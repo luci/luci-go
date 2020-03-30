@@ -68,3 +68,15 @@ declare global {
 Object.prototype.as = function<T>(this: T) {
   return this;
 };
+
+declare global {
+  interface DateConstructor {
+    /**
+     * Converts a date string into a Date object.
+     */
+    from(dateStr: string): Date;
+  }
+}
+Date.from = (dateStr: string) => {
+  return new Date(Date.parse(dateStr));
+};
