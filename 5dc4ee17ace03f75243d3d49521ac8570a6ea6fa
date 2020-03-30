@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16280491_caf4c61d",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-30T23:31:47Z",
+      "side": 1,
+      "message": "for my own education, is there a reason to implement your own Date.from method rather than just doing:\n\n${new Date(this.invocation!.createTime).toLocaleString()}",
+      "range": {
+        "startLine": 54,
+        "startChar": 30,
+        "endLine": 54,
+        "endChar": 39
+      },
+      "revId": "5dc4ee17ace03f75243d3d49521ac8570a6ea6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
