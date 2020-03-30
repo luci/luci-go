@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "425ac6af_66442407",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-30T21:52:14Z",
+      "side": 1,
+      "message": "nit: move into separate import group",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 25
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26f578fe_61f61fde",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-30T21:52:14Z",
+      "side": 1,
+      "message": "unused?",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 17
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f470663_c58abe7f",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-30T21:52:14Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 37
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1e3772f_f20ce4ef",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-30T21:52:14Z",
+      "side": 1,
+      "message": "does it need Transient tag or the channel will keep retrying all errors?",
+      "range": {
+        "startLine": 157,
+        "startChar": 9,
+        "endLine": 157,
+        "endChar": 12
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "113d0d34_b765648d",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-30T21:52:14Z",
+      "side": 1,
+      "message": "How long does it take? Worth adding logging to know if we get stuck here?",
+      "range": {
+        "startLine": 162,
+        "startChar": 15,
+        "endLine": 162,
+        "endChar": 28
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
