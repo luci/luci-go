@@ -1,0 +1,14 @@
+{
+  'WATCHLIST_DEFINITIONS': {
+    'luci_notify': {
+      'filepath': 'luci_notify',
+    },
+    'milo': {
+      'filepath': 'milo',
+    },
+  },
+  'WATCHLISTS': {
+    'luci_notify': ['chops-tfs-team+reviews@google.com'],
+    'milo': ['chops-tfs-team+reviews@google.com'],
+  },
+}
