@@ -16,65 +16,79 @@ package main
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	montypes "go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"golang.org/x/time/rate"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/server/archivist"
 	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
-
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
-
-// loopParams control the outer archivist loop.
-type loopParams struct {
-	batchSize int64
-	leaseTime time.Duration
-}
 
 var (
 	errInvalidConfig = errors.New("invalid configuration")
 	errNoWorkToDo    = errors.New("no work to do")
 
-	// Note: these initial values are mostly bogus, they are replaced by
-	// fetchLoopParams before the loop starts.
-	loop = loopParams{
-		// batchSize is the number of jobs to lease from taskqueue per cycle.
-		//
-		// TaskQueue has a limit of 10qps for leasing tasks, so the batch size must
-		// be set to:
-		// batchSize * 10 > (max expected stream creation QPS)
-		//
-		// In 2020, max stream QPS is approximately 1000 QPS
-		batchSize: 500,
-
-		// leaseTime is the amount of time to to lease the batch of tasks for.
-		//
-		// We need:
-		// (time to process avg stream) * batchSize < leaseTime
-		//
-		// As of 2020, 90th percentile process time per stream is ~5s, 95th
-		// percentile of the loop time is 25m.
-		leaseTime: 40 * time.Minute,
+	leaseRetryParams = func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   time.Second,
+				Retries: -1,
+			},
+			Multiplier: 1.25,
+			MaxDelay:   time.Minute * 10,
+		}
 	}
 
-	// loopM protects 'loop'.
-	loopM = sync.Mutex{}
+	ackChannelOptions = &dispatcher.Options{
+		QPSLimit: rate.NewLimiter(1, 1), // 1 QPS max rate
+		Buffer: buffer.Options{
+			MaxLeases:     10,
+			BatchSize:     500,
+			BatchDuration: 10 * time.Minute,
+			FullBehavior: &buffer.BlockNewItems{
+				MaxItems: 10 * 500,
+			},
+			Retry: func() retry.Iterator {
+				return &retry.ExponentialBackoff{
+					Limited: retry.Limited{
+						Delay:   time.Second,
+						Retries: 10,
+					},
+					Multiplier: 1.25,
+					MaxDelay:   time.Minute * 10,
+				}
+			},
+		},
+	}
+
+	mkJobChannelOptions = func(maxWorkers int) *dispatcher.Options {
+		return &dispatcher.Options{
+			Buffer: buffer.Options{
+				MaxLeases: maxWorkers,
+				BatchSize: 1,
+				FullBehavior: &buffer.BlockNewItems{
+					MaxItems: 2 * maxWorkers,
+				},
+			},
+		}
+	}
 
 	// maxSleepTime is the max amount of time to sleep in-between errors, in seconds.
 	maxSleepTime = 32
@@ -116,148 +130,120 @@ type application struct {
 }
 
 // runForever runs the archivist loop forever.
-func runForever(c context.Context, taskConcurrency int, ar archivist.Archivist) error {
-	sleepTime := 1
-	client := ar.Service
-	// Forever loop.
-	for {
-		// Only exit out if the context is cancelled (I.E. Ctrl + c).
-		if c.Err() != nil {
-			return c.Err()
+func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist) {
+	type archiveJob struct {
+		deadline time.Time
+		task     *logdog.ArchiveTask
+	}
+
+	ackChan, err := dispatcher.NewChannel(ctx, ackChannelOptions, func(batch *buffer.Batch) error {
+		var req *logdog.DeleteRequest
+		if batch.Meta != nil {
+			req = batch.Meta.(*logdog.DeleteRequest)
+		} else {
+			tasks := make([]*logdog.ArchiveTask, len(batch.Data))
+			for i, datum := range batch.Data {
+				tasks[i] = datum.(*logdog.ArchiveTask)
+				batch.Data[i] = nil
+			}
+			req = &logdog.DeleteRequest{Tasks: tasks}
+			batch.Meta = req
 		}
-		if err := func() error {
-			loop := grabLoopParams()
+		_, err := ar.Service.DeleteArchiveTasks(ctx, req)
+		return transient.Tag.Apply(err)
+	})
+	if err != nil {
+		panic(err) // only occurs if Options is invalid
+	}
+	defer func() {
+		logging.Infof(ctx, "draining ACK channel")
+		ackChan.CloseAndDrain(ctx)
+		logging.Infof(ctx, "ACK channel drained")
+	}()
 
-			// Sizes of archival tasks are pretty uniform. It means the total time it
-			// takes to process equally sized batches of tasks is approximately the
-			// same across all archivist instances. Once a bunch of them start at the
-			// same time, they end up hitting LeaseArchiveTasks in waves at
-			// approximately the same time. Randomize the batch size +-25% to remove
-			// this synchronization.
-			factor := int64(mathrand.Intn(c, 500) + 750) // [750, 1250)
-			loop.batchSize = loop.batchSize * factor / 1000
-			loop.leaseTime = loop.leaseTime * time.Duration(factor) / 1000
+	jobChanOpts := mkJobChannelOptions(taskConcurrency)
+	jobChan, err := dispatcher.NewChannel(ctx, jobChanOpts, func(data *buffer.Batch) error {
+		job := data.Data[0].(*archiveJob)
 
-			cycleStartTime := clock.Now(c)
-			leaseTimeProto := ptypes.DurationProto(loop.leaseTime)
-			nc, cancel := context.WithTimeout(c, loop.leaseTime)
-			defer cancel()
+		nc, cancel := context.WithDeadline(ctx, job.deadline)
+		defer cancel()
 
-			logging.Infof(c, "Leasing max %d tasks for %s", loop.batchSize, loop.leaseTime)
-			tasks, err := client.LeaseArchiveTasks(c, &logdog.LeaseRequest{
-				MaxTasks:  loop.batchSize,
-				LeaseTime: leaseTimeProto,
-			})
-			if err != nil {
-				return err
+		startTime := clock.Now(ctx)
+		err := ar.ArchiveTask(nc, job.task)
+		duration := clock.Now(ctx).Sub(startTime)
+		tsTaskProcessingTime.Add(ctx, float64(duration.Nanoseconds())/1000000, err == nil)
+
+		if err == nil {
+			select {
+			case ackChan.C <- job:
+			case <-ctx.Done():
+				logging.Errorf(ctx, "Failed to ACK task %v due to context: %s", job.task, ctx.Err())
 			}
-			logging.Fields{
-				"cycleStart": true,
-				"numLeased":  len(tasks.Tasks),
-				"noWork":     len(tasks.Tasks) == 0,
-			}.Infof(c, "Start of cycled, leased %d tasks", len(tasks.Tasks))
-			tsLeaseCount.Add(c, int64(len(tasks.Tasks)))
-			if len(tasks.Tasks) == 0 {
-				return errNoWorkToDo
-			}
+		} else {
+			logging.Errorf(ctx, "Failed to archive task %v: %s", job.task, err)
+		}
 
-			var ackTasksM sync.Mutex
-			ackTasks := make([]*logdog.ArchiveTask, 0, len(tasks.Tasks))
+		return nil
+	})
+	if err != nil {
+		panic(err) // only occurs if Options is invalid
+	}
+	defer func() {
+		logging.Infof(ctx, "Job channel draining")
+		jobChan.CloseAndDrain(ctx)
+		logging.Infof(ctx, "Job channel drained")
+	}()
 
-			merr := parallel.WorkPool(taskConcurrency, func(ch chan<- func() error) {
-				for i := range tasks.Tasks {
-					task := tasks.Tasks[i]
-					ch <- func() (err error) {
-						deleteTask := false
-						startTime := clock.Now(c)
+	// now we spin forever, pushing items into jobChan.
+	sleepTime := 1
+	var previousCycle time.Time
+	for ctx.Err() != nil {
+		loopParams := grabLoopParams()
+		req := loopParams.mkRequest(ctx)
 
-						defer func() {
-							duration := clock.Now(c).Sub(startTime)
-							tsTaskProcessingTime.Add(c, float64(duration.Nanoseconds())/1000000, deleteTask)
-						}()
+		var tasks *logdog.LeaseResponse
+		var deadline time.Time
 
-						if err = ar.ArchiveTask(nc, task); err == nil {
-							deleteTask = true
-							ackTasksM.Lock()
-							defer ackTasksM.Unlock()
-							ackTasks = append(ackTasks, task)
-						}
+		logging.Infof(ctx, "Leasing max %d tasks for %s", loopParams.batchSize, loopParams.deadline)
+		err := retry.Retry(ctx, leaseRetryParams, func() (err error) {
+			deadline = clock.Now(ctx).Add(loop.deadline)
+			tasks, err = ar.Service.LeaseArchiveTasks(ctx, req)
+			return
+		}, retry.LogCallback(ctx, "LeaseArchiveTasks"))
+		if ctx.Err() != nil && err != nil {
+			panic("impossible: infinite retry stopped: " + err.Error())
+		}
 
-						return
-					}
-				}
-			})
+		if !previousCycle.IsZero() {
+			now := clock.Now(ctx)
+			tsLoopCycleTime.Add(ctx, float64(now.Sub(previousCycle).Nanoseconds()/1000000))
+			previousCycle = now
+		}
 
-			tsNackCount.Add(c, int64(len(tasks.Tasks)-len(ackTasks)))
-			// Ack the successful tasks.  We log the error here since there's nothing we can do.
-			if len(ackTasks) > 0 {
-				tsAckCount.Add(c, int64(len(ackTasks)))
-				c := log.SetFields(c, log.Fields{"Tasks": ackTasks})
-				if _, err := client.DeleteArchiveTasks(c, &logdog.DeleteRequest{Tasks: ackTasks}); err != nil {
-					log.WithError(err).Errorf(c, "error while acking tasks (%s)", ackTasks)
-				}
-			}
-
-			duration := clock.Now(c).Sub(cycleStartTime)
-			logging.Fields{
-				"cycleEnd":     true,
-				"numLeased":    len(tasks.Tasks),
-				"numCompleted": len(ackTasks),
-				"timeSpentSec": duration.Seconds(),
-			}.Infof(c, "Done archiving %d items (%d successful) took %.2fs", len(tasks.Tasks), len(ackTasks), duration.Seconds())
-			tsLoopCycleTime.Add(c, float64(duration.Nanoseconds()/1000000))
-
-			return merr
-		}(); err != nil {
-			// Back off on errors.
+		if len(tasks.Tasks) == 0 {
 			sleepTime *= 2
 			if sleepTime > maxSleepTime {
 				sleepTime = maxSleepTime
 			}
-			switch err {
-			case errNoWorkToDo:
-				logging.Infof(c, "no work to do, sleeping for %d seconds", sleepTime)
-			default:
-				logging.WithError(err).Errorf(c, "got error in loop, sleeping for %d seconds", sleepTime)
-			}
-			clock.Sleep(c, time.Duration(sleepTime)*time.Second)
+			logging.Infof(ctx, "no work to do, sleeping for %d seconds", sleepTime)
+			clock.Sleep(ctx, time.Duration(sleepTime)*time.Second)
+			previousCycle = time.Time{}
+			continue
 		} else {
 			sleepTime = 1
 		}
-	}
-}
 
-// grabLoopParams returns a copy of most recent value of `loop`.
-func grabLoopParams() loopParams {
-	loopM.Lock()
-	defer loopM.Unlock()
-	return loop
-}
-
-// fetchLoopParams updates `loop` based on settings in datastore (or panics).
-func fetchLoopParams(c context.Context) {
-	// Note: these are eventually controlled through /admin/portal/archivist.
-	set := coordinator.GetSettings(c)
-	loopM.Lock()
-	defer loopM.Unlock()
-	if set.ArchivistBatchSize != 0 {
-		loop.batchSize = set.ArchivistBatchSize
-	}
-	if set.ArchivistLeaseTime != 0 {
-		loop.leaseTime = set.ArchivistLeaseTime
-	}
-	logging.Debugf(c, "loop settings: batchSize:%d, leastTime:%s", loop.batchSize, loop.leaseTime)
-}
-
-// loopParamsUpdater updates loopParams based on setting in datastore every once
-// in a while.
-func loopParamsUpdater(c context.Context) {
-	for {
-		if clock.Sleep(c, 5*time.Minute).Err != nil {
-			break //  the context is canceled, the process is exiting
+		for _, task := range tasks.Tasks {
+			select {
+			case jobChan.C <- &archiveJob{deadline, task}:
+			case <-ctx.Done():
+				logging.Infof(ctx, "lease thread got context err: %s", ctx.Err())
+				break
+			}
 		}
-		fetchLoopParams(c)
 	}
+
+	logging.Infof(ctx, "runForever no longer running forever")
 }
 
 // run is the main execution function.
@@ -320,60 +306,9 @@ func (a *application) runArchivist(c context.Context) error {
 	fetchLoopParams(c)
 	go loopParamsUpdater(c)
 
-	return runForever(c, a.maxConcurrentTasks, ar)
-}
+	runForever(c, a.maxConcurrentTasks, ar)
 
-// GetSettingsLoader is an archivist.SettingsLoader implementation that merges
-// global and project-specific settings.
-//
-// The resulting settings object will be verified by the Archivist.
-func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.SettingsLoader {
-	serviceID := a.ServiceID()
-
-	return func(c context.Context, project string) (*archivist.Settings, error) {
-		// Fold in our project-specific configuration, if valid.
-		pcfg, err := a.ProjectConfig(c, project)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"project":    project,
-			}.Errorf(c, "Failed to fetch project configuration.")
-			return nil, err
-		}
-
-		indexParam := func(get func(ic *svcconfig.ArchiveIndexConfig) int32) int {
-			if ic := pcfg.ArchiveIndexConfig; ic != nil {
-				if v := get(ic); v > 0 {
-					return int(v)
-				}
-			}
-
-			if ic := acfg.ArchiveIndexConfig; ic != nil {
-				if v := get(ic); v > 0 {
-					return int(v)
-				}
-			}
-
-			return 0
-		}
-
-		// Load our base settings.
-		//
-		// Archival bases are:
-		// Staging: gs://<services:gs_staging_bucket>/<project-id>/...
-		// Archive: gs://<project:archive_gs_bucket>/<project-id>/...
-		st := archivist.Settings{
-			GSBase:        gs.MakePath(pcfg.ArchiveGsBucket, "").Concat(serviceID),
-			GSStagingBase: gs.MakePath(acfg.GsStagingBucket, "").Concat(serviceID),
-
-			IndexStreamRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.StreamRange }),
-			IndexPrefixRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.PrefixRange }),
-			IndexByteRange:   indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.ByteRange }),
-		}
-
-		// Fold project settings into loaded ones.
-		return &st, nil
-	}
+	return nil
 }
 
 // Entry point.
