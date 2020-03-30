@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76d1569c_eccf5ddf",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T00:17:43Z",
+      "side": 1,
+      "message": "tr-variant-entry is not in this CL.\nBut I think it\u0027s fine to include it here.\nIt renders a blank element.",
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdae08a2_b7dccea3",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T00:17:43Z",
+      "side": 1,
+      "message": "A placeholder implementation.\nWill update once test selection is implemented.",
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
