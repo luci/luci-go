@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a462d89b_5ad82e58",
+        "filename": "milo/frontend/appengine/resultui/index.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "To load lodash as a separate script.\nWe can pack it into index.js too. But then the cache will be invalidated every time we update any code in index.js.\nDeleted this in favour of webpack chunk/code splitting (not in this CL).",
+      "parentUuid": "d6ca0d04_1c44a4fb",
+      "range": {
+        "startLine": 4,
+        "startChar": 13,
+        "endLine": 4,
+        "endChar": 70
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7abfeba9_a57832be",
         "filename": "milo/frontend/resultui/package.json",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "669af87e_0459b82a",
+        "filename": "milo/frontend/resultui/package.json",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "I did some investigation.\nAfter applying some optimisation, the total bundle size can be reduced to ~230KB before compression.\nI\u0027ll open a separate CL for that.",
+      "parentUuid": "7abfeba9_a57832be",
+      "range": {
+        "startLine": 28,
+        "startChar": 4,
+        "endLine": 28,
+        "endChar": 33
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2a5ee545_7e8277e3",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "It is a property getter though. It will appear as a property when using it.\n\"Finds ...\" is more suited for describing methods IMO.",
+      "parentUuid": "2c0dd12b_324eed62",
+      "range": {
+        "startLine": 51,
+        "startChar": 5,
+        "endLine": 51,
+        "endChar": 59
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0cce687f_049b3550",
         "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "8841926b_5863a4ce",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "There are quite a few nice utilities from lodash that we might want to take advantage of in the future.\nI do agree that 24KB for a single function is a bit excessive.\nI did some investigation around reducing bundle size. Using webpack\u0027s tree-shaking feature (and some other features), the bundle size can be reduced significantly.\nI\u0027ll keep this for now.\nAdded a TODO comment to remind myself to comeback to this.",
+      "parentUuid": "0cce687f_049b3550",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 78
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76d1569c_eccf5ddf",
         "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
         "patchSetId": 3
@@ -108,6 +204,24 @@
       "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70bd81b6_afe2f9ba",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "76d1569c_eccf5ddf",
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +242,24 @@
     },
     {
       "key": {
+        "uuid": "c00d2cd1_5864dc89",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "56eb5041_f574c327",
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cdae08a2_b7dccea3",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 3
@@ -142,6 +274,24 @@
       "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6a28d74_6c7b5280",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T08:38:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cdae08a2_b7dccea3",
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
