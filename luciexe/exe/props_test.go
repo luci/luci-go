@@ -36,12 +36,11 @@ func TestProperties(t *testing.T) {
 		expectedStruct := &testStruct{Field: "hi"}
 		expectedProto := &bbpb.Build{SummaryMarkdown: "there"}
 		expectedStrings := []string{"not", "a", "struct"}
-		var expectedNil interface{}
 		So(WriteProperties(props, map[string]interface{}{
 			"struct":  expectedStruct,
 			"proto":   expectedProto,
 			"strings": expectedStrings,
-			"null":    expectedNil,
+			"null":    Null,
 		}), ShouldBeNil)
 		So(props, ShouldResembleProto, &structpb.Struct{
 			Fields: map[string]*structpb.Value{
@@ -85,7 +84,26 @@ func TestProperties(t *testing.T) {
 		So(readStruct, ShouldResemble, expectedStruct)
 		So(extraStruct, ShouldResemble, &testStruct{})
 		So(readStrings, ShouldResemble, expectedStrings)
-		So(readNil, ShouldResemble, expectedNil)
+		So(readNil, ShouldResemble, nil)
 		So(readProto, ShouldResembleProto, expectedProto)
+
+		// now, delete some keys
+		So(WriteProperties(props, map[string]interface{}{
+			"struct":         nil,
+			"proto":          nil,
+			"does_not_exist": nil,
+		}), ShouldBeNil)
+		So(props, ShouldResembleProto, &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"strings": {Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{
+					Values: []*structpb.Value{
+						{Kind: &structpb.Value_StringValue{StringValue: "not"}},
+						{Kind: &structpb.Value_StringValue{StringValue: "a"}},
+						{Kind: &structpb.Value_StringValue{StringValue: "struct"}},
+					},
+				}}},
+				"null": {Kind: &structpb.Value_NullValue{NullValue: 0}},
+			},
+		})
 	})
 }

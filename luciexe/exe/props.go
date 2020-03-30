@@ -79,6 +79,12 @@ func ParseProperties(props *structpb.Struct, outputs map[string]interface{}) err
 	return ret.Get()
 }
 
+type nullType struct{}
+
+// Null is a sentinel value to assign JSON `null` to a property with
+// WriteProperties.
+var Null = nullType{}
+
 // WriteProperties updates a protobuf 'struct' with structured Go data.
 //
 // `inputs` is a mapping of a property name to an input structure. An input
@@ -88,6 +94,9 @@ func ParseProperties(props *structpb.Struct, outputs map[string]interface{}) err
 //    JSONPB and Unmarshaled into the proto.Message.
 //  * a valid "encoding/json" marshal source. The data in this field will be
 //    interpreted as json and marshaled with the stdlib "encoding/json" package.
+//  * The `Null` value in this package. The top-level property will be set to
+//    JSON `null`.
+//  * nil. The top-level property will be removed.
 //
 // This function will scan the inputs and marshal them as appropriate into
 // `props` (usually `build.Output.Properties`).
@@ -110,6 +119,11 @@ func WriteProperties(props *structpb.Struct, inputs map[string]interface{}) erro
 	for field, input := range inputs {
 		idx++
 
+		if input == nil {
+			delete(props.Fields, field)
+			continue
+		}
+
 		var buf bytes.Buffer
 		var err error
 
@@ -120,8 +134,13 @@ func WriteProperties(props *structpb.Struct, inputs map[string]interface{}) erro
 		}
 
 		switch x := input.(type) {
+		case nullType:
+			fieldVal.Kind = &structpb.Value_NullValue{}
+			continue
+
 		case proto.Message:
 			err = (&jsonpb.Marshaler{OrigName: true}).Marshal(&buf, x)
+
 		default:
 			var data []byte
 			data, err = json.Marshal(x)

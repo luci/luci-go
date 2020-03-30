@@ -291,6 +291,77 @@ func TestTags(t *testing.T) {
 	})
 }
 
+func TestProperties(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `Properties`, []testCase{
+		{
+			name:   "nil",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Properties(nil, false)
+				})
+				So(must(jd.HighLevelInfo().Properties()), ShouldBeEmpty)
+			},
+		},
+
+		{
+			name:   "add",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Properties(map[string]string{
+						"key":    `"value"`,
+						"other":  `{"something": [1, 2, "subvalue"]}`,
+						"delete": "", // noop
+					}, false)
+				})
+				So(must(jd.HighLevelInfo().Properties()), ShouldResemble, map[string]string{
+					"key":   `"value"`,
+					"other": `{"something":[1,2,"subvalue"]}`,
+				})
+			},
+		},
+
+		{
+			name:   "add (auto)",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Properties(map[string]string{
+						"json":    `{"thingy": "kerplop"}`,
+						"literal": `{I am a banana}`,
+						"delete":  "", // noop
+					}, true)
+				})
+				So(must(jd.HighLevelInfo().Properties()), ShouldResemble, map[string]string{
+					"json":    `{"thingy":"kerplop"}`,
+					"literal": `"{I am a banana}"`, // string now
+				})
+			},
+		},
+
+		{
+			name:   "delete",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Properties(map[string]string{
+						"key": `"value"`,
+					}, false)
+				})
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Properties(map[string]string{
+						"key": "",
+					}, false)
+				})
+				So(must(jd.HighLevelInfo().Properties()), ShouldBeEmpty)
+			},
+		},
+	})
+}
+
 func TestGerritChange(t *testing.T) {
 	t.Parallel()
 
