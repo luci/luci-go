@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Config } from 'karma';
-import webpackConfig from './webpack.config';
+import webpackConfig from './webpack.common';
 
 module.exports = (config: Config) => {
   const isDebug = process.argv.some((arg) => arg === '--debug');
