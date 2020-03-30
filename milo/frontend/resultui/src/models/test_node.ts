@@ -31,6 +31,19 @@ export function isTestResult(testResultOrExoneration: TestResultOrExoneration): 
 }
 
 /**
+ * Regex for extracting segments from a test ID.
+ */
+// Use /\w*(\W+|$)/g instead of /\w+(\W+|$)/g so testIds ending with a
+// non-alphanumerical character will get their own leaf.
+// This ensures only leaf nodes can have directly associated tests.
+// Without this, nodes may be incorrectly elided when there's a testId that
+// ends with /\W/.
+// For example, when we add 'parent:' and 'parent:child' to the tree,
+// 'child' will be incorrectly elided into 'parent:',
+// even though 'parent:' contains two different testIds.
+export const ID_SEG_REGEX = /\w*(\W+|$)/g;
+
+/**
  * Contains test results and exonerations, grouped by variant,
  * for the given test id.
  */
@@ -120,15 +133,7 @@ export class TestNode {
    * creating new nodes as necessary.
    */
   addTest(test: ReadonlyTest) {
-    // Use /\w*(\W+|$)/g instead of /\w+(\W+|$)/g so testIds ending with a
-    // non-alphanumerical character will get their own leaf.
-    // This ensures only leaf nodes can have directly associated tests.
-    // Without this, nodes may be incorrectly elided when there's a testId that
-    // ends with /\W/.
-    // For example, when we add 'parent:' and 'parent:child' to the tree,
-    // 'child' will be incorrectly elided into 'parent:',
-    // even though 'parent:' contains two different testIds.
-    const idSegs = test.id.match(/\w*(\W+|$)/g)!;
+    const idSegs = test.id.match(ID_SEG_REGEX)!;
     idSegs.reverse();
     this.addTestWithIdSegs(test, idSegs);
   }
