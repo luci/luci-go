@@ -12,11 +12,12 @@
     "@material/mwc-icon": "^0.14.1",
     "@vaadin/router": "^1.7.1",
     "copy-to-clipboard": "^3.3.1",
+    "dayjs": "^1.8.23",
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
+    "lodash-es": "^4.17.15",
     "mobx": "^5.15.4",
-    "mobx-utils": "^5.5.5",
-    "moment": "^2.24.0"
+    "mobx-utils": "^5.5.5"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.9.0",
@@ -25,15 +26,19 @@
     "@types/gapi.auth2": "0.0.51",
     "@types/karma": "^4.4.0",
     "@types/karma-webpack": "^2.0.7",
+    "@types/lodash-es": "^4.17.3",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.9.3",
     "@types/sinon": "^7.5.2",
     "@types/webpack": "^4.41.8",
     "@types/webpack-dev-server": "^3.10.1",
+    "@types/webpack-merge": "^4.1.5",
     "babel-jest": "^25.1.0",
     "chai": "^4.2.0",
     "css-loader": "^3.4.2",
     "gts": "^1.1.2",
+    "html-webpack-harddisk-plugin": "^1.0.1",
+    "html-webpack-plugin": "^4.0.3",
     "karma": "^4.4.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.1.0",
@@ -47,12 +52,12 @@
     "typescript": "^3.8.3",
     "webpack": "^4.42.0",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.10.3"
+    "webpack-dev-server": "^3.10.3",
+    "webpack-merge": "^4.2.2"
   },
   "scripts": {
-    "build": "webpack",
-    "watch": "webpack -w",
-    "dev": "webpack-dev-server",
-    "test": "karma start --single-run karma.conf.ts"
+    "build": "webpack --config webpack.prod.ts",
+    "dev": "webpack-dev-server --open --config webpack.prod.ts",
+    "test": "karma start --single-run"
   }
 }
