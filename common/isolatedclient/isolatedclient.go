@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/tracer"
 )
 
@@ -221,7 +222,7 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 		defer decompressor.Close()
 		_, err = io.Copy(dest, decompressor)
 		if err != nil {
-			return errors.Annotate(err, "io.Copy failed").Err()
+			return errors.Annotate(err, "io.Copy failed").Tag(transient.Tag).Err()
 		}
 		return err
 	}
@@ -299,7 +300,7 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 		defer decompressor.Close()
 		_, err = io.Copy(dest, decompressor)
 		if err != nil {
-			return errors.Annotate(err, "GCS io.Copy failed").Err()
+			return errors.Annotate(err, "GCS io.Copy failed").Tag(transient.Tag).Err()
 		}
 		return err
 	}
