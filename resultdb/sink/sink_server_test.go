@@ -19,89 +19,59 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// validTestResult returns a valid sinkpb.TestResult sample.
-func validTestResult(now time.Time) *sinkpb.TestResult {
-	st, _ := ptypes.TimestampProto(now.Add(-2 * time.Minute))
-	return &sinkpb.TestResult{
-		TestId:      "this is testID",
-		ResultId:    "result_id1",
-		Variant:     pbutil.Variant("a", "b"),
-		Expected:    true,
-		Status:      sinkpb.TestStatus_PASS,
-		SummaryHtml: "HTML summary",
-		StartTime:   st,
-		Duration:    ptypes.DurationProto(time.Minute),
-		Tags:        pbutil.StringPairs("k1", "v1"),
-		InputArtifacts: map[string]*sinkpb.Artifact{
-			"input_art1": &sinkpb.Artifact{
-				Body:        &sinkpb.Artifact_FilePath{"/tmp/foo"},
-				ContentType: "text/plain",
-			},
-		},
-		OutputArtifacts: map[string]*sinkpb.Artifact{
-			"output_art1": &sinkpb.Artifact{
-				Body:        &sinkpb.Artifact_Contents{[]byte("contents")},
-				ContentType: "text/plain",
-			},
-		},
-	}
-}
-
 func TestReportTestResults(t *testing.T) {
 	t.Parallel()
-
-	now := testclock.TestRecentTimeUTC
-	req := &sinkpb.ReportTestResultsRequest{
-		TestResults: []*sinkpb.TestResult{validTestResult(now)}}
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-	recClient := pb.NewMockRecorderClient(ctl)
 
 	Convey("ReportTestResults", t, func() {
-		ctx := authtest.MockAuthConfig(context.Background())
-		ctx = metadata.NewIncomingContext(
-			ctx, metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
-		sink, err := newSinkServer(ctx, ServerConfig{
-			AuthToken: "secret", Recorder: recClient, Invocation: "inv1"})
+		tr, cleanup := validTestResult()
+		req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+		defer cleanup()
+
+		// setup a test server
+		ctx := metadata.NewIncomingContext(
+			authtest.MockAuthConfig(context.Background()),
+			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
+		cfg := testServerConfig(ctl, "", "secret")
+		cfg.Invocation = "inv1"
+		sink, err := newSinkServer(ctx, cfg)
 		So(err, ShouldBeNil)
 
-		Convey("returns a success for a valid request", func() {
-			_, err := sink.ReportTestResults(ctx, req)
-			So(err, ShouldBeNil)
-			recClient.EXPECT().BatchCreateTestResults(gomock.Any(), gomock.Any())
-
-			// close the server to drain the channel and process the queued items asap.
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer func() {
+			// close the server to drain the channel and process the queued items.
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 			closeSinkServer(ctx, sink)
+		}()
+
+		// mock
+		recorder := cfg.Recorder.(*pb.MockRecorderClient)
+
+		Convey("creates TestResult", func() {
+			_, err := sink.ReportTestResults(ctx, req)
+			So(err, ShouldBeNil)
+
+			// rdb_channel should invoke recorder.BatchCreateTestResults()
+			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
 		})
 
-		Convey("returns an error for a request with an invalid artifact", func() {
+		Convey("returns an error if artifacts are invalid", func() {
 			req.TestResults[0].InputArtifacts["input_art2"] = &sinkpb.Artifact{}
 			_, err := sink.ReportTestResults(ctx, req)
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
-			recClient.EXPECT().BatchCreateTestResults(
-				gomock.Any(), gomock.Any()).MaxTimes(0)
-
-			// close the server to drain the channel and process the queued items asap.
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
-			defer cancel()
-			closeSinkServer(ctx, sink)
 		})
 	})
 }

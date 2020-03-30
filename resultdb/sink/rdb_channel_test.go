@@ -15,7 +15,6 @@ package sink
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -27,7 +26,7 @@ import (
 func TestSinkArtsToRpcArts(t *testing.T) {
 	t.Parallel()
 
-	Convey("sinkToRpcArts", t, func() {
+	Convey("sinkArtsToRpcArts", t, func() {
 		ctx := context.Background()
 		sinkArts := map[string]*sinkpb.Artifact{}
 
@@ -41,17 +40,16 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 			})
 
 			Convey("with the size of the file", func() {
-				f, err := ioutil.TempFile("", "test-artifact")
-				So(err, ShouldBeNil)
-				f.Write([]byte("123"))
-				f.Close()
-				defer os.Remove(f.Name())
+				sinkArts["art1"] = testArtifactWithFile(func(f *os.File) {
+					n, err := f.WriteString("test artifact")
+					So(err, ShouldBeNil)
+					So(n, ShouldEqual, len("test artifact"))
+				})
+				defer os.Remove(sinkArts["art1"].GetFilePath())
 
-				sinkArts["art1"] = &sinkpb.Artifact{
-					Body: &sinkpb.Artifact_FilePath{FilePath: f.Name()}}
 				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
-				So(rpcArts[0].Size, ShouldEqual, 3)
+				So(rpcArts[0].Size, ShouldEqual, len("test artifact"))
 			})
 
 			Convey("with -1 if the file is not accessible", func() {
