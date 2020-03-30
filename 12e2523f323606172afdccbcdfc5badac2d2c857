@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "41b33b5b_b1418036",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-30T23:36:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "425ac6af_66442407",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 25
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26f578fe_61f61fde",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14baad40_573c40ca",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-30T23:36:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26f578fe_61f61fde",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 92,
+        "endChar": 17
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "25fcb2c8_fdeb5e3e",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-30T23:36:51Z",
+      "side": 1,
+      "message": "🤓",
+      "parentUuid": "9f470663_c58abe7f",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 37
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1e3772f_f20ce4ef",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 4
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "ae8a90fb_48722eb3",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-30T23:36:51Z",
+      "side": 1,
+      "message": "doesn\u0027t prpc client already tag transient errors? Or you\u0027re just meaning to retry all errors (up to the limit) because why not? I\u0027ll do that.",
+      "parentUuid": "b1e3772f_f20ce4ef",
+      "range": {
+        "startLine": 157,
+        "startChar": 9,
+        "endLine": 157,
+        "endChar": 12
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "113d0d34_b765648d",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 4
@@ -114,6 +210,30 @@
       "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "415ff811_b9962a26",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-30T23:36:51Z",
+      "side": 1,
+      "message": "Added logging\n\nThis operation does what it implies:\n  * close channel for new items\n  * wait for all buffered items to finish, according to their retry parameters.\n\nHowever, if the context is currently canceled (which should be true here, as that\u0027s the only way for runForever to stop running forever), then all buffered or NACK\u0027d work is immediately dropped; individual worker functions are expected to handle context cancelation correctly to not block forever.",
+      "parentUuid": "113d0d34_b765648d",
+      "range": {
+        "startLine": 162,
+        "startChar": 15,
+        "endLine": 162,
+        "endChar": 28
+      },
+      "revId": "12e2523f323606172afdccbcdfc5badac2d2c857",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
