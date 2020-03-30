@@ -2,6 +2,98 @@
   "comments": [
     {
       "key": {
+        "uuid": "d6ca0d04_1c44a4fb",
+        "filename": "milo/frontend/appengine/resultui/index.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-30T00:38:29Z",
+      "side": 1,
+      "message": "what\u0027s this for? does this not get packed into our index.js?",
+      "range": {
+        "startLine": 4,
+        "startChar": 13,
+        "endLine": 4,
+        "endChar": 70
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7abfeba9_a57832be",
+        "filename": "milo/frontend/resultui/package.json",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-30T00:38:29Z",
+      "side": 1,
+      "message": "As a side note (not for this CL), it looks like our index.js download is up to 1.3MB now. Is there any way we can reduce that?",
+      "range": {
+        "startLine": 28,
+        "startChar": 4,
+        "endLine": 28,
+        "endChar": 33
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c0dd12b_324eed62",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-30T00:38:29Z",
+      "side": 1,
+      "message": "Nit: \"Finds the common prefix between this.test.id and this.prevTestId.\"",
+      "range": {
+        "startLine": 51,
+        "startChar": 5,
+        "endLine": 51,
+        "endChar": 59
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cce687f_049b3550",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-30T00:38:29Z",
+      "side": 1,
+      "message": "If this is our only use of lodash, I\u0027d consider whether it\u0027s worth the extra 24KB we\u0027re making the user download.",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 78
+      },
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "76d1569c_eccf5ddf",
         "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
         "patchSetId": 3
