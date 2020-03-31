@@ -197,7 +197,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 	// now we spin forever, pushing items into jobChan.
 	sleepTime := 1
 	var previousCycle time.Time
-	for ctx.Err() != nil {
+	for ctx.Err() == nil {
 		loopParams := grabLoopParams()
 		req := loopParams.mkRequest(ctx)
 
@@ -243,7 +243,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 		}
 	}
 
-	logging.Infof(ctx, "runForever no longer running forever")
+	logging.Infof(ctx, "runForever no longer running forever: ctx.Err() == %s", ctx.Err())
 }
 
 // run is the main execution function.
