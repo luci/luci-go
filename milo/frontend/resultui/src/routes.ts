@@ -12,29 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './pages/error_page';
-import './pages/invocation_page';
-import './pages/login_page';
-import './pages/not_found_page';
-
 import { Router } from '@vaadin/router';
 
 const router = new Router(document.getElementById('app-root'));
 router.setRoutes([
   {
     path: '/invocation/:invocation_name',
-    component: 'tr-invocation-page',
+    action: async (_ctx, cmd) => {
+      await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+      return cmd.component('tr-invocation-page');
+    },
   },
   {
     path: '/login',
-    component: 'tr-login-page',
+    action: async (_ctx, cmd) => {
+      await import(/* webpackChunkName: "login_page" */ './pages/login_page');
+      return cmd.component('tr-login-page');
+    },
   },
   {
     path: '/error',
-    component: 'tr-error-page',
+    action: async (_ctx, cmd) => {
+      await import(/* webpackChunkName: "error_page" */ './pages/error_page');
+      return cmd.component('tr-error-page');
+    },
   },
   {
     path: '/:path*',
-    component: 'tr-not-found-page',
+    action: async (_ctx, cmd) => {
+      await import(/* webpackChunkName: "not_found_page" */ './pages/not_found_page');
+      return cmd.component('tr-not-found-page');
+    },
   },
 ]);

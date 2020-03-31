@@ -12,35 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import path from 'path';
 import webpack from 'webpack';
+import merge from 'webpack-merge';
 
-const config: webpack.Configuration = {
+import common from './webpack.common';
+
+const config: webpack.Configuration = merge(common, {
   mode: 'development',
-  entry: './src/index.ts',
   devtool: 'eval-source-map',
-  output: {
-    path: path.resolve(__dirname, '../appengine/resultui/static/dist/scripts/'),
-    filename: 'index.js',
-  },
-  module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  resolve: {
-    extensions: ['.js', '.ts'],
-  },
-  devServer: {
-    contentBase: path.join(__dirname, '../appengine/resultui/'),
-    publicPath: '/static/dist/scripts/',
-    historyApiFallback: true,
-  },
-};
+});
 
 // Default export is required by webpack.
 // tslint:disable-next-line: no-default-export

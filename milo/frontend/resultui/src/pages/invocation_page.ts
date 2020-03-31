@@ -20,7 +20,6 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
 import { action, computed, observable, reaction, when } from 'mobx';
-import moment from 'moment';
 
 import '../components/invocation_details';
 import '../components/page_header';
@@ -154,15 +153,13 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     if (this.invocation.finalizeTime) {
         return html`
           <i>${INVOCATION_STATE_DISPLAY_MAP[this.invocation.state]}</i>
-          <!-- TODO(weiweilin): use <chops-timestamp> -->
-          at ${moment(this.invocation.finalizeTime).format('YYYY-MM-DD HH:mm:ss')}
+          at ${new Date(this.invocation.finalizeTime).toLocaleString()}
         `;
     }
 
     return html`
       <i>${INVOCATION_STATE_DISPLAY_MAP[this.invocation.state]}</i>
-      <!-- TODO(weiweilin): use <chops-timestamp> -->
-      since ${moment(this.invocation.createTime).format('YYYY-MM-DD HH:mm:ss')}
+      since ${new Date(this.invocation.createTime).toLocaleString()}
     `;
   }
 
