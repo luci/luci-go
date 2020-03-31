@@ -25,6 +25,7 @@ import { computed, observable } from 'mobx';
 
 import { ID_SEG_REGEX, ReadonlyTest } from '../../models/test_node';
 import '../copy_to_clipboard';
+import './variant-entry';
 
 
 /**
@@ -89,7 +90,6 @@ export class TestEntryElement extends MobxLitElement {
           <div id="content-ruler"></div>
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
             ${repeat(this.wasExpanded ? this.test!.variants : [], (_variant, i) => i, (v) => html`
-            <!-- TODO(weiweilin): implement <tr-variant-entry> -->
             <tr-variant-entry .variant=${v} .expanded=${this.test!.variants.length === 1}></tr-variant-entry>
             `)}
           </div>

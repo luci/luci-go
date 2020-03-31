@@ -18,8 +18,9 @@
  */
 
 import { computed, observable } from 'mobx';
+
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
-import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExoneration } from './test_node';
+import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExoneration, VariantStatus } from './test_node';
 
 
 /**
@@ -88,8 +89,20 @@ export class TestLoader {
 // Use an unexported class that implements an exported interface to artificially
 // create file-scoped access modifier.
 class TestVariant implements ReadonlyVariant {
-  readonly results: TestResult[] = [];
-  readonly exonerations: TestExoneration[] = [];
+  @computed get status() {
+    if (this.results.length === 0) {
+      return VariantStatus.Exonerated;
+    }
+    const firstExpected = Boolean(this.results[0].expected);
+    for (const result of this.results) {
+      if (Boolean(result.expected) !== firstExpected) {
+        return VariantStatus.Flaky;
+      }
+    }
+    return firstExpected ? VariantStatus.Expected : VariantStatus.Unexpected;
+  }
+  @observable.shallow readonly results: TestResult[] = [];
+  @observable.shallow readonly exonerations: TestExoneration[] = [];
   constructor(readonly variant: Variant, readonly variantKey: string) {}
 }
 
@@ -105,7 +118,7 @@ class Test implements ReadonlyTest {
   // Use an array instead of a dictionary so
   //   1. the order is stable when new variants are added.
   //   2. we can keep variantKey as an implementation detail.
-  readonly variants: TestVariant[] = [];
+  @observable.shallow readonly variants: TestVariant[] = [];
   constructor(readonly id: string) {}
 
   private getOrCreateTestVariant(variant: Variant) {
