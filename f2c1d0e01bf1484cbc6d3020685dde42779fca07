@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cf516130_582badeb",
+        "filename": "led/ledcmd/clients.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-31T07:19:07Z",
+      "side": 1,
+      "message": "I think that could make sense in some contexts, but I don\u0027t see the value of doing that here; The code is pretty clear and the context key is private.",
+      "parentUuid": "3765117f_fbb66437",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "611b0a9d_33c2d5c6",
         "filename": "led/ledcmd/consolidate_isolateds_test.go",
         "patchSetId": 8
@@ -30,6 +48,24 @@
       "writtenOn": "2020-03-25T18:01:36Z",
       "side": 1,
       "message": "Arguably this struct warrants its own tests.",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd52f5fa_1aad90ce",
+        "filename": "led/ledcmd/consolidate_isolateds_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-31T07:19:07Z",
+      "side": 1,
+      "message": "Arguably I wouldn\u0027t have to implement this because isolate would have a well tested fake, yet here we are.\n\nI don\u0027t want to go down the rabbit hole any further than I already have. The alternative would be to return it to the state it was in before (i.e. no tests at all).",
+      "parentUuid": "611b0a9d_33c2d5c6",
       "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
