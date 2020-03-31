@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4beb5c73_453a9bba",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-31T06:03:38Z",
+      "side": 1,
+      "message": "what\u0027s \"h\"? in classic http handlers this is called \"w\" https://godoc.org/net/http#example-Handle",
+      "range": {
+        "startLine": 29,
+        "startChar": 6,
+        "endLine": 29,
+        "endChar": 7
+      },
+      "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2618b533_a17dab74",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-31T06:03:38Z",
+      "side": 1,
+      "message": "note: cron jobs have 10 min timeout",
+      "range": {
+        "startLine": 30,
+        "startChar": 41,
+        "endLine": 30,
+        "endChar": 52
+      },
+      "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
