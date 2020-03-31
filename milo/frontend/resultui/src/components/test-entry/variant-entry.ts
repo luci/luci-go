@@ -20,6 +20,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import { ReadonlyVariant, VariantStatus } from '../../models/test_node';
+import './result-entry';
 
 
 const STATUS_DISPLAY_MAP = {
