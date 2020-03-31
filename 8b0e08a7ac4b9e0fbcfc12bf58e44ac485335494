@@ -22,6 +22,30 @@
       "revId": "8b0e08a7ac4b9e0fbcfc12bf58e44ac485335494",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1687bf48_638c5be8",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-31T02:19:51Z",
+      "side": 1,
+      "message": "It will be changed to (appear to) have the same behavior. But that depends on the the implementation of test selection. I added a TODO in the handler below to indicate that.",
+      "parentUuid": "b8da36a0_1aa2724f",
+      "range": {
+        "startLine": 222,
+        "startChar": 20,
+        "endLine": 222,
+        "endChar": 119
+      },
+      "revId": "8b0e08a7ac4b9e0fbcfc12bf58e44ac485335494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
