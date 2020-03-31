@@ -141,6 +141,30 @@
       "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e131bf0_ecd7ff5e",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-31T06:33:39Z",
+      "side": 1,
+      "message": "you are probably right. i think i spent too much time with python",
+      "parentUuid": "d3820069_a91ee937",
+      "range": {
+        "startLine": 30,
+        "startChar": 41,
+        "endLine": 30,
+        "endChar": 52
+      },
+      "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
