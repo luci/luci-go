@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a52452ac_cd5e9bfe",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-31T12:34:03Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "884ab86e_e62e6a1f",
+      "range": {
+        "startLine": 31,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 29
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c4994bb_4eb0aed2",
         "filename": "resultdb/sink/gs_raw.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17f7ee50_8fec4cbe",
+        "filename": "resultdb/sink/gs_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-31T12:34:03Z",
+      "side": 1,
+      "message": "Yes, the result is the same. Removed.",
+      "parentUuid": "9c4994bb_4eb0aed2",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 2
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "962a3757_0a3daac5",
+        "filename": "resultdb/sink/gs_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-31T12:34:03Z",
+      "side": 1,
+      "message": "I slightly modified and moved this code into gs_channel.go, and then compared it with your suggestion. After a comparison, I didn\u0027t find that it would look simpler to place the if-statement between NewWriter() and w.Close().\n\nFirst of all, the suggested flow only reduces one line, compared to the new code block in gs_channel.go.\nSecondly, the suggested way requires w.Close() invoked inside the if-statement of errors from input stream preparation. I found that the existing flow looks cleaner.\n\nPTAL at the new code.",
+      "parentUuid": "e53a843f_f1903b33",
+      "range": {
+        "startLine": 81,
+        "startChar": 14,
+        "endLine": 81,
+        "endChar": 32
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16542b98_e2dbb421",
         "filename": "resultdb/sink/gs_raw.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "766751d6_d180e2d8",
+        "filename": "resultdb/sink/gs_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-31T12:34:03Z",
+      "side": 1,
+      "message": "No, it doesn\u0027t. Removed.",
+      "parentUuid": "16542b98_e2dbb421",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "61013f02_d1282028",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-31T12:34:03Z",
+      "side": 1,
+      "message": "Good point! thanks",
+      "parentUuid": "3c2c420f_0b7c4824",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 30
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "645b2f7b_ea0b1f6e",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 3
@@ -131,6 +251,24 @@
       "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5f6c3a2_45cac1e5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-31T12:34:03Z",
+      "side": 1,
+      "message": "Sent a separate CL for the change.",
+      "parentUuid": "645b2f7b_ea0b1f6e",
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
