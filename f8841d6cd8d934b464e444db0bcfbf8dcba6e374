@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c601d88_47566b72",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-31T05:02:56Z",
+      "side": 1,
+      "message": "unused?",
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aed1678_ccacc06c",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-31T05:02:56Z",
+      "side": 1,
+      "message": "nit: a bit misleading if it has no results or exonerations",
+      "range": {
+        "startLine": 52,
+        "startChar": 14,
+        "endLine": 52,
+        "endChar": 20
+      },
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
