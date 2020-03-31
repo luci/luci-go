@@ -94,6 +94,11 @@ func mainImpl() int {
 	cctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	if input.Build.GetInfra().GetResultdb().GetInvocation() != "" {
+		cctx, err = setResultDBContext(cctx, input.Build)
+		check(err)
+	}
+
 	opts := &host.Options{
 		BaseBuild:      input.Build,
 		ButlerLogLevel: logging.Warning,
