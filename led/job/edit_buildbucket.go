@@ -290,5 +290,8 @@ func (bbe *buildbucketEditor) RemoveGerritChange(cl *bbpb.GerritChange) {
 }
 
 func (bbe *buildbucketEditor) GitilesCommit(commit *bbpb.GitilesCommit) {
-	panic("implement me")
+	bbe.tweak(func() error {
+		bbe.bb.BbagentArgs.Build.Input.GitilesCommit = commit
+		return nil
+	})
 }
