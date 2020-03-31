@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "dd2e9cc7_ce9203e0",
+        "filename": "led/ledcmd/clients.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-31T20:49:52Z",
+      "side": 1,
+      "message": "Consistency I guess. Somewhat less likely to surprise if there isn\u0027t a context key that overrides the default client and instead client must always be supplied.",
+      "parentUuid": "cf516130_582badeb",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "611b0a9d_33c2d5c6",
         "filename": "led/ledcmd/consolidate_isolateds_test.go",
         "patchSetId": 8
@@ -66,6 +84,24 @@
       "side": 1,
       "message": "Arguably I wouldn\u0027t have to implement this because isolate would have a well tested fake, yet here we are.\n\nI don\u0027t want to go down the rabbit hole any further than I already have. The alternative would be to return it to the state it was in before (i.e. no tests at all).",
       "parentUuid": "611b0a9d_33c2d5c6",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fed58ca_0e570924",
+        "filename": "led/ledcmd/consolidate_isolateds_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-31T20:49:52Z",
+      "side": 1,
+      "message": "I mean, yes, but tl;dr you did have to implement something with somewhat nontrivial logic. I\u0027ve had to do it too. Anyway whatever.",
+      "parentUuid": "fd52f5fa_1aad90ce",
       "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
