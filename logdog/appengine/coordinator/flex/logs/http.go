@@ -143,7 +143,8 @@ type logData struct {
 }
 
 func (ld *logData) viewerURL() string {
-	return ld.logDesc.Tags["logdog.viewer_url"]
+	// logDesc can be nil if the log doesn't exist
+	return ld.logDesc.GetTags()["logdog.viewer_url"]
 }
 
 // nopFlusher is an http.Flusher that does nothing.  It's used as a standin
