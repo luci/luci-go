@@ -18,7 +18,6 @@ import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
-import moment from 'moment';
 
 import { Invocation } from '../services/resultdb';
 
@@ -52,10 +51,9 @@ export class InvocationDetailsElement extends MobxLitElement {
       </div>
       <div id="body">
         <div id="content" style=${styleMap({'display': this.expanded ? '' : 'none'})}>
-          <!-- TODO(weiweilin): use <chops-timestamp> -->
-          <div>Create Time: ${moment(this.invocation!.createTime).format('YYYY-MM-DD HH:mm:ss')}</div>
-          <div>Finalize Time: ${moment(this.invocation!.finalizeTime).format('YYYY-MM-DD HH:mm:ss')}</div>
-          <div>Deadline: ${moment(this.invocation!.deadline).format('YYYY-MM-DD HH:mm:ss')}</div>
+          <div>Create Time: ${new Date(this.invocation!.createTime).toLocaleString()}</div>
+          <div>Finalize Time: ${new Date(this.invocation!.finalizeTime).toLocaleDateString()}</div>
+          <div>Deadline: ${new Date(this.invocation!.deadline).toLocaleDateString()}</div>
           <div
             id="included-invocations"
             style=${styleMap({'display': this.hasIncludedInvocations ? '' : 'none'})}
