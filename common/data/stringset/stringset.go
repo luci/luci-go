@@ -60,6 +60,13 @@ func (s Set) Add(value string) bool {
 	return true
 }
 
+// AddAll ensures that Set contains all values.
+func (s Set) AddAll(values []string) {
+	for _, value := range values {
+		s[value] = struct{}{}
+	}
+}
+
 // Del removes value from the set, and returns true if it was deleted (i.e. it
 // returns false if the Set did not already contain the value).
 func (s Set) Del(value string) bool {
@@ -68,6 +75,13 @@ func (s Set) Del(value string) bool {
 	}
 	delete(s, value)
 	return true
+}
+
+// DelAll ensures that Set contains none of values.
+func (s Set) DelAll(values []string) {
+	for _, value := range values {
+		delete(s, value)
+	}
 }
 
 // Peek returns an arbitrary element from the set. If the set was empty, this
