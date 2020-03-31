@@ -218,11 +218,11 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			panic("impossible: infinite retry stopped: " + err.Error())
 		}
 
+		now := clock.Now(ctx)
 		if !previousCycle.IsZero() {
-			now := clock.Now(ctx)
 			tsLoopCycleTime.Add(ctx, float64(now.Sub(previousCycle).Nanoseconds()/1000000))
-			previousCycle = now
 		}
+		previousCycle = now
 
 		if len(tasks.Tasks) == 0 {
 			sleepTime *= 2
