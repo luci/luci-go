@@ -34,7 +34,7 @@ func TestCookie(t *testing.T) {
 		c = testsecrets.Use(c)
 
 		Convey("Encode and decode works", func() {
-			cookie, err := makeSessionCookie(c, "sid", true)
+			cookie, err := makeSessionCookie(c, "sid", true, http.SameSiteStrictMode)
 			So(err, ShouldBeNil)
 			So(cookie, ShouldResemble, &http.Cookie{
 				Name: "oid_session",
@@ -45,6 +45,7 @@ func TestCookie(t *testing.T) {
 				MaxAge:   2591100,
 				Secure:   true,
 				HttpOnly: true,
+				SameSite: http.SameSiteStrictMode,
 			})
 
 			r, err := http.NewRequest("GET", "http://example.com", nil)
