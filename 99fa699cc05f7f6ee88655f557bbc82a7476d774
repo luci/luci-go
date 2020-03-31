@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "521dbf8c_ae32aa04",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-31T00:36:14Z",
+      "side": 1,
+      "message": "this too?",
+      "range": {
+        "startLine": 316,
+        "startChar": 2,
+        "endLine": 318,
+        "endChar": 3
+      },
+      "revId": "99fa699cc05f7f6ee88655f557bbc82a7476d774",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
