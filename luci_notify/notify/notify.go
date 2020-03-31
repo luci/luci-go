@@ -27,6 +27,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 
@@ -42,14 +43,14 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/luci_notify/api/config"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
 
 // createEmailTasks constructs EmailTasks to be dispatched onto the task queue.
-func createEmailTasks(c context.Context, recipients []EmailNotify, input *config.TemplateInput) ([]*tq.Task, error) {
+func createEmailTasks(c context.Context, recipients []EmailNotify, input *notifypb.TemplateInput) ([]*tq.Task, error) {
 	// Get templates.
 	bundle, err := getBundle(c, input.Build.Builder.Project)
 	if err != nil {
@@ -269,17 +270,21 @@ func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newB
 		return false
 	}
 
+	return stepsMatch(newBuild, n.FailedStepRegexp, n.FailedStepRegexpExclude)
+}
+
+func stepsMatch(build *buildbucketpb.Build, failedStepRegexp, failedStepRegexpExclude string) bool {
 	var includeRegex *regexp.Regexp = nil
-	if n.FailedStepRegexp != "" {
+	if failedStepRegexp != "" {
 		// We should never get an invalid regex here, as our validation should catch this.
 		// If we do, includeRegex will be nil and hence ignored below.
-		includeRegex, _ = regexp.Compile(n.FailedStepRegexp)
+		includeRegex, _ = regexp.Compile(failedStepRegexp)
 	}
 
 	var excludeRegex *regexp.Regexp = nil
-	if n.FailedStepRegexpExclude != "" {
+	if failedStepRegexpExclude != "" {
 		// Ditto.
-		excludeRegex, _ = regexp.Compile(n.FailedStepRegexpExclude)
+		excludeRegex, _ = regexp.Compile(failedStepRegexpExclude)
 	}
 
 	// Don't scan steps if we have no regexes.
@@ -287,7 +292,7 @@ func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newB
 		return true
 	}
 
-	for _, step := range newBuild.Steps {
+	for _, step := range build.Steps {
 		if step.Status == buildbucketpb.Status_FAILURE {
 			if (includeRegex == nil || includeRegex.MatchString(step.Name)) &&
 				(excludeRegex == nil || !excludeRegex.MatchString(step.Name)) {
@@ -321,11 +326,61 @@ func contains(status buildbucketpb.Status, statusList []buildbucketpb.Status) bo
 	return false
 }
 
+func computeStatus(cfgTreeCloser *config.TreeCloser, build *buildbucketpb.Build) config.TreeCloserStatus {
+	if build.Status == buildbucketpb.Status_FAILURE {
+		tc := cfgTreeCloser.TreeCloser
+		if stepsMatch(build, tc.FailedStepRegexp, tc.FailedStepRegexpExclude) {
+			return config.Closed
+		}
+	}
+	return config.Open
+}
+
+// UpdateTreeClosers finds all the TreeClosers that care about a particular
+// build, and updates their status according to the results of the build.
+func UpdateTreeClosers(c context.Context, build *buildbucketpb.Build) error {
+	// This reads, modifies and writes back entities in datastore. Hence, it should
+	// be called within a transaction to avoid races.
+	if datastore.CurrentTransaction(c) == nil {
+		panic("UpdateTreeClosers must be run within a transaction")
+	}
+
+	project := &config.Project{Name: build.Builder.Project}
+	parentBuilder := &config.Builder{
+		ProjectKey: datastore.KeyForObj(c, project),
+		ID:         getBuilderID(build),
+	}
+	q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, parentBuilder))
+
+	toUpdate := []*config.TreeCloser{}
+	err := datastore.Run(c, q, func(tc *config.TreeCloser) {
+		// Don't update the status at all unless we have a definite
+		// success or failure - infra failures, for example, shouldn't
+		// cause us to close or re-open the tree.
+		if build.Status != buildbucketpb.Status_SUCCESS && build.Status != buildbucketpb.Status_FAILURE {
+			return
+		}
+
+		newStatus := computeStatus(tc, build)
+		if tc.Status != newStatus {
+			tc.Status = newStatus
+			tc.Timestamp = time.Now().UTC()
+
+			toUpdate = append(toUpdate, tc)
+		}
+	})
+	if err != nil {
+		return err
+	}
+
+	return datastore.Put(c, toUpdate)
+}
+
 // Notify discovers, consolidates and filters recipients from a Builder's notifications,
 // and 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, recipients []EmailNotify, templateParams *config.TemplateInput) error {
+func Notify(c context.Context, d *tq.Dispatcher, recipients []EmailNotify, templateParams *notifypb.TemplateInput) error {
 	c = datastore.WithoutTransaction(c)
 
 	// Remove unallowed recipients.

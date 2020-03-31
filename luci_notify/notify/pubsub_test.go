@@ -37,8 +37,8 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
-	apicfg "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/common/errors"
+	apicfg "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
@@ -47,7 +47,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
+func dummyBuildWithEmails(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
 	ret := &Build{
 		Build: buildbucketpb.Build{
 			Builder: &buildbucketpb.BuilderID{
@@ -68,6 +68,35 @@ func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime 
 	}
 	ret.Build.CreateTime, _ = ptypes.TimestampProto(creationTime)
 	return ret
+}
+
+func dummyBuildWithFailingSteps(status buildbucketpb.Status, failingSteps []string) *Build {
+	build := &Build{
+		Build: buildbucketpb.Build{
+			Builder: &buildbucketpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: "test-builder-tree-closer",
+			},
+			Status: status,
+			Input: &buildbucketpb.Build_Input{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    defaultGitilesHost,
+					Project: defaultGitilesProject,
+					Id:      "deadbeef",
+				},
+			},
+		},
+	}
+
+	for _, stepName := range failingSteps {
+		build.Build.Steps = append(build.Build.Steps, &buildbucketpb.Step{
+			Name:   stepName,
+			Status: buildbucketpb.Status_FAILURE,
+		})
+	}
+
+	return build
 }
 
 func TestExtractEmailNotifyValues(t *testing.T) {
@@ -236,7 +265,7 @@ func TestHandleBuild(t *testing.T) {
 
 		verifyBuilder := func(build *Build, revision string, checkout Checkout) {
 			datastore.GetTestable(c).CatchupIndexes()
-			id := getBuilderID(build)
+			id := getBuilderID(&build.Build)
 			builder := config.Builder{
 				ProjectKey: datastore.KeyForObj(c, project),
 				ID:         id,
@@ -281,26 +310,26 @@ func TestHandleBuild(t *testing.T) {
 		}
 
 		Convey(`no config`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1)
+			build := dummyBuildWithEmails("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil))
 			grepLog("No builder")
 		})
 
 		Convey(`no config w/property`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			build := dummyBuildWithEmails("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), propEmail)
 		})
 
 		Convey(`no repository in-order`, func() {
-			build := pubsubDummyBuild("test-builder-no-repo", buildbucketpb.Status_FAILURE, oldTime, rev1)
+			build := dummyBuildWithEmails("test-builder-no-repo", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail)
 		})
 
 		Convey(`no repository out-of-order`, func() {
-			build := pubsubDummyBuild("test-builder-no-repo", buildbucketpb.Status_FAILURE, newTime, rev1)
+			build := dummyBuildWithEmails("test-builder-no-repo", buildbucketpb.Status_FAILURE, newTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail)
 
-			newBuild := pubsubDummyBuild("test-builder-no-repo", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			newBuild := dummyBuildWithEmails("test-builder-no-repo", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(newBuild, mockCheckoutFunc(nil), failEmail, successEmail)
 			grepLog("old time")
 		})
@@ -321,26 +350,26 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`init builder`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1)
+			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail)
 			verifyBuilder(build, rev1, nil)
 		})
 
 		Convey(`init builder w/property`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
 		})
 
 		Convey(`source manifest return error`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutReturnsErrorFunc(), failEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
 			grepLog("Got error when getting source manifest for build")
 		})
 
 		Convey(`repository mismatch`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
 
@@ -366,44 +395,44 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`out-of-order revision`, func() {
-			build := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			build := dummyBuildWithEmails("test-builder-2", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(build, mockCheckoutFunc(nil), successEmail)
 			verifyBuilder(build, rev2, nil)
 
-			oldRevBuild := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_FAILURE, newTime, rev1)
+			oldRevBuild := dummyBuildWithEmails("test-builder-2", buildbucketpb.Status_FAILURE, newTime, rev1)
 			assertTasks(oldRevBuild, mockCheckoutFunc(nil), successEmail, failEmail)
 			grepLog("old commit")
 		})
 
 		Convey(`revision update`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1)
+			build := dummyBuildWithEmails("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), successEmail)
 			verifyBuilder(build, rev1, nil)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2)
+			newBuild := dummyBuildWithEmails("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2)
 			newBuild.Id++
 			assertTasks(newBuild, mockCheckoutFunc(nil), successEmail, failEmail, changeEmail)
 			verifyBuilder(newBuild, rev2, nil)
 		})
 
 		Convey(`revision update w/property`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, propEmail)
+			build := dummyBuildWithEmails("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), successEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, propEmail)
+			newBuild := dummyBuildWithEmails("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, propEmail)
 			newBuild.Id++
 			assertTasks(newBuild, mockCheckoutFunc(nil), successEmail, propEmail, failEmail, changeEmail, propEmail)
 			verifyBuilder(newBuild, rev2, nil)
 		})
 
 		Convey(`out-of-order creation time`, func() {
-			build := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
+			build := dummyBuildWithEmails("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
 			build.Id = 2
 			assertTasks(build, mockCheckoutFunc(nil), successEmail)
 			verifyBuilder(build, rev1, nil)
 
-			oldBuild := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_FAILURE, oldTime, rev1)
+			oldBuild := dummyBuildWithEmails("test-builder-4", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			oldBuild.Id = 1
 			assertTasks(oldBuild, mockCheckoutFunc(nil), successEmail, failEmail)
 			grepLog("old time")
@@ -419,11 +448,11 @@ func TestHandleBuild(t *testing.T) {
 		}
 
 		testBlamelistConfig := func(builderID string, emails ...EmailNotify) {
-			build := pubsubDummyBuild(builderID, buildbucketpb.Status_SUCCESS, oldTime, rev1)
+			build := dummyBuildWithEmails(builderID, buildbucketpb.Status_SUCCESS, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(checkoutOld))
 			verifyBuilder(build, rev1, checkoutOld)
 
-			newBuild := pubsubDummyBuild(builderID, buildbucketpb.Status_FAILURE, newTime, rev2)
+			newBuild := dummyBuildWithEmails(builderID, buildbucketpb.Status_FAILURE, newTime, rev2)
 			newBuild.Id++
 			assertTasks(newBuild, mockCheckoutFunc(checkoutNew), emails...)
 			verifyBuilder(newBuild, rev2, checkoutNew)
@@ -438,17 +467,17 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`blamelist against last non-empty checkout`, func() {
-			build := pubsubDummyBuild("test-builder-blamelist-2", buildbucketpb.Status_SUCCESS, oldTime, rev1)
+			build := dummyBuildWithEmails("test-builder-blamelist-2", buildbucketpb.Status_SUCCESS, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(checkoutOld))
 			verifyBuilder(build, rev1, checkoutOld)
 
-			newBuild := pubsubDummyBuild("test-builder-blamelist-2", buildbucketpb.Status_FAILURE, newTime, rev2)
+			newBuild := dummyBuildWithEmails("test-builder-blamelist-2", buildbucketpb.Status_FAILURE, newTime, rev2)
 			newBuild.Id++
 			assertTasks(newBuild, mockCheckoutFunc(nil), changeEmail)
 			verifyBuilder(newBuild, rev2, checkoutOld)
 
 			newestTime := time.Date(2017, 2, 3, 12, 59, 9, 0, time.UTC)
-			newestBuild := pubsubDummyBuild("test-builder-blamelist-2", buildbucketpb.Status_SUCCESS, newestTime, rev2)
+			newestBuild := dummyBuildWithEmails("test-builder-blamelist-2", buildbucketpb.Status_SUCCESS, newestTime, rev2)
 			newestBuild.Id++
 			assertTasks(newestBuild, mockCheckoutFunc(checkoutNew), changeEmail, commit1Email)
 			verifyBuilder(newestBuild, rev2, checkoutNew)
@@ -463,25 +492,102 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`failure type infra`, func() {
-			infra_failure_build := pubsubDummyBuild("test-builder-infra-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			infra_failure_build := dummyBuildWithEmails("test-builder-infra-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(infra_failure_build, mockCheckoutFunc(nil))
 
-			infra_failure_build = pubsubDummyBuild("test-builder-infra-1", buildbucketpb.Status_FAILURE, newTime, rev2)
+			infra_failure_build = dummyBuildWithEmails("test-builder-infra-1", buildbucketpb.Status_FAILURE, newTime, rev2)
 			assertTasks(infra_failure_build, mockCheckoutFunc(nil))
 
-			infra_failure_build = pubsubDummyBuild("test-builder-infra-1", buildbucketpb.Status_INFRA_FAILURE, newTime2, rev2)
+			infra_failure_build = dummyBuildWithEmails("test-builder-infra-1", buildbucketpb.Status_INFRA_FAILURE, newTime2, rev2)
 			assertTasks(infra_failure_build, mockCheckoutFunc(nil), infraFailEmail)
 		})
 
 		Convey(`failure type mixed`, func() {
-			failure_and_infra_failure_build := pubsubDummyBuild("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			failure_and_infra_failure_build := dummyBuildWithEmails("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(failure_and_infra_failure_build, mockCheckoutFunc(nil))
 
-			failure_and_infra_failure_build = pubsubDummyBuild("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_FAILURE, newTime, rev2)
+			failure_and_infra_failure_build = dummyBuildWithEmails("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_FAILURE, newTime, rev2)
 			assertTasks(failure_and_infra_failure_build, mockCheckoutFunc(nil), failAndInfraFailEmail)
 
-			failure_and_infra_failure_build = pubsubDummyBuild("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_INFRA_FAILURE, newTime2, rev2)
+			failure_and_infra_failure_build = dummyBuildWithEmails("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_INFRA_FAILURE, newTime2, rev2)
 			assertTasks(failure_and_infra_failure_build, mockCheckoutFunc(nil), failAndInfraFailEmail)
+		})
+
+		testTreeClosers := func(buildStatus buildbucketpb.Status, initialStatus, expectedNewStatus config.TreeCloserStatus, expectingUpdatedTimestamp bool, failingSteps []string) {
+			// Some arbitrary time guaranteed to be less than time.Now() when called from handleBuild.
+			µs, _ := time.ParseDuration("1µs")
+			initialTimestamp := time.Now().AddDate(-1, 0, 0).UTC().Round(µs)
+
+			// Insert the tree closer to test into datastore.
+			builderKey := datastore.KeyForObj(c, &config.Builder{
+				ProjectKey: datastore.KeyForObj(c, &config.Project{Name: "chromium"}),
+				ID:         "ci/test-builder-tree-closer",
+			})
+
+			tc := &config.TreeCloser{
+				BuilderKey:     builderKey,
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser: apicfg.TreeCloser{
+					FailedStepRegexp:        "include",
+					FailedStepRegexpExclude: "exclude",
+				},
+				Status:    initialStatus,
+				Timestamp: initialTimestamp,
+			}
+			So(datastore.Put(c, tc), ShouldBeNil)
+
+			// Handle a new build.
+			build := dummyBuildWithFailingSteps(buildStatus, failingSteps)
+			history := mockHistoryFunc(map[string][]*gitpb.Commit{})
+			So(handleBuild(c, dispatcher, build, mockCheckoutFunc(nil), history), ShouldBeNil)
+
+			// Fetch the new tree closer.
+			So(datastore.Get(c, tc), ShouldBeNil)
+
+			// Assert the resulting state of the tree closer.
+			So(tc.Status, ShouldEqual, expectedNewStatus)
+			So(tc.Timestamp.After(initialTimestamp), ShouldEqual, expectingUpdatedTimestamp)
+		}
+
+		// We want to exhaustively test all combinations of the following:
+		//   * Did the build succeed?
+		//   * If not, do the filters (if any) match?
+		//   * Is the resulting status the same as the old status?
+		// All possibilities are explored in the tests below.
+
+		Convey(`Build passed, Closed -> Open, adjusts timestamp`, func() {
+			testTreeClosers(buildbucketpb.Status_SUCCESS, config.Closed, config.Open, true, []string{})
+		})
+
+		Convey(`Build passed, Open -> Open, doesn't adjust timestamp`, func() {
+			testTreeClosers(buildbucketpb.Status_SUCCESS, config.Open, config.Open, false, []string{})
+		})
+
+		Convey(`Build failed, filters don't match, Closed -> Open, adjusts timestamp`, func() {
+			testTreeClosers(buildbucketpb.Status_FAILURE, config.Closed, config.Open, true, []string{"exclude"})
+		})
+
+		Convey(`Build failed, filters don't match, Open -> Open, doesn't adjust timestamp`, func() {
+			testTreeClosers(buildbucketpb.Status_FAILURE, config.Open, config.Open, false, []string{"exclude"})
+		})
+
+		Convey(`Build failed, filters match, Open -> Closed, adjusts timestamp`, func() {
+			testTreeClosers(buildbucketpb.Status_FAILURE, config.Open, config.Closed, true, []string{"include"})
+		})
+
+		Convey(`Build failed, filters match, Closed -> Closed, doesn't adjust timestamp`, func() {
+			testTreeClosers(buildbucketpb.Status_FAILURE, config.Closed, config.Closed, false, []string{"include"})
+		})
+
+		// In addition, we want to test that statuses other than SUCCESS and FAILURE don't
+		// cause any updates, regardless of the initial state.
+
+		Convey(`Infra failure, stays Open`, func() {
+			testTreeClosers(buildbucketpb.Status_INFRA_FAILURE, config.Open, config.Open, false, []string{"include"})
+		})
+
+		Convey(`Infra failure, stays Closed`, func() {
+			testTreeClosers(buildbucketpb.Status_INFRA_FAILURE, config.Closed, config.Closed, false, []string{"include"})
 		})
 	})
 }
