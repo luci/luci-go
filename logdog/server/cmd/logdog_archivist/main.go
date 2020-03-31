@@ -150,6 +150,9 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			batch.Meta = req
 		}
 		_, err := ar.Service.DeleteArchiveTasks(ctx, req)
+		if err == nil {
+			tsAckCount.Add(ctx, int64(len(req.Tasks)))
+		}
 		return transient.Tag.Apply(err)
 	})
 	if err != nil {
@@ -180,6 +183,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 				logging.Errorf(ctx, "Failed to ACK task %v due to context: %s", job.task, ctx.Err())
 			}
 		} else {
+			tsNackCount.Add(ctx, 1)
 			logging.Errorf(ctx, "Failed to archive task %v: %s", job.task, err)
 		}
 
@@ -230,6 +234,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			previousCycle = time.Time{}
 			continue
 		} else {
+			tsLeaseCount.Add(ctx, int64(len(tasks.Tasks)))
 			sleepTime = 1
 		}
 
