@@ -301,7 +301,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 	}
 
 	// Set the cookies.
-	cookie, err := makeSessionCookie(c, sid, !m.Insecure)
+	cookie, err := makeSessionCookie(c, sid, !m.Insecure, http.SameSiteNoneMode)
 	if err != nil {
 		replyError(c, rw, err, "Can't make session cookie - %s", err)
 		return
