@@ -175,7 +175,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 
 		if err == nil {
 			select {
-			case ackChan.C <- job:
+			case ackChan.C <- job.task:
 			case <-ctx.Done():
 				logging.Errorf(ctx, "Failed to ACK task %v due to context: %s", job.task, ctx.Err())
 			}
