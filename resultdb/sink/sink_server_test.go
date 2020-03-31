@@ -14,7 +14,9 @@
 package sink
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -50,22 +52,37 @@ func TestReportTestResults(t *testing.T) {
 		sink, err := newSinkServer(ctx, cfg)
 		So(err, ShouldBeNil)
 
-		defer func() {
-			// close the server to drain the channel and process the queued items.
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			closeSinkServer(ctx, sink)
-		}()
-
 		// mock
 		recorder := cfg.Recorder.(*pb.MockRecorderClient)
 
-		Convey("creates TestResult", func() {
+		Convey("creates TestResult and uploads artifacts", func() {
 			_, err := sink.ReportTestResults(ctx, req)
 			So(err, ShouldBeNil)
 
 			// rdb_channel should invoke recorder.BatchCreateTestResults()
 			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
+
+			// close the server to drain the channels and process the queued items.
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			closeSinkServer(ctx, sink)
+
+			for name, art := range req.TestResults[0].InputArtifacts {
+				So(cfg.testGS.writerMap, ShouldContainKey, name)
+				// check the contents written to the mock writer.
+				// all the sample input artifacts are Artifact_FilePath{}.
+				input, err := ioutil.ReadFile(art.GetFilePath())
+				So(err, ShouldBeNil)
+				writer := (*bytes.Buffer)(cfg.testGS.writerMap[name])
+				So(writer.Bytes(), ShouldResemble, input)
+			}
+			for name, art := range req.TestResults[0].OutputArtifacts {
+				So(cfg.testGS.writerMap, ShouldContainKey, name)
+				// check the contents written to the mock writer.
+				// all the sample input artifacts are Artifact_Contents{}.
+				writer := (*bytes.Buffer)(cfg.testGS.writerMap[name])
+				So(writer.Bytes(), ShouldResemble, art.GetContents())
+			}
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {

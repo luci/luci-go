@@ -32,11 +32,15 @@ import (
 type sinkServer struct {
 	cfg   ServerConfig
 	rdbCh rdbChannel
+	gsCh  gsChannel
 }
 
 func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
 	ss := &sinkServer{cfg: cfg}
-	if err := ss.rdbCh.init(ctx, cfg); err != nil {
+	if err := ss.gsCh.init(ctx, cfg); err != nil {
+		return nil, err
+	}
+	if err := ss.rdbCh.init(ctx, &ss.gsCh, cfg); err != nil {
 		return nil, err
 	}
 	return &sinkpb.DecoratedSink{
@@ -50,6 +54,7 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	ss := s.(*sinkpb.DecoratedSink).Service.(*sinkServer)
 	ss.rdbCh.closeAndDrain(ctx)
+	ss.gsCh.closeAndDrain(ctx)
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
