@@ -214,7 +214,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			tasks, err = ar.Service.LeaseArchiveTasks(ctx, req)
 			return
 		}, retry.LogCallback(ctx, "LeaseArchiveTasks"))
-		if ctx.Err() != nil && err != nil {
+		if ctx.Err() == nil && err != nil {
 			panic("impossible: infinite retry stopped: " + err.Error())
 		}
 
