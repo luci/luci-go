@@ -117,6 +117,30 @@
       "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3820069_a91ee937",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-31T06:32:44Z",
+      "side": 1,
+      "message": "Fair point, but I think 1 minute will be plenty. We\u0027ll be able to handle each host in parallel, so worst case the requests we\u0027ll make in serial are:\n\n* Fetch all tree closers from datastore\n* Fetch current status from the tree status app\n* Update tree status\n\nI don\u0027t think these will take longer than a minute.",
+      "parentUuid": "3358ec45_73d2aa3b",
+      "range": {
+        "startLine": 30,
+        "startChar": 41,
+        "endLine": 30,
+        "endChar": 52
+      },
+      "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
