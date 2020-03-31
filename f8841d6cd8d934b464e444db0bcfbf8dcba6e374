@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1ade9ea5_db053f0a",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-31T05:27:06Z",
+      "side": 1,
+      "message": "It\u0027s used below.\n(and I forgot to remove the TODO).",
+      "parentUuid": "4c601d88_47566b72",
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70d7cca5_13c61323",
         "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0ae3187_5b9e47c8",
+        "filename": "milo/frontend/resultui/src/components/test-entry/index.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-31T05:27:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70d7cca5_13c61323",
+      "range": {
+        "startLine": 93,
+        "startChar": 12,
+        "endLine": 93,
+        "endChar": 66
+      },
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "3d2e315d_d4f35ba9",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-31T05:27:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61dbf001_310582a4",
+      "range": {
+        "startLine": 52,
+        "startChar": 14,
+        "endLine": 52,
+        "endChar": 25
+      },
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a23432b1_87b6178b",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-31T05:27:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4aed1678_ccacc06c",
+      "range": {
+        "startLine": 52,
+        "startChar": 14,
+        "endLine": 52,
+        "endChar": 20
+      },
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa5d4835_609ca3f7",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -108,6 +198,30 @@
       "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf4ae6bc_6621e3bc",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-31T05:27:06Z",
+      "side": 1,
+      "message": "To separate 3rd party imports with local ones.\nThis is quite common AFAIK and the same pattern is used in the rest of the code base.\n(there\u0027s no tslint rule to enforce that though)",
+      "parentUuid": "aa5d4835_609ca3f7",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 0
+      },
+      "revId": "f8841d6cd8d934b464e444db0bcfbf8dcba6e374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
