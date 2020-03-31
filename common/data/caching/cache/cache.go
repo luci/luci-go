@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"crypto"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -28,6 +27,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/filesystem"
 )
@@ -105,7 +105,7 @@ func NewMemory(policies Policies, namespace string) Cache {
 // previous cache metadata. It is safe to ignore this error.
 func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	if !filepath.IsAbs(path) {
-		return nil, errors.New("must use absolute path")
+		return nil, errors.Reason("must use absolute path: %s", path).Err()
 	}
 	d := &disk{
 		policies: policies,
@@ -223,11 +223,11 @@ func (m *memory) add(digest isolated.HexDigest, src io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if isolated.HashBytes(m.h, content) != digest {
-		return nil, errors.New("invalid hash")
+	if d := isolated.HashBytes(m.h, content); d != digest {
+		return nil, errors.Reason("invalid hash, got=%s, want=%s", d, digest).Err()
 	}
 	if units.Size(len(content)) > m.policies.MaxSize {
-		return nil, errors.New("item too large")
+		return nil, errors.Reason("item too large, size=%d, limit=%d", len(content), m.policies.MaxSize).Err()
 	}
 
 	m.mu.Lock()
@@ -379,13 +379,13 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 		_ = os.Remove(p)
 		return err
 	}
-	if isolated.Sum(h) != digest {
+	if d := isolated.Sum(h); d != digest {
 		_ = os.Remove(p)
-		return errors.New("invalid hash")
+		return errors.Reason("invalid hash, got=%s, want=%s", d, digest).Err()
 	}
 	if units.Size(size) > d.policies.MaxSize {
 		_ = os.Remove(p)
-		return errors.New("item too large")
+		return errors.Reason("item too large, size=%d, limit=%d", size, d.policies.MaxSize).Err()
 	}
 
 	if cb != nil {
