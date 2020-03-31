@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8da36a0_1aa2724f",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-31T01:52:30Z",
+      "side": 1,
+      "message": "This is kind of a misleading UI. It says \"Showing 100/100 tests\" even when there are more tests to load, and you have to expand the tree panel to even find that out. Since we\u0027ve made the tree panel optional, we need to rethink this design.\n\nCan we have the two \"load\" buttons do the same thing? IMO there shouldn\u0027t be two separate concepts of \"loading more tests\"; it\u0027s too confusing for the user.",
+      "range": {
+        "startLine": 222,
+        "startChar": 20,
+        "endLine": 222,
+        "endChar": 119
+      },
+      "revId": "8b0e08a7ac4b9e0fbcfc12bf58e44ac485335494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
