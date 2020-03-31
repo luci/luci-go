@@ -69,6 +69,24 @@
       "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c98bd11c_14a0814b",
+        "filename": "led/job/edit_cipd_pkgs_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-31T20:59:51Z",
+      "side": 1,
+      "message": "\u003e\u0027add\u0027 above already shows that adding packages works.\nI mean, that\u0027s the issue I\u0027m raising. IMO unit tests shouldn\u0027t depend on another test (for the same struct) passing. I don\u0027t feel that strongly, I\u0027m just pointing out that I would\u0027ve written it differently. In general I don\u0027t mind if my test cases are numerous and fuckhuge.",
+      "parentUuid": "916cad17_c7ee64e6",
+      "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
