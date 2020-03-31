@@ -14,13 +14,17 @@
 package sink
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"sync"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/metadata"
@@ -61,6 +65,9 @@ func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 		Address:   addr,
 		AuthToken: tk,
 		Recorder:  pb.NewMockRecorderClient(ctl),
+		GStorage:  &storage.Client{},
+		testGS:    &testGStorage{writerMap: map[string]*testWriteCloser{}},
+		GSBucket:  "test-bucket",
 	}
 }
 
@@ -103,9 +110,14 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		StartTime:   st,
 		Duration:    ptypes.DurationProto(time.Minute),
 		Tags:        pbutil.StringPairs("k1", "v1"),
+
+		// keep all input artifacts with Artifact_FilePath{} to help other unit tests
+		// simplified.
 		InputArtifacts: map[string]*sinkpb.Artifact{
 			"input_art1": artf,
 		},
+		// keep all output artifacts with Artifact_Contents{} to help other unit
+		// tests simplified.
 		OutputArtifacts: map[string]*sinkpb.Artifact{
 			"output_art1": testArtifactWithContents([]byte("test artifact")),
 		},
@@ -127,4 +139,29 @@ func (m invMatcher) Matches(x interface{}) bool {
 
 func (m invMatcher) String() string {
 	return fmt.Sprint("has Invocation ", string(m))
+}
+
+type testGStorage struct {
+	writerMap map[string]*testWriteCloser
+	lock      sync.Mutex
+}
+
+func (tgs *testGStorage) NewWriter(obj *storage.ObjectHandle) io.WriteCloser {
+	buf := bytes.NewBuffer([]byte{})
+	twc := (*testWriteCloser)(buf)
+
+	tgs.lock.Lock()
+	defer tgs.lock.Unlock()
+	tgs.writerMap[obj.ObjectName()] = twc
+	return twc
+}
+
+type testWriteCloser bytes.Buffer
+
+func (wc *testWriteCloser) Write(data []byte) (int, error) {
+	return (*bytes.Buffer)(wc).Write(data)
+}
+
+func (wc *testWriteCloser) Close() error {
+	return nil
 }

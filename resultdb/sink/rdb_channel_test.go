@@ -17,6 +17,9 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/golang/mock/gomock"
 
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
@@ -25,16 +28,32 @@ import (
 
 func TestSinkArtsToRpcArts(t *testing.T) {
 	t.Parallel()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	Convey("sinkArtsToRpcArts", t, func() {
 		ctx := context.Background()
 		sinkArts := map[string]*sinkpb.Artifact{}
 
+		// setup a test channel
+		gsc := &gsChannel{}
+		cfg := testServerConfig(ctl, "", "secret")
+		cfg.GSBucket = "my-bucket"
+		cfg.testGS = &testGStorage{writerMap: map[string]*testWriteCloser{}}
+		So(gsc.init(ctx, cfg), ShouldBeNil)
+
+		defer func() {
+			// close the server to drain the channel and process the queued items.
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			gsc.closeAndDrain(ctx)
+		}()
+
 		Convey("sets the size of the artifact", func() {
 			Convey("with the length of contents", func() {
 				sinkArts["art1"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRpcArts(ctx, gsc, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, 3)
 			})
@@ -46,8 +65,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 					So(n, ShouldEqual, len("test artifact"))
 				})
 				defer os.Remove(sinkArts["art1"].GetFilePath())
-
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRpcArts(ctx, gsc, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, len("test artifact"))
 			})
@@ -55,7 +73,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 			Convey("with -1 if the file is not accessible", func() {
 				sinkArts["art1"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_FilePath{FilePath: "does-not-exist/foo/bar"}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRpcArts(ctx, gsc, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, -1)
 			})

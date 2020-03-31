@@ -35,7 +35,7 @@ type rdbChannel struct {
 	testResultCh *dispatcher.Channel
 }
 
-func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
+func (rdbc *rdbChannel) init(ctx context.Context, gsCh *gsChannel, cfg ServerConfig) error {
 	// install a dispatcher channel for pb.TestResult
 	rdopts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
@@ -47,7 +47,7 @@ func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
 		},
 	}
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
-		req := prepareReportTestResultsRequest(ctx, cfg.Invocation, b)
+		req := prepareReportTestResultsRequest(ctx, cfg.Invocation, gsCh, b)
 		_, err := cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
@@ -68,7 +68,7 @@ func (rdbc *rdbChannel) reportTestResults(trs []*sinkpb.TestResult) {
 	}
 }
 
-func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func prepareReportTestResultsRequest(ctx context.Context, inv string, gsCh *gsChannel, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
 	// retried batch?
 	if b.Meta != nil {
 		return b.Meta.(*pb.BatchCreateTestResultsRequest)
@@ -90,8 +90,8 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 				StartTime:       tr.GetStartTime(),
 				Duration:        tr.GetDuration(),
 				Tags:            tr.GetTags(),
-				InputArtifacts:  sinkArtsToRpcArts(ctx, tr.GetInputArtifacts()),
-				OutputArtifacts: sinkArtsToRpcArts(ctx, tr.GetOutputArtifacts()),
+				InputArtifacts:  sinkArtsToRpcArts(ctx, gsCh, tr.GetInputArtifacts()),
+				OutputArtifacts: sinkArtsToRpcArts(ctx, gsCh, tr.GetOutputArtifacts()),
 			},
 		})
 	}
@@ -99,30 +99,31 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 	return req
 }
 
-func sinkArtsToRpcArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
+func sinkArtsToRpcArts(ctx context.Context, gsCh *gsChannel, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
 	for name, sart := range sArts {
-		var size int64 = -1
+		art := &pb.Artifact{
+			Name:        name,
+			Size:        -1,
+			ContentType: sart.GetContentType(),
+		}
+
 		switch {
 		case sart.GetFilePath() != "":
 			if info, err := os.Stat(sart.GetFilePath()); err == nil {
-				size = info.Size()
+				art.Size = info.Size()
+				art.FetchUrl, art.FetchUrlExpiration = gsCh.uploadArtifact(name, sart)
 			} else {
 				logging.Errorf(ctx, "artifact %q: %q - %s", name, sart.GetFilePath(), err)
 			}
 		case sart.GetContents() != nil:
-			size = int64(len(sart.GetContents()))
+			art.Size = int64(len(sart.GetContents()))
+			art.FetchUrl, art.FetchUrlExpiration = gsCh.uploadArtifact(name, sart)
 		default:
 			// This should never be reached. pbutil.ValidateSinkArtifact() should
 			// filter out invalid artifacts.
 			panic(fmt.Sprintf("%s: neither file_path nor contents were given", name))
 		}
-
-		rArts = append(rArts, &pb.Artifact{
-			Name: name,
-			// TODO(ddoman): set fetch_url and fetch_url_expiration
-			ContentType: sart.GetContentType(),
-			Size:        size,
-		})
+		rArts = append(rArts, art)
 	}
 	sort.Slice(rArts, func(i, j int) bool {
 		return rArts[i].Name < rArts[j].Name
