@@ -20,6 +20,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import { ReadonlyVariant, VariantStatus } from '../../models/test_node';
+import './result-entry';
 
 
 const STATUS_DISPLAY_MAP = {
@@ -76,12 +77,20 @@ export class VariantEntryElement extends MobxLitElement {
         <div id="body">
           <div id="content-ruler"></div>
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
-            <!-- TODO(weiweilin): implement result entry and exoneration entry -->
-            ${repeat(this.variant!.results, (r) => r.resultId, (r) => html`
-            <tr-result-entry .testResult=${r} .expanded=${this.hasSingleChild || !r.expected}></tr-result-entry>
+            ${repeat(this.variant!.results, (r) => r.resultId, (r, i) => html`
+            <tr-result-entry
+              .id=${i}
+              .testResult=${r}
+              .expanded=${this.hasSingleChild || !r.expected}
+            ></tr-result-entry>
             `)}
-            ${repeat(this.variant!.exonerations, (e) => e.exonerationId, (e) => html`
-            <tr-exoneration-entry .testExoneration=${e} .expanded=${this.hasSingleChild}></tr-exoneration-entry>
+            ${repeat(this.variant!.exonerations, (e) => e.exonerationId, (e, i) => html`
+            <!-- TODO(weiweilin): implement exoneration entry -->
+            <tr-exoneration-entry
+              .id=${this.variant!.results.length + i}
+              .testExoneration=${e}
+              .expanded=${this.hasSingleChild}
+            ></tr-exoneration-entry>
             `)}
           </div>
         </div>
