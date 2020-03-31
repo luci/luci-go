@@ -481,6 +481,50 @@ func TestGerritChange(t *testing.T) {
 	})
 }
 
+func TestGitilesCommit(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `GitilesChange`, []testCase{
+		{
+			name:   "nil",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.GitilesCommit(nil)
+				})
+				So(jd.HighLevelInfo().GitilesCommit(), ShouldBeNil)
+			},
+		},
+
+		{
+			name:   "add",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.GitilesCommit(&bbpb.GitilesCommit{Id: "deadbeef"})
+				})
+				So(jd.HighLevelInfo().GitilesCommit(), ShouldResemble, &bbpb.GitilesCommit{
+					Id: "deadbeef",
+				})
+			},
+		},
+
+		{
+			name:   "del",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.GitilesCommit(&bbpb.GitilesCommit{Id: "deadbeef"})
+				})
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.GitilesCommit(nil)
+				})
+				So(jd.HighLevelInfo().GitilesCommit(), ShouldBeNil)
+			},
+		},
+	})
+}
+
 func TestTaskPayload(t *testing.T) {
 	t.Parallel()
 
