@@ -202,14 +202,14 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 	sleepTime := 1
 	var previousCycle time.Time
 	for ctx.Err() == nil {
-		loopParams := grabLoopParams()
-		req := loopParams.mkRequest(ctx)
-
 		var tasks *logdog.LeaseResponse
 		var deadline time.Time
 
-		logging.Infof(ctx, "Leasing max %d tasks for %s", loopParams.batchSize, loopParams.deadline)
 		err := retry.Retry(ctx, leaseRetryParams, func() (err error) {
+			// we grab here to avoid getting stuck with some bad loopParams.
+			loopParams := grabLoopParams()
+			req := loopParams.mkRequest(ctx)
+			logging.Infof(ctx, "Leasing max %d tasks for %s", loopParams.batchSize, loopParams.deadline)
 			deadline = clock.Now(ctx).Add(loop.deadline)
 			tasks, err = ar.Service.LeaseArchiveTasks(ctx, req)
 			return
