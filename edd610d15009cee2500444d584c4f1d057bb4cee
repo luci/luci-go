@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b1512b2c_407bc5a2",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-31T07:01:26Z",
+      "side": 1,
+      "message": "Yep; clarified.",
+      "parentUuid": "d0269b66_e1bbbe3c",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 73
+      },
+      "revId": "edd610d15009cee2500444d584c4f1d057bb4cee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b9b29e9_3779e9b2",
         "filename": "led/job/job.go",
         "patchSetId": 6
