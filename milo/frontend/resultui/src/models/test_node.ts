@@ -53,9 +53,32 @@ export interface ReadonlyTest {
 }
 
 /**
+ * Indicates the status of the variant.
+ */
+export enum VariantStatus {
+  /**
+   * No test results in the variant (only exonerations).
+   */
+  Exonerated,
+  /**
+   * No results in the variant are failed.
+   */
+  Passed,
+  /**
+   * All results in the variant are failed.
+   */
+  Failed,
+  /**
+   * Some of the results in the variant are failed while others are passed.
+   */
+  Flaky,
+}
+
+/**
  * Contains test results and exonerations for the given test variant.
  */
 export interface ReadonlyVariant {
+  readonly status: VariantStatus;
   readonly variant: Variant;
   readonly results: ReadonlyArray<TestResult>;
   readonly exonerations: ReadonlyArray<TestExoneration>;
