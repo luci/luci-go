@@ -976,13 +976,16 @@ type Verifiers_Tryjob_Builder struct {
 	// If location_regexp is not specified (default), builder will be used
 	// on all CLs.
 	//
-	// The location_regexp is matches are done against the following string:
+	// The location_regexp matches are done against the following string:
 	//   <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
 	// File path must be relative to root of the repo, and it uses Unix /
 	// directory separators.
 	//
 	// The comparison is a full match; the pattern is implicitly anchored with
 	// "^" and "$", so there is no need add them.
+	//
+	// CQ uses Google's re2 syntax for regexp, documented
+	// here https://github.com/google/re2/wiki/Syntax.
 	//
 	// Touching a file means either adding, modifying or removing it.
 	//
