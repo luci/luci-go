@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d6aa9d08_129ce7c4",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-31T06:12:51Z",
+      "side": 1,
+      "message": "Changed. This was copy-pasted from config.UpdateHandler.",
+      "parentUuid": "4beb5c73_453a9bba",
+      "range": {
+        "startLine": 29,
+        "startChar": 6,
+        "endLine": 29,
+        "endChar": 7
+      },
+      "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2618b533_a17dab74",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2020-03-31T06:03:38Z",
       "side": 1,
       "message": "note: cron jobs have 10 min timeout",
+      "range": {
+        "startLine": 30,
+        "startChar": 41,
+        "endLine": 30,
+        "endChar": 52
+      },
+      "revId": "87a52a4b87ace162f78d930446afcb1a08559b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1859fbc_04e48704",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-31T06:12:51Z",
+      "side": 1,
+      "message": "Are you saying I should update this timeout to 10 minutes? I don\u0027t think that\u0027s necessary here.",
+      "parentUuid": "2618b533_a17dab74",
       "range": {
         "startLine": 30,
         "startChar": 41,
