@@ -56,8 +56,9 @@ func main() {
 	notify.InitDispatcher(&taskDispatcher)
 	taskDispatcher.InstallRoutes(r, basemw)
 
-	// Cron endpoint.
+	// Cron endpoints.
 	r.GET("/internal/cron/update-config", basemw.Extend(gaemiddleware.RequireCron), config.UpdateHandler)
+	r.GET("/internal/cron/update-tree-status", basemw.Extend(gaemiddleware.RequireCron), notify.UpdateTreeStatus)
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
