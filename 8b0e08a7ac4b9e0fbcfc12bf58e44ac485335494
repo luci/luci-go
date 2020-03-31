@@ -46,6 +46,30 @@
       "revId": "8b0e08a7ac4b9e0fbcfc12bf58e44ac485335494",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1404e008_51b945ba",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-31T02:56:50Z",
+      "side": 1,
+      "message": "OK, as long as the user doesn\u0027t have to click \"load more\" in two places in the final impl.",
+      "parentUuid": "1687bf48_638c5be8",
+      "range": {
+        "startLine": 222,
+        "startChar": 20,
+        "endLine": 222,
+        "endChar": 119
+      },
+      "revId": "8b0e08a7ac4b9e0fbcfc12bf58e44ac485335494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
