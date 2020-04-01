@@ -94,7 +94,6 @@ func TestConfig(t *testing.T) {
 					So(cfg, ShouldBeNil)
 				})
 			})
-
 			Convey("valid", func() {
 				cfg, err := srv.Ensure(c, &config.EnsureRequest{
 					Id: "id",
@@ -119,7 +118,7 @@ func TestConfig(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, &config.Config{
+				So(cfg, ShouldResembleProto, &config.Config{
 					Attributes: &config.VM{
 						Disk: []*config.Disk{
 							{},
@@ -479,6 +478,7 @@ func TestConfig(t *testing.T) {
 						err = datastore.Get(c, mdl)
 						So(err, ShouldBeNil)
 						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+						So(mdl.BinaryConfig, ShouldResemble, config.BinaryConfig{})
 					})
 
 					Convey("max", func() {
@@ -501,6 +501,8 @@ func TestConfig(t *testing.T) {
 						err = datastore.Get(c, mdl)
 						So(err, ShouldBeNil)
 						So(mdl.Config.CurrentAmount, ShouldEqual, 3)
+						So(mdl.BinaryConfig.CurrentAmount, ShouldEqual, 3)
+						So(mdl.BinaryConfig.Config, ShouldResemble, mdl.Config)
 					})
 
 					Convey("updates", func() {
@@ -523,6 +525,8 @@ func TestConfig(t *testing.T) {
 						err = datastore.Get(c, mdl)
 						So(err, ShouldBeNil)
 						So(mdl.Config.CurrentAmount, ShouldEqual, 2)
+						So(mdl.BinaryConfig.CurrentAmount, ShouldEqual, 2)
+						So(mdl.BinaryConfig.Config, ShouldResemble, mdl.Config)
 					})
 				})
 			})
