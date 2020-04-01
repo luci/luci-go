@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "c5f19426_16abaf88",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "It\u0027s to make sure that all the upload workers are completed its job before closing gsc.drainCh.",
+      "parentUuid": "7120061e_150817c7",
+      "range": {
+        "startLine": 66,
+        "startChar": 7,
+        "endLine": 66,
+        "endChar": 9
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8462d8de_7740e440",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -59,6 +83,24 @@
     },
     {
       "key": {
+        "uuid": "1f0f0e6c_b57dde04",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "There is no busy waiting, as gsc.findUploadTask() does select{} on the channel and context.\n\nWG is to ensure that all the in-flight requests are completed before closing drainCh so that closeAndDrain() will be unblocked.",
+      "parentUuid": "8462d8de_7740e440",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "531266ea_e7a96dc5",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -70,6 +112,30 @@
       "writtenOn": "2020-04-01T00:00:57Z",
       "side": 1,
       "message": "this swallows the error, effectively. This means an artifact the swarming task might complete successfully, while its artifacts aren\u0027t uploaded.\n\ni think we need to propagate this error all the way up",
+      "range": {
+        "startLine": 81,
+        "startChar": 6,
+        "endLine": 84,
+        "endChar": 7
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfaea762_75db09b7",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "Perhaps, we can add another error channel, like Server.ErrC() at https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/sink.go;l\u003d117-123, but for all errors from rdb_channel and gs_channel? Please let me know your opinion.",
+      "parentUuid": "531266ea_e7a96dc5",
       "range": {
         "startLine": 81,
         "startChar": 6,
@@ -105,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "7931e0e7_6751d5e4",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "What about use of sync.Once?\n\ne.g.,\nhttps://golang.org/src/net/http/server.go?s\u003d96538:96593#L3324\n\n```\n// onceCloseListener wraps a net.Listener, protecting it from\n// multiple Close calls.\ntype onceCloseListener struct {\n\tnet.Listener\n\tonce     sync.Once\n\tcloseErr error\n}\n\nfunc (oc *onceCloseListener) Close() error {\n\toc.once.Do(oc.close)\n\treturn oc.closeErr\n}\n\nfunc (oc *onceCloseListener) close() { oc.closeErr \u003d oc.Listener.Close() }\n```\n\nIf it also looks an overkill, then I am happy to remove this code and let it panic on multiple close calls. Please let me know your opinion.",
+      "parentUuid": "ed16a3e0_e18e0fa3",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 29
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "64539bd5_1bb7731d",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -116,6 +206,24 @@
       "writtenOn": "2020-04-01T00:00:57Z",
       "side": 1,
       "message": "i am worried this will cause occasional panics in L132.\nNormally sending and closing is done by the same piece of code, to guarantee that we don\u0027t attempt to send after closure",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc885ce5_a4d50578",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "All of closeAndDrain(), close(), and uploadArtifact() are invoked by the user of this channel.\n\n\u003e\u003e Normally sending and closing is done by the same piece of code, to guarantee that we don\u0027t attempt to send after closure\nI believe that you are describing about such a module that internally sends data to and close an internal channel. This is not such a module.\n\nIt\u0027s normal that a class, struct, module provides reads, writes, and close functions.\ngsChannel provides uploadArtifact(), close(), and closeAndDrain() to its users.\n\nWould you want this module to maintain its terminate status, such that invocation of uploadArtifact() returns an error, such as ChannelClosed, after a call to close(), just like net/http.ErrServerClosed?\n \nhttps://golang.org/src/net/http/server.go?s\u003d96538:96593#L3074\n\n// ErrServerClosed is returned by the Server\u0027s Serve, ServeTLS, ListenAndServe,\n// and ListenAndServeTLS methods after a call to Shutdown or Close.\nvar ErrServerClosed \u003d errors.New(\"http: Server closed\")",
+      "parentUuid": "64539bd5_1bb7731d",
       "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -145,6 +253,30 @@
     },
     {
       "key": {
+        "uuid": "fdc81deb_c0d5af97",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "drainCh gets closed only if the goroutine with parallel.WorkPool() terminates at L63.\nThis context is to give the caller a way of interrupting the draining process.\n\nCould you give me more pointers for the scenario you described?",
+      "parentUuid": "8e2fb6c1_c4deecd4",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a3217c36_f9e14238",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -156,6 +288,30 @@
       "writtenOn": "2020-04-01T00:00:57Z",
       "side": 1,
       "message": "this name is supposed to be relative to the bucket.\nthis means different tests will overwrite each other\u0027s artifacts,\nand different resultSink executions will overwrite each other\u0027s artifacts",
+      "range": {
+        "startLine": 131,
+        "startChar": 22,
+        "endLine": 131,
+        "endChar": 26
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bc1c798_aa4b1e40",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-01T01:21:22Z",
+      "side": 1,
+      "message": "Ah, that\u0027s a great point. Would the following format provide a unique object name?\n\n${test_id}.${result_id}.${prefix}_${artifact.name}\nwhere prefix is either \"input\" or \"output\"",
+      "parentUuid": "a3217c36_f9e14238",
       "range": {
         "startLine": 131,
         "startChar": 22,
