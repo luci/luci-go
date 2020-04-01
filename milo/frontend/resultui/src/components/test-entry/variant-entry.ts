@@ -20,6 +20,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import { ReadonlyVariant, VariantStatus } from '../../models/test_node';
+import './exoneration-entry';
 import './result-entry';
 
 
@@ -85,7 +86,6 @@ export class VariantEntryElement extends MobxLitElement {
             ></tr-result-entry>
             `)}
             ${repeat(this.variant!.exonerations, (e) => e.exonerationId, (e, i) => html`
-            <!-- TODO(weiweilin): implement exoneration entry -->
             <tr-exoneration-entry
               .id=${this.variant!.results.length + i}
               .testExoneration=${e}
