@@ -252,8 +252,9 @@ func TestCreateInvocation(t *testing.T) {
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
-				Name:  "invocations/u:inv",
-				State: pb.Invocation_ACTIVE,
+				Name:      "invocations/u:inv",
+				State:     pb.Invocation_ACTIVE,
+				CreatedBy: "anonymous:anonymous",
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: inv.CreateTime,

@@ -47,6 +47,9 @@ CREATE TABLE Invocations (
   -- When the invocation was created.
   CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
+  -- LUCI identity who created the invocation, typically "user:<email>".
+  CreatedBy STRING(MAX),
+
   -- When the invocation was finalized.
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
