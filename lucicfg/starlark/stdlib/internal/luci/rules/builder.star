@@ -17,6 +17,7 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
+load('@stdlib//internal/luci/lib/resultdb.star', 'resultdb')
 load('@stdlib//internal/luci/lib/scheduler.star', 'schedulerimpl')
 load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 
@@ -56,6 +57,9 @@ def _builder(
       triggers=None,
       triggered_by=None,
       notifies=None
+
+      # Results.
+      resultdb=None,
   ):
   """Defines a generic builder.
 
@@ -186,6 +190,10 @@ def _builder(
     notifies: list of luci.notifier(...) or luci.tree_closer(...) the builder
         notifies when it changes its status. This relation can also be defined
         via `notified_by` field in luci.notifier(...) or luci.tree_closer(...).
+
+    resultdb: resultdb.settings(...) struct with a confiuration that defines if
+        buildbucket should sync this builder's builds with ResultDB and which
+	results to export to BigQuery, and to which project/table/dataset.
   """
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
@@ -213,6 +221,7 @@ def _builder(
       'experimental': validate.bool('experimental', experimental, required=False),
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
       'repo': validate.repo_url('repo', repo, required=False),
+      'resultdb': resultdb.validate_settings(resultdb),
   }
 
   # Merge explicitly passed properties with the module-scoped defaults.
