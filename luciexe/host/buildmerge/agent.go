@@ -51,7 +51,6 @@ import (
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
-	"golang.org/x/time/rate"
 )
 
 // CalcURLFn is a stateless function which can calculate the absolute url and
@@ -177,7 +176,6 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 
 	var err error
 	ret.mergeCh, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(rate.Inf, 1),
 		Buffer: buffer.Options{
 			MaxLeases:    1,
 			BatchSize:    1,
