@@ -210,6 +210,7 @@ func setCurrent(c context.Context, id string, amt int32) error {
 			return nil
 		}
 		cfg.Config.CurrentAmount = amt
+		model.CopyToBinaryInConfig(cfg)
 		if err := datastore.Put(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to store config").Err()
 		}
