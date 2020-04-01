@@ -177,7 +177,6 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 
 	var err error
 	ret.mergeCh, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(rate.Inf, 1),
 		Buffer: buffer.Options{
 			MaxLeases:    1,
 			BatchSize:    1,

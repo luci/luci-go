@@ -33,7 +33,7 @@ func (o *Options) normalize(ctx context.Context) error {
 	}
 
 	if o.QPSLimit == nil {
-		o.QPSLimit = rate.NewLimiter(1, 1)
+		o.QPSLimit = rate.NewLimiter(rate.Inf, 0)
 	}
 	if o.QPSLimit.Limit() != rate.Inf && o.QPSLimit.Burst() < 1 {
 		return errors.Reason(
