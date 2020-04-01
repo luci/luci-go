@@ -22,7 +22,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	api "go.chromium.org/luci/swarming/proto/api"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 func TestClearCurrentIsolated(t *testing.T) {
@@ -57,11 +56,7 @@ func TestClearCurrentIsolated(t *testing.T) {
 
 				iso, err := jd.Info().CurrentIsolated()
 				So(err, ShouldBeNil)
-				So(iso, ShouldResemble, &swarmingpb.CASTree{
-					Namespace: "namespace",
-					Server:    "server",
-				})
-
+				So(iso, ShouldBeNil)
 			},
 		},
 	})
