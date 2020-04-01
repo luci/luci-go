@@ -231,7 +231,6 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			}
 			logging.Infof(ctx, "no work to do, sleeping for %d seconds", sleepTime)
 			clock.Sleep(ctx, time.Duration(sleepTime)*time.Second)
-			previousCycle = time.Time{}
 			continue
 		} else {
 			tsLeaseCount.Add(ctx, int64(len(tasks.Tasks)))
