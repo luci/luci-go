@@ -114,6 +114,12 @@ message Invocation {
   // bigquery_exports indicates what BigQuery table(s) that results in this
   // invocation should export to.
   repeated BigQueryExport bigquery_exports = 9;
+
+  // LUCI identity (e.g. "user:<email>") who created the invocation.
+  // Typically, a LUCI service account (e.g.
+  // "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
+  // (e.g. "user:johndoe@example.com").
+  string created_by = 10;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

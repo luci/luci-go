@@ -160,16 +160,18 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
-				Name:  "invocations/u:batch-inv",
-				State: pb.Invocation_ACTIVE,
+				Name:      "invocations/u:batch-inv",
+				State:     pb.Invocation_ACTIVE,
+				CreatedBy: "anonymous:anonymous",
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[0].CreateTime,
 			})
 			expected2 := proto.Clone(req.Requests[1].Invocation).(*pb.Invocation)
 			proto.Merge(expected2, &pb.Invocation{
-				Name:  "invocations/u:batch-inv2",
-				State: pb.Invocation_ACTIVE,
+				Name:      "invocations/u:batch-inv2",
+				State:     pb.Invocation_ACTIVE,
+				CreatedBy: "anonymous:anonymous",
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[1].CreateTime,

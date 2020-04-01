@@ -166,6 +166,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		SELECT
 		 i.InvocationId,
 		 i.State,
+		 i.CreatedBy,
 		 i.CreateTime,
 		 i.FinalizeTime,
 		 i.Deadline,
@@ -188,6 +189,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 
 		err := b.FromSpanner(row, &id,
 			&inv.State,
+			&inv.CreatedBy,
 			&inv.CreateTime,
 			&inv.FinalizeTime,
 			&inv.Deadline,

@@ -127,6 +127,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 			Deadline:        req.Invocation.GetDeadline(),
 			Tags:            req.Invocation.GetTags(),
 			BigqueryExports: req.Invocation.GetBigqueryExports(),
+			CreatedBy:       string(auth.CurrentIdentity(ctx)),
 		}
 
 		// Ensure the invocation has a deadline.
