@@ -21,12 +21,15 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/appengine"
+
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
@@ -43,10 +46,21 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
+	cookieAuth := server.CookieAuth
+	if !appengine.IsDevAppServer() {
+		// Initialize AuthMethod manually here so we can set a custom value for SameSite.
+		cookieAuth = &openid.AuthMethod{
+			SessionStore:        &server.SessionStore{Prefix: "openid"},
+			IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
+			Insecure:            appengine.IsDevAppServer(), // for http:// cookie
+			SameSite:            http.SameSiteNoneMode,      // So we can be shown in iframes.
+		}
+	}
+
 	baseMW := standard.Base()
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
+		auth.Authenticate(cookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
 		withBuildbucketClient,
