@@ -57,7 +57,7 @@ var (
 	}
 
 	ackChannelOptions = &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(1, 1), // 1 QPS max rate
+		QPSLimit: rate.NewLimiter(rate.Inf, 1), // no limit
 		Buffer: buffer.Options{
 			MaxLeases:     10,
 			BatchSize:     500,
@@ -80,6 +80,7 @@ var (
 
 	mkJobChannelOptions = func(maxWorkers int) *dispatcher.Options {
 		return &dispatcher.Options{
+			QPSLimit: rate.NewLimiter(rate.Inf, 1), // no limit
 			Buffer: buffer.Options{
 				MaxLeases: maxWorkers,
 				BatchSize: 1,
