@@ -1,0 +1,233 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9bb23874_af2440c8",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "i don\u0027t think this code compiled without tests, because this struct is in a _test.go file.\n\nbesides, why do we need a specific impl here? all we need is a type (e.g. type uploadFile func(...)..) and a field of this type here.",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7120061e_150817c7",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "not sure why we need wg here",
+      "range": {
+        "startLine": 66,
+        "startChar": 7,
+        "endLine": 66,
+        "endChar": 9
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8462d8de_7740e440",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "FWIU this will spin very very fast burning CPU. This isn\u0027t how Go code is written typically.\n\nI think we just need a loop like this\n\n  for {\n    select {\n     // case on context cancelation. exit.\n     // case on receiving an item.\n    }\n    // process the item\n  }\n\nthen we don\u0027t definitely don\u0027t need wg",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "531266ea_e7a96dc5",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "this swallows the error, effectively. This means an artifact the swarming task might complete successfully, while its artifacts aren\u0027t uploaded.\n\ni think we need to propagate this error all the way up",
+      "range": {
+        "startLine": 81,
+        "startChar": 6,
+        "endLine": 84,
+        "endChar": 7
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed16a3e0_e18e0fa3",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "why is this needed?\n\nif the intention is to allow calling close multiple times, i am not so sure that\u0027s a great idea. why not change the caller so that it knows what its doing",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 29
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64539bd5_1bb7731d",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "i am worried this will cause occasional panics in L132.\nNormally sending and closing is done by the same piece of code, to guarantee that we don\u0027t attempt to send after closure",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e2fb6c1_c4deecd4",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "this seems unnecessary because if context is canceled, drainCh will get closed",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3217c36_f9e14238",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "this name is supposed to be relative to the bucket.\nthis means different tests will overwrite each other\u0027s artifacts,\nand different resultSink executions will overwrite each other\u0027s artifacts",
+      "range": {
+        "startLine": 131,
+        "startChar": 22,
+        "endLine": 131,
+        "endChar": 26
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56b4be0a_27449073",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "NewReader",
+      "range": {
+        "startLine": 159,
+        "startChar": 12,
+        "endLine": 159,
+        "endChar": 21
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1a85c6c_11dcc737",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "instead of propagating it everywhere below, can we make it a field in rdbChannel?",
+      "range": {
+        "startLine": 38,
+        "startChar": 50,
+        "endLine": 38,
+        "endChar": 66
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28abf9de_003ed759",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T00:00:57Z",
+      "side": 1,
+      "message": "i think i missed this before. This looks like we are ignore bad input and letting the swarming task finishing successfully despite it having bogus results",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
