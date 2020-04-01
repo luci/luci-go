@@ -74,7 +74,7 @@ func Run(templatePath string) {
 	// Builds.
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
-	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", projectMW, handleError(handleLUCIBuild))
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", htmlMW, handleError(handleLUCIBuild))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
@@ -104,7 +104,7 @@ func Run(templatePath string) {
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(BuilderHandler))
+	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, handleError(BuilderHandler))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
