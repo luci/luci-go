@@ -34,6 +34,24 @@
       "revId": "c06b905c3b68051639ae8b7f1383d41e6bed379c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9662a11_259843f6",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-01T09:12:45Z",
+      "side": 1,
+      "message": "\u003e I think this is prevented in python client because it does retry almost always \n\u003e https://cs.chromium.org/chromium/infra/luci/client/utils/threading_utils.py?l\u003d337\u0026rcl\u003d0cfc2151b49d342450b7b163df9cddff685c8b31\n\nAck\n\n\u003e \u003e Do you think this is reproducible by retrying xx times?\n\u003e \n\u003e Maybe, but don\u0027t have confidence. uploaded file might really be broken.\n\nAgree to approach this issue by retry.",
+      "parentUuid": "50478281_1d842c35",
+      "revId": "c06b905c3b68051639ae8b7f1383d41e6bed379c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
