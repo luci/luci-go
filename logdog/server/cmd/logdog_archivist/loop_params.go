@@ -22,7 +22,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -35,20 +34,9 @@ type loopParams struct {
 	deadline  time.Duration
 }
 
-// Generates a randomized LeaseRequest from this loopParams.
-//
-// Sizes of archival task batches are pretty uniform.  This means the total time
-// it takes to process equally sized batches of tasks is approximately the same
-// across all archivist instances. Once a bunch of them start at the same time,
-// they end up hitting LeaseArchiveTasks in waves at approximately the same
-// time.
-//
-// This method randomizes the batch size +-25% to remove this synchronization.
 func (l loopParams) mkRequest(ctx context.Context) *logdog.LeaseRequest {
-	factor := int64(mathrand.Intn(ctx, 500) + 750) // [750, 1250)
-
 	return &logdog.LeaseRequest{
-		MaxTasks:  l.batchSize * factor / 1000,
+		MaxTasks:  l.batchSize,
 		LeaseTime: ptypes.DurationProto(l.deadline),
 	}
 }
