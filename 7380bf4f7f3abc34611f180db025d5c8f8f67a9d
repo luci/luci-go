@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "0abed624_494831cd",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "parallel.WorkPool already guarantees that. It does not exist until all worker functions exit",
+      "parentUuid": "c5f19426_16abaf88",
+      "range": {
+        "startLine": 66,
+        "startChar": 7,
+        "endLine": 66,
+        "endChar": 9
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8462d8de_7740e440",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -95,6 +119,24 @@
       "side": 1,
       "message": "There is no busy waiting, as gsc.findUploadTask() does select{} on the channel and context.\n\nWG is to ensure that all the in-flight requests are completed before closing drainCh so that closeAndDrain() will be unblocked.",
       "parentUuid": "8462d8de_7740e440",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abd8a5bc_7ced6cb5",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "true, there is no default case in select{}.\n\ni still find it very unusual to split the code this way. findUploadTask is very specific its caller (if you modify one of them, you are very likely to modify another).\n\nI also this usage of for(init;cond;step) loop very unusual. This makes a lot of sense when step depends on the previous state (e.g. i++, or n\u003dn.next) but this is not the case here.\n\nStepping back, this listens to TWO signals that the work is over. It would be simpler if we had just one: the closure of uploadCh. In fact, it is already closed in closAndDrain, so this could be as simple as\n \n  for ut :\u003d range gsc.uploadCh {\n    ...\n  }",
+      "parentUuid": "1f0f0e6c_b57dde04",
       "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -136,6 +178,30 @@
       "side": 1,
       "message": "Perhaps, we can add another error channel, like Server.ErrC() at https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/sink/sink.go;l\u003d117-123, but for all errors from rdb_channel and gs_channel? Please let me know your opinion.",
       "parentUuid": "531266ea_e7a96dc5",
+      "range": {
+        "startLine": 81,
+        "startChar": 6,
+        "endLine": 84,
+        "endChar": 7
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff03a3f7_50b90752",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "a channel is OK if there is only one sender. otherwise if both try to send, one of them will block.\n\ni think a function a sync.Once would be simpler",
+      "parentUuid": "cfaea762_75db09b7",
       "range": {
         "startLine": 81,
         "startChar": 6,
@@ -195,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "451a9ce0_6f021e22",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "using sync.Once at the callsite of gsc.close sgtm",
+      "parentUuid": "7931e0e7_6751d5e4",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 29
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "64539bd5_1bb7731d",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -227,6 +317,24 @@
       "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "703cb1a8_deb74548",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "you are right. this code is fine",
+      "parentUuid": "fc885ce5_a4d50578",
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -277,6 +385,29 @@
     },
     {
       "key": {
+        "uuid": "ccaa72c0_4ce2739b",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "will other files use this? if so, let\u0027s make it UploadArtifact so that it is clear that this func is a part of public interface of this struct.\n\nplease add a comment. please mention that it will panic after calling close (which must also be Close)",
+      "range": {
+        "startLine": 130,
+        "startChar": 22,
+        "endLine": 130,
+        "endChar": 36
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a3217c36_f9e14238",
         "filename": "resultdb/sink/gs_channel.go",
         "patchSetId": 7
@@ -312,6 +443,30 @@
       "side": 1,
       "message": "Ah, that\u0027s a great point. Would the following format provide a unique object name?\n\n${test_id}.${result_id}.${prefix}_${artifact.name}\nwhere prefix is either \"input\" or \"output\"",
       "parentUuid": "a3217c36_f9e14238",
+      "range": {
+        "startLine": 131,
+        "startChar": 22,
+        "endLine": 131,
+        "endChar": 26
+      },
+      "revId": "7380bf4f7f3abc34611f180db025d5c8f8f67a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e037fe1_e8e943db",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T17:46:05Z",
+      "side": 1,
+      "message": "this is missing invocation id.\ni recommend slashes instead of \".\" to avoid clashes.\n\ni recommend\n\n  \"resultdb/${invocation_id}/${test_id}/${result_id}/${prefix}_${artifact.name}\n\nconsider shorter \"in\" and \"out\" for artifacts. Consider them dirs too.",
+      "parentUuid": "6bc1c798_aa4b1e40",
       "range": {
         "startLine": 131,
         "startChar": 22,
