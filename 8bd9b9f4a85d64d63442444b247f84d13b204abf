@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c55f18b2_d3fb7750",
+        "filename": "milo/frontend/resultui/src/components/page_header.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-01T10:16:03Z",
+      "side": 1,
+      "message": "Looks like my editor removed these spaces automatically.\n\nWeiwei, what tool do you use for formatting?",
+      "range": {
+        "startLine": 17,
+        "startChar": 7,
+        "endLine": 17,
+        "endChar": 23
+      },
+      "revId": "8bd9b9f4a85d64d63442444b247f84d13b204abf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
