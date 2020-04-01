@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "f95b7d03_5c056133",
+        "filename": "led/ledcmd/clients.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-01T08:06:20Z",
+      "side": 1,
+      "message": "I\u0027m going to keep it as-is; if there was a way to override this from outside of the package, then I would agree with you, but it\u0027s really only here to mock for tests (without mocking it as a global function). It\u0027s easy to add more complexity later if it\u0027s warranted.",
+      "parentUuid": "dd2e9cc7_ce9203e0",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "611b0a9d_33c2d5c6",
         "filename": "led/ledcmd/consolidate_isolateds_test.go",
         "patchSetId": 8
@@ -105,6 +123,24 @@
       "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0c32d23_1e3fdd2f",
+        "filename": "led/ledcmd/consolidate_isolateds_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-01T08:06:20Z",
+      "side": 1,
+      "message": "If there were a meaningful way to \u0027upstream\u0027 this to live next to isolatedclient, then I would do so (and then add tests for the fake), however the package is currently mock-proof, because *isolatedclient.Client is a struct :(. I\u0027ve had to define my own internal interface around it here 😞\n\nI\u0027ve added a bug+TODO in lieu of actually fixing this because I agree that it sucks, but I have to draw the line somewhere.",
+      "parentUuid": "4fed58ca_0e570924",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
