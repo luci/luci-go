@@ -31,29 +31,40 @@ export class PageHeaderElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <img id="chromium-icon" src="/static/assets/chromium-icon.png"/>
-      <span id="headline">LUCI Test Results</span>
+      <div id="title-container">
+        <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
+        <span id="headline">LUCI Test Results (BETA)</span>
+      </div>
       <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
     `;
   }
 
   static styles = css`
     :host {
-        padding-left: 5px;
+        padding: 10px 0;
+        display: flex;
+    }
+    #title-container {
+        display: flex;
+        flex: 1 1 100%;
+        align-items: center;
+        margin-left: 14px;
     }
     #chromium-icon {
         display: inline-block;
-        width: 50px;
-        vertical-align: middle;
+        width: 32px;
+        height: 32px;
+        margin-right: 8px;
     }
     #headline {
-        font-size: 34px;
+        color: rgb(95, 99, 104);
+        font-family: "Google Sans", "Helvetica Neue", sans-serif;
+        font-size: 18px;
+        font-weight: 300;
         letter-spacing: 0.25px;
-        vertical-align: middle;
     }
     #signin {
-        float: right;
-        padding: 5px;
+        margin-right: 14px;
     }
   `;
 }
