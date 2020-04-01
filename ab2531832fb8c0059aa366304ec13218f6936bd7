@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6a6d0940_3373f968",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T23:17:53Z",
+      "side": 1,
+      "message": "who should it be in DeriveInvocation?\n\nnote that I wouldn\u0027t use CurrentIdentity because we cache invocations. Otherwise, the first identity who made the DeriveInvocation becomes the creator, which isn\u0027t really correct.\n\nThis field isn\u0027t really important for derived invocation, I don\u0027t see what diff does it make, and the code is scheduled to be removed.\n\nWDYT?",
+      "parentUuid": "5af01505_7d073002",
+      "revId": "ab2531832fb8c0059aa366304ec13218f6936bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c441958_ac8d658a",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2020-04-01T03:45:31Z",
       "side": 1,
       "message": "Nit: LUCI service account or user?",
+      "range": {
+        "startLine": 50,
+        "startChar": 47,
+        "endLine": 50,
+        "endChar": 72
+      },
+      "revId": "ab2531832fb8c0059aa366304ec13218f6936bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3df9c71e_47af0856",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-01T23:17:53Z",
+      "side": 1,
+      "message": "WDYM? \"user:\" is a concrete prefix that LUCI identities have, e.g. \"user:nodir@google.com\". \nA bit more about this: https://godoc.org/go.chromium.org/luci/auth/identity",
+      "parentUuid": "3c441958_ac8d658a",
       "range": {
         "startLine": 50,
         "startChar": 47,
