@@ -12,6 +12,7 @@
     "@material/mwc-icon": "^0.14.1",
     "@vaadin/router": "^1.7.1",
     "copy-to-clipboard": "^3.3.1",
+    "dompurify": "^2.0.8",
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
     "lodash-es": "^4.17.15",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@babel/preset-env": "^7.9.0",
     "@types/chai": "^4.2.11",
+    "@types/dompurify": "^2.0.1",
     "@types/gapi": "0.0.39",
     "@types/gapi.auth2": "0.0.51",
     "@types/karma": "^4.4.0",
