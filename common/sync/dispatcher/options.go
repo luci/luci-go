@@ -105,7 +105,7 @@ type Options struct {
 
 	// [OPTIONAL] A rate limiter for how frequently this will invoke SendFn.
 	//
-	// Default: 1 QPS with a burst of 1.
+	// Default: No limit.
 	QPSLimit *rate.Limiter
 
 	Buffer buffer.Options

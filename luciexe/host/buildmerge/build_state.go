@@ -176,7 +176,6 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		ret.finalize()
 	} else {
 		ret.work, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
-			QPSLimit: rate.NewLimiter(rate.Inf, 1),
 			Buffer: buffer.Options{
 				MaxLeases:    1,
 				BatchSize:    1,
