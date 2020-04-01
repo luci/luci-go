@@ -477,6 +477,12 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 					if perr := pr.CloseWithError(err); perr != nil {
 						return errors.Annotate(perr, "failed to close pipe reader").Err()
 					}
+
+					// invalid hash might be due to data corruption in network.
+					if errors.Contains(err, cache.ErrInvalidHash) {
+						return transient.Tag.Apply(err)
+					}
+
 					return err
 				})
 				return wg.Wait()

@@ -89,6 +89,8 @@ type Policies struct {
 	MinFreeSpace units.Size
 }
 
+var ErrInvalidHash = errors.New("invalid hash")
+
 // NewMemory creates a purely in-memory cache.
 func NewMemory(policies Policies, namespace string) Cache {
 	return &memory{
@@ -224,7 +226,7 @@ func (m *memory) add(digest isolated.HexDigest, src io.Reader) ([]byte, error) {
 		return nil, err
 	}
 	if d := isolated.HashBytes(m.h, content); d != digest {
-		return nil, errors.Reason("invalid hash, got=%s, want=%s", d, digest).Err()
+		return nil, errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
 	}
 	if units.Size(len(content)) > m.policies.MaxSize {
 		return nil, errors.Reason("item too large, size=%d, limit=%d", len(content), m.policies.MaxSize).Err()
@@ -381,7 +383,7 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 	}
 	if d := isolated.Sum(h); d != digest {
 		_ = os.Remove(p)
-		return errors.Reason("invalid hash, got=%s, want=%s", d, digest).Err()
+		return errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
 	}
 	if units.Size(size) > d.policies.MaxSize {
 		_ = os.Remove(p)
