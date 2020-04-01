@@ -40,7 +40,10 @@ func (b bbInfo) TaskName() string {
 }
 
 func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
-	return b.userPayload, nil
+	if b.userPayload.GetDigest() != "" {
+		return b.userPayload, nil
+	}
+	return nil, nil
 }
 
 func (b bbInfo) Dimensions() (ExpiringDimensions, error) {

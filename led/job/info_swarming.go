@@ -40,7 +40,7 @@ func (s swInfo) TaskName() string {
 
 func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 	isolatedOptions := map[string]*swarmingpb.CASTree{}
-	if up := s.userPayload; up != nil {
+	if up := s.userPayload; up != nil && up.Digest != "" {
 		isolatedOptions[up.Digest] = up
 	}
 
