@@ -16,10 +16,12 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
+import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
+import { state } from '../../models/state';
 import { TestNode } from '../../models/test_node';
 
 /**
@@ -29,16 +31,29 @@ import { TestNode } from '../../models/test_node';
 export class TestNavNodeElement extends MobxLitElement {
   @observable.ref depth = 0;
   @observable.ref node?: TestNode;
-  @observable.ref expanded = false;
+
+  @observable.ref private _expanded = false;
+  @computed get expanded() {
+    return this._expanded;
+  }
+  set expanded(newVal: boolean) {
+    this._expanded = newVal;
+    this.wasExpanded = this.wasExpanded || newVal;
+  }
 
   // Always render the children once it was expanded so the children's state
   // don't get reset after the node is collapsed.
   @observable.ref private wasExpanded = false;
 
+  @computed private get isSelected() { return state!.selectedTestNode === this.node; }
+
   protected render() {
     return html`
       <div
-        class="expandable-header"
+        class=${classMap({
+          'selected': this.isSelected,
+          'expandable-header': true,
+        })}
         style=${styleMap({
           'padding-left': `${this.depth * 10}px`,
         })}
@@ -46,10 +61,7 @@ export class TestNavNodeElement extends MobxLitElement {
         <mwc-icon
           class="expand-toggle"
           style=${styleMap({ display: this.node!.children.length === 0 ? 'none' : '' })}
-          @click=${() => {
-            this.expanded = !this.expanded;
-            this.wasExpanded = true;
-          }}
+          @click=${() => this.expanded = !this.expanded}
         >
           ${this.expanded ? 'expand_more' : 'chevron_right'}
         </mwc-icon>
@@ -60,6 +72,13 @@ export class TestNavNodeElement extends MobxLitElement {
             'padding-left': this.node!.children.length === 0 ? '8px' : '',
           })}
           title=${this.node!.name}
+          @click=${() => {
+            if (this.isSelected) {
+              state.selectedTestNode = null;
+            } else {
+              state.selectedTestNode = this.node!;
+            }
+          }}
         >${this.node!.name}</span>
       </div>
       <div id="body">
@@ -133,6 +152,10 @@ export class TestNavNodeElement extends MobxLitElement {
     #content {
       grid-column: 1/3;
       grid-row: 1;
+    }
+
+    .expandable-header.selected {
+        background-color: #66ccff;
     }
   `;
 }
