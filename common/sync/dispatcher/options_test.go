@@ -42,7 +42,7 @@ func TestOptionValidationGood(t *testing.T) {
 			name:    "minimal",
 			options: Options{},
 			expected: Options{
-				QPSLimit: rate.NewLimiter(1, 1),
+				QPSLimit: rate.NewLimiter(rate.Inf, 0),
 			},
 		},
 

@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/time/rate"
 )
 
 // buildState represets the current state of a single build.proto stream.
@@ -176,7 +175,6 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		ret.finalize()
 	} else {
 		ret.work, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
-			QPSLimit: rate.NewLimiter(rate.Inf, 1),
 			Buffer: buffer.Options{
 				MaxLeases:    1,
 				BatchSize:    1,

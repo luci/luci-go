@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	montypes "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"golang.org/x/time/rate"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/archivist"
@@ -57,7 +56,6 @@ var (
 	}
 
 	ackChannelOptions = &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(rate.Inf, 1), // no limit
 		Buffer: buffer.Options{
 			MaxLeases:     10,
 			BatchSize:     500,
@@ -80,7 +78,6 @@ var (
 
 	mkJobChannelOptions = func(maxWorkers int) *dispatcher.Options {
 		return &dispatcher.Options{
-			QPSLimit: rate.NewLimiter(rate.Inf, 1), // no limit
 			Buffer: buffer.Options{
 				MaxLeases: maxWorkers,
 				BatchSize: 1,
