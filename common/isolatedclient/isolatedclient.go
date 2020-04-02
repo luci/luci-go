@@ -340,16 +340,21 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 			return err4
 		}
 
-		if xGoogHash := resp.Header.Get("x-goog-hash"); xGoogHash != "" {
-			base64MD5 := base64.StdEncoding.EncodeToString(c.h.Sum(nil))
-			if !strings.Contains(xGoogHash, "md5="+base64MD5) {
-				return errors.Reason("hash mismatch, x-goog-hash=%s md5 hash=%s",
-					xGoogHash, base64MD5).Tag(transient.Tag).Err()
+		base64MD5 := "md5=" + base64.StdEncoding.EncodeToString(c.h.Sum(nil))
+		xGoogHash := resp.Header.Values("x-goog-hash")
+		verified := false
+		for _, value := range xGoogHash {
+			if value == base64MD5 {
+				verified = true
+				break
 			}
-
-		} else {
-			return errors.New("x-goog-hash header is not included in response")
 		}
+
+		if !verified {
+			return errors.Reason("hash mismatch, x-goog-hash='%s' md5 hash='%s'",
+				xGoogHash, base64MD5).Tag(transient.Tag).Err()
+		}
+
 		return err5
 	}, nil)
 	_, err := req()
