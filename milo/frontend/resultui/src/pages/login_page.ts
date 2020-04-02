@@ -15,7 +15,9 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
-import { customElement, html } from 'lit-element';
+import { customElement, css, html } from 'lit-element';
+import { styleMap } from 'lit-html/directives/style-map';
+import { observable } from 'mobx';
 
 import '../components/page_header';
 
@@ -31,14 +33,8 @@ import '../components/page_header';
 @customElement('tr-login-page')
 export class LoginPageElement extends MobxLitElement implements
     BeforeEnterObserver {
+  @observable.ref redirectFailed = false;
   redirectUri = '';
-
-  protected render() {
-    return html`
-      <tr-page-header></tr-page-header>
-      <div>You must sign in to see anything useful.<div>
-    `;
-  }
 
   onBeforeEnter(location: RouterLocation) {
     const redirect = new URLSearchParams(location.search).get('redirect');
@@ -57,6 +53,24 @@ export class LoginPageElement extends MobxLitElement implements
   private onUserUpdate = () => {
     if (signin.getAuthorizationHeadersSync()?.Authorization) {
       Router.go(this.redirectUri);
+    } else {
+      this.redirectFailed = true;
     }
   }
+
+  protected render() {
+    return html`
+      <tr-page-header></tr-page-header>
+      <div
+        id="sign-in-message"
+        style=${styleMap({display: this.redirectFailed ? '' : 'none'})}
+      >You must sign in to see anything useful.<div>
+    `;
+  }
+
+  static styles = css`
+    #sign-in-message {
+      margin: 8px 16px;
+    }
+  `;
 }
