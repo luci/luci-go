@@ -310,12 +310,12 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 
 // Push uploads content from the provided source to the GCS path specified in
 // the HandlersEndpointsV1PreuploadStatus response.
-func (gcs defaultGCSHandler) Push(c context.Context, i *Client, status isolateservice.HandlersEndpointsV1PreuploadStatus, source Source) error {
+func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolateservice.HandlersEndpointsV1PreuploadStatus, source Source) error {
 	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
 	// client instead.
-	req := lhttp.NewRequest(c, i.anonClient, i.retryFactory, func() (*http.Request, error) {
+	req := lhttp.NewRequest(ctx, i.anonClient, i.retryFactory, func() (*http.Request, error) {
 		src, err := source()
 		if err != nil {
 			return nil, err
