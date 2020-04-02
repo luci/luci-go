@@ -16,6 +16,24 @@
       "revId": "b17e35e5ce53ccec2a8b9821c53fbcc6d93d1eaf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae3059b1_04d97dbf",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-02T12:27:16Z",
+      "side": 1,
+      "message": "changed in crrev.com/c/2133337",
+      "parentUuid": "59b5a817_52b89115",
+      "revId": "b17e35e5ce53ccec2a8b9821c53fbcc6d93d1eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
