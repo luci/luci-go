@@ -85,7 +85,11 @@ var (
 				MaxLeases: maxWorkers,
 				BatchSize: 1,
 				FullBehavior: &buffer.BlockNewItems{
-					MaxItems: 2 * maxWorkers,
+					// Currently (2020Q2) it takes ~4s on average to process a task, and
+					// ~60s to lease a new batch. We never want to starve our job workers
+					// here, so we need at least 60s worth of tasks. We add 20% margin,
+					// just to be safe.
+					MaxItems: int(((60. / 4.) * float64(maxWorkers)) * 1.2),
 				},
 			},
 		}
