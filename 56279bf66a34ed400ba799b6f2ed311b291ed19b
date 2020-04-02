@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "81d8868d_d2f60f81",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-02T23:01:03Z",
+      "side": 1,
+      "message": "Was mostly just I placeholder since I couldn\u0027t find an artifact with conttent. Removed inline rendering.",
+      "parentUuid": "ec6229b0_0368815b",
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "979acff6_07344bcd",
         "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3de066b0_76f82db0",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-02T23:01:03Z",
+      "side": 1,
+      "message": "Done.\n\nHow do I get updated fetch url if it expires? Do I need to refetch the entire test result?",
+      "parentUuid": "979acff6_07344bcd",
+      "range": {
+        "startLine": 48,
+        "startChar": 31,
+        "endLine": 48,
+        "endChar": 38
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
