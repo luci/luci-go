@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86ffa92d_96f048ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-02T01:30:44Z",
+      "side": 1,
+      "message": "datastore.put is only called if something changed though, so this will only convert new and updated configs.",
+      "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6e38666_102cc1be",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-02T01:30:44Z",
+      "side": 1,
+      "message": "Ah so you switch the Config field to read from binary_config instead of config and swap update the datastore.PropertyConverter implementation then you don\u0027t have to update any of the read sites. It\u0027s clever.\n\nCould you extend this concept? Don\u0027t update the write sites either, just add a job which reads every entity and writes it back with both config and binary_config, wait for it to run for every entity, then update both config -\u003e binary_config and the datastore.PropertyConverter implementation at the same time as removing the conversion job. Then you don\u0027t ever have to update more than one place.",
+      "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41b23968_af10ad0c",
+        "filename": "gce/api/config/v1/binary_config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-02T01:30:44Z",
+      "side": 1,
+      "message": "Can you put this in config.go next to the text implementation?",
+      "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
