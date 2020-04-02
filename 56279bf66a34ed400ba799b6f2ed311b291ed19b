@@ -60,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "89044af5_976df24c",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-02T23:08:28Z",
+      "side": 1,
+      "message": "removed the entire thing since we don\u0027t have inline content anymore.",
+      "parentUuid": "2922c7c2_32052a9a",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 39,
+        "endChar": 37
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41dc7365_c2d4205e",
         "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
         "patchSetId": 2
@@ -80,6 +104,30 @@
       "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7dd0ece3_b40ebc95",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-02T23:08:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41dc7365_c2d4205e",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 0
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
