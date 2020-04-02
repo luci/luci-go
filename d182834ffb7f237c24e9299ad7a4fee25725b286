@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20dea4b7_878daef3",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T00:07:40Z",
+      "side": 1,
+      "message": "can be removed now (since this code is not executing on dev server)",
+      "range": {
+        "startLine": 54,
+        "startChar": 41,
+        "endLine": 54,
+        "endChar": 64
+      },
+      "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b70af705_9368ff96",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T00:07:40Z",
+      "side": 1,
+      "message": "remove, it is always false",
+      "range": {
+        "startLine": 55,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 73
+      },
+      "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38e98a40_e365608d",
+        "filename": "server/auth/openid/method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T00:07:40Z",
+      "side": 1,
+      "message": "I forgot about this requirement. Since we now constructing a new copy of AuthMethod it is important. Handlers are installed in `standard.InstallHandlers(r)` which eventually calls https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/appengine/gaeauth/server/default.go#41. I think we should allow server.CookieAuth to be assignable and replace it with tweaked \u0026openid.AuthMethod before standard.InstallHandlers(r). This will require changing some type assertions in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/appengine/gaeauth/server/default.go to account for arbitrary auth.Method. I think we\u0027ll also have to remove cookieAuthMethod wrapper (I\u0027m not quite sure why it exists, but it appears it discourages people from overriding server.CookieAuth). I can make this refactoring myself if you prefer.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 19
+      },
+      "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
