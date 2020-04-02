@@ -49,6 +49,29 @@
     },
     {
       "key": {
+        "uuid": "294b4b1e_11cd7505",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "for code outside of this package, this struct is public, but has no fields and thus unusuable. Perhaps it should be private",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 15
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5bd27ea0_faf9117a",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -93,6 +116,184 @@
       "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "50dd6c10_a2657c33",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "a real impl will definitely need ctx as first param",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 4
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e80e6e0_9eb7f8c4",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "this might make unbounded concurrent requests. better to bound it by using parallel.WorkPool",
+      "range": {
+        "startLine": 79,
+        "startChar": 17,
+        "endLine": 79,
+        "endChar": 25
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92ba9467_b3364cd9",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "this is unnecessary. append(nil, element) is a valid operation in Go. this whole loop body should be just\n\n  byHost[tc.treeStatusHost] \u003d append(byHost[tc.treeStatusHost], tc)",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 3
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eaa1c55c_b23260c1",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "this will show up as an error in gae logs. please use https://godoc.org/go.chromium.org/luci/common/logging instead",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 11
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "724f6cf8_fdcb699f",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "unnecessary and atypical",
+      "range": {
+        "startLine": 103,
+        "startChar": 36,
+        "endLine": 103,
+        "endChar": 42
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8d9c726_41052074",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "nit: a slight more compact and go-idiomatic version of this\n\n\n\ttreeStatus, err :\u003d ts.getStatus(host)\n\tswitch {\n\tcase err !\u003d nil:\n\t\treturn err\n\tcase treeStatus.status \u003d\u003d overallStatus:\n\t\t// Nothing to do, status is already correct.\n\t\treturn nil\n\tcase treeStatus.status \u003d\u003d config.Closed \u0026\u0026 treeStatus.username !\u003d botUsername:\n\t\t// Don\u0027t reopen the tree if we weren\u0027t the one to close it.\n\t\treturn nil\n\t}",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 0
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5646900_201ec3e7",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "we also need a TODO to compare oldestClosed.Timestamp to the timestamp of the status.\n\nexcept we need newest?",
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d273175_a253f218",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T05:47:15Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 139,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 12
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
