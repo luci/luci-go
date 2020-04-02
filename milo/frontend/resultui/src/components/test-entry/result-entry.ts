@@ -20,6 +20,7 @@ import { observable } from 'mobx';
 
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { TestResult, TestStatus } from '../../services/resultdb';
+import './artifact';
 
 const STATUS_DISPLAY_MAP = {
   [TestStatus.Unspecified]: 'unspecified',
@@ -139,7 +140,6 @@ export class ResultEntryElement extends MobxLitElement {
       </div>
       <ul style=${styleMap({display: this.inputArtifactsExpanded ? '' : 'none'})}>
         ${this.testResult!.inputArtifacts?.map((artifact) => html`
-        <!-- TODO(weiweilin): implement <tr-artifact> -->
         <li><tr-artifact .artifact=${artifact}></tr-artifact></li>
         `)}
       </ul>
