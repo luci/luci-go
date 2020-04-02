@@ -19,7 +19,9 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"crypto/md5"
 	"encoding/base64"
+	"hash"
 	"io"
 	"io/ioutil"
 	"log"
@@ -315,6 +317,7 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
 	// client instead.
+	var c *compressed
 	req := lhttp.NewRequest(ctx, i.anonClient, i.retryFactory, func() (*http.Request, error) {
 		src, err := source()
 		if err != nil {
@@ -326,7 +329,8 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 			src.Close()
 			return nil, err
 		}
-		request.Body = newCompressed(i.namespace, src)
+		c = newCompressed(i.namespace, src)
+		request.Body = c
 		request.Header.Set("Content-Type", "application/octet-stream")
 		return request, nil
 	}, func(resp *http.Response) error {
@@ -334,6 +338,17 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 		err5 := resp.Body.Close()
 		if err4 != nil {
 			return err4
+		}
+
+		if xGoogHash := resp.Header.Get("x-goog-hash"); xGoogHash != "" {
+			base64MD5 := base64.StdEncoding.EncodeToString(c.h.Sum(nil))
+			if !strings.Contains(xGoogHash, "md5="+base64MD5) {
+				return errors.Reason("hash mismatch, x-goog-hash=%s md5 hash=%s",
+					xGoogHash, base64MD5).Tag(transient.Tag).Err()
+			}
+
+		} else {
+			return errors.New("x-goog-hash header is not included in response")
 		}
 		return err5
 	}, nil)
@@ -346,6 +361,9 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 type compressed struct {
 	pr  *io.PipeReader
 	src io.ReadCloser
+
+	// Hold md5 checksum.
+	h hash.Hash
 }
 
 func (c *compressed) Read(data []byte) (int, error) {
@@ -363,15 +381,18 @@ func (c *compressed) Close() error {
 // newCompressed creates a pipeline to compress a file into a ReadCloser via:
 // src (file as ReadCloser) -> gzip compressor (via io.CopyBuffer) -> bufio.Writer
 // -> io.Pipe Writer side -> io.Pipe Reader side
-func newCompressed(namespace string, src io.ReadCloser) io.ReadCloser {
+// \
+//  \-> hash.Hash writer for md5 hash checksum
+func newCompressed(namespace string, src io.ReadCloser) *compressed {
 	pr, pw := io.Pipe()
+	h := md5.New()
 	go func() {
 		// Memory is cheap, we never want this pipeline to stall.
 		const outBufSize = 1024 * 1024
 		// We write into a buffer so that the Reader can read larger chunks of
 		// compressed data out of the compressor instead of being constrained to
 		// compressed(4096 bytes) each read.
-		bufWriter := bufio.NewWriterSize(pw, outBufSize)
+		bufWriter := bufio.NewWriterSize(io.MultiWriter(pw, h), outBufSize)
 		// The compressor itself is not thread safe.
 		compressor, err := isolated.GetCompressor(namespace, bufWriter)
 		if err != nil {
@@ -394,5 +415,5 @@ func newCompressed(namespace string, src io.ReadCloser) io.ReadCloser {
 		pw.CloseWithError(bufWriter.Flush())
 	}()
 
-	return &compressed{pr, src}
+	return &compressed{pr, src, h}
 }

@@ -18,6 +18,7 @@ package isolatedfake
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -207,7 +208,9 @@ func (s *IsolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Req
 		s.fail(fmt.Errorf("missing namespace"))
 		return
 	}
-	decompressor, err := isolated.GetDecompressor(namespace, r.Body)
+	h := md5.New()
+	teer := io.TeeReader(r.Body, h)
+	decompressor, err := isolated.GetDecompressor(namespace, teer)
 	if err != nil {
 		w.WriteHeader(500)
 		s.fail(err)
@@ -220,6 +223,9 @@ func (s *IsolatedFake) fakeCloudStorageUpload(w http.ResponseWriter, r *http.Req
 		s.fail(err)
 		return
 	}
+
+	w.Header().Set("x-goog-hash", "md5="+base64.StdEncoding.EncodeToString(h.Sum(nil)))
+
 	digest := isolated.HexDigest(r.URL.Query().Get("digest"))
 	if digest != isolated.HashBytes(isolated.GetHash(namespace), raw) {
 		w.WriteHeader(400)
