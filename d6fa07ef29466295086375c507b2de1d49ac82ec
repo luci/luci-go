@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "15811d3f_387815ac",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-02T05:27:11Z",
+      "side": 1,
+      "message": "maybe we should call this luci-notify@chromium.org now? Or is this actually used for auth?\n\nEdit: ah, I guess if you want your dry-run to work properly, you need to use the legacy username here anyway. It\u0027d be good to get rid of this Buildbot reference at some point though.",
+      "range": {
+        "startLine": 30,
+        "startChar": 21,
+        "endLine": 30,
+        "endChar": 42
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bd27ea0_faf9117a",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-02T05:27:11Z",
+      "side": 1,
+      "message": "optional suggestion: call this TreeStatusClient? I think \"client\" is a more standard term for this kind of thing.",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 18
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
