@@ -478,6 +478,24 @@
     },
     {
       "key": {
+        "uuid": "6acbe701_dd5ea685",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:28:51Z",
+      "side": 1,
+      "message": "Right, I see what you mean.\n\n\u003e first of all...\nThe purpose of finding the oldest closed TreeCloser is to select which template to use for the status message. Using the oldest makes sense, as the earliest failure is what \"caused\" the tree to close. We don\u0027t use it yet because, as noted in the TODO, we don\u0027t have the necessary info to fill out the TemplateInput struct yet.\n\n\u003e secondly...\nGood point, I hadn\u0027t thought about that - with the move to a separate cron job we do need this check. Added the TODO.\n\n\u003e BTW we need TreeStatus.timestamp field.\nDone.",
+      "parentUuid": "d99be267_dabd7019",
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d273175_a253f218",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
