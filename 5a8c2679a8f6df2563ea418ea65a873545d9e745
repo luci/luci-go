@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f56cf3cd_a11c2d98",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-02T11:55:30Z",
+      "side": 1,
+      "message": "This documents saids \n\n```\nA request and response header for expressing an object\u0027s MD5 and/or CRC32C base64-encoded checksums. \n```\n\n\u003e \"and/or\"\n\nMaybe you need to have CRC32C checksum check for no MD5 checksum header cases?",
+      "revId": "5a8c2679a8f6df2563ea418ea65a873545d9e745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
