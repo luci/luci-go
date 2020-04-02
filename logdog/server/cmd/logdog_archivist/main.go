@@ -215,7 +215,11 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			tasks, err = ar.Service.LeaseArchiveTasks(ctx, req)
 			return
 		}, retry.LogCallback(ctx, "LeaseArchiveTasks"))
-		if ctx.Err() == nil && err != nil {
+		if ctx.Err() != nil {
+			logging.Infof(ctx, "lease thread got context err in RPC: %s", ctx.Err())
+			break
+		}
+		if err != nil {
 			panic("impossible: infinite retry stopped: " + err.Error())
 		}
 
@@ -242,7 +246,7 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 			select {
 			case jobChan.C <- &archiveJob{deadline, task}:
 			case <-ctx.Done():
-				logging.Infof(ctx, "lease thread got context err: %s", ctx.Err())
+				logging.Infof(ctx, "lease thread got context err in jobChan push: %s", ctx.Err())
 				break
 			}
 		}
