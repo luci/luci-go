@@ -202,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "5656a6a1_316f71fd",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-02T23:40:05Z",
+      "side": 1,
+      "message": "what\u0027s the typical lifetime of a fetch url?\nIf it\u0027s long enough. I\u0027ll just let the users refresh the page themselves.",
+      "parentUuid": "f993d1bc_259a515a",
+      "range": {
+        "startLine": 48,
+        "startChar": 31,
+        "endLine": 48,
+        "endChar": 38
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94e381e3_b59c5bf6",
         "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
         "patchSetId": 2
