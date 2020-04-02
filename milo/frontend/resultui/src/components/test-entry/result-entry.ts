@@ -114,8 +114,7 @@ export class ResultEntryElement extends MobxLitElement {
       </div>
       <ul style=${styleMap({display: this.outputArtifactsExpanded ? '' : 'none'})}>
         ${this.testResult!.outputArtifacts?.map((artifact) => html`
-        <!-- TODO(weiweilin): implement <tr-artifact> -->
-        <li><tr-artifact .artifact=${artifact}></tr-artifact></li>
+        <li><a href=${artifact.fetchUrl}>${artifact.name}</a></li>
         `)}
       </ul>
     `;
@@ -139,8 +138,7 @@ export class ResultEntryElement extends MobxLitElement {
       </div>
       <ul style=${styleMap({display: this.inputArtifactsExpanded ? '' : 'none'})}>
         ${this.testResult!.inputArtifacts?.map((artifact) => html`
-        <!-- TODO(weiweilin): implement <tr-artifact> -->
-        <li><tr-artifact .artifact=${artifact}></tr-artifact></li>
+        <li><a href=${artifact.fetchUrl}>${artifact.name}</a></li>
         `)}
       </ul>
     `;
