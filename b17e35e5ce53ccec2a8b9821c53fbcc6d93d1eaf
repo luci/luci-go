@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59b5a817_52b89115",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-02T11:46:56Z",
+      "side": 1,
+      "message": "nit: you can reduce a nest.\n\nif xGoogHash :\u003d ...; xGoogHash !\u003d \"\" {\n  return errors.New(\"x-goog-hash header is not included in response\")\n}\n\nbase64MD5 :\u003d ...",
+      "revId": "b17e35e5ce53ccec2a8b9821c53fbcc6d93d1eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
