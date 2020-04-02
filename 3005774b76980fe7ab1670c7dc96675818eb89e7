@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c03b681b_47818d6c",
+        "filename": "appengine/gaeauth/server/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T01:55:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f1f85e7_1fd36953",
+      "range": {
+        "startLine": 39,
+        "startChar": 20,
+        "endLine": 39,
+        "endChar": 28
+      },
+      "revId": "3005774b76980fe7ab1670c7dc96675818eb89e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d536be77_f49ec78a",
         "filename": "server/auth/openid/method.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "3005774b76980fe7ab1670c7dc96675818eb89e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "120d42a9_58fddd3c",
+        "filename": "server/auth/openid/method.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T01:55:09Z",
+      "side": 1,
+      "message": "This is compile-time check that *AuthMethod implements all these interfaces. It is a pretty common idiom.\n\nStructurally it is \"var \u003cname\u003e \u003ctype\u003e \u003d \u003cvalue\u003e\" where:\n  \u003cname\u003e is \"_\" which in Go is magical and means \"we don\u0027t care\"\n  \u003ctype\u003e is an anonymous interface that includes all methods from all these other interfaces.\n  \u003cvalue\u003e is a nil pointer of time *AuthMethod.\n\nAssigning a value to an interface-typed variable is allowed only if the value has all methods defined in the interface. So for example if we add a new method to auth.UsersAPI, but don\u0027t implement it in AuthMethod here, this code will stop compiling. \n\nThis is important because because auth.UserAPI (and Warmable and HasHandlers) are kind of \"optional\". They are sniffed out of auth.Method dynamically in runtime to enable optional functionality:\n\n  if ua, ok :\u003d m.(auth.UsersAPI); ok {\n     ua.Something()\n  }\n\nWithout the compile time check (and if runtime tests are poorly written) it is entirely possible not to notice that `m` no longer triggers this optional code path.",
+      "parentUuid": "d536be77_f49ec78a",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 22
+      },
+      "revId": "3005774b76980fe7ab1670c7dc96675818eb89e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
