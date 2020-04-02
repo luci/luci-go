@@ -226,6 +226,30 @@
     },
     {
       "key": {
+        "uuid": "747df18e_b0f92454",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T23:57:04Z",
+      "side": 1,
+      "message": "i think it will be always 1h",
+      "parentUuid": "5656a6a1_316f71fd",
+      "range": {
+        "startLine": 48,
+        "startChar": 31,
+        "endLine": 48,
+        "endChar": 38
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94e381e3_b59c5bf6",
         "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
         "patchSetId": 2
