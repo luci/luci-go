@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a58efa61_e885b8d9",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Good point, I\u0027m just used to capitalising type names :)\nChanged this and a few others to be private.",
+      "parentUuid": "294b4b1e_11cd7505",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 15
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5bd27ea0_faf9117a",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -142,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "e118baf5_8934ba52",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50dd6c10_a2657c33",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 4
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7e80e6e0_9eb7f8c4",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -162,6 +210,30 @@
       "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a003e4a_9ee4ad96",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e80e6e0_9eb7f8c4",
+      "range": {
+        "startLine": 79,
+        "startChar": 17,
+        "endLine": 79,
+        "endChar": 25
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -188,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "508a9ab4_28af3d9f",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92ba9467_b3364cd9",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 93,
+        "endChar": 3
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eaa1c55c_b23260c1",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -208,6 +304,30 @@
       "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c7120f2_11f9564a",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Whoops, this was a leftover debug print. Removed.",
+      "parentUuid": "eaa1c55c_b23260c1",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 11
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -234,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "04b37e1e_77bad350",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "724f6cf8_fdcb699f",
+      "range": {
+        "startLine": 103,
+        "startChar": 36,
+        "endLine": 103,
+        "endChar": 42
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8d9c726_41052074",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -257,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "1d0da741_a21742ac",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8d9c726_41052074",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 0
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5646900_201ec3e7",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -268,6 +436,24 @@
       "writtenOn": "2020-04-02T05:47:15Z",
       "side": 1,
       "message": "we also need a TODO to compare oldestClosed.Timestamp to the timestamp of the status.\n\nexcept we need newest?",
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "012259b1_ce01f1c5",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Not sure what you mean here, can you elaborate?",
+      "parentUuid": "d5646900_201ec3e7",
       "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -294,6 +480,30 @@
       "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21b8a8b0_d5dea10c",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T06:04:18Z",
+      "side": 1,
+      "message": "Ditto.",
+      "parentUuid": "3d273175_a253f218",
+      "range": {
+        "startLine": 139,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 12
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
