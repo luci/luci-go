@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f1f85e7_1fd36953",
+        "filename": "appengine/gaeauth/server/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-02T01:46:09Z",
+      "side": 1,
+      "message": "nit: assign",
+      "range": {
+        "startLine": 39,
+        "startChar": 20,
+        "endLine": 39,
+        "endChar": 28
+      },
+      "revId": "3005774b76980fe7ab1670c7dc96675818eb89e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d536be77_f49ec78a",
+        "filename": "server/auth/openid/method.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-02T01:46:09Z",
+      "side": 1,
+      "message": "I\u0027m not a Go expert; could you explain for my own education how this works?",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 22
+      },
+      "revId": "3005774b76980fe7ab1670c7dc96675818eb89e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
