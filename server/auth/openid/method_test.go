@@ -108,6 +108,7 @@ func TestFullFlow(t *testing.T) {
 		method := AuthMethod{
 			SessionStore:        &authtest.MemorySessionStore{},
 			Insecure:            true,
+			SameSite:            http.SameSiteStrictMode,
 			IncompatibleCookies: []string{"wrong_cookie"},
 		}
 
@@ -169,7 +170,7 @@ func TestFullFlow(t *testing.T) {
 			So(rec.Code, ShouldEqual, http.StatusFound)
 			So(rec.Header().Get("Location"), ShouldEqual, "/destination")
 			So(rec.Header().Get("Set-Cookie"), ShouldEqual,
-				expectedCookie+"; Path=/; Expires=Sun, 18 Oct 2015 01:18:20 GMT; Max-Age=2591100; HttpOnly")
+				expectedCookie+"; Path=/; Expires=Sun, 18 Oct 2015 01:18:20 GMT; Max-Age=2591100; HttpOnly; SameSite=Strict")
 
 			// Use the cookie to authenticate some call.
 			req, err = http.NewRequest("GET", "http://fake/something", nil)
