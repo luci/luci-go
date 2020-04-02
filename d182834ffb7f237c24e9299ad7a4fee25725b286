@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "e79f80ee_c71bfa98",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T01:34:44Z",
+      "side": 1,
+      "message": "It also occurred to me that once https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2133350 lands you can also simply do:\n\nif !appengine.IsDevAppServer() {\n  oid :\u003d server.CookieAuth.(*openid.AuthMethod)\n  oid.SameSite \u003d http.SameSiteNoneMode\n}",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 32
+      },
+      "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "20dea4b7_878daef3",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 6
@@ -116,6 +139,29 @@
       "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "059b2d4f_adadab63",
+        "filename": "server/auth/openid/method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T01:34:44Z",
+      "side": 1,
+      "message": "what does the default value of 0 mean?",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 23
+      },
+      "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
