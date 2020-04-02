@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fc35a223_a1bcbb8b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-04-02T20:21:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "86ffa92d_96f048ee",
+      "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6e38666_102cc1be",
         "filename": "/COMMIT_MSG",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2020-04-02T01:30:44Z",
       "side": 1,
       "message": "Ah so you switch the Config field to read from binary_config instead of config and swap update the datastore.PropertyConverter implementation then you don\u0027t have to update any of the read sites. It\u0027s clever.\n\nCould you extend this concept? Don\u0027t update the write sites either, just add a job which reads every entity and writes it back with both config and binary_config, wait for it to run for every entity, then update both config -\u003e binary_config and the datastore.PropertyConverter implementation at the same time as removing the conversion job. Then you don\u0027t ever have to update more than one place.",
+      "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "703448a5_3bb2523c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-04-02T20:21:15Z",
+      "side": 1,
+      "message": "\u003e Could you extend this concept? Don\u0027t update the write sites either, just add a job which reads every entity and writes it back with both config and binary_config, wait for it to run for every entity, then update both config -\u003e binary_config and the datastore.PropertyConverter implementation at the same time as removing the conversion job. Then you don\u0027t ever have to update more than one place.\n\nIf so, it may cause that some binary data is different from text data. Let\u0027s say conversion job has done on the config1. Then there is an update on config1. Because we haven\u0027t done the final step, only config1\u0027s text proto will be updated. Then we go to the final step to remove conversion job and update config -\u003e binary_configIt and datastore.PropertyConverter at the same time. This leads to the difference between binary and text. That\u0027s why I think we need to keep the current write sites\u0027 changes in my CL.",
+      "parentUuid": "a6e38666_102cc1be",
       "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -50,6 +86,24 @@
       "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d576b72_8398025c",
+        "filename": "gce/api/config/v1/binary_config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-04-02T20:21:15Z",
+      "side": 1,
+      "message": "Will do.",
+      "parentUuid": "41b23968_af10ad0c",
+      "revId": "97d47a8f804e144edf3e796daf20b12b66835d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
