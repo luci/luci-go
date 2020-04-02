@@ -533,12 +533,6 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 
 // GetProject loads the project from the datastore.
 func GetProject(c context.Context, project string) (*Project, error) {
-	switch allowed, err := IsAllowed(c, project); {
-	case err != nil:
-		return nil, err
-	case !allowed:
-		return nil, errors.Annotate(cfgclientAccess.ErrNoAccess, "no access to project").Err()
-	}
 	proj := Project{
 		ID: project,
 	}
