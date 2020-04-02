@@ -64,8 +64,18 @@ type AuthMethod struct {
 	IncompatibleCookies []string
 }
 
+// Make sure all extra interfaces are implemented.
+var _ interface {
+	auth.Method
+	auth.UsersAPI
+	auth.Warmable
+	auth.HasHandlers
+} = (*AuthMethod)(nil)
+
 // InstallHandlers installs HTTP handlers used in OpenID protocol. Must be
 // installed in server HTTP router for OpenID authentication flow to work.
+//
+// Implements auth.HasHandlers.
 func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET(loginURL, base, m.loginHandler)
 	r.GET(logoutURL, base, m.logoutHandler)
@@ -73,6 +83,8 @@ func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareCha
 }
 
 // Warmup prepares local caches. It's optional.
+//
+// Implements auth.Warmable.
 func (m *AuthMethod) Warmup(c context.Context) (err error) {
 	cfg, err := fetchCachedSettings(c)
 	if err != nil {

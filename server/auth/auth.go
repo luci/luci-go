@@ -56,8 +56,10 @@ var (
 
 // Method implements a particular kind of low-level authentication mechanism.
 //
-// It may also optionally implement UsersAPI (if the method support login and
-// logout URLs).
+// It may also optionally implement a bunch of other interfaces:
+//   UsersAPI: if the method supports login and logout URLs.
+//   Warmable: if the method supports warm up.
+//   HasHandlers: if the method needs to install HTTP handlers.
 //
 // Methods are not usually used directly, but passed to Authenticator{...} that
 // knows how to apply them.
@@ -81,6 +83,22 @@ type UsersAPI interface {
 	// LogoutURL returns a URL that, when visited, signs the user out,
 	// then redirects the user to the URL specified by dest.
 	LogoutURL(c context.Context, dest string) (string, error)
+}
+
+// Warmable may be additionally implemented by Method if it supports warm up.
+type Warmable interface {
+	// Warmup may be called to precache the data needed by the method.
+	//
+	// There's no guarantee when it will be called or if it will be called at all.
+	// Should always do best-effort initialization. Errors are logged and ignored.
+	Warmup(c context.Context) error
+}
+
+// HasHandlers may be additionally implemented by Method if it needs to
+// install HTTP handlers.
+type HasHandlers interface {
+	// InstallHandlers installs necessary HTTP handlers into the router.
+	InstallHandlers(r *router.Router, base router.MiddlewareChain)
 }
 
 // UserCredentialsGetter may be additionally implemented by Method if it knows
