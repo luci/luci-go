@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cd080d67_9c715574",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T05:41:53Z",
+      "side": 1,
+      "message": "For auth, tree-status just cares about the domain.\n\nI\u0027ve moved to a compromise solution - we post updates under luci-notify@chromium.org, but check for automatic closures using either luci-notify@chromium.org or buildbot@chromium.org.",
+      "parentUuid": "15811d3f_387815ac",
+      "range": {
+        "startLine": 30,
+        "startChar": 21,
+        "endLine": 30,
+        "endChar": 42
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5bd27ea0_faf9117a",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eed3dea9_f913becb",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T05:41:53Z",
+      "side": 1,
+      "message": "Thanks, wasn\u0027t satisfied with this name but didn\u0027t think of using \"client\".",
+      "parentUuid": "5bd27ea0_faf9117a",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 18
+      },
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
