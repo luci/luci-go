@@ -24,6 +24,7 @@ import "google/protobuf/wrappers.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/common/proto/options.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/projects:buildbucket.cfg";
@@ -74,7 +75,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 26.
+// Next tag: 27.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -178,6 +179,18 @@ message Builder {
     // Fields properties and properties_j can be used together, but cannot both
     // specify values for same property.
     repeated string properties_j = 4;
+  }
+
+  // ResultDB-specific information for a builder.
+  message ResultDB {
+
+    // Whether to enable ResultDB:Buildbucket integration.
+    bool enable = 1;
+
+    // Configuration for exporting test results to BigQuery.
+    // This can have multiple values to export results to multiple BigQuery
+    // tables, or to support multiple test result predicates.
+    repeated luci.resultdb.rpc.v1.BigQueryExport bq_exports = 2;
   }
 
   // Name of the builder or builder mixin.
@@ -405,6 +418,9 @@ message Builder {
   //
   // This value can be overridden by ScheduleBuildRequest.critical
   buildbucket.v2.Trinary critical = 25;
+
+  // Used to enable and configure ResultDB integration.
+  ResultDB resultdb = 26;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
