@@ -29,9 +29,15 @@ import (
 
 // CookieAuth is default cookie-based auth method to use on GAE.
 //
-// On dev server it is based on dev server cookies, in prod it is based on
-// OpenID. Works only if appropriate handlers have been installed into
-// the router. See InstallHandlers.
+// By default on the dev server it is based on dev server cookies (implemented
+// by UsersAPIAuthMethod), in prod it is based on OpenID (implemented by
+// *openid.AuthMethod).
+//
+// Works only if appropriate handlers have been installed into the router. See
+// InstallHandlers.
+//
+// It is allowed to assign to CookieAuth (e.g. to install a tweaked auth method)
+// before InstallHandlers is called.
 var CookieAuth auth.Method
 
 // InstallHandlers installs HTTP handlers for various default routes related
@@ -39,9 +45,8 @@ var CookieAuth auth.Method
 //
 // Must be installed in server HTTP router for authentication to work.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
-	m := CookieAuth.(cookieAuthMethod)
-	if oid, ok := m.Method.(*openid.AuthMethod); ok {
-		oid.InstallHandlers(r, base)
+	if m, ok := CookieAuth.(auth.HasHandlers); ok {
+		m.InstallHandlers(r, base)
 	}
 	auth.InstallHandlers(r, base)
 	authdbimpl.InstallHandlers(r, base)
@@ -49,44 +54,23 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 
 func init() {
 	warmup.Register("appengine/gaeauth/server", func(ctx context.Context) error {
-		m := CookieAuth.(cookieAuthMethod)
-		if oid, ok := m.Method.(*openid.AuthMethod); ok {
-			return oid.Warmup(ctx)
+		if m, ok := CookieAuth.(auth.Warmable); ok {
+			return m.Warmup(ctx)
 		}
 		return nil
 	})
-}
 
-///
-
-// cookieAuthMethod implements union of openid.AuthMethod and UsersAPIAuthMethod
-// methods, routing calls appropriately.
-type cookieAuthMethod struct {
-	auth.Method
-}
-
-func (m cookieAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
-	return m.Method.(auth.UsersAPI).LoginURL(ctx, dest)
-}
-
-func (m cookieAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
-	return m.Method.(auth.UsersAPI).LogoutURL(ctx, dest)
-}
-
-func init() {
 	// Flip to true to enable OpenID login on devserver for debugging. Requires
 	// a configuration (see /admin/portal/openid_auth page).
 	const useOIDOnDevServer = false
 
 	if appengine.IsDevAppServer() && !useOIDOnDevServer {
-		CookieAuth = cookieAuthMethod{UsersAPIAuthMethod{}}
+		CookieAuth = UsersAPIAuthMethod{}
 	} else {
-		CookieAuth = cookieAuthMethod{
-			&openid.AuthMethod{
-				SessionStore:        &SessionStore{Prefix: "openid"},
-				IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
-				Insecure:            appengine.IsDevAppServer(), // for http:// cookie
-			},
+		CookieAuth = &openid.AuthMethod{
+			SessionStore:        &SessionStore{Prefix: "openid"},
+			IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
+			Insecure:            appengine.IsDevAppServer(), // for http:// cookie
 		}
 	}
 }
