@@ -182,8 +182,11 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     return html`
       <tr-page-header></tr-page-header>
       <div id="test-invocation-summary">
+        <div id="test-invocation-id">
+          <span id="test-invocation-id-label">Invocation ID </span>
           <span>${this.invocationName.slice('invocations/'.length)}</span>
-          <span style="float: right">${this.renderInvocationState()}</span>
+        </div>
+        <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
       <tr-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
@@ -244,9 +247,24 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     }
 
     #test-invocation-summary {
-      font-size: 16px;
-      line-spacing: 0.15px;
-      padding: 5px;
+      background-color: rgb(248, 249, 250);
+      padding: 6px 16px;
+      font-family: "Google sans";
+      font-size: 14px;
+      display: flex;
+    }
+
+    #test-invocation-id {
+      flex: 0 auto;
+    }
+
+    #test-invocation-id-label {
+      color: rgb(95, 99, 104);
+    }
+
+    #test-invocation-state {
+      margin-left: auto;
+      flex: 0 auto;
     }
 
     #main {
