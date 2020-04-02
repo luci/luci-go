@@ -30,6 +30,8 @@ load('@stdlib//internal/luci/proto.star',
     'logdog_pb',
     'milo_pb',
     'notify_pb',
+    'predicate_pb',
+    'resultdb_pb',
     'scheduler_pb',
 )
 
@@ -272,6 +274,7 @@ def _buildbucket_builders(bucket, swarming_host):
         experimental = _buildbucket_toggle(node.props.experimental),
         task_template_canary_percentage = optional_UInt32Value(
             node.props.task_template_canary_percentage),
+	resultdb = _buildbucket_resultdb_settings(node.props.resultdb),
     ))
   return out
 
@@ -1101,3 +1104,36 @@ def _notify_builder_repo(builder, pollers_map):
   if len(repos) == 1:
     return list(repos)[0]
   return None
+
+
+def _buildbucket_resultdb_settings(settings):
+  """Given a resultdb.settings returns buildbucket_pb.Builder.ResultDB."""
+  if settings == None:
+    return None
+
+  ret = buildbucket_pb.Builder.ResultDB(enable = settings.enable)
+  for bq_export in settings.bigquery_exports:
+    bigquery_pb = resultdb_pb.BigQueryExport(
+        project=bq_export.project,
+        dataset=bq_export.dataset,
+        table=bq_export.table,
+    )
+
+    if bq_export.test_results_export:
+      test_results = bq_export.test_results_export
+      predicate = bigquery_pb.test_results.predicate
+
+      predicate.test_id_regexp = test_results.test_id_regexp
+
+      if test_results.contains:
+        predicate.variant.contains = test_results.variant
+      else:
+        predicate.variant.equals = test_results.variant
+
+      if test_results.unexpected_only:
+        predicate.expectancy = predicate_pb.TestResultPredicate.VARIANTS_WITH_UNEXPECTED_RESULTS
+      else:
+        predicate.expectancy = predicate_pb.TestResultPredicate.ALL
+
+    ret.bq_exports.append(bigquery_pb)
+  return ret

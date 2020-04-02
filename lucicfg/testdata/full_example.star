@@ -1,3 +1,5 @@
+load('@stdlib//internal/luci/lib/resultdb.star', 'resultdb')
+
 lucicfg.config(config_dir = '.output')
 lucicfg.config(tracked_files = ['*.cfg'])
 lucicfg.config(fail_on_warnings = True)
@@ -139,7 +141,25 @@ luci.builder(
     triggering_policy = scheduler.greedy_batching(
         max_concurrent_invocations=5,
         max_batch_size=10,
-    )
+    ),
+    resultdb_settings = resultdb.settings(
+        enable = True,
+        bigquery_exports = [
+            resultdb.bigquery_export(
+                project = "luci-resultdb",
+                dataset = "my-awesome-project",
+                table = "all_test_results",
+                test_results_export = resultdb.test_results_export(
+                    test_id_regexp = "ninja:.*",
+                    unexpected_only = True,
+                    contains = True,
+                    variant = {"def": {
+                        "test_suite": "super_interesting_suite",
+                    }}
+                )
+            )
+        ]
+    ),
 )
 
 luci.builder(
@@ -624,6 +644,28 @@ lucicfg.emit(
 #       >
 #       build_numbers: YES
 #       service_account: "builder@example.com"
+#       resultdb: <
+#         enable: true
+#         bq_exports: <
+#           project: "luci-resultdb"
+#           dataset: "my-awesome-project"
+#           table: "all_test_results"
+#           test_results: <
+#             predicate: <
+#               test_id_regexp: "ninja:.*"
+#               variant: <
+#                 contains: <
+#                   def: <
+#                     key: "test_suite"
+#                     value: "super_interesting_suite"
+#                   >
+#                 >
+#               >
+#               expectancy: VARIANTS_WITH_UNEXPECTED_RESULTS
+#             >
+#           >
+#         >
+#       >
 #     >
 #     builders: <
 #       name: "watched builder"
