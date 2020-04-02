@@ -1091,6 +1091,7 @@ luci.builder(
     triggers = None,
     triggered_by = None,
     notifies = None,
+    resultdb_settings = None,
 )
 ```
 
@@ -1164,6 +1165,7 @@ Buildbucket.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer).
+* **resultdb_settings**: resultdb.settings(...) struct with a confiuration that defines if buildbucket should sync this builder's builds with ResultDB and which results to export to BigQuery, and to which project, dataset, and table.
 
 
 
