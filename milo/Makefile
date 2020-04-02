@@ -55,4 +55,4 @@ versions-cleanup:
 	gae.py cleanup -A luci-milo --app-dir $(projdir)/frontend/appengine
 
 build-resultui:
-	cd frontend/resultui && npm run build
+	cd frontend/resultui && make build
