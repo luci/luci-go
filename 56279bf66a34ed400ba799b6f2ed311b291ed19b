@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec6229b0_0368815b",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T22:38:44Z",
+      "side": 1,
+      "message": "not sure how this is supposed to work. contents would be base64-encoded byte array. are we putting raw bytes into HTML?",
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "979acff6_07344bcd",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T22:38:44Z",
+      "side": 1,
+      "message": "there is no view url in the latest version https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto;l\u003d159?q\u003dArtifact%20f:resultdb\u0026sq\u003d\n\nand won\u0027t be. I think we can omit \u003ca\u003e",
+      "range": {
+        "startLine": 48,
+        "startChar": 31,
+        "endLine": 48,
+        "endChar": 38
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94e381e3_b59c5bf6",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T22:38:44Z",
+      "side": 1,
+      "message": "fyi, given the most recent developments of the project, i suspect we won\u0027t actually have inlined content and all artifacts would be fetchable via fetch_url\n\ni doubt we will have any artifacts with inlined content any time soon",
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
