@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "535d6be1_cc538ed4",
+        "filename": "milo/frontend/resultui/src/models/state.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T23:16:21Z",
+      "side": 1,
+      "message": "is there a way not to have global mutable state? this is sort of an anti-pattern. we should try hard not to have global mutable state",
+      "revId": "d5dd085c2417b2728251a5cff22894f04f809290",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
