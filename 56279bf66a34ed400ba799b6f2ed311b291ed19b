@@ -37,6 +37,52 @@
     },
     {
       "key": {
+        "uuid": "2922c7c2_32052a9a",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T23:02:51Z",
+      "side": 1,
+      "message": "Perhaps a bit simpler to pull out contentType and fold these conditions together?\ne.g.\n\n  if (contentType \u003d\u003d\u003d \u0027plain/text\u0027 || contentType?.startsWith(\u0027image/\u0027)) {\n    return this.artifact!.contents;\n  }",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 39,
+        "endChar": 37
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41dc7365_c2d4205e",
+        "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-02T23:02:51Z",
+      "side": 1,
+      "message": "This else branch is unnecessary.",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 0
+      },
+      "revId": "56279bf66a34ed400ba799b6f2ed311b291ed19b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "979acff6_07344bcd",
         "filename": "milo/frontend/resultui/src/components/test-entry/artifact.ts",
         "patchSetId": 2
