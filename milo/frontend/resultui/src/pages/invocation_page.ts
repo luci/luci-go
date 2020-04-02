@@ -27,6 +27,7 @@ import '../components/page_header';
 import '../components/status_bar';
 import '../components/test-entry';
 import '../components/test_nav_tree';
+import { state } from '../models/state';
 import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
 import { ReadonlyTest, TestNode } from '../models/test_node';
 import { Invocation, InvocationState, ResultDb } from '../services/resultdb';
@@ -99,8 +100,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 
   @computed
   private get selectedTests(): readonly ReadonlyTest[] {
-    // TODO(weiweilin): implement this.selectedTests()
-    return this.testLoader.node.allTests;
+    return (state.selectedTestNode ?? this.testLoader.node).allTests;
   }
 
   @computed
