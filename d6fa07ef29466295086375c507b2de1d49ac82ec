@@ -460,6 +460,24 @@
     },
     {
       "key": {
+        "uuid": "d99be267_dabd7019",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T06:15:27Z",
+      "side": 1,
+      "message": "first of all, right now the fact [oldestClosed is oldest] is ignored in this function. Loop L104 finds it, but the fact that is oldest is ignored. L103-115 are equivalent to\n\n\toverallStatus :\u003d config.Open\n\tfor _, tc :\u003d range treeClosers {\n\t\tif tc.Status \u003d\u003d config.Closed {\n\t\t\toverallStatus \u003d config.Closed\n\t\t}\n\t}\n\nsecondly, I think the intention is to prevent a scenario\n\n- the cron job closes the tree\n- human intervenes and reopens the tree\n- the cron job closes it again, ignoring the intervention\n\nto do that we need to compare closer timestamp with treeStatus.timestamp to ensure that our most recent reason to close the tree is older than the current status. \n\nBTW we need TreeStatus.timestamp field.",
+      "parentUuid": "012259b1_ce01f1c5",
+      "revId": "d6fa07ef29466295086375c507b2de1d49ac82ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3d273175_a253f218",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 2
