@@ -123,6 +123,30 @@
       "revId": "ab2531832fb8c0059aa366304ec13218f6936bd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d75d349c_9c40ae75",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-02T07:15:36Z",
+      "side": 1,
+      "message": "do you mean the proto comment is more elaborate? that\u0027s intentional because our clients will read proto comments, while they won\u0027t read this.",
+      "parentUuid": "af368f61_9e4c31b3",
+      "range": {
+        "startLine": 50,
+        "startChar": 47,
+        "endLine": 50,
+        "endChar": 72
+      },
+      "revId": "ab2531832fb8c0059aa366304ec13218f6936bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
