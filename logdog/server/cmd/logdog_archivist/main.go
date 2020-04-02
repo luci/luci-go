@@ -85,7 +85,11 @@ var (
 				MaxLeases: maxWorkers,
 				BatchSize: 1,
 				FullBehavior: &buffer.BlockNewItems{
-					MaxItems: 2 * maxWorkers,
+					// Once we hit MaxItems, the main loop will pull the next batch from
+					// appengine.  Since the majority of tasks execute quite quickly, we
+					// want to set this deep enough to hide the latency of fetching the
+					// next batch.
+					MaxItems: 8 * maxWorkers,
 				},
 			},
 		}
