@@ -68,6 +68,30 @@
       "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d2575f9_c9470fe5",
+        "filename": "server/auth/openid/method.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-02T00:11:12Z",
+      "side": 1,
+      "message": "In fact, I prefer to do this since I have some related minor improvement ideas. I\u0027ll send you a CL shortly.",
+      "parentUuid": "38e98a40_e365608d",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 19
+      },
+      "revId": "d182834ffb7f237c24e9299ad7a4fee25725b286",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
