@@ -96,6 +96,23 @@
     },
     {
       "key": {
+        "uuid": "fb3f7572_d0957068",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "tabs and spaces",
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "08be3f40_593f18f2",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 4
@@ -184,6 +201,283 @@
         "startChar": 0,
         "endLine": 61,
         "endChar": 0
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "282e988e_4e4cfe3a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "great!\n\nRoberto, could you drop structs and emit protos from these funcs?",
+      "parentUuid": "d69127c2_1f316a09",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 0
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfa2e386_97b020a6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "please use the wording from the proto",
+      "range": {
+        "startLine": 67,
+        "startChar": 11,
+        "endLine": 68,
+        "endChar": 17
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a2fecf8_562c4c3e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "protos must be very structured, but here we can try to be a bit more friendly. Did you consider a string \"dataset.project.table\"?",
+      "range": {
+        "startLine": 85,
+        "startChar": 4,
+        "endLine": 87,
+        "endChar": 15
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8702602b_11f619e9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "nothing here is really builder-specific. I think this part can be dropped",
+      "range": {
+        "startLine": 89,
+        "startChar": 59,
+        "endLine": 89,
+        "endChar": 77
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9cd1a8d_91ff6b32",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "BigQuery",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 19
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b10d0a5_5b3b9409",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "nothing below is specific to exporting. This is all about the predicate, so I think test_results_predicate would be a better name.",
+      "range": {
+        "startLine": 110,
+        "startChar": 4,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f467470_f49ac0f8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "this is too abstract. please make the name specific to variant",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 112,
+        "endChar": 13
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2982a02c_d8860a8a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "predicate",
+      "range": {
+        "startLine": 115,
+        "startChar": 18,
+        "endLine": 115,
+        "endChar": 24
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba8c0dad_6db39904",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "what knowledge here is not provided by Args below? if there is some, can we move into Args?",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 0
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0fb095b_17700a61",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "e.g. {\"test_suite\": \"not_site_per_process_webkit_layout_tests\"}",
+      "range": {
+        "startLine": 126,
+        "startChar": 59,
+        "endLine": 126,
+        "endChar": 60
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a380b83_be645f5f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "mix of tabs and spaces",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 129,
+        "endChar": 2
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcb5a99c_b725d338",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T23:15:03Z",
+      "side": 1,
+      "message": "1) let\u0027s talk about export here. this can be more generic\n2) description is not entirely accurate\n\nbool, if true only export test results of test variants that had unexpected results",
+      "range": {
+        "startLine": 130,
+        "startChar": 21,
+        "endLine": 131,
+        "endChar": 36
       },
       "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
