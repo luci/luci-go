@@ -140,6 +140,30 @@
       "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "484ffb56_ed2cc7b7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T22:42:51Z",
+      "side": 1,
+      "message": "all of this sgtm. \n\nI am worried about the maintenance cost here. Next time we add a field to this proto, we need to update the starlark layer again. Updating the starlark portion is unavoidable, but can be *minimized*.\n\nI see the value in functions. I see less value in structs. They add a layer of indirection that does *NOT* provide a new level of abstraction (because they mirror proto fields 1:1, at least in this case). This means they add work for us, without adding a lot of value. This makes me think that these functions should return protos (or return node that contain protos). Then the change in generators.go would be minimial because it wouldn\u0027t have to convert structs-to-protos. WDYT?\n\nCan a node property be a proto? If a node must be immutable, can we serialize the proto when putting it in the node, and then deserialize it back later? is there a more efficient way of doing this, maybe by adding support at the go level?",
+      "parentUuid": "11662750_c23b9ad6",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 0
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
