@@ -78,3 +78,29 @@ func (cfg *Config) Validate(c *validation.Context) {
 	cfg.GetTimeout().Validate(c)
 	c.Exit()
 }
+
+// BinaryConfig - Inherits from generated Config proto go
+type BinaryConfig struct {
+	Config
+}
+
+var _ datastore.PropertyConverter = &BinaryConfig{}
+
+// FromProperty implements datastore.PropertyConverter.
+func (bc *BinaryConfig) FromProperty(p datastore.Property) error {
+	if p.Value() == nil {
+		bc = &BinaryConfig{}
+		return nil
+	}
+	return proto.Unmarshal(p.Value().([]byte), bc)
+}
+
+// ToProperty implements datastore.PropertyConverter.
+func (bc *BinaryConfig) ToProperty() (datastore.Property, error) {
+	p := datastore.Property{}
+	bytes, err := proto.Marshal(bc)
+	if err != nil {
+		return datastore.Property{}, err
+	}
+	return p, p.SetValue(bytes, datastore.NoIndex)
+}
