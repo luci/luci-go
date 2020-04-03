@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package recorder
+package deriver
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/services/common"
-	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
+	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -42,8 +42,8 @@ const testResultBatchSizeMax = 1000
 
 var urlPrefixes = []string{"http://", "https://"}
 
-// validateDeriveInvocationRequest returns an error if req is invalid.
-func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
+// validateDeriveChromiumInvocationRequest returns an error if req is invalid.
+func validateDeriveChromiumInvocationRequest(req *pb.DeriveChromiumInvocationRequest) error {
 	if req.SwarmingTask == nil {
 		return errors.Reason("swarming_task missing").Err()
 	}
@@ -65,12 +65,12 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 	return nil
 }
 
-// DeriveInvocation derives the invocation associated with the given swarming task.
+// DeriveChromiumInvocation derives the invocation associated with the given swarming task.
 //
 // The invocation returned is associated with the swarming task itself.
 // If the task is deduped against another task, the invocation returned includes the underlying one.
-func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
-	if err := validateDeriveInvocationRequest(in); err != nil {
+func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.DeriveChromiumInvocationRequest) (*pb.Invocation, error) {
+	if err := validateDeriveChromiumInvocationRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -101,7 +101,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return span.ReadInvocationFull(ctx, readTxn, invID)
 	}
 
-	inv, err := chromium.DeriveInvocation(task, in)
+	inv, err := chromium.DeriveChromiumInvocation(task, in)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 
 // deriveInvocationForOriginTask derives an invocation and test results
 // from a given task and returns derived origin invocation.
-func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *pb.DeriveInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, client *spanner.Client) (*pb.Invocation, error) {
+func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *pb.DeriveChromiumInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, client *spanner.Client) (*pb.Invocation, error) {
 	// Get the origin task that the task is deduped against. Or the task
 	// itself if it's not deduped.
 	originTask, err := chromium.GetOriginTask(ctx, task, swarmSvc)
@@ -182,7 +182,7 @@ func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *
 		defer readTxn.Close()
 		return span.ReadInvocationFull(ctx, readTxn, originInvID)
 	}
-	originInv, err := chromium.DeriveInvocation(originTask, in)
+	originInv, err := chromium.DeriveChromiumInvocation(originTask, in)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
 // returning container ids.
-func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
+func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
 	batches := batchTestResults(trs, batchSize)
 	includedInvs := make(span.InvocationIDSet, len(batches))
 

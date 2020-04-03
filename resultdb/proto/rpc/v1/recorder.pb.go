@@ -701,7 +701,7 @@ type BatchCreateInvocationsResponse struct {
 	// These are passed in the response instead of as metadata, because large
 	// batches increase the size of the response headers beyond allowed limits and
 	// cause failures like crbug.com/1064496
-	// Update_tokens[i] corresponds to invocations[i].
+	// update_tokens[i] corresponds to invocations[i].
 	// *Do not log these values*.
 	UpdateTokens         []string `protobuf:"bytes,2,rep,name=update_tokens,json=updateTokens,proto3" json:"update_tokens,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`

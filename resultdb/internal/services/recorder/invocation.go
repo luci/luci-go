@@ -16,20 +16,16 @@ package recorder
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
+	"go.chromium.org/luci/resultdb/internal/services/common"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -129,47 +125,5 @@ func extractUpdateToken(ctx context.Context) (string, error) {
 // invocation.
 // inv.CreateTime is ignored in favor of spanner.CommitTime.
 func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]interface{} {
-	now := clock.Now(ctx).UTC()
-	row := map[string]interface{}{
-		"InvocationId": span.MustParseInvocationName(inv.Name),
-		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
-		"State":        inv.State,
-		"Interrupted":  inv.Interrupted,
-		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
-
-		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
-		"ExpectedTestResultsExpirationTime": now.Add(s.ExpectedResultsExpiration),
-
-		"CreateTime": spanner.CommitTimestamp,
-		"Deadline":   inv.Deadline,
-
-		"Tags": inv.Tags,
-	}
-
-	if inv.State == pb.Invocation_FINALIZED {
-		// We are ignoring the provided inv.FinalizeTime because it would not
-		// make sense to have an invocation finalized before it was created,
-		// yet attempting to set this in the future would fail the sql schema
-		// restriction for columns that allow commit timestamp.
-		// Note this function is only used for setting FinalizeTime by derive
-		// invocation, which is planned to be superseded by other mechanisms.
-		row["FinalizeTime"] = spanner.CommitTimestamp
-	}
-
-	if createRequestID != "" {
-		row["CreateRequestId"] = createRequestID
-	}
-
-	if len(inv.BigqueryExports) != 0 {
-		bqExports := make([][]byte, len(inv.BigqueryExports))
-		for i, msg := range inv.BigqueryExports {
-			var err error
-			if bqExports[i], err = proto.Marshal(msg); err != nil {
-				panic(fmt.Sprintf("failed to marshal BigQueryExport to bytes: %s", err))
-			}
-		}
-		row["BigQueryExports"] = bqExports
-	}
-
-	return row
+	return common.RowOfInvocation(ctx, inv, createRequestID, s.ExpectedResultsExpiration)
 }

@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package recorder
+package common
 
 import (
 	"strconv"
@@ -24,7 +24,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int) *spanner.Mutation {
+func InsertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int) *spanner.Mutation {
 	trMap := map[string]interface{}{
 		"InvocationId": invID,
 		"TestId":       tr.TestId,
