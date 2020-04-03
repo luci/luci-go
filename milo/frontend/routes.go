@@ -21,15 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/appengine"
-
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
@@ -45,13 +42,6 @@ func Run(templatePath string) {
 	// Register plain ol' http handlers.
 	r := router.New()
 	standard.InstallHandlers(r)
-
-	if !appengine.IsDevAppServer() {
-		oid := server.CookieAuth.(*openid.AuthMethod)
-		// Set SameSite=None so we can get auth cookies while we're in
-		// an iframe.
-		oid.SameSite = http.SameSiteNoneMode
-	}
 
 	baseMW := standard.Base()
 	htmlMW := baseMW.Extend(
