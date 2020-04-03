@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5bcd5418_da9e8bca",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-03T21:00:32Z",
+      "side": 1,
+      "message": "sp",
+      "range": {
+        "startLine": 10,
+        "startChar": 21,
+        "endLine": 10,
+        "endChar": 44
+      },
+      "revId": "ede05413076f4fd53acadff62612c55daa1591de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1aa99a8_896fa82c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-03T21:00:32Z",
+      "side": 1,
+      "message": "sp",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 7
+      },
+      "revId": "ede05413076f4fd53acadff62612c55daa1591de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85128861_d29d8823",
+        "filename": "resultdb/internal/services/deriver/chromium/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-03T21:00:32Z",
+      "side": 1,
+      "message": "nit: 2020 here and other files.",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "ede05413076f4fd53acadff62612c55daa1591de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
