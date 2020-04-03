@@ -1,5 +1,5 @@
 dispatch:
-  - url: "*/rpcexplorer/*"
+  - url: "*/static/bootstrap/*"
     module: static
-  - url: "*/static/*"
+  - url: "*/static/jquery/*"
     module: static
