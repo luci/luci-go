@@ -274,17 +274,16 @@ func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newB
 }
 
 func stepsMatch(build *buildbucketpb.Build, failedStepRegexp, failedStepRegexpExclude string) bool {
-	var includeRegex *regexp.Regexp = nil
+	var includeRegex *regexp.Regexp
 	if failedStepRegexp != "" {
 		// We should never get an invalid regex here, as our validation should catch this.
-		// If we do, includeRegex will be nil and hence ignored below.
-		includeRegex, _ = regexp.Compile(failedStepRegexp)
+		includeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", failedStepRegexp))
 	}
 
-	var excludeRegex *regexp.Regexp = nil
+	var excludeRegex *regexp.Regexp
 	if failedStepRegexpExclude != "" {
 		// Ditto.
-		excludeRegex, _ = regexp.Compile(failedStepRegexpExclude)
+		excludeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", failedStepRegexpExclude))
 	}
 
 	// Don't scan steps if we have no regexes.
