@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5aee7d02_3971b065",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "please fix indentation",
+      "range": {
+        "startLine": 277,
+        "startChar": 0,
+        "endLine": 277,
+        "endChar": 1
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a3e185c_6866e4aa",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 1109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "move this to around line 355\n\neach luci service has a dedicated section in this file. You put _buildbucket_resultdb_settings in luci-notify\u0027s section.",
+      "range": {
+        "startLine": 1109,
+        "startChar": 4,
+        "endLine": 1109,
+        "endChar": 34
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "977d2502_493dd7a4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "Add \"Returns\" section e.g.\n\n  Returns:\n    An opaque value that can be passed to luci.builder(...) as `resultdb_settings` field.\n\n(or something). It is important for the auto-generated doc",
+      "range": {
+        "startLine": 72,
+        "startChar": 2,
+        "endLine": 72,
+        "endChar": 5
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0145a26_fd87fe0b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "don\u0027t mix tabs and spaces",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 1
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e16fb555_f2425fea",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "nit: more spaces, see e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/starlark/stdlib/internal/luci/lib/cq.star#101\n\nAlso it might be a good idea to force this fields to be keyword-only arguments (by using \u0027*\u0027).",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 4
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0e95112_9d5fa479",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "del\n\nAlso note that this comment will be interpreted as a markdown when generating the doc. I\u0027m not sure \u0027-\u0027 is recognized as a list item delimiter in gitiles parser. If not, consider replacing it with \u0027*\u0027.",
+      "range": {
+        "startLine": 120,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 6
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5d195d3_87050907",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "nit: 4 space indent",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 149,
+        "endChar": 2
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "301e14e3_94a69783",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "nit: move this before `# Releations` section. By convention, relations are always last.",
+      "range": {
+        "startLine": 62,
+        "startChar": 6,
+        "endLine": 62,
+        "endChar": 23
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3a60336_83ea3fa7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "add resultdb_settings here too, it would allow to define a default result DB settings for a project or a part of project without explicitly passing it everywhere.",
+      "range": {
+        "startLine": 300,
+        "startChar": 4,
+        "endLine": 300,
+        "endChar": 12
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69aa7dba_3c697f65",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "there should be no imports like this to use default lucicfg functionality. Add resultdb to the global namespace here https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/starlark/stdlib/builtins.star (see e.g. how `swarming` is added). Please also add a doc section similar to https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/doc/templates/README.mdt#494",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 60
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

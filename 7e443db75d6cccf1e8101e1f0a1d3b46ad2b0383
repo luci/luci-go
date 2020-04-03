@@ -116,6 +116,30 @@
       "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11662750_c23b9ad6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T22:06:14Z",
+      "side": 1,
+      "message": "Using protos as opaque return values of e.g. resultdb.settings(...) is OK. Asking users to use load(\"@...\") and construct protos by hand as public API is not OK. lucicfg provides an API layer higher than raw protos. Raw protos should not stick out from lucicfg public API.\n\nThe value of constructors like resultdb.settings(...) is more tight type validation that happens at the moment the message is constructed.\n\nAnother minor advantage is that structs are frozen (and protos are not). But it\u0027s not crucial.",
+      "parentUuid": "08be3f40_593f18f2",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 0
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
