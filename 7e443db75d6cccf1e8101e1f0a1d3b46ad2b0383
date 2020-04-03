@@ -164,6 +164,30 @@
       "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d69127c2_1f316a09",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-03T23:00:29Z",
+      "side": 1,
+      "message": "Note properties can be protos and they will be frozen automatically when they are added to nodes. I was meaning slightly different thing. With structs the following is not possible.\n\ns \u003d resultdb.settings(enabled \u003d False)\ns.enabled \u003d True\n\nWith protos it will be possible.\n\nIt\u0027s not a big deal.",
+      "parentUuid": "484ffb56_ed2cc7b7",
+      "range": {
+        "startLine": 19,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 0
+      },
+      "revId": "7e443db75d6cccf1e8101e1f0a1d3b46ad2b0383",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
