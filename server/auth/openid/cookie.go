@@ -38,7 +38,7 @@ var sessionCookieToken = tokens.TokenKind{
 
 // makeSessionCookie takes a session ID and makes a signed cookie that can be
 // put in a response.
-func makeSessionCookie(c context.Context, sid string, secure bool, sameSite http.SameSite) (*http.Cookie, error) {
+func makeSessionCookie(c context.Context, sid string, secure bool) (*http.Cookie, error) {
 	tok, err := sessionCookieToken.Generate(c, nil, map[string]string{"sid": sid}, 0)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,6 @@ func makeSessionCookie(c context.Context, sid string, secure bool, sameSite http
 		Path:     "/",
 		Secure:   secure,
 		HttpOnly: true, // no access from Javascript
-		SameSite: sameSite,
 		Expires:  clock.Now(c).Add(exp),
 		MaxAge:   int(exp / time.Second),
 	}, nil

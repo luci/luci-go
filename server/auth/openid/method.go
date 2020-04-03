@@ -58,10 +58,6 @@ type AuthMethod struct {
 	// local development.
 	Insecure bool
 
-	// SameSite allows clients to decide the SameSite attribute for the OpenID
-	// session cookie.
-	SameSite http.SameSite
-
 	// IncompatibleCookies is a list of cookies to remove when setting or clearing
 	// session cookie. It is useful to get rid of GAE cookies when OpenID cookies
 	// are being used. Having both is very confusing.
@@ -317,7 +313,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 	}
 
 	// Set the cookies.
-	cookie, err := makeSessionCookie(c, sid, !m.Insecure, m.SameSite)
+	cookie, err := makeSessionCookie(c, sid, !m.Insecure)
 	if err != nil {
 		replyError(c, rw, err, "Can't make session cookie - %s", err)
 		return
