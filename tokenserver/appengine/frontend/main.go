@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -73,7 +74,10 @@ func main() {
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
 
-	// The service has no UI, so just redirect to stock RPC explorer.
+	// Serve the RPC Explorer UI.
+	rpcexplorer.Install(r)
+
+	// The service has no UI, so just redirect to the RPC Explorer.
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
