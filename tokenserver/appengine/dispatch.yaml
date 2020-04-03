@@ -1,3 +1,0 @@
-dispatch:
-  - url: "*/rpcexplorer/*"
-    service: static

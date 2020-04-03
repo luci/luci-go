@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -171,6 +172,7 @@ func main() {
 
 	standard.InstallHandlersWithMiddleware(r, base)
 	globalDispatcher.InstallRoutes(r, base)
+	rpcexplorer.Install(r)
 
 	ui.InstallHandlers(r, base, ui.Config{
 		Engine:        globalEngine.PublicAPI(),
