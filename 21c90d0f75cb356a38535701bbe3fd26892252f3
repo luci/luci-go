@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef2badfd_20898a20",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "nit: consider putting scheme before host, because that\u0027s the natural order",
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11801294_434299c6",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "nit: more typical is to initialize fields inside the struct literal:\n\n  q :\u003d url.Values{}\n  q.Add(\"format\", \"json\")\n  u :\u003d url.URL{\n    Scheme: \"https\",\n    Host: host,\n    Path: \"/current\",\n    RawQuery: q.Encode(),\n  }\n\nstepping back, a fmt.Sprintf would be just fine here, since most of these are constants.",
+      "range": {
+        "startLine": 56,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 24
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5750ac01_328f9154",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "nit: go likes all abbreviations capitalized: respJSON",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 9
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b054f567_3e3b31c5",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "golint wouldn\u0027t be happy with snake case. More typical:\n\n  CanCommitFreely bool `json:\"can_commit_freely\"`",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 19
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33817f0f_b92ee43c",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "shorter:\n\n\tstatus :\u003d config.Closed\n\tif r.Can_commit_freely {\n\t\tstatus \u003d config.Open\n\t}",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 2
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f60dfca6_e83649a5",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "nit:\n\n  const dateFormat \u003d ...",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 14
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ed9bdcf_110d46c5",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "NewRequestWithContext",
+      "range": {
+        "startLine": 117,
+        "startChar": 18,
+        "endLine": 117,
+        "endChar": 28
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "372d4597_4bb25f60",
+        "filename": "luci_notify/notify/tree_status_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "tests shouldn\u0027t writing to stdout. if anything, please use t.Log",
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20d22d06_d2998828",
+        "filename": "luci_notify/notify/tree_status_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "this is equivalent to nil",
+      "range": {
+        "startLine": 337,
+        "startChar": 11,
+        "endLine": 337,
+        "endChar": 21
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a60c6e87_ff3d4b6c",
+        "filename": "luci_notify/notify/tree_status_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "fmt.Errorf",
+      "range": {
+        "startLine": 337,
+        "startChar": 23,
+        "endLine": 337,
+        "endChar": 46
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3600b9b_2df53674",
+        "filename": "luci_notify/notify/tree_status_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T15:18:49Z",
+      "side": 1,
+      "message": "nit: in go, its OK for a line not to fit 80 cols if it makes the code more readable\n\nalso, consider using more standard https://godoc.org/github.com/luci/luci-go/common/clock/testclock#TestRecentTimeUTC",
+      "range": {
+        "startLine": 346,
+        "startChar": 3,
+        "endLine": 349,
+        "endChar": 13
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
