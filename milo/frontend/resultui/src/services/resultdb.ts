@@ -74,10 +74,9 @@ export interface TestExoneration {
 export interface Artifact {
   readonly name: string;
   readonly fetchUrl?: string;
-  readonly viewUrl?: string;
+  readonly fetchUrlExpiration?: string;
   readonly contentType: string;
   readonly size: number;
-  readonly contents: string;
 }
 
 export interface Variant {
