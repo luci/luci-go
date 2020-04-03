@@ -15,3 +15,4 @@
 package apipb
 
 //go:generate cproto
+//go:generate svcdec -type ExternalSchedulerServer
