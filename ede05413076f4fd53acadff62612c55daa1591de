@@ -48,6 +48,23 @@
     },
     {
       "key": {
+        "uuid": "e31d53e6_89f6874b",
+        "filename": "resultdb/internal/services/common/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T21:44:00Z",
+      "side": 1,
+      "message": "there is no service \"common\". Let\u0027s reserve services/ dir to services\n\nstepping back, the code I see in common/ is small enough that I\u0027d be totally OK duplicating it, for the sake of simplicity, and because deriver will go away",
+      "revId": "ede05413076f4fd53acadff62612c55daa1591de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "85128861_d29d8823",
         "filename": "resultdb/internal/services/deriver/chromium/common.go",
         "patchSetId": 2
@@ -64,6 +81,29 @@
         "startChar": 13,
         "endLine": 1,
         "endChar": 17
+      },
+      "revId": "ede05413076f4fd53acadff62612c55daa1591de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c539931_b7d248b4",
+        "filename": "resultdb/proto/rpc/v1/deriver.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-03T21:44:00Z",
+      "side": 1,
+      "message": "please move this TODO to the service level.",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 9
       },
       "revId": "ede05413076f4fd53acadff62612c55daa1591de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
