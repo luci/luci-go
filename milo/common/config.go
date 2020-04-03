@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
-	cfgclientAccess "go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -533,12 +532,6 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 
 // GetProject loads the project from the datastore.
 func GetProject(c context.Context, project string) (*Project, error) {
-	switch allowed, err := IsAllowed(c, project); {
-	case err != nil:
-		return nil, err
-	case !allowed:
-		return nil, errors.Annotate(cfgclientAccess.ErrNoAccess, "no access to project").Err()
-	}
 	proj := Project{
 		ID: project,
 	}
