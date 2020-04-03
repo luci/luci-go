@@ -63,6 +63,7 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 		ID:     req.Id,
 		Config: *req.Config,
 	}
+	model.CopyToBinaryInConfig(cfg)
 	if err := datastore.Put(c, cfg); err != nil {
 		return nil, errors.Annotate(err, "failed to store config").Err()
 	}
@@ -131,6 +132,7 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 			return nil
 		}
 		cfg.Config.CurrentAmount = amt
+		model.CopyToBinaryInConfig(cfg)
 		if err := datastore.Put(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to store config").Err()
 		}
