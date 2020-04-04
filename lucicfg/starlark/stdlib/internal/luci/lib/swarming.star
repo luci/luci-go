@@ -192,7 +192,7 @@ def _validate_caches(attr, caches):
   return caches
 
 
-def _validate_dimensions(attr, dimensions, allow_none=False):
+def _validate_dimensions(attr, dimensions, *, allow_none=False):
   """Validates and normalizes a dict with dimensions.
 
   The dict should have string keys and values are swarming.dimension, a string
