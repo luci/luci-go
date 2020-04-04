@@ -52,7 +52,7 @@ def test_expose_as_set_fails():
   assert.fails(
       lambda: lucicfg.var(expose_as='v1').set('123'),
       'the value of the variable is controlled through CLI flag ' +
-      '\"\-var v1=..." and can\'t be changed from Starlark side')
+      r'\"\-var v1=..." and can\'t be changed from Starlark side')
 
 
 def test_expose_as_bad_default_type():

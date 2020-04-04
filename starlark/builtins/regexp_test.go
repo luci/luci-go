@@ -29,10 +29,10 @@ def assert(a, b):
     fail("%s != %s" % (a, b))
 
 def test():
-  groups = submatches('a (\d+) (\d+)', 'a 123 456 tail')
+  groups = submatches(r'a (\d+) (\d+)', 'a 123 456 tail')
   assert(groups, ("a 123 456", "123", "456"))
 
-  groups = submatches('a (\d+) (\d+)', 'a huh 456')
+  groups = submatches(r'a (\d+) (\d+)', 'a huh 456')
   assert(groups, ())
 
   groups = submatches('.*', 'a 123 456 tail')

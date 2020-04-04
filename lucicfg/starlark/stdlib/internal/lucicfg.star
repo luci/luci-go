@@ -69,7 +69,7 @@ def _config(
       tracked_files=None,
       fail_on_warnings=None
   ):
-  """Sets one or more parameters for the `lucicfg` itself.
+  r"""Sets one or more parameters for the `lucicfg` itself.
 
   These parameters do not affect semantic meaning of generated configs, but
   influence how they are generated and validated.

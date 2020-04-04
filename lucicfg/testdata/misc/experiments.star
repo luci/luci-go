@@ -19,7 +19,7 @@ def test_happy_path():
 
   exp1.require() # doesn't fail
   exp2.require()
-  assert.fails(exp3.require, 'requires enabling the experiment \"unittest.exp_id3\"')
+  assert.fails(exp3.require, 'requires enabling the experiment "unittest.exp_id3"')
 
 
 def test_double_registration():

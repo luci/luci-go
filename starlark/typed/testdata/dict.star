@@ -130,7 +130,7 @@ def test_update():
 
   # Need an iterable that returns pairs.
   assert.fails(lambda: a.update(1), 'update: got int, want iterable')
-  assert.fails(lambda: a.update([1]), 'update: element #0 is not iterable \(int\)')
+  assert.fails(lambda: a.update([1]), r'update: element #0 is not iterable \(int\)')
   assert.fails(lambda: a.update([(1,1,1)]), 'update: element #0 has length 3, want 2')
 
   # Bad conversion in fast path.

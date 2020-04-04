@@ -103,8 +103,8 @@ def test_supported_operators():
   assert.fails(lambda: a + [0,-1], 'item #1: fail: nope')
   assert.fails(lambda: [0,-1] + a, 'item #1: fail: nope')
 
-  assert.fails(lambda: a + another_typed([]), 'unknown binary op: list<T> \+ list<K>')
-  assert.fails(lambda: another_typed([]) + a, 'unknown binary op: list<K> \+ list<T>')
+  assert.fails(lambda: a + another_typed([]), r'unknown binary op: list<T> \+ list<K>')
+  assert.fails(lambda: another_typed([]) + a, r'unknown binary op: list<K> \+ list<T>')
 
   c = a
   c += [2]
@@ -128,7 +128,7 @@ def test_unsupported_operators():
   a = typed([0, 1])
   assert.eq(a == ['0', '1'], False)  # there's no way to make this an error :(
   assert.fails(lambda: a < typed([0, 1]), '"<" is not implemented for list<T>')
-  assert.fails(lambda: a*a, 'unknown binary op: list<T> \* list<T>')
+  assert.fails(lambda: a*a, r'unknown binary op: list<T> \* list<T>')
 test_unsupported_operators()
 
 

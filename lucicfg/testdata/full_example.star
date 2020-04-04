@@ -89,7 +89,7 @@ luci.gitiles_poller(
     refs = [
         'refs/heads/master',
         'refs/tags/blah',
-        'refs/branch-heads/\d+\.\d+',
+        r'refs/branch-heads/\d+\.\d+',
     ],
     path_regexps = ['.*'],
     path_regexps_exclude = ['excluded'],
@@ -226,7 +226,7 @@ def inline_poller():
       refs = [
           'refs/heads/master',
           'refs/tags/blah',
-          'refs/branch-heads/\d+\.\d+',
+          r'refs/branch-heads/\d+\.\d+',
       ],
       schedule = 'with 10s interval',
   )
@@ -310,7 +310,7 @@ luci.console_view(
         ],
     },
     repo = 'https://noop.com',
-    refs = ['refs/tags/blah', 'refs/branch-heads/\d+\.\d+'],
+    refs = ['refs/tags/blah', r'refs/branch-heads/\d+\.\d+'],
     exclude_ref = 'refs/heads/master',
     include_experimental_builds = True,
     entries = [
