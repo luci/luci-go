@@ -316,23 +316,29 @@ def _repo_url(attr, val, required=True):
   return val
 
 
-def _relative_path(attr, val, allow_dots=False, required=True, default=None):
+def _relative_path(attr, val, *, allow_dots=False, base=None, required=True, default=None):
   """Validates that the value is a string with relative path.
+
+  Optionally adds it to some base path and returns the cleaned resulting path.
 
   Args:
     attr: name of the var for error messages. Required.
     var: a value to validate. Required.
-    allow_dots: if True, allow `../` as a prefix. Default is False.
+    allow_dots: if True, allow `../` as a prefix in the resulting path. Default
+        is False.
+    base: if given, apply the relative path to this base path and returns the
+        result.
     default: a value to use if 'val' is None, ignored if required is True.
-    required: if False, allow 'val' to be None, return 'default' in this case.
+    required: if False, allow 'val' to be None, return `default` in this case.
 
   Returns:
-    Validated and cleaned path.
+    Validated, cleaned and (if `base` is given) rebased path.
   """
   val = validate.string(attr, val, required=required, default=default)
   if val == None:
     return None
-  clean, err = __native__.clean_relative_path(val, allow_dots)
+  base = validate.string('base', base, required=False)
+  clean, err = __native__.clean_relative_path(base or '', val, allow_dots)
   if err:
     fail('bad %r: %s' % (attr, err))
   return clean
