@@ -16,6 +16,47 @@
       "revId": "99b489f2d0505193a2de9bcf386ddbbcb0d2e766",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55249baf_3436ef42",
+        "filename": "lucicfg/path.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-04T05:52:53Z",
+      "side": 1,
+      "message": "or\n\n  RelativeTo(base).Clean(path)\n  RelativeTo(base).CleanWithDots(path)\n\nBut this is only a semi-serious suggestion (RelativeTo would be a `type ... string`)",
+      "parentUuid": "3b604e93_74c1983b",
+      "revId": "99b489f2d0505193a2de9bcf386ddbbcb0d2e766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0bf3042_4b3dcd21",
+        "filename": "lucicfg/path.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-04T05:52:53Z",
+      "side": 1,
+      "message": "why just a prefix? Is rel \u003d \"a/../../stuff\" not a concern?",
+      "range": {
+        "startLine": 32,
+        "startChar": 42,
+        "endLine": 32,
+        "endChar": 51
+      },
+      "revId": "99b489f2d0505193a2de9bcf386ddbbcb0d2e766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
