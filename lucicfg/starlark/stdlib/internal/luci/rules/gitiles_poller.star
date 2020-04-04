@@ -31,7 +31,7 @@ def _gitiles_poller(
       schedule=None,
       triggers=None
   ):
-  """Defines a gitiles poller which can trigger builders on git commits.
+  r"""Defines a gitiles poller which can trigger builders on git commits.
 
   It periodically examines the state of watched refs in the git repository. On
   each iteration it triggers builders if either:
