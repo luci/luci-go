@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "844ae7f9_d2b00dbc",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 1735,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-04T07:34:52Z",
+      "side": 1,
+      "message": "this doesn\u0027t look correct",
+      "range": {
+        "startLine": 1735,
+        "startChar": 52,
+        "endLine": 1735,
+        "endChar": 58
+      },
+      "revId": "e1775bd21f1962058484540b48b8189bac5568a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8339e374_6c1e577c",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 1783,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-04T07:34:52Z",
+      "side": 1,
+      "message": "this too",
+      "range": {
+        "startLine": 1783,
+        "startChar": 11,
+        "endLine": 1783,
+        "endChar": 16
+      },
+      "revId": "e1775bd21f1962058484540b48b8189bac5568a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
