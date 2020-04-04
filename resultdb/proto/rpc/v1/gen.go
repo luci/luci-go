@@ -17,6 +17,8 @@ package rpcpb
 //go:generate cproto
 //go:generate svcdec -type RecorderServer
 //go:generate svcdec -type ResultDBServer
+//go:generate svcdec -type DeriverServer
 //go:generate mockgen -source resultdb.pb.go -destination resultdb.mock.pb.go -package rpcpb -write_package_comment=false
 //go:generate mockgen -source recorder.pb.go -destination recorder.mock.pb.go -package rpcpb -write_package_comment=false
-//go:generate goimports -w resultdb.mock.pb.go recorder.mock.pb.go
+//go:generate mockgen -source deriver.pb.go -destination deriver.mock.pb.go -package rpcpb -write_package_comment=false
+//go:generate goimports -w resultdb.mock.pb.go recorder.mock.pb.go deriver.mock.pb.go
