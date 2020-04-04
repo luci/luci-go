@@ -13,7 +13,7 @@ def test_validate_string():
   assert.fails(lambda: call('a', 1), 'bad "a": got int, want string')
   assert.fails(lambda: call('a', []), 'bad "a": got list, want string')
   assert.fails(lambda: call('a', None, default=1, required=False), 'bad "a": got int, want string')
-  assert.fails(lambda: call('a', 'abcd', regexp='a.c$'), 'bad "a": "abcd" should match "a\.c\$"')
+  assert.fails(lambda: call('a', 'abcd', regexp='a.c$'), r'bad "a": "abcd" should match "a\.c\$"')
   assert.fails(lambda: call('a', '', default='zzz', required=False), 'bad "a": must not be empty')
 
 
@@ -72,7 +72,7 @@ def test_validate_duration():
   assert.fails(
       lambda: call('a', 500 * time.millisecond),
       'bad "a": losing precision when truncating 500ms to 1s units, use ' +
-      'time.truncate\(\.\.\.\) to acknowledge')
+      r'time.truncate\(\.\.\.\) to acknowledge')
 
 
 def test_validate_list():
