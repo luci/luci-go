@@ -32,7 +32,7 @@ def _milo(
       bug_summary=None,
       bug_description=None
   ):
-  """Defines optional configuration of the Milo service for this project.
+  r"""Defines optional configuration of the Milo service for this project.
 
   Milo service is a public user interface for displaying (among other things)
   builds, builders, builder lists (see luci.list_view(...)) and consoles

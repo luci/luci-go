@@ -15,7 +15,7 @@ def test_refset_fail():
   def fail(repo, refs, msg):
     assert.fails(lambda: cq.refset(repo=repo, refs=refs), msg)
   fail('example.googlesource.com/repo', None, 'should match "https://')
-  fail('https://github.com/zzz', None, 'only \*\.googlesource.com repos are supported currently')
+  fail('https://github.com/zzz', None, r'only \*\.googlesource.com repos are supported currently')
   fail('https://-review.googlesource.com/repo', None, 'not a valid repository URL')
   fail('https://example.googlesource.com/a/', None, 'not a valid repository URL')
 
