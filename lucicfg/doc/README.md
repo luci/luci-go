@@ -1732,7 +1732,7 @@ luci.notifier_template(name, body)
 Defines a template to use for notifications sent by [luci.notifier(...)](#luci.notifier) and
 [luci.tree_closer(...)](#luci.tree_closer).
 
-The main template body should have format `<subject>\n\n<body>` where
+The main template body should have format `<subject>\\n\\n<body>` where
 subject is one line of [text/template] and body is an [html/template]. The
 body can either be specified inline right in the starlark script or loaded
 from an external file via [io.read_file(...)](#io.read_file).
@@ -1780,7 +1780,7 @@ project are merged into one. Example:
 # using io.read_file.
 luci.notifier_template(
     name = 'default',
-    body = '\n'.join([
+    body = '\\n'.join([
         'A {{.Build.Builder.Builder}} completed',
         '',
         'A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a> has completed.',

@@ -42,7 +42,7 @@ def _console_view(
       default_expand=None,
       entries=None
   ):
-  """A Milo UI view that displays a table-like console where columns are
+  r"""A Milo UI view that displays a table-like console where columns are
   builders and rows are git commits on which builders are triggered.
 
   A console is associated with a single git repository it uses as a source of
