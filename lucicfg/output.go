@@ -346,7 +346,7 @@ func (o *outputBuilder) SetKey(k, v starlark.Value) error {
 	}
 
 	// Paths must be within the config output directory, "../" is not allowed.
-	if _, err := cleanRelativePath(key.GoString(), false); err != nil {
+	if _, err := cleanRelativePath("", key.GoString(), false); err != nil {
 		return err
 	}
 
@@ -374,7 +374,7 @@ func (o *outputBuilder) finalize(includePBHeader bool) (map[string]Datum, error)
 	for _, kv := range o.Items() {
 		k, v := kv[0].(starlark.String), kv[1]
 
-		key, err := cleanRelativePath(k.GoString(), false)
+		key, err := cleanRelativePath("", k.GoString(), false)
 		if err != nil {
 			panic(err) // already validated in SetKey
 		}

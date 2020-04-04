@@ -196,7 +196,7 @@ def _emit(*, dest=None, data=None):
   """
   trace = stacktrace(skip=2)
   def _emit_data(ctx):
-    _, err = __native__.clean_relative_path(dest, False)
+    _, err = __native__.clean_relative_path('', dest, False)
     if err:
       error('%s', err, trace=trace)
       return
