@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91049d53_e107aaae",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-06T22:42:22Z",
+      "side": 1,
+      "message": "this needs a doc string otherwise its doc sections is bare https://chromium.googlesource.com/infra/luci/luci-go/+/7d96128d06891bcc5354e7f1d0fa79d8ce2836de/lucicfg/doc/README.md#resultdb.validate_settings",
+      "range": {
+        "startLine": 128,
+        "startChar": 4,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
