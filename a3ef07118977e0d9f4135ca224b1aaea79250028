@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0dbadd09_459ed36b",
+        "filename": "led/ledcmd/edit_recipe_bundle.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-06T12:37:21Z",
+      "side": 1,
+      "message": "😄",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 71
+      },
+      "revId": "a3ef07118977e0d9f4135ca224b1aaea79250028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5247dad4_fd2fd27f",
+        "filename": "led/ledcmd/edit_recipe_bundle.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-06T12:37:21Z",
+      "side": 1,
+      "message": "nit: I\u0027d move this type to the top of the file -- this is the first I first want to read.",
+      "revId": "a3ef07118977e0d9f4135ca224b1aaea79250028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
