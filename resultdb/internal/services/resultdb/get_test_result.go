@@ -40,5 +40,14 @@ func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResult
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-	return span.ReadTestResult(ctx, txn, in.Name)
+	tr, err := span.ReadTestResult(ctx, txn, in.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.rewriteArtifactLinks(ctx, tr); err != nil {
+		return nil, err
+	}
+
+	return tr, nil
 }

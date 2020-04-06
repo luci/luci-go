@@ -107,7 +107,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, err
 	}
 
-	if err := s.rewriteArtifactLinks(ctx, trs); err != nil {
+	if err := s.rewriteArtifactLinks(ctx, trs...); err != nil {
 		return nil, err
 	}
 
@@ -117,7 +117,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}, nil
 }
 
-func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, trs []*pb.TestResult) error {
+func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, trs ...*pb.TestResult) error {
 	for _, tr := range trs {
 		for _, a := range tr.OutputArtifacts {
 			// If the URL looks an isolate URL, then generate a signed plain HTTP
