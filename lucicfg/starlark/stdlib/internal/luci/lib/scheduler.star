@@ -126,7 +126,7 @@ def _logarithmic_batching(
   )
 
 
-def _validate_policy(attr, policy, default=None, required=True):
+def _validate_policy(attr, policy, *, default=None, required=True):
   """Validates that `policy` was returned by scheduler.policy(...).
 
   Args:
@@ -138,7 +138,7 @@ def _validate_policy(attr, policy, default=None, required=True):
   Returns:
     Either `policy` itself or `default` (which may be None).
   """
-  return validate.type(attr, policy, scheduler_pb.TriggeringPolicy(), default, required)
+  return validate.type(attr, policy, scheduler_pb.TriggeringPolicy(), default=default, required=required)
 
 
 scheduler = struct(

@@ -19,7 +19,7 @@ load('@stdlib//internal/re.star', 're')
 load('@stdlib//internal/time.star', 'time')
 
 
-def _string(attr, val, regexp=None, allow_empty=False, default=None, required=True):
+def _string(attr, val, *, regexp=None, allow_empty=False, default=None, required=True):
   """Validates that the value is a string and returns it.
 
   Args:
@@ -50,7 +50,7 @@ def _string(attr, val, regexp=None, allow_empty=False, default=None, required=Tr
   return val
 
 
-def _int(attr, val, min=None, max=None, default=None, required=True):
+def _int(attr, val, *, min=None, max=None, default=None, required=True):
   """Validates that the value is an integer and returns it.
 
   Args:
@@ -82,7 +82,7 @@ def _int(attr, val, min=None, max=None, default=None, required=True):
   return val
 
 
-def _float(attr, val, min=None, max=None, default=None, required=True):
+def _float(attr, val, *, min=None, max=None, default=None, required=True):
   """Validates that the value is a float or integer and returns it as float.
 
   Args:
@@ -116,7 +116,7 @@ def _float(attr, val, min=None, max=None, default=None, required=True):
   return val
 
 
-def _bool(attr, val, default=None, required=True):
+def _bool(attr, val, *, default=None, required=True):
   """Validates that the value can be converted to a boolean.
 
   Zero values other than None (0, "", [], etc) are treated as False. None
@@ -141,7 +141,7 @@ def _bool(attr, val, default=None, required=True):
   return bool(val)
 
 
-def _duration(attr, val, precision=time.second, min=time.zero, max=None, default=None, required=True):
+def _duration(attr, val, *, precision=time.second, min=time.zero, max=None, default=None, required=True):
   """Validates that the value is a duration specified at the given precision.
 
   For example, if 'precision' is time.second, will validate that the given
@@ -183,7 +183,7 @@ def _duration(attr, val, precision=time.second, min=time.zero, max=None, default
   return val
 
 
-def _list(attr, val, required=False):
+def _list(attr, val, *, required=False):
   """Validates that the value is a list and returns it.
 
   None is treated as an empty list.
@@ -209,7 +209,7 @@ def _list(attr, val, required=False):
   return val
 
 
-def _str_dict(attr, val, required=False):
+def _str_dict(attr, val, *, required=False):
   """Validates that the value is a dict with non-empty string keys.
 
   None is treated as an empty dict.
@@ -241,7 +241,7 @@ def _str_dict(attr, val, required=False):
   return val
 
 
-def _struct(attr, val, sym, default=None, required=True):
+def _struct(attr, val, sym, *, default=None, required=True):
   """Validates that the value is a struct of the given flavor and returns it.
 
   Args:
@@ -268,7 +268,7 @@ def _struct(attr, val, sym, default=None, required=True):
   return val
 
 
-def _type(attr, val, prototype, default=None, required=True):
+def _type(attr, val, prototype, *, default=None, required=True):
   """Validates that the value is either None or has the same type as `prototype`
   value.
 
@@ -297,7 +297,7 @@ def _type(attr, val, prototype, default=None, required=True):
   return val
 
 
-def _repo_url(attr, val, required=True):
+def _repo_url(attr, val, *, required=True):
   """Validates that the value is `https://...` repository URL and returns it.
 
   Additionally verifies that `val` doesn't end with `.git`.

@@ -93,7 +93,7 @@ def _refset(repo=None, *, refs=None):
   )
 
 
-def _validate_refset(attr, val, default=None, required=True):
+def _validate_refset(attr, val, *, default=None, required=True):
   """Validates that `val` was constructed via cq.refset(...)."""
   return validate.struct(attr, val, _refset_ctor, default=default, required=required)
 
@@ -135,7 +135,7 @@ def _retry_config(
   )
 
 
-def _validate_retry_config(attr, val, default=None, required=True):
+def _validate_retry_config(attr, val, *, default=None, required=True):
   """Validates that `val` was constructed via cq.retry_config(...)."""
   return validate.struct(attr, val, _retry_config_ctor, default=default, required=required)
 

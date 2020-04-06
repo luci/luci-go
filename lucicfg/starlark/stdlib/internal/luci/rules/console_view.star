@@ -204,7 +204,7 @@ def _console_view(
           'header': header,
           'include_experimental_builds': validate.bool('include_experimental_builds', include_experimental_builds, required=False),
           'favicon': validate.string('favicon', favicon, regexp=r'https://storage\.googleapis\.com/.+', required=False),
-          'default_commit_limit': validate.int('default_commit_limit', default_commit_limit, 0, 1000, 0, required=False),
+          'default_commit_limit': validate.int('default_commit_limit', default_commit_limit, min=0, max=1000, default=0, required=False),
           'default_expand': validate.bool('default_expand', default_expand, required=False),
       },
   )
