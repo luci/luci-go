@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "446cda18_36ef63fb",
+        "filename": "led/ledcli/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-06T12:54:10Z",
+      "side": 1,
+      "message": "yeah, I find it awkward, too, but Vadim apparently got used to it, just like you 😄",
+      "revId": "d5482e1def19788ed3fcd9614ba4d6653abf5eea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "12aca9a6_373ee350",
+        "filename": "led/ledcli/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-06T12:54:10Z",
+      "side": 1,
+      "message": "grrr, this it smells 😞 even though it also doesn\u0027t matter in CLI.\n\nIMO,\n    done :\u003d make(chan struct[})\n  and switch on either \n    clock.After(ctx, 1sec)\n    done\n\nis cleaner, costs just a few more lines (but yeah, let\u0027s overlook internal complexity of clock.After)\n\npersonally, I prefer to actually add a wait group as well s.t. inner goroutine is guaranteed to finish before its parent returns.\n\n\np.s. I just now realized that a sleeping goroutine will not prevent os.Exit(...) from terminating a process.",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 3
+      },
+      "revId": "d5482e1def19788ed3fcd9614ba4d6653abf5eea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
