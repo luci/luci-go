@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -66,6 +67,7 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 			return nil
 		}
 		vm.Connected = at.Unix()
+		model.CopyToBinaryInVM(vm)
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -147,7 +149,21 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 		logging.Debugf(c, "VM drained")
 		return terminateBotAsync(c, vm.ID, vm.Hostname)
 	}
+	convertToBinary(c, vm)
 	return nil
+}
+
+// convertToBinary is to convert BinaryAttributes if it's not equal to attributes.
+func convertToBinary(c context.Context, vm *model.VM) {
+	if reflect.DeepEqual(vm.BinaryAttributes.VM, vm.Attributes) {
+		return
+	}
+
+	logging.Infof(c, "Converting Attributes to BinaryAttributes...")
+	model.CopyToBinaryInVM(vm)
+	if err := datastore.Put(c, vm); err != nil {
+		logging.Errorf(c, "Failed to convert to BinaryAttributes, Error : %v", err)
+	}
 }
 
 // manageBotQueue is the name of the manage bot task handler queue.
