@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "614ed46a_48118945",
+        "filename": "resultdb/internal/services/resultdb/get_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-06T16:44:34Z",
+      "side": 1,
+      "message": "code below did not change",
+      "revId": "8e6b1d82c6a5fe4e3ad7b4b00475443373eca4fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
