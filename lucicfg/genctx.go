@@ -54,7 +54,7 @@ func (c *genCtx) declareConfigSetImpl(_ *starlark.Thread, _ *starlark.Builtin, a
 	nameS := name.GoString()
 
 	// Paths must be within the config output directory, "../" is not allowed.
-	rootS, err := cleanRelativePath(root.GoString(), false)
+	rootS, err := cleanRelativePath("", root.GoString(), false)
 	if err != nil {
 		return nil, fmt.Errorf("declare_config_set: root - %s", err)
 	}

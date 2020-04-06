@@ -129,6 +129,18 @@ def test_validate_relative_path():
   assert.eq(call('a', None, required=False), None)
   assert.fails(lambda: call('a', None), 'missing required field "a"')
   assert.fails(lambda: call('a', './../abc'), 'must not start with "../"')
+  assert.fails(lambda: call('a', 'a/../../abc'), 'must not start with "../"')
+  # Rebasing.
+  assert.eq(call('a', './abc', base='./a/b'), 'a/b/abc')
+  assert.eq(call('a', '../abc', base='./a/b'), 'a/abc')
+  assert.eq(call('a', '../../abc', base='./a/b'), 'abc')
+  assert.eq(call('a', '../../../abc', base='./a/b', allow_dots=True), '../abc')
+  assert.fails(
+      lambda: call('a', '../../../abc', base='./a/b', allow_dots=False),
+      'must not start with "../"')
+  assert.fails(
+      lambda: call('a', 'a/../../../../abc', base='./a/b', allow_dots=False),
+      'must not start with "../"')
 
 
 test_validate_string()

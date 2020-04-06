@@ -22,28 +22,29 @@ import (
 	"go.starlark.net/starlark"
 )
 
-// cleanRelativePath does path.Clean and returns an error if 'p' is absolute or
-// (if allowDots is false) starts with "..[/]".
-func cleanRelativePath(p string, allowDots bool) (string, error) {
-	switch p = path.Clean(p); {
-	case path.IsAbs(p):
-		return "", fmt.Errorf("absolute path %q is not allowed", p)
-	case !allowDots && (p == ".." || strings.HasPrefix(p, "../")):
-		return "", fmt.Errorf("path %q is not allowed, must not start with \"../\"", p)
-	default:
-		return p, nil
+// cleanRelativePath does path.Join and returns an error if 'rel' is absolute or
+// (if allowDots is false) the resulting path starts with "..".
+func cleanRelativePath(base, rel string, allowDots bool) (string, error) {
+	if path.IsAbs(rel) {
+		return "", fmt.Errorf("absolute path %q is not allowed", rel)
 	}
+	rel = path.Join(base, rel)
+	if !allowDots && (rel == ".." || strings.HasPrefix(rel, "../")) {
+		return "", fmt.Errorf("path %q is not allowed, must not start with \"../\"", rel)
+	}
+	return rel, nil
 }
 
 func init() {
 	// Used in //internal/lucicfg.star and in //internal/validate.star.
 	declNative("clean_relative_path", func(call nativeCall) (starlark.Value, error) {
-		var s starlark.String
+		var base starlark.String
+		var path starlark.String
 		var allowDots starlark.Bool
-		if err := call.unpack(2, &s, &allowDots); err != nil {
+		if err := call.unpack(3, &base, &path, &allowDots); err != nil {
 			return nil, err
 		}
-		res, err := cleanRelativePath(s.GoString(), bool(allowDots))
+		res, err := cleanRelativePath(base.GoString(), path.GoString(), bool(allowDots))
 		errStr := ""
 		if err != nil {
 			errStr = err.Error()
