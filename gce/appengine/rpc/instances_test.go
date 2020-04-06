@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 
@@ -66,6 +67,9 @@ func TestInstances(t *testing.T) {
 				vm := &model.VM{
 					ID:       "id",
 					Hostname: "hostname",
+					Attributes: config.VM{
+						Zone: "zone",
+					},
 				}
 
 				Convey("id", func() {
@@ -80,6 +84,9 @@ func TestInstances(t *testing.T) {
 						So(rsp, ShouldResemble, &empty.Empty{})
 						So(datastore.Get(c, vm), ShouldBeNil)
 						So(vm.Drained, ShouldBeTrue)
+						So(vm.BinaryAttributes.VM, ShouldResemble, config.VM{
+							Zone: "zone",
+						})
 					})
 
 					Convey("deleted", func() {
@@ -102,6 +109,9 @@ func TestInstances(t *testing.T) {
 						So(rsp, ShouldResemble, &empty.Empty{})
 						So(datastore.Get(c, vm), ShouldBeNil)
 						So(vm.Drained, ShouldBeTrue)
+						So(vm.BinaryAttributes.VM, ShouldResemble, config.VM{
+							Zone: "zone",
+						})
 					})
 
 					Convey("deleted", func() {

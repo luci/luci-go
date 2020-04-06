@@ -24,3 +24,10 @@ func CopyToBinaryInConfig(cfg *Config) {
 		cfg.Config,
 	}
 }
+
+// CopyToBinaryInVM - copy the attributes field to binary attributes field in model.ConVMfig
+func CopyToBinaryInVM(vm *VM) {
+	vm.BinaryAttributes = config.BinaryVM{
+		vm.Attributes,
+	}
+}

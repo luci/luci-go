@@ -59,6 +59,7 @@ func deleteByID(c context.Context, id string) (*empty.Empty, error) {
 			return nil
 		}
 		vm.Drained = true
+		model.CopyToBinaryInVM(vm)
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}

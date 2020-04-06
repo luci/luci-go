@@ -268,6 +268,7 @@ func TestCreate(t *testing.T) {
 						},
 					})
 					So(v.URL, ShouldEqual, "url")
+					So(v.BinaryAttributes.VM, ShouldResemble, v.Attributes)
 				})
 			})
 		})

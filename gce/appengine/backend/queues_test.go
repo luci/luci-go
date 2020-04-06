@@ -166,6 +166,15 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
+						BinaryAttributes: config.BinaryVM{
+							config.VM{
+								Disk: []*config.Disk{
+									{
+										Image: "image",
+									},
+								},
+							},
+						},
 						AttributesIndexed: []string{
 							"disk.image:image",
 						},
@@ -260,8 +269,15 @@ func TestQueues(t *testing.T) {
 							},
 						})
 						v := &model.VM{
-							ID:      "id",
-							Config:  "config",
+							ID:     "id",
+							Config: "config",
+							Attributes: config.VM{
+								Disk: []*config.Disk{
+									{
+										Image: "image",
+									},
+								},
+							},
 							Drained: true,
 						}
 						So(datastore.Put(c, v), ShouldBeNil)
@@ -269,18 +285,33 @@ func TestQueues(t *testing.T) {
 						So(v.Drained, ShouldBeTrue)
 						So(datastore.Get(c, v), ShouldBeNil)
 						So(v.Drained, ShouldBeTrue)
+						So(v.BinaryAttributes.VM, ShouldResemble, config.VM{})
 					})
 
 					Convey("deleted", func() {
 						v := &model.VM{
 							ID:     "id",
 							Config: "config",
+							Attributes: config.VM{
+								Disk: []*config.Disk{
+									{
+										Image: "image",
+									},
+								},
+							},
 						}
 						So(datastore.Put(c, v), ShouldBeNil)
 						So(drainVM(c, v), ShouldBeNil)
 						So(v.Drained, ShouldBeTrue)
 						So(datastore.Get(c, v), ShouldBeNil)
 						So(v.Drained, ShouldBeTrue)
+						So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						})
 					})
 
 					Convey("amount", func() {
