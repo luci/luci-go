@@ -54,6 +54,7 @@ import (
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
 	_ "go.chromium.org/luci/milo/api/config"
+	_ "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 )
 
@@ -109,6 +110,8 @@ func init() {
 		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
 		"go.chromium.org/luci/milo/api/config/project.proto",
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
+		"go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto",
+		"go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
 	}, visited, wellKnownDescSet, googTypesDescSet)
 }

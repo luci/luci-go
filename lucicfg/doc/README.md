@@ -29,6 +29,7 @@
 
 
 
+
 [TOC]
 
 ## Overview
@@ -1091,6 +1092,7 @@ luci.builder(
     triggers = None,
     triggered_by = None,
     notifies = None,
+    resultdb_settings = None,
 )
 ```
 
@@ -1164,6 +1166,7 @@ Buildbucket.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer).
+* **resultdb_settings**: [resultdb.settings(...)](#resultdb.settings) struct with a confiuration that defines if buildbucket should sync this builder's builds with ResultDB and which results to export to BigQuery, and to which project, dataset, and table.
 
 
 
@@ -2149,6 +2152,102 @@ luci.project(
 #### Returns  {#acl.entry-returns}
 
 acl.entry object, should be treated as opaque.
+
+
+
+
+
+## ResultDB
+
+
+
+
+### resultdb.settings {#resultdb.settings}
+
+```python
+resultdb.settings(enable = None, bigquery_exports = None)
+```
+
+
+
+Specifies how buildbucket should sync a builder's builds with ResultDB.
+
+#### Arguments {#resultdb.settings-args}
+
+* **enable**: boolean, whether to enable ResultDB:Buildbucket integration.
+* **bigquery_exports**: list of resultdb_pb.BigQueryExport() protos, configurations for exporting specific subsets of test results to a designated BigQuery table.
+
+
+#### Returns  {#resultdb.settings-returns}
+
+A populated buildbucket_pb.Builder.ResultDB() proto.
+
+
+
+### resultdb.bigquery_export {#resultdb.bigquery_export}
+
+```python
+resultdb.bigquery_export(bq_table = None, test_results_predicate = None)
+```
+
+
+
+Represents a mapping between a subset of test results and a BigQuery table
+to export them to.
+
+#### Arguments {#resultdb.bigquery_export-args}
+
+* **bq_table**: string of the form `<project>.<dataset>.<table>` where the parts respresent the BigQuery-enabled gcp project, dataset and table to export results.
+* **test_results_predicate**: A predicate_pb.TestResultPredicate() proto, specifies the subset of test results to export to the above table. if unspecified, matches all test results.
+
+
+#### Returns  {#resultdb.bigquery_export-returns}
+
+A populated resultdb_pb.BigQueryExport() proto.
+
+
+
+### resultdb.test_results_predicate {#resultdb.test_results_predicate}
+
+```python
+resultdb.test_results_predicate(
+    # Optional arguments.
+    test_id_regexp = None,
+    variant = None,
+    variant_contains = None,
+    unexpected_only = None,
+)
+```
+
+
+
+Represents a predicate of test results.
+
+#### Arguments {#resultdb.test_results_predicate-args}
+
+* **test_id_regexp**: string, regular expression that a test result must fully match to be considered covered by this definition.
+* **variant**: string dict, defines the test variant to match. E.g. {"test_suite": "not_site_per_process_webkit_layout_tests"}
+* **variant_contains**: bool, if true the variant parameter above will cause a match if it's a subset of the test's variant, otherwise it will only match if it's exactly equal.
+* **unexpected_only**: bool, if true only export test results of test variants that had unexpected results.
+
+
+#### Returns  {#resultdb.test_results_predicate-returns}
+
+A populated predicate_pb.TestResultPredicate() proto.
+
+
+
+### resultdb.validate_settings {#resultdb.validate_settings}
+
+```python
+resultdb.validate_settings()
+```
+
+
+
+
+
+
 
 
 
