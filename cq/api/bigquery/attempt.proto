@@ -13,11 +13,15 @@ import "google/protobuf/timestamp.proto";
 //
 // An attempt involves doing checks for one or more CLs that could
 // potentially be submitted together.
+//
+// Next ID: 12.
 message Attempt {
   // The opaque key unique to this Attempt.
   string key = 1;
   // The LUCI project that this Attempt belongs to.
   string luci_project = 2;
+  // The name of the config group that this Attempt belongs to.
+  string config_group = 11;
 
   // An opaque key that is unique for a given set of Gerrit change patchsets.
   // (or, equivalently, buildsets). The same cl_group_key will be used if
