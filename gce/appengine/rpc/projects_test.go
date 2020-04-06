@@ -151,5 +151,37 @@ func TestProjects(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("Ensure", func() {
+			Convey("Binary", func() {
+				req := &projects.EnsureRequest{
+					Id: "id",
+					Project: &projects.Config{
+						Project: "project",
+						Region: []string{
+							"region1",
+							"region2",
+						},
+						Revision: "revision-1",
+					},
+				}
+				cfg, err := srv.Ensure(c, req)
+				So(err, ShouldBeNil)
+				So(cfg, ShouldNotBeEmpty)
+				So(cfg, ShouldResemble, &projects.Config{
+					Project: "project",
+					Region: []string{
+						"region1",
+						"region2",
+					},
+					Revision: "revision-1",
+				})
+				mdl := &model.Project{
+					ID: "id",
+				}
+				So(datastore.Get(c, mdl), ShouldBeNil)
+				So(mdl.BinaryConfig.Config, ShouldResemble, mdl.Config)
+			})
+		})
 	})
 }
