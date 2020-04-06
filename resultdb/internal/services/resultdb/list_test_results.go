@@ -57,7 +57,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 		return nil, err
 	}
 
-	if err := s.rewriteArtifactLinks(ctx, trs); err != nil {
+	if err := s.rewriteArtifactLinks(ctx, trs...); err != nil {
 		return nil, err
 	}
 
