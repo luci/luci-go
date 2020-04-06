@@ -469,6 +469,30 @@
       "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bf9dda91_d1f23590",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-06T21:54:01Z",
+      "side": 1,
+      "message": "README.mdt change is not done.",
+      "parentUuid": "cc6ca214_c00eb648",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 60
+      },
+      "revId": "c95a40430c4048dbd9b5c4e56fed1d25bd92e77a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
