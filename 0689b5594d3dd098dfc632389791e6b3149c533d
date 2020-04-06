@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff69f996_929b88cf",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-06T21:30:36Z",
+      "side": 1,
+      "message": "Fixed.",
+      "parentUuid": "dadf1360_3ffbd506",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 8
+      },
+      "revId": "0689b5594d3dd098dfc632389791e6b3149c533d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
