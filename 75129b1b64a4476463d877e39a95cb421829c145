@@ -22,6 +22,30 @@
       "revId": "75129b1b64a4476463d877e39a95cb421829c145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1364a22d_a47a8784",
+        "filename": "resultdb/internal/services/deriver/deriver.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-06T18:46:15Z",
+      "side": 1,
+      "message": "I think this hack is for discovery service to list servers that serve prpc requests.",
+      "parentUuid": "7bbd68e7_868cdd93",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 41
+      },
+      "revId": "75129b1b64a4476463d877e39a95cb421829c145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
