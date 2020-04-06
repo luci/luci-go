@@ -131,21 +131,21 @@ func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 
 // deriveInvocation derives an invocation from a task.
 func (r *deriveRun) deriveInvocation(ctx context.Context, taskID string) (*pb.Invocation, error) {
-	req := &pb.DeriveInvocationRequest{
-		SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
+	req := &pb.DeriveChromiumInvocationRequest{
+		SwarmingTask: &pb.DeriveChromiumInvocationRequest_SwarmingTask{
 			Hostname: r.swarmingHost,
 			Id:       taskID,
 		},
 	}
 
 	if !r.wait {
-		return r.recorder.DeriveInvocation(ctx, req)
+		return r.deriver.DeriveChromiumInvocation(ctx, req)
 	}
 
 	var inv *pb.Invocation
 	err := retry.Retry(ctx, newPollingIter, func() error {
 		var err error
-		inv, err = r.recorder.DeriveInvocation(ctx, req, prpc.ExpectedCode(codes.OK, codes.FailedPrecondition))
+		inv, err = r.deriver.DeriveChromiumInvocation(ctx, req, prpc.ExpectedCode(codes.OK, codes.FailedPrecondition))
 		if isTaskIncomplete(err) {
 			return errors.Annotate(err, "task is not complete yet").Tag(notReady).Err()
 		}
@@ -162,7 +162,7 @@ func (r *deriveRun) deriveInvocation(ctx context.Context, taskID string) (*pb.In
 func isTaskIncomplete(err error) bool {
 	return hasPreconditionViolationOfType(
 		status.Convert(err).Details(),
-		pb.DeriveInvocationPreconditionFailureType_INCOMPLETE_SWARMING_TASK.String(),
+		pb.DeriveChromiumInvocationPreconditionFailureType_INCOMPLETE_CHROMIUM_SWARMING_TASK.String(),
 	)
 }
 
