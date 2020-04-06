@@ -343,6 +343,13 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
+						Attributes: config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						},
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -355,6 +362,13 @@ func TestManageBot(t *testing.T) {
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Connected, ShouldNotEqual, 0)
+					So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
+						Disk: []*config.Disk{
+							{
+								Image: "image",
+							},
+						},
+					})
 				})
 
 				Convey("dead", func() {
@@ -471,7 +485,6 @@ func TestManageBot(t *testing.T) {
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Connected, ShouldNotEqual, 0)
 				})
-
 				Convey("alive", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
@@ -495,6 +508,45 @@ func TestManageBot(t *testing.T) {
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Connected, ShouldNotEqual, 0)
+				})
+				Convey("convertToBinary in the conversion job", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId:       "id",
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:        "id",
+						Config:    "config",
+						Hostname:  "name",
+						URL:       "url",
+						Connected: 1586197201,
+						Attributes: config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						},
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.Connected, ShouldNotEqual, 0)
+					So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
+						Disk: []*config.Disk{
+							{
+								Image: "image",
+							},
+						},
+					})
 				})
 			})
 		})

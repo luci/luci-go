@@ -69,6 +69,7 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		vm.Created = t.Unix()
 		vm.NetworkInterfaces = nics
 		vm.URL = inst.SelfLink
+		model.CopyToBinaryInVM(vm)
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
