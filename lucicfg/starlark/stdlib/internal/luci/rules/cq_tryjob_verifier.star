@@ -75,6 +75,9 @@ def _cq_tryjob_verifier(
   The comparison is a full match. The pattern is implicitly anchored with `^`
   and `$`, so there is no need add them.
 
+  The pattern must use [Google Re2](https://github.com/google/re2) library
+  syntax, [documented here](https://github.com/google/re2/wiki/Syntax).
+
   This filtering currently cannot be used in any of the following cases:
 
     * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
