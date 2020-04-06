@@ -38,6 +38,7 @@ load('@stdlib//internal/luci/rules/tree_closer.star', _tree_closer='tree_closer'
 
 # LUCI helper modules.
 load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
+load('@stdlib//internal/luci/lib/resultdb.star', _resultdb='resultdb')
 load('@stdlib//internal/luci/lib/scheduler.star', _scheduler='scheduler')
 load('@stdlib//internal/luci/lib/swarming.star', _swarming='swarming')
 load('@stdlib//internal/luci/lib/cq.star', _cq_helpers='cq')
@@ -76,6 +77,7 @@ luci = struct(
     cq_tryjob_verifier = _cq_tryjob_verifier,
 )
 acl = _acl
+resultdb = _resultdb
 scheduler = _scheduler
 swarming = _swarming
 cq = _cq_helpers
