@@ -46,6 +46,30 @@
       "revId": "75129b1b64a4476463d877e39a95cb421829c145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b59a389_9e8b5247",
+        "filename": "resultdb/internal/services/deriver/deriver.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-06T22:39:12Z",
+      "side": 1,
+      "message": "Roberto is right. This hack is relevant only in resultdb binary, because that\u0027s the binary that serves discovery service. This binary doesn\u0027t, so this is noop and should be removed.",
+      "parentUuid": "1364a22d_a47a8784",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 41
+      },
+      "revId": "75129b1b64a4476463d877e39a95cb421829c145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
