@@ -15,9 +15,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/cmdrunner"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 )
 
 // run_isolated.py in Go
@@ -25,17 +30,54 @@ var cmdRunTask = &subcommands.Command{
 	UsageLine: "runtask <options>...",
 	ShortDesc: "runs swarming task",
 	CommandRun: func() subcommands.CommandRun {
-		return &cmdRunTaskRun{}
+		c := cmdRunTaskRun{}
+		c.Flags.BoolVar(&c.rawCmd, "raw-cmd", true, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
+		return &c
 	},
 }
 
 type cmdRunTaskRun struct {
 	subcommands.CommandRunBase
+	rawCmd bool
 }
 
 func (c *cmdRunTaskRun) Run(
 	a subcommands.Application, args []string, env subcommands.Env) int {
 	// TODO(crbug.com/962804): implement here
-	fmt.Println("running swarming task...")
-	return 0
+	ctx := context.Background()
+
+	if err := c.Parse(args); err != nil {
+		printError(a, err)
+	}
+
+	return runCommand(ctx, args, env)
+}
+
+func (c *cmdRunTaskRun) Parse(args []string) error {
+	if c.rawCmd && len(args) == 0 {
+		return errors.Reason("arguments with -raw-cmd should be passed after -- as command delimiter").Err()
+	}
+	return nil
+}
+
+func runCommand(ctx context.Context, args []string, env subcommands.Env) int {
+	commands := args
+	cwd := "."
+	cmdEnv := environ.System()
+	hardTimeout := time.Minute
+	gracePeriod := time.Minute
+	lowerPriority := false
+	containment := false
+
+	exitCode, err := cmdrunner.Run(
+		ctx, commands, cwd, cmdEnv, hardTimeout, gracePeriod, lowerPriority, containment)
+	if err != nil {
+		// TODO: log error
+		return 1
+	}
+	return exitCode
+}
+
+func printError(a subcommands.Application, err error) {
+	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 }
