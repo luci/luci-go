@@ -125,7 +125,7 @@ The spec (as it is) for JobDefinition is at:
 			// commands to obtain JobDescriptions. These all begin with `get`.
 			// TODO(iannucci): `get` to scrape from any URL
 			getSwarmCmd(defaults),
-			// IMPLEMENT getBuildCmd(defaults),
+			getBuildCmd(defaults),
 			getBuilderCmd(defaults),
 
 			// commands to edit JobDescriptions.
@@ -138,7 +138,7 @@ The spec (as it is) for JobDefinition is at:
 			editIsolated(defaults),
 
 			// commands to launch swarming tasks.
-			// IMPLEMENT launchCmd(defaults),
+			launchCmd(defaults),
 			// TODO(iannucci): launch-local to launch locally
 			// TODO(iannucci): launch-buildbucket to launch on buildbucket
 
