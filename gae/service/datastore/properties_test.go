@@ -121,6 +121,47 @@ func TestProperties(t *testing.T) {
 					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 					So(pv.Type().String(), ShouldEqual, "PTFloat")
 				})
+				Convey("property map", func() {
+					pv := Property{}
+					So(pv.SetValue(PropertyMap{
+						"key": Property{
+							indexSetting: true,
+							propType:     PTString,
+							value:        stringByteSequence("val"),
+						},
+						"nested": Property{
+							indexSetting: false,
+							propType: PTPropertyMap,
+							value: PropertyMap{
+								"key": Property{
+									indexSetting: false,
+									propType: PTInt,
+									value: 1,
+								},
+							},
+						},
+					}, NoIndex), ShouldBeNil)
+					So(pv.Value(), ShouldResemble, PropertyMap{
+						"key": Property{
+							indexSetting: true,
+							propType: PTString,
+							value: stringByteSequence("val"),
+						},
+						"nested": Property{
+							indexSetting: false,
+							propType: PTPropertyMap,
+							value: PropertyMap{
+								"key": Property{
+									indexSetting: false,
+									propType: PTInt,
+									value: 1,
+								},
+							},
+						},
+					})
+					So(pv.IndexSetting(), ShouldEqual, NoIndex)
+					So(pv.Type().String(), ShouldEqual, "PTPropertyMap")
+				})
 			})
 			Convey("bad type", func() {
 				pv := Property{}

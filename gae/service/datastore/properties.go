@@ -166,6 +166,11 @@ const (
 	// PTBlobKey represents a blobstore.Key
 	PTBlobKey
 
+	// PTPropertyMap represents a PropertyMap object.
+	//
+	// This is typicaly used to represent GAE *datastore.Entity objects.
+	PTPropertyMap
+
 	// PTUnknown is a placeholder value which should never show up in reality.
 	//
 	// NOTE: THIS MUST BE LAST VALUE FOR THE init() ASSERTION BELOW TO WORK.
@@ -259,6 +264,8 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 			err = errors.New("invalid GeoPoint value")
 		}
 		return PTGeoPoint, err
+	case PropertyMap:
+		return PTPropertyMap, nil
 	default:
 		return PTUnknown, fmt.Errorf("gae: Property has bad type %T", v)
 	}
@@ -378,6 +385,8 @@ func (p *Property) Value() interface{} {
 		return p.value.(byteSequence).string()
 	case PTBlobKey:
 		return blobstore.Key(p.value.(byteSequence).string())
+	case PTPropertyMap:
+		return p.value.(PropertyMap)
 	default:
 		return p.value
 	}
@@ -439,6 +448,8 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 		value = bytesByteSequence(t)
 	case time.Time:
 		value = RoundTime(t)
+	case PropertyMap:
+		value = t.Clone()
 	}
 
 	p.propType = pt
@@ -544,6 +555,8 @@ func (p *Property) Project(to PropertyType) (interface{}, error) {
 			return nil, nil
 		case PTBlobKey:
 			return blobstore.Key(""), nil
+		case PTPropertyMap:
+			return PropertyMap{}, nil
 		}
 	}
 	return nil, fmt.Errorf("unable to project %s to %s", pt, to)
@@ -898,6 +911,15 @@ func (pm PropertyMap) Save(withMeta bool) (PropertyMap, error) {
 		}
 	}
 	return ret, nil
+}
+
+// Clone returns a copy of this PropertyMap.
+func (pm PropertyMap) Clone() PropertyMap {
+	ret := PropertyMap{}
+	for k, v := range pm {
+		ret[k] = v.Clone()
+	}
+	return ret
 }
 
 // GetMeta implements PropertyLoadSaver.GetMeta, and returns the current value
