@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f9fe9d2d_a3bc1935",
+        "filename": "led/ledcli/edit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-07T11:25:48Z",
+      "side": 1,
+      "message": "IMO should mention it\u0027s true by default",
+      "range": {
+        "startLine": 93,
+        "startChar": 90,
+        "endLine": 93,
+        "endChar": 94
+      },
+      "revId": "e2b897891c4c3f981004fc318ec508a21ed6f635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
