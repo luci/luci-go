@@ -18,11 +18,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 
 	"go.chromium.org/luci/client/archiver"
+	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -102,4 +104,14 @@ func fetchIsolated(ctx context.Context, arc isoClientIface, dgst isolated.HexDig
 		return nil, errors.Annotate(err, "parsing isolated %q", dgst).Err()
 	}
 	return &isoFile, nil
+}
+
+func newSwarmbucketClient(authClient *http.Client, host string) *swarmbucket.Service {
+	// TODO(iannucci): Switch this to prpc endpoints
+	sbucket, err := swarmbucket.New(authClient)
+	if err != nil {
+		panic(err)
+	}
+	sbucket.BasePath = fmt.Sprintf("https://%s/_ah/api/swarmbucket/v1/", host)
+	return sbucket
 }
