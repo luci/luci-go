@@ -19,5 +19,6 @@
 #   load('@stdlib//internal/luci/proto.star', 'logdog_pb')
 #   load('@stdlib//internal/luci/proto.star', 'milo_pb')
 #   load('@stdlib//internal/luci/proto.star', 'notify_pb')
+#   load('@stdlib//internal/luci/proto.star', 'resultdb_pb')
 #   load('@stdlib//internal/luci/proto.star', 'scheduler_pb')
 lucitypes_descpb = __native__.lucitypes_descpb
