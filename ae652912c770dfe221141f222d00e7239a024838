@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cda9ab25_61b4c443",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 14
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-07T06:46:42Z",
+      "side": 1,
+      "message": "why was this parameter renamed? No code/protos here are test result specific\ni think this should be bigquery_exports or bq_exports",
+      "range": {
+        "startLine": 31,
+        "startChar": 4,
+        "endLine": 31,
+        "endChar": 23
+      },
+      "revId": "ae652912c770dfe221141f222d00e7239a024838",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66ec941b_3e730abc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 14
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-07T06:46:42Z",
+      "side": 1,
+      "message": "this can be a dot, so this doesn\u0027t guarantee that there are only 3 dots in the string.\nThis should be r\u0027([^.]+)\\.([^.]+)\\.([^.]+)\u0027",
+      "range": {
+        "startLine": 65,
+        "startChar": 50,
+        "endLine": 65,
+        "endChar": 51
+      },
+      "revId": "ae652912c770dfe221141f222d00e7239a024838",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfde6925_40f19960",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 14
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-07T06:46:42Z",
+      "side": 1,
+      "message": "this can be omitted. We don\u0027t have to cover everything here. A reader can go and read up about resultdb.settings.",
+      "range": {
+        "startLine": 191,
+        "startChar": 43,
+        "endLine": 192,
+        "endChar": 14
+      },
+      "revId": "ae652912c770dfe221141f222d00e7239a024838",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
