@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -37,7 +36,7 @@ import (
 // but locally, in-memory.
 type fakeTreeStatusClient struct {
 	statusForHosts map[string]treeStatus
-	nextKey        int
+	nextKey        int64
 	mtx            sync.Mutex
 }
 
@@ -52,7 +51,7 @@ func (ts *fakeTreeStatusClient) getStatus(c context.Context, host string) (*tree
 	return nil, errors.New(fmt.Sprintf("No status for host %s", host))
 }
 
-func (ts *fakeTreeStatusClient) putStatus(c context.Context, host, message, prevKey string) error {
+func (ts *fakeTreeStatusClient) putStatus(c context.Context, host, message string, prevKey int64) error {
 	ts.mtx.Lock()
 	defer ts.mtx.Unlock()
 
@@ -74,7 +73,7 @@ func (ts *fakeTreeStatusClient) putStatus(c context.Context, host, message, prev
 	}
 
 	ts.statusForHosts[host] = treeStatus{
-		"buildbot@chromium.org", message, strconv.Itoa(key), status, time.Now(),
+		"buildbot@chromium.org", message, key, status, time.Now(),
 	}
 	return nil
 }
@@ -115,7 +114,7 @@ func TestUpdateTrees(t *testing.T) {
 					"chromium-status.appspot.com": treeStatus{
 						username:  botUsername,
 						message:   statusMessage,
-						key:       "key",
+						key:       -1,
 						status:    initialTreeStatus,
 						timestamp: earlierTime,
 					},
@@ -175,7 +174,7 @@ func TestUpdateTrees(t *testing.T) {
 					"chromium-status.appspot.com": treeStatus{
 						username:  "somedev@chromium.org",
 						message:   "Closed because of reasons",
-						key:       "key",
+						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
@@ -204,7 +203,7 @@ func TestUpdateTrees(t *testing.T) {
 					"chromium-status.appspot.com": treeStatus{
 						username:  "somedev@chromium.org",
 						message:   "Opened, because I feel like it",
-						key:       "key",
+						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
@@ -233,14 +232,14 @@ func TestUpdateTrees(t *testing.T) {
 					"chromium-status.appspot.com": treeStatus{
 						username:  botUsername,
 						message:   "Closed up",
-						key:       "key",
+						key:       -1,
 						status:    config.Closed,
 						timestamp: earlierTime,
 					},
 					"v8-status.appspot.com": treeStatus{
 						username:  botUsername,
 						message:   "Open for business",
-						key:       "key",
+						key:       -1,
 						status:    config.Open,
 						timestamp: earlierTime,
 					},
@@ -302,6 +301,69 @@ func TestUpdateTrees(t *testing.T) {
 			status, err = ts.getStatus(c, "v8-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
+		})
+	})
+}
+
+func TestReadOnlyTreeStatusClient(t *testing.T) {
+	Convey("Test environment for readOnlyTreeStatusClient", t, func() {
+		c := gaetesting.TestingContextWithAppID("luci-notify-test")
+
+		// Real responses, with usernames redacted and readable formatting applied.
+		responses := map[string]string{
+			"https://chromium-status.appspot.com/current?format=json": `{
+				"username": "someone@google.com",
+				"can_commit_freely": false,
+				"general_state": "throttled",
+				"key": 5656890264518656,
+				"date": "2020-03-31 05:33:52.682351",
+				"message": "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)"
+			}`,
+			"https://v8-status.appspot.com/current?format=json": `{
+				"username": "someone-else@google.com",
+				"can_commit_freely": true,
+				"general_state": "open",
+				"key": 5739466035560448,
+				"date": "2020-04-02 15:21:39.981072",
+				"message": "open (flake?)"
+			}`,
+		}
+
+		fetch := func(_ context.Context, url string) ([]byte, error) {
+			if s, e := responses[url]; e {
+				return []byte(s), nil
+			} else {
+				return nil, fmt.Errorf("Key not present: %q", url)
+			}
+		}
+		ts := readOnlyTreeStatusClient{fetch}
+
+		Convey("Open tree", func() {
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+
+			expectedTime := time.Date(2020, time.March, 31, 5, 33, 52, 682351000, time.UTC)
+			So(status, ShouldResemble, &treeStatus{
+				username:  "someone@google.com",
+				message:   "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)",
+				key:       5656890264518656,
+				status:    config.Closed,
+				timestamp: expectedTime,
+			})
+		})
+
+		Convey("Closed tree", func() {
+			status, err := ts.getStatus(c, "v8-status.appspot.com")
+			So(err, ShouldBeNil)
+
+			expectedTime := time.Date(2020, time.April, 2, 15, 21, 39, 981072000, time.UTC)
+			So(status, ShouldResemble, &treeStatus{
+				username:  "someone-else@google.com",
+				message:   "open (flake?)",
+				key:       5739466035560448,
+				status:    config.Open,
+				timestamp: expectedTime,
+			})
 		})
 	})
 }
