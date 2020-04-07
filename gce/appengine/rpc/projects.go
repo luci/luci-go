@@ -60,6 +60,7 @@ func (*Projects) Ensure(c context.Context, req *projects.EnsureRequest) (*projec
 		ID:     req.Id,
 		Config: *req.Project,
 	}
+	model.CopyToBinaryInProject(p)
 	if err := datastore.Put(c, p); err != nil {
 		return nil, errors.Annotate(err, "failed to store project").Err()
 	}
