@@ -136,6 +136,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"State":        inv.State,
 		"Interrupted":  inv.Interrupted,
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
+		"CreatedBy":    inv.CreatedBy,
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
 		"ExpectedTestResultsExpirationTime": now.Add(s.ExpectedResultsExpiration),
