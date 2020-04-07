@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7b67e54a_7538e2e4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "389075a1_a6a733d4",
+      "range": {
+        "startLine": 31,
+        "startChar": 22,
+        "endLine": 34,
+        "endChar": 0
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6365a1e5_8e8385ff",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 10
@@ -39,6 +63,24 @@
       "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7c9cdcf_69a1afd2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "It does. Done.",
+      "parentUuid": "6365a1e5_8e8385ff",
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "0ccdaf05_c11c3ab7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4472be7e_5d383e7c",
+      "range": {
+        "startLine": 49,
+        "startChar": 6,
+        "endLine": 49,
+        "endChar": 28
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a2adc963_322fedff",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 10
@@ -85,6 +151,30 @@
       "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fc7d284_e4416e32",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2adc963_322fedff",
+      "range": {
+        "startLine": 58,
+        "startChar": 4,
+        "endLine": 58,
+        "endChar": 26
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "07f1fa9f_37901a17",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f1de17b_ad442a09",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 48
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "48300fcc_965b8404",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 10
@@ -131,6 +245,30 @@
       "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17968e4c_240b4837",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48300fcc_965b8404",
+      "range": {
+        "startLine": 65,
+        "startChar": 55,
+        "endLine": 65,
+        "endChar": 57
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "008675f7_05471f57",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "_predicate now.",
+      "parentUuid": "2e31ad96_e1da8959",
+      "range": {
+        "startLine": 82,
+        "startChar": 4,
+        "endLine": 82,
+        "endChar": 27
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "91049d53_e107aaae",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 10
@@ -177,6 +339,30 @@
       "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57314fe5_408b41ee",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91049d53_e107aaae",
+      "range": {
+        "startLine": 128,
+        "startChar": 4,
+        "endLine": 128,
+        "endChar": 22
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "041cd19e_db54e5c4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28057e61_5847fd8e",
+      "range": {
+        "startLine": 188,
+        "startChar": 46,
+        "endLine": 188,
+        "endChar": 52
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "377ed5c7_dc1f7f61",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 10
@@ -223,6 +433,30 @@
       "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e68b183_4d40807a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T06:37:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "377ed5c7_dc1f7f61",
+      "range": {
+        "startLine": 189,
+        "startChar": 38,
+        "endLine": 189,
+        "endChar": 42
+      },
+      "revId": "7d96128d06891bcc5354e7f1d0fa79d8ce2836de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
