@@ -355,6 +355,9 @@ message Verifiers {
       // If true, this builder will only be used if specified via
       // `CQ-Include-Trybots:` on CL description.
       //
+      // If false, the builder may still be included via `CQ-Include-Trybots:`
+      // on CL description.
+      //
       // This is useful if you want individual CLs to opt-in to this builder,
       // e.g.:
       //  builder {name: "win-release"}                      # required for all.
