@@ -29,6 +29,8 @@ load('@proto//go.chromium.org/luci/cq/api/config/v2/cq.proto', _cq_pb='cq.config
 load('@proto//go.chromium.org/luci/logdog/api/config/svcconfig/project.proto', _logdog_pb='svcconfig')
 load('@proto//go.chromium.org/luci/milo/api/config/project.proto', _milo_pb='milo')
 load('@proto//go.chromium.org/luci/luci_notify/api/config/notify.proto', _notify_pb='notify')
+load('@proto//go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto', _resultdb_pb='luci.resultdb.rpc.v1')
+load('@proto//go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto', _predicate_pb='luci.resultdb.rpc.v1')
 load('@proto//go.chromium.org/luci/scheduler/appengine/messages/config.proto', _scheduler_pb='scheduler.config')
 
 buildbucket_pb = _buildbucket_pb
@@ -38,4 +40,6 @@ cq_pb = _cq_pb
 logdog_pb = _logdog_pb
 milo_pb = _milo_pb
 notify_pb = _notify_pb
+predicate_pb = _predicate_pb
+resultdb_pb = _resultdb_pb
 scheduler_pb = _scheduler_pb
