@@ -22,6 +22,30 @@
       "revId": "8ee22b34d53101d7ad90a2ef227ecd9e0dd24b4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83c351dd_f4905417",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-07T04:02:26Z",
+      "side": 1,
+      "message": "Heh, oops. Fixed.",
+      "parentUuid": "27267802_80df01d8",
+      "range": {
+        "startLine": 44,
+        "startChar": 27,
+        "endLine": 44,
+        "endChar": 31
+      },
+      "revId": "8ee22b34d53101d7ad90a2ef227ecd9e0dd24b4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
