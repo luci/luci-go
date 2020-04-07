@@ -87,6 +87,24 @@
       "revId": "9a32d6b63cec3370f8755d6c420e8428c0d3a289",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f31d4ca9_8f8c7be9",
+        "filename": "led/ledcli/edit_cr_cl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-07T21:23:34Z",
+      "side": 1,
+      "message": "No, it\u0027s the same reason; these are all various old and conflicting ways of setting the revision/affecting the checkout. This command is meant to update the CL attached to the job and there\u0027s only one way that led supports this. If we left these properties alone then it\u0027s possible that led would succeed and update the new canonical way, and leave these alone, causing confusion and/or mass hysteria when the led job builds the old CL anyway.\n\nThat said, I THINK these are now completely gone from even CQ and scheduler? If that\u0027s the case then I\u0027ll stop deleting them here because folks have bigger problems than led at that point if they still rely on these.",
+      "parentUuid": "1a51ee2f_d281807c",
+      "revId": "9a32d6b63cec3370f8755d6c420e8428c0d3a289",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
