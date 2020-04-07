@@ -135,7 +135,7 @@ The spec (as it is) for JobDefinition is at:
 			editCrCLCmd(defaults),
 
 			// commands to edit the raw isolated files.
-			// IMPLEMENT editIsolated(defaults),
+			editIsolated(defaults),
 
 			// commands to launch swarming tasks.
 			// IMPLEMENT launchCmd(defaults),
