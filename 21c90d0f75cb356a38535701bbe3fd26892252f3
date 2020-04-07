@@ -492,6 +492,30 @@
       "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9e683afd_cf053927",
+        "filename": "luci_notify/notify/tree_status_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-07T05:42:29Z",
+      "side": 1,
+      "message": "oh, i see now!",
+      "parentUuid": "c570416c_a0c9a868",
+      "range": {
+        "startLine": 346,
+        "startChar": 3,
+        "endLine": 349,
+        "endChar": 13
+      },
+      "revId": "21c90d0f75cb356a38535701bbe3fd26892252f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
