@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a58f818_275e4ad5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-07T05:02:04Z",
+      "side": 1,
+      "message": "these are different projects.\ngit.WithProject() takes LUCI project (badly named, sure).\nOTH, you are passing GoB (Git/Gerrit-on-Borg) project.",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 0
+      },
+      "revId": "ebd9590712ae648d743854ea5fb4ab354d7d6699",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
