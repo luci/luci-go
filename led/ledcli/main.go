@@ -132,7 +132,7 @@ The spec (as it is) for JobDefinition is at:
 			editCmd(defaults),
 			editSystemCmd(defaults),
 			editRecipeBundleCmd(defaults),
-			// IMPLEMENT editCrCLCmd(defaults),
+			editCrCLCmd(defaults),
 
 			// commands to edit the raw isolated files.
 			// IMPLEMENT editIsolated(defaults),
