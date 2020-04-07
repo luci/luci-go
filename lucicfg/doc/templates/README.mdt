@@ -43,6 +43,7 @@
 {{ $time := Symbol "@stdlib//builtins.star" "time" }}
 {{ $luci := Symbol "@stdlib//builtins.star" "luci" }}
 {{ $acl := Symbol "@stdlib//builtins.star" "acl" }}
+{{ $resultdb := Symbol "@stdlib//builtins.star" "resultdb" }}
 {{ $swarming := Symbol "@stdlib//builtins.star" "swarming" }}
 {{ $scheduler := Symbol "@stdlib//builtins.star" "scheduler" }}
 {{ $cq := Symbol "@stdlib//builtins.star" "cq" }}
@@ -490,6 +491,9 @@ Similarly some roles can be assigned to individual users, other only to groups.
 {{- end}}
 
 {{template "gen-funcs-doc" $acl}}
+
+## ResultDB
+{{template "gen-funcs-doc" $resultdb}}
 
 ## Swarming
 {{template "gen-funcs-doc" $swarming}}
