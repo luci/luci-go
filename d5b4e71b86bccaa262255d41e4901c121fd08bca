@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa3d3f25_7c3097f5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-07T21:14:46Z",
+      "side": 1,
+      "message": "I think you don\u0027t need to do this, you could have only the conversion job. VM attributes should be immutable for the lifetime of the entity, so none of the write sites are changing them. A conversion job that checks if BinaryAttributes !\u003d \"\" should suffice.",
+      "range": {
+        "startLine": 9,
+        "startChar": 62,
+        "endLine": 9,
+        "endChar": 70
+      },
+      "revId": "d5b4e71b86bccaa262255d41e4901c121fd08bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2ec604b_f0c2e8f5",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-07T21:14:46Z",
+      "side": 1,
+      "message": "Let\u0027s use logging.Warningf. Easier to find when checking if it\u0027s okay to revert the conversion code.",
+      "revId": "d5b4e71b86bccaa262255d41e4901c121fd08bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8780a4b7_3ef01b22",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-07T21:14:46Z",
+      "side": 1,
+      "message": "Theoretically this may conflict with other writes, so we should use datastore.RunInTransaction, calling both Get and Put inside the transaction to make sure we have the latest field values for the VM entity (see e.g. setConnected).",
+      "revId": "d5b4e71b86bccaa262255d41e4901c121fd08bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b98b847_525633f6",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-07T21:14:46Z",
+      "side": 1,
+      "message": "Theoretically we may keep calling manageMissingBot for 180 days, in which case you never get to call manageExistingBot and reach the conversion code, but it would mean that a VM configured to live for 180 days isn\u0027t connecting for 180 days and nobody noticed or cared. In practice such a situation \"probably\" isn\u0027t occurring, but we have no way to know so we should probably handle it by calling convertToBinary in manageBot instead of in manageExistingBot. This is slightly less efficient because it will convert entities that are about to be deleted anyway, but it\u0027s not a big deal.",
+      "revId": "d5b4e71b86bccaa262255d41e4901c121fd08bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "556a5bf1_562013f1",
+        "filename": "gce/appengine/model/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-07T21:14:46Z",
+      "side": 1,
+      "message": "Sorry I forgot to mention this in a previous CL (so it applies to L21 as well), but comments like these should be written in sentences, e.g. \"CopyToBinaryInVM copies ...\" instead of \"CopyToBinaryInVM - copy\" because they will be extracted and presented in godocs (inline comments can be however you want-- for the most part). This also means punctuation at the end of the sentence.\n\nAlso you have a typo in this sentence (model.ConVMfig -\u003e VM).",
+      "revId": "d5b4e71b86bccaa262255d41e4901c121fd08bca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
