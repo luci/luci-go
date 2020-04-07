@@ -166,6 +166,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		SELECT
 		 i.InvocationId,
 		 i.State,
+		 i.CreatedBy,
 		 i.CreateTime,
 		 i.FinalizeTime,
 		 i.Deadline,
@@ -186,8 +187,10 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		var bqExports [][]byte
 		inv := &pb.Invocation{}
 
+		var createdBy spanner.NullString
 		err := b.FromSpanner(row, &id,
 			&inv.State,
+			&createdBy,
 			&inv.CreateTime,
 			&inv.FinalizeTime,
 			&inv.Deadline,
@@ -201,6 +204,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 
 		inv.Name = pbutil.InvocationName(string(id))
 		inv.IncludedInvocations = included.Names()
+		inv.CreatedBy = createdBy.StringVal
 
 		if len(bqExports) > 0 {
 			inv.BigqueryExports = make([]*pb.BigQueryExport, len(bqExports))
