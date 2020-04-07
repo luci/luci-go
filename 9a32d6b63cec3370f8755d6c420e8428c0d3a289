@@ -33,6 +33,24 @@
       "revId": "9a32d6b63cec3370f8755d6c420e8428c0d3a289",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f5bd38f_58123ec6",
+        "filename": "led/ledcli/edit_cr_cl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-07T20:21:19Z",
+      "side": 1,
+      "message": "The previous version of led was already nuking these: https://cs.chromium.org/chromium/infra/go/src/infra/tools/led/job_edit_cl.go?l\u003d185\n\nI\u0027m just carrying on the tradition :)",
+      "parentUuid": "25a91efb_b4803a24",
+      "revId": "9a32d6b63cec3370f8755d6c420e8428c0d3a289",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
