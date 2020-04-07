@@ -124,7 +124,7 @@ The spec (as it is) for JobDefinition is at:
 		Commands: []*subcommands.Command{
 			// commands to obtain JobDescriptions. These all begin with `get`.
 			// TODO(iannucci): `get` to scrape from any URL
-			// IMPLEMENT getSwarmCmd(defaults),
+			getSwarmCmd(defaults),
 			// IMPLEMENT getBuildCmd(defaults),
 			getBuilderCmd(defaults),
 
