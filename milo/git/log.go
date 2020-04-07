@@ -244,7 +244,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		req.ExcludeAncestorsOf = l.ancestor
 	}
 	logging.Infof(c, "gitiles(%q).Log(%#v)", l.host, req)
-	client, err := l.factory.gitilesClient(c, l.host)
+	client, err := l.factory.gitilesClient(c, l.host, l.project)
 	if err != nil {
 		return nil, err
 	}

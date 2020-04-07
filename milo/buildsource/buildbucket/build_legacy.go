@@ -209,7 +209,7 @@ func ToMiloBuild(c context.Context, msg *bbv1.LegacyApiCommonBuildMessage) (*ui.
 		}}
 		result.Trigger.Changelist = link
 
-		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Change)
+		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Project, cl.Change)
 		switch {
 		case err == context.DeadlineExceeded:
 			result.Blame[0].AuthorEmail = "<Gerrit took too long respond>"

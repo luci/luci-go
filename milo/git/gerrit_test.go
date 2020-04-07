@@ -42,6 +42,7 @@ func TestCLEmail(t *testing.T) {
 		gerritMock := gerritpb.NewMockGerritClient(ctl)
 
 		host := "limited-review.googlesource.com"
+		project := "project"
 		acls, err := gitacls.FromConfig(c, []*config.Settings_SourceAcls{
 			{Hosts: []string{"limited.googlesource.com"}, Readers: []string{"allowed@example.com"}},
 		})
@@ -54,10 +55,10 @@ func TestCLEmail(t *testing.T) {
 		// Will be called exactly once.
 		gerritMock.EXPECT().GetChange(gomock.Any(), gomock.Any()).Return(&gerritpb.ChangeInfo{
 			Owner:   &gerritpb.AccountInfo{Email: "user@example.com"},
-			Project: "project",
+			Project: project,
 		}, nil)
 
-		_, err = impl.CLEmail(cDenied, host, 123)
+		_, err = impl.CLEmail(cDenied, host, project, 123)
 		Convey("ACLs respected with cold cache", func() {
 			So(err.Error(), ShouldContainSubstring, "not logged in")
 		})
@@ -66,12 +67,12 @@ func TestCLEmail(t *testing.T) {
 		// happen, ensured by gerritMock expectation above.
 
 		Convey("ACLs still respected with warm cache", func() {
-			_, err = impl.CLEmail(cDenied, host, 123)
+			_, err = impl.CLEmail(cDenied, host, project, 123)
 			So(err.Error(), ShouldContainSubstring, "not logged in")
 		})
 
 		Convey("Happy cached path", func() {
-			email, err := impl.CLEmail(cAllowed, host, 123)
+			email, err := impl.CLEmail(cAllowed, host, project, 123)
 			So(err, ShouldBeNil)
 			So(email, ShouldResemble, "user@example.com")
 		})
