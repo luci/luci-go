@@ -29,6 +29,7 @@
 
 
 
+
 [TOC]
 
 ## Overview
@@ -1088,6 +1089,7 @@ luci.builder(
     experimental = None,
     task_template_canary_percentage = None,
     repo = None,
+    resultdb_settings = None,
     triggers = None,
     triggered_by = None,
     notifies = None,
@@ -1161,6 +1163,7 @@ Buildbucket.
 * **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from the executable and it may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles_poller) that trigger this builder if they all poll the same repo.
+* **resultdb_settings**: A buildbucket_pb.Builder.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer).
@@ -2149,6 +2152,109 @@ luci.project(
 #### Returns  {#acl.entry-returns}
 
 acl.entry object, should be treated as opaque.
+
+
+
+
+
+## ResultDB
+
+
+
+
+### resultdb.settings {#resultdb.settings}
+
+```python
+resultdb.settings(enable = None, bq_exports = None)
+```
+
+
+
+Specifies how buildbucket should integrate with ResultDB.
+
+#### Arguments {#resultdb.settings-args}
+
+* **enable**: boolean, whether to enable ResultDB:Buildbucket integration.
+* **bq_exports**: list of resultdb_pb.BigQueryExport() protos, configurations for exporting specific subsets of test results to a designated BigQuery table, use [resultdb.export_test_results(...)](#resultdb.export_test_results) to create these.
+
+
+#### Returns  {#resultdb.settings-returns}
+
+A populated buildbucket_pb.Builder.ResultDB() proto.
+
+
+
+### resultdb.export_test_results {#resultdb.export_test_results}
+
+```python
+resultdb.export_test_results(bq_table = None, predicate = None)
+```
+
+
+
+Represents a mapping between a subset of test results and a BigQuery table
+to export them to.
+
+#### Arguments {#resultdb.export_test_results-args}
+
+* **bq_table**: string of the form `<project>.<dataset>.<table>` where the parts respresent the BigQuery-enabled gcp project, dataset and table to export results.
+* **predicate**: A predicate_pb.TestResultPredicate() proto. If given, specifies the subset of test results to export to the above table, instead of all. Use [resultdb.test_result_predicate(...)](#resultdb.test_result_predicate) to generate this, if needed.
+
+
+#### Returns  {#resultdb.export_test_results-returns}
+
+A populated resultdb_pb.BigQueryExport() proto.
+
+
+
+### resultdb.test_result_predicate {#resultdb.test_result_predicate}
+
+```python
+resultdb.test_result_predicate(
+    # Optional arguments.
+    test_id_regexp = None,
+    variant = None,
+    variant_contains = None,
+    unexpected_only = None,
+)
+```
+
+
+
+Represents a predicate of test results.
+
+#### Arguments {#resultdb.test_result_predicate-args}
+
+* **test_id_regexp**: string, regular expression that a test result must fully match to be considered covered by this definition.
+* **variant**: string dict, defines the test variant to match. E.g. `{"test_suite": "not_site_per_process_webkit_layout_tests"}`
+* **variant_contains**: bool, if true the variant parameter above will cause a match if it's a subset of the test's variant, otherwise it will only match if it's exactly equal.
+* **unexpected_only**: bool, if true only export test results of test variants that had unexpected results.
+
+
+#### Returns  {#resultdb.test_result_predicate-returns}
+
+A populated predicate_pb.TestResultPredicate() proto.
+
+
+
+### resultdb.validate_settings {#resultdb.validate_settings}
+
+```python
+resultdb.validate_settings(settings = None)
+```
+
+
+
+Validates the type of a ResultDB settings proto.
+
+#### Arguments {#resultdb.validate_settings-args}
+
+* **settings**: A proto such as the one returned by [resultdb.settings(...)](#resultdb.settings).
+
+
+#### Returns  {#resultdb.validate_settings-returns}
+
+A validated proto, if it's the correct type.
 
 
 
