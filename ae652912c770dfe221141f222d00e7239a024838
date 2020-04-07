@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "10bdfd24_4e9956ce",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 14
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T20:34:56Z",
+      "side": 1,
+      "message": "This was an oversight. Fixed.",
+      "parentUuid": "cda9ab25_61b4c443",
+      "range": {
+        "startLine": 31,
+        "startChar": 4,
+        "endLine": 31,
+        "endChar": 23
+      },
+      "revId": "ae652912c770dfe221141f222d00e7239a024838",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "66ec941b_3e730abc",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 14
@@ -45,6 +69,30 @@
       "revId": "ae652912c770dfe221141f222d00e7239a024838",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e3f1e22_c246f02f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 14
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-07T20:34:56Z",
+      "side": 1,
+      "message": "Oops. My bad. I\u0027ve added a couple of test cases to make sure this is correct. I actually had to add ^ and $ to make it fail on \u0027a.b.c.d\u0027.",
+      "parentUuid": "66ec941b_3e730abc",
+      "range": {
+        "startLine": 65,
+        "startChar": 50,
+        "endLine": 65,
+        "endChar": 51
+      },
+      "revId": "ae652912c770dfe221141f222d00e7239a024838",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
