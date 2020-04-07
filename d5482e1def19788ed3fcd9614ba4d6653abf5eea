@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2e18eb3e_21a9392a",
+        "filename": "led/ledcli/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-07T06:04:09Z",
+      "side": 1,
+      "message": "Well, I don\u0027t want to introduce something new just for this; if we replace it, it should be in some systemic way (e.g. we all agree to start using the new thing and opportunistically replace instances of subcommands)",
+      "parentUuid": "446cda18_36ef63fb",
+      "revId": "d5482e1def19788ed3fcd9614ba4d6653abf5eea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12aca9a6_373ee350",
         "filename": "led/ledcli/util.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "d5482e1def19788ed3fcd9614ba4d6653abf5eea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2445d4a_23db9619",
+        "filename": "led/ledcli/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-07T06:04:09Z",
+      "side": 1,
+      "message": "yeah idk what I was thinking... will fix",
+      "parentUuid": "12aca9a6_373ee350",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 3
+      },
+      "revId": "d5482e1def19788ed3fcd9614ba4d6653abf5eea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
