@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/client/archiver"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
+	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -104,6 +105,15 @@ func fetchIsolated(ctx context.Context, arc isoClientIface, dgst isolated.HexDig
 		return nil, errors.Annotate(err, "parsing isolated %q", dgst).Err()
 	}
 	return &isoFile, nil
+}
+
+func newSwarmClient(authClient *http.Client, host string) *swarming.Service {
+	swarm, err := swarming.New(authClient)
+	if err != nil {
+		panic(err)
+	}
+	swarm.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
+	return swarm
 }
 
 func newSwarmbucketClient(authClient *http.Client, host string) *swarmbucket.Service {
