@@ -30,9 +30,9 @@ import (
 var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
 
 // CLEmail implements Client interface.
-func (p *implementation) CLEmail(c context.Context, host string, changeNumber int64) (email string, err error) {
+func (p *implementation) CLEmail(c context.Context, host, project string, changeNumber int64) (email string, err error) {
 	defer func() { err = common.TagGRPC(c, err) }()
-	changeInfo, err := p.clEmailAndProjectNoACLs(c, host, changeNumber)
+	changeInfo, err := p.clEmailAndProjectNoACLs(c, host, project, changeNumber)
 	if err != nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (p *implementation) CLEmail(c context.Context, host string, changeNumber in
 // Gerrit change owner and project are deemed immutable.
 // Caveat: technically only owner's account id is immutable. Owner's email
 // associated with this account id may change, but this is rare.
-func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string, changeNumber int64) (*gerritpb.ChangeInfo, error) {
+func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host, project string, changeNumber int64) (*gerritpb.ChangeInfo, error) {
 	cache := memcache.NewItem(c, fmt.Sprintf("gerrit-change-owner/%s/%d", host, changeNumber))
 	if err := memcache.Get(c, cache); err == nil {
 		val := &gerritpb.ChangeInfo{}
@@ -62,7 +62,7 @@ func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string,
 		}
 	}
 
-	client, err := p.gerritClient(c, host)
+	client, err := p.gerritClient(c, host, project)
 	if err != nil {
 		return nil, err
 	}

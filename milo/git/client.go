@@ -90,7 +90,7 @@ type Client interface {
 	//   current user has no access to CL's project.
 	//
 	// May return gRPC errors returned by the underlying Gerrit service.
-	CLEmail(c context.Context, host string, changeNumber int64) (string, error)
+	CLEmail(c context.Context, host, project string, changeNumber int64) (string, error)
 }
 
 // UseACLs returns context with production implementation installed.
@@ -132,34 +132,33 @@ type implementation struct {
 var _ Client = (*implementation)(nil)
 
 // transport returns an authenticated RoundTripper for Gerrit or Gitiles RPCs.
-func (p *implementation) transport(c context.Context) (transport http.RoundTripper, err error) {
-	luciProject, err := ProjectFromContext(c)
+func (p *implementation) transport(c context.Context, project string) (transport http.RoundTripper, err error) {
 	if err != nil {
 		return nil, err
 	}
 	opts := []auth.RPCOption{
-		auth.WithProject(luciProject),
+		auth.WithProject(project),
 		auth.WithScopes(gitiles.OAuthScope),
 	}
 	return auth.GetRPCTransport(c, auth.AsProject, opts...)
 }
 
-func (p *implementation) gitilesClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
+func (p *implementation) gitilesClient(c context.Context, host, project string) (gitilespb.GitilesClient, error) {
 	if p.mockGitiles != nil {
 		return p.mockGitiles, nil
 	}
-	t, err := p.transport(c)
+	t, err := p.transport(c, project)
 	if err != nil {
 		return nil, err
 	}
 	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
 }
 
-func (p *implementation) gerritClient(c context.Context, host string) (gerritpb.GerritClient, error) {
+func (p *implementation) gerritClient(c context.Context, host, project string) (gerritpb.GerritClient, error) {
 	if p.mockGerrit != nil {
 		return p.mockGerrit, nil
 	}
-	t, err := p.transport(c)
+	t, err := p.transport(c, project)
 	if err != nil {
 		return nil, err
 	}

@@ -272,7 +272,7 @@ func (impl *implementation) CombinedLogs(c context.Context, host, project, exclu
 	}
 
 	// Prepare Gitiles client.
-	client, err := impl.gitilesClient(c, host)
+	client, err := impl.gitilesClient(c, host, project)
 	if err != nil {
 		return
 	}
