@@ -228,10 +228,15 @@ func TestHandleBuild(t *testing.T) {
 		c = memlogger.Use(c)
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
 
-		// Add Project and Notifiers to datastore and update indexes.
+		// Add entities to datastore and update indexes.
 		project := &config.Project{Name: "chromium"}
 		builders := makeBuilders(c, "chromium", cfg)
-		So(datastore.Put(c, project, builders), ShouldBeNil)
+		template := &config.EmailTemplate{
+			ProjectKey:          datastore.KeyForObj(c, project),
+			Name:                "template",
+			SubjectTextTemplate: "Builder {{.Build.Builder.Builder}} failed",
+		}
+		So(datastore.Put(c, project, builders, template), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
@@ -513,11 +518,11 @@ func TestHandleBuild(t *testing.T) {
 			assertTasks(failure_and_infra_failure_build, mockCheckoutFunc(nil), failAndInfraFailEmail)
 		})
 
-		testTreeClosers := func(buildStatus buildbucketpb.Status, initialStatus, expectedNewStatus config.TreeCloserStatus, expectingUpdatedTimestamp bool, failingSteps []string) {
-			// Some arbitrary time guaranteed to be less than time.Now() when called from handleBuild.
-			µs, _ := time.ParseDuration("1µs")
-			initialTimestamp := time.Now().AddDate(-1, 0, 0).UTC().Round(µs)
+		// Some arbitrary time guaranteed to be less than time.Now() when called from handleBuild.
+		µs, _ := time.ParseDuration("1µs")
+		initialTimestamp := time.Now().AddDate(-1, 0, 0).UTC().Round(µs)
 
+		runHandleBuild := func(buildStatus buildbucketpb.Status, initialStatus config.TreeCloserStatus, failingSteps []string) *config.TreeCloser {
 			// Insert the tree closer to test into datastore.
 			builderKey := datastore.KeyForObj(c, &config.Builder{
 				ProjectKey: datastore.KeyForObj(c, &config.Project{Name: "chromium"}),
@@ -530,6 +535,7 @@ func TestHandleBuild(t *testing.T) {
 				TreeCloser: apicfg.TreeCloser{
 					FailedStepRegexp:        "include",
 					FailedStepRegexpExclude: "exclude",
+					Template:                "template",
 				},
 				Status:    initialStatus,
 				Timestamp: initialTimestamp,
@@ -543,6 +549,11 @@ func TestHandleBuild(t *testing.T) {
 
 			// Fetch the new tree closer.
 			So(datastore.Get(c, tc), ShouldBeNil)
+			return tc
+		}
+
+		testStatus := func(buildStatus buildbucketpb.Status, initialStatus, expectedNewStatus config.TreeCloserStatus, expectingUpdatedTimestamp bool, failingSteps []string) {
+			tc := runHandleBuild(buildStatus, initialStatus, failingSteps)
 
 			// Assert the resulting state of the tree closer.
 			So(tc.Status, ShouldEqual, expectedNewStatus)
@@ -556,38 +567,45 @@ func TestHandleBuild(t *testing.T) {
 		// All possibilities are explored in the tests below.
 
 		Convey(`Build passed, Closed -> Open, adjusts timestamp`, func() {
-			testTreeClosers(buildbucketpb.Status_SUCCESS, config.Closed, config.Open, true, []string{})
+			testStatus(buildbucketpb.Status_SUCCESS, config.Closed, config.Open, true, []string{})
 		})
 
 		Convey(`Build passed, Open -> Open, doesn't adjust timestamp`, func() {
-			testTreeClosers(buildbucketpb.Status_SUCCESS, config.Open, config.Open, false, []string{})
+			testStatus(buildbucketpb.Status_SUCCESS, config.Open, config.Open, false, []string{})
 		})
 
 		Convey(`Build failed, filters don't match, Closed -> Open, adjusts timestamp`, func() {
-			testTreeClosers(buildbucketpb.Status_FAILURE, config.Closed, config.Open, true, []string{"exclude"})
+			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Open, true, []string{"exclude"})
 		})
 
 		Convey(`Build failed, filters don't match, Open -> Open, doesn't adjust timestamp`, func() {
-			testTreeClosers(buildbucketpb.Status_FAILURE, config.Open, config.Open, false, []string{"exclude"})
+			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Open, false, []string{"exclude"})
 		})
 
 		Convey(`Build failed, filters match, Open -> Closed, adjusts timestamp`, func() {
-			testTreeClosers(buildbucketpb.Status_FAILURE, config.Open, config.Closed, true, []string{"include"})
+			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Closed, true, []string{"include"})
 		})
 
 		Convey(`Build failed, filters match, Closed -> Closed, doesn't adjust timestamp`, func() {
-			testTreeClosers(buildbucketpb.Status_FAILURE, config.Closed, config.Closed, false, []string{"include"})
+			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Closed, false, []string{"include"})
 		})
 
 		// In addition, we want to test that statuses other than SUCCESS and FAILURE don't
 		// cause any updates, regardless of the initial state.
 
 		Convey(`Infra failure, stays Open`, func() {
-			testTreeClosers(buildbucketpb.Status_INFRA_FAILURE, config.Open, config.Open, false, []string{"include"})
+			testStatus(buildbucketpb.Status_INFRA_FAILURE, config.Open, config.Open, false, []string{"include"})
 		})
 
 		Convey(`Infra failure, stays Closed`, func() {
-			testTreeClosers(buildbucketpb.Status_INFRA_FAILURE, config.Closed, config.Closed, false, []string{"include"})
+			testStatus(buildbucketpb.Status_INFRA_FAILURE, config.Closed, config.Closed, false, []string{"include"})
+		})
+
+		// Test that the correct status message is generated.
+		Convey(`Status message`, func() {
+			tc := runHandleBuild(buildbucketpb.Status_FAILURE, config.Open, []string{"include"})
+
+			So(tc.Message, ShouldEqual, "Builder test-builder-tree-closer failed")
 		})
 	})
 }
