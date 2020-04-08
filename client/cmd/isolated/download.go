@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"runtime/pprof"
 	"strings"
 	"sync"
 
@@ -139,7 +140,10 @@ func (c *downloadRun) outputResults(cache cache.Cache, dl *downloader.Downloader
 func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	// Prepare isolated client.
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
+	signals.HandleInterrupt(func() {
+		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
+		cancel()
+	})
 	if err := c.runMain(ctx, a, args); err != nil {
 		errors.Log(ctx, err)
 		return err
