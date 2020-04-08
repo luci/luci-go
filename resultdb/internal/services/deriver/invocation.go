@@ -56,6 +56,7 @@ func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation,
 		"Deadline":   inv.Deadline,
 
 		"Tags": inv.Tags,
+		"ProducerResource": inv.ProducerResource,
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {

@@ -64,12 +64,12 @@ func validateBatchCreateInvocationsRequest(
 func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.BatchCreateInvocationsRequest) (*pb.BatchCreateInvocationsResponse, error) {
 	now := clock.Now(ctx).UTC()
 
-	allowCustomID, err := auth.IsMember(ctx, customIdGroup)
+	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
 	if err != nil {
 		return nil, err
 	}
 
-	idSet, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId, allowCustomID)
+	idSet, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId, trustedCreator)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -117,12 +117,13 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
-			Name:            span.InvocationID(req.InvocationId).Name(),
-			State:           pb.Invocation_ACTIVE,
-			Deadline:        req.Invocation.GetDeadline(),
-			Tags:            req.Invocation.GetTags(),
-			BigqueryExports: req.Invocation.GetBigqueryExports(),
-			CreatedBy:       string(auth.CurrentIdentity(ctx)),
+			Name:             span.InvocationID(req.InvocationId).Name(),
+			State:            pb.Invocation_ACTIVE,
+			Deadline:         req.Invocation.GetDeadline(),
+			Tags:             req.Invocation.GetTags(),
+			BigqueryExports:  req.Invocation.GetBigqueryExports(),
+			CreatedBy:        string(auth.CurrentIdentity(ctx)),
+			ProducerResource: req.Invocation.GetProducerResource(),
 		}
 
 		// Ensure the invocation has a deadline.
