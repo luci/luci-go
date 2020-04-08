@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "2700851d_2ccd8687",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
+        "patchSetId": 16
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-08T00:43:14Z",
+      "side": 1,
+      "message": "thanks",
+      "parentUuid": "ea88401a_26a8334d",
+      "range": {
+        "startLine": 105,
+        "startChar": 44,
+        "endLine": 105,
+        "endChar": 58
+      },
+      "revId": "1122cda79756dc79e137e29909fc7229ad5d8eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fbd8c384_967e3179",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/resultdb.star",
         "patchSetId": 16
