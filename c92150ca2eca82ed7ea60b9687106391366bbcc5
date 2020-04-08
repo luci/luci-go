@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6bc0c49d_4c367946",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-08T17:17:56Z",
+      "side": 1,
+      "message": "i think this design is more intrusive and limiting than it has to be, in a couple of ways:\n1) to connect two elements with this lib, i have to modify the elements, although from their perspective, what they do is enough. Both can have observable properties, e.g. subscriber has read/write property and the provider has it read-only\n2) this requires putting the subscriber inside the provider, although we might have a situation where subscriber and publisher elements need to be siblings. Ideally the hierarchy of elements and their data binding is orthogonal.\n3) contextKey is defined at the element level (so it is global), as opposed to the place of usage, i.e. Page class in your example.\n\nFWIU you are trying to implement data binding. I wonder if it can solved like this:\n\n  \u003cdata-binding from-id\u003d\"sourceElementId\" from-property\u003d\"myProp\" to-id\u003d\"destElemId\" to-property\u003d\"myProp2\"\u003e\n  \u003csrcElem id\u003d\"sourceElemeentId\" /\u003e\n  \u003cdestElem id\u003d\"destElemId\" /\u003e\n\nwhere srcElem class has myProp observable property and destElement has myProp2 writable property.\n\nThen DataBinding class subscribes to DOM mutations of the tree it belongs to and finds the from/to elements by their ids.\nThen it subscribes to the observable property of the \"from\" element. Whenever it changes, it copies it to the dest element.",
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2f043be_cf39393e",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-08T17:17:56Z",
+      "side": 1,
+      "message": "is the point of this double \"as\" is to ensure newValue is both an lit element and T?\nif so, should we mark T as extending LitElement in L155 where we declare T?",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
