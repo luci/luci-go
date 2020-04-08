@@ -79,17 +79,6 @@ service Recorder {
   // invocation.
   rpc BatchCreateTestExonerations(BatchCreateTestExonerationsRequest)
       returns (BatchCreateTestExonerationsResponse) {};
-
-  // == Misc ===================================================================
-
-  // Derives an invocation and test results from a Chromium swarming task.
-  // Returns the derived invocation; test results should retrieved using
-  // ResultDB.ListTestResults or ResultDB.QueryTestResults.
-  //
-  // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
-  // in which we derive invocations given swarming task IDs, rather than have
-  // tasks make RPCs directly.
-  rpc DeriveInvocation(DeriveInvocationRequest) returns (Invocation) {};
 }
 
 // == Invocations ==============================================================
@@ -270,40 +259,4 @@ message BatchCreateInvocationsResponse {
   // update_tokens[i] corresponds to invocations[i].
   // *Do not log these values*.
   repeated string update_tokens = 2;
-}
-
-
-// == Misc =====================================================================
-
-// A request message for DeriveInvocation RPC.
-message DeriveInvocationRequest {
-
-  // Identifies a swarming task.
-  message SwarmingTask {
-    // Swarming host of task.
-    string hostname = 1 [ (google.api.field_behavior) = REQUIRED ];
-
-    // ID of swarming task to process and insert.
-    //
-    // The task should have tags:
-    //  ninja_target: the fully-qualified ninja target used to compile the test
-    //    binary used in the task, e.g. "//chrome/test:browser_tests".
-    //  bucket: the LUCI bucket of the parent build
-    //  buildername: the LUCI builder of the parent build.
-    //  test_suite: a value of "test" property in any of the JSON files in
-    //    https://chromium.googlesource.com/chromium/src/+/master/testing/buildbot/
-    //    used to create the swarming task.
-    string id = 2 [ (google.api.field_behavior) = REQUIRED ];
-  }
-
-  // Derive the invocation from the Swarming task.
-  SwarmingTask swarming_task = 1 [ (google.api.field_behavior) = REQUIRED ];
-}
-
-// Used a google.rpc.PreconditionFailure.Violation.type returned as a Status
-// detail by DeriveInvocation when responding with a PreconditionFailure status
-// code.
-enum DeriveInvocationPreconditionFailureType {
-  DERIVE_INVOCATION_PRECONDITION_FAILURE_TYPE_UNSPECIFIED = 0;
-  INCOMPLETE_SWARMING_TASK = 1;
 }

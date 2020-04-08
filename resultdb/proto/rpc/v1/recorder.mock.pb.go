@@ -215,26 +215,6 @@ func (mr *MockRecorderClientMockRecorder) BatchCreateTestExonerations(ctx, in in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateTestExonerations", reflect.TypeOf((*MockRecorderClient)(nil).BatchCreateTestExonerations), varargs...)
 }
 
-// DeriveInvocation mocks base method
-func (m *MockRecorderClient) DeriveInvocation(ctx context.Context, in *DeriveInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DeriveInvocation", varargs...)
-	ret0, _ := ret[0].(*Invocation)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DeriveInvocation indicates an expected call of DeriveInvocation
-func (mr *MockRecorderClientMockRecorder) DeriveInvocation(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeriveInvocation", reflect.TypeOf((*MockRecorderClient)(nil).DeriveInvocation), varargs...)
-}
-
 // MockRecorderServer is a mock of RecorderServer interface
 type MockRecorderServer struct {
 	ctrl     *gomock.Controller
@@ -391,19 +371,4 @@ func (m *MockRecorderServer) BatchCreateTestExonerations(arg0 context.Context, a
 func (mr *MockRecorderServerMockRecorder) BatchCreateTestExonerations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateTestExonerations", reflect.TypeOf((*MockRecorderServer)(nil).BatchCreateTestExonerations), arg0, arg1)
-}
-
-// DeriveInvocation mocks base method
-func (m *MockRecorderServer) DeriveInvocation(arg0 context.Context, arg1 *DeriveInvocationRequest) (*Invocation, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeriveInvocation", arg0, arg1)
-	ret0, _ := ret[0].(*Invocation)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DeriveInvocation indicates an expected call of DeriveInvocation
-func (mr *MockRecorderServerMockRecorder) DeriveInvocation(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeriveInvocation", reflect.TypeOf((*MockRecorderServer)(nil).DeriveInvocation), arg0, arg1)
 }
