@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "398fefdb_066eec02",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-08T17:23:23Z",
+      "side": 1,
+      "message": "expanded the CL description significantly. PTAL",
+      "parentUuid": "d799d64e_0bce9463",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 19
+      },
+      "revId": "a21894b116534f49a0bde2ffe8c79bf3785a1305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc3f6209_fcaff452",
         "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
         "patchSetId": 3
@@ -60,6 +84,30 @@
       "side": 1,
       "message": "Or even \n\n //$resultdbhostname/derivations/$swarmingHostname/tasks/$taskId\n\n?",
       "parentUuid": "fc3f6209_fcaff452",
+      "range": {
+        "startLine": 85,
+        "startChar": 38,
+        "endLine": 85,
+        "endChar": 43
+      },
+      "revId": "a21894b116534f49a0bde2ffe8c79bf3785a1305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd1af3d7_f9459615",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-08T17:23:23Z",
+      "side": 1,
+      "message": "i agree that we might want to distinguish derived and non-derived, but i don\u0027t think it should be done using this field. There are clients that don\u0027t want to see the diff, such as the client of this property - UI.\n\ni think the invocations are already distinguishable via tags.",
+      "parentUuid": "c80ab1e2_8e4ea2e3",
       "range": {
         "startLine": 85,
         "startChar": 38,
