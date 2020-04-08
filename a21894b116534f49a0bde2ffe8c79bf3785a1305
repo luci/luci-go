@@ -22,6 +22,29 @@
       "revId": "a21894b116534f49a0bde2ffe8c79bf3785a1305",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc3f6209_fcaff452",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-08T16:26:34Z",
+      "side": 1,
+      "message": "maybe \"derived_tasks\" to distinguish from when swarming has built-in resultdb integration?",
+      "range": {
+        "startLine": 85,
+        "startChar": 38,
+        "endLine": 85,
+        "endChar": 43
+      },
+      "revId": "a21894b116534f49a0bde2ffe8c79bf3785a1305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
