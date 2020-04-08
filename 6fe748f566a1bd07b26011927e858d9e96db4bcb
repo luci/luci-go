@@ -16,6 +16,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdbdff68_9760e14d",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-08T17:56:37Z",
+      "side": 1,
+      "message": "not sure yet. maybe. note that this is an invocation-level field, not test results. It means it will be duplicated hundreds or thousands of times. maybe that\u0027s ok because BQ storage is cheap, but we also don\u0027t have a use case for this. BigQuery queries usually aren\u0027t written in a generic way, so they can parse invocation id if they really need to produce a URL. Thoughts?\n\nin any case, yes, separate CL",
+      "parentUuid": "92f119fc_0318ae53",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
