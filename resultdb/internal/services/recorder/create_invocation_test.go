@@ -85,7 +85,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "build:8765432100",
 			}, now, false)
-			So(err, ShouldErrLike, `must have id starting with "u:"`)
+			So(err, ShouldErrLike, `only invocations created by trusted systems may have id not starting with "u:"`)
 		})
 
 		Convey(`reserved prefix, allowed`, func() {
@@ -141,6 +141,26 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
+		Convey(`producer_resource disallowed`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u:0",
+				Invocation: &pb.Invocation{
+					ProducerResource: "//builds.example.com/builds/1",
+				},
+			}, now, false)
+			So(err, ShouldErrLike, `invocation: producer_resource: only trusted systems are allowed`)
+		})
+
+		Convey(`producer_resource allowed`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u:0",
+				Invocation: &pb.Invocation{
+					ProducerResource: "//builds.example.com/builds/1",
+				},
+			}, now, true)
+			So(err, ShouldBeNil)
+		})
+
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
@@ -161,7 +181,7 @@ func TestCreateInvocation(t *testing.T) {
 		// Configure mock authentication to allow creation of custom invocation ids.
 		ctx = authtest.MockAuthConfig(ctx)
 		db := authtest.FakeDB{
-			"anonymous:anonymous": []string{"luci-resultdb-custom-invocation-id"},
+			"anonymous:anonymous": []string{trustedInvocationCreators},
 		}
 		ctx = db.Use(ctx)
 
@@ -245,6 +265,7 @@ func TestCreateInvocation(t *testing.T) {
 					BigqueryExports: []*pb.BigQueryExport{
 						bqExport,
 					},
+					ProducerResource: "//builds.example.com/builds/1",
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))

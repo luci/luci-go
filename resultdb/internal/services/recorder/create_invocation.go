@@ -37,8 +37,9 @@ import (
 )
 
 var (
-	// customIdGroup is a CIA group that can create invocations with custom id's.
-	customIdGroup = "luci-resultdb-custom-invocation-id"
+	// trustedInvocationCreators is a CIA group that can create invocations with
+	// custom IDs and specify producer_resource field.
+	trustedInvocationCreators = "luci-resultdb-trusted-invocation-creators"
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
@@ -61,13 +62,18 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, allowCustomID bool) error {
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, trustedCreator bool) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
 	}
 
-	if !strings.HasPrefix(req.InvocationId, "u:") && !allowCustomID {
-		return errors.Reason(`invocation_id: an invocation created by a non-LUCI system must have id starting with "u:"; please generate "u:{GUID}"`).Err()
+	if !trustedCreator {
+		if !strings.HasPrefix(req.InvocationId, "u:") {
+			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u:"; please generate "u:{GUID}" or reach out to ResultDB owners`).Err()
+		}
+		if req.GetInvocation().GetProducerResource() != "" {
+			return errors.Reason(`invocation: producer_resource: only trusted systems are allowed to set producer_resource field for now`).Err()
+		}
 	}
 
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
@@ -102,11 +108,11 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	now := clock.Now(ctx).UTC()
 
-	allowCustomID, err := auth.IsMember(ctx, customIdGroup)
+	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
 	if err != nil {
 		return nil, err
 	}
-	if err := validateCreateInvocationRequest(in, now, allowCustomID); err != nil {
+	if err := validateCreateInvocationRequest(in, now, trustedCreator); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, span.NewInvocationIDSet(span.InvocationID(in.InvocationId)))

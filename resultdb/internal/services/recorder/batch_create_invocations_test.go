@@ -75,7 +75,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 		// Configure mock authentication to allow creation of custom invocation ids.
 		ctx = authtest.MockAuthConfig(ctx)
 		db := authtest.FakeDB{
-			"anonymous:anonymous": []string{"luci-resultdb-custom-invocation-id"},
+			"anonymous:anonymous": []string{trustedInvocationCreators},
 		}
 		ctx = db.Use(ctx)
 
@@ -100,12 +100,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 				Requests: []*pb.CreateInvocationRequest{
 					&pb.CreateInvocationRequest{
 						InvocationId: "u:batchinv",
-						Invocation:   &pb.Invocation{},
 						RequestId:    "request id",
 					},
 					&pb.CreateInvocationRequest{
 						InvocationId: "u:batchinv2",
-						Invocation:   &pb.Invocation{},
 						RequestId:    "request id",
 					},
 				},
@@ -140,6 +138,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 							BigqueryExports: []*pb.BigQueryExport{
 								bqExport,
 							},
+							ProducerResource: "//builds.example.com/builds/1",
 						},
 					},
 					&pb.CreateInvocationRequest{
@@ -150,6 +149,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 							BigqueryExports: []*pb.BigQueryExport{
 								bqExport,
 							},
+							ProducerResource: "//builds.example.com/builds/2",
 						},
 					},
 				},
