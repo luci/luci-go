@@ -30,7 +30,7 @@ import (
 func main() {
 	bqTableFlag := flag.String(
 		"derive-bigquery-table",
-		"",
+		"luci-resultdb-dev.chromium.all_test_results_staging",
 		`Name of the BigQuery table for result export. In the format of "<project>.<dataset>.<table>".`,
 	)
 	expectedTestResultsExpirationDays := flag.Int(
