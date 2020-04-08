@@ -81,3 +81,28 @@ func (v *VM) Validate(c *validation.Context) {
 		c.Errorf("zone is required")
 	}
 }
+
+type BinaryVM struct {
+	VM
+}
+
+var _ datastore.PropertyConverter = &BinaryVM{}
+
+// FromProperty implements datastore.PropertyConverter.
+func (bv *BinaryVM) FromProperty(p datastore.Property) error {
+	if p.Value() == nil {
+		bv = &BinaryVM{}
+		return nil
+	}
+	return proto.Unmarshal(p.Value().([]byte), bv)
+}
+
+// ToProperty implements datastore.PropertyConverter.
+func (bv *BinaryVM) ToProperty() (datastore.Property, error) {
+	p := datastore.Property{}
+	bytes, err := proto.Marshal(bv)
+	if err != nil {
+		return datastore.Property{}, err
+	}
+	return p, p.SetValue(bytes, datastore.NoIndex)
+}
