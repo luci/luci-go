@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.9.0",
+    "@open-wc/testing": "^2.5.10",
     "@types/chai": "^4.2.11",
     "@types/dompurify": "^2.0.1",
     "@types/gapi": "0.0.39",
@@ -60,6 +61,7 @@
   "scripts": {
     "build": "webpack --config webpack.prod.ts",
     "dev": "webpack-dev-server --open --config webpack.dev.ts",
-    "test": "karma start --single-run"
+    "test": "karma start --single-run",
+    "test:watch": "karma start"
   }
 }
