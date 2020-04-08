@@ -34,6 +34,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3800621_4874982b",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-08T17:59:54Z",
+      "side": 1,
+      "message": "Agreed.",
+      "parentUuid": "fdbdff68_9760e14d",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
