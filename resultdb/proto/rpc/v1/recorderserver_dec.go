@@ -177,20 +177,3 @@ func (s *DecoratedRecorder) BatchCreateTestExonerations(ctx context.Context, req
 	}
 	return
 }
-
-func (s *DecoratedRecorder) DeriveInvocation(ctx context.Context, req *DeriveInvocationRequest) (rsp *Invocation, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "DeriveInvocation", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.DeriveInvocation(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "DeriveInvocation", rsp, err)
-	}
-	return
-}

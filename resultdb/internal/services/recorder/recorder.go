@@ -33,9 +33,6 @@ type recorderServer struct {
 
 // Options is recorder server configuration.
 type Options struct {
-	// BigQuery table that the derived invocations should be exported to.
-	DerivedInvBQTable *pb.BigQueryExport
-
 	// Duration since invocation creation after which to delete expected test
 	// results.
 	ExpectedResultsExpiration time.Duration

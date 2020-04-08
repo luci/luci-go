@@ -16,23 +16,15 @@ package main
 
 import (
 	"flag"
-	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 func main() {
-	bqTableFlag := flag.String(
-		"derive-bigquery-table",
-		"",
-		`Name of the BigQuery table for result export. In the format of "<project>.<dataset>.<table>".`,
-	)
 	expectedTestResultsExpirationDays := flag.Int(
 		"expected-results-expiration",
 		60,
@@ -40,33 +32,9 @@ func main() {
 	)
 
 	internal.Main(func(srv *server.Server) error {
-		derivedInvBQTable, err := parseBQTable(*bqTableFlag)
-		if err != nil {
-			return err
-		}
-
 		recorder.InitServer(srv, recorder.Options{
-			DerivedInvBQTable:         derivedInvBQTable,
 			ExpectedResultsExpiration: time.Duration(*expectedTestResultsExpirationDays) * 24 * time.Hour,
 		})
 		return nil
 	})
-}
-
-func parseBQTable(bqTable string) (*pb.BigQueryExport, error) {
-	if bqTable == "" {
-		return nil, errors.Reason("-derive-bigquery-table is missing").Err()
-	}
-
-	p := strings.Split(bqTable, ".")
-	if len(p) != 3 || p[0] == "" || p[1] == "" || p[2] == "" {
-		return nil, errors.Reason("invalid bq table %q", bqTable).Err()
-	}
-
-	return &pb.BigQueryExport{
-		Project:     p[0],
-		Dataset:     p[1],
-		Table:       p[2],
-		TestResults: &pb.BigQueryExport_TestResults{},
-	}, nil
 }
