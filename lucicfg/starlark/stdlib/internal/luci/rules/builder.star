@@ -17,6 +17,7 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
+load('@stdlib//internal/luci/lib/resultdb.star', 'resultdb')
 load('@stdlib//internal/luci/lib/scheduler.star', 'schedulerimpl')
 load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
 
@@ -51,6 +52,9 @@ def _builder(
       experimental=None,
       task_template_canary_percentage=None,
       repo=None,
+
+      # Results.
+      resultdb_settings=None,
 
       # Relations.
       triggers=None,
@@ -181,6 +185,11 @@ def _builder(
         of luci.gitiles_poller(...) that trigger this builder if they all poll
         the same repo.
 
+    resultdb_settings: A buildbucket_pb.Builder.ResultDB, such as one created
+        with resultdb.settings(...). A configuration that defines if
+        Buildbucket:ResultDB integration should be enabled for this builder and
+        which results to export to BigQuery.
+
     triggers: builders this builder triggers.
     triggered_by: builders or pollers this builder is triggered by.
     notifies: list of luci.notifier(...) or luci.tree_closer(...) the builder
@@ -213,6 +222,7 @@ def _builder(
       'experimental': validate.bool('experimental', experimental, required=False),
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
       'repo': validate.repo_url('repo', repo, required=False),
+      'resultdb': resultdb.validate_settings(resultdb_settings),
   }
 
   # Merge explicitly passed properties with the module-scoped defaults.
@@ -301,5 +311,6 @@ builder = lucicfg.rule(
         'build_numbers': validate.bool,
         'experimental': validate.bool,
         'task_template_canary_percentage': lambda attr, val: validate.int(attr, val, min=1, max=100),
+        'resultdb': resultdb.validate_settings,
     }),
 )

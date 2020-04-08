@@ -30,6 +30,8 @@ load('@stdlib//internal/luci/proto.star',
     'logdog_pb',
     'milo_pb',
     'notify_pb',
+    'predicate_pb',
+    'resultdb_pb',
     'scheduler_pb',
 )
 
@@ -272,6 +274,7 @@ def _buildbucket_builders(bucket, swarming_host):
         experimental = _buildbucket_toggle(node.props.experimental),
         task_template_canary_percentage = optional_UInt32Value(
             node.props.task_template_canary_percentage),
+        resultdb = node.props.resultdb,
     ))
   return out
 
