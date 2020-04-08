@@ -52,6 +52,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bf23e7f1_7347a7e0",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-08T18:00:37Z",
+      "side": 1,
+      "message": "My preference would be to export this to BQ specifically to AVOID people relying on the structure of the invocation ID; this field has documented structure, whereas, AFAIK, INVOCATION_ID does not.\n\nI don\u0027t think \"thousands of small strings\" is worthwhile to optimize out of BQ?\n\nSeparate CL is fine.",
+      "parentUuid": "fdbdff68_9760e14d",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
