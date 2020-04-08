@@ -264,6 +264,13 @@ func TestManageBot(t *testing.T) {
 						Hostname: "name",
 						Lifetime: 1,
 						URL:      "url",
+						Attributes: config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						},
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -271,6 +278,17 @@ func TestManageBot(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					v := &model.VM{
+						ID: "id",
+					}
+					So(datastore.Get(c, v), ShouldBeNil)
+					So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
+						Disk: []*config.Disk{
+							{
+								Image: "image",
+							},
+						},
+					})
 				})
 
 				Convey("drained", func() {
@@ -484,6 +502,13 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
+						Attributes: config.VM{
+							Disk: []*config.Disk{
+								{
+									Image: "image",
+								},
+							},
+						},
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -495,6 +520,13 @@ func TestManageBot(t *testing.T) {
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Connected, ShouldNotEqual, 0)
+					So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
+						Disk: []*config.Disk{
+							{
+								Image: "image",
+							},
+						},
+					})
 				})
 			})
 		})
