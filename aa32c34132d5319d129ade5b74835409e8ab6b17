@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "8d5965d9_0a6123b2",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-04-09T19:06:31Z",
+      "side": 1,
+      "message": "Not sure why my previous comment got lost. I was saying it will become faster. But it still needs to use the `reflect.DeepEqual` to compare with the empty vm.Attributes struct. For now, I just keep this code as it will be deleted soon after the migration.",
+      "parentUuid": "2af2bf02_f6ad1e59",
+      "revId": "aa32c34132d5319d129ade5b74835409e8ab6b17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "544b14a0_166fc3b5",
         "filename": "gce/appengine/backend/bots.go",
         "patchSetId": 5
