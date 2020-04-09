@@ -142,6 +142,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "031a3aa2_28e47b7d",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-09T22:29:05Z",
+      "side": 1,
+      "message": "IMO the pragmatic thing to do is to include data parity by default, not to pick and choose without a concrete reason (like: this will cost millions of $ / second, or run us out of quota).\n\nPicking and choosing means that every time there\u0027s new data there\u0027s time wasted debating if it should be included, and then additional time wasted when someone finds out that its missing and has to ask around to figure out why (and then disappointment when the answer was \"well, we didn\u0027t feel like it\")",
+      "parentUuid": "0c881794_22238283",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
