@@ -119,7 +119,7 @@ type expiringData struct {
 	caches    []*bbpb.BuildInfra_Swarming_CacheEntry
 }
 
-func (ed *expiringData) createWith(template *swarmingpb.TaskProperties) *swarmingpb.TaskProperties {
+func (ed *expiringData) createWith(cacheDir string, template *swarmingpb.TaskProperties) *swarmingpb.TaskProperties {
 	if len(template.Dimensions) != 0 {
 		panic("impossible; createWith called with dimensions already set")
 	}
@@ -141,7 +141,7 @@ func (ed *expiringData) createWith(template *swarmingpb.TaskProperties) *swarmin
 	for _, nc := range ed.caches {
 		ret.NamedCaches = append(ret.NamedCaches, &swarmingpb.NamedCacheEntry{
 			Name:     nc.Name,
-			DestPath: nc.Path,
+			DestPath: path.Join(cacheDir, nc.Path),
 		})
 		addDims("caches", nc.Name)
 	}
@@ -321,7 +321,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks Kitc
 	for i, dat := range expiringData {
 		sw.Task.TaskSlices[i] = &swarmingpb.TaskSlice{
 			Expiration: ptypes.DurationProto(dat.relative),
-			Properties: dat.createWith(baseProperties),
+			Properties: dat.createWith(bb.BbagentArgs.CacheDir, baseProperties),
 		}
 	}
 

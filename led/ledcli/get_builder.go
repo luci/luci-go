@@ -95,6 +95,8 @@ func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, in
 		Builder:         c.builder,
 		Canary:          c.canary,
 		ExtraTags:       c.tags,
+
+		KitchenSupport: c.kitchenSupport,
 	})
 }
 
