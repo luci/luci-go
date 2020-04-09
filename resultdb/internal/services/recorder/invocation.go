@@ -144,7 +144,8 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"CreateTime": spanner.CommitTimestamp,
 		"Deadline":   inv.Deadline,
 
-		"Tags": inv.Tags,
+		"Tags":             inv.Tags,
+		"ProducerResource": inv.ProducerResource,
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {

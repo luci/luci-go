@@ -230,6 +230,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				IncludedInvocations: []string{inv.Name + "::batch::0"},
+				ProducerResource:    fmt.Sprintf("//%s/tasks/completed-task", swarmingHostname),
 			})
 
 			// Assert we wrote correct test results.

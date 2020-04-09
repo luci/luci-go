@@ -80,8 +80,9 @@ func DeriveChromiumInvocation(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.
 
 	// Populate fields we will need in the base invocation.
 	inv := &pb.Invocation{
-		Name:  GetInvocationID(task, req).Name(),
-		State: pb.Invocation_FINALIZED,
+		Name:             GetInvocationID(task, req).Name(),
+		State:            pb.Invocation_FINALIZED,
+		ProducerResource: fmt.Sprintf("//%s/tasks/%s", req.SwarmingTask.Hostname, req.SwarmingTask.Id),
 	}
 	var err error
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {

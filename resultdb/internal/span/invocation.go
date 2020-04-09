@@ -174,6 +174,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		 i.Interrupted,
 		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
+		 i.ProducerResource,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -188,6 +189,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		inv := &pb.Invocation{}
 
 		var createdBy spanner.NullString
+		var producerResource spanner.NullString
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -197,7 +199,8 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 			&inv.Tags,
 			&inv.Interrupted,
 			&bqExports,
-			&included)
+			&included,
+			&producerResource)
 		if err != nil {
 			return err
 		}
@@ -205,6 +208,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		inv.Name = pbutil.InvocationName(string(id))
 		inv.IncludedInvocations = included.Names()
 		inv.CreatedBy = createdBy.StringVal
+		inv.ProducerResource = producerResource.StringVal
 
 		if len(bqExports) > 0 {
 			inv.BigqueryExports = make([]*pb.BigQueryExport, len(bqExports))

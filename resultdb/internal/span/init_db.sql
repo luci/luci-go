@@ -72,7 +72,10 @@ CREATE TABLE Invocations (
   -- Invocation.bigquery_exports in invocation.proto.
   -- Each array element is a binary-encoded luci.resultdb.rpc.v1.BigQueryExport
   -- message.
-  BigQueryExports ARRAY<BYTES(MAX)>
+  BigQueryExports ARRAY<BYTES(MAX)>,
+
+  -- Value of Invocation.producer_resource. See its documentation.
+  ProducerResource STRING(MAX)
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration time.

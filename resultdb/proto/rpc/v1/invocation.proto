@@ -27,6 +27,8 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
 // It represents all results of some computation; examples: swarming task,
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
+//
+// Next id: 12.
 message Invocation {
   // Can be used to refer to this invocation, e.g. in ResultDB.GetInvocation
   // RPC.
@@ -120,6 +122,13 @@ message Invocation {
   // "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
   // (e.g. "user:johndoe@example.com").
   string created_by = 10;
+
+  // Full name of the resource that produced results in this invocation.
+  // See also https://aip.dev/122#full-resource-names
+  // Typical examples:
+  // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
+  // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+  string producer_resource = 11;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported
