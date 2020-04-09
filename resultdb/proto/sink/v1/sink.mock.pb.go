@@ -11,65 +11,65 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// MockisSinkMessageContainer_Msg is a mock of isSinkMessageContainer_Msg interface
+// MockisSinkMessageContainer_Msg is a mock of isSinkMessageContainer_Msg interface.
 type MockisSinkMessageContainer_Msg struct {
 	ctrl     *gomock.Controller
 	recorder *MockisSinkMessageContainer_MsgMockRecorder
 }
 
-// MockisSinkMessageContainer_MsgMockRecorder is the mock recorder for MockisSinkMessageContainer_Msg
+// MockisSinkMessageContainer_MsgMockRecorder is the mock recorder for MockisSinkMessageContainer_Msg.
 type MockisSinkMessageContainer_MsgMockRecorder struct {
 	mock *MockisSinkMessageContainer_Msg
 }
 
-// NewMockisSinkMessageContainer_Msg creates a new mock instance
+// NewMockisSinkMessageContainer_Msg creates a new mock instance.
 func NewMockisSinkMessageContainer_Msg(ctrl *gomock.Controller) *MockisSinkMessageContainer_Msg {
 	mock := &MockisSinkMessageContainer_Msg{ctrl: ctrl}
 	mock.recorder = &MockisSinkMessageContainer_MsgMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockisSinkMessageContainer_Msg) EXPECT() *MockisSinkMessageContainer_MsgMockRecorder {
 	return m.recorder
 }
 
-// isSinkMessageContainer_Msg mocks base method
+// isSinkMessageContainer_Msg mocks base method.
 func (m *MockisSinkMessageContainer_Msg) isSinkMessageContainer_Msg() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "isSinkMessageContainer_Msg")
 }
 
-// isSinkMessageContainer_Msg indicates an expected call of isSinkMessageContainer_Msg
+// isSinkMessageContainer_Msg indicates an expected call of isSinkMessageContainer_Msg.
 func (mr *MockisSinkMessageContainer_MsgMockRecorder) isSinkMessageContainer_Msg() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isSinkMessageContainer_Msg", reflect.TypeOf((*MockisSinkMessageContainer_Msg)(nil).isSinkMessageContainer_Msg))
 }
 
-// MockSinkClient is a mock of SinkClient interface
+// MockSinkClient is a mock of SinkClient interface.
 type MockSinkClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockSinkClientMockRecorder
 }
 
-// MockSinkClientMockRecorder is the mock recorder for MockSinkClient
+// MockSinkClientMockRecorder is the mock recorder for MockSinkClient.
 type MockSinkClientMockRecorder struct {
 	mock *MockSinkClient
 }
 
-// NewMockSinkClient creates a new mock instance
+// NewMockSinkClient creates a new mock instance.
 func NewMockSinkClient(ctrl *gomock.Controller) *MockSinkClient {
 	mock := &MockSinkClient{ctrl: ctrl}
 	mock.recorder = &MockSinkClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSinkClient) EXPECT() *MockSinkClientMockRecorder {
 	return m.recorder
 }
 
-// ReportTestResults mocks base method
+// ReportTestResults mocks base method.
 func (m *MockSinkClient) ReportTestResults(ctx context.Context, in *ReportTestResultsRequest, opts ...grpc.CallOption) (*ReportTestResultsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
@@ -82,37 +82,37 @@ func (m *MockSinkClient) ReportTestResults(ctx context.Context, in *ReportTestRe
 	return ret0, ret1
 }
 
-// ReportTestResults indicates an expected call of ReportTestResults
+// ReportTestResults indicates an expected call of ReportTestResults.
 func (mr *MockSinkClientMockRecorder) ReportTestResults(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportTestResults", reflect.TypeOf((*MockSinkClient)(nil).ReportTestResults), varargs...)
 }
 
-// MockSinkServer is a mock of SinkServer interface
+// MockSinkServer is a mock of SinkServer interface.
 type MockSinkServer struct {
 	ctrl     *gomock.Controller
 	recorder *MockSinkServerMockRecorder
 }
 
-// MockSinkServerMockRecorder is the mock recorder for MockSinkServer
+// MockSinkServerMockRecorder is the mock recorder for MockSinkServer.
 type MockSinkServerMockRecorder struct {
 	mock *MockSinkServer
 }
 
-// NewMockSinkServer creates a new mock instance
+// NewMockSinkServer creates a new mock instance.
 func NewMockSinkServer(ctrl *gomock.Controller) *MockSinkServer {
 	mock := &MockSinkServer{ctrl: ctrl}
 	mock.recorder = &MockSinkServerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSinkServer) EXPECT() *MockSinkServerMockRecorder {
 	return m.recorder
 }
 
-// ReportTestResults mocks base method
+// ReportTestResults mocks base method.
 func (m *MockSinkServer) ReportTestResults(arg0 context.Context, arg1 *ReportTestResultsRequest) (*ReportTestResultsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReportTestResults", arg0, arg1)
@@ -121,7 +121,7 @@ func (m *MockSinkServer) ReportTestResults(arg0 context.Context, arg1 *ReportTes
 	return ret0, ret1
 }
 
-// ReportTestResults indicates an expected call of ReportTestResults
+// ReportTestResults indicates an expected call of ReportTestResults.
 func (mr *MockSinkServerMockRecorder) ReportTestResults(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportTestResults", reflect.TypeOf((*MockSinkServer)(nil).ReportTestResults), arg0, arg1)
