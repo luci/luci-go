@@ -178,6 +178,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8c50a16_56befd8b",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-09T22:42:48Z",
+      "side": 1,
+      "message": "I think we\u0027ll have to agree to disagree then; I don\u0027t find this a compelling reason to let the schemas drift apart. It sounds either subjective (i.e. it\u0027s not actually that hard we just don\u0027t want to do it) or a design flaw (the tables are migration-proof).\n\nThe use case is so that we don\u0027t have documentation and implementations littered with context sensitive exceptions and caveats.",
+      "parentUuid": "16447749_7678b945",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
