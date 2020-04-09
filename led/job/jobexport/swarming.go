@@ -80,10 +80,10 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 				RelativeCwd: props.RelativeCwd,
 
 				Containment: &swarming.SwarmingRpcsContainment{
-					ContainmentType:           props.Containment.ContainmentType.String(),
-					LimitProcesses:            props.Containment.LimitProcesses,
-					LimitTotalCommittedMemory: props.Containment.LimitTotalCommittedMemory,
-					LowerPriority:             props.Containment.LowerPriority,
+					ContainmentType:           props.GetContainment().GetContainmentType().String(),
+					LimitProcesses:            props.GetContainment().GetLimitProcesses(),
+					LimitTotalCommittedMemory: props.GetContainment().GetLimitTotalCommittedMemory(),
+					LowerPriority:             props.GetContainment().GetLowerPriority(),
 				},
 			},
 		}
