@@ -106,6 +106,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "777dafc4_b4f94b37",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-09T22:12:00Z",
+      "side": 1,
+      "message": "(agree not in this CL)\n\nI think we should provide data in the easiest way to digest, and I\u0027d prefer that data in the API is available in BQ, apart from some technical limitation (like it\u0027s too large or something like that). Regexes (or conditional parsing thingies) in the client aren\u0027t great, imo.",
+      "parentUuid": "6e20a35e_7a7bcd2d",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
