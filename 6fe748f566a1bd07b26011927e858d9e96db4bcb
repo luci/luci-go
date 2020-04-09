@@ -279,6 +279,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e17d2498_11b75fe8",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-09T23:47:39Z",
+      "side": 1,
+      "message": "filed https://crbug.com/1069674 to track.",
+      "parentUuid": "4899bd3e_dad11f12",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
