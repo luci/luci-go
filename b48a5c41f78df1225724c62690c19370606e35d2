@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4af7960e_5eb586f2",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-09T22:12:36Z",
+      "side": 1,
+      "message": "nit:\n\n  tc.Message, _, err \u003d",
+      "range": {
+        "startLine": 381,
+        "startChar": 4,
+        "endLine": 381,
+        "endChar": 20
+      },
+      "revId": "b48a5c41f78df1225724c62690c19370606e35d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "332aa3ba_8036d13e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-09T22:12:36Z",
+      "side": 1,
+      "message": "this means that one bad template may break the pubsub handler: emails won\u0027t be sent for this build.\n\nThen the topic will start accumulating unacked messages, and it will affect all builds, so i think luci-notify will stop working overall.\n\nalso your team will receive an alert and all you can do is to send to the author of config CL author who broke it everyone.\n\nProblems like this was the reason we have a fallback. Why isn\u0027t it used here?",
+      "range": {
+        "startLine": 384,
+        "startChar": 5,
+        "endLine": 384,
+        "endChar": 15
+      },
+      "revId": "b48a5c41f78df1225724c62690c19370606e35d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
