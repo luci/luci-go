@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0347f9b4_63927b0b",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-09T01:46:44Z",
+      "side": 1,
+      "message": "The design of the API is heavily inspired by ContextProvider/Consumer in react.\n\n1 \u0026 3) It\u0027s not really about connecting components together. It is about creating a \"context background\". Each node can get the data it want from the \u0027context background\u0027 and/or modify the \u0027context background\u0027 for it the descendant nodes. (A lot like css variables).\nI view contexts as properties that can be passed from ancestors (or sourced from the \u0027context background\u0027). So it\u0027s part of the component\u0027s definition. Therefore, it should goes into the definition of the class, rather than an instance.\nI don\u0027t want to make contextKey dynamically configurable, because that will make data flow very hard to analysis statically. In reality, you rarely need to do that. If the parent node wants to decide which context key the child node should subscribes to, the parent node may as well just subscribe to the context itself and pass the data as properties to the child node.\nIf you do need to listen to/provide a dynamic set of contextKeys, there are some workarounds.\nFor Subscribers:\nyou can instead subscribe to a super set of all contextKeys you may want to subscribe to, then pick which properties you want to use.\nFor Providers:\nyou can instead provide a super set of all contextKeys you may want to provide. And simply pass on the context value you get from your context background for keys you don\u0027t want to modify.\n\n2) I personally think it\u0027s a good constraint to have. context is already harder to trace than passing attributes directly to components. Allowing context to be passed from siblings makes it even harder. Also, it\u0027s hard to figure out/define which sibling takes priority when providing the same contextKey.\n\n```\n\u003cdata-binding from-id\u003d\"sourceElementId\" from-property\u003d\"myProp\" to-id\u003d\"destElemId\" to-property\u003d\"myProp2\"\u003e\n```\nThought that was a native HTML5 thing. Got excited for a second 😞\nI don\u0027t think this would work even if we wanted to go with this API. Mainly because element ID doesn\u0027t penetrate shadow dom boundary.",
+      "parentUuid": "6bc0c49d_4c367946",
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2f043be_cf39393e",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd62bad0_42dc8152",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-09T01:46:44Z",
+      "side": 1,
+      "message": "No. LitElement is just a bridge between typeof this and T.\n\nProvider has to be T. and T has to extend LitElement. This is defined in L104.\nIn L107, we casted cls from Constructor\u003cT\u003e to Constructor\u003cLitElement\u003e, (due to some typescript limitation) we lost the information.\n\ninheritance graph from tsc\u0027s point of view:\nLitElement -\u003e Provider\nLitElement -\u003e T\nT is a sibling class of Provider.\n\ninheritance graph from our point of view:\nLitElement -\u003e T -\u003e Provider\n\nSo we ended up with type mismatch issue. In order to cast an instance from Provider to T, we need to upcast to a common parent class, which is LitElement in this case.",
+      "parentUuid": "c2f043be_cf39393e",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
