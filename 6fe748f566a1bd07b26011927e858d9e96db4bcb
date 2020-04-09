@@ -88,6 +88,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e20a35e_7a7bcd2d",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-09T21:59:18Z",
+      "side": 1,
+      "message": "invocation name does have a documented structure for builds and tasks, but i agree that prepending \"https\" is way easier than regexing the invocation name. I am not sure we should be optimizing for this though. Yes, Chrome OS are building their UI with SQLs, which I find a bit weird, but they seem to be reaching the conclusion that this is a bad idea, so I am not sure we should try to solve \"generate URL\" problems in BigQuery.\n\nwe don\u0027t have an invocations table, as they are no use cases right now. Normally if someone wants to operate at the invocation level, it would be easier for them to use the producer resource\u0027s native table, e.g. swarming tasks table or buidbucket builds table.\n\nUltimately, I think this shouldn\u0027t be in this CL, but we can keep discussing this.",
+      "parentUuid": "416bad42_dff14c7d",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
