@@ -69,10 +69,11 @@ func (c *cmdGetSwarm) validateFlags(ctx context.Context, positionals []string, e
 
 func (c *cmdGetSwarm) execute(ctx context.Context, authClient *http.Client, inJob *job.Definition) (out interface{}, err error) {
 	return ledcmd.GetFromSwarmingTask(ctx, authClient, ledcmd.GetFromSwarmingTaskOpts{
-		Name:           fmt.Sprintf("led get-swarm %s", c.taskID),
-		PinBotID:       c.pinBotID,
-		SwarmingHost:   c.swarmingHost,
-		TaskID:         c.taskID,
+		Name:         fmt.Sprintf("led get-swarm %s", c.taskID),
+		PinBotID:     c.pinBotID,
+		SwarmingHost: c.swarmingHost,
+		TaskID:       c.taskID,
+
 		KitchenSupport: c.kitchenSupport,
 	})
 }
