@@ -135,7 +135,11 @@ var _ Client = (*implementation)(nil)
 func (p *implementation) transport(c context.Context) (transport http.RoundTripper, err error) {
 	luciProject, err := ProjectFromContext(c)
 	if err != nil {
-		return nil, err
+		opts := []auth.RPCOption{
+			auth.WithProject(luciProject),
+			auth.WithScopes(gitiles.OAuthScope),
+		}
+		return auth.GetRPCTransport(c, auth.AsSelf, opts...)
 	}
 	opts := []auth.RPCOption{
 		auth.WithProject(luciProject),
