@@ -124,6 +124,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c881794_22238283",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-09T22:16:08Z",
+      "side": 1,
+      "message": "note that the BQ table today already doesn\u0027t provide everything that is available in RPCs.\n\nI agree that regexes in the client aren\u0027t great. But so is SQL for UI :) \n\n\u003e I think we should provide data in the easiest way to digest\n\ni think we should try to be a bit more pragmatic. Nobody is asking for this in BQ.",
+      "parentUuid": "777dafc4_b4f94b37",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
