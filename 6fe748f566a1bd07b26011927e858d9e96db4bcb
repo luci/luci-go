@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5e9bd4ce_6a0a51ed",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-09T23:37:32Z",
+      "side": 1,
+      "message": "This group doesn\u0027t exist, right?",
+      "range": {
+        "startLine": 42,
+        "startChar": 30,
+        "endLine": 42,
+        "endChar": 71
+      },
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92f119fc_0318ae53",
         "filename": "resultdb/proto/rpc/v1/invocation.proto",
         "patchSetId": 4
