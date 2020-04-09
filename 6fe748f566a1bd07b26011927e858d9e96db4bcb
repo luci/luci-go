@@ -160,6 +160,24 @@
       "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16447749_7678b945",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-09T22:39:15Z",
+      "side": 1,
+      "message": "concrete reason: we don\u0027t fully own schemas of these tables. In Buildbucket we do, because there is one table and we own its schema. Here we let the users to specify table name, so there is a lot of tables.\nThis means we have to think about schema migrations. BQ does not automatically create columns just because we sent values. This is not implemented yet and I don\u0027t see a strong reason to do it now. We have enough high priority work.\n\ni think the answer is not \"well, we didn\u0027t feel like it\" but we didn\u0027t have a use case. I think this is not as subjective, as you are making it sound.",
+      "parentUuid": "031a3aa2_28e47b7d",
+      "revId": "6fe748f566a1bd07b26011927e858d9e96db4bcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
