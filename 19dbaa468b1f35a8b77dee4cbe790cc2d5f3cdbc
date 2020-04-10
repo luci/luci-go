@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4630fe2a_6446335f",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-10T07:44:57Z",
+      "side": 1,
+      "message": "better to be more specific? Q3 2020 or something concrete.",
+      "range": {
+        "startLine": 227,
+        "startChar": 68,
+        "endLine": 227,
+        "endChar": 72
+      },
+      "revId": "19dbaa468b1f35a8b77dee4cbe790cc2d5f3cdbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d16785e_de636492",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-10T07:44:57Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 231,
+        "startChar": 66,
+        "endLine": 231,
+        "endChar": 70
+      },
+      "revId": "19dbaa468b1f35a8b77dee4cbe790cc2d5f3cdbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
