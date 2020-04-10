@@ -339,7 +339,7 @@ message MintDelegationTokenResponse {
 message MintOAuthTokenGrantRequest {
   // Service account identity the end user wants to act as.
   //
-  // A string of the form "user:<email>".
+  // A string of the form "<email>".
   //
   // Required.
   string service_account = 1;
@@ -463,4 +463,3 @@ message MintProjectTokenResponse {
   // monitoring.
   string service_version = 4;
 }
-
