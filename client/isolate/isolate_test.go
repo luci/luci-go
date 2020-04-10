@@ -130,11 +130,12 @@ func TestArchive(t *testing.T) {
 			So(ioutil.WriteFile(filepath.Join(tmpDir, "link"), []byte("no link on Windows"), 0600), ShouldBeNil)
 		}
 		opts := &ArchiveOptions{
-			Isolate:         isolatePath,
-			Isolated:        filepath.Join(tmpDir, "baz.isolated"),
-			Blacklist:       stringlistflag.Flag{"ignored", "*.isolate"},
-			PathVariables:   map[string]string{"VAR": "wonderful"},
-			ConfigVariables: map[string]string{"OS": "amiga"},
+			Isolate:                    isolatePath,
+			Isolated:                   filepath.Join(tmpDir, "baz.isolated"),
+			Blacklist:                  stringlistflag.Flag{"ignored", "*.isolate"},
+			PathVariables:              map[string]string{"VAR": "wonderful"},
+			ConfigVariables:            map[string]string{"OS": "amiga"},
+			AllowCommandAndRelativeCWD: true,
 		}
 		item := Archive(a, opts)
 		So(item.DisplayName, ShouldResemble, "baz.isolated")
