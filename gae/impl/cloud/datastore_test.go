@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"cloud.google.com/go/datastore"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"golang.org/x/net/context"
 
@@ -62,6 +63,110 @@ func shouldBeUntypedNil(actual interface{}, _ ...interface{}) string {
 	}
 	return fmt.Sprintf(`Expected: (%T, %v)
 Actual:   (%T, %v)`, nil, nil, actual, actual)
+}
+
+func TestBoundDatastore(t *testing.T) {
+	t.Parallel()
+
+	Convey("boundDatastore", t, func() {
+		bds := &boundDatastore{}
+
+		Convey("*datastore.Entity", func() {
+			ent := &datastore.Entity{
+				Key: &datastore.Key{
+					ID:   1,
+					Kind: "kind",
+				},
+				Properties: []datastore.Property{
+					{
+						Name:  "bool",
+						Value: true,
+					},
+					{
+						Name: "entity",
+						Value: &datastore.Entity{
+							Properties: []datastore.Property{
+								{
+									Name:    "[]byte",
+									NoIndex: true,
+									Value:   []byte{'b', 'y', 't', 'e'},
+								},
+								{
+									Name:    "[]interface",
+									NoIndex: true,
+									Value:   []interface{}{"interface"},
+								},
+								{
+									Name:    "geopoint",
+									NoIndex: true,
+									Value: datastore.GeoPoint{
+										Lat: 1,
+										Lng: 1,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name:  "float64",
+						Value: 1.0,
+					},
+					{
+						Name:  "int64",
+						Value: int64(1),
+					},
+					{
+						Name: "key",
+						Value: &datastore.Key{
+							ID:   2,
+							Kind: "kind",
+						},
+					},
+					{
+						Name:  "string",
+						Value: "string",
+					},
+					{
+						Name:  "time",
+						Value: ds.RoundTime(testclock.TestRecentTimeUTC),
+					},
+				},
+			}
+
+			pm := ds.PropertyMap{
+				"__key__": ds.MkProperty(bds.kc.NewKey("kind", "", 1, nil)),
+				"bool":    ds.MkProperty(true),
+				"entity": ds.MkProperty(ds.PropertyMap{
+					"[]byte": ds.MkPropertyNI([]byte{'b', 'y', 't', 'e'}),
+					"[]interface": ds.PropertySlice{
+						ds.MkPropertyNI("interface"),
+					},
+					"geopoint": ds.MkPropertyNI(ds.GeoPoint{Lat: 1, Lng: 1}),
+				}),
+				"float64": ds.MkProperty(1.0),
+				"int64":   ds.MkProperty(int64(1)),
+				"key":     ds.MkProperty(bds.kc.NewKey("kind", "", 2, nil)),
+				"string":  ds.MkProperty("string"),
+				"time":    ds.MkProperty(ds.RoundTime(testclock.TestRecentTimeUTC)),
+			}
+
+			Convey("gaeEntityToNative", func() {
+				So(bds.gaeEntityToNative(pm), ShouldResemble, ent)
+			})
+
+			Convey("nativeEntityToGAE", func() {
+				So(bds.nativeEntityToGAE(ent), ShouldResemble, pm)
+			})
+
+			Convey("gaeEntityToNative, nativeEntityToGAE", func() {
+				So(bds.nativeEntityToGAE(bds.gaeEntityToNative(pm)), ShouldResemble, pm)
+			})
+
+			Convey("nativeEntityToGAE, gaeEntityToNative", func() {
+				So(bds.gaeEntityToNative(bds.nativeEntityToGAE(ent)), ShouldResemble, ent)
+			})
+		})
+	})
 }
 
 // TestDatastore tests the cloud datastore implementation.
