@@ -37,6 +37,64 @@
     },
     {
       "key": {
+        "uuid": "934f9fbd_dfce8894",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-10T00:45:06Z",
+      "side": 1,
+      "message": "A link to https://reactjs.org/docs/context.html is the exactly critical piece I was missing, as a comment, CL description or message. It explains the rationale, when to use it, and answers all my questions.  Please add it as a comment.",
+      "parentUuid": "0347f9b4_63927b0b",
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fe32427b_09f86bde",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-10T00:45:06Z",
+      "side": 1,
+      "message": "i am bit concerned that we have one namespace for keys in context and other properties in the class, and possible clashes. Did you consider something like\n\n  subscriber.contextValues[key] \u003d newValue\n\n?",
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b4573b9_f1410642",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-10T00:45:06Z",
+      "side": 1,
+      "message": "handle",
+      "range": {
+        "startLine": 153,
+        "startChar": 56,
+        "endLine": 153,
+        "endChar": 63
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2f043be_cf39393e",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5
@@ -81,6 +139,53 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c5efbc73_8b44e451",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-10T00:45:06Z",
+      "side": 1,
+      "message": "thanks for explaining. It gives me flashbacks of headaches when I wrote overly generic code in C#. It is interesting that both are designed by the same author.\n\ni hope these complexities bring more value than harm",
+      "parentUuid": "fd62bad0_42dc8152",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9149bece_bda04004",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-10T00:45:06Z",
+      "side": 1,
+      "message": "does it make sense to extract this code and parameterize only the event name?",
+      "range": {
+        "startLine": 218,
+        "startChar": 8,
+        "endLine": 225,
+        "endChar": 9
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
