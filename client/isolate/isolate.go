@@ -59,11 +59,12 @@ type Tree struct {
 
 // ArchiveOptions for archiving trees.
 type ArchiveOptions struct {
-	Isolate         string              `json:"isolate"`
-	Isolated        string              `json:"isolated"`
-	Blacklist       stringlistflag.Flag `json:"blacklist"`
-	PathVariables   stringmapflag.Value `json:"path_variables"`
-	ConfigVariables stringmapflag.Value `json:"config_variables"`
+	Isolate                    string              `json:"isolate"`
+	Isolated                   string              `json:"isolated"`
+	Blacklist                  stringlistflag.Flag `json:"blacklist"`
+	PathVariables              stringmapflag.Value `json:"path_variables"`
+	ConfigVariables            stringmapflag.Value `json:"config_variables"`
+	AllowCommandAndRelativeCWD bool                `json:"allow_command_and_relative_cwd"`
 }
 
 // Init initializes with non-nil values.
@@ -221,6 +222,18 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 		Version:  isolated.IsolatedFormatVersion,
 	}
 	if len(cmd) != 0 {
+		if opts.AllowCommandAndRelativeCWD {
+			os.Stderr.WriteString(`
+WARNING: command / relative_cwd in isolate file will be deprecated around 2020 Q3 or later (crbug.com/1069704).
+`)
+		} else {
+			return nil, "", nil, errors.New(`
+ERROR: command / relative_cwd in isolate file will be deprecated around 2020 Q3 or later.
+Please conntact the LUCI team in crbug.com/1069704 if you see this error.
+Escape hatch is to specify -allow-command-and-relative-cwd flag.
+`)
+		}
+
 		isol.Command = cmd
 		// Only set RelativeCwd if a command was also specified. This reduce the
 		// noise for Swarming tasks where the command is specified as part of the
