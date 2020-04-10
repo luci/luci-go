@@ -649,7 +649,7 @@ func (m *MintDelegationTokenResponse) GetServiceVersion() string {
 type MintOAuthTokenGrantRequest struct {
 	// Service account identity the end user wants to act as.
 	//
-	// A string of the form "user:<email>".
+	// A string of the form "<email>".
 	//
 	// Required.
 	ServiceAccount string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"`
