@@ -62,6 +62,7 @@ isolate. Format of files is:
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.Var(&c.blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
+			c.Flags.BoolVar(&c.enableCommandAndRelativeCWD, "enable-command-and-relative-cwd", true, "This flag specifies whether client allows to use command and relative_cwd filed in isolate file. See crbug.com/1069704 for detail.")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
 			return &c
@@ -71,10 +72,11 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	loggingFlags         loggingFlags
-	dumpJSON             string
-	maxConcurrentChecks  int
-	maxConcurrentUploads int
+	loggingFlags                loggingFlags
+	dumpJSON                    string
+	enableCommandAndRelativeCWD bool
+	maxConcurrentChecks         int
+	maxConcurrentUploads        int
 	// Blacklist is a list of filename regexes describing which files to
 	// ignore.
 	blacklist common.Strings
@@ -161,11 +163,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		quiet: c.defaultFlags.Quiet,
 	}
 	blacklistStrings := []string(c.blacklist)
-	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args, blacklistStrings)
+	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args, blacklistStrings, c.enableCommandAndRelativeCWD)
 }
 
 // batchArchive archives a series of isolates specified by genJSONPaths.
-func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, genJSONPaths []string, blacklistStrings []string) error {
+func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, genJSONPaths []string, blacklistStrings []string, enableCommandAndRelativeCWD bool) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
@@ -186,6 +188,22 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		if err != nil {
 			return fmt.Errorf("isolate %s: failed to process: %v", opts.Isolate, err)
 		}
+
+		if len(isol.Command) != 0 || isol.RelativeCwd != "" {
+			if enableCommandAndRelativeCWD {
+				os.Stderr.WriteString(`
+WARNING: command / relative_cwd in isolate file will be unsupported soon (crbug.com/1069704).
+`)
+			} else {
+				os.Stderr.WriteString(`
+ERROR: command / relative_cwd in isolate file will be unsupported soon.
+Please conntact the LUCI team in crbug.com/1069704 if you see this error.
+Escape hatch is to specify -enable-command-and-relative-cwd flag.
+`)
+				os.Exit(1)
+			}
+		}
+
 		log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 		// Use the explicit blacklist if it's provided.

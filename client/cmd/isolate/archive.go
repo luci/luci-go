@@ -53,6 +53,7 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate")
 			c.Flags.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
+			c.Flags.BoolVar(&c.enableCommandAndRelativeCWD, "enable-command-and-relative-cwd", true, "This flag specifies whether client allows to use command and relative_cwd filed in isolate file. See crbug.com/1069704 for detail.")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
@@ -65,10 +66,11 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 type archiveRun struct {
 	commonServerFlags
 	isolateFlags
-	loggingFlags         loggingFlags
-	maxConcurrentChecks  int
-	maxConcurrentUploads int
-	dumpJSON             string
+	loggingFlags                loggingFlags
+	enableCommandAndRelativeCWD bool
+	maxConcurrentChecks         int
+	maxConcurrentUploads        int
+	dumpJSON                    string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -103,7 +105,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		quiet: c.defaultFlags.Quiet,
 	}
 
-	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al)
+	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al, c.enableCommandAndRelativeCWD)
 }
 
 // archiveLogger reports stats to stderr.
@@ -142,12 +144,28 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 
 // archive performs the archive operation for an isolate specified by opts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger) error {
+func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger, enableCommandAndRelativeCWD bool) error {
 	// Parse the incoming isolate file.
 	deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
 	if err != nil {
 		return fmt.Errorf("isolate %s: failed to process: %v", opts.Isolate, err)
 	}
+
+	if len(isol.Command) != 0 || isol.RelativeCwd != "" {
+		if enableCommandAndRelativeCWD {
+			os.Stderr.WriteString(`
+WARNING: command / relative_cwd in isolate file will be unsupported soon (crbug.com/1069704).
+`)
+		} else {
+			os.Stderr.WriteString(`
+ERROR: command / relative_cwd in isolate file will be unsupported soon.
+Please conntact the LUCI team in crbug.com/1069704 if you see this error.
+Escape hatch is to specify -enable-command-and-relative-cwd flag.
+`)
+			os.Exit(1)
+		}
+	}
+
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 	// Set up a checker and uploader.
