@@ -10,6 +10,8 @@ syntax = "proto3";
 
 package components.auth;
 
+import "components/auth/proto/realms.proto";
+
 option go_package = "go.chromium.org/luci/server/auth/service/protocol;protocol";
 
 
@@ -153,7 +155,9 @@ message AuthIPWhitelistAssignment {
 
 // An entire database of auth configuration that is being replicated.
 message AuthDB {
-  reserved 5; // used to be 'secrets', no longer used
+  // Next use: 12
+  reserved 5;  // used to be 'secrets', no longer used
+  reserved 10; // used to be 'buckets', was never used
 
   // OAuth2 client_id to use to mint new OAuth2 tokens.
   string oauth_client_id = 1;
@@ -183,6 +187,12 @@ message AuthDB {
   // If we use SecurityConfig directly here, old services would just drop fields
   // they don't understand when accepting an AuthDB push.
   bytes security_config = 9;
+
+  // Definition of all known permissions and realms in a LUCI deployment.
+  //
+  // It is ultimately used by LUCI services for authorizing access to resources.
+  // See realms.proto for more details.
+  realms.Realms realms = 11;
 }
 
 
