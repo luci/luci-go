@@ -11,41 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// MockisSinkMessageContainer_Msg is a mock of isSinkMessageContainer_Msg interface.
-type MockisSinkMessageContainer_Msg struct {
-	ctrl     *gomock.Controller
-	recorder *MockisSinkMessageContainer_MsgMockRecorder
-}
-
-// MockisSinkMessageContainer_MsgMockRecorder is the mock recorder for MockisSinkMessageContainer_Msg.
-type MockisSinkMessageContainer_MsgMockRecorder struct {
-	mock *MockisSinkMessageContainer_Msg
-}
-
-// NewMockisSinkMessageContainer_Msg creates a new mock instance.
-func NewMockisSinkMessageContainer_Msg(ctrl *gomock.Controller) *MockisSinkMessageContainer_Msg {
-	mock := &MockisSinkMessageContainer_Msg{ctrl: ctrl}
-	mock.recorder = &MockisSinkMessageContainer_MsgMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockisSinkMessageContainer_Msg) EXPECT() *MockisSinkMessageContainer_MsgMockRecorder {
-	return m.recorder
-}
-
-// isSinkMessageContainer_Msg mocks base method.
-func (m *MockisSinkMessageContainer_Msg) isSinkMessageContainer_Msg() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "isSinkMessageContainer_Msg")
-}
-
-// isSinkMessageContainer_Msg indicates an expected call of isSinkMessageContainer_Msg.
-func (mr *MockisSinkMessageContainer_MsgMockRecorder) isSinkMessageContainer_Msg() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isSinkMessageContainer_Msg", reflect.TypeOf((*MockisSinkMessageContainer_Msg)(nil).isSinkMessageContainer_Msg))
-}
-
 // MockSinkClient is a mock of SinkClient interface.
 type MockSinkClient struct {
 	ctrl     *gomock.Controller

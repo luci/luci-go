@@ -45,34 +45,3 @@ message ReportTestResultsResponse {
   // or requested via luci.resultdb.rpc.v1.ResultDB service.
   repeated string test_result_names = 1;
 }
-
-/*
-  DEPRECATED - SinkMessageContainer and HandShake are going to be removed
-  soon. Use ReportTestResultsRequest instead.
-
-  TODO(crbug/1017288) - remove the below messages.
-*/
-// A container of a message to a ResultSink server.
-// The server accepts a sequence of these messages in JSON format.
-message SinkMessageContainer {
-  oneof msg {
-    // The very first message in a ResultSink TCP connection must be a
-    // handshake.
-    Handshake handshake = 1;
-
-    // Upload one test result.
-    TestResult test_result = 2;
-
-    // Upload all test results from this file.
-    TestResultFile test_result_file = 3;
-  }
-}
-
-// The very first message in a ResultSink TCP connection.
-message Handshake {
-  // The auth token is available to eligible subprocesses via
-  // test_results.uploader.auth_token LUCI_CONTEXT value.
-  // More about LUCI_CONTEXT: https://chromium.googlesource.com/infra/luci/luci-py/+/6b6dad7aef994b96d3bb5b6f13fae8168938560f/client/LUCI_CONTEXT.md
-  // If the value is unexpected, the server will close the connection.
-  string auth_token = 1;
-}
