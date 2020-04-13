@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9047230e_6b54e680",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-13T15:38:52Z",
+      "side": 1,
+      "message": "This change changes the number of RPCs from test frameworks from [1 per batch of test results] to [2 per test result]. rpcpb.TestResult and sinkpb.TestResult serve different purposes and don\u0027t have to be the same (and they aren\u0027t already). In particular, the purpose of sink is to a very simple API for test frameworks and this CL seems to be doing the opposite.",
+      "revId": "33e8cb9a4dc0bbf2565b8efad4c466437e09f8ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
