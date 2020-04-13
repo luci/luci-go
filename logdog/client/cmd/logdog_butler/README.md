@@ -22,12 +22,12 @@ bootstrapped process' `STDOUT` and `STDERR` streams to LogDog streams.
 
 However, the Butler can also enable additional stream registration by
 instantiating a local **Stream Server** and exposing that to other applications.
-Those applications can then connect to the **Stream Server**, perform a minimial
+Those applications can then connect to the **Stream Server**, perform a minimal
 [handshake](../../butlerproto), and connect an additional stream to the Butler.
 
 Clients can use the [streamclient](../../butlerlib/streamclient) package to
 connect to a stream server and create Butler streams. Additional stream client
-packages are availalbe for other languages:
+packages are available for other languages:
 
 * [Python](https://github.com/luci/luci-py/tree/master/client/libs/logdog)
 
