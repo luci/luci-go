@@ -15,15 +15,11 @@ package sink
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"sort"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -82,50 +78,17 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 		tr := d.(*sinkpb.TestResult)
 		req.Requests = append(req.Requests, &pb.CreateTestResultRequest{
 			TestResult: &pb.TestResult{
-				TestId:          tr.GetTestId(),
-				ResultId:        tr.GetResultId(),
-				Variant:         tr.GetVariant(),
-				Expected:        tr.GetExpected(),
-				SummaryHtml:     tr.GetSummaryHtml(),
-				StartTime:       tr.GetStartTime(),
-				Duration:        tr.GetDuration(),
-				Tags:            tr.GetTags(),
-				InputArtifacts:  sinkArtsToRpcArts(ctx, tr.GetInputArtifacts()),
-				OutputArtifacts: sinkArtsToRpcArts(ctx, tr.GetOutputArtifacts()),
+				TestId:      tr.GetTestId(),
+				ResultId:    tr.GetResultId(),
+				Variant:     tr.GetVariant(),
+				Expected:    tr.GetExpected(),
+				SummaryHtml: tr.GetSummaryHtml(),
+				StartTime:   tr.GetStartTime(),
+				Duration:    tr.GetDuration(),
+				Tags:        tr.GetTags(),
 			},
 		})
 	}
 	b.Meta = req
 	return req
-}
-
-func sinkArtsToRpcArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
-	for name, sart := range sArts {
-		var size int64 = -1
-		switch {
-		case sart.GetFilePath() != "":
-			if info, err := os.Stat(sart.GetFilePath()); err == nil {
-				size = info.Size()
-			} else {
-				logging.Errorf(ctx, "artifact %q: %q - %s", name, sart.GetFilePath(), err)
-			}
-		case sart.GetContents() != nil:
-			size = int64(len(sart.GetContents()))
-		default:
-			// This should never be reached. pbutil.ValidateSinkArtifact() should
-			// filter out invalid artifacts.
-			panic(fmt.Sprintf("%s: neither file_path nor contents were given", name))
-		}
-
-		rArts = append(rArts, &pb.Artifact{
-			Name: name,
-			// TODO(ddoman): set fetch_url and fetch_url_expiration
-			ContentType: sart.GetContentType(),
-			Size:        size,
-		})
-	}
-	sort.Slice(rArts, func(i, j int) bool {
-		return rArts[i].Name < rArts[j].Name
-	})
-	return
 }

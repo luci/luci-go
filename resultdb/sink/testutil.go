@@ -103,12 +103,6 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		StartTime:   st,
 		Duration:    ptypes.DurationProto(time.Minute),
 		Tags:        pbutil.StringPairs("k1", "v1"),
-		InputArtifacts: map[string]*sinkpb.Artifact{
-			"input_art1": artf,
-		},
-		OutputArtifacts: map[string]*sinkpb.Artifact{
-			"output_art1": testArtifactWithContents([]byte("test artifact")),
-		},
 	}, cleanup
 }
 

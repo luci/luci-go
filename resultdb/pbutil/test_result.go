@@ -224,8 +224,6 @@ func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	case ec.isErr(ValidateSinkArtifacts(msg.InputArtifacts), "input_artifacts"):
-	case ec.isErr(ValidateSinkArtifacts(msg.OutputArtifacts), "output_artifacts"):
 	}
 	return err
 }

@@ -52,14 +52,6 @@ message TestResult {
 
   // Equivalent of luci.resultpb.TestResult.tags.
   repeated luci.resultdb.type.StringPair tags = 9;
-
-  // Equivalent of luci.resultpb.TestResult.input_artifacts.
-  // The map key is an artifact name.
-  map<string, Artifact> input_artifacts = 10;
-
-  // Equivalent of luci.resultpb.TestResult.output_artifacts.
-  // The map key is an artifact name.
-  map<string, Artifact> output_artifacts = 11;
 }
 
 // A local equivalent of luci.resultdb.Artifact message
