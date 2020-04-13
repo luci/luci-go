@@ -12,19 +12,19 @@
         "caches": [
           {
             "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
-            "path": "builder"
+            "path": "cache/builder"
           },
           {
             "name": "git",
-            "path": "git"
+            "path": "cache/git"
           },
           {
             "name": "goma",
-            "path": "goma"
+            "path": "cache/goma"
           },
           {
             "name": "vpython",
-            "path": "vpython"
+            "path": "cache/vpython"
           }
         ],
         "cipd_input": {
@@ -186,15 +186,15 @@
         "caches": [
           {
             "name": "git",
-            "path": "git"
+            "path": "cache/git"
           },
           {
             "name": "goma",
-            "path": "goma"
+            "path": "cache/goma"
           },
           {
             "name": "vpython",
-            "path": "vpython"
+            "path": "cache/vpython"
           }
         ],
         "cipd_input": {
