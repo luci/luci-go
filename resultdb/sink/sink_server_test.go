@@ -19,9 +19,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -66,12 +64,6 @@ func TestReportTestResults(t *testing.T) {
 
 			// rdb_channel should invoke recorder.BatchCreateTestResults()
 			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
-		})
-
-		Convey("returns an error if artifacts are invalid", func() {
-			req.TestResults[0].InputArtifacts["input_art2"] = &sinkpb.Artifact{}
-			_, err := sink.ReportTestResults(ctx, req)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 	})
 }
