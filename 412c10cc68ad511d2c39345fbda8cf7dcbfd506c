@@ -45,6 +45,30 @@
       "revId": "412c10cc68ad511d2c39345fbda8cf7dcbfd506c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05134e83_becba289",
+        "filename": "milo/git/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-13T22:07:26Z",
+      "side": 1,
+      "message": "Oops, indeed the `WithProject` should be removed.",
+      "parentUuid": "29243a98_b151a77a",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 141,
+        "endChar": 3
+      },
+      "revId": "412c10cc68ad511d2c39345fbda8cf7dcbfd506c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
