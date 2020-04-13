@@ -14,7 +14,7 @@ import "google/protobuf/timestamp.proto";
 // An attempt involves doing checks for one or more CLs that could
 // potentially be submitted together.
 //
-// Next ID: 12.
+// Next ID: 13.
 message Attempt {
   // The opaque key unique to this Attempt.
   string key = 1;
@@ -66,6 +66,10 @@ message Attempt {
 
   // A more fine-grained status the explains more details about the status.
   AttemptSubstatus substatus = 10;
+
+  // Whether or not the required builds for this attempt include additional
+  // "opted-in" builders by the user via the `Cq-Include-Trybots` footer.
+  bool has_custom_requirement = 12;
 }
 
 // GerritChange represents one revision (patchset) of one Gerrit change
@@ -159,10 +163,12 @@ message Build {
   // this builder are all not reusable.
   Origin origin = 3;
 
-  // Whether this build's builder must pass in order for the CLs to be
+  // Whether the CQ must wait for this build to pass in order for the CLs to be
   // considered ready to submit. True means this builder must pass, false means
   // this builder is "optional", and so this build should not be used to assess
-  // the correctness of the CLs in the Attempt.
+  // the correctness of the CLs in the Attempt. For example, builds added
+  // because of the Cq-Include-Trybots footer are still critical; experimental
+  // builders are not.
   //
   // Tip: join this with the Buildbucket BigQuery table to figure out which
   // builder this build belongs to.
