@@ -587,6 +587,21 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 	}
 }
 
+// optionalProjectACLMiddleware install git project into context if the current
+// user has access to the project.
+func optionalProjectACLMiddleware(c *router.Context, next router.Handler) {
+	luciProject := c.Params.ByName("project")
+	allowed, err := common.IsAllowed(c.Context, luciProject)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	if allowed {
+		c.Context = git.WithProject(c.Context, luciProject)
+	}
+	next(c)
+}
+
 // ProjectLinks returns the navigation list surrounding a project and optionally group.
 func ProjectLinks(c context.Context, project, group string) []ui.LinkGroup {
 	if project == "" {

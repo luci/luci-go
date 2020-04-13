@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -151,6 +152,9 @@ type RPCOption interface {
 // WithProject can be used to generate an OAuth token with an identity bound
 // to that particular LUCI project.
 func WithProject(project string) RPCOption {
+	if (project == "") {
+		panic(fmt.Errorf("project should not be an empty string"))
+	}
 	return projectOption{name: project}
 }
 
