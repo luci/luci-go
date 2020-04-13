@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
-import { customElement, html } from 'lit-element';
+import { customElement, css, html } from 'lit-element';
 
 import '../components/page_header';
 
@@ -32,13 +32,6 @@ import '../components/page_header';
 export class LoginPageElement extends MobxLitElement implements
     BeforeEnterObserver {
   redirectUri = '';
-
-  protected render() {
-    return html`
-      <tr-page-header></tr-page-header>
-      <div>You must sign in to see anything useful.<div>
-    `;
-  }
 
   onBeforeEnter(location: RouterLocation) {
     const redirect = new URLSearchParams(location.search).get('redirect');
@@ -59,4 +52,17 @@ export class LoginPageElement extends MobxLitElement implements
       Router.go(this.redirectUri);
     }
   }
+
+  protected render() {
+    return html`
+      <tr-page-header></tr-page-header>
+      <div id="sign-in-message">You must sign in to see anything useful.<div>
+    `;
+  }
+
+  static styles = css`
+    #sign-in-message {
+      margin: 8px 16px;
+    }
+  `;
 }
