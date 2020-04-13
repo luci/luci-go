@@ -133,15 +133,18 @@ var _ Client = (*implementation)(nil)
 
 // transport returns an authenticated RoundTripper for Gerrit or Gitiles RPCs.
 func (p *implementation) transport(c context.Context) (transport http.RoundTripper, err error) {
-	luciProject, err := ProjectFromContext(c)
-	if err != nil {
-		return nil, err
+	luciProject, ok := ProjectFromContext(c)
+	if ok {
+		opts := []auth.RPCOption{
+			auth.WithProject(luciProject),
+			auth.WithScopes(gitiles.OAuthScope),
+		}
+		return auth.GetRPCTransport(c, auth.AsProject, opts...)
 	}
 	opts := []auth.RPCOption{
-		auth.WithProject(luciProject),
 		auth.WithScopes(gitiles.OAuthScope),
 	}
-	return auth.GetRPCTransport(c, auth.AsProject, opts...)
+	return auth.GetRPCTransport(c, auth.AsSelf, opts...)
 }
 
 func (p *implementation) gitilesClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
