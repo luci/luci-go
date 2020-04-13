@@ -39,3 +39,20 @@ func (s *DecoratedSink) ReportTestResults(ctx context.Context, req *ReportTestRe
 	}
 	return
 }
+
+func (s *DecoratedSink) UploadArtifacts(ctx context.Context, req *UploadArtifactsRequest) (rsp *UploadArtifactsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UploadArtifacts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UploadArtifacts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UploadArtifacts", rsp, err)
+	}
+	return
+}
