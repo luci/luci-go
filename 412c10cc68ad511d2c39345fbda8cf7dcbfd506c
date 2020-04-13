@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c135c803_47699768",
+        "filename": "milo/git/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-13T22:13:38Z",
+      "side": 1,
+      "message": "let me clarify\n\nthis code looks like we are silently swallowing an error, but looking at ProjectFromContext impl, i see why you did this.\n\ni suggest\n- change WithProject to panic on an empty project\n- change ProjectFromContext to return (project string, ok bool)",
+      "parentUuid": "9fb35322_aa3b7a13",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 137,
+        "endChar": 7
+      },
+      "revId": "412c10cc68ad511d2c39345fbda8cf7dcbfd506c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "29243a98_b151a77a",
         "filename": "milo/git/client.go",
         "patchSetId": 3
