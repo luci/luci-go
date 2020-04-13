@@ -63,11 +63,6 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 				GracePeriodSecs:      props.GetGracePeriod().GetSeconds(),
 				IoTimeoutSecs:        props.GetIoTimeout().GetSeconds(),
 
-				InputsRef: &swarming.SwarmingRpcsFilesRef{
-					Isolated:       props.GetCasInputs().GetDigest(),
-					Isolatedserver: props.GetCasInputs().GetServer(),
-					Namespace:      props.GetCasInputs().GetNamespace(),
-				},
 				CipdInput: &swarming.SwarmingRpcsCipdInput{
 					Packages: make([]*swarming.SwarmingRpcsCipdPackage, 0, len(props.CipdInputs)),
 				},
@@ -86,6 +81,14 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 					LowerPriority:             props.GetContainment().GetLowerPriority(),
 				},
 			},
+		}
+
+		if iso := props.GetCasInputs(); iso.GetDigest() != "" || iso.GetServer() != "" || iso.GetNamespace() != "" {
+			toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
+				Isolated:       props.GetCasInputs().GetDigest(),
+				Isolatedserver: props.GetCasInputs().GetServer(),
+				Namespace:      props.GetCasInputs().GetNamespace(),
+			}
 		}
 
 		for _, env := range props.Env {
