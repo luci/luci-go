@@ -78,6 +78,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 		DryRun:          c.dump,
 		UserID:          uid,
 		FinalBuildProto: "build.proto.json",
+		KitchenSupport:  c.kitchenSupport,
 	})
 	if err != nil {
 		return nil, err

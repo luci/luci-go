@@ -188,10 +188,6 @@
     ],
     "env_vars": [
       {
-        "key": "BUILDBUCKET_EXPERIMENTAL",
-        "value": "FALSE"
-      },
-      {
         "key": "SWARMING_TASK_TEMPLATE_NAME",
         "value": "test_canary"
       }
