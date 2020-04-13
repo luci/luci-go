@@ -95,3 +95,8 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
 }
+
+// UploadArtifacts implement sinkpb.SinkServer
+func (s *sinkServer) UploadArtifacts(ctx context.Context, in *sinkpb.UploadArtifactsRequest) (*sinkpb.UploadArtifactsResponse, error) {
+	return &sinkpb.UploadArtifactsResponse{}, nil
+}

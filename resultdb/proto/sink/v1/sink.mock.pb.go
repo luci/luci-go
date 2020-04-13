@@ -89,6 +89,26 @@ func (mr *MockSinkClientMockRecorder) ReportTestResults(ctx, in interface{}, opt
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportTestResults", reflect.TypeOf((*MockSinkClient)(nil).ReportTestResults), varargs...)
 }
 
+// UploadArtifacts mocks base method.
+func (m *MockSinkClient) UploadArtifacts(ctx context.Context, in *UploadArtifactsRequest, opts ...grpc.CallOption) (*UploadArtifactsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UploadArtifacts", varargs...)
+	ret0, _ := ret[0].(*UploadArtifactsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UploadArtifacts indicates an expected call of UploadArtifacts.
+func (mr *MockSinkClientMockRecorder) UploadArtifacts(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadArtifacts", reflect.TypeOf((*MockSinkClient)(nil).UploadArtifacts), varargs...)
+}
+
 // MockSinkServer is a mock of SinkServer interface.
 type MockSinkServer struct {
 	ctrl     *gomock.Controller
@@ -125,4 +145,19 @@ func (m *MockSinkServer) ReportTestResults(arg0 context.Context, arg1 *ReportTes
 func (mr *MockSinkServerMockRecorder) ReportTestResults(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportTestResults", reflect.TypeOf((*MockSinkServer)(nil).ReportTestResults), arg0, arg1)
+}
+
+// UploadArtifacts mocks base method.
+func (m *MockSinkServer) UploadArtifacts(arg0 context.Context, arg1 *UploadArtifactsRequest) (*UploadArtifactsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadArtifacts", arg0, arg1)
+	ret0, _ := ret[0].(*UploadArtifactsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UploadArtifacts indicates an expected call of UploadArtifacts.
+func (mr *MockSinkServerMockRecorder) UploadArtifacts(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadArtifacts", reflect.TypeOf((*MockSinkServer)(nil).UploadArtifacts), arg0, arg1)
 }

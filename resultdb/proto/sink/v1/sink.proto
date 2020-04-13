@@ -33,6 +33,8 @@ service Sink {
   // Reports test results.
   rpc ReportTestResults(ReportTestResultsRequest)
       returns (ReportTestResultsResponse) {};
+  rpc UploadArtifacts(UploadArtifactsRequest)
+      returns (UploadArtifactsResponse) {};
 }
 
 message ReportTestResultsRequest {
@@ -45,6 +47,26 @@ message ReportTestResultsResponse {
   // or requested via luci.resultdb.rpc.v1.ResultDB service.
   repeated string test_result_names = 1;
 }
+
+message UploadArtifactsRequest {
+  // ParentID represents the invocation-local ID of the Artifact parent.
+  message ParentID {
+    // Equivalent of luci.resultpb.TestResult.TestId.
+    string test_id = 1;
+    // Equivalent of luci.resultpb.TestResult.result_id.
+    string result_id = 2;
+  }
+
+  // The parent of all the Artifacts included in this message.
+  // This field is omitted for invocation-level Artifacts.
+  ParentID parent_id = 1;
+
+  // A map of artifacts to upload, where the key is the Artifact ID.
+  // Note that the Artifact ID is unique, but local to the parent.
+  map<string, Artifact> artifacts = 2;
+}
+
+message UploadArtifactsResponse {}
 
 /*
   DEPRECATED - SinkMessageContainer and HandShake are going to be removed
