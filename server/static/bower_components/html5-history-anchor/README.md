@@ -72,7 +72,7 @@ Refresh the page with `history.go(0)`.
 The [HTML5 history spec](http://www.w3.org/html/wg/drafts/html/master/browsers.html#the-history-interface) is a bit quirky. `history.pushState()` doesn't dispatch a `popstate` event or load a new page by itself. It was only meant to push state into history. This is an "undo" feature for single page applications. This is why you have to manually dispatch a `popstate` event. Including both `pushstate` and `popstate` attributes on the link will push the new state into history then dispatch a `popstate` event which you can use to load a new page with a router.
 
 - `history.pushState()` and `history.replaceState()` don't dispatch `popstate` events.
-- `history.back()`, `history.forward()`, and the browser's back and foward buttons do dispatch `popstate` events.
+- `history.back()`, `history.forward()`, and the browser's back and forward buttons do dispatch `popstate` events.
 - `history.go()` and `history.go(0)` do a full page reload and don't dispatch `popstate` events.
 - `history.go(-1)` (back 1 page) and `history.go(1)` (forward 1 page) do dispatch `popstate` events.
 
