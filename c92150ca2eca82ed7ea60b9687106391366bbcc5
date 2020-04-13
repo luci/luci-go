@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "2f6a46e2_e08ad36f",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-13T23:30:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "934f9fbd_dfce8894",
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe32427b_09f86bde",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5
@@ -69,6 +87,24 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "593a64ce_91a5e75d",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-13T23:30:53Z",
+      "side": 1,
+      "message": "That\u0027s doable but doesn\u0027t hook into lit-element\u0027s property tracking very well.\nI tried but failed to support taking a map between context keys and property keys without over complicating the API and implementation.\n\nAnd there is a workaround:\nThe parent element of the context consumers can simply rename the context key by wrapping the child elements in another context provider.\nThe context consumers themselves don\u0027t need to worry about name collision, because they are the ones that set the rules (the shape (type definition) of the context of this node).",
+      "parentUuid": "fe32427b_09f86bde",
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -92,6 +128,30 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "beba1949_dee1513e",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-13T23:30:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b4573b9_f1410642",
+      "range": {
+        "startLine": 153,
+        "startChar": 56,
+        "endLine": 153,
+        "endChar": 63
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -166,6 +226,30 @@
     },
     {
       "key": {
+        "uuid": "e896e1b8_490d0ddb",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-13T23:30:53Z",
+      "side": 1,
+      "message": "The implementation of these functions/mixins are quite involved. But the interfaces they expose are actually quite simple. And they guarantee type safety.\nHopefully it should be simple to use.",
+      "parentUuid": "c5efbc73_8b44e451",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9149bece_bda04004",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5
@@ -186,6 +270,30 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc3a2701_8c5433c8",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-13T23:30:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9149bece_bda04004",
+      "range": {
+        "startLine": 218,
+        "startChar": 8,
+        "endLine": 225,
+        "endChar": 9
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
