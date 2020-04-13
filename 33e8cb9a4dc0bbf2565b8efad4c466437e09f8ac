@@ -34,6 +34,24 @@
       "revId": "33e8cb9a4dc0bbf2565b8efad4c466437e09f8ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26cef781_91fd04a2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-13T22:16:51Z",
+      "side": 1,
+      "message": "i think so, but I think it is too soon to design this now.",
+      "parentUuid": "6182803e_e2fdac4c",
+      "revId": "33e8cb9a4dc0bbf2565b8efad4c466437e09f8ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
