@@ -36,10 +36,13 @@ func cipdPins(ci *swarming.SwarmingRpcsCipdInput) (ret []*swarmingpb.CIPDPackage
 	return
 }
 
-func strPairs(pairs []*swarming.SwarmingRpcsStringPair) []*swarmingpb.StringPair {
-	ret := make([]*swarmingpb.StringPair, len(pairs))
-	for i, p := range pairs {
-		ret[i] = &swarmingpb.StringPair{Key: p.Key, Value: p.Value}
+func strPairs(pairs []*swarming.SwarmingRpcsStringPair, filter func(key string) bool) []*swarmingpb.StringPair {
+	ret := make([]*swarmingpb.StringPair, 0, len(pairs))
+	for _, p := range pairs {
+		if filter != nil && !filter(p.Key) {
+			continue
+		}
+		ret = append(ret, &swarmingpb.StringPair{Key: p.Key, Value: p.Value})
 	}
 	return ret
 }
