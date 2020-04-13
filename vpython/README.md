@@ -12,7 +12,7 @@ run in a hermetic world consisting of just those dependencies.
 
 When invoking such a script via `vpython`, the tool downloads its dependencies
 and prepares an immutable VirtualEnv containing them. It then invokes the
-script, now running in that VirutalEnv, through the preferred Python
+script, now running in that virtualenv, through the preferred Python
 interpreter.
 
 `vpython` does its best not to use hacky mechanisms to achieve this. It uses
@@ -62,7 +62,7 @@ when vendoring packages. Notably, with `vpython`:
   places within Chrome's infra code base, have bootstrap scripts that vendor
   packages or mimic a VirtualEnv. These are at best repetitive and, at worst,
   buggy and insecure.
-* Depenencies are explicitly stated, not assumed, and consistent between
+* Dependencies are explicitly stated, not assumed, and consistent between
   deployments.
 
 ### Why VirtualEnv?
@@ -161,7 +161,7 @@ Use wheels with the `cp27m` or `none` ABI tag. For example:
 `vpython`.
 
 `vpython` works with a default Python environment out of the box. To add
-vendored packges, you need to define an environment specification file that
+vendored packages, you need to define an environment specification file that
 describes which wheels to install.
 
 An environment specification file is a text protobuf defined as `Spec`
@@ -203,7 +203,7 @@ invocation overhead.
 
 Once a VirtualEnv specification has been resolved, its resulting pinned
 specification is hashed and used as a key to that VirtualEnv. Other `vpython`
-invocations expressing hte same environment will naturally re-use that
+invocations expressing the same environment will naturally re-use that
 VirtualEnv instead of creating their own.
 
 #### Download Caching
@@ -227,7 +227,7 @@ vpython ./foo/bar/baz.py -d --flag value arg arg whatever
 ```
 
 The `vpython` tool accepts its own command-line arguments. In this case, use
-a `--` seprator to differentiate between `vpython` options and `python` options:
+a `--` separator to differentiate between `vpython` options and `python` options:
 
 ```sh
 vpython -vpython-spec /path/to/spec.vpython -- ./foo/bar/baz.py
