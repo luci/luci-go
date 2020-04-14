@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f9a6696_64e89939",
+        "filename": "client/archiver/archiver_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-14T14:08:01Z",
+      "side": 1,
+      "message": "maybe not good idea. but you could alias to shorten the package name.\n\n\"\"\nimport isc \"go.chromium.org/luci/common/isolatedclient\"\n\n...\n\nisc.NewClient(\"http://localhost\", isc.WithNameSpace(...), ....)\n\"\"",
+      "revId": "f6149cda4544f1b980ea0109aa8c265a5f57084b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

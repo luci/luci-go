@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28331ff7_3d1a15bf",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-14T14:08:01Z",
+      "side": 0,
+      "message": "The name \"isolatedclient.New\" was natural. You can use the name since you\u0027re deprecating it.",
+      "revId": "282905a9f9b760486dfeeca43015f9dceb4c7e6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
