@@ -46,6 +46,29 @@
       "revId": "bf5bd7d2f736d17bcd95664a79bc74494d128e88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d0b8fd3_07f774ce",
+        "filename": "server/auth/permission/permission.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T21:05:34Z",
+      "side": 1,
+      "message": "I believe if you drop the *, you can make the perms map have type `map[Permission]struct{}` which will let you achieve the same thing, but with less pointery things.",
+      "range": {
+        "startLine": 46,
+        "startChar": 8,
+        "endLine": 46,
+        "endChar": 9
+      },
+      "revId": "bf5bd7d2f736d17bcd95664a79bc74494d128e88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
