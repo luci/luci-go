@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6d41404_dc0ed2bf",
+        "filename": "milo/common/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 681,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T07:10:52Z",
+      "side": 1,
+      "message": "probably can just drop this chunk of the switch to let it hit default",
+      "range": {
+        "startLine": 681,
+        "startChar": 35,
+        "endLine": 681,
+        "endChar": 43
+      },
+      "revId": "a06c2856e99bd1f640c596fcb94f44c06843bb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
