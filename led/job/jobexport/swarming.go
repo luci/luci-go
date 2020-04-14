@@ -43,10 +43,14 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 		TaskSlices:           make([]*swarming.SwarmingRpcsTaskSlice, 0, len(task.TaskSlices)),
 	}
 
+	upDigest := jd.GetUserPayload().GetDigest()
+
 	for i, slice := range task.TaskSlices {
 		props := slice.Properties
 
-		if props.GetCasInputs().GetDigest() != "" && jd.GetUserPayload().GetDigest() != "" {
+		slcDgst := props.GetCasInputs().GetDigest()
+
+		if slcDgst != "" && upDigest != "" && slcDgst != upDigest {
 			return nil, errors.Reason(
 				"slice %d defines CasInputs, but job.UserPayload is also defined. "+
 					"Call ConsolidateIsolateds before calling ToSwarmingNewTask.", i).Err()
