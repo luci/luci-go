@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "14acde5f_f5cc195e",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-14T08:39:52Z",
+      "side": 1,
+      "message": "These functions are called from other packages.",
+      "parentUuid": "e7e6942e_a469f400",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "53b4e8b2_7adf16c8",
         "filename": "common/isolatedclient/isolatedclient.go",
         "patchSetId": 2
@@ -48,6 +66,24 @@
       "side": 1,
       "message": "+1. Or would it be cleaner to do something like a builder pattern, where WithX is defined on Options, and returns Options pointer itself? Then you can basically write\n\ndefaultOpts().WithFoo(..).WithBar(..).With..\ndefaultOpts.apply(client)",
       "parentUuid": "53b4e8b2_7adf16c8",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee6c5cca_d52584b1",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-14T08:39:52Z",
+      "side": 1,
+      "message": "\u003e Why not simply define defualtClientOptions somewhere in this file, rather than using the Option functions?\n\nDoes this make simplify this? Also how can we change configs without Option functions?\n\n\u003e Or would it be cleaner to do something like a builder pattern\n\nI think builder pattern makes code bit longer than this.",
+      "parentUuid": "4b65d1a2_49454bb9",
       "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
