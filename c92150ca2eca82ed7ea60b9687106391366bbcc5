@@ -274,6 +274,30 @@
     },
     {
       "key": {
+        "uuid": "4dfda494_e6dd645b",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T13:46:36Z",
+      "side": 1,
+      "message": "I think my drive towards a stricter (often more complex) type system comes from my frustration of dealing with weaker type systems, where I need to keep track of a lot of constraints/invariants because they are not encoded in the type system.\nWith a stricter type system, although it\u0027s harder to make the complier happy or to understand the type interface initially, (IMO) it\u0027s easier to code later on because I no longer need to keep track of the constraints since the type system can do most of the work.\nBut I don\u0027t have enough experience with large projects. Maybe the trade off is not justified.\n\n\u003e \u003e the interfaces they expose are actually quite simple\n\u003e I think it is bold claim. As a user of this func, I have to read\nThat\u0027s poorly worded. I agree that the type is quite hard to comprehend. I meant the usage of lib should be quite simple. Most notably, there\u0027s very little thing to manually keep track of once you get it working.",
+      "parentUuid": "d521d5f8_87b7425e",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9149bece_bda04004",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5
@@ -342,6 +366,30 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ca70315_67a70cad",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T13:46:36Z",
+      "side": 1,
+      "message": "Ahh, I thought you meant putting the context key in to event name. Will update it in a separate CL.",
+      "parentUuid": "787724d1_157d6efc",
+      "range": {
+        "startLine": 218,
+        "startChar": 8,
+        "endLine": 225,
+        "endChar": 9
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

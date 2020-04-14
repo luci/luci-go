@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a2a03f75_a6eb6276",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T13:46:36Z",
+      "side": 1,
+      "message": "As you commented in another thread, the return type here is quite complex. I don\u0027t think stating it out will make it easier to understand.\nI intended to use the example provided in the @fileoverview to help the user understand how to use these functions.\nThe types here are just to ensure the functions are not misused.",
+      "parentUuid": "98e610b0_faedde4f",
+      "range": {
+        "startLine": 168,
+        "startChar": 51,
+        "endLine": 168,
+        "endChar": 52
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0d482c5_5a310a3e",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 7
@@ -39,6 +63,24 @@
       "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea3ca856_33d88c14",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T13:46:36Z",
+      "side": 1,
+      "message": "Parameterising it allows us to perform type check on the tracked properties but not on the untracked properties.",
+      "parentUuid": "c0d482c5_5a310a3e",
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "2b8b1cf2_b6b474cf",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T13:46:36Z",
+      "side": 1,
+      "message": "The context consumer doesn\u0027t have to subscribe to the full list of context keys.",
+      "parentUuid": "76d20622_fccd2fb4",
+      "range": {
+        "startLine": 236,
+        "startChar": 60,
+        "endLine": 236,
+        "endChar": 72
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f50bf8e3_3d51b37c",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 7
@@ -85,6 +151,30 @@
       "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c164648c_9f2b4ca1",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T13:46:36Z",
+      "side": 1,
+      "message": "Fixed in another CL.",
+      "parentUuid": "f50bf8e3_3d51b37c",
+      "range": {
+        "startLine": 255,
+        "startChar": 52,
+        "endLine": 255,
+        "endChar": 66
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
