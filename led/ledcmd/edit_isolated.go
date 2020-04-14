@@ -116,7 +116,6 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 		nil, authClient,
 		current.Server, current.Namespace,
 		retry.Default,
-		nil,
 	)
 
 	if current.Digest != "" {
