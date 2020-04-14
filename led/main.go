@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Command led implements a 'led' binary WITHOUT support for "kitchen" based
-// tasks. If you need support for kitchen based tasks, see 'infra/tools/led2'.
+// tasks. If you need support for kitchen based tasks, see 'infra/tools/led'.
 //
 // TODO(crbug.com/1015181) Hopefully kitchen isn't long for this world and will
 // be gone soon (~mid 2020).
