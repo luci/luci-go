@@ -2,6 +2,161 @@
   "comments": [
     {
       "key": {
+        "uuid": "33ac90f6_3eaea3c9",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "I like \"LegacyProperties\" you have above. Maybe make \"UnusedProperties\" struct or something like that?",
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7625650_1db4d93f",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "intentional? note that proto field is also called \"create_time\"",
+      "range": {
+        "startLine": 37,
+        "startChar": 7,
+        "endLine": 37,
+        "endChar": 8
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6298c7b6_e9a85df1",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "same concern with order of expression as in another CL. Would be OK with p was a pointer.\nConsider\n\n  err :\u003d p.SetValue(...)\n  return p, err",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 13
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e03b908_db058caf",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "this capture a stack trace, which then gets printed. It will be pretty confusing.\nThe solution for this is https://godoc.org/go.chromium.org/luci/common/errors#BoolTag",
+      "range": {
+        "startLine": 88,
+        "startChar": 35,
+        "endLine": 88,
+        "endChar": 41
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b8f257a_38f7a108",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "shorter:\n\n\t\tif i \u003d\u003d 0 {\n\t\t\tshds[i].ID \u003d fmt.Sprintf(\"%s:%s\", key, val)\n\t\t} else {\n\t\t\tshds[i].ID \u003d fmt.Sprintf(\":%d:%s:%s\", i, key, val)\n\t\t}",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 103,
+        "endChar": 3
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0609eeb9_64019d95",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "i think this has a pretty well defined scope. Could this be extracted to \"hasInternalDSErrors(err) bool\" or something like that?",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 3
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7d4a2ba_a585bfb0",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "nit: this allocates a slice backed with 0-length array, which isn\u0027t very useful. Consider \n\n  var ents []TagIndexEntry\n\nwhich does not do allocations and simpler",
+      "range": {
+        "startLine": 116,
+        "startChar": 8,
+        "endLine": 116,
+        "endChar": 33
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9bb9685e_7ec544ca",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 2
@@ -13,6 +168,47 @@
       "writtenOn": "2020-04-14T01:44:01Z",
       "side": 1,
       "message": "Actually not sure about this case. Maybe the TagIndex hasn\u0027t been created yet?",
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad02f7f3_1d1f9f07",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "i don\u0027t see how this can happenning. TagIndex entities are created *before* Build entities, in a separate txn. Build creation does not proceed to putting Build entity if it fails to write TagIndex",
+      "parentUuid": "9bb9685e_7ec544ca",
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51565ee1_70ab6ff9",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T02:51:14Z",
+      "side": 1,
+      "message": "nit: \n\n        switch err :\u003d datastore.Get(ctx, ent); {\n\tcase err \u003d\u003d datastore.ErrNoSuchEntity:\n\t\treturn nil, status.Errorf(codes.NotFound, \"not found\")\n\tcase err !\u003d nil:\n\t\treturn nil, errors.Annotate(err, \"error fetching build with ID %d\", req.Id).Err()\n\t}",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 10
+      },
       "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
