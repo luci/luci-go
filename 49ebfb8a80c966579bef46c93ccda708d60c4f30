@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bb966aa3_d042f97e",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 576,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T03:47:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5fcff4b2_0d095b38",
+      "range": {
+        "startLine": 576,
+        "startChar": 46,
+        "endLine": 576,
+        "endChar": 83
+      },
+      "revId": "49ebfb8a80c966579bef46c93ccda708d60c4f30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b26a2863_aa5d906d",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 9
@@ -39,6 +63,24 @@
       "revId": "49ebfb8a80c966579bef46c93ccda708d60c4f30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3d4eee0_2bfa0f74",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 594,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T03:47:26Z",
+      "side": 1,
+      "message": "Replaced with a flat switch. But doesn\u0027t rely on the order of cases as much. I find that to be more readable.",
+      "parentUuid": "b26a2863_aa5d906d",
+      "revId": "49ebfb8a80c966579bef46c93ccda708d60c4f30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
