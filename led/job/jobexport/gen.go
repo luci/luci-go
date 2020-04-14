@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testdata
+package jobexport
 
 // Running `go generate` will regenerate the '.job.json' and '.swarm.json'
-// files.
+// files in the 'testdata' directory.
 //
 // The .job.json files are the output from the `jobcreate` test; they are
 // job.Definition JSONPB messages.
@@ -23,6 +23,6 @@ package testdata
 // When doing this make sure to inspect the diff of the .swarm.json files to
 // ensure they're correct.
 
-//go:generate cp ../../jobcreate/testdata/bbagent.job.json .
-//go:generate cp ../../jobcreate/testdata/raw.job.json .
-//go:generate go test .. -train
+//go:generate cp ../jobcreate/testdata/bbagent.job.json testdata/
+//go:generate cp ../jobcreate/testdata/raw.job.json testdata/
+//go:generate go test -train

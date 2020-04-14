@@ -102,9 +102,12 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bb.BbagentArgs.Build.Infra.Buildbucket.RequestedProperties = nil
 		bb.BbagentArgs.Build.Status = 0
 
+		// drop the executable package; it's canonically represented by
+		// out.BBAgentArgs.Build.Exe.
+		dropRecipePackage(&bb.CipdPackages, path.Dir(bb.BbagentArgs.ExecutablePath))
+
 		// drop legacy recipe fields
 		if recipe := bb.BbagentArgs.Build.Infra.Recipe; recipe != nil {
-			dropRecipePackage(&bb.CipdPackages, path.Dir(bb.BbagentArgs.ExecutablePath))
 			bb.BbagentArgs.Build.Infra.Recipe = nil
 		}
 	}

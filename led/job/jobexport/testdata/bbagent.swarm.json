@@ -3,17 +3,13 @@
   "priority": "40",
   "tags": [
     "allow_milo:1",
-    "log_location:logdog://logs.chromium.org/led/testuser_example.com/fa12f92afbe00f8508d0e83bab9cf8cebf42e25e8b14eafc81eae0d00f2cade4/+/build.proto"
+    "log_location:logdog://logs.chromium.org/infra/led/testuser_example.com/fa12f92afbe00f8508d0e83bab9cf8cebf42e25e8b14eafc81eae0d00f2cade4/+/build.proto"
   ],
   "task_slices": [
     {
       "expiration_secs": "240",
       "properties": {
         "caches": [
-          {
-            "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
-            "path": "cache/builder"
-          },
           {
             "name": "git",
             "path": "cache/git"
@@ -25,6 +21,10 @@
           {
             "name": "vpython",
             "path": "cache/vpython"
+          },
+          {
+            "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
+            "path": "cache/builder"
           }
         ],
         "cipd_input": {
@@ -118,27 +118,12 @@
         },
         "command": [
           "bbagent${EXECUTABLE_SUFFIX}",
-          "eNq0U01v40QYjpNuG16gy05VtWtQ1a16WCLcxG7SOgGhRXwIxGoLq26lag/WeOa1PYo9Y81H2kUIkPaCxI0jv4AfwYmfwJET4heAxBkhp4FDU25wGdnvxzPP87zzwvZUWFagDFiBbKqc7ZeOCbxEcotRVqC/TSXXSvCDXKm8RKOcZnjAVOX7qdJC5saUy7m7rNCqEq5aTm1yqu2N4Qu5HN7OHCuMoMuZjVzdgFKWsxvu3Kp5djMZM70Je+sCU23ZUmLvqxfI63BLyExT0mbCfy11ouRBrZVVAV7WqEWF0galkO7ys+cr8GcH7kF3f+Ey2extwB14EStXUotJzpC0dz34pg1kXyMTNSYocyGxXyInf3i93z147gEwUfNEyNpZ4noGPoW1mrIpzZF84L83p9NftKdO8hJN/18H0L8qb8a86DFB/Qx2YG2G2gglyYZ/R2Nm+gVSbvoVNRY1CIASeaKdTAQnT/3zEnnforHOoE7wklZ1eYWf0TDKxhHNUhwMsng0iPkA48OUpmOWxQzTbBhhNMI4DYdIMxaHSHHAB4MsYpTjEL7zYPuaG4YVyF2JmnzR+xzegG6hjJW0QrLr7zRSgn8qAo6zA1rXpla24QMPoWu1yHPUhjyI3oa3ehO4BytMK0nu9rZgEyBHiZraRvyafysaR9EINqEtOLntv9wUTmbh5Cp8AKtX1Mi+v5c56zSayUK+6aeUTXOtnORJgWWN+r73rfdrB3YnO0wH88eSOjZFe50l+aENO3/PLDAXVFfXS/w3KS8UCxrThcwfzGVbNUUZGNSzhXJBq4O8+RcMKWPKyXnz7v3ebeiw2pHVy/goOBr6rd46tJUhq09SJ63zW71XYKVWqiSr7zY80G9NXoJOLixpDr81WYeVXFWUzE+/NQlgbVY/s0Xj2uLDb+1tnX1yfvrhyaPk7KPHp0/eefj+o7Pk8cnJ6eQpfDw3AHUS8jAbDONBeJQdcnYcjYcY0pTzjB+P4jCOUjYeHYVjhiyi8TEfhPQwi4aj8DgdYhSHw2QWkbUFmN/p/ub5X8Krcz9KlXOVL7l7tbL/46P90TuH/2QRyfLu/eStdH/53vvZ63S/Xv8rAAD//5Ti4xA"
+          "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"
         ],
-        "containment": {
-          "containment_type": "NOT_SPECIFIED"
-        },
         "dimensions": [
           {
             "key": "caches",
             "value": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2"
-          },
-          {
-            "key": "caches",
-            "value": "git"
-          },
-          {
-            "key": "caches",
-            "value": "goma"
-          },
-          {
-            "key": "caches",
-            "value": "vpython"
           },
           {
             "key": "cpu",
@@ -151,6 +136,16 @@
           {
             "key": "pool",
             "value": "Chrome"
+          }
+        ],
+        "env": [
+          {
+            "key": "SWARMING_TASK_TEMPLATE_NAME",
+            "value": "test_canary"
+          },
+          {
+            "key": "BUILDBUCKET_EXPERIMENTAL",
+            "value": "TRUE"
           }
         ],
         "env_prefixes": [
@@ -195,6 +190,10 @@
           {
             "name": "vpython",
             "path": "cache/vpython"
+          },
+          {
+            "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
+            "path": "cache/builder"
           }
         ],
         "cipd_input": {
@@ -288,24 +287,9 @@
         },
         "command": [
           "bbagent${EXECUTABLE_SUFFIX}",
-          "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"
+          "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"
         ],
-        "containment": {
-          "containment_type": "NOT_SPECIFIED"
-        },
         "dimensions": [
-          {
-            "key": "caches",
-            "value": "git"
-          },
-          {
-            "key": "caches",
-            "value": "goma"
-          },
-          {
-            "key": "caches",
-            "value": "vpython"
-          },
           {
             "key": "cpu",
             "value": "x86-64"
@@ -317,6 +301,16 @@
           {
             "key": "pool",
             "value": "Chrome"
+          }
+        ],
+        "env": [
+          {
+            "key": "SWARMING_TASK_TEMPLATE_NAME",
+            "value": "test_canary"
+          },
+          {
+            "key": "BUILDBUCKET_EXPERIMENTAL",
+            "value": "TRUE"
           }
         ],
         "env_prefixes": [
