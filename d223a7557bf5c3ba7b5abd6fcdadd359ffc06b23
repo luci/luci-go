@@ -22,6 +22,30 @@
       "revId": "d223a7557bf5c3ba7b5abd6fcdadd359ffc06b23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d27fd06e_cf41d897",
+        "filename": "led/ledcli/launch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T20:39:55Z",
+      "side": 1,
+      "message": "*ahem*... yes 😇",
+      "parentUuid": "8c286170_d1e29106",
+      "range": {
+        "startLine": 80,
+        "startChar": 34,
+        "endLine": 80,
+        "endChar": 43
+      },
+      "revId": "d223a7557bf5c3ba7b5abd6fcdadd359ffc06b23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
