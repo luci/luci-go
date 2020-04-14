@@ -81,6 +81,24 @@
       "revId": "49ebfb8a80c966579bef46c93ccda708d60c4f30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3b42658_bf6df3f5",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 594,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T05:04:18Z",
+      "side": 1,
+      "message": "you still depend on order though, e.g. `case allowed` and `case !allowed \u0026\u0026 optional` assume that they go after `case err !\u003d nil`",
+      "parentUuid": "e3d4eee0_2bfa0f74",
+      "revId": "49ebfb8a80c966579bef46c93ccda708d60c4f30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
