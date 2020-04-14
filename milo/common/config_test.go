@@ -325,7 +325,6 @@ consoles: {
 	refs: "refs/heads/master"
 	manifest_name: "REVISION"
 	builders: {
-		name: "buildbucket/luci.foo.something/bar"
 		name: "buildbot/master.blah/bar"
 		category: "main"
 		short_name: "s"
