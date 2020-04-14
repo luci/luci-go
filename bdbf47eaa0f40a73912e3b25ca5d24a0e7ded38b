@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9beee6bb_f9001202",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-14T01:44:01Z",
+      "side": 1,
+      "message": "Most such cases have TODOs, I think this is the only time I didn\u0027t add a TODO. I can add it. Anyways it\u0027s not that much code, yeah I will just try to remember that this is here. I don\u0027t want to block GetBuild on figuring out how the entire search package and its exported functions will look.",
+      "parentUuid": "6168c812_6b978395",
+      "range": {
+        "startLine": 118,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 142
+      },
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8bd236fb_9864ec48",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a1d16d3_4ab02b05",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-14T01:44:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8bd236fb_9864ec48",
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46bbe05f_b2d58261",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-14T01:44:01Z",
+      "side": 1,
+      "message": "No longer applicable.",
+      "parentUuid": "0d6d6fc5_e45f9c60",
+      "range": {
+        "startLine": 121,
+        "startChar": 22,
+        "endLine": 121,
+        "endChar": 25
+      },
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
