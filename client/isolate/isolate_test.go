@@ -75,7 +75,7 @@ func TestArchive(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 		// Setup temporary directory.
 		//   /base/bar
@@ -242,7 +242,7 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 	t.Parallel()
 
 	Convey(`The client should handle missing isolate files.`, t, func() {
-		a := archiver.New(context.Background(), isolatedclient.New(nil, nil, "http://unused", isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := archiver.New(context.Background(), isolatedclient.NewClient("http://unused"), nil)
 		opts := &ArchiveOptions{
 			Isolate:  "/this-file-does-not-exist",
 			Isolated: "/this-file-doesnt-either",
@@ -266,7 +266,7 @@ func TestArchiveDir(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 		// Setup temporary directory.
 		//   /base/subdir/foo
