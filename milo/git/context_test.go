@@ -26,16 +26,16 @@ func TestProjectContext(t *testing.T) {
 
 	Convey("Context annotation works", t, func() {
 		ctx := context.Background()
-		_, err := ProjectFromContext(ctx)
-		So(err, ShouldNotBeNil)
+		_, ok := ProjectFromContext(ctx)
+		So(ok, ShouldBeFalse)
 
 		WithProject(ctx, "")
-		_, err = ProjectFromContext(ctx)
-		So(err, ShouldNotBeNil)
+		_, ok = ProjectFromContext(ctx)
+		So(ok, ShouldBeFalse)
 
 		ctx = WithProject(ctx, "luci-project")
-		project, err := ProjectFromContext(ctx)
+		project, ok := ProjectFromContext(ctx)
 		So(project, ShouldResemble, "luci-project")
-		So(err, ShouldBeNil)
+		So(ok, ShouldBeTrue)
 	})
 }

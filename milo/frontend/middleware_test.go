@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/milo/git"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -97,6 +98,7 @@ func TestFuncs(t *testing.T) {
 		})
 
 		Convey("Redirect unauthorized users to login page for projects with access restrictions", func() {
+			projectACLMiddleware := buildProjectACLMiddleware(false)
 			r := httptest.NewRecorder()
 			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 
@@ -116,10 +118,78 @@ func TestFuncs(t *testing.T) {
 				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)),
 				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
 			}
-
 			projectACLMiddleware(ctx, nil)
+			project, ok := git.ProjectFromContext(ctx.Context)
+			So(ok, ShouldBeFalse)
+			So(project, ShouldEqual, "")
 			So(r.Code, ShouldEqual, 302)
 			So(r.HeaderMap["Location"], ShouldResemble, []string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"})
+		})
+
+		Convey("Install git project to context when the user has access to the project", func() {
+			optionalProjectACLMiddleware := buildProjectACLMiddleware(true)
+			r := httptest.NewRecorder()
+			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
+
+			// Fake user to be anonymous.
+			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity, IdentityGroups: []string{"all"}})
+
+			// Create fake public project named "public".
+			c = testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+				"projects/public": {
+					"project.cfg": "name: \"public\"\naccess: \"group:all\"",
+				},
+			}))
+
+			ctx := &router.Context{
+				Context: c,
+				Writer:  r,
+				Request: httptest.NewRequest("GET", "/p/public", bytes.NewReader(nil)),
+				Params:  httprouter.Params{{Key: "project", Value: "public"}},
+			}
+			nextCalled := false
+			next := func (*router.Context) {
+				nextCalled = true
+			}
+			optionalProjectACLMiddleware(ctx, next)
+			project, ok := git.ProjectFromContext(ctx.Context)
+			So(project, ShouldEqual, "public")
+			So(ok, ShouldBeTrue)
+			So(nextCalled, ShouldBeTrue)
+			So(r.Code, ShouldEqual, 200)
+		})
+
+		Convey("Don't install git project to context when the user doesn't have access to the project", func() {
+			optionalProjectACLMiddleware := buildProjectACLMiddleware(true)
+			r := httptest.NewRecorder()
+			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
+
+			// Fake user to be anonymous.
+			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
+
+			// Create fake internal project named "secret".
+			c = testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+				"projects/secret": {
+					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
+				},
+			}))
+
+			ctx := &router.Context{
+				Context: c,
+				Writer:  r,
+				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)),
+				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
+			}
+			nextCalled := false
+			next := func (*router.Context) {
+				nextCalled = true
+			}
+			optionalProjectACLMiddleware(ctx, next)
+			project, ok := git.ProjectFromContext(ctx.Context)
+			So(ok, ShouldBeFalse)
+			So(project, ShouldEqual, "")
+			So(nextCalled, ShouldBeTrue)
+			So(r.Code, ShouldEqual, 200)
 		})
 
 		Convey("Convert LogDog URLs", func() {
