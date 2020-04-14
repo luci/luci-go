@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6c02510f_326d125e",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 603,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T02:41:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e39bc93_4ffe814b",
+      "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1f157a5_5621dd4e",
         "filename": "milo/git/client.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00fbef8d_48aebfa6",
+        "filename": "milo/git/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T02:41:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1f157a5_5621dd4e",
+      "range": {
+        "startLine": 142,
+        "startChar": 53,
+        "endLine": 142,
+        "endChar": 57
+      },
+      "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "88cd0527_9ef505e4",
+        "filename": "milo/git/context.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T02:41:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c691932_2e26192f",
+      "range": {
+        "startLine": 33,
+        "startChar": 8,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c06a0ee1_2b1b5b05",
         "filename": "milo/git/context.go",
         "patchSetId": 6
@@ -85,6 +151,30 @@
       "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "737a803b_54255b68",
+        "filename": "milo/git/context.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T02:41:27Z",
+      "side": 1,
+      "message": "changed to return project, ok \u0026\u0026 project !\u003d \"\".\nThe original function expected project to not equal \"\".",
+      "parentUuid": "c06a0ee1_2b1b5b05",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 21
+      },
+      "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "91ab974c_df430083",
+        "filename": "server/auth/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T02:41:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9da55544_1a69dedd",
+      "range": {
+        "startLine": 155,
+        "startChar": 4,
+        "endLine": 155,
+        "endChar": 5
+      },
+      "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54c8040c_01411e58",
         "filename": "server/auth/client.go",
         "patchSetId": 6
@@ -131,6 +245,30 @@
       "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73e877f0_aff558e6",
+        "filename": "server/auth/client.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T02:41:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54c8040c_01411e58",
+      "range": {
+        "startLine": 156,
+        "startChar": 8,
+        "endLine": 156,
+        "endChar": 19
+      },
+      "revId": "ad982cb249b9cce049833615396b0dbad2ac2b34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
