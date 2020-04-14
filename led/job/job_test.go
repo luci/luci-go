@@ -52,7 +52,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.Tags, ShouldResemble, []string{
 				"allow_milo:1",
-				"log_location:logdog://logs.chromium.org/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898/+/build.proto",
+				"log_location:logdog://logs.chromium.org/infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898/+/build.proto",
 			})
 
 			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
@@ -63,7 +63,6 @@ func TestFlattenToSwarming(t *testing.T) {
 				{
 					Key: "caches", Values: []string{
 						"builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
-						"git", "goma", "vpython",
 					},
 				},
 				{Key: "cpu", Values: []string{"x86-64"}},
@@ -83,7 +82,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			expectedProps := ledProperties{
-				LedRunID: "led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898",
+				LedRunID: "infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898",
 				CIPDInput: &cipdInput{
 					"infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py",
 					"refs/heads/master",
@@ -100,7 +99,6 @@ func TestFlattenToSwarming(t *testing.T) {
 			slice1 := sw.Task.TaskSlices[1]
 			So(slice1.Expiration, ShouldResemble, &durpb.Duration{Seconds: 21360})
 			So(slice1.Properties.Dimensions, ShouldResemble, []*swarmingpb.StringListPair{
-				{Key: "caches", Values: []string{"git", "goma", "vpython"}},
 				{Key: "cpu", Values: []string{"x86-64"}},
 				{Key: "os", Values: []string{"Ubuntu"}},
 				{Key: "pool", Values: []string{"Chrome"}},

@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/led/job"
+	"go.chromium.org/luci/swarming/proto/api"
 )
 
 // ToSwarmingNewTask renders a (swarming) Definition to
@@ -63,11 +64,6 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 				GracePeriodSecs:      props.GetGracePeriod().GetSeconds(),
 				IoTimeoutSecs:        props.GetIoTimeout().GetSeconds(),
 
-				InputsRef: &swarming.SwarmingRpcsFilesRef{
-					Isolated:       props.GetCasInputs().GetDigest(),
-					Isolatedserver: props.GetCasInputs().GetServer(),
-					Namespace:      props.GetCasInputs().GetNamespace(),
-				},
 				CipdInput: &swarming.SwarmingRpcsCipdInput{
 					Packages: make([]*swarming.SwarmingRpcsCipdPackage, 0, len(props.CipdInputs)),
 				},
@@ -78,14 +74,24 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 				Command:     props.Command,
 				ExtraArgs:   props.ExtraArgs,
 				RelativeCwd: props.RelativeCwd,
-
-				Containment: &swarming.SwarmingRpcsContainment{
-					ContainmentType:           props.GetContainment().GetContainmentType().String(),
-					LimitProcesses:            props.GetContainment().GetLimitProcesses(),
-					LimitTotalCommittedMemory: props.GetContainment().GetLimitTotalCommittedMemory(),
-					LowerPriority:             props.GetContainment().GetLowerPriority(),
-				},
 			},
+		}
+
+		if con := props.GetContainment(); con.GetContainmentType() != apipb.Containment_NOT_SPECIFIED {
+			toAdd.Properties.Containment = &swarming.SwarmingRpcsContainment{
+				ContainmentType:           con.GetContainmentType().String(),
+				LimitProcesses:            con.GetLimitProcesses(),
+				LimitTotalCommittedMemory: con.GetLimitTotalCommittedMemory(),
+				LowerPriority:             con.GetLowerPriority(),
+			}
+		}
+
+		if iso := props.GetCasInputs(); iso.GetDigest() != "" || iso.GetServer() != "" || iso.GetNamespace() != "" {
+			toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
+				Isolated:       iso.GetDigest(),
+				Isolatedserver: iso.GetServer(),
+				Namespace:      iso.GetNamespace(),
+			}
 		}
 
 		for _, env := range props.Env {

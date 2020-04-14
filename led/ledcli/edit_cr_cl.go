@@ -22,6 +22,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/andygrunwald/go-gerrit"
 	"github.com/maruel/subcommands"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -126,6 +127,30 @@ func parseCrChangeListURL(clURL string) (*bbpb.GerritChange, error) {
 		ret.Patchset, err = strconv.ParseInt(issuePatchsetToks[1], 10, 64)
 		if err != nil {
 			return nil, errors.Reason("gerrit URL parsing patchset %q from %q", issuePatchsetToks[1], clURL).Err()
+		}
+	} else {
+		gc, err := gerrit.NewClient("https://"+ret.Host, nil)
+		if err != nil {
+			return nil, errors.Annotate(err, "creating new gerrit client").Err()
+		}
+
+		ci, rsp, err := gc.Changes.GetChangeDetail(strconv.FormatInt(ret.Change, 10), &gerrit.ChangeOptions{
+			AdditionalFields: []string{"CURRENT_REVISION"}})
+		if rsp != nil && rsp.StatusCode == http.StatusUnauthorized {
+			return nil, errors.Annotate(err,
+				"Gerrit host %q requires authentication and no patchset was provided in CL URL %q. "+
+					"Please include the patchset you want in your URL (or `0` to ignore this).",
+				ret.Host, clURL,
+			).Err()
+		}
+		if err != nil {
+			return nil, errors.Annotate(err, "GetChangeDetail").Err()
+		}
+
+		// There's only one.
+		for _, rd := range ci.Revisions {
+			ret.Patchset = int64(rd.Number)
+			break
 		}
 	}
 	return ret, nil

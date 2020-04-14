@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testdata
+package jobcreate
 
-// Running `go generate` will regenerate the '.job.json' files. When doing this
-// make sure to inspect the diff to ensure that the changes are correct.
+// Running `go generate` will regenerate the '.job.json' files in testdata/.
+// When doing this make sure to inspect the diff to ensure that the changes are
+// correct.
 
-//go:generate go test .. -train
+//go:generate go test -train
