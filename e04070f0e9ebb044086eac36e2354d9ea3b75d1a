@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7e6942e_a469f400",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-14T08:06:28Z",
+      "side": 1,
+      "message": "Why are these With* functions public?",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53b4e8b2_7adf16c8",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-14T08:06:28Z",
+      "side": 1,
+      "message": "Why not simply define defualtClientOptions somewhere in this file, rather than using the Option functions?",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
