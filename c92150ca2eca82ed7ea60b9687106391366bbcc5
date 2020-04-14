@@ -298,6 +298,30 @@
     },
     {
       "key": {
+        "uuid": "3553ea76_5a26bdd1",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T16:09:38Z",
+      "side": 1,
+      "message": "yeah, my comment isn\u0027t really about this particular CL, but about the approach and mindset that we are applying to this and future decisions. My point will become clearer as the size of the project and your personal scope/impact grows. My advice is just to be mindful about cost/benefit balance and erring on the side of simplicity in the future.",
+      "parentUuid": "4dfda494_e6dd645b",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9149bece_bda04004",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5

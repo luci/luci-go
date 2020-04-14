@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "4687f14a_cc3aff41",
+        "filename": "milo/frontend/resultui/src/@types/index.d.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T16:09:38Z",
+      "side": 1,
+      "message": "missing copyright",
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "98e610b0_faedde4f",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 7
@@ -84,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "56a6769f_bb323bbd",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T16:09:38Z",
+      "side": 1,
+      "message": "what about C?\n\nhttps://www.typescriptlang.org/play/index.html?ssl\u003d20\u0026ssc\u003d1\u0026pln\u003d20\u0026pc\u003d11#code/C4TwDgpgBAwg9gOwM7AE4FcDGw6oDwAqANFAApQQAewECAJklOggNYJwDuCA2gLpQBeKHwB8gqAggcoACgB0CsAENUSgLZIAXGQCUgsQQDcAKEwAbJUkYAZAJbAAomYhrawKAG8oAX2PGqYLjuAGbM2LaIUJiINNSkqHAAbrZ0EKgAsraUtggAQui2Zqn4MMCUIjJ6HsZQtVCoEMDoqAhQoQjhkWAJyakA0hAgSHh9FNS0DFAsg3DBsGUVCnLdSSkQdPAIscADQ9p9fFU1dScNTS1tYcARrSu9aZnZCIRjNPQ29k4ublAAZGS2TAsPClSgkPoiCrmLSwRAoDDYXCEERHE4nXzo4y+UwWKywrZUdzVE6UbQIdBqABGaXEAEYTCcQGSKdTUHSTNjzJZGF9XFtXhMPo5nHyicdaqSJCyaUJ6Vi-NECXEemsMlkcvlCsUQTFCRUdDIAESUQ0G3luHSGIA",
+      "parentUuid": "ea3ca856_33d88c14",
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76d20622_fccd2fb4",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 7
@@ -119,6 +154,30 @@
       "side": 1,
       "message": "The context consumer doesn\u0027t have to subscribe to the full list of context keys.",
       "parentUuid": "76d20622_fccd2fb4",
+      "range": {
+        "startLine": 236,
+        "startChar": 60,
+        "endLine": 236,
+        "endChar": 72
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "19e8f07d_070a6448",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T16:09:38Z",
+      "side": 1,
+      "message": "I see. It is the code that should answer the question. A future reader of this (checked in) code will not see your explanation, and might have the same question. For example, it could be\n\n  // The context consumer doesn\u0027t have to subscribe to the full list of context keys.\n  type CtxSubset \u003d Pick\u003cCtx, K\u003e;\n\nsomewhere in L170",
+      "parentUuid": "2b8b1cf2_b6b474cf",
       "range": {
         "startLine": 236,
         "startChar": 60,
