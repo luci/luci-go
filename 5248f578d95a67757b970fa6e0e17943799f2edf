@@ -22,6 +22,30 @@
       "revId": "5248f578d95a67757b970fa6e0e17943799f2edf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a95d23fd_31c07024",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 588,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-14T05:12:52Z",
+      "side": 1,
+      "message": "I\u0027m aware of that this still depends on `case err !\u003d nil:` being checked first.\nBut I feel that\u0027s something you would expect when reading the code. It\u0027s \u0027err\u0027 after all.\nHowever, it would surprise me if the order of \u0027case allowed:\u0027 and \u0027case optional:\u0027 has an impact on the final result. So I feel less comfortable flatting identity check to switch cases.",
+      "parentUuid": "b2a34119_4a03cea3",
+      "range": {
+        "startLine": 588,
+        "startChar": 3,
+        "endLine": 588,
+        "endChar": 5
+      },
+      "revId": "5248f578d95a67757b970fa6e0e17943799f2edf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
