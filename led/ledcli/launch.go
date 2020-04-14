@@ -53,10 +53,12 @@ containing information about the launched task to stdout.
 type cmdLaunch struct {
 	cmdBase
 
-	dump bool
+	modernize bool
+	dump      bool
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
+	c.Flags.BoolVar(&c.modernize, "modernize", false, "Update the launched task to modern LUCI standards.")
 	c.Flags.BoolVar(&c.dump, "dump", false, "Dump swarming task to stdout instead of running it.")
 	c.cmdBase.initFlags(opts)
 }
@@ -72,6 +74,11 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 	uid, err := ledcmd.GetUID(ctx, c.authenticator)
 	if err != nil {
 		return nil, err
+	}
+
+	// Currently modernize only means 'upgrade to bbagent from kitchen'.
+	if bb := inJob.GetBuildbucket(); c.modernize && bb != nil {
+		bb.LegacyKitchen = false
 	}
 
 	task, meta, err := ledcmd.LaunchSwarming(ctx, authClient, inJob, ledcmd.LaunchSwarmingOpts{
