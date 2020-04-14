@@ -87,6 +87,24 @@
       "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe837a0e_b5f3971d",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-14T13:56:11Z",
+      "side": 1,
+      "message": "Looking the following CL crrev.com/c/2147136.\nIt\u0027s bit verbose to call `isolatedclient.With*` everywhere.\n\nSimilar to the Ye\u0027s suggestion, I think the Client can have option setters like:\n\n```\nclient :\u003d NewClient(host) // initialize client with default options\n           .WithAnonymousClient(...) // set the option\n           .WithNamespace(...) // set the option\n           .CalculateHash() // finalize initialization by calculating and setting hash\n```",
+      "parentUuid": "ee6c5cca_d52584b1",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
