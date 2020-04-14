@@ -16,15 +16,7 @@ package model
 
 import (
 	"go.chromium.org/luci/gce/api/config/v1"
-	project "go.chromium.org/luci/gce/api/projects/v1"
 )
-
-// CopyToBinaryInProject copies the config field to binary config field in Project.
-func CopyToBinaryInProject(p *Project) {
-	p.BinaryConfig = project.BinaryConfig{
-		p.Config,
-	}
-}
 
 // CopyToBinaryInVM copies the attributes field to binary attributes field in VM.
 func CopyToBinaryInVM(vm *VM) {
