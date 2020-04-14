@@ -105,6 +105,24 @@
       "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daa8d096_0f0e062e",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-14T23:23:29Z",
+      "side": 1,
+      "message": "Hmm, as many other google owned libraries use functional option pattern\ne.g.\n* https://godoc.org/google.golang.org/grpc#Dial\n* https://godoc.org/cloud.google.com/go/storage#NewClient\n* https://godoc.org/cloud.google.com/go/bigquery#NewClient\n\nI\u0027d like to use functional option pattern here too.\n\nI agree with that isolatedclient is not short, but I think such package name length is acceptable for clarity.",
+      "parentUuid": "fe837a0e_b5f3971d",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
