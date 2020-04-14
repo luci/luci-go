@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e5c76caf_2b1dc7ee",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T07:01:25Z",
+      "side": 1,
+      "message": "Heh, oops. Done.",
+      "parentUuid": "c48a7523_c93efa84",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 10
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "629fd86b_02580347",
         "filename": "led/job/job.go",
         "patchSetId": 6
@@ -39,6 +63,24 @@
       "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b20adf9_ef147aee",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T07:01:25Z",
+      "side": 1,
+      "message": "keysOf returns the keys in sorted order; useful for determinism.",
+      "parentUuid": "629fd86b_02580347",
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "80918111_5fd4c6f1",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T07:01:25Z",
+      "side": 1,
+      "message": "Yeah, I was being lazy though :) Done.",
+      "parentUuid": "65b7cf42_211d8cc4",
+      "range": {
+        "startLine": 312,
+        "startChar": 53,
+        "endLine": 312,
+        "endChar": 68
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5915092_0bcf9df2",
         "filename": "led/job/jobexport/swarming.go",
         "patchSetId": 6
@@ -108,6 +174,30 @@
       "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54e3c018_0f772828",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-14T07:01:25Z",
+      "side": 1,
+      "message": "sure can! done.",
+      "parentUuid": "e5915092_0bcf9df2",
+      "range": {
+        "startLine": 91,
+        "startChar": 20,
+        "endLine": 91,
+        "endChar": 40
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
