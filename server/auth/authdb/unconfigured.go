@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -59,6 +60,11 @@ func (db UnconfiguredDB) IsMember(ctx context.Context, id identity.Identity, gro
 func (db UnconfiguredDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) ([]string, error) {
 	db.log(ctx, "CheckMembership")
 	return nil, db.Error
+}
+
+func (db UnconfiguredDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+	db.log(ctx, "HasPermission")
+	return false, db.Error
 }
 
 func (db UnconfiguredDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
