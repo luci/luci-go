@@ -53,7 +53,8 @@ func Run(templatePath string) {
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	xsrfMW := htmlMW.Extend(xsrf.WithTokenCheck)
-	projectMW := htmlMW.Extend(projectACLMiddleware)
+	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))
+	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
 	backendMW := baseMW.Extend(
 		middleware.WithContextTimeout(10*time.Minute),
 		withBuildbucketClient)
@@ -74,7 +75,7 @@ func Run(templatePath string) {
 	// Builds.
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
-	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", htmlMW, handleError(handleLUCIBuild))
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
@@ -104,7 +105,7 @@ func Run(templatePath string) {
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", htmlMW, handleError(BuilderHandler))
+	r.GET("/p/:project/builders/:bucket/:builder", optionalProjectMW, handleError(BuilderHandler))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
