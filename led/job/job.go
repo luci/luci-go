@@ -26,7 +26,6 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -55,21 +54,22 @@ type ledProperties struct {
 
 func (jd *Definition) addLedProperties(ctx context.Context, uid string) error {
 	// Set the "$recipe_engine/led" recipe properties.
-	buf := make([]byte, 32)
-	if _, err := cryptorand.Read(ctx, buf); err != nil {
-		return errors.Annotate(err, "generating random token").Err()
-	}
-	streamName, err := logdog_types.MakeStreamName("", "led", uid, hex.EncodeToString(buf))
-	if err != nil {
-		return errors.Annotate(err, "generating logdog token").Err()
-	}
-	logdogPrefix := string(streamName)
-
 	bb := jd.GetBuildbucket()
 	if bb == nil {
 		panic("impossible: Buildbucket is nil while flattening to swarming")
 	}
 	bb.EnsureBasics()
+
+	buf := make([]byte, 32)
+	if _, err := cryptorand.Read(ctx, buf); err != nil {
+		return errors.Annotate(err, "generating random token").Err()
+	}
+	logdogPrefixSN, err := logdog_types.MakeStreamName("", "led", uid, hex.EncodeToString(buf))
+	if err != nil {
+		return errors.Annotate(err, "generating logdog token").Err()
+	}
+	logdogPrefix := string(logdogPrefixSN)
+	logdogProjectPrefix := path.Join(bb.BbagentArgs.Build.Infra.Logdog.Project, logdogPrefix)
 
 	// TODO(iannucci): change logdog project to something reserved to 'led' tasks.
 	// Though if we merge logdog into resultdb, this hopefully becomes moot.
@@ -78,7 +78,7 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) error {
 	// Pass the CIPD package or isolate containing the recipes code into
 	// the led recipe module. This gives the build the information it needs
 	// to launch child builds using the same version of the recipes code.
-	props := ledProperties{LedRunID: logdogPrefix}
+	props := ledProperties{LedRunID: logdogProjectPrefix}
 
 	// The logdog prefix is unique to each led job, so it can be used as an
 	// ID for the job.
@@ -99,106 +99,112 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) error {
 		"$recipe_engine/led": props,
 	})
 
-	logdogTag := "log_location:logdog://logs.chromium.org/" + logdogPrefix
+	streamName := "build.proto"
 	if bb.LegacyKitchen {
-		logdogTag += "/+/annotations"
-	} else {
-		logdogTag += "/+/build.proto"
+		streamName = "annotations"
 	}
+
+	logdogTag := "log_location:logdog://logs.chromium.org/" + path.Join(
+		logdogProjectPrefix, "+", streamName)
 
 	return jd.Edit(func(je Editor) {
 		je.Tags([]string{logdogTag, "allow_milo:1"})
 	})
 }
 
-type expiringData struct {
+type expiringDims struct {
 	absolute time.Duration // from scheduling task
 	relative time.Duration // from previous slice
 
-	dimesions []*swarmingpb.StringPair
-	caches    []*bbpb.BuildInfra_Swarming_CacheEntry
+	// key -> values
+	dimensions map[string]stringset.Set
 }
 
-func (ed *expiringData) createWith(cacheDir string, template *swarmingpb.TaskProperties) *swarmingpb.TaskProperties {
+func (ed *expiringDims) addDimVals(key string, values ...string) {
+	if ed.dimensions == nil {
+		ed.dimensions = map[string]stringset.Set{}
+	}
+	if set, ok := ed.dimensions[key]; !ok {
+		ed.dimensions[key] = stringset.NewFromSlice(values...)
+	} else {
+		set.AddAll(values)
+	}
+}
+
+func (ed *expiringDims) updateFrom(other *expiringDims) {
+	for key, values := range other.dimensions {
+		ed.addDimVals(key, values.ToSlice()...)
+	}
+}
+
+func (ed *expiringDims) createWith(template *swarmingpb.TaskProperties) *swarmingpb.TaskProperties {
 	if len(template.Dimensions) != 0 {
 		panic("impossible; createWith called with dimensions already set")
 	}
 
 	ret := proto.Clone(template).(*swarmingpb.TaskProperties)
 
-	dimMap := map[string]stringset.Set{}
-	addDims := func(key string, values ...string) {
-		if set, ok := dimMap[key]; !ok {
-			dimMap[key] = stringset.NewFromSlice(values...)
-		} else {
-			set.AddAll(values)
-		}
-	}
-
-	for _, dim := range ed.dimesions {
-		addDims(dim.Key, dim.Value)
-	}
-	for _, nc := range ed.caches {
-		ret.NamedCaches = append(ret.NamedCaches, &swarmingpb.NamedCacheEntry{
-			Name:     nc.Name,
-			DestPath: path.Join(cacheDir, nc.Path),
-		})
-		addDims("caches", nc.Name)
-	}
-
-	newDims := make([]*swarmingpb.StringListPair, 0, len(dimMap))
-	for _, key := range keysOf(dimMap) {
+	newDims := make([]*swarmingpb.StringListPair, 0, len(ed.dimensions))
+	for _, key := range keysOf(ed.dimensions) {
 		newDims = append(newDims, &swarmingpb.StringListPair{
-			Key: key, Values: dimMap[key].ToSortedSlice()})
+			Key: key, Values: ed.dimensions[key].ToSortedSlice()})
 	}
 	ret.Dimensions = newDims
 
 	return ret
 }
 
-func (jd *Definition) makeExpiringSliceData() (ret []*expiringData, err error) {
+func (jd *Definition) makeExpiringSliceData() (ret []*expiringDims, err error) {
 	bb := jd.GetBuildbucket()
-	expirationSet := map[time.Duration]*expiringData{}
-	nonExpiring := expiringData{}
-	addExpiration := func(name string, protoDuration *durpb.Duration, add func(d *expiringData)) error {
-		if protoDuration == nil {
-			protoDuration = &durpb.Duration{}
+	expirationSet := map[time.Duration]*expiringDims{}
+	nonExpiring := &expiringDims{}
+	getExpiringSlot := func(dimType, name string, protoDuration *durpb.Duration) (*expiringDims, error) {
+		var dur time.Duration
+		if protoDuration != nil {
+			var err error
+			if dur, err = ptypes.Duration(protoDuration); err != nil {
+				return nil, errors.Annotate(err, "parsing %s %q expiration", dimType, name).Err()
+			}
 		}
-		dur, err := ptypes.Duration(protoDuration)
-		if err != nil {
-			return errors.Annotate(err, "parsing %s expiration", name).Err()
-		}
-
 		if dur > 0 {
 			data, ok := expirationSet[dur]
 			if !ok {
-				data = &expiringData{absolute: dur}
+				data = &expiringDims{absolute: dur}
 				expirationSet[dur] = data
 			}
-			add(data)
-		} else {
-			add(&nonExpiring)
+			return data, nil
 		}
-		return nil
+		return nil, nil
 	}
+	// Cache and dimension expiration have opposite defaults for 0 or negative
+	// times.
+	//
+	// Cache entries with WaitForWarmCache <= 0 mean that the dimension for the
+	// cache essentially expires at 0.
+	//
+	// Dimension entries with Expiration <= 0 mean that the dimension expires at
+	// 'infinity'
 	for _, cache := range bb.BbagentArgs.GetBuild().GetInfra().GetSwarming().GetCaches() {
-		err := addExpiration("cache", cache.WaitForWarmCache, func(data *expiringData) {
-			data.caches = append(data.caches, cache)
-		})
+		slot, err := getExpiringSlot("cache", cache.Name, cache.WaitForWarmCache)
 		if err != nil {
 			return nil, err
+		}
+		if slot != nil {
+			slot.addDimVals("caches", cache.Name)
 		}
 	}
 	for _, dim := range bb.BbagentArgs.GetBuild().GetInfra().GetSwarming().GetTaskDimensions() {
-		err := addExpiration("dimension", dim.Expiration, func(data *expiringData) {
-			data.dimesions = append(data.dimesions, &swarmingpb.StringPair{Key: dim.Key, Value: dim.Value})
-		})
+		slot, err := getExpiringSlot("dimension", dim.Key, dim.Expiration)
 		if err != nil {
 			return nil, err
 		}
+		if slot == nil {
+			slot = nonExpiring
+		}
+		slot.addDimVals(dim.Key, dim.Value)
 	}
 
-	ret = make([]*expiringData, 0, len(expirationSet))
+	ret = make([]*expiringDims, 0, len(expirationSet))
 	for _, data := range expirationSet {
 		ret = append(ret, data)
 	}
@@ -215,12 +221,10 @@ func (jd *Definition) makeExpiringSliceData() (ret []*expiringData, err error) {
 			// expiration, then use nonExpiring as the last slice.
 			nonExpiring.absolute = total
 			nonExpiring.relative = total - ret[len(ret)-1].absolute
-			ret = append(ret, &nonExpiring)
+			ret = append(ret, nonExpiring)
 		} else {
 			// otherwise, add all of nonExpiring's guts to the last slice.
-			last := ret[len(ret)-1]
-			last.caches = append(last.caches, nonExpiring.caches...)
-			last.dimesions = append(last.dimesions, nonExpiring.dimesions...)
+			ret[len(ret)-1].updateFrom(nonExpiring)
 		}
 	}
 
@@ -236,10 +240,8 @@ func (jd *Definition) makeExpiringSliceData() (ret []*expiringData, err error) {
 	//
 	// Since a slice expiring at 20s includes all the caches (and dimensions) of
 	// all slices expiring after it.
-
 	for i := len(ret) - 2; i >= 0; i-- {
-		ret[i].dimesions = append(ret[i].dimesions, ret[i+1].dimesions...)
-		ret[i].caches = append(ret[i].caches, ret[i+1].caches...)
+		ret[i].updateFrom(ret[i+1])
 	}
 
 	return
@@ -275,7 +277,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks Kitc
 		return errors.Annotate(err, "adding led properties").Err()
 	}
 
-	expiringData, err := jd.makeExpiringSliceData()
+	expiringDims, err := jd.makeExpiringSliceData()
 	if err != nil {
 		return errors.Annotate(err, "calculating expirations").Err()
 	}
@@ -290,7 +292,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks Kitc
 			ServiceAccount: bbi.GetSwarming().GetTaskServiceAccount(),
 			Tags:           jd.Info().Tags(),
 			User:           uid,
-			TaskSlices:     make([]*swarmingpb.TaskSlice, len(expiringData)),
+			TaskSlices:     make([]*swarmingpb.TaskSlice, len(expiringDims)),
 		},
 	}
 
@@ -301,8 +303,31 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks Kitc
 		EnvPaths:         bb.EnvPrefixes,
 		ExecutionTimeout: bb.BbagentArgs.Build.ExecutionTimeout,
 		GracePeriod:      bb.GracePeriod,
+	}
 
-		Containment: bb.Containment,
+	if bb.Containment.GetContainmentType() != swarmingpb.Containment_NOT_SPECIFIED {
+		baseProperties.Containment = bb.Containment
+	}
+
+	baseProperties.Env = make([]*swarmingpb.StringPair, len(bb.EnvVars)+1)
+	copy(baseProperties.Env, bb.EnvVars)
+	expEnvValue := "FALSE"
+	if bb.BbagentArgs.Build.Input.Experimental {
+		expEnvValue = "TRUE"
+	}
+	baseProperties.Env[len(baseProperties.Env)-1] = &swarmingpb.StringPair{
+		Key:   "BUILDBUCKET_EXPERIMENTAL",
+		Value: expEnvValue,
+	}
+
+	if caches := bb.BbagentArgs.Build.Infra.Swarming.Caches; len(caches) > 0 {
+		baseProperties.NamedCaches = make([]*swarmingpb.NamedCacheEntry, len(caches))
+		for i, cache := range caches {
+			baseProperties.NamedCaches[i] = &swarmingpb.NamedCacheEntry{
+				Name:     cache.Name,
+				DestPath: path.Join(bb.BbagentArgs.CacheDir, cache.Path),
+			}
+		}
 	}
 
 	baseProperties.Command, err = jd.generateCommand(ctx, ks)
@@ -318,10 +343,10 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks Kitc
 		})
 	}
 
-	for i, dat := range expiringData {
+	for i, dat := range expiringDims {
 		sw.Task.TaskSlices[i] = &swarmingpb.TaskSlice{
 			Expiration: ptypes.DurationProto(dat.relative),
-			Properties: dat.createWith(bb.BbagentArgs.CacheDir, baseProperties),
+			Properties: dat.createWith(baseProperties),
 		}
 	}
 
