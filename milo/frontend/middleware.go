@@ -568,21 +568,29 @@ func withAccessClientMiddleware(c *router.Context, next router.Handler) {
 	next(c)
 }
 
-// projectACLMiddleware adds ACL checks on a per-project basis.
-// Expects c.Params to have project parameter.
-func projectACLMiddleware(c *router.Context, next router.Handler) {
-	luciProject := c.Params.ByName("project")
-	switch allowed, err := common.IsAllowed(c.Context, luciProject); {
-	case err != nil:
-		ErrorHandler(c, err)
-	case !allowed:
-		if auth.CurrentIdentity(c.Context) == identity.AnonymousIdentity {
-			ErrorHandler(c, errors.New("not logged in", grpcutil.UnauthenticatedTag))
-		} else {
-			ErrorHandler(c, errors.New("no access to project", grpcutil.PermissionDeniedTag))
+// builds a projectACLMiddleware, which expects c.Params to have project
+// parameter, adds ACL checks on a per-project basis, and install a git project
+// into context.
+// If optional is true, the returned middleware doesn't fail when the user has
+// no access to the project.
+func buildProjectACLMiddleware(optional bool) func(*router.Context, router.Handler) {
+	return func(c *router.Context, next router.Handler) {
+		luciProject := c.Params.ByName("project")
+		allowed, err := common.IsAllowed(c.Context, luciProject)
+		if err != nil {
+			ErrorHandler(c, err)
+			return
 		}
-	default:
-		c.Context = git.WithProject(c.Context, luciProject)
+		if allowed {
+			c.Context = git.WithProject(c.Context, luciProject)
+		} else if !optional {
+			if auth.CurrentIdentity(c.Context) == identity.AnonymousIdentity {
+				ErrorHandler(c, errors.New("not logged in", grpcutil.UnauthenticatedTag))
+			} else {
+				ErrorHandler(c, errors.New("no access to project", grpcutil.PermissionDeniedTag))
+			}
+			return
+		}
 		next(c)
 	}
 }
