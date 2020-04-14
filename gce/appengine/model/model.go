@@ -45,8 +45,7 @@ type Config struct {
 	// Additionally, indexed string fields are limited to 1500 bytes.
 	// https://cloud.google.com/datastore/docs/concepts/limits.
 	// noindex is not respected here. See config.Config.ToProperty.
-	Config       config.Config       `gae:"config,noindex"`
-	BinaryConfig config.BinaryConfig `gae:"binary_config,noindex"`
+	Config config.Config `gae:"binary_config,noindex"`
 }
 
 // ProjectKind is a project entity's kind in the datastore.
@@ -64,8 +63,7 @@ type Project struct {
 	ID string `gae:"$id"`
 	// Config is the projects.Config representation of this entity.
 	// noindex is not respected here. See projects.Config.ToProperty.
-	Config projects.Config `gae:"config,noindex"`
-	// BinaryConfig contains binary protos and will substitute the text proto.
+	Config       projects.Config       `gae:"config,noindex"`
 	BinaryConfig projects.BinaryConfig `gae:"binary_config,noindex"`
 }
 

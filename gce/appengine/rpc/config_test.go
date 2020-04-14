@@ -58,7 +58,8 @@ func TestConfig(t *testing.T) {
 
 			Convey("valid", func() {
 				So(datastore.Put(c, &model.Config{
-					ID: "id",
+					ID:     "id",
+					Config: config.Config{},
 				}), ShouldBeNil)
 				cfg, err := srv.Delete(c, &config.DeleteRequest{
 					Id: "id",
@@ -479,7 +480,6 @@ func TestConfig(t *testing.T) {
 						err = datastore.Get(c, mdl)
 						So(err, ShouldBeNil)
 						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
-						So(mdl.BinaryConfig, ShouldResemble, config.BinaryConfig{})
 					})
 
 					Convey("max", func() {
@@ -502,8 +502,6 @@ func TestConfig(t *testing.T) {
 						err = datastore.Get(c, mdl)
 						So(err, ShouldBeNil)
 						So(mdl.Config.CurrentAmount, ShouldEqual, 3)
-						So(mdl.BinaryConfig.CurrentAmount, ShouldEqual, 3)
-						So(mdl.BinaryConfig.Config, ShouldResemble, mdl.Config)
 					})
 
 					Convey("updates", func() {
@@ -526,8 +524,6 @@ func TestConfig(t *testing.T) {
 						err = datastore.Get(c, mdl)
 						So(err, ShouldBeNil)
 						So(mdl.Config.CurrentAmount, ShouldEqual, 2)
-						So(mdl.BinaryConfig.CurrentAmount, ShouldEqual, 2)
-						So(mdl.BinaryConfig.Config, ShouldResemble, mdl.Config)
 					})
 				})
 			})
