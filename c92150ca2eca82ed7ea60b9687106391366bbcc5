@@ -250,6 +250,30 @@
     },
     {
       "key": {
+        "uuid": "d521d5f8_87b7425e",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T06:01:12Z",
+      "side": 1,
+      "message": "\u003e the interfaces they expose are actually quite simple\n\nI think it is bold claim. As a user of this func, I have to read\n\n  export function buildContextProviderMixin\u003cCtx\u003e(providedContexts: Array\u003ckeyof Ctx\u003e) {\n    return function providerMixin\u003cT extends LitElement \u0026 Ctx, C extends Constructor\u003cT\u003e\u003e(cls: C) {\n\nand this hurts my eyes to be honest. If I was coming from a JS world, this would be a lot to take in compared to a version without type parameterization. \n\nThe type systems in C# and TypeScript (the same language designer, Anders Hejlsberg) tempt the engineer to write a perfect type expression like the one above, but it comes with cost of readability/maintainability (and I bet you spend some time coming up with these expressions). I generally recommend to keep things simple; simplicity goes a long way; managing complexity is the most important thing in software engineering. It is not obvious to me that this cost/benefit balance is done well here.",
+      "parentUuid": "e896e1b8_490d0ddb",
+      "range": {
+        "startLine": 160,
+        "startChar": 33,
+        "endLine": 160,
+        "endChar": 51
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9149bece_bda04004",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 5
@@ -294,6 +318,30 @@
       "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "787724d1_157d6efc",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T06:01:12Z",
+      "side": 1,
+      "message": "I still see this code duplicated. I mean\n\n  connectedCallback() {\n    this.emitEvents(\u0027subscribe\u0027);\n  }\n  diconnectedCallback() {\n    this.emitEvents(\u0027unsubscribe\u0027);\n  }\n  private emitEvents(eventInfix: string) {...}",
+      "parentUuid": "bc3a2701_8c5433c8",
+      "range": {
+        "startLine": 218,
+        "startChar": 8,
+        "endLine": 225,
+        "endChar": 9
+      },
+      "revId": "c92150ca2eca82ed7ea60b9687106391366bbcc5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

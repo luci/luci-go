@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98e610b0_faedde4f",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T06:01:12Z",
+      "side": 1,
+      "message": "consider writing the return type explicitly, so that a user of this func does not have to read the complex code below",
+      "range": {
+        "startLine": 168,
+        "startChar": 51,
+        "endLine": 168,
+        "endChar": 52
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0d482c5_5a310a3e",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T06:01:12Z",
+      "side": 1,
+      "message": "why not\n\n    return function provideKeys(...providedContextKeys: (keyof Ctx)[]) {\n        return function providerMixin\u003cT extends LitElement \u0026 Ctx\u003e(cls: Constructor\u003cT\u003e) {\n\nif you really like K shortcut, you can define it inline\n\n  type T \u003d keyof K;\n\nwithout making the func itself parameterized",
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76d20622_fccd2fb4",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T06:01:12Z",
+      "side": 1,
+      "message": "why not just Ctx?",
+      "range": {
+        "startLine": 236,
+        "startChar": 60,
+        "endLine": 236,
+        "endChar": 72
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f50bf8e3_3d51b37c",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-14T06:01:12Z",
+      "side": 1,
+      "message": "\"subscribes\" or \"can subscribe\"",
+      "range": {
+        "startLine": 255,
+        "startChar": 52,
+        "endLine": 255,
+        "endChar": 66
+      },
+      "revId": "cdb0cc7bc5c065d3d17f8f736158e78e6c27d90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
