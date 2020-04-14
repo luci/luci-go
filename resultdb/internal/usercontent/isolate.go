@@ -71,7 +71,7 @@ func (s *Server) handleIsolateContent(ctx *router.Context) {
 }
 
 func (s *Server) fetchIsolate(ctx context.Context, isolateHost, ns, digest string, w io.Writer) error {
-	client := isolatedclient.New(s.anonClient, s.authClient, "https://"+isolateHost, ns, nil, nil)
+	client := isolatedclient.New(s.anonClient, s.authClient, "https://"+isolateHost, ns, nil)
 	return client.Fetch(ctx, isolated.HexDigest(digest), w)
 }
 
