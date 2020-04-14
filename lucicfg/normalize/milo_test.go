@@ -47,7 +47,6 @@ consoles {
 
   builders {
     name: "zz"
-    name: "za"
   }
   builders {
     name: "a"
@@ -79,7 +78,6 @@ const miloOut = `consoles: <
   refs: "regexp:y\\\\z"
   refs: "regexp:z"
   builders: <
-    name: "za"
     name: "zz"
   >
   builders: <
