@@ -29,14 +29,22 @@ var _ datastore.PropertyConverter = &Config{}
 
 // FromProperty implements datastore.PropertyConverter.
 func (cfg *Config) FromProperty(p datastore.Property) error {
-	return proto.UnmarshalText(p.Value().(string), cfg)
+	if p.Value() == nil {
+		cfg = &Config{}
+		return nil
+	}
+	return proto.Unmarshal(p.Value().([]byte), cfg)
 }
 
 // ToProperty implements datastore.PropertyConverter.
 func (cfg *Config) ToProperty() (datastore.Property, error) {
 	p := datastore.Property{}
+	bytes, err := proto.Marshal(cfg)
+	if err != nil {
+		return datastore.Property{}, err
+	}
 	// noindex is not respected in the tags in the model.
-	return p, p.SetValue(proto.MarshalTextString(cfg), datastore.NoIndex)
+	return p, p.SetValue(bytes, datastore.NoIndex)
 }
 
 // ComputeAmount returns the amount to use given the proposed amount and time.
@@ -77,30 +85,4 @@ func (cfg *Config) Validate(c *validation.Context) {
 	c.Enter("timeout")
 	cfg.GetTimeout().Validate(c)
 	c.Exit()
-}
-
-// BinaryConfig - Inherits from generated Config proto go
-type BinaryConfig struct {
-	Config
-}
-
-var _ datastore.PropertyConverter = &BinaryConfig{}
-
-// FromProperty implements datastore.PropertyConverter.
-func (bc *BinaryConfig) FromProperty(p datastore.Property) error {
-	if p.Value() == nil {
-		bc = &BinaryConfig{}
-		return nil
-	}
-	return proto.Unmarshal(p.Value().([]byte), bc)
-}
-
-// ToProperty implements datastore.PropertyConverter.
-func (bc *BinaryConfig) ToProperty() (datastore.Property, error) {
-	p := datastore.Property{}
-	bytes, err := proto.Marshal(bc)
-	if err != nil {
-		return datastore.Property{}, err
-	}
-	return p, p.SetValue(bytes, datastore.NoIndex)
 }
