@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -193,6 +194,19 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 		}
 	}
 	return
+}
+
+// HasPermission returns true if the identity has the given permission in any
+// of the realms.
+func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.HasPermission")
+	span.Attribute("cr.dev/permission", perm.Name())
+	span.Attribute("cr.dev/realms", strings.Join(realms, ", "))
+	defer span.End(nil)
+
+	// TODO(vadimsh): Implement.
+
+	return false, errors.Reason("HasPermission is not implemented yet").Err()
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.

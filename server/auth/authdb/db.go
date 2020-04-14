@@ -19,6 +19,7 @@ import (
 	"net"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -54,6 +55,19 @@ type DB interface {
 	//
 	// May return errors if underlying datastore has issues.
 	CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error)
+
+	// HasPermission returns true if the identity has the given permission in any
+	// of the realms.
+	//
+	// During the check any non-existing realm is replaced with the corresponding
+	// root realm (e.g. if "projectA:some/realm" doesn't exist, "projectA:@root"
+	// will be used in its place). If the project doesn't exist or is not using
+	// realms yet, all its realms (including the root realm) are considered empty.
+	// HasPermission returns false in this case.
+	//
+	// Returns errors only if the check itself has failed due to misconfiguration
+	// or transient errors. This should usually result in an Internal error.
+	HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error)
 
 	// GetCertificates returns a bundle with certificates of a trusted signer.
 	//
