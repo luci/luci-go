@@ -112,18 +112,25 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 		return err
 	}
 
+	// If we have no current isolate data, default to the default isolate
+	// server/namespace, which are stored in UserPayload.
+	isoServerParams := current
+	if isoServerParams == nil {
+		isoServerParams = jd.UserPayload
+	}
+
 	rawIsoClient := isolatedclient.New(
 		nil, authClient,
-		current.Server, current.Namespace,
+		isoServerParams.Server, isoServerParams.Namespace,
 		retry.Default,
 		nil,
 	)
 
-	if current.Digest != "" {
+	if dgst := current.GetDigest(); dgst != "" {
 		var statMu sync.Mutex
 		var previousStats *downloader.FileStats
 
-		dl := downloader.New(ctx, rawIsoClient, isolated.HexDigest(current.Digest), tdir, &downloader.Options{
+		dl := downloader.New(ctx, rawIsoClient, isolated.HexDigest(dgst), tdir, &downloader.Options{
 			FileStatsCallback: func(s downloader.FileStats, span time.Duration) {
 				logging.Infof(ctx, "%s", s.StatLine(previousStats, span))
 				statMu.Lock()

@@ -28,7 +28,12 @@ func bbCommonFromTaskRequest(bb *job.Buildbucket, r *swarming.SwarmingRpcsNewTas
 	bb.EnsureBasics()
 
 	bb.CipdPackages = cipdPins(ts.Properties.CipdInput)
-	bb.EnvVars = strPairs(ts.Properties.Env)
+	bb.EnvVars = strPairs(ts.Properties.Env, func(key string) bool {
+		if key == "BUILDBUCKET_EXPERIMENTAL" {
+			return false
+		}
+		return true
+	})
 	bb.EnvPrefixes = strListPairs(ts.Properties.EnvPrefixes)
 
 	bb.GracePeriod = ptypes.DurationProto(
