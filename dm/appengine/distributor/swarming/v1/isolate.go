@@ -102,8 +102,8 @@ func pushIsolate(c context.Context, isolateURL string, chunks []isoChunk) error 
 
 	anonC, authC := httpClients(c)
 
-	isoClient := isolatedclient.New(
-		anonC, authC, isolateURL, isolatedclient.DefaultNamespace, nil, nil)
+	isoClient := isolatedclient.NewClient(
+		isolateURL, isolatedclient.WithAnonymousClient(anonC), isolatedclient.WithAuthClient(authC))
 	states, err := isoClient.Contains(c, dgsts)
 	if err != nil {
 		err = errors.Annotate(err, "checking containment for %d digests", len(dgsts)).Err()
