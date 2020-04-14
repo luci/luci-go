@@ -77,6 +77,9 @@ type Build struct {
 	// Tags is a slice of "<key>:<value>" strings taken from Proto.Tags.
 	// Stored separately in order to index.
 	Tags []string `gae:"tags"`
+	// UnusedSwarmingTaskKey was used before Swarming task creation was made idempotent
+	// in order to ensure only one task could call UpdateBuild.
+	UnusedSwarmingTaskKey string `gae:"swarming_task_key"`
 
 	// PubSubCallback, if set, creates notifications for build status changes.
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
