@@ -31,7 +31,8 @@ type Info interface {
 	TaskName() string
 
 	// CurrentIsolated returns the current isolated contents for the
-	// Definition.
+	// Definition. If the current CASTree information has no Digest value, this
+	// returns nil.
 	//
 	// Returns error if this is a Swarming job where the slices have differing
 	// isolateds.

@@ -130,7 +130,28 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 		}
 	}
 
+	if err := fillIsolateServerDefaults(authClient, jd); err != nil {
+		return nil, err
+	}
 	return jd, nil
+}
+
+func fillIsolateServerDefaults(authClient *http.Client, jd *job.Definition) error {
+	if jd.UserPayload.Server == "" || jd.UserPayload.Namespace == "" {
+		swarm := newSwarmClient(authClient, jd.Info().SwarmingHostname())
+
+		details, err := swarm.Server.Details().Do()
+		if err != nil {
+			return err
+		}
+		if jd.UserPayload.Server == "" {
+			jd.UserPayload.Server = details.DefaultIsolateServer
+		}
+		if jd.UserPayload.Namespace == "" {
+			jd.UserPayload.Namespace = details.DefaultIsolateNamespace
+		}
+	}
+	return nil
 }
 
 // swarming has two separate structs to represent a task request.
