@@ -151,6 +151,7 @@ type ContextEvent<Ctx, T extends LitElement & Ctx = LitElement & Ctx> = CustomEv
 /**
  * Builds a contextProviderMixin, which is a mixin function that takes a
  * LitElement constructor and mixin ContextProvider's behavior.
+ * See @fileoverview for examples.
  *
  * ### ContextProvider
  * Conceptually, ContextProvider is an element that can override the context
@@ -250,9 +251,10 @@ export function contextProviderMixinBuilder<Ctx>() {
 /**
  * Builds a contextConsumerMixin, which is a mixin function that takes a
  * LitElement constructor and mixin ContextConsumer's behavior.
+ * See @fileoverview for examples.
  *
  * ### ContextConsumer
- * Conceptually, ContextConsumer is an element that can subscribes to changes
+ * Conceptually, ContextConsumer is an element that can subscribe to changes
  * in the context, which is provided/overridden by its ancestor ContextProvider.
  *
  * When connected to DOM:
@@ -271,20 +273,17 @@ export function contextConsumerMixinBuilder<Ctx>() {
       class Consumer extends (cls as Constructor<LitElement, []>) {
         connectedCallback() {
           super.connectedCallback();
-          for (const key of observedContextKeys) {
-            this.dispatchEvent(new CustomEvent(`tr-subscribe-context-${key}`, {
-              detail: {element: this as LitElement as T},
-              bubbles: true,
-              cancelable: true,
-              composed: true,
-            }) as ContextEvent<Pick<Ctx, K>, T>);
-          }
+          this.emitEvents('subscribe');
         }
 
         disconnectedCallback() {
           super.disconnectedCallback();
+          this.emitEvents('unsubscribe');
+        }
+
+        private emitEvents(type: 'subscribe' | 'unsubscribe') {
           for (const key of observedContextKeys) {
-            this.dispatchEvent(new CustomEvent(`tr-unsubscribe-context-${key}`, {
+            this.dispatchEvent(new CustomEvent(`tr-${type}-context-${key}`, {
               detail: {element: this as LitElement as T},
               bubbles: true,
               cancelable: true,
