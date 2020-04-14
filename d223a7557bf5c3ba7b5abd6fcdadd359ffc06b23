@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c286170_d1e29106",
+        "filename": "led/ledcli/launch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-14T19:49:48Z",
+      "side": 1,
+      "message": "Should this be `c.modernize \u0026\u0026 bb !\u003d nil` instead?",
+      "range": {
+        "startLine": 80,
+        "startChar": 34,
+        "endLine": 80,
+        "endChar": 43
+      },
+      "revId": "d223a7557bf5c3ba7b5abd6fcdadd359ffc06b23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
