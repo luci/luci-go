@@ -47,7 +47,7 @@ func TestIsolateServerCaps(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, DefaultNamespace, nil, nil)
+		client := NewClient(ts.URL)
 		caps, err := client.ServerCapabilities(ctx)
 		So(err, ShouldBeNil)
 		So(caps, ShouldResemble, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"})
@@ -94,7 +94,7 @@ func TestIsolateServerDownloadRetryGCSPartial(t *testing.T) {
 				flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/download": 1024}}
 				flaky.ts = httptest.NewServer(flaky)
 				defer flaky.ts.Close()
-				client := New(nil, nil, flaky.ts.URL, namespace, fastRetry, nil)
+				client := NewClient(flaky.ts.URL, WithNamespace(namespace), WithRetryFactory(fastRetry))
 
 				var buffer bytes.Buffer
 				So(client.Fetch(context.Background(), largeHash, &buffer), ShouldBeNil)
@@ -118,7 +118,7 @@ func TestIsolateServerUploadRetryGCSPartial(t *testing.T) {
 		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage/upload": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, namespace, fastRetry, nil)
+		client := NewClient(flaky.ts.URL, WithNamespace(namespace), WithRetryFactory(fastRetry))
 
 		digests, contents, expected := makeItems(namespace, large)
 		states, err := client.Contains(ctx, digests)
@@ -148,7 +148,7 @@ func TestIsolateServerBadURL(t *testing.T) {
 		if testing.Short() {
 			t.SkipNow()
 		}
-		client := New(nil, nil, "http://127.0.0.1:1", DefaultNamespace, fastRetry, nil)
+		client := NewClient("http://127.0.0.1:1", WithNamespace(DefaultNamespace), WithRetryFactory(fastRetry))
 		caps, err := client.ServerCapabilities(context.Background())
 		So(caps, ShouldBeNil)
 		So(err, ShouldNotBeNil)
@@ -184,7 +184,7 @@ func TestRetryDownload(t *testing.T) {
 		}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, namespace, tc.retryFactory, nil)
+		client := NewClient(flaky.ts.URL, WithNamespace(namespace), WithRetryFactory(tc.retryFactory))
 
 		var buffer bytes.Buffer
 		err := client.Fetch(ctx, itemHash, &buffer)
@@ -291,7 +291,7 @@ func TestRetryUpload(t *testing.T) {
 		}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, namespace, tc.retryFactory, nil)
+		client := NewClient(flaky.ts.URL, WithNamespace(namespace), WithRetryFactory(tc.retryFactory))
 
 		digests, contents, expected := makeItems(namespace, tc.items...)
 		states, err := client.Contains(ctx, digests)
@@ -463,7 +463,7 @@ func testNormalDownload(ctx context.Context, t *testing.T, contents ...[]byte) {
 		}
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, namespace, noRetry, nil)
+		client := NewClient(ts.URL, WithNamespace(namespace), WithRetryFactory(noRetry))
 		for i, hash := range hashes {
 			var buffer bytes.Buffer
 			err := client.Fetch(ctx, hash, &buffer)
@@ -481,7 +481,7 @@ func testNormalUpload(ctx context.Context, t *testing.T, contents ...[]byte) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, namespace, noRetry, nil)
+		client := NewClient(ts.URL, WithNamespace(namespace), WithRetryFactory(noRetry))
 		states, err := client.Contains(ctx, digests)
 		So(err, ShouldBeNil)
 		So(len(states), ShouldResemble, len(digests))

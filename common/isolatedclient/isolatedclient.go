@@ -101,26 +101,75 @@ type Client struct {
 // If gcs is nil, the defaultGCSHandler is used for fetching from and pushing to GCS.
 //
 // The hashing algorithm used depends on the namespace.
+// Deprecated, use NewClient instead.
 func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, gcs CloudStorage) *Client {
-	if anonClient == nil {
-		anonClient = http.DefaultClient
+	opts := []Option{WithNamespace(namespace)}
+
+	if anonClient != nil {
+		opts = append(opts, WithAnonymousClient(anonClient))
 	}
-	if authClient == nil {
-		authClient = http.DefaultClient
+	if authClient != nil {
+		opts = append(opts, WithAuthClient(authClient))
 	}
-	if gcs == nil {
-		gcs = defaultGCSHandler{}
+	if gcs != nil {
+		opts = append(opts, WithGCSHandler(gcs))
 	}
-	i := &Client{
-		retryFactory: rFn,
-		url:          strings.TrimRight(host, "/"),
-		namespace:    namespace,
-		h:            isolated.GetHash(namespace),
-		authClient:   authClient,
-		anonClient:   anonClient,
-		gcsHandler:   gcs,
+	if rFn != nil {
+		opts = append(opts, WithRetryFactory(rFn))
 	}
+
+	i := NewClient(host, opts...)
+
 	tracer.NewPID(i, "isolatedclient:"+i.url)
+	return i
+}
+
+type Option func(*Client)
+
+func WithNamespace(namespace string) Option {
+	return func(i *Client) {
+		i.namespace = namespace
+	}
+}
+
+func WithAuthClient(c *http.Client) Option {
+	return func(i *Client) {
+		i.authClient = c
+	}
+}
+
+func WithAnonymousClient(c *http.Client) Option {
+	return func(i *Client) {
+		i.anonClient = c
+	}
+}
+
+func WithRetryFactory(rFn retry.Factory) Option {
+	return func(i *Client) {
+		i.retryFactory = rFn
+	}
+}
+
+func WithGCSHandler(gcs CloudStorage) Option {
+	return func(i *Client) {
+		i.gcsHandler = gcs
+	}
+}
+
+func NewClient(host string, opts ...Option) *Client {
+	i := &Client{
+		url:        strings.TrimRight(host, "/"),
+		namespace:  DefaultNamespace,
+		authClient: http.DefaultClient,
+		anonClient: http.DefaultClient,
+		gcsHandler: defaultGCSHandler{},
+	}
+
+	for _, o := range opts {
+		o(i)
+	}
+
+	i.h = isolated.GetHash(i.namespace)
 	return i
 }
 
