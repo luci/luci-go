@@ -16,6 +16,24 @@
       "revId": "004aea1ffbfa0b4147406e490bd006f032174a6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1497766b_feb08891",
+        "filename": "gce/api/config/v1/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-04-14T21:22:30Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "91415627_7218896a",
+      "revId": "004aea1ffbfa0b4147406e490bd006f032174a6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
