@@ -81,7 +81,6 @@ func mkIsoClient(ctx context.Context, authClient *http.Client, tree *api.CASTree
 		nil, authClient,
 		tree.Server, tree.Namespace,
 		retry.Default,
-		nil,
 	)
 	// The archiver is pretty noisy at Info level, so we skip giving it
 	// a logging-enabled context unless the user actually requseted verbose.

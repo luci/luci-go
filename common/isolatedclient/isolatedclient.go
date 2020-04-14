@@ -98,19 +98,15 @@ type Client struct {
 //
 // If you're unsure which namespace to use, use the DefaultNamespace constant.
 //
-// If gcs is nil, the defaultGCSHandler is used for fetching from and pushing to GCS.
-//
 // The hashing algorithm used depends on the namespace.
-func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, gcs CloudStorage) *Client {
+func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory) *Client {
 	if anonClient == nil {
 		anonClient = http.DefaultClient
 	}
 	if authClient == nil {
 		authClient = http.DefaultClient
 	}
-	if gcs == nil {
-		gcs = defaultGCSHandler{}
-	}
+
 	i := &Client{
 		retryFactory: rFn,
 		url:          strings.TrimRight(host, "/"),
@@ -118,7 +114,7 @@ func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.
 		h:            isolated.GetHash(namespace),
 		authClient:   authClient,
 		anonClient:   anonClient,
-		gcsHandler:   gcs,
+		gcsHandler:   defaultGCSHandler{},
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
