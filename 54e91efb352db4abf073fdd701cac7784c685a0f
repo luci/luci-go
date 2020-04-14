@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c48a7523_c93efa84",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-14T05:18:50Z",
+      "side": 1,
+      "message": "typo: dimesions -\u003e dimensions",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 10
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "629fd86b_02580347",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-14T05:18:50Z",
+      "side": 1,
+      "message": "nit: why not iterate over map here (i.e. `key, val :\u003d  ed.dimensions`)?",
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3766bf28_fd6bbc75",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-14T05:18:50Z",
+      "side": 1,
+      "message": "This is clear : )",
+      "range": {
+        "startLine": 179,
+        "startChar": 0,
+        "endLine": 186,
+        "endChar": 14
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "65b7cf42_211d8cc4",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-14T05:18:50Z",
+      "side": 1,
+      "message": "nit: will using `len(bb.EnvVars) + 1` avoid resizing of underlying array since you will always append `BUILDBUCKET_EXPERIMENTAL` property?",
+      "range": {
+        "startLine": 312,
+        "startChar": 53,
+        "endLine": 312,
+        "endChar": 68
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5915092_0bcf9df2",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-14T05:18:50Z",
+      "side": 1,
+      "message": "nit: Can use `iso` variable instead. Same comments apply to the following two lines as well",
+      "range": {
+        "startLine": 91,
+        "startChar": 20,
+        "endLine": 91,
+        "endChar": 40
+      },
+      "revId": "54e91efb352db4abf073fdd701cac7784c685a0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
