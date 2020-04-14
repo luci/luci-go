@@ -16,8 +16,6 @@ package git
 
 import (
 	"context"
-
-	"go.chromium.org/luci/common/errors"
 )
 
 var luciProjectKey = "luci_project_ctx"
@@ -30,13 +28,7 @@ func WithProject(ctx context.Context, project string) context.Context {
 
 // ProjectFromContext is the opposite of WithProject, is extracts the
 // LUCI project which the current call stack is handling a request for.
-func ProjectFromContext(ctx context.Context) (string, error) {
+func ProjectFromContext(ctx context.Context) (string, bool) {
 	project, ok := ctx.Value(&luciProjectKey).(string)
-	if !ok {
-		return "", errors.Reason("LUCI project not available in context").Err()
-	}
-	if project == "" {
-		return "", errors.Reason("LUCI project is empty string").Err()
-	}
-	return project, nil
+	return project, ok && project != ""
 }
