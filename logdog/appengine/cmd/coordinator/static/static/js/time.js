@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// A Series of time based utilites for the LogDog plaintext viewer.
+// A Series of time based utilities for the LogDog plaintext viewer.
 // Requires: moment.js, moment-timezone.js, jquery, jquery-ui
 
 // This file cannot use EcmaScript6: crbug.com/791528

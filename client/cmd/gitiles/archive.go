@@ -36,7 +36,7 @@ func cmdArchive(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options> repository-url committish",
 		ShortDesc: "downloads an archive of a repo at committish",
-		LongDesc: `Downloads an archive of a repo at given comittish.
+		LongDesc: `Downloads an archive of a repo at given committish.
 
 This tool does not stream the archive, so the full contents are stored in
 memory before being written to disk.

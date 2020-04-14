@@ -112,7 +112,7 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
 	fs.Var(&a.globalTags, "tag",
-		"Specify key[=value] tags to be applied to all log streams. Individual treams may override. Can "+
+		"Specify key[=value] tags to be applied to all log streams. Individual streams may override. Can "+
 			"be specified multiple times.")
 	fs.Var(&a.maxBufferAge, "output-max-buffer-age",
 		"Send buffered messages if they've been held for longer than this period.")

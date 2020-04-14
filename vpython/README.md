@@ -1,28 +1,28 @@
-## vpython - simple and easy VirtualEnv Python
+## vpython - simple and easy Virtualenv Python
 
 `vpython` is a tool, written in Go, which enables the simple and easy invocation
-of Python code in [VirtualEnv](https://virtualenv.pypa.io/en/stable/)
+of Python code in [Virtualenv](https://virtualenv.pypa.io/en/stable/)
 environments.
 
 `vpython` is a simple Python bootstrap which (almost) transparently wraps a
-Python interpreter invocation to run in a tailored VirtualEnv environment. The
+Python interpreter invocation to run in a tailored Virtualenv environment. The
 environment is expressed by a script-specific configuration file. This allows
 each Python script to trivially express its own package-level dependencies and
 run in a hermetic world consisting of just those dependencies.
 
 When invoking such a script via `vpython`, the tool downloads its dependencies
-and prepares an immutable VirtualEnv containing them. It then invokes the
-script, now running in that VirutalEnv, through the preferred Python
+and prepares an immutable Virtualenv containing them. It then invokes the
+script, now running in that Virtualenv, through the preferred Python
 interpreter.
 
 `vpython` does its best not to use hacky mechanisms to achieve this. It uses
-an unmodified VirtualEnv package, standard setup methods, and local system
-resources. The result is transparent canonical VirtualEnv environment
+an unmodified Virtualenv package, standard setup methods, and local system
+resources. The result is transparent canonical Virtualenv environment
 bootstrapping that meets the expectations of standard Python packages. `vpython`
 is also safe for concurrent invocation, using safe filesystem-level locking to
 perform any environment setup and management.
 
-`vpython` itself is very fast. The wheel downloads and VirtualEnvs may also be
+`vpython` itself is very fast. The wheel downloads and Virtualenvs may also be
 cached and re-used, optimally limiting the runtime overhead of `vpython` to just
 one initial setup per unique environment.
 
@@ -30,7 +30,7 @@ one initial setup per unique environment.
 
 For the standard case, employing `vpython` is as simple as:
 
-1. Create a `vpython` VirtualEnv specification (or don't, if no additional
+1. Create a `vpython` Virtualenv specification (or don't, if no additional
    packages are needed.
 2. Invoke your script through `vpython` instead of `python`.
 
@@ -60,14 +60,14 @@ when vendoring packages. Notably, with `vpython`:
   fast and secure Google Cloud Platform technologies.
 * No more custom bootstraps. Several projects and tools, including multiple
   places within Chrome's infra code base, have bootstrap scripts that vendor
-  packages or mimic a VirtualEnv. These are at best repetitive and, at worst,
+  packages or mimic a Virtualenv. These are at best repetitive and, at worst,
   buggy and insecure.
-* Depenencies are explicitly stated, not assumed, and consistent between
+* Dependencies are explicitly stated, not assumed, and consistent between
   deployments.
 
-### Why VirtualEnv?
+### Why Virtualenv?
 
-VirtualEnv offers several benefits over system Python. Primarily, it is the
+Virtualenv offers several benefits over system Python. Primarily, it is the
 *de facto* encapsulated environment method used by the Python community and is
 generally used as the standard for a functional deployable package.
 
@@ -82,7 +82,7 @@ A direct mechanism for vendoring, `sys.path` manipulation, is nuanced, buggy,
 and unsupported by the Python community. It is difficult to do correctly on all
 platforms in all environments for all packages. A notorious example of this is
 `protobuf` and other domain-bound packages, which actively fight `sys.path`
-inclusion and require special non-intuitive hacks to work. Using VirtualEnv
+inclusion and require special non-intuitive hacks to work. Using Virtualenv
 means that any compliant Python package can trivially be included into a
 project.
 
@@ -161,7 +161,7 @@ Use wheels with the `cp27m` or `none` ABI tag. For example:
 `vpython`.
 
 `vpython` works with a default Python environment out of the box. To add
-vendored packges, you need to define an environment specification file that
+vendored packages, you need to define an environment specification file that
 describes which wheels to install.
 
 An environment specification file is a text protobuf defined as `Spec`
@@ -199,12 +199,12 @@ This specification can be supplied in one of four ways:
 `vpython` has several levels of caching that it employs to optimize setup and
 invocation overhead.
 
-#### VirtualEnv
+#### Virtualenv
 
-Once a VirtualEnv specification has been resolved, its resulting pinned
-specification is hashed and used as a key to that VirtualEnv. Other `vpython`
-invocations expressing hte same environment will naturally re-use that
-VirtualEnv instead of creating their own.
+Once a Virtualenv specification has been resolved, its resulting pinned
+specification is hashed and used as a key to that Virtualenv. Other `vpython`
+invocations expressing the same environment will naturally re-use that
+Virtualenv instead of creating their own.
 
 #### Download Caching
 
@@ -227,7 +227,7 @@ vpython ./foo/bar/baz.py -d --flag value arg arg whatever
 ```
 
 The `vpython` tool accepts its own command-line arguments. In this case, use
-a `--` seprator to differentiate between `vpython` options and `python` options:
+a `--` separator to differentiate between `vpython` options and `python` options:
 
 ```sh
 vpython -vpython-spec /path/to/spec.vpython -- ./foo/bar/baz.py
