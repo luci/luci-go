@@ -2,6 +2,7 @@
   "bot_ping_tolerance_secs": "1200",
   "name": "led: test_name",
   "priority": "40",
+  "service_account": "none",
   "task_slices": [
     {
       "expiration_secs": "3600",

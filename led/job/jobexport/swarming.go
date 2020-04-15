@@ -39,6 +39,7 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 		Name:                 task.Name,
 		User:                 uid,
 		Priority:             int64(task.Priority),
+		ServiceAccount:       task.ServiceAccount,
 		Tags:                 task.Tags,
 		TaskSlices:           make([]*swarming.SwarmingRpcsTaskSlice, 0, len(task.TaskSlices)),
 	}
