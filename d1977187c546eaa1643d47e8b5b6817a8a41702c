@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de395b96_bd5430f2",
+        "filename": "common/version/update_version.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T03:26:30Z",
+      "side": 1,
+      "message": "I don\u0027t really like this but I don\u0027t have a better suggestion.",
+      "revId": "d1977187c546eaa1643d47e8b5b6817a8a41702c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f059e92_086fc907",
+        "filename": "common/version/version.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T03:26:30Z",
+      "side": 1,
+      "message": "This is entertaining.",
+      "revId": "d1977187c546eaa1643d47e8b5b6817a8a41702c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dad95d7a_29c8c0f8",
+        "filename": "common/version/version_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T03:26:30Z",
+      "side": 1,
+      "message": "Seems arbitrary. Time could be screwed up in other ways. Though I guess a test is better than no tests.",
+      "revId": "d1977187c546eaa1643d47e8b5b6817a8a41702c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
