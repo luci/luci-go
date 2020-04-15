@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80c381a7_b681b6da",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-15T04:48:15Z",
+      "side": 1,
+      "message": "this is very nice, and much better than what I have suggested.",
+      "range": {
+        "startLine": 141,
+        "startChar": 11,
+        "endLine": 141,
+        "endChar": 27
+      },
+      "revId": "26deaf2954be4798866f527929b603b04ca20432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "915876a7_09c5294c",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-15T04:48:15Z",
+      "side": 1,
+      "message": "if you didn\u0027t have this code, the effect would be, practically, the same, right?",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 112,
+        "endChar": 98
+      },
+      "revId": "26deaf2954be4798866f527929b603b04ca20432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

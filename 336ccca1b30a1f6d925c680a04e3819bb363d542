@@ -225,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "e00a945c_c8578f5b",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-15T04:48:15Z",
+      "side": 1,
+      "message": "I bet it doesn\u0027t because we iterate over a slice (whose length isn\u0027t a cost)\n\nbut now that you said that, the code would be simpler if you unrolled it yourself:\n\n        shds[0].ID \u003d fmt.Sprintf(\"%s:%s\", key, val)\n\tfor i :\u003d 1; i \u003c TagIndexShardCount; i++ {\n  \t  shds[i].ID \u003d fmt.Sprintf(\":%d:%s:%s\", i, key, val)\n\t}",
+      "parentUuid": "be3ef4ad_9e454b21",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 103,
+        "endChar": 3
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0609eeb9_64019d95",
         "filename": "buildbucket/appengine/model/tagindex.go",
         "patchSetId": 2
