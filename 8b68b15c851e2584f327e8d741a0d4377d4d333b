@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e60a215e_8d16bed1",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-04-15T22:57:14Z",
+      "side": 1,
+      "message": "Very optional: In practice a atomic.LoadInt32() + atomic.StoreInt32() would be less code.",
+      "range": {
+        "startLine": 148,
+        "startChar": 1,
+        "endLine": 148,
+        "endChar": 18
+      },
+      "revId": "8b68b15c851e2584f327e8d741a0d4377d4d333b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c86b68b7_28257bee",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-04-15T22:57:14Z",
+      "side": 1,
+      "message": "Don\u0027t use a pointer here.",
+      "range": {
+        "startLine": 149,
+        "startChar": 20,
+        "endLine": 149,
+        "endChar": 24
+      },
+      "revId": "8b68b15c851e2584f327e8d741a0d4377d4d333b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
