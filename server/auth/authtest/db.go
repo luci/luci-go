@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -68,6 +69,15 @@ func (db FakeDB) CheckMembership(c context.Context, id identity.Identity, groups
 		}
 	}
 	return
+}
+
+// HasPermission is part of authdb.DB interface.
+//
+// Currently always returns false.
+func (db FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+	// TODO(vadimsh): Implement a meaningful interface to setup fake permission
+	// checks.
+	return false, nil
 }
 
 // IsAllowedOAuthClientID is part of authdb.DB interface.

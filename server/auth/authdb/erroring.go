@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -52,6 +53,13 @@ func (db ErroringDB) IsMember(c context.Context, id identity.Identity, groups []
 func (db ErroringDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
 	logging.Errorf(c, "%s", db.Error)
 	return nil, db.Error
+}
+
+// HasPermission returns true if the identity has the given permission in any
+// of the realms.
+func (db ErroringDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return false, db.Error
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.

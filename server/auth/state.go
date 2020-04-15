@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/realms"
 )
 
 // State is stored in the context when handling an incoming request. It
@@ -122,6 +123,24 @@ func CurrentIdentity(c context.Context) identity.Identity {
 func IsMember(c context.Context, groups ...string) (bool, error) {
 	if s := GetState(c); s != nil {
 		return s.DB().IsMember(c, s.User().Identity, groups)
+	}
+	return false, ErrNotConfigured
+}
+
+// HasPermission returns true if the current caller has the given permission
+// in any of the realms.
+//
+// During the check any non-existing realm is replaced with the corresponding
+// root realm (e.g. if "projectA:some/realm" doesn't exist, "projectA:@root"
+// will be used in its place). If the project doesn't exist or is not using
+// realms yet, all its realms (including the root realm) are considered empty.
+// HasPermission returns false in this case.
+//
+// Returns errors only if the check itself has failed due to misconfiguration
+// or transient errors. This should usually result in an Internal error.
+func HasPermission(c context.Context, perm realms.Permission, realms []string) (bool, error) {
+	if s := GetState(c); s != nil {
+		return s.DB().HasPermission(c, s.User().Identity, perm, realms)
 	}
 	return false, ErrNotConfigured
 }

@@ -20,6 +20,7 @@ import (
 	"net"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 )
 
@@ -51,6 +52,13 @@ func (DevServerDB) CheckMembership(c context.Context, id identity.Identity, grou
 		return nil, nil
 	}
 	return groups, nil
+}
+
+func (DevServerDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+	if len(realms) == 0 {
+		return false, nil
+	}
+	return id.Kind() != identity.Anonymous, nil
 }
 
 func (DevServerDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
