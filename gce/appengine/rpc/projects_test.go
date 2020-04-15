@@ -168,7 +168,7 @@ func TestProjects(t *testing.T) {
 				cfg, err := srv.Ensure(c, req)
 				So(err, ShouldBeNil)
 				So(cfg, ShouldNotBeEmpty)
-				So(cfg, ShouldResemble, &projects.Config{
+				So(cfg, ShouldResembleProto, &projects.Config{
 					Project: "project",
 					Region: []string{
 						"region1",
@@ -176,11 +176,6 @@ func TestProjects(t *testing.T) {
 					},
 					Revision: "revision-1",
 				})
-				mdl := &model.Project{
-					ID: "id",
-				}
-				So(datastore.Get(c, mdl), ShouldBeNil)
-				So(mdl.BinaryConfig.Config, ShouldResemble, mdl.Config)
 			})
 		})
 	})
