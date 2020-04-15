@@ -168,7 +168,10 @@ type ContextEvent<Ctx, T extends LitElement & Ctx = LitElement & Ctx> = CustomEv
  */
 export function contextProviderMixinBuilder<Ctx>() {
   return function provideKeys<K extends keyof Ctx>(...providedContextKeys: K[]) {
-    return function providerMixin<T extends LitElement & Pick<Ctx, K>, C extends Constructor<T>>(cls: C) {
+    // The mixin target class (cls) needs to implement Pick<Ctx, K>.
+    // i.e for each property name in observedContextKeys, the property in T
+    // must be assignable to the property of the same name in Ctx.
+    return function providerMixin<T extends LitElement & Pick<Ctx, K>>(cls: Constructor<T>) {
       // TypeScript doesn't allow type parameter in extends or implements
       // position. Cast to Constructor<LitElement> to stop tsc complaining.
       class Provider extends (cls as Constructor<LitElement>) {
@@ -243,7 +246,7 @@ export function contextProviderMixinBuilder<Ctx>() {
       }
 
       // Recover the type information that was lost in the down-casting above.
-      return Provider as Constructor<LitElement> as C;
+      return Provider as Constructor<LitElement> as Constructor<T>;
     };
   };
 }
@@ -267,10 +270,13 @@ export function contextProviderMixinBuilder<Ctx>() {
  */
 export function contextConsumerMixinBuilder<Ctx>() {
   return function consumeKeys<K extends keyof Ctx>(...observedContextKeys: K[]) {
-    return function consumerMixin<T extends LitElement & Pick<Ctx, K>, C extends Constructor<T>>(cls: C) {
+    // The mixin target class (cls) needs to implement Pick<Ctx, K>.
+    // i.e for each property name in observedContextKeys, the property in T
+    // must be assignable to the property of the same name in Ctx.
+    return function consumerMixin<T extends LitElement & Pick<Ctx, K>>(cls: Constructor<T>) {
       // TypeScript doesn't allow type parameter in extends or implements
       // position. Cast to Constructor<LitElement> to stop tsc complaining.
-      class Consumer extends (cls as Constructor<LitElement, []>) {
+      class Consumer extends (cls as Constructor<LitElement>) {
         connectedCallback() {
           super.connectedCallback();
           this.emitEvents('subscribe');
@@ -293,7 +299,7 @@ export function contextConsumerMixinBuilder<Ctx>() {
         }
       }
       // Recover the type information that lost in the down-casting above.
-      return Consumer as Constructor<LitElement> as C;
+      return Consumer as Constructor<LitElement> as Constructor<T>;
     };
   };
 }
