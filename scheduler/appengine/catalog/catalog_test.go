@@ -90,6 +90,10 @@ func TestProtoValidation(t *testing.T) {
 			Noop: &messages.NoopTask{},
 		}), ShouldBeNil)
 		So(call(&messages.Job{
+			Id:    "good",
+			Realm: "@invalid",
+		}), ShouldErrLike, "bad 'realm' field")
+		So(call(&messages.Job{
 			Id:       "good",
 			Schedule: "blah",
 		}), ShouldErrLike, "not valid value for 'schedule' field")
@@ -237,13 +241,14 @@ func TestConfigReading(t *testing.T) {
 		})
 
 		Convey("GetProjectJobs works", func() {
-			const expectedRev = "b7f431e8f06f458c638959786b5477a6ae3d565b"
+			const expectedRev = "a0cd8e4a450eeb7e0c4a33353769bb6190d98c87"
 
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			So(err, ShouldBeNil)
 			So(defs, ShouldResemble, []Definition{
 				{
-					JobID: "project1/noop-job-1",
+					JobID:   "project1/noop-job-1",
+					RealmID: "project1:public",
 					Acls: acl.GrantsByRole{
 						Readers:    []string{"group:all"},
 						Triggerers: []string{},
@@ -256,7 +261,8 @@ func TestConfigReading(t *testing.T) {
 					TriggeringPolicy: []uint8{16, 4},
 				},
 				{
-					JobID: "project1/noop-job-2",
+					JobID:   "project1/noop-job-2",
+					RealmID: "project1:@legacy",
 					Acls: acl.GrantsByRole{
 						Readers:    []string{"group:all"},
 						Triggerers: []string{},
@@ -268,7 +274,8 @@ func TestConfigReading(t *testing.T) {
 					Task:        []uint8{10, 0},
 				},
 				{
-					JobID: "project1/urlfetch-job-1",
+					JobID:   "project1/urlfetch-job-1",
+					RealmID: "project1:@legacy",
 					Acls: acl.GrantsByRole{
 						Readers:    []string{"group:all"},
 						Triggerers: []string{"group:triggerers"},
@@ -280,7 +287,8 @@ func TestConfigReading(t *testing.T) {
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
 				{
-					JobID: "project1/trigger",
+					JobID:   "project1/trigger",
+					RealmID: "project1:@legacy",
 					Acls: acl.GrantsByRole{
 						Readers:    []string{"group:all"},
 						Triggerers: []string{},
@@ -306,7 +314,8 @@ func TestConfigReading(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(defs, ShouldResemble, []Definition{
 				{
-					JobID: "project2/noop-job-1",
+					JobID:   "project2/noop-job-1",
+					RealmID: "project2:@legacy",
 					Acls: acl.GrantsByRole{
 						Owners:     []string{"group:all"},
 						Triggerers: []string{},
@@ -318,7 +327,8 @@ func TestConfigReading(t *testing.T) {
 					Task:        []uint8{10, 0},
 				},
 				{
-					JobID: "project2/trigger",
+					JobID:   "project2/trigger",
+					RealmID: "project2:@legacy",
 					Acls: acl.GrantsByRole{
 						Owners:     []string{"group:all"},
 						Triggerers: []string{},
@@ -550,6 +560,7 @@ job {
 	id: "noop-job-1"
 	schedule: "*/10 * * * * * *"
 	acl_sets: "public"
+	realm: "public"
 
 	triggering_policy {
 		max_concurrent_invocations: 4
