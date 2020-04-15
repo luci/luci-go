@@ -48,9 +48,10 @@ func application(p Params) *cli.Application {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
+			cmdDerive(p),
+			cmdCall(p),
 			cmdContext(),
 			cmdQuery(p),
-			cmdDerive(p),
 			cmdUpdateInclusions(p),
 			// TODO(crbug.com/1021849): add subcommand upload
 			// TODO(crbug.com/1021849): add subcommand run
