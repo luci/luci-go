@@ -22,7 +22,6 @@ import '../components/page_header';
 export class ErrorPageElement extends MobxLitElement {
   protected render() {
     return html`
-      <tr-page-header></tr-page-header>
       <div>An error occured.<div>
     `;
   }

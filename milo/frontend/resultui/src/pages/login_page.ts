@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
-import { customElement, css, html } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 
 import '../components/page_header';
 
@@ -55,7 +55,6 @@ export class LoginPageElement extends MobxLitElement implements
 
   protected render() {
     return html`
-      <tr-page-header></tr-page-header>
       <div id="sign-in-message">You must sign in to see anything useful.<div>
     `;
   }
