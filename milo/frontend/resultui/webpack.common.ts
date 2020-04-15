@@ -14,6 +14,7 @@
 
 import path from 'path';
 
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
@@ -63,6 +64,7 @@ const config: webpack.Configuration = {
     },
   },
   plugins: [
+    new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
       alwaysWriteToDisk: true,
       template: path.resolve(__dirname, './index.html'),
@@ -72,7 +74,6 @@ const config: webpack.Configuration = {
   ],
   devServer: {
     contentBase: path.join(__dirname, '../appengine/resultui/'),
-    writeToDisk: true,
     historyApiFallback: true,
   },
 };
