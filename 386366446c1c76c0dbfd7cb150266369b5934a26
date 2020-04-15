@@ -70,6 +70,30 @@
       "revId": "386366446c1c76c0dbfd7cb150266369b5934a26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46d37cb6_c2ff5899",
+        "filename": "server/auth/authdb/db.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T21:35:51Z",
+      "side": 1,
+      "message": "\u003e Why didn\u0027t you ask this question when reviewing python code?\n\nI\u0027d like to claim explicit types brought this home,\nbut the really is that I\u0027m a bad reviewer.",
+      "parentUuid": "bcfc5c2c_ae8d8cd9",
+      "range": {
+        "startLine": 70,
+        "startChar": 80,
+        "endLine": 70,
+        "endChar": 95
+      },
+      "revId": "386366446c1c76c0dbfd7cb150266369b5934a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
