@@ -42,82 +42,67 @@ export class InvocationDetailsElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div
-        class="expandable-header"
-        @click=${() => this.expanded = !this.expanded}
-      >
-        <mwc-icon class="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <span class="one-line-content">Details</span>
+      <div id="details-header" @click=${() => this.expanded = !this.expanded}>
+        <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
+        <span id="details-header-text">Details</span>
       </div>
-      <div id="body">
-        <div id="content" style=${styleMap({'display': this.expanded ? '' : 'none'})}>
-          <div>Create Time: ${new Date(this.invocation!.createTime).toLocaleString()}</div>
-          <div>Finalize Time: ${new Date(this.invocation!.finalizeTime).toLocaleDateString()}</div>
-          <div>Deadline: ${new Date(this.invocation!.deadline).toLocaleDateString()}</div>
-          <div
-            id="included-invocations"
-            style=${styleMap({'display': this.hasIncludedInvocations ? '' : 'none'})}
-          >Included Invocations:
-            <ul>
-            ${this.invocation!.includedInvocations.map(invocationName => html`
-              <li><a href="/invocation/${encodeURIComponent(invocationName)}">${invocationName.slice('invocations/'.length)}</a></li>
-            `)}
-            </ul>
-          </div>
-          <div style=${styleMap({'display': this.hasTags ? '' : 'none'})}>Tags:
-            <table id="tag-table" border="0">
-            ${this.invocation!.tags.map((tag) => html`
-              <tr>
-                <td>${tag.key}:</td>
-                <td>${tag.value}</td>
-              </tr>
-            `)}
-            </table>
-          </div>
+      <div id="content" style=${styleMap({'display': this.expanded ? '' : 'none'})}>
+        <div>Create Time: ${new Date(this.invocation!.createTime).toLocaleString()}</div>
+        <div>Finalize Time: ${new Date(this.invocation!.finalizeTime).toLocaleDateString()}</div>
+        <div>Deadline: ${new Date(this.invocation!.deadline).toLocaleDateString()}</div>
+        <div
+          id="included-invocations"
+          style=${styleMap({'display': this.hasIncludedInvocations ? '' : 'none'})}
+        >Included Invocations:
+          <ul>
+          ${this.invocation!.includedInvocations.map(invocationName => html`
+            <li><a href="/invocation/${encodeURIComponent(invocationName)}">${invocationName.slice('invocations/'.length)}</a></li>
+          `)}
+          </ul>
+        </div>
+        <div style=${styleMap({'display': this.hasTags ? '' : 'none'})}>Tags:
+          <table id="tag-table" border="0">
+          ${this.invocation!.tags.map((tag) => html`
+            <tr>
+              <td>${tag.key}:</td>
+              <td>${tag.value}</td>
+            </tr>
+          `)}
+          </table>
         </div>
       </div>
     `;
   }
 
   static styles = css`
-    .expandable-header {
-      display: grid;
-      grid-template-columns: 24px 1fr;
-      grid-template-rows: 24px;
-      grid-gap: 5px;
+    #details-header {
+      display: flex;
+      padding: 6px 16px;
+      font-size: 14px;
+      line-height: 16px;
+      font-family: "Google Sans", "Helvetica Neue", sans-serif;
       cursor: pointer;
       letter-spacing: 0.15px;
     }
-    .expandable-header .expand-toggle {
-      grid-row: 1;
-      grid-column: 1;
-    }
-    .expandable-header .one-line-content {
-      grid-row: 1;
-      grid-column: 2;
+
+    #expand-toggle {
       font-size: 16px;
-      line-height: 24px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    #body {
-      display: grid;
-      grid-template-columns: 24px 1fr;
-      grid-gap: 5px;
-    }
-    #content {
-      padding: 5px 0 5px 0;
-      grid-column: 2;
-    }
-    #content-ruler {
-      border-left: 1px solid grey;
-      width: 0px;
-      margin-left: 11.5px;
     }
 
-    #included-invocation {
+    #details-header-text {
+      margin-left: 4px;
+    }
+
+    #content {
+      padding: 5px 24px;
+      border-top: 1px solid rgb(238,238,238);
+    }
+
+    #included-invocations ul {
       list-style-type: none;
+      margin-block-start: auto;
+      margin-block-end: auto;
+      padding-inline-start: 32px;
     }
 
     #tag-table {
