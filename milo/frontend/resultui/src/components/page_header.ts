@@ -19,7 +19,8 @@ import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
 /**
- * Renders page header, including a sign-in widget.
+ * Renders page header, including a sign-in widget, at the top of the child
+ * nodes.
  */
 @customElement('tr-page-header')
 export class PageHeaderElement extends MobxLitElement {
@@ -31,37 +32,46 @@ export class PageHeaderElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div id="title-container">
-        <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
-        <span id="headline">LUCI Test Results (BETA)</span>
+      <div id="container">
+        <div id="title-container">
+          <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
+          <span id="headline">LUCI Test Results (BETA)</span>
+        </div>
+        <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
       </div>
-      <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
+      <slot></slot>
     `;
   }
 
   static styles = css`
     :host {
-        padding: 10px 0;
-        display: flex;
+      --header-height: 52px;
+    }
+
+    #container {
+      box-sizing: border-box;
+      height: var(--header-height);
+      padding: 10px 0;
+      display: flex;
     }
     #title-container {
-        display: flex;
-        flex: 1 1 100%;
-        align-items: center;
-        margin-left: 14px;
+      display: flex;
+      flex: 1 1 100%;
+      align-items: center;
+      margin-left: 14px;
     }
     #chromium-icon {
-        display: inline-block;
-        width: 32px;
-        height: 32px;
-        margin-right: 8px;
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
     }
     #headline {
-        color: rgb(95, 99, 104);
-        font-family: "Google Sans", "Helvetica Neue", sans-serif;
-        font-size: 18px;
-        font-weight: 300;
-        letter-spacing: 0.25px;
+      color: rgb(95, 99, 104);
+      font-family: "Google Sans", "Helvetica Neue", sans-serif;
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: 0.25px;
     }
     #signin {
         margin-right: 14px;

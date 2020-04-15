@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { contextConsumerMixinBuilder, contextProviderMixinBuilder } from '../libs/context';
+import { AppState } from './app_state';
 
-import '../components/page_header';
-
-
-@customElement('tr-error-page')
-export class ErrorPageElement extends MobxLitElement {
-  protected render() {
-    return html`
-      <div>An error occured.<div>
-    `;
-  }
+export interface Context {
+  appState: AppState;
 }
+
+export const contextConsumer = contextConsumerMixinBuilder<Context>();
+export const contextProvider = contextProviderMixinBuilder<Context>();

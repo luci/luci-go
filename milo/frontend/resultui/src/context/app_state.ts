@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { computed, observable } from 'mobx';
+import { ResultDb } from '../services/resultdb';
 
-import '../components/page_header';
+/**
+ * Records the app-level state.
+ */
+export class AppState {
+  @observable.ref accessToken = '';
 
-
-@customElement('tr-error-page')
-export class ErrorPageElement extends MobxLitElement {
-  protected render() {
-    return html`
-      <div>An error occured.<div>
-    `;
+  @computed
+  get resultDb(): ResultDb | null {
+    if (!this.accessToken) {
+      return null;
+    }
+    // TODO(weiweilin): set the host dynamically (from a config file?).
+    return new ResultDb('staging.results.api.cr.dev', this.accessToken);
   }
 }

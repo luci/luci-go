@@ -13,23 +13,24 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import * as signin from '@chopsui/chops-signin';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { action, computed, observable, reaction, when } from 'mobx';
+import { computed, observable, reaction, when } from 'mobx';
 
 import '../components/invocation_details';
 import '../components/page_header';
 import '../components/status_bar';
 import '../components/test-entry';
 import '../components/test_nav_tree';
+import { contextConsumer } from '../context';
+import { AppState } from '../context/app_state';
 import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
 import { ReadonlyTest, TestNode } from '../models/test_node';
-import { Invocation, InvocationState, ResultDb } from '../services/resultdb';
+import { Invocation, InvocationState } from '../services/resultdb';
 
 const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
@@ -45,31 +46,23 @@ const INVOCATION_STATE_DISPLAY_MAP = {
  * If invocation_name not provided, redirects to '/not-found'.
  * Otherwise, shows results for the invocation.
  */
-@customElement('tr-invocation-page')
 export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
-  @observable.ref accessToken = '';
   @observable.ref invocationName = '';
   @observable.ref leftPanelExpanded = false;
   @observable.ref pageLength = 100;
 
-  @computed
-  private get resultDb(): ResultDb | null {
-    if (!this.accessToken) {
-      return null;
-    }
-    // TODO(weiweilin): set the host dynamically (from a config file?).
-    return new ResultDb('staging.results.api.cr.dev', this.accessToken);
-  }
+  @observable.ref appState!: AppState;
 
   @computed
   private get invocationReq(): ObservablePromise<Invocation> {
-    if (!this.resultDb) {
+    if (!this.appState?.resultDb) {
       return observable.box({tag: 'loading', v: null}, {deep: false});
     }
-    return this.resultDb
+    return this.appState.resultDb
       .getInvocation({name: this.invocationName})
       .toObservable();
   }
+
   @computed
   private get invocation(): Invocation | null {
     const req = this.invocationReq.get();
@@ -81,12 +74,12 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 
   @computed
   private get testIter(): AsyncIterableIterator<ReadonlyTest> {
-    if (!this.resultDb) {
+    if (!this.appState?.resultDb) {
       return (async function*() {})();
     }
     return streamTests(
-      streamTestResults({invocations: [this.invocationName]}, this.resultDb),
-      streamTestExonerations({invocations: [this.invocationName]}, this.resultDb),
+      streamTestResults({invocations: [this.invocationName]}, this.appState.resultDb),
+      streamTestExonerations({invocations: [this.invocationName]}, this.appState.resultDb),
     );
   }
 
@@ -109,7 +102,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    this.refreshAccessToken();
     const invocationName = location.params['invocation_name'];
     if (typeof invocationName !== 'string') {
       return cmd.redirect('/not-found');
@@ -121,8 +113,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   private disposers: Array<() => void> = [];
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener('user-update', this.refreshAccessToken);
-    this.refreshAccessToken();
     this.disposers.push(when(
       () => this.invocationReq.get().tag === 'err',
       () => Router.go('/error'),
@@ -138,27 +128,9 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener('user-update', this.refreshAccessToken);
     for (const disposer of this.disposers) {
       disposer();
     }
-  }
-
-  @action
-  private refreshAccessToken = () => {
-    // Awaiting on authInstance to load may block the loading of authInstance,
-    // creating a deadlock. Use synced call instead.
-    this.accessToken = signin
-      .getAuthInstanceSync()
-      ?.currentUser.get()
-      .getAuthResponse()
-      .access_token || '';
-    if (!this.accessToken) {
-      const searchParams = new URLSearchParams();
-      searchParams.set('redirect', window.location.href);
-      return Router.go(`/login?${searchParams}`);
-    }
-    return;
   }
 
   private renderInvocationState() {
@@ -180,7 +152,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 
   protected render() {
     return html`
-      <tr-page-header></tr-page-header>
       <div id="test-invocation-summary">
         <div id="test-invocation-id">
           <span id="test-invocation-id-label">Invocation ID </span>
@@ -240,7 +211,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 
   static styles = css`
     :host {
-      height: 100%;
+      height: calc(100% - var(--header-height));
       display: flex;
       flex-direction: column;
       overflow-y: hidden;
@@ -321,3 +292,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     }
   `;
 }
+
+customElement('tr-invocation-page')(
+  contextConsumer('appState')(InvocationPageElement),
+);

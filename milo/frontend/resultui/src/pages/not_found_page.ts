@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, css, html } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 
 import '../components/page_header';
 
@@ -22,7 +22,6 @@ import '../components/page_header';
 export class NotFoundPageElement extends MobxLitElement {
   protected render() {
     return html`
-      <tr-page-header></tr-page-header>
       <div id="not-found-message">We couldn't find the page you were looking for.<div>
     `;
   }
