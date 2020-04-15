@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3ae8f0a_329537e1",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T07:18:22Z",
+      "side": 1,
+      "message": "Sorry for the late comment...\nWhy did you remove \"go\" from user agent?\n\"isolate.go/{version}\" would be consistent with the python user agent.",
+      "revId": "7c59a9fe22b7be33a4837a84c7c8444656cee752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dcb5f70_eb9d9bb2",
+        "filename": "client/cmd/isolated/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T07:18:22Z",
+      "side": 1,
+      "message": "same",
+      "revId": "7c59a9fe22b7be33a4837a84c7c8444656cee752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
