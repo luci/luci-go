@@ -80,6 +80,10 @@ func (c *commonServerFlags) createAuthClient(ctx context.Context) (*http.Client,
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
+func (c *commonServerFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
+	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent("isolate/"+version))
+}
+
 type isolateFlags struct {
 	// TODO(tandrii): move ArchiveOptions from isolate pkg to here.
 	isolate.ArchiveOptions

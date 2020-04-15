@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -156,7 +155,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 	if err != nil {
 		return err
 	}
-	client := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authClient), isolatedclient.WithNamespace(c.isolatedFlags.Namespace), isolatedclient.WithUserAgent("isolated/"+version))
+	client := c.createIsolatedClient(authClient)
 	var filesMu sync.Mutex
 	var files []string
 

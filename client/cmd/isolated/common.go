@@ -57,3 +57,7 @@ func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error
 	// for IP whitelisted bots: they have NO credentials to send.
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
+
+func (c *commonFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
+	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent("isolated/"+version))
+}
