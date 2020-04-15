@@ -16,6 +16,24 @@
       "revId": "282905a9f9b760486dfeeca43015f9dceb4c7e6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5777247b_436888a4",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-15T00:05:51Z",
+      "side": 0,
+      "message": "isolatedclient.New is used from other places, so we cannot use the same name here.\ncrrev.com/c/2143089",
+      "parentUuid": "28331ff7_3d1a15bf",
+      "revId": "282905a9f9b760486dfeeca43015f9dceb4c7e6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

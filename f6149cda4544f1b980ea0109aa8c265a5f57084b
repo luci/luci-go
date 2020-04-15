@@ -16,6 +16,24 @@
       "revId": "f6149cda4544f1b980ea0109aa8c265a5f57084b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70d114f7_90c8f267",
+        "filename": "client/archiver/archiver_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-15T00:05:51Z",
+      "side": 1,
+      "message": "I\u0027d like to keep using isolatedclient here for clarity.",
+      "parentUuid": "4f9a6696_64e89939",
+      "revId": "f6149cda4544f1b980ea0109aa8c265a5f57084b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
