@@ -143,7 +143,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 		return nil, nil
 	}
 
-	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.Client), isolatedclient.WithNamespace(ref.Namespace))
+	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.Client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent("swarming/"+version))
 
 	var filesMu sync.Mutex
 	var files []string

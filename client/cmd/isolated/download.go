@@ -156,7 +156,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 	if err != nil {
 		return err
 	}
-	client := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authClient), isolatedclient.WithNamespace(c.isolatedFlags.Namespace))
+	client := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authClient), isolatedclient.WithNamespace(c.isolatedFlags.Namespace), isolatedclient.WithUserAgent("isolated/"+version))
 	var filesMu sync.Mutex
 	var files []string
 
