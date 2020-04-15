@@ -84,6 +84,8 @@ type Client struct {
 	authClient *http.Client // client that sends auth tokens
 	anonClient *http.Client // client that does NOT send auth tokens
 	gcsHandler CloudStorage // implements GCS fetch and push handlers
+
+	userAgent string
 }
 
 // New returns a new IsolateServer client.
@@ -156,6 +158,13 @@ func WithGCSHandler(gcs CloudStorage) Option {
 	}
 }
 
+func WithUserAgent(userAgent string) Option {
+	return func(i *Client) {
+		i.userAgent = userAgent
+	}
+}
+
+// NewClient returns a new IsolateServer client.
 func NewClient(host string, opts ...Option) *Client {
 	i := &Client{
 		url:        strings.TrimRight(host, "/"),
@@ -247,7 +256,6 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 // Fetch downloads an item from the server.
 func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Writer) error {
 	// Perform initial request.
-	url := i.url + "/_ah/api/isolateservice/v1/retrieve"
 	in := &isolateservice.HandlersEndpointsV1RetrieveRequest{
 		Digest: string(digest),
 		Namespace: &isolateservice.HandlersEndpointsV1Namespace{
@@ -256,7 +264,8 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 		Offset: 0,
 	}
 	var out isolateservice.HandlersEndpointsV1RetrievedContent
-	if _, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, url, nil, in, &out); err != nil {
+
+	if err := i.postJSON(c, "/_ah/api/isolateservice/v1/retrieve", nil, in, &out); err != nil {
 		return err
 	}
 
@@ -286,6 +295,15 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 func (i *Client) postJSON(c context.Context, resource string, headers map[string]string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.Reason("resource must start with '/'").Err()
+	}
+	if i.userAgent != "" {
+		// Clone headers.
+		newheaders := map[string]string{}
+		for k, v := range headers {
+			newheaders[k] = v
+		}
+		headers = newheaders
+		headers["User-Agent"] = i.userAgent
 	}
 	_, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, i.url+resource, headers, in, out)
 	return err
