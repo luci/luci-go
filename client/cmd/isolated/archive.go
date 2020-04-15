@@ -96,7 +96,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	if err != nil {
 		return
 	}
-	isolatedClient := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authClient), isolatedclient.WithNamespace(c.isolatedFlags.Namespace))
+	isolatedClient := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authClient), isolatedclient.WithNamespace(c.isolatedFlags.Namespace), isolatedclient.WithUserAgent("isolated/"+version))
 
 	arch := archiver.New(ctx, isolatedClient, out)
 	defer func() {
