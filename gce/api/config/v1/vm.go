@@ -29,14 +29,22 @@ var _ datastore.PropertyConverter = &VM{}
 
 // FromProperty implements datastore.PropertyConverter.
 func (v *VM) FromProperty(p datastore.Property) error {
-	return proto.UnmarshalText(p.Value().(string), v)
+	if p.Value() == nil {
+		v = &VM{}
+		return nil
+	}
+	return proto.Unmarshal(p.Value().([]byte), v)
 }
 
 // ToProperty implements datastore.PropertyConverter.
 func (v *VM) ToProperty() (datastore.Property, error) {
 	p := datastore.Property{}
+	bytes, err := proto.Marshal(v)
+	if err != nil {
+		return datastore.Property{}, err
+	}
 	// noindex is not respected in the tags in the model.
-	return p, p.SetValue(proto.MarshalTextString(v), datastore.NoIndex)
+	return p, p.SetValue(bytes, datastore.NoIndex)
 }
 
 // SetZone sets the given zone throughout this VM.
@@ -80,29 +88,4 @@ func (v *VM) Validate(c *validation.Context) {
 	if v.GetZone() == "" {
 		c.Errorf("zone is required")
 	}
-}
-
-type BinaryVM struct {
-	VM
-}
-
-var _ datastore.PropertyConverter = &BinaryVM{}
-
-// FromProperty implements datastore.PropertyConverter.
-func (bv *BinaryVM) FromProperty(p datastore.Property) error {
-	if p.Value() == nil {
-		bv = &BinaryVM{}
-		return nil
-	}
-	return proto.Unmarshal(p.Value().([]byte), bv)
-}
-
-// ToProperty implements datastore.PropertyConverter.
-func (bv *BinaryVM) ToProperty() (datastore.Property, error) {
-	p := datastore.Property{}
-	bytes, err := proto.Marshal(bv)
-	if err != nil {
-		return datastore.Property{}, err
-	}
-	return p, p.SetValue(bytes, datastore.NoIndex)
 }
