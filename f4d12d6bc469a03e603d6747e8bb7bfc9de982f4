@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "51b9a1cf_16bd8eea",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T20:42:13Z",
+      "side": 1,
+      "message": "Yes, I meant corresponding root realms.",
+      "parentUuid": "27331d65_24597e45",
+      "range": {
+        "startLine": 56,
+        "startChar": 58,
+        "endLine": 56,
+        "endChar": 59
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "652ce65d_f33bef59",
         "filename": "server/auth/realms/realms.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d81b8883_289611d1",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T20:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "652ce65d_f33bef59",
+      "range": {
+        "startLine": 75,
+        "startChar": 43,
+        "endLine": 75,
+        "endChar": 47
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "212f915c_c66f2384",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T20:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b223f6a_06a07cd5",
+      "range": {
+        "startLine": 77,
+        "startChar": 58,
+        "endLine": 77,
+        "endChar": 62
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9c65706_8ae2210d",
         "filename": "server/auth/realms/realms.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "7a0b8f17_893d51f2",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T20:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9c65706_8ae2210d",
+      "range": {
+        "startLine": 79,
+        "startChar": 47,
+        "endLine": 79,
+        "endChar": 51
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bab53ff8_6b82b96f",
         "filename": "server/auth/realms/realms.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b60fa5f_b037eec6",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T20:42:13Z",
+      "side": 1,
+      "message": "Nah, this regexp is already duplicated in many places (a bunch of *.proto, a bunch of *.py) so changing it will require work no matter what.",
+      "parentUuid": "bab53ff8_6b82b96f",
+      "range": {
+        "startLine": 81,
+        "startChar": 46,
+        "endLine": 81,
+        "endChar": 72
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
