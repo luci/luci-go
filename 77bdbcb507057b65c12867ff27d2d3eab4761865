@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2125a531_5b6f1e1a",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T01:19:42Z",
+      "side": 0,
+      "message": "It would be good to migrate these comments, and add usage of With* options.",
+      "revId": "77bdbcb507057b65c12867ff27d2d3eab4761865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
