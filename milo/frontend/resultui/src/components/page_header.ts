@@ -31,16 +31,19 @@ export class PageHeaderElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div id="title-container">
-        <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
-        <span id="headline">LUCI Test Results (BETA)</span>
+      <div id="container">
+        <div id="title-container">
+          <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
+          <span id="headline">LUCI Test Results (BETA)</span>
+        </div>
+        <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
       </div>
-      <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
+      <slot></slot>
     `;
   }
 
   static styles = css`
-    :host {
+    #container {
         padding: 10px 0;
         display: flex;
     }
