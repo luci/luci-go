@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c685f42_8b647261",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-15T19:14:06Z",
+      "side": 1,
+      "message": "https://godoc.org/io/ioutil#ReadAll",
+      "range": {
+        "startLine": 93,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 18
+      },
+      "revId": "a67dd60570d605556b35051a2f3b5e8e47828de6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

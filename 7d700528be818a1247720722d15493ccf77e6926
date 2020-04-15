@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "664ac6b9_703d5a9a",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-15T19:14:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "484487ec_e4d0d5dd",
+      "range": {
+        "startLine": 44,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cefcfce9_c4316b7a",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
