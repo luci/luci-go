@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4daac0df_a8f60d91",
+        "filename": "gce/appengine/rpc/projects_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T02:23:11Z",
+      "side": 1,
+      "message": "Thanks for fixing this.",
+      "revId": "46bcdf7a634d2c80193daf6ea49afa0fd813a70d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
