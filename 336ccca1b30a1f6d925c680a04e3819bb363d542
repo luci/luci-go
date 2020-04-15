@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "93bf78eb_a14eda33",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33ac90f6_3eaea3c9",
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c7625650_1db4d93f",
         "filename": "buildbucket/appengine/model/tagindex.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8b20462_31189cc0",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "It\u0027s actually created_time in the datastore, so everywhere else is right and only this line (but in the tag) is wrong. Anyway done.",
+      "parentUuid": "c7625650_1db4d93f",
+      "range": {
+        "startLine": 37,
+        "startChar": 7,
+        "endLine": 37,
+        "endChar": 8
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "a76221a1_888365d8",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6298c7b6_e9a85df1",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 13
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e03b908_db058caf",
         "filename": "buildbucket/appengine/model/tagindex.go",
         "patchSetId": 2
@@ -85,6 +151,30 @@
       "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f18b3ce_86e43818",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e03b908_db058caf",
+      "range": {
+        "startLine": 88,
+        "startChar": 35,
+        "endLine": 88,
+        "endChar": 41
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "be3ef4ad_9e454b21",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done. Actually what I really hate is \"if i \u003d\u003d 0\" check on every iteration. I wonder if the compiler unrolls it to something like:\nshds[0] \u003d ...\nfor i :\u003d range shds[1:] { ... }\n\nActually since TagIndexShardCount is const it probably unrolls the entire thing.",
+      "parentUuid": "5b8f257a_38f7a108",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 103,
+        "endChar": 3
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0609eeb9_64019d95",
         "filename": "buildbucket/appengine/model/tagindex.go",
         "patchSetId": 2
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "7db33cad_f75db9df",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0609eeb9_64019d95",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 3
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7d4a2ba_a585bfb0",
         "filename": "buildbucket/appengine/model/tagindex.go",
         "patchSetId": 2
@@ -154,6 +292,30 @@
       "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d3dd7b4_214ae5bb",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7d4a2ba_a585bfb0",
+      "range": {
+        "startLine": 116,
+        "startChar": 8,
+        "endLine": 116,
+        "endChar": 33
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -192,6 +354,24 @@
     },
     {
       "key": {
+        "uuid": "5aeaf926_ebacd43a",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad02f7f3_1d1f9f07",
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51565ee1_70ab6ff9",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 2
@@ -212,6 +392,30 @@
       "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d4106a2_ccd1fff6",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-15T00:50:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51565ee1_70ab6ff9",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 10
+      },
+      "revId": "336ccca1b30a1f6d925c680a04e3819bb363d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
