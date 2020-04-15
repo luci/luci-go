@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -151,25 +150,6 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	return nil
 }
 
-// convertToBinary is to convert BinaryAttributes if it's not equal to attributes.
-func convertToBinary(c context.Context, vm *model.VM) {
-	if reflect.DeepEqual(vm.BinaryAttributes.VM, vm.Attributes) {
-		return
-	}
-
-	logging.Warningf(c, "Converting Attributes to BinaryAttributes...")
-
-	if err := datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, vm); err != nil {
-			return err
-		}
-		model.CopyToBinaryInVM(vm)
-		return datastore.Put(c, vm)
-	}, nil); err != nil {
-		logging.Errorf(c, "Failed to convert to BinaryAttributes, Error: %v", err)
-	}
-}
-
 // manageBotQueue is the name of the manage bot task handler queue.
 const manageBotQueue = "manage-bot"
 
@@ -198,9 +178,6 @@ func manageBot(c context.Context, payload proto.Message) error {
 	if err := drainVM(c, vm); err != nil {
 		return errors.Annotate(err, "failed to drain VM").Err()
 	}
-
-	// Convert to Binary property for the VM entity no matter the status of the bot.
-	convertToBinary(c, vm)
 
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)
 	bot, err := getSwarming(c, vm.Swarming).Bot.Get(vm.Hostname).Context(c).Do()
