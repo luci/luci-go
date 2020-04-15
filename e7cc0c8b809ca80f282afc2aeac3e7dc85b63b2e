@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "35fefcf7_534daaaa",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-04-15T22:12:52Z",
+      "side": 1,
+      "message": "If it\u0027s weird to have these as fields, I can change them to be parameters to `pollForTasks()`.",
+      "revId": "e7cc0c8b809ca80f282afc2aeac3e7dc85b63b2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
