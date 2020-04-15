@@ -96,7 +96,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	client := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authCl), isolatedclient.WithNamespace(c.isolatedFlags.Namespace), isolatedclient.WithUserAgent("go isolate/"+version))
+	client := c.createIsolatedClient(authCl)
 
 	al := archiveLogger{
 		start: start,

@@ -59,3 +59,7 @@ func (c *Flags) Parse() error {
 	}
 	return nil
 }
+
+func (c *Flags) NewClient(opts ...Option) *Client {
+	return NewClient(c.ServerURL, append([]Option{WithNamespace(c.Namespace)}, opts...)...)
+}
