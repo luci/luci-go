@@ -12,36 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Router } from '@vaadin/router';
+import { Route, Router } from '@vaadin/router';
+
+import './context/app_state_provider';
+
+const notFoundRoute: Route = {
+  path: '/:path*',
+  action: async (_ctx, cmd) => {
+    await import(/* webpackChunkName: "not_found_page" */ './pages/not_found_page');
+    return cmd.component('tr-not-found-page');
+  },
+};
 
 const router = new Router(document.getElementById('app-root'));
-router.setRoutes([
-  {
-    path: '/invocation/:invocation_name',
-    action: async (_ctx, cmd) => {
-      await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
-      return cmd.component('tr-invocation-page');
+router.setRoutes({
+  path: '/',
+  component: 'tr-page-header',
+  children: [
+    {
+      path: '/login',
+      action: async (_ctx, cmd) => {
+        await import(/* webpackChunkName: "login_page" */ './pages/login_page');
+        return cmd.component('tr-login-page');
+      },
     },
-  },
-  {
-    path: '/login',
-    action: async (_ctx, cmd) => {
-      await import(/* webpackChunkName: "login_page" */ './pages/login_page');
-      return cmd.component('tr-login-page');
+    {
+      path: '/error',
+      action: async (_ctx, cmd) => {
+        await import(/* webpackChunkName: "error_page" */ './pages/error_page');
+        return cmd.component('tr-error-page');
+      },
     },
-  },
-  {
-    path: '/error',
-    action: async (_ctx, cmd) => {
-      await import(/* webpackChunkName: "error_page" */ './pages/error_page');
-      return cmd.component('tr-error-page');
+    {
+      path: '/',
+      component: 'tr-app-state-provider',
+      children: [
+        {
+          path: '/invocation/:invocation_name',
+          action: async (_ctx, cmd) => {
+            await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+            return cmd.component('tr-invocation-page');
+          },
+        },
+        notFoundRoute,
+      ],
     },
-  },
-  {
-    path: '/:path*',
-    action: async (_ctx, cmd) => {
-      await import(/* webpackChunkName: "not_found_page" */ './pages/not_found_page');
-      return cmd.component('tr-not-found-page');
-    },
-  },
-]);
+    notFoundRoute,
+  ],
+});
