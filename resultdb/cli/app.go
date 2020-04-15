@@ -48,12 +48,12 @@ func application(p Params) *cli.Application {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
+			cmdDerive(p),
+			cmdCall(p),
 			cmdContext(),
 			cmdQuery(p),
-			cmdDerive(p),
+			// TODO(crbug.com/1021849): Remove this in favor of cmdCall.
 			cmdUpdateInclusions(p),
-			// TODO(crbug.com/1021849): add subcommand upload
-			// TODO(crbug.com/1021849): add subcommand run
 
 			{}, // a separator
 			authcli.SubcommandLogin(p.Auth, "auth-login", false),
