@@ -85,24 +85,21 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		// set all buildbucket type tasks to experimental by default.
 		bb.BbagentArgs.Build.Input.Experimental = true
 
-		// Don't upload build to buildbucket as there's no associated buildbucket build
-		bb.BbagentArgs.Build.Infra.Buildbucket.Hostname = "no-upload"
-
 		// bump priority by default
 		bb.BbagentArgs.Build.Infra.Swarming.Priority += 10
 
 		// clear fields which don't make sense
-		bb.BbagentArgs.Build.CreatedBy = ""
 		bb.BbagentArgs.Build.CanceledBy = ""
+		bb.BbagentArgs.Build.CreatedBy = ""
 		bb.BbagentArgs.Build.CreateTime = nil
 		bb.BbagentArgs.Build.Id = 0
-		bb.BbagentArgs.Build.Number = 0
-		bb.BbagentArgs.Build.Status = 0
-		bb.BbagentArgs.Build.UpdateTime = nil
-
+		bb.BbagentArgs.Build.Infra.Buildbucket.Hostname = ""
 		bb.BbagentArgs.Build.Infra.Buildbucket.RequestedProperties = nil
 		bb.BbagentArgs.Build.Infra.Logdog.Prefix = ""
 		bb.BbagentArgs.Build.Infra.Swarming.TaskId = ""
+		bb.BbagentArgs.Build.Number = 0
+		bb.BbagentArgs.Build.Status = 0
+		bb.BbagentArgs.Build.UpdateTime = nil
 
 		// drop the executable package; it's canonically represented by
 		// out.BBAgentArgs.Build.Exe.

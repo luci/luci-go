@@ -68,11 +68,8 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 	}
 
 	var sendFn dispatcher.SendFn
-	if hostname == "no-upload" {
-		// led will set the hostname explicitly to "no-upload", and bbagent will
-		// behave exactly as the normal bbagent, except the builds won't be uploaded
-		// anywhere.
-		logging.Infof(ctx, "no-upload mode enabled; making dummy buildbucket client")
+	if hostname == "" {
+		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
 		sendFn = func(b *buffer.Batch) error {
 			return nil // noop
 		}
