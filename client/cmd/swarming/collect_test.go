@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -80,17 +81,29 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 	})
 }
 
-func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
+func setupClock() (context.Context, context.CancelFunc) {
 	ctx, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
 
 	// Set a callback to make the timer finish.
 	clk.SetTimerCallback(func(amt time.Duration, t clock.Timer) {
 		clk.Add(amt)
 	})
+	return ctx, cancel
+}
+
+func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
+	ctx, cancel := setupClock()
+	defer cancel()
 
 	return runner.pollForTaskResult(ctx, "10982374012938470", s)
+}
+
+func testCollectPollForTasks(runner *collectRun, taskIDs []string, s *testService) []taskResult {
+	ctx, cancel := setupClock()
+	defer cancel()
+
+	return runner.pollForTasks(ctx, taskIDs, s)
 }
 
 func TestCollectPollForTaskResult(t *testing.T) {
@@ -166,6 +179,88 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
 		So(result.result.State, ShouldResemble, "COMPLETED")
+	})
+
+}
+
+func TestCollectPollForTasks(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test eager return cancels polling goroutines`, t, func() {
+		firstID, lastID := "1", "2"
+		outputFetched := make(map[string]bool)
+
+		service := &testService{
+			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				if taskID != firstID {
+					<-c.Done()
+					return nil, c.Err()
+				}
+				return &swarming.SwarmingRpcsTaskResult{
+					State:      "COMPLETED",
+					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+				}, nil
+			},
+			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				outputFetched[taskID] = true
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+		}
+		runner := &collectRun{
+			taskOutput:        taskOutputAll,
+			eager:             true,
+			eagerDownloadWG:   &sync.WaitGroup{},
+			firstTaskComplete: make(chan struct{}),
+		}
+
+		results := testCollectPollForTasks(runner, []string{firstID, lastID}, service)
+		So(outputFetched[firstID], ShouldBeTrue)
+		So(outputFetched[lastID], ShouldBeFalse)
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[1].err, ShouldUnwrapTo, context.Canceled)
+		So(results[1].result, ShouldBeNil)
+	})
+
+	Convey(`Test eager return lets downloading complete`, t, func() {
+		firstID, lastID := "1", "2"
+		outputFetched := make(map[string]bool)
+
+		runner := &collectRun{
+			taskOutput:        taskOutputAll,
+			eager:             true,
+			eagerDownloadWG:   &sync.WaitGroup{},
+			firstTaskComplete: make(chan struct{}),
+		}
+		var contextCanceled error
+		service := &testService{
+			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return &swarming.SwarmingRpcsTaskResult{
+					State:      "COMPLETED",
+					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+				}, nil
+			},
+			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				if taskID != firstID {
+					<-runner.firstTaskComplete
+					contextCanceled = c.Err()
+				}
+				outputFetched[taskID] = true
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+		}
+
+		results := testCollectPollForTasks(runner, []string{firstID, lastID}, service)
+		So(contextCanceled, ShouldBeNil)
+		So(outputFetched[firstID], ShouldBeTrue)
+		So(outputFetched[lastID], ShouldBeTrue)
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
 	})
 }
 
