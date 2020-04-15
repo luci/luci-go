@@ -46,6 +46,7 @@ type baseCommandRun struct {
 	fallbackHost  string
 
 	http        *http.Client
+	prpcClient  *prpc.Client
 	resultdb    pb.ResultDBClient
 	recorder    pb.RecorderClient
 	deriver     pb.DeriverClient
@@ -110,14 +111,14 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("resultdb CLI, instanceID=%q", info.InstanceID)
-	prpcClient := &prpc.Client{
+	r.prpcClient = &prpc.Client{
 		C:       r.http,
 		Host:    r.host,
 		Options: rpcOpts,
 	}
-	r.resultdb = pb.NewResultDBPRPCClient(prpcClient)
-	r.recorder = pb.NewRecorderPRPCClient(prpcClient)
-	r.deriver = pb.NewDeriverPRPCClient(prpcClient)
+	r.resultdb = pb.NewResultDBPRPCClient(r.prpcClient)
+	r.recorder = pb.NewRecorderPRPCClient(r.prpcClient)
+	r.deriver = pb.NewDeriverPRPCClient(r.prpcClient)
 	return nil
 }
 
