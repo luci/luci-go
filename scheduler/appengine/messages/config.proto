@@ -33,7 +33,7 @@ message ProjectConfig {
   // Trigger is a set of triggering jobs defined in the project.
   repeated Trigger trigger = 2;
   // A list of ACL sets. Names must be unique.
-  repeated AclSet acl_sets = 3;
+  repeated AclSet acl_sets = 3 [deprecated = true];
 
   // A set of security options to be enabled individually for the project.
   SecurityOptions security_options = 4;
@@ -41,6 +41,8 @@ message ProjectConfig {
 
 
 // A single access control rule.
+//
+// Deprecated in favor of LUCI Realms.
 message Acl {
   enum Role {
     // Can do read-only operations, such as listing invocations of a Job.
@@ -64,6 +66,8 @@ message Acl {
 
 
 // A set of Acl messages. Can be referenced in a Job or Trigger by name.
+//
+// Deprecated in favor of LUCI Realms.
 message AclSet {
   // A name of the ACL set, unique for a project.
   // Required. Must match regex '^[0-9A-Za-z_\-\.]{1,100}$'.
@@ -150,6 +154,15 @@ message Job {
   // Must match '^[0-9A-Za-z_\-\. \)\(]{1,100}$'.
   string id = 1;
 
+  // Realm is a name of a LUCI realm within the project to use for ACLs.
+  //
+  // Must match `^[a-z0-9_\.\-/]{1,400}$` or be literals "@root" or "@legacy".
+  // If not set, defaults to "@legacy".
+  //
+  // ACLs associated with a realm are defined separately in realms.cfg file.
+  // That way they can be shared by multiple services.
+  string realm = 8;
+
   // Schedule describes when to run the job.
   //
   // A job with a schedule can still be triggered by other triggering jobs
@@ -191,11 +204,11 @@ message Job {
   // The order does not matter.
   // There can be at most 32 different acls for a Job, including those from
   // acl_sets.
-  repeated Acl acls = 5;
+  repeated Acl acls = 5 [deprecated = true];
   // A list of ACL set names. Each ACL in each referenced ACL set will be
   // included in this Job.
   // The order does not matter.
-  repeated string acl_sets = 6;
+  repeated string acl_sets = 6 [deprecated = true];
 
   // TriggeringPolicy defines how job handles incoming triggering events.
   //
@@ -225,6 +238,15 @@ message Trigger {
   // regular jobs.
   string id = 1;
 
+  // Realm is a name of a LUCI realm within the project to use for ACLs.
+  //
+  // Must match `^[a-z0-9_\.\-/]{1,400}$` or be literals "@root" or "@legacy".
+  // If not set, defaults to "@legacy".
+  //
+  // ACLs associated with a realm are defined separately in realms.cfg file.
+  // That way they can be shared by multiple services.
+  string realm = 7;
+
   // Schedule describes when to run this triggering job.
   //
   // See Job.schedule for more info. Default is "with 30s interval".
@@ -236,8 +258,8 @@ message Trigger {
   bool disabled = 3;
 
   // ACLs, see Job.acls and Job.acl_sets.
-  repeated Acl acls = 4;
-  repeated string acl_sets = 5;
+  repeated Acl acls = 4 [deprecated = true];
+  repeated string acl_sets = 5 [deprecated = true];
 
   // TriggeringPolicy defines how job handles incoming triggering events.
   //

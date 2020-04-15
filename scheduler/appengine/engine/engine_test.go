@@ -106,6 +106,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 
 		jobDef := catalog.Definition{
 			JobID:            "proj/1",
+			RealmID:          "proj:testing",
 			Revision:         "rev1",
 			Schedule:         "*/5 * * * * * *",
 			Acls:             acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
@@ -127,6 +128,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
+					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
 					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
@@ -192,6 +194,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
+					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
 					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
@@ -235,6 +238,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
+					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
 					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
@@ -272,6 +276,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
+					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   false,
 					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
@@ -811,6 +816,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    "project/job",
+				RealmID:  "project:testing",
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),

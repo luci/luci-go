@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/engine/policy"
@@ -120,7 +121,12 @@ type Definition struct {
 	// JobID is globally unique job identifier: "<ProjectID>/<JobName>".
 	JobID string
 
+	// Realm is a global realm name (i.e. "<ProjectID>:...") the job belongs to.
+	RealmID string
+
 	// Acls describes who can read and who owns this job.
+	//
+	// Deprecated in favor of RealmID.
 	Acls acl.GrantsByRole
 
 	// Flavor describes what category of jobs this is, see the enum.
@@ -282,6 +288,10 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to marshal the task: %s: %s", id, err)
 			continue
 		}
+		realm := job.Realm
+		if realm == "" {
+			realm = realms.Legacy
+		}
 		schedule := job.Schedule
 		if schedule == "" {
 			schedule = defaultJobSchedule
@@ -297,6 +307,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, job.Id),
+			RealmID:          realms.Join(projectID, realm),
 			Acls:             *acls,
 			Flavor:           flavor,
 			Revision:         meta.Revision,
@@ -329,6 +340,10 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to marshal the task: %s: %s", id, err)
 			continue
 		}
+		realm := trigger.Realm
+		if realm == "" {
+			realm = realms.Legacy
+		}
 		schedule := trigger.Schedule
 		if schedule == "" {
 			schedule = defaultTriggerSchedule
@@ -340,6 +355,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, trigger.Id),
+			RealmID:          realms.Join(projectID, realm),
 			Acls:             *acls,
 			Flavor:           JobFlavorTrigger,
 			Revision:         meta.Revision,
@@ -425,12 +441,15 @@ func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) p
 	} else if !jobIDRe.MatchString(j.Id) {
 		ctx.Errorf("%q is not valid value for 'id' field", j.Id)
 	}
+	if j.Realm != "" {
+		if err := realms.ValidateRealmName(j.Realm, realms.ProjectScope); err != nil {
+			ctx.Errorf("bad 'realm' field - %s", err)
+		}
+	}
 	if j.Schedule != "" {
-		ctx.Enter("schedule")
 		if _, err := schedule.Parse(j.Schedule, 0); err != nil {
 			ctx.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
 		}
-		ctx.Exit()
 	}
 	cat.validateTriggeringPolicy(ctx, j.TriggeringPolicy)
 	return cat.validateTaskProto(ctx, j)
@@ -452,12 +471,15 @@ func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Tr
 	} else if !jobIDRe.MatchString(t.Id) {
 		ctx.Errorf("%q is not valid value for 'id' field", t.Id)
 	}
+	if t.Realm != "" {
+		if err := realms.ValidateRealmName(t.Realm, realms.ProjectScope); err != nil {
+			ctx.Errorf("bad 'realm' field - %s", err)
+		}
+	}
 	if t.Schedule != "" {
-		ctx.Enter("schedule")
 		if _, err := schedule.Parse(t.Schedule, 0); err != nil {
 			ctx.Errorf("%s is not valid value for 'schedule' field - %s", t.Schedule, err)
 		}
-		ctx.Exit()
 	}
 	filtered := make([]string, 0, len(t.Triggers))
 	for _, id := range t.Triggers {

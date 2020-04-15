@@ -926,6 +926,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 			*job = Job{
 				JobID:               def.JobID,
 				ProjectID:           chunks[0],
+				RealmID:             def.RealmID,
 				Flavor:              def.Flavor,
 				Enabled:             false, // to trigger 'if wasDisabled' below
 				Schedule:            def.Schedule,
@@ -939,6 +940,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		oldTriggeringPolicy := job.TriggeringPolicyRaw
 
 		// Update the job in full before running any state changes.
+		job.RealmID = def.RealmID
 		job.Flavor = def.Flavor
 		job.Revision = def.Revision
 		job.RevisionURL = def.RevisionURL
