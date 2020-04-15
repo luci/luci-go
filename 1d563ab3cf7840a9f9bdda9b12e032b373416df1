@@ -22,6 +22,30 @@
       "revId": "1d563ab3cf7840a9f9bdda9b12e032b373416df1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16bb5ce9_1dfe0e96",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-15T04:36:33Z",
+      "side": 1,
+      "message": "good catch, made crrev.com/c/2150305",
+      "parentUuid": "d4e3e491_3179cda1",
+      "range": {
+        "startLine": 99,
+        "startChar": 189,
+        "endLine": 99,
+        "endChar": 200
+      },
+      "revId": "1d563ab3cf7840a9f9bdda9b12e032b373416df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
