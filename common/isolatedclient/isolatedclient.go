@@ -78,50 +78,22 @@ type Client struct {
 	// All the members are immutable.
 	retryFactory retry.Factory
 	url          string
-	namespace    string
-	h            crypto.Hash
 
+	// If you're unsure which namespace to use, use the DefaultNamespace constant.
+	namespace string
+	h         crypto.Hash
+
+	// 'authClient' must implement authentication sufficient to talk to Isolate server
+	// (OAuth tokens with 'email' scope).
+	//
+	// 'anonClient' must be a functional http.Client.
+	//
+	// If either client is nil, it will use http.DefaultClient (which will not work
+	// on Classic AppEngine!).
 	authClient *http.Client // client that sends auth tokens
 	anonClient *http.Client // client that does NOT send auth tokens
+
 	gcsHandler CloudStorage // implements GCS fetch and push handlers
-}
-
-// New returns a new IsolateServer client.
-//
-// 'authClient' must implement authentication sufficient to talk to Isolate server
-// (OAuth tokens with 'email' scope).
-//
-// 'anonClient' must be a functional http.Client.
-//
-// If either client is nil, it will use http.DefaultClient (which will not work
-// on Classic AppEngine!).
-//
-// If you're unsure which namespace to use, use the DefaultNamespace constant.
-//
-// If gcs is nil, the defaultGCSHandler is used for fetching from and pushing to GCS.
-//
-// The hashing algorithm used depends on the namespace.
-// Deprecated, use NewClient instead.
-func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, gcs CloudStorage) *Client {
-	opts := []Option{WithNamespace(namespace)}
-
-	if anonClient != nil {
-		opts = append(opts, WithAnonymousClient(anonClient))
-	}
-	if authClient != nil {
-		opts = append(opts, WithAuthClient(authClient))
-	}
-	if gcs != nil {
-		opts = append(opts, WithGCSHandler(gcs))
-	}
-	if rFn != nil {
-		opts = append(opts, WithRetryFactory(rFn))
-	}
-
-	i := NewClient(host, opts...)
-
-	tracer.NewPID(i, "isolatedclient:"+i.url)
-	return i
 }
 
 type Option func(*Client)
@@ -156,6 +128,7 @@ func WithGCSHandler(gcs CloudStorage) Option {
 	}
 }
 
+// NewClient returns a new IsolateServer client.
 func NewClient(host string, opts ...Option) *Client {
 	i := &Client{
 		url:        strings.TrimRight(host, "/"),
