@@ -44,7 +44,7 @@
         },
         "infra": {
           "buildbucket": {
-            "hostname": "no-upload"
+
           },
           "swarming": {
             "hostname": "chromium-swarm-dev.appspot.com",
