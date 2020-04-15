@@ -30,7 +30,10 @@ import (
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.3"
+const (
+	version           = "0.3"
+	swarmingUserAgent = "swarming-go/" + version
+)
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
