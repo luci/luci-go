@@ -251,10 +251,7 @@ message Builder {
   // in the console. e.g.
   //   * "buildbot/chromium.linux/Linux Tests"
   //   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
-  //
-  // If multiple names are specified, the console will show the union of the
-  // builders.
-  repeated string name = 1;
+  string name = 1;
 
   // Category describes the hierarchy of the builder on the header of the
   // console as a "|" delimited list.  Neighboring builders with common ancestors

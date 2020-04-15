@@ -79,13 +79,5 @@ func Milo(c context.Context, cfg *pb.Project) error {
 		sort.Strings(c.Refs)
 	}
 
-	// Sort alternative builder names, but not builders themselves! Their order is
-	// significant for Milo UI.
-	for _, c := range cfg.Consoles {
-		for _, b := range c.Builders {
-			sort.Strings(b.Name)
-		}
-	}
-
 	return nil
 }

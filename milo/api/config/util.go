@@ -26,7 +26,7 @@ func (b *Builder) ParseCategory() []string {
 func (c *Console) AllBuilderIDs() []string {
 	builders := make([]string, 0, len(c.Builders))
 	for _, b := range c.Builders {
-		builders = append(builders, b.Name...)
+		builders = append(builders, b.Name)
 	}
 	return builders
 }

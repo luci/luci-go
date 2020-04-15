@@ -109,19 +109,11 @@ func (c *Console) FilterBuilders(perms access.Permissions) {
 	}
 	c.Builders = okBuilderIDs
 	okBuilders := make([]*config.Builder, 0, len(c.Def.Builders))
-	// A single builder entry could have multiple builder names.
 	for _, b := range c.Def.Builders {
-		okNames := make([]string, 0, len(b.Name))
-		for _, name := range b.Name {
-			if bucket := extractBucket(name); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
-				continue
-			}
-			okNames = append(okNames, name)
+		if bucket := extractBucket(b.Name); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
+			continue
 		}
-		b.Name = okNames
-		if len(b.Name) > 0 {
-			okBuilders = append(okBuilders, b)
-		}
+		okBuilders = append(okBuilders, b)
 	}
 	c.Def.Builders = okBuilders
 }
@@ -681,19 +673,13 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		}
 		for j, b := range console.Builders {
 			ctx.Enter("builders #%d", j+1)
-			for k, name := range b.Name {
-				ctx.Enter("builders #%d: %q", k+1, name)
-				switch {
-				case name == "":
-					ctx.Errorf("name must be non-empty")
-				case strings.HasPrefix(name, "buildbucket/"):
-					// OK
-				case strings.HasPrefix(name, "buildbot/"):
-					ctx.Errorf("buildbot builders are no longer supported")
-				default:
-					ctx.Errorf(`name must be in the form of "buildbucket/<bucket>/<builder>"`)
-				}
-				ctx.Exit()
+			switch {
+			case b.Name == "":
+				ctx.Errorf("name must be non-empty")
+			case strings.HasPrefix(b.Name, "buildbucket/"):
+				// OK
+			default:
+				ctx.Errorf(`name must be in the form of "buildbucket/<bucket>/<builder>"`)
 			}
 			ctx.Exit()
 		}

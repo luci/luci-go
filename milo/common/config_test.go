@@ -76,10 +76,9 @@ func TestConfig(t *testing.T) {
 				err := ctx.Finalize()
 				ve, ok := err.(*validation.Error)
 				So(ok, ShouldEqual, true)
-				So(len(ve.Errors), ShouldEqual, 3)
-				So(ve.Errors[0].Error(), ShouldContainSubstring, "buildbot builders")
-				So(ve.Errors[1].Error(), ShouldContainSubstring, "name must be non-empty")
-				So(ve.Errors[2].Error(), ShouldContainSubstring, "name must be in the form of")
+				So(len(ve.Errors), ShouldEqual, 2)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "name must be non-empty")
+				So(ve.Errors[1].Error(), ShouldContainSubstring, "name must be in the form of")
 			})
 			Convey("Load a good config", func() {
 				content := []byte(fooCfg)
@@ -324,12 +323,6 @@ consoles: {
 	repo_url: "https://chromium.googlesource.com/foo/bar"
 	refs: "refs/heads/master"
 	manifest_name: "REVISION"
-	builders: {
-		name: "buildbucket/luci.foo.something/bar"
-		name: "buildbot/master.blah/bar"
-		category: "main"
-		short_name: "s"
-	}
 	builders: {
 		name: ""
 	}
