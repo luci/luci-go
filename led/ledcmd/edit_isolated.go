@@ -120,9 +120,9 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 	}
 
 	rawIsoClient := isolatedclient.NewClient(
-		current.Server,
+		isoServerParams.Server,
 		isolatedclient.WithAuthClient(authClient),
-		isolatedclient.WithNamespace(current.Namespace),
+		isolatedclient.WithNamespace(isoServerParams.Namespace),
 		isolatedclient.WithRetryFactory(retry.Default))
 
 	if dgst := current.GetDigest(); dgst != "" {
