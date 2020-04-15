@@ -81,7 +81,7 @@ func (c *commonServerFlags) createAuthClient(ctx context.Context) (*http.Client,
 }
 
 func (c *commonServerFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
-	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent("isolate/"+version))
+	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent("isolate-go/"+version))
 }
 
 type isolateFlags struct {
