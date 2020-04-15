@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27331d65_24597e45",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T05:54:09Z",
+      "side": 1,
+      "message": "realm\nthere is just one root realm, or did you mean smth else?\n\nah, perhaps you mean \"falls back to *corresponding* root realms if any ...\" right?",
+      "range": {
+        "startLine": 56,
+        "startChar": 58,
+        "endLine": 56,
+        "endChar": 59
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "652ce65d_f33bef59",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T05:54:09Z",
+      "side": 1,
+      "message": "realm",
+      "range": {
+        "startLine": 75,
+        "startChar": 43,
+        "endLine": 75,
+        "endChar": 47
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b223f6a_06a07cd5",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T05:54:09Z",
+      "side": 1,
+      "message": "the form\nalso, below.",
+      "range": {
+        "startLine": 77,
+        "startChar": 58,
+        "endLine": 77,
+        "endChar": 62
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9c65706_8ae2210d",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T05:54:09Z",
+      "side": 1,
+      "message": "cause",
+      "range": {
+        "startLine": 79,
+        "startChar": 47,
+        "endLine": 79,
+        "endChar": 51
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bab53ff8_6b82b96f",
+        "filename": "server/auth/realms/realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T05:54:09Z",
+      "side": 1,
+      "message": "maybe more future proof is to refer to a publicly exported constant?",
+      "range": {
+        "startLine": 81,
+        "startChar": 46,
+        "endLine": 81,
+        "endChar": 72
+      },
+      "revId": "f4d12d6bc469a03e603d6747e8bb7bfc9de982f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
