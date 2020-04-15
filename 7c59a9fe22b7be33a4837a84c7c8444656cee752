@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "52a5e2af_90da7a77",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-04-15T07:31:35Z",
+      "side": 1,
+      "message": "made crrev.com/c/2150316",
+      "parentUuid": "f39bfc9d_41e64e0a",
+      "revId": "7c59a9fe22b7be33a4837a84c7c8444656cee752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1dcb5f70_eb9d9bb2",
         "filename": "client/cmd/isolated/common.go",
         "patchSetId": 4
