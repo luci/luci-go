@@ -60,9 +60,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	// Maps all builderIDs to the indexes of the columns it appears in.
 	columnMap := map[string][]int{}
 	for columnIdx, b := range console.Builders {
-		for _, name := range b.Name {
-			columnMap[name] = append(columnMap[name], columnIdx)
-		}
+		columnMap[b.Name] = append(columnMap[b.Name], columnIdx)
 	}
 
 	ret := make([]*ConsoleRow, len(commits))
@@ -135,21 +133,19 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 
 		for i, column := range ent.Def.Builders {
 			s := &model.BuilderSummary{
-				BuilderID: column.Name[0],
+				BuilderID: column.Name,
 				ProjectID: projectID,
 			}
 			summaries[cid].Builders[i] = s
-			for _, rawName := range column.Name {
-				name := BuilderID(rawName)
-				// Find/populate the BuilderID -> {console: summary}
-				colMap, ok := columns[name]
-				if !ok {
-					colMap = map[common.ConsoleID][]*model.BuilderSummary{}
-					columns[name] = colMap
-				}
-
-				colMap[cid] = append(colMap[cid], s)
+			name := BuilderID(column.Name)
+			// Find/populate the BuilderID -> {console: summary}
+			colMap, ok := columns[name]
+			if !ok {
+				colMap = map[common.ConsoleID][]*model.BuilderSummary{}
+				columns[name] = colMap
 			}
+
+			colMap[cid] = append(colMap[cid], s)
 		}
 	}
 
