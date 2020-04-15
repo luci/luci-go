@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9a0ca06b_8f6c30aa",
+        "filename": "resultdb/cli/app.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bc04bb5_a7120f46",
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43da4cfb_ce7875a5",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2020-04-15T17:05:44Z",
       "side": 1,
       "message": "nit: just curious, was same format as prpc tool considered? it uses one argument for both, separated with dot, e.g. luci.resultdb.rpc.v1.ResultDB.GetInvocation",
+      "range": {
+        "startLine": 44,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "484487ec_e4d0d5dd",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "Yes the format is the same. Since in prpc tool service and method are splitted anyways, I think it\u0027ll be easier to just pass in them separately.",
+      "parentUuid": "43da4cfb_ce7875a5",
       "range": {
         "startLine": 44,
         "startChar": 3,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "862ca992_e4c76b66",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cefcfce9_c4316b7a",
+      "range": {
+        "startLine": 48,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 15
+      },
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc777316_6b21b4d7",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "1005c796_4b33241d",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc777316_6b21b4d7",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 15
+      },
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a87b8d3a_20498004",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
@@ -102,6 +192,24 @@
       "revId": "7d700528be818a1247720722d15493ccf77e6926",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "871a0194_88540ae2",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "Indeed... Done.",
+      "parentUuid": "a87b8d3a_20498004",
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "854e3cfe_1cc6436f",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "In the new patch I\u0027ll use prpc.Client.CallWithFormats instead. So this will be not applicable.",
+      "parentUuid": "d979471c_23b57ad3",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 124,
+        "endChar": 57
+      },
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8bcd1c5e_431b0817",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
@@ -148,6 +280,30 @@
       "revId": "7d700528be818a1247720722d15493ccf77e6926",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b720e16_fe4d6c33",
+        "filename": "resultdb/cli/cmd_call.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-15T18:43:51Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "8bcd1c5e_431b0817",
+      "range": {
+        "startLine": 151,
+        "startChar": 1,
+        "endLine": 151,
+        "endChar": 8
+      },
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
