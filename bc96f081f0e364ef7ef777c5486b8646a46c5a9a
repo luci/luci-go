@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ad42ba46_7af4e0ce",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T00:20:27Z",
+      "side": 1,
+      "message": "Configs are cached in Milo in the local datastore in binary serialized form. Please double check it is OK to downgrade a repeated field to a singular field without changing its proto tag.",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 18
+      },
+      "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
