@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -103,20 +104,30 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid field mask")
 	}
-	// TODO(crbug/1042991): Check that the user can view this build.
-	if req.Id > 0 {
-		ent := &model.Build{
-			ID: req.Id,
-		}
-		switch err := datastore.Get(ctx, ent); err {
-		case nil:
-		case datastore.ErrNoSuchEntity:
-			return nil, status.Errorf(codes.NotFound, "not found")
+	if req.Id == 0 {
+		build_addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)
+		switch ents, err := model.SearchTagIndex(ctx, "build_address", build_addr); {
+		case model.TagIndexIncomplete.In(err):
+			// Shouldn't happen because build address is globally unique (exactly one entry in a complete index).
+			return nil, errors.Reason("unexpected incomplete index for build address %q", build_addr).Err()
+		case err != nil:
+			return nil, err
+		case len(ents) == 1:
+			req.Id = ents[0].BuildID
 		default:
-			return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
+			// Shouldn't happen because build address is globally unique and created before the build.
+			return nil, errors.Reason("unexpected number of results for build address %q: %d", build_addr, len(ents)).Err()
 		}
-		return ent.ToProto(ctx, m)
 	}
-	// TODO(crbug/1042991): Implement get by builder/build number.
-	return &pb.Build{}, nil
+	ent := &model.Build{
+		ID: req.Id,
+	}
+	switch err := datastore.Get(ctx, ent); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "not found")
+	case err != nil:
+		return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
+	}
+	// TODO(crbug/1042991): Check that the user can view this build.
+	return ent.ToProto(ctx, m)
 }
