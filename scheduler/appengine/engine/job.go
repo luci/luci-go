@@ -61,6 +61,9 @@ type Job struct {
 	// ProjectID exists for indexing. It matches <projectID> portion of JobID.
 	ProjectID string
 
+	// RealmID is a global realm name (i.e. "<ProjectID>:...") the job belongs to.
+	RealmID string
+
 	// Flavor describes what category of jobs this is, see the enum.
 	Flavor catalog.JobFlavor `gae:",noindex"`
 
@@ -96,6 +99,8 @@ type Job struct {
 	TriggeredJobIDs []string `gae:",noindex"`
 
 	// ACLs are the latest ACLs applied to Job and all its invocations.
+	//
+	// Deprecated in favor of RealmID.
 	Acls acl.GrantsByRole `gae:",noindex"`
 
 	// Cron holds the state of the cron state machine.
@@ -207,6 +212,7 @@ func (e *Job) ParseSchedule() (*schedule.Schedule, error) {
 func (e *Job) IsEqual(other *Job) bool {
 	return e == other || (e.JobID == other.JobID &&
 		e.ProjectID == other.ProjectID &&
+		e.RealmID == other.RealmID &&
 		e.Flavor == other.Flavor &&
 		e.Enabled == other.Enabled &&
 		e.Paused == other.Paused &&
@@ -227,6 +233,7 @@ func (e *Job) IsEqual(other *Job) bool {
 // one specified by catalog.Definition struct.
 func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 	return e.JobID == def.JobID &&
+		e.RealmID == def.RealmID &&
 		e.Flavor == def.Flavor &&
 		e.Schedule == def.Schedule &&
 		e.Acls.Equal(&def.Acls) &&
