@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "f39bfc9d_41e64e0a",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T07:25:24Z",
+      "side": 1,
+      "message": "It doesn\u0027t need to be \u0027isolate.go\u0027. it can be \u0027isolate-go\u0027 or something explicit.\n\nThe swarming go client uses \"swarming-go\".\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2148811/3/client/cmd/swarming/main.go#35",
+      "parentUuid": "6eb422b6_921c0f84",
+      "revId": "7c59a9fe22b7be33a4837a84c7c8444656cee752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1dcb5f70_eb9d9bb2",
         "filename": "client/cmd/isolated/common.go",
         "patchSetId": 4
@@ -48,6 +66,24 @@
       "writtenOn": "2020-04-15T07:18:22Z",
       "side": 1,
       "message": "same",
+      "revId": "7c59a9fe22b7be33a4837a84c7c8444656cee752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2359d582_f77281c8",
+        "filename": "client/cmd/isolated/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T07:25:24Z",
+      "side": 1,
+      "message": "I recommend put \"go\" in isolated client to be explicit, too.",
+      "parentUuid": "1dcb5f70_eb9d9bb2",
       "revId": "7c59a9fe22b7be33a4837a84c7c8444656cee752",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
