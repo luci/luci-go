@@ -34,6 +34,24 @@
       "revId": "77bdbcb507057b65c12867ff27d2d3eab4761865",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9112ea6e_cbd2e331",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T03:10:20Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "c3d21f4a_1417541d",
+      "revId": "77bdbcb507057b65c12867ff27d2d3eab4761865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
