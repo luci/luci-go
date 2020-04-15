@@ -220,7 +220,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     #test-invocation-summary {
       background-color: rgb(248, 249, 250);
       padding: 6px 16px;
-      font-family: "Google sans";
+      font-family: "Google Sans", "Helvetica Neue", sans-serif;
       font-size: 14px;
       display: flex;
     }
