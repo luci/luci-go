@@ -187,12 +187,12 @@ func (m *Permission) GetName() string {
 
 // Realm is a named collection of (<principal>, <permission>) pairs.
 //
-// A realm name has form "<project>/<realm>", where "<project>" is a name of
+// A realm name has form "<project>:<realm>", where "<project>" is a name of
 // the LUCI project that defined the realm, and "<realm>" is a user-provided
 // name of the realm from realms.cfg project config file.
 //
 // A LUCI resource can point to exactly one realm by referring to its
-// "<project>/<realm>" name. Such reference can either be calculated on the fly
+// "<project>:<realm>" name. Such reference can either be calculated on the fly
 // from other resource's properties, or be stored alongside the resource's data.
 // We say that such resource "belongs to the realm" or "lives in the realm" or
 // is just "in the realm". We also say that such resource belongs to the project
@@ -205,7 +205,7 @@ func (m *Permission) GetName() string {
 // accepting a realm when a resource is created via an RPC.
 //
 // There are two special realms (both optional) that a project can have:
-// "<project>/@root" and "<project>/@legacy".
+// "<project>:@root" and "<project>:@legacy".
 //
 // The root realm should be used as a fallback when an existing resource points
 // to a realm that doesn't exist. Without the root realm, such resources become
@@ -230,7 +230,7 @@ func (m *Permission) GetName() string {
 // to decouple the high-level user-facing language for defining permissions from
 // the implementation of each individual LUCI service that checks permissions.
 type Realm struct {
-	// Name of the realm as "<project>/<realm>" string, where:
+	// Name of the realm as "<project>:<realm>" string, where:
 	//   "<project>" is a LUCI project name, matches `^[a-z0-9\-_]{1,100}$`.
 	//   "<realm>" matches `^[a-z0-9_\.\-/]{1,400}|@root|@legacy$`.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
