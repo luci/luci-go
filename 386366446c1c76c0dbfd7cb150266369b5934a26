@@ -22,6 +22,30 @@
       "revId": "386366446c1c76c0dbfd7cb150266369b5934a26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08c2759b_2fb392f9",
+        "filename": "server/auth/authdb/db.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-15T19:51:40Z",
+      "side": 1,
+      "message": "I was thinking about a fallback to the container\u0027s realm but maybe I\u0027m wrong. Why didn\u0027t you ask this question when reviewing python code? It has the exact same API.",
+      "parentUuid": "22344dbe_03509a90",
+      "range": {
+        "startLine": 70,
+        "startChar": 80,
+        "endLine": 70,
+        "endChar": 95
+      },
+      "revId": "386366446c1c76c0dbfd7cb150266369b5934a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
