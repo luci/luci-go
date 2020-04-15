@@ -45,10 +45,10 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/tokens"
 
-	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/policy"
@@ -300,7 +300,7 @@ func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error
 	case job == nil || !job.Enabled:
 		return nil, ErrNoSuchJob
 	}
-	if err := job.CheckRole(c, acl.Reader); err != nil {
+	if err := checkPermission(c, job, permJobGet); err != nil {
 		if err == ErrNoPermission {
 			err = ErrNoSuchJob // pretend protected jobs don't exist
 		}
@@ -317,7 +317,7 @@ func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) GetVisibleJobBatch(c context.Context, jobIDs []string) (map[string]*Job, error) {
 	// TODO(vadimsh): This can be parallelized to be single GetMulti RPC to fetch
-	// jobs and single filterForRole to check ACLs. In practice O(len(jobIDs)) is
+	// jobs and single filterByPerm to check ACLs. In practice O(len(jobIDs)) is
 	// small, so there's no pressing need to do this.
 	visible := make(map[string]*Job, len(jobIDs))
 	for _, id := range jobIDs {
@@ -409,7 +409,7 @@ func (e *engineImpl) GetInvocation(c context.Context, job *Job, invID int64) (*I
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) PauseJob(c context.Context, job *Job) error {
-	if err := job.CheckRole(c, acl.Owner); err != nil {
+	if err := checkPermission(c, job, permJobPause); err != nil {
 		return err
 	}
 	return e.setJobPausedFlag(c, job, true, auth.CurrentIdentity(c))
@@ -419,7 +419,7 @@ func (e *engineImpl) PauseJob(c context.Context, job *Job) error {
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) ResumeJob(c context.Context, job *Job) error {
-	if err := job.CheckRole(c, acl.Owner); err != nil {
+	if err := checkPermission(c, job, permJobResume); err != nil {
 		return err
 	}
 	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c))
@@ -429,7 +429,7 @@ func (e *engineImpl) ResumeJob(c context.Context, job *Job) error {
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
-	if err := job.CheckRole(c, acl.Owner); err != nil {
+	if err := checkPermission(c, job, permJobAbort); err != nil {
 		return err
 	}
 	jobID := job.JobID
@@ -475,7 +475,7 @@ func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) error {
-	if err := job.CheckRole(c, acl.Owner); err != nil {
+	if err := checkPermission(c, job, permJobAbort); err != nil {
 		return err
 	}
 	return e.abortInvocation(c, job.JobID, invID)
@@ -489,9 +489,9 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 	for j := range perJob {
 		jobs = append(jobs, j)
 	}
-	switch filtered, err := e.filterForRole(c, jobs, acl.Triggerer); {
+	switch filtered, err := e.filterByPerm(c, jobs, permJobTrigger); {
 	case err != nil:
-		return errors.Annotate(err, "transient error when checking Triggerer role").Err()
+		return errors.Annotate(err, "transient error when checking permissions").Err()
 	case len(filtered) != len(jobs):
 		return ErrNoPermission // some jobs are not triggerable
 	}
@@ -851,18 +851,18 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 		}
 	}
 	// Keep only ones visible to the caller.
-	return e.filterForRole(c, enabled, acl.Reader)
+	return e.filterByPerm(c, enabled, permJobGet)
 }
 
-// filterForRole returns jobs for which caller has the given role.
+// filterByPerm returns jobs for which caller has the given permission.
 //
 // May return transient errors.
-func (e *engineImpl) filterForRole(c context.Context, jobs []*Job, role acl.Role) ([]*Job, error) {
+func (e *engineImpl) filterByPerm(c context.Context, jobs []*Job, perm realms.Permission) ([]*Job, error) {
 	// TODO(tandrii): improve batch ACLs check here to take advantage of likely
 	// shared ACLs between most jobs of the same project.
 	filtered := make([]*Job, 0, len(jobs))
 	for _, job := range jobs {
-		switch err := job.CheckRole(c, role); {
+		switch err := checkPermission(c, job, perm); {
 		case err == nil:
 			filtered = append(filtered, job)
 		case err != ErrNoPermission:

@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -250,20 +249,6 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 func (e *Job) CronTickTime() time.Time {
 	// Note: LastTick is "last scheduled tick", it is in the future.
 	return e.Cron.LastTick.When
-}
-
-// CheckRole returns nil if the caller has the given role or ErrNoPermission
-// otherwise.
-//
-// May also return transient errors.
-func (e *Job) CheckRole(c context.Context, role acl.Role) error {
-	switch yep, err := e.Acls.CallerHasRole(logging.SetField(c, "JobID", e.JobID), role); {
-	case err != nil:
-		return err
-	case !yep:
-		return ErrNoPermission
-	}
-	return nil
 }
 
 // recentlyFinishedSet is a set with IDs of all recently finished invocations.

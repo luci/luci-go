@@ -13,4 +13,6 @@
 // limitations under the License.
 
 // Package acl implements ACLs for enforcement in API and UI.
+//
+// Deprecated and being replaced with LUCI Realms.
 package acl
