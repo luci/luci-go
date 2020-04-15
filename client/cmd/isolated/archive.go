@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/data/text/units"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -96,7 +95,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	if err != nil {
 		return
 	}
-	isolatedClient := isolatedclient.NewClient(c.isolatedFlags.ServerURL, isolatedclient.WithAuthClient(authClient), isolatedclient.WithNamespace(c.isolatedFlags.Namespace), isolatedclient.WithUserAgent("isolated/"+version))
+	isolatedClient := c.createIsolatedClient(authClient)
 
 	arch := archiver.New(ctx, isolatedClient, out)
 	defer func() {
