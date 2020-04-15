@@ -46,6 +46,30 @@
       "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b30308c8_31f5255e",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-15T01:38:18Z",
+      "side": 1,
+      "message": "Never mind, I think I found it (the Def field on the Console entity).",
+      "parentUuid": "12936046_f82de85d",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 18
+      },
+      "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
