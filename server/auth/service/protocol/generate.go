@@ -21,5 +21,5 @@ package protocol
 //   appengine/components/components/auth/proto/replication.proto
 //   appengine/components/components/auth/proto/security_config.proto
 //
-// Commit: 0a090525210dc130a7dc9e40ec967eb197b8f9d7
+// Commit: 7ec3aa4ec64b035f5f34e4732477f1ae94a6aeaf
 // Modifications: None
