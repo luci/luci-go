@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "5d5aac96_249ebba6",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T01:12:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "14acde5f_f5cc195e",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53b4e8b2_7adf16c8",
         "filename": "common/isolatedclient/isolatedclient.go",
         "patchSetId": 2
@@ -123,6 +141,24 @@
       "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cb5f3eb_b0370e1a",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-04-15T01:12:06Z",
+      "side": 1,
+      "message": "\u003e Hmm, as many other google owned libraries use functional option pattern\n\nAck\n\nThe following is what I learned about method chain vs functional option pattern in Go.\n\n---\nThere is an issue with the method chain pattern in Go.\nhttps://www.calhoun.io/using-functional-options-instead-of-method-chaining-in-go/\n\n- In this specific case, you can use the method chain since the Option doesn\u0027t return error.\n- There is also an alternative to have error field to store errors that happen while calling Option methods.",
+      "parentUuid": "daa8d096_0f0e062e",
+      "revId": "e04070f0e9ebb044086eac36e2354d9ea3b75d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
