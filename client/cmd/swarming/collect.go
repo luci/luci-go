@@ -140,8 +140,13 @@ type collectRun struct {
 	taskSummaryPython bool
 	taskOutput        taskOutputOption
 	outputDir         string
+	eager             bool
 	perf              bool
 	jsonInput         string
+
+	// Used to stop polling for incomplete tasks when -eager is set.
+	firstTaskComplete chan struct{}
+	eagerDownloadWG   *sync.WaitGroup
 }
 
 func (c *collectRun) Init(defaultAuthOpts auth.Options) {
@@ -153,10 +158,14 @@ func (c *collectRun) Init(defaultAuthOpts auth.Options) {
 	//TODO(tikuta): Remove this flag once crbug.com/894045 is fixed.
 	c.Flags.BoolVar(&c.taskSummaryPython, "task-summary-python", false, "Generate python client compatible task summary json.")
 
+	c.Flags.BoolVar(&c.eager, "eager", false, "Return after first task completion.")
 	c.Flags.BoolVar(&c.perf, "perf", false, "Includes performance statistics.")
 	c.Flags.Var(&c.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
 	c.Flags.StringVar(&c.outputDir, "output-dir", "", "Where to download isolated output to.")
 	c.Flags.StringVar(&c.jsonInput, "requests-json", "", "Load the task IDs from a .json file as saved by \"trigger -dump-json\"")
+
+	c.firstTaskComplete = make(chan struct{})
+	c.eagerDownloadWG = &sync.WaitGroup{}
 }
 
 func (c *collectRun) Parse(args *[]string) error {
@@ -231,6 +240,20 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		result, err = service.GetTaskResult(ctx, taskID, c.perf)
 		if err != nil {
 			return tagTransientGoogleAPIError(err)
+		}
+
+		if c.eager {
+			// Signal that we want to start downloading outputs. We'll only
+			// proceed to download them if the eager return process has not
+			// already begun.
+			c.eagerDownloadWG.Add(1)
+			defer c.eagerDownloadWG.Done()
+
+			select {
+			case <-c.firstTaskComplete:
+				return nil
+			default:
+			}
 		}
 
 		// TODO(mknyszek): Fetch output and outputs in parallel.
@@ -367,7 +390,52 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 	return json.MarshalIndent(jsonResults, "", "  ")
 }
 
-func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
+func (c *collectRun) pollForTasks(ctx context.Context, taskIDs []string, service swarmingService) []taskResult {
+	var cancel context.CancelFunc
+	if c.timeout > 0 {
+		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+	defer cancel()
+
+	// Aggregate results by polling and fetching across multiple goroutines.
+	results := make([]taskResult, len(taskIDs))
+	var wg sync.WaitGroup
+
+	mu := sync.Mutex{}
+
+	wg.Add(len(taskIDs))
+	for i := range taskIDs {
+		go func(i int) {
+			defer wg.Done()
+			results[i] = c.pollForTaskResult(ctx, taskIDs[i], service)
+			if c.eager {
+				// As soon as the first task finishes, let any goroutines that
+				// have already started downloading finish their downloads. Then
+				// cancel all other polling goroutines.
+				mu.Lock()
+				defer mu.Unlock()
+
+				select {
+				case <-c.firstTaskComplete:
+					return
+				default:
+				}
+
+				close(c.firstTaskComplete)
+				c.eagerDownloadWG.Wait()
+				cancel()
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	return results
+}
+
+func (c *collectRun) main(_ subcommands.Application, taskIDs []string) error {
 	// Set up swarming service.
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
@@ -376,24 +444,7 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 		return err
 	}
 
-	// Prepare context.
-	if c.timeout > 0 {
-		var cancel func()
-		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
-		defer cancel()
-	}
-
-	// Aggregate results by polling and fetching across multiple goroutines.
-	results := make([]taskResult, len(taskIDs))
-	var wg sync.WaitGroup
-	wg.Add(len(taskIDs))
-	for i := range taskIDs {
-		go func(i int) {
-			defer wg.Done()
-			results[i] = c.pollForTaskResult(ctx, taskIDs[i], service)
-		}(i)
-	}
-	wg.Wait()
+	results := c.pollForTasks(ctx, taskIDs, service)
 
 	// Summarize and write summary json if applicable.
 	if c.taskSummaryJSON != "" {
