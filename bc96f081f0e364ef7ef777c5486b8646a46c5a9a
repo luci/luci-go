@@ -70,6 +70,30 @@
       "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "69f21269_1cf3e433",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-15T04:15:23Z",
+      "side": 1,
+      "message": "Alright, I\u0027ve now verified the following things:\n\n* There are no console configs in luci-config using multiple builder names.\n* Unmarshaling the text-encoded config protos from luci-config still works with the new proto definition.\n* Binary-encoded protos from the datastore can still be unmarshaled using the new proto definition.\n\nSo I think this change is safe.",
+      "parentUuid": "b30308c8_31f5255e",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 18
+      },
+      "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
