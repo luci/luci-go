@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22344dbe_03509a90",
+        "filename": "server/auth/authdb/db.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-15T05:44:52Z",
+      "side": 1,
+      "message": "what\u0027s the use-case for \u003e1 realms?\n\nthis kinda suggests that 2+ realms can be attached to the same resource.",
+      "range": {
+        "startLine": 70,
+        "startChar": 80,
+        "endLine": 70,
+        "endChar": 95
+      },
+      "revId": "386366446c1c76c0dbfd7cb150266369b5934a26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
