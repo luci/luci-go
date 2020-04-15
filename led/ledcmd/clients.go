@@ -77,11 +77,10 @@ func mkIsoClient(ctx context.Context, authClient *http.Client, tree *api.CASTree
 		return val
 	}
 
-	client := isolatedclient.New(
-		nil, authClient,
-		tree.Server, tree.Namespace,
-		retry.Default,
-		nil,
+	client := isolatedclient.NewClient(
+		tree.Server, isolatedclient.WithAuthClient(authClient),
+		isolatedclient.WithNamespace(tree.Namespace),
+		isolatedclient.WithRetryFactory(retry.Default),
 	)
 	// The archiver is pretty noisy at Info level, so we skip giving it
 	// a logging-enabled context unless the user actually requseted verbose.

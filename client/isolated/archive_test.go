@@ -100,7 +100,7 @@ func TestArchive(t *testing.T) {
 		// TODO(maruel): Make other algorithms work too.
 		for _, namespace := range []string{isolatedclient.DefaultNamespace} {
 			Convey(fmt.Sprintf("Run on namespace %s", namespace), func() {
-				a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+				a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 				item := Archive(ctx, a, opts)
 				So(item.DisplayName, ShouldResemble, filepath.Join(tmpDir, "baz.isolated"))
 				item.WaitForHashed()
@@ -161,7 +161,7 @@ func TestArchiveFiles(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 
-		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 		So(testfs.Build(dir, map[string]string{
 			"a":   "a",
@@ -219,7 +219,7 @@ func TestArchiveFail(t *testing.T) {
 		defer ts.Close()
 
 		Convey(`File missing`, func() {
-			a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+			a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 			tmpDir, err := ioutil.TempDir("", "archiver")
 			So(err, ShouldBeNil)
@@ -268,7 +268,7 @@ func TestArchiveFail(t *testing.T) {
 					So(j.Encode(out), ShouldBeNil)
 				})
 			})
-			a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+			a := archiver.New(ctx, isolatedclient.NewClient(ts.URL), nil)
 
 			tmpDir, err := ioutil.TempDir("", "archiver")
 			So(err, ShouldBeNil)

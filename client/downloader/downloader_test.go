@@ -118,7 +118,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+	client := isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace))
 
 	Convey(`A downloader should be able to download the isolated.`, t, func() {
 		tmpDir, err := ioutil.TempDir("", "isolated")
@@ -249,7 +249,7 @@ func TestDownloaderWithCache(t *testing.T) {
 
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+		client := isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace))
 
 		mu := sync.Mutex{}
 		var files []string
@@ -315,7 +315,7 @@ func TestFetchAndMap(t *testing.T) {
 
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+		client := isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace))
 
 		policy := cache.Policies{
 			MaxSize:  1024,

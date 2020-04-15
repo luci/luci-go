@@ -212,7 +212,7 @@ func TestUploadThenDelete(t *testing.T) {
 		ts := httptest.NewServer(server)
 		defer ts.Close()
 		namespace := isolatedclient.DefaultNamespace
-		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+		client := isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace))
 
 		So(testfs.Build(dir, map[string]string{
 			"a/b":   "ab",
