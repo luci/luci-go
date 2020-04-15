@@ -22,6 +22,30 @@
       "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12936046_f82de85d",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-15T01:33:06Z",
+      "side": 1,
+      "message": "From what I can tell, it *should* be fine in proto3 for a string message, since the repeated values don\u0027t get packed together.\n\nI\u0027ve also tested this on luci-milo-dev and the consoles still seem to work fine.\n\nWhat entity type in Datastore should I be looking for?",
+      "parentUuid": "ad42ba46_7af4e0ce",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 18
+      },
+      "revId": "bc96f081f0e364ef7ef777c5486b8646a46c5a9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
