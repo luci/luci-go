@@ -266,7 +266,7 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, blacklist []st
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(context.Background(), isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+	a := New(context.Background(), isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
 
 	// Create the directories and symlinks.
 	for _, node := range nodes {

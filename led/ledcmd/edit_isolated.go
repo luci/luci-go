@@ -119,12 +119,11 @@ func EditIsolated(ctx context.Context, authClient *http.Client, jd *job.Definiti
 		isoServerParams = jd.UserPayload
 	}
 
-	rawIsoClient := isolatedclient.New(
-		nil, authClient,
-		isoServerParams.Server, isoServerParams.Namespace,
-		retry.Default,
-		nil,
-	)
+	rawIsoClient := isolatedclient.NewClient(
+		current.Server,
+		isolatedclient.WithAuthClient(authClient),
+		isolatedclient.WithNamespace(current.Namespace),
+		isolatedclient.WithRetryFactory(retry.Default))
 
 	if dgst := current.GetDigest(); dgst != "" {
 		var statMu sync.Mutex
