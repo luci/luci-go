@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0521ecc_40e0106f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-16T02:25:25Z",
+      "side": 1,
+      "message": "How come this modifies the child\u0027s private field directly instead of calling finalizeLoading? Don\u0027t we need to recursively mark the tree nodes as finalized from this point?\n\n(Also, should we have a test for that case?)",
+      "range": {
+        "startLine": 178,
+        "startChar": 8,
+        "endLine": 178,
+        "endChar": 34
+      },
+      "revId": "4f159a916fe12e152e19e95c86d5744008619f2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
