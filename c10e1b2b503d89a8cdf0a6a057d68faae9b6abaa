@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0d18858_102c08d9",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1143474
+      },
+      "writtenOn": "2020-04-16T08:50:44Z",
+      "side": 1,
+      "message": "for less than ~50- ints, it\u0027s hard to beat external log-based routine that doesn\u0027t do small slice optimization.\n\nAnd it turns out Go doesn\u0027t, which kinda makes sense: if predicate is expensive, you want minimal possible number of predicate() calls.\n\nFrom my C++ perf optimizing hat:\n\n  const LOG_IF_LONGER_THAN \u003d 8\n  l, r :\u003d 0, len(ns)\n  for l+LOG_IF_LONGER_THAN \u003c r {\n    switch m :\u003d int(uint(l+r) \u003e\u003e 1); {\n    case ns[m] \u003d\u003d idx:\n      return true\n    case ns[m] \u003c idx:\n      l \u003d m + 1\n    default:\n      r \u003d m\n    }\n  }\n  for l \u003c r {\n    if ns[l] \u003d\u003d idx {\n      return true\n    }\n    l++\n  }\n  return false\n\n\nI\u0027d bet it works much better than inlined Go search. I miss proper templates and real perf 😞",
+      "range": {
+        "startLine": 81,
+        "startChar": 10,
+        "endLine": 81,
+        "endChar": 16
+      },
+      "revId": "c10e1b2b503d89a8cdf0a6a057d68faae9b6abaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
