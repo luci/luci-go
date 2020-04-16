@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a605927c_e6838dfa",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-16T21:38:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a326eca_42681b6a",
+      "range": {
+        "startLine": 470,
+        "startChar": 9,
+        "endLine": 470,
+        "endChar": 13
+      },
+      "revId": "4c1c1cf85bc3d81469617fc3239db109772689ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8240d72e_159e0d32",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "4c1c1cf85bc3d81469617fc3239db109772689ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24cf6d70_25c78488",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-16T21:38:22Z",
+      "side": 1,
+      "message": "it isn\u0027t necessary, but I want to advertise a good regexp library is 😊",
+      "parentUuid": "8240d72e_159e0d32",
+      "revId": "4c1c1cf85bc3d81469617fc3239db109772689ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
