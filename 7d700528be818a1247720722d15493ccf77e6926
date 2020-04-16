@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "c77369a1_6e7bf74e",
+        "filename": "resultdb/cli/app.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T06:45:51Z",
+      "side": 1,
+      "message": "ah true.\n\nthis also means we are passing current update token *assuming* that the invocation in the request is the same the invocation in luci context. Fix: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2151193/",
+      "parentUuid": "c6d73b64_191b866f",
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43da4cfb_ce7875a5",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
