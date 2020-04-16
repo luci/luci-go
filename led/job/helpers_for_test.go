@@ -52,7 +52,9 @@ const (
 
 func testBBJob() *Definition {
 	return &Definition{JobType: &Definition_Buildbucket{
-		Buildbucket: &Buildbucket{},
+		Buildbucket: &Buildbucket{
+			Name: "default-task-name",
+		},
 	}}
 }
 
@@ -62,7 +64,9 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 	}}
 	if len(sliceExps) > 0 {
 		sw := ret.GetSwarming()
-		sw.Task = &api.TaskRequest{}
+		sw.Task = &api.TaskRequest{
+			Name: "default-task-name",
+		}
 
 		for _, exp := range sliceExps {
 			sw.Task.TaskSlices = append(sw.Task.TaskSlices, &api.TaskSlice{

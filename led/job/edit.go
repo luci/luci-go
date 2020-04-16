@@ -64,6 +64,9 @@ type Editor interface {
 	// this led pipeline.
 	SwarmingHostname(host string)
 
+	// TaskName allows you to set the swarming task name of the job.
+	TaskName(name string)
+
 	// Tags appends the given values to the task's tags.
 	Tags(values []string)
 }

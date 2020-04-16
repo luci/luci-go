@@ -42,6 +42,9 @@ func newSwarmingEditor(jd *Definition) *swarmingEditor {
 	if jd.UserPayload == nil {
 		jd.UserPayload = &api.CASTree{}
 	}
+	if sw.Task == nil {
+		sw.Task = &api.TaskRequest{}
+	}
 	return &swarmingEditor{jd, sw, jd.UserPayload, nil}
 }
 
@@ -231,6 +234,13 @@ func (swe *swarmingEditor) SwarmingHostname(host string) {
 			return errors.New("empty SwarmingHostname")
 		}
 		swe.sw.Hostname = host
+		return
+	})
+}
+
+func (swe *swarmingEditor) TaskName(name string) {
+	swe.tweak(func() (err error) {
+		swe.sw.Task.Name = name
 		return
 	})
 }

@@ -95,21 +95,3 @@ func TestGetCurrentIsolated(t *testing.T) {
 	})
 
 }
-
-func TestTaskName(t *testing.T) {
-	t.Parallel()
-
-	Convey(`TaskName`, t, func() {
-		Convey(`swarming`, func() {
-			jd := testSWJob()
-			jd.GetSwarming().Task = &api.TaskRequest{Name: "hello"}
-			So(jd.Info().TaskName(), ShouldEqual, "hello")
-		})
-
-		Convey(`buildbucket`, func() {
-			jd := testBBJob()
-			jd.GetBuildbucket().Name = "hello"
-			So(jd.Info().TaskName(), ShouldEqual, "hello")
-		})
-	})
-}
