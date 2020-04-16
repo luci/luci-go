@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5fed0e07_987de789",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:56:07Z",
+      "side": 1,
+      "message": "this is noop because the the return value is ignored.\n\nit is better to do this only if -verbose flag was passed",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cd79fac_340e3285",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:56:07Z",
+      "side": 1,
+      "message": "the error message is lost here. let\u0027s log it",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fddec2e3_bcd15876",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/flags.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:56:07Z",
+      "side": 1,
+      "message": "why is this public? it is currently unusable outside of the package",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63e52d40_62ab5f91",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:56:07Z",
+      "side": 1,
+      "message": "public symbols must have a comment",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6f5be31_f0055bc3",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:56:07Z",
+      "side": 1,
+      "message": "should be immediately after context.WithCancel",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e03faec7_2f26539d",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:56:07Z",
+      "side": 1,
+      "message": "should be in the callsite\nsee \"Only handle errors once\" in https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 2
+      },
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
