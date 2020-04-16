@@ -237,6 +237,13 @@ func (bbe *buildbucketEditor) SwarmingHostname(host string) {
 	})
 }
 
+func (bbe *buildbucketEditor) TaskName(name string) {
+	bbe.tweak(func() (err error) {
+		bbe.bb.Name = name
+		return
+	})
+}
+
 func (bbe *buildbucketEditor) Experimental(isExperimental bool) {
 	bbe.tweak(func() error {
 		bbe.bb.BbagentArgs.Build.Input.Experimental = isExperimental

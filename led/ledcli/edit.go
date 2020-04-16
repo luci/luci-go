@@ -59,6 +59,7 @@ type cmdEdit struct {
 	processedDimensions job.DimensionEditCommands
 
 	swarmingHost string
+	taskName     string
 }
 
 func (c *cmdEdit) initFlags(opts cmdBaseOptions) {
@@ -89,6 +90,9 @@ func (c *cmdEdit) initFlags(opts cmdBaseOptions) {
 	c.Flags.StringVar(&c.swarmingHost, "S", "",
 		"override the swarming `host` to launch the task on (i.e. chromium-swarm.appspot.com).")
 
+	c.Flags.StringVar(&c.taskName, "name", "",
+		"set the task name of the led job as it will show on swarming.")
+
 	c.Flags.StringVar(&c.experimental, "exp", "",
 		"set to `true` or `false` to change the Build.Input.Experimental value. `led` jobs, "+
 			"by default, always start as experimental.")
@@ -113,6 +117,9 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, inJob *job.Defini
 		je.EditDimensions(c.processedDimensions)
 		if host := c.swarmingHost; host != "" {
 			je.SwarmingHostname(c.swarmingHost)
+		}
+		if c.taskName != "" {
+			je.TaskName(c.taskName)
 		}
 	})
 	if err == nil {

@@ -213,6 +213,33 @@ func TestSwarmingHostname(t *testing.T) {
 	})
 }
 
+func TestTaskName(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `TaskName`, []testCase{
+		{
+			name: "set",
+			fn: func(jd *Definition) {
+				if jd.GetBuildbucket() == nil && jd.GetSwarming().GetTask() == nil {
+					So(jd.Info().TaskName(), ShouldResemble, "")
+				} else {
+					So(jd.Info().TaskName(), ShouldResemble, "default-task-name")
+				}
+
+				SoEdit(jd, func(je Editor) {
+					je.TaskName("")
+				})
+				So(jd.Info().TaskName(), ShouldResemble, "")
+
+				SoEdit(jd, func(je Editor) {
+					je.TaskName("something")
+				})
+				So(jd.Info().TaskName(), ShouldResemble, "something")
+			},
+		},
+	})
+}
+
 func TestPrefixPathEnv(t *testing.T) {
 	t.Parallel()
 
