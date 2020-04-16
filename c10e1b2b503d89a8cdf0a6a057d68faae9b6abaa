@@ -22,6 +22,30 @@
       "revId": "c10e1b2b503d89a8cdf0a6a057d68faae9b6abaa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd84b22b_5129945b",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-16T21:24:30Z",
+      "side": 1,
+      "message": "Err.. ok.",
+      "parentUuid": "f0d18858_102c08d9",
+      "range": {
+        "startLine": 81,
+        "startChar": 10,
+        "endLine": 81,
+        "endChar": 16
+      },
+      "revId": "c10e1b2b503d89a8cdf0a6a057d68faae9b6abaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
