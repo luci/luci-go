@@ -76,8 +76,36 @@ type SortedNodeSet []NodeIndex
 
 // Has is true if 'idx' is in 'ns'.
 func (ns SortedNodeSet) Has(idx NodeIndex) bool {
+	// TODO(vadimsh): Inline sort.Search? Inlining it (thus reducing overhead
+	// on the callback call) makes it 3x faster in a synthetic test when searching
+	// for a median in a slice with 50 items.
 	found := sort.Search(len(ns), func(i int) bool { return ns[i] >= idx })
 	return found < len(ns) && ns[found] == idx
+}
+
+// Intersects is true if 'a' and 'b' have common elements.
+func (a SortedNodeSet) Intersects(b SortedNodeSet) bool {
+	// Note: this is O(|a|+|b|) but with extremely small constant factor. It is
+	// possible (and likely common) that |a| and |b| are significantly different.
+	// In this case it may be more effective to use O(|a|*log|b|) (a binary search
+	// in a loop), but its constant factor is larger due to overhead on function
+	// calls (in particular inside the binary search implementation that uses
+	// sort.Search). Synthetic benchmark shows O(50+5) algorithm is 10x faster
+	// than O(5*log50) one. In practice both variants probably run in nanoseconds,
+	// so it doesn't really matter.
+	lenA, lenB := len(a), len(b)
+	idxA, idxB := 0, 0
+	for idxA < lenA && idxB < lenB {
+		switch itemA, itemB := a[idxA], b[idxB]; {
+		case itemA < itemB:
+			idxA++
+		case itemA > itemB:
+			idxB++
+		default: // equal
+			return true
+		}
+	}
+	return false
 }
 
 // MapKey converts 'ns' to a string that can be used as a map key.
@@ -87,6 +115,20 @@ func (ns SortedNodeSet) MapKey() string {
 		binary.LittleEndian.PutUint16(buf[2*i:], uint16(x))
 	}
 	return string(buf)
+}
+
+// NodeSetDedupper helps to find duplicate NodeSet's.
+type NodeSetDedupper map[string]SortedNodeSet
+
+// Dedup returns a sorted version of 'ns' (perhaps reusing an existing one).
+func (nsd NodeSetDedupper) Dedup(ns NodeSet) SortedNodeSet {
+	sorted := ns.Sort()
+	key := sorted.MapKey()
+	if existing, ok := nsd[key]; ok {
+		return existing
+	}
+	nsd[key] = sorted
+	return sorted
 }
 
 // Node is a node in a group graph.
@@ -275,19 +317,11 @@ func (g *Graph) buildMembershipsMap() map[identity.Identity]SortedNodeSet {
 		}
 	}
 
-	memberships := make(map[identity.Identity]SortedNodeSet, len(sets))
-	seen := map[string]SortedNodeSet{}
-
 	// Convert sets to slices and find duplicates to reduce memory footprint.
+	memberships := make(map[identity.Identity]SortedNodeSet, len(sets))
+	dedupper := NodeSetDedupper{}
 	for ident, nodeSet := range sets {
-		sorted := nodeSet.Sort()
-		key := sorted.MapKey()
-		if existing, ok := seen[key]; ok {
-			sorted = existing // reuse the existing identical slice
-		} else {
-			seen[key] = sorted
-		}
-		memberships[identity.Identity(ident)] = sorted
+		memberships[identity.Identity(ident)] = dedupper.Dedup(nodeSet)
 	}
 
 	return memberships
@@ -318,10 +352,35 @@ func BuildQueryable(groups []*protocol.AuthGroup) (*QueryableGraph, error) {
 	return g.ToQueryable()
 }
 
+// GroupIndex returns a NodeIndex of the group given its name.
+func (g *QueryableGraph) GroupIndex(group string) (idx NodeIndex, ok bool) {
+	idx, ok = g.groups[group]
+	return
+}
+
 // IsMember returns true if the given identity belongs to the given group.
 func (g *QueryableGraph) IsMember(ident identity.Identity, group string) bool {
 	if grpIdx, ok := g.groups[group]; ok {
 		return g.memberships[ident].Has(grpIdx) || g.globs[grpIdx].Has(ident)
 	}
 	return false // unknown groups are considered empty
+}
+
+// IsMemberOfAny returns true if the given identity belongs to any of the given
+// groups.
+//
+// Groups are given as a sorted slice of group indexes obtained via GroupIndex.
+func (g *QueryableGraph) IsMemberOfAny(ident identity.Identity, groups SortedNodeSet) bool {
+	if g.memberships[ident].Intersects(groups) {
+		return true
+	}
+	// The above check works only for identities mentioned in the group graph
+	// directly. We still need to check whether `ident` belongs to any of the
+	// groups through a glob.
+	for _, grpIdx := range groups {
+		if g.globs[grpIdx].Has(ident) {
+			return true
+		}
+	}
+	return false
 }

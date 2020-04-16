@@ -16,6 +16,7 @@ package graph
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"testing"
 
@@ -159,6 +160,17 @@ func TestNodeSet(t *testing.T) {
 		So(sorted.Has(10), ShouldBeTrue)
 		So(sorted.Has(11), ShouldBeFalse)
 
+		So(sorted.Intersects(SortedNodeSet{}), ShouldBeFalse)
+		So(sorted.Intersects(SortedNodeSet{1}), ShouldBeFalse)
+		So(sorted.Intersects(SortedNodeSet{1, 2}), ShouldBeFalse)
+		So(sorted.Intersects(SortedNodeSet{1, 2, 4}), ShouldBeFalse)
+		So(sorted.Intersects(SortedNodeSet{1, 2, 4, 11}), ShouldBeFalse)
+		So(sorted.Intersects(SortedNodeSet{11}), ShouldBeFalse)
+		So(sorted.Intersects(SortedNodeSet{3}), ShouldBeTrue)
+		So(sorted.Intersects(SortedNodeSet{1, 2, 3}), ShouldBeTrue)
+		So(sorted.Intersects(SortedNodeSet{10, 11}), ShouldBeTrue)
+		So(sorted.Intersects(SortedNodeSet{5}), ShouldBeTrue)
+
 		So(sorted.MapKey(), ShouldResemble, "\x03\x00\x05\x00\x0a\x00")
 	})
 }
@@ -271,4 +283,44 @@ func stringifyGlobMap(gl map[NodeIndex]globset.GlobSet) map[NodeIndex]string {
 		globs[idx] = g
 	}
 	return globs
+}
+
+func BenchmarkSortedNodeSetHas(b *testing.B) {
+	rnd := rand.New(rand.NewSource(123))
+
+	ns := genRandomSortedNodeSet(rnd, 50, nil)
+	median := ns[len(ns)/2]
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ns.Has(median)
+	}
+}
+
+func BenchmarkSortedNodeSetIntersect(b *testing.B) {
+	rnd := rand.New(rand.NewSource(123))
+
+	ns1 := genRandomSortedNodeSet(rnd, 50, func(i NodeIndex) NodeIndex {
+		return i * 2
+	})
+	ns2 := genRandomSortedNodeSet(rnd, 5, func(i NodeIndex) NodeIndex {
+		return i*2 + 1
+	})
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ns1.Intersects(ns2)
+	}
+}
+
+func genRandomSortedNodeSet(rnd *rand.Rand, l int, f func(NodeIndex) NodeIndex) (ns SortedNodeSet) {
+	if f == nil {
+		f = func(i NodeIndex) NodeIndex { return i }
+	}
+	var last NodeIndex
+	for i := 0; i < l; i++ {
+		ns = append(ns, f(last))
+		last += NodeIndex(rnd.Intn(10))
+	}
+	return
 }
