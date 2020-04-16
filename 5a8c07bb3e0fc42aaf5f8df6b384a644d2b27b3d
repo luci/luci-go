@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd20d27a_a24c3679",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T23:58:46Z",
+      "side": 1,
+      "message": "nit: shorter\n\n\terr :\u003d server.Run(ctx, func(ctx context.Context) (err error) {\n\t\tchildExitCode, err \u003d w.run(ctx)\n\t\treturn\n\t})",
+      "revId": "5a8c07bb3e0fc42aaf5f8df6b384a644d2b27b3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
