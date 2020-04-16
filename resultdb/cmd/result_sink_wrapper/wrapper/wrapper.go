@@ -20,12 +20,17 @@ import (
 	"fmt"
 	"os"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	"go.chromium.org/luci/resultdb/sink"
 )
 
@@ -38,41 +43,64 @@ type Wrapper struct {
 	childExitCode int
 }
 
-func NewWrapper() (*Wrapper, error) {
+func NewWrapper(ctx context.Context) (*Wrapper, error) {
 	w := &Wrapper{}
-	if err := w.init(); err != nil {
-		return nil, err
-	}
-	return w, nil
-}
 
-func (w *Wrapper) init() error {
 	fls, err := parseFlags()
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if err := w.initServerConfigs(ctx, fls); err != nil {
+		return nil, err
 	}
 
 	// parse cmd arguments for the test
 	if flag.NArg() < 1 {
-		return errors.Reason("must pass command to run in wrapper").Err()
+		return nil, errors.Reason("must pass command to run in wrapper").Err()
 	}
 	w.cmdName = flag.Arg(0)
 	w.cmdArgs = flag.Args()[1:]
-
-	w.serverCfg.Address = fmt.Sprint(":", fls.port)
 
 	if fls.logFile == "" {
 		w.logCfg.Out = os.Stderr
 	} else {
 		f, err := os.OpenFile(fls.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		w.logFile = f
 		w.logCfg.Out = w.logFile
 	}
 	// TODO(sajjadm): Parse remaining fls into meaningful structures
 
+	return w, nil
+}
+
+func (w *Wrapper) initServerConfigs(ctx context.Context, flgs Flags) error {
+	// Create pRPC over HTTP clients.
+	hc, err := auth.NewAuthenticator(
+		ctx, auth.SilentLogin, chromeinfra.DefaultAuthOptions()).Client()
+	if err != nil {
+		return err
+	}
+	info, err := version.GetCurrentVersion()
+	if err != nil {
+		return err
+	}
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.UserAgent = fmt.Sprintf("result_sink_wrapper, instanceID=%q", info.InstanceID)
+	pc := &prpc.Client{
+		C:       hc,
+		Host:    flgs.rdbHost,
+		Options: rpcOpts,
+	}
+
+	// Set the server configs based on the flags
+	w.serverCfg.Recorder = pb.NewRecorderPRPCClient(pc)
+	w.serverCfg.Address = flgs.sinkHost
+	w.serverCfg.Invocation = flgs.invocation
+	w.serverCfg.UpdateToken = flgs.updateToken
+	w.serverCfg.TestIDPrefix = flgs.testIDPrefix
 	return nil
 }
 
