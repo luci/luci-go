@@ -51,11 +51,11 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   @observable.ref leftPanelExpanded = false;
   @observable.ref pageLength = 100;
 
-  @observable.ref appState!: AppState;
+  @observable.ref appState = new AppState();
 
   @computed
   private get invocationReq(): ObservablePromise<Invocation> {
-    if (!this.appState?.resultDb) {
+    if (!this.appState.resultDb) {
       return observable.box({tag: 'loading', v: null}, {deep: false});
     }
     return this.appState.resultDb
@@ -74,7 +74,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 
   @computed
   private get testIter(): AsyncIterableIterator<ReadonlyTest> {
-    if (!this.appState?.resultDb) {
+    if (!this.appState.resultDb) {
       return (async function*() {})();
     }
     return streamTests(
