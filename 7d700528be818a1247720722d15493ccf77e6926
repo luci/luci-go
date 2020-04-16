@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "c6d73b64_191b866f",
+        "filename": "resultdb/cli/app.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-16T05:33:12Z",
+      "side": 1,
+      "message": "There\u0027s actually one benifit of using `rdb update-inclusions`: callsite doesn\u0027t need to know the current invocation since it\u0027s in luci context. \n\nBut when running `rdb call`, callsite must know the current invocation to include it in the request message.\n\nFor the exoneration change on recipe side, I can get the current invocation from api.buildbucket.build.infra.resultdb so it\u0027s not a big deal.",
+      "parentUuid": "9a0ca06b_8f6c30aa",
+      "revId": "7d700528be818a1247720722d15493ccf77e6926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43da4cfb_ce7875a5",
         "filename": "resultdb/cli/cmd_call.go",
         "patchSetId": 1
