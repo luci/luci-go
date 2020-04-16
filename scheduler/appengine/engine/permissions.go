@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
@@ -63,7 +64,18 @@ func checkPermission(ctx context.Context, job *Job, perm realms.Permission) erro
 		return err
 	}
 
-	// TODO(vadimsh): Check job.RealmID ACL and compare it to `legacyResult`.
+	// Fallback to the @legacy realm if the job entity isn't updated yet.
+	realm := job.RealmID
+	if realm == "" {
+		realm = realms.Join(job.ProjectID, realms.Legacy)
+	}
+
+	// Check realms ACL and compare it to `legacyResult`. The result and errors
+	// (if any) are recorded inside.
+	auth.HasPermissionDryRun{
+		ExpectedResult: legacyResult,
+		TrackingBug:    "crbug.com/1070761",
+	}.Execute(ctx, perm, []string{realm})
 
 	// Use the legacy result for now.
 	if !legacyResult {

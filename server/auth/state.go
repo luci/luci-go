@@ -16,11 +16,14 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"strings"
 
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
 )
@@ -143,6 +146,58 @@ func HasPermission(c context.Context, perm realms.Permission, realms []string) (
 		return s.DB().HasPermission(c, s.User().Identity, perm, realms)
 	}
 	return false, ErrNotConfigured
+}
+
+// HasPermissionDryRun compares result of HasPermission to 'expected'.
+//
+// Intended to be used during the migration between the old and new ACL models.
+type HasPermissionDryRun struct {
+	ExpectedResult bool   // the expected result of this dry run
+	TrackingBug    string // identifier of a particular migration, for logs
+}
+
+// Execute calls HasPermission and compares the result to the expectations.
+//
+// Logs information about the call and any errors or discrepancies found.
+//
+// Accepts same arguments as HasPermission. Intentionally returns nothing.
+func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission, realms []string) {
+	s := GetState(c)
+	if s == nil { // this should not really be happening at all
+		logging.Errorf(c, "HasPermissionDryRun: no state in the context")
+		return
+	}
+
+	db := s.DB()
+	ident := s.User().Identity
+
+	// We use python naming convention in the log to make Go and Python dry run
+	// logs look identical in case we want to parse them.
+	realmsQuoted := make([]string, len(realms))
+	for i, r := range realms {
+		realmsQuoted[i] = fmt.Sprintf("%q", r)
+	}
+	logPfx := fmt.Sprintf("has_permission_dryrun(%q, [%s], %q), authdb=%d",
+		perm, strings.Join(realmsQuoted, ", "), ident, authdb.Revision(db))
+	if dr.TrackingBug != "" {
+		logPfx = dr.TrackingBug + ": " + logPfx
+	}
+
+	allowDeny := func(b bool) string {
+		if b {
+			return "ALLOW"
+		}
+		return "DENY"
+	}
+
+	switch result, err := db.HasPermission(c, ident, perm, realms); {
+	case err != nil:
+		logging.Errorf(c, "%s: error - want %s, got: %s", logPfx, allowDeny(dr.ExpectedResult), err)
+	case result != dr.ExpectedResult:
+		logging.Warningf(c, "%s: mismatch - got %s, want %s", logPfx, allowDeny(result), allowDeny(dr.ExpectedResult))
+	default:
+		logging.Infof(c, "%s: match - %s", logPfx, allowDeny(result))
+	}
 }
 
 // IsInWhitelist returns true if the current caller is in the given IP
