@@ -73,6 +73,7 @@ export class TestLoader {
       const {value, done} = await this.testIter.next();
       if (done) {
         this._done = true;
+        this.node.finalizeLoading();
         break;
       }
       this.node.addTest(value);

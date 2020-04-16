@@ -137,12 +137,14 @@ describe('test_loader', () => {
   };
 
   describe('TestLoader', () => {
-    let spy = sinon.spy();
+    let addTestSpy = sinon.spy();
+    let finalizeLoadingSpy = sinon.spy();
     let testLoader: TestLoader;
     beforeEach(() => {
-      spy = sinon.spy();
+      addTestSpy = sinon.spy();
+      finalizeLoadingSpy = sinon.spy();
       testLoader = new TestLoader(
-        {addTest: spy} as Partial<TestNode> as TestNode,
+        {addTest: addTestSpy, finalizeLoading: finalizeLoadingSpy} as Partial<TestNode> as TestNode,
         (async function* () {
           yield test1;
           yield test2;
@@ -154,40 +156,40 @@ describe('test_loader', () => {
     });
 
     it('should load tests to test node on request', async () => {
-      assert.strictEqual(spy.callCount, 0);
+      assert.strictEqual(addTestSpy.callCount, 0);
       await testLoader.loadMore(5);
-      assert.strictEqual(spy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 5);
 
-      assert.strictEqual(spy.getCall(0).args[0], test1);
-      assert.strictEqual(spy.getCall(1).args[0], test2);
-      assert.strictEqual(spy.getCall(2).args[0], test3);
-      assert.strictEqual(spy.getCall(3).args[0], test4);
-      assert.strictEqual(spy.getCall(4).args[0], test5);
+      assert.strictEqual(addTestSpy.getCall(0).args[0], test1);
+      assert.strictEqual(addTestSpy.getCall(1).args[0], test2);
+      assert.strictEqual(addTestSpy.getCall(2).args[0], test3);
+      assert.strictEqual(addTestSpy.getCall(3).args[0], test4);
+      assert.strictEqual(addTestSpy.getCall(4).args[0], test5);
     });
 
     it('should preserve loading progress', async () => {
       assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
-      assert.strictEqual(spy.callCount, 2);
-      assert.strictEqual(spy.getCall(0).args[0], test1);
-      assert.strictEqual(spy.getCall(1).args[0], test2);
+      assert.strictEqual(addTestSpy.callCount, 2);
+      assert.strictEqual(addTestSpy.getCall(0).args[0], test1);
+      assert.strictEqual(addTestSpy.getCall(1).args[0], test2);
       assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
-      assert.strictEqual(spy.callCount, 4);
-      assert.strictEqual(spy.getCall(2).args[0], test3);
-      assert.strictEqual(spy.getCall(3).args[0], test4);
+      assert.strictEqual(addTestSpy.callCount, 4);
+      assert.strictEqual(addTestSpy.getCall(2).args[0], test3);
+      assert.strictEqual(addTestSpy.getCall(3).args[0], test4);
       assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
-      assert.strictEqual(spy.callCount, 5);
-      assert.strictEqual(spy.getCall(4).args[0], test5);
+      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.getCall(4).args[0], test5);
       assert.isTrue(testLoader.done);
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadMore(2);
-      assert.strictEqual(spy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 5);
       assert.isTrue(testLoader.done);
     });
 
@@ -199,21 +201,29 @@ describe('test_loader', () => {
       assert.isTrue(testLoader.isLoading);
 
       await loadReq1;
-      assert.strictEqual(spy.callCount, 3);
+      assert.strictEqual(addTestSpy.callCount, 3);
       // loadReq2 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
       assert.isFalse(testLoader.done);
 
       await loadReq2;
-      assert.strictEqual(spy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 5);
       // The list is exhausted, loadReq3 should not change the loading state.
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
 
       await loadReq3;
-      assert.strictEqual(spy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 5);
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
+    });
+
+    it('should signal loading is finalized after all tests are loaded', async () => {
+      assert.isTrue(finalizeLoadingSpy.notCalled);
+      await testLoader.loadMore(3);
+      assert.isTrue(finalizeLoadingSpy.notCalled);
+      await testLoader.loadMore(3);
+      assert.isTrue(finalizeLoadingSpy.calledOnce);
     });
   });
 
