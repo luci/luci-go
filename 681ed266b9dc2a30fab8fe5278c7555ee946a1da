@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7dfb4551_03cfe458",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-16T06:55:56Z",
+      "side": 1,
+      "message": "seems odd to have this still be a switch now that it\u0027s only two cases, suggest two if statements?",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 2
+      },
+      "revId": "681ed266b9dc2a30fab8fe5278c7555ee946a1da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
