@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "743cd055_40c08a2c",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-16T23:55:05Z",
+      "side": 1,
+      "message": "Removed these lines from this CL.\n\nI believe that a better solution is to use FlagSet{} and import --log-level which is defined in luci/common/logging/config.go.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/logging/config.go;l\u003d37-38",
+      "parentUuid": "5fed0e07_987de789",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1cd79fac_340e3285",
         "filename": "resultdb/cmd/result_sink_wrapper/main.go",
         "patchSetId": 9
@@ -33,6 +51,24 @@
       "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0af5cf1c_a8656d79",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-16T23:55:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1cd79fac_340e3285",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "61d59532_2fba0143",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/flags.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-16T23:55:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fddec2e3_bcd15876",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63e52d40_62ab5f91",
         "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
         "patchSetId": 9
@@ -70,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "831b1076_296f770e",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-16T23:55:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63e52d40_62ab5f91",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6f5be31_f0055bc3",
         "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
         "patchSetId": 9
@@ -84,6 +156,24 @@
       "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f328ee6_e012246e",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-16T23:55:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6f5be31_f0055bc3",
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -107,6 +197,30 @@
       "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dd4dc44_92a40b7b",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-16T23:55:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e03faec7_2f26539d",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 2
+      },
+      "revId": "47e8b32c56ec3852f92c4497fca9081e2cdb8c32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
