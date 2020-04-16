@@ -56,6 +56,9 @@ type cmdEdit struct {
 	recipeName     string
 	experimental   string
 
+	recipeCIPDPkg string
+	recipeCIPDVer string
+
 	processedDimensions job.DimensionEditCommands
 
 	swarmingHost string
@@ -86,6 +89,11 @@ func (c *cmdEdit) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.StringVar(&c.recipeName, "r", "",
 		"override the `recipe` to run.")
+
+	c.Flags.StringVar(&c.recipeCIPDPkg, "rpkg", "",
+		"override the recipe CIPD `package` (if not using isolated).")
+	c.Flags.StringVar(&c.recipeCIPDVer, "rver", "",
+		"override the recipe CIPD `version` (if not using isolated).")
 
 	c.Flags.StringVar(&c.swarmingHost, "S", "",
 		"override the swarming `host` to launch the task on (i.e. chromium-swarm.appspot.com).")
@@ -128,6 +136,16 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, inJob *job.Defini
 			je.Properties(c.propertiesAuto, true)
 			if c.recipeName != "" {
 				je.Properties(map[string]string{"recipe": c.recipeName}, true)
+			}
+			if c.recipeCIPDPkg != "" || c.recipeCIPDVer != "" {
+				pkg, ver, path := inJob.HighLevelInfo().TaskPayload()
+				if c.recipeCIPDPkg != "" {
+					pkg = c.recipeCIPDPkg
+				}
+				if c.recipeCIPDVer != "" {
+					ver = c.recipeCIPDVer
+				}
+				je.TaskPayload(pkg, ver, path)
 			}
 			if c.experimental != "" {
 				je.Experimental(c.experimental == "true")
