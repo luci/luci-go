@@ -21,44 +21,45 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/resultdb/sink"
 )
 
 type Flags struct {
-	port                        int
-	recorder                    string
-	invocationIDFile            string
-	logFile                     string
-	resultFiles                 strpair.Map
-	testIDPrefix                string
-	invocationTags              strpair.Map
-	baseTestVariant             map[string]string
+	sinkHost string
+	rdbHost  string
+
+	invocation  string
+	updateToken string
+
+	testIDPrefix   string
+	invocationTags strpair.Map
+
 	completeInvocationExitCodes []int
+	logFile                     string
 }
 
 func parseFlags() (Flags, error) {
 	args := Flags{
 		invocationTags: make(strpair.Map),
-		resultFiles:    make(strpair.Map),
 	}
 
-	flag.IntVar(&args.port, "port", 0, "TCP port to listen on, will be arbitrarily selected if unset")
-	// TODO(sajjadm): Set the default recorder once it exists.
-	flag.StringVar(&args.recorder, "recorder", "",
-		"Hostname of the Recorder service that the server should upload results to")
+	flag.StringVar(&args.sinkHost, "sink-host", sink.DefaultAddr,
+		"Address for SinkServer to listen on")
+	flag.StringVar(&args.rdbHost, "rdb-host", chromeinfra.ResultDBHost,
+		"Address of the ResultDB service to upload test results to")
 
-	flag.StringVar(&args.invocationIDFile, "invocation-id-file", "",
-		"Path to write the generated invocation ID")
-
-	flag.StringVar(&args.logFile, "log-file", "", "File to log to")
-
-	flag.Var(luciflag.StringPairs(args.resultFiles), "result-file",
-		"Files to read and upload after running the subprocess, of form format:path, may be set more than once. Valid formats are luci, chromium_jtr, and chromium_gtest")
+	flag.StringVar(&args.invocation, "invocation", "",
+		"The name of the invocation to append the test results to")
+	flag.StringVar(&args.updateToken, "update-token", "",
+		"The token required for the invocation to be updated")
 
 	flag.StringVar(&args.testIDPrefix, "test-id-prefix", "",
 		"Prefix to prepepend before the test id of every test result")
-
 	flag.Var(luciflag.StringPairs(args.invocationTags), "invocation-tag",
 		"Tag to add to the Invocation, of form key:value, may be set more than once")
+
+	flag.StringVar(&args.logFile, "log-file", "", "File to log to")
 
 	// TODO(sajjadm): Add new function to flag package that decodes to a map[string]string and
 	// enforces unique keys, then use that function to implement a -base-test-variant flag.
@@ -67,8 +68,7 @@ func parseFlags() (Flags, error) {
 	// It will decode into wrapperArgs.baseTestVariant
 
 	var rawExitCodes []string
-	flag.Var(luciflag.CommaList(&rawExitCodes),
-		"complete-invocation-exit-codes",
+	flag.Var(luciflag.CommaList(&rawExitCodes), "complete-invocation-exit-codes",
 		"Comma-separated list of exit codes from the subprocess that mean the Invocation should be marked non-interrupted")
 
 	flag.Parse()
