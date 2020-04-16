@@ -142,7 +142,7 @@ describe('test_loader', () => {
     beforeEach(() => {
       spy = sinon.spy();
       testLoader = new TestLoader(
-        {addTest: spy} as Partial<TestNode> as TestNode,
+        {addTest: spy, finalize: () => {}} as Partial<TestNode> as TestNode,
         (async function* () {
           yield test1;
           yield test2;
