@@ -164,8 +164,23 @@ func groupTreeClosers(treeClosers []*config.TreeCloser) map[string][]*config.Tre
 }
 
 func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser) error {
+	treeStatus, err := ts.getStatus(c, host)
+	switch {
+	case err != nil:
+		return err
+	case treeStatus.status == config.Closed && treeStatus.username != botUsername && treeStatus.username != legacyBotUsername:
+		// Don't do anything if the tree was manually closed.
+		return nil
+	}
+
 	var oldestClosed *config.TreeCloser
 	for _, tc := range treeClosers {
+		// Only pay attention to builds from after the last update to the
+		// tree. Otherwise we'll automatically close the tree every minute
+		// when people try to manually re-open.
+		if tc.Timestamp.Before(treeStatus.timestamp) {
+			continue
+		}
 		if tc.Status == config.Closed && (oldestClosed == nil || tc.Timestamp.Before(oldestClosed.Timestamp)) {
 			oldestClosed = tc
 		}
@@ -178,15 +193,8 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		overallStatus = config.Closed
 	}
 
-	treeStatus, err := ts.getStatus(c, host)
-	switch {
-	case err != nil:
-		return err
-	case treeStatus.status == overallStatus:
+	if treeStatus.status == overallStatus {
 		// Nothing to do, status is already correct.
-		return nil
-	case treeStatus.status == config.Closed && treeStatus.username != botUsername && treeStatus.username != legacyBotUsername:
-		// Don't reopen the tree if it wasn't automatically closed.
 		return nil
 	}
 
@@ -199,8 +207,6 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		// TreeCloser config struct.
 		message = fmt.Sprintf("Tree is closed (Automatic: %s)", "TODO")
 	}
-	// TODO: We also need to compare the TreeCloser timestamps against the
-	// existing status timestamp, to ensure we're only acting on new builds.
 
 	return ts.putStatus(c, host, message, treeStatus.key)
 }

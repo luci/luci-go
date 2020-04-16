@@ -92,7 +92,8 @@ func TestUpdateTrees(t *testing.T) {
 		builder4 := &config.Builder{ProjectKey: projectKey, ID: "ci/builder4"}
 		So(datastore.Put(c, project, builder1, builder2, builder3, builder4), ShouldBeNil)
 
-		earlierTime := time.Now().AddDate(-1, 0, 0)
+		earlierTime := time.Now().AddDate(-1, 0, 0).UTC()
+		evenEarlierTime := time.Now().AddDate(-2, 0, 0).UTC()
 
 		cleanup := func() {
 			var treeClosers []*config.TreeCloser
@@ -301,6 +302,36 @@ func TestUpdateTrees(t *testing.T) {
 			status, err = ts.getStatus(c, "v8-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
+		})
+
+		Convey("No action when build is older than last status update", func() {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium-status.appspot.com": treeStatus{
+						username:  "somedev@chromium.org",
+						message:   "Opened, because I feel like it",
+						key:       -1,
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder1),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      evenEarlierTime,
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Opened, because I feel like it")
 		})
 	})
 }
