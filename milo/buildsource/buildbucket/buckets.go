@@ -66,7 +66,7 @@ func getBuilders(c context.Context, host string) (*swarmbucket.LegacySwarmbucket
 	}
 
 	if data, err := json.Marshal(res); err == nil {
-		mc.SetValue(data).SetExpiration(10 * time.Minute)
+		mc.SetValue(data).SetExpiration(12 * time.Hour)
 		if err := memcache.Set(c, mc); err != nil {
 			logging.WithError(err).Warningf(c, "failed to cache swarmbucket builders")
 		}
