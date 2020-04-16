@@ -67,3 +67,17 @@ declare global {
 Object.prototype.as = function<T>(this: T) {
   return this;
 };
+
+declare global {
+  interface Array<T> {
+    /**
+     * The last element in the array.
+     */
+    readonly last: T | undefined;
+  }
+}
+Object.defineProperty(Array.prototype, 'last', {
+  get(this: unknown[]) {
+    return this[this.length - 1];
+  },
+});
