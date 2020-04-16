@@ -20,12 +20,17 @@ import (
 	"fmt"
 	"os"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	"go.chromium.org/luci/resultdb/sink"
 )
 
@@ -38,10 +43,13 @@ type Wrapper struct {
 	childExitCode int
 }
 
-func NewWrapper() (*Wrapper, error) {
+func NewWrapper(ctx context.Context) (*Wrapper, error) {
 	w := &Wrapper{}
 	flgs, err := parseFlags()
 	if err != nil {
+		return nil, err
+	}
+	if err := w.initServerConfigs(ctx, fls); err != nil {
 		return nil, err
 	}
 
@@ -51,8 +59,6 @@ func NewWrapper() (*Wrapper, error) {
 	}
 	w.cmdName = flag.Arg(0)
 	w.cmdArgs = flag.Args()[1:]
-
-	w.serverCfg.Address = fmt.Sprint(":", flgs.port)
 
 	if flgs.logFile == "" {
 		w.logCfg.Out = os.Stderr
@@ -65,8 +71,35 @@ func NewWrapper() (*Wrapper, error) {
 		w.logCfg.Out = w.logFile
 	}
 	// TODO(sajjadm): Parse remaining flags into meaningful structures
-
 	return w, nil
+}
+
+func (w *Wrapper) initServerConfigs(ctx context.Context, flgs Flags) error {
+	// Create pRPC over HTTP clients.
+	hc, err := auth.NewAuthenticator(
+		ctx, auth.SilentLogin, chromeinfra.DefaultAuthOptions()).Client()
+	if err != nil {
+		return err
+	}
+	info, err := version.GetCurrentVersion()
+	if err != nil {
+		return err
+	}
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.UserAgent = fmt.Sprintf("result_sink_wrapper, instanceID=%q", info.InstanceID)
+	pc := &prpc.Client{
+		C:       hc,
+		Host:    flgs.recorder,
+		Options: rpcOpts,
+	}
+
+	// Set the server configs based on the flags
+	w.serverCfg.Recorder = pb.NewRecorderPRPCClient(pc)
+	w.serverCfg.Address = flgs.sink
+	w.serverCfg.Invocation = flgs.invocation
+	w.serverCfg.UpdateToken = flgs.updateToken
+	w.serverCfg.TestIDPrefix = flgs.testIDPrefix
+	return nil
 }
 
 func (w *Wrapper) Close() {
@@ -112,5 +145,6 @@ func (w *Wrapper) Main(ctx context.Context) (int, error) {
 	if err != nil {
 		logging.Errorf(ctx, "FATAL: %s", err)
 	}
+	logging.Infof(ctx, "Child process terminated with %d", childExitCode)
 	return childExitCode, err
 }

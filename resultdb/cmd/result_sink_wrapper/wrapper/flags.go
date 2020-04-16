@@ -21,44 +21,45 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/resultdb/sink"
 )
 
 type Flags struct {
-	port                        int
-	recorder                    string
-	invocationIDFile            string
-	logFile                     string
-	resultFiles                 strpair.Map
-	testIDPrefix                string
-	invocationTags              strpair.Map
-	baseTestVariant             map[string]string
+	sink     string
+	recorder string
+
+	invocation  string
+	updateToken string
+
+	testIDPrefix   string
+	invocationTags strpair.Map
+
 	completeInvocationExitCodes []int
+	logFile                     string
 }
 
 func parseFlags() (Flags, error) {
 	flgs := Flags{
 		invocationTags: make(strpair.Map),
-		resultFiles:    make(strpair.Map),
 	}
 
-	flag.IntVar(&flgs.port, "port", 0, "TCP port to listen on, will be arbitrarily selected if unset")
-	// TODO(sajjadm): Set the default recorder once it exists.
-	flag.StringVar(&flgs.recorder, "recorder", "",
-		"Hostname of the Recorder service that the server should upload results to")
+	flag.StringVar(&flgs.sink, "sink", sink.DefaultAddr,
+		"Address for SinkServer to listen on")
+	flag.StringVar(&flgs.recorder, "recorder", chromeinfra.ResultDBHost,
+		"Address of the Recorder service to report test results to")
 
-	flag.StringVar(&flgs.invocationIDFile, "invocation-id-file", "",
-		"Path to write the generated invocation ID")
-
-	flag.StringVar(&flgs.logFile, "log-file", "", "File to log to")
-
-	flag.Var(luciflag.StringPairs(flgs.resultFiles), "result-file",
-		"Files to read and upload after running the subprocess, of form format:path, may be set more than once. Valid formats are luci, chromium_jtr, and chromium_gtest")
+	flag.StringVar(&flgs.invocation, "invocation", "",
+		"The name of the invocation to append the test results to")
+	flag.StringVar(&flgs.updateToken, "update-token", "",
+		"The token required for the invocation to be updated")
 
 	flag.StringVar(&flgs.testIDPrefix, "test-id-prefix", "",
 		"Prefix to prepepend before the test id of every test result")
-
 	flag.Var(luciflag.StringPairs(flgs.invocationTags), "invocation-tag",
 		"Tag to add to the Invocation, of form key:value, may be set more than once")
+
+	flag.StringVar(&flgs.logFile, "log-file", "", "File to log to")
 
 	// TODO(sajjadm): Add new function to flag package that decodes to a map[string]string and
 	// enforces unique keys, then use that function to implement a -base-test-variant flag.
