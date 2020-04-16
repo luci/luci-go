@@ -86,6 +86,7 @@ func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, inJo
 		BuildbucketHost: c.bbHost,
 		BuildID:         c.buildID,
 		PinBotID:        c.pinBotID,
+		KitchenSupport:  c.kitchenSupport,
 	})
 }
 
