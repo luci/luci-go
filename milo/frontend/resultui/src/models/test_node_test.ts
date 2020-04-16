@@ -75,4 +75,21 @@ describe('TestNode', () => {
     assert.equal(node.children[0].name, '');
     assert.equal(node.children[1].name, 'e');
   });
+
+  it('should mark nodes as finalized correctly', async () => {
+    const node = TestNode.newRoot();
+    const test1 = {id: 'a/b/c/d', variants: []};
+    const test2 = {id: 'a/b/c/e', variants: []};
+    node.addTest(test1);
+    node.addTest(test2);
+
+    assert.equal(node.finalized, false);
+    assert.equal(node.children[0].finalized, true);
+    assert.equal(node.children[1].finalized, false);
+
+    node.finalize();
+    assert.equal(node.finalized, true);
+    assert.equal(node.children[0].finalized, true);
+    assert.equal(node.children[1].finalized, true);
+  });
 });
