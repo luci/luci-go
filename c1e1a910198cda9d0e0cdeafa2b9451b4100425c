@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4aa04d63_0ff81a3a",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-16T02:20:53Z",
+      "side": 1,
+      "message": "renamed to fullyLoaded.\nand renamed this.finalize() to this.finalizeLoading()",
+      "parentUuid": "e0455f8b_855e404a",
+      "range": {
+        "startLine": 115,
+        "startChar": 16,
+        "endLine": 115,
+        "endChar": 25
+      },
+      "revId": "c1e1a910198cda9d0e0cdeafa2b9451b4100425c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4282baa2_cd2ad12c",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "c1e1a910198cda9d0e0cdeafa2b9451b4100425c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05afe997_99ec0cb7",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-16T02:20:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4282baa2_cd2ad12c",
+      "range": {
+        "startLine": 160,
+        "startChar": 5,
+        "endLine": 160,
+        "endChar": 15
+      },
+      "revId": "c1e1a910198cda9d0e0cdeafa2b9451b4100425c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
