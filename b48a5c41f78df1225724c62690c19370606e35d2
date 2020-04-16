@@ -93,6 +93,30 @@
       "revId": "b48a5c41f78df1225724c62690c19370606e35d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "214cc142_c66bfb5b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T06:53:57Z",
+      "side": 1,
+      "message": "sounds good, let\u0027s define one that is more appropriate for tree status message.",
+      "parentUuid": "2c1deb12_a7d1852f",
+      "range": {
+        "startLine": 384,
+        "startChar": 5,
+        "endLine": 384,
+        "endChar": 15
+      },
+      "revId": "b48a5c41f78df1225724c62690c19370606e35d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
