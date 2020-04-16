@@ -132,7 +132,7 @@ func NewBundle(templates []*Template) *Bundle {
 // the definition of the failed template.
 func (b *Bundle) GenerateEmail(templateName string, input *config.TemplateInput) (subject, body string) {
 	var err error
-	if subject, body, err = b.executeUserTemplate(templateName, input); err != nil {
+	if subject, body, err = b.ExecuteUserTemplate(templateName, input); err != nil {
 		// Execution of the user-defined template failed.
 		// Fallback to the error template.
 		subject, body = b.generateErrorEmail(templateName, input, err)
@@ -141,7 +141,7 @@ func (b *Bundle) GenerateEmail(templateName string, input *config.TemplateInput)
 }
 
 // executeUserTemplate executed a user-defined template.
-func (b *Bundle) executeUserTemplate(templateName string, input *config.TemplateInput) (subject, body string, err error) {
+func (b *Bundle) ExecuteUserTemplate(templateName string, input *config.TemplateInput) (subject, body string, err error) {
 	var buf bytes.Buffer
 	if err = b.subjects.ExecuteTemplate(&buf, templateName, input); err != nil {
 		return
