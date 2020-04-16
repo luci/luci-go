@@ -16,12 +16,14 @@ package ledcli
 
 import (
 	"net/http"
+	"os"
 
 	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -100,7 +102,24 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 	logging.Infof(ctx, "LUCI UI: https://ci.chromium.org/swarming/task/%s?server=%s",
 		meta.TaskId, swarmingHostname)
 
-	return nil, nil
+	ret := &struct {
+		Swarming struct {
+			// The swarming task ID of the launched task.
+			TaskID string `json:"task_id"`
+
+			// The hostname of the swarming server
+			Hostname string `json:"host_name"`
+		} `json:"swarming"`
+	}{}
+
+	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+		ret.Swarming.TaskID = meta.TaskId
+		ret.Swarming.Hostname = swarmingHostname
+	} else {
+		ret = nil
+	}
+
+	return ret, nil
 }
 
 func (c *cmdLaunch) Run(a subcommands.Application, args []string, env subcommands.Env) int {
