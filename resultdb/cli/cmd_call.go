@@ -48,6 +48,7 @@ func cmdCall(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &callRun{}
 			r.RegisterGlobalFlags(p)
+			r.Flags.BoolVar(&r.includeUpdateToken, "include-update-token", false, "send the request with the current invocation's update token in LUCI_CONTEXT")
 			return r
 		},
 	}
@@ -55,8 +56,9 @@ func cmdCall(p Params) *subcommands.Command {
 
 type callRun struct {
 	baseCommandRun
-	service string
-	method  string
+	service            string
+	method             string
+	includeUpdateToken bool
 }
 
 func (r *callRun) parseArgs(args []string) error {
@@ -95,9 +97,11 @@ func (r *callRun) call(ctx context.Context) error {
 		return err
 	}
 
-	if r.resultdbCtx.CurrentInvocation.UpdateToken != "" {
-		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
-			"update-token", r.resultdbCtx.CurrentInvocation.UpdateToken))
+	if r.includeUpdateToken {
+		if r.resultdbCtx.CurrentInvocation.UpdateToken == "" {
+			return errors.Reason("update token is not available").Err()
+		}
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("update-token", r.resultdbCtx.CurrentInvocation.UpdateToken))
 	}
 
 	// Send the request.
