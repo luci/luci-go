@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { fixture } from '@open-wc/testing';
 import { Commands, RouterLocation } from '@vaadin/router';
 import { assert } from 'chai';
+import { html } from 'lit-element';
 import sinon from 'sinon';
 
+import './invocation_page';
 import { InvocationPageElement } from './invocation_page';
 
 
 describe('Invocation Test Page', () => {
   it('should get invocation name from URL', async () => {
-    const page = new InvocationPageElement();
+    const page = await fixture<InvocationPageElement>(html`<tr-invocation-page></tr-invocation-page>`);
     const location = {params: {'invocation_name': 'invocation_name'}} as Partial<RouterLocation> as RouterLocation;
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
@@ -29,7 +32,7 @@ describe('Invocation Test Page', () => {
   });
 
   it('should redirect to "/not-found" when invocation_name is not provided', async () => {
-    const page = new InvocationPageElement();
+    const page = await fixture<InvocationPageElement>(html`<tr-invocation-page></tr-invocation-page>`);
     const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
     const redirect = sinon.spy();
     const cmd = {redirect} as Partial<Commands> as Commands;
