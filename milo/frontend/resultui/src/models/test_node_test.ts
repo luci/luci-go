@@ -75,4 +75,31 @@ describe('TestNode', () => {
     assert.equal(node.children[0].name, '');
     assert.equal(node.children[1].name, 'e');
   });
+
+  it('should mark nodes as fully loaded correctly', async () => {
+    const node = TestNode.newRoot();
+    const test1 = {id: 'a/b/c/d', variants: []};
+    const test2 = {id: 'a/b/c/e/f', variants: []};
+    const test3 = {id: 'a/b/c/e/g', variants: []};
+    const test4 = {id: 'a/b/c/f', variants: []};
+    node.addTest(test1);
+    node.addTest(test2);
+    node.addTest(test3);
+    node.addTest(test4);
+
+    assert.equal(node.fullyLoaded, false);
+    assert.equal(node.children[0].fullyLoaded, true);
+    assert.equal(node.children[1].fullyLoaded, true);
+    assert.equal(node.children[1].children[0].fullyLoaded, true);
+    assert.equal(node.children[1].children[1].fullyLoaded, true);
+    assert.equal(node.children[2].fullyLoaded, false);
+
+    node.finalizeLoading();
+    assert.equal(node.fullyLoaded, true);
+    assert.equal(node.children[0].fullyLoaded, true);
+    assert.equal(node.children[1].fullyLoaded, true);
+    assert.equal(node.children[1].children[0].fullyLoaded, true);
+    assert.equal(node.children[1].children[1].fullyLoaded, true);
+    assert.equal(node.children[2].fullyLoaded, true);
+  });
 });

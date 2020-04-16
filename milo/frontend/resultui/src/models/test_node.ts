@@ -112,6 +112,9 @@ export class TestNode {
     return {name, node};
   }
 
+  @computed get fullyLoaded() { return this._fullyLoaded; }
+  @observable.ref private _fullyLoaded = false;
+
   static newRoot() { return new TestNode('', ''); }
   private constructor(prefix: string, private readonly unelidedName: string) {
     this.unelidedPath = prefix + unelidedName;
@@ -153,6 +156,8 @@ export class TestNode {
   /**
    * Takes a test and adds it to the appropriate place in the tree,
    * creating new nodes as necessary.
+   * @param test test.id must be alphabetically greater than the id of any
+   *     previously added test.
    */
   addTest(test: ReadonlyTest) {
     const idSegs = test.id.match(ID_SEG_REGEX)!;
@@ -167,14 +172,25 @@ export class TestNode {
       this.unelidedTests.push(test);
       return;
     }
-    // TODO(weiweilin): we will only need to compare with the last child once
-    // all tests are sorted by testId.
-    // crbug.com/1062117
-    let child = this.unelidedChildren.find((c) => c.unelidedName === nextSeg);
-    if (child === undefined) {
+    let child = this.unelidedChildren.last;
+    if (child?.unelidedName !== nextSeg) {
+      child?.finalizeLoading();
       child = new TestNode(this.unelidedPath, nextSeg);
       this.unelidedChildren.push(child);
     }
     child.addTestWithIdSegs(test, idSegStack);
+  }
+
+  /**
+   * Marks the nodes in the tree as fully loaded.
+   * This method should be called after the last test is added to the node.
+   */
+  finalizeLoading() {
+    if (this._fullyLoaded) {
+      return;
+    }
+    this._fullyLoaded = true;
+    const child = this.unelidedChildren.last;
+    child?.finalizeLoading();
   }
 }
