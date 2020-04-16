@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0455f8b_855e404a",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-16T01:55:58Z",
+      "side": 1,
+      "message": "Finalized is a bit of an overloaded term here, since it means something different in the resultDB data model (and also since \"finalize\" in Java means a destructor method). Can we call it something clearer that articulates what it actually means? like \"fullyLoaded\" or \"loadingComplete\" or similar?",
+      "range": {
+        "startLine": 115,
+        "startChar": 16,
+        "endLine": 115,
+        "endChar": 25
+      },
+      "revId": "c1e1a910198cda9d0e0cdeafa2b9451b4100425c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4282baa2_cd2ad12c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-16T01:55:58Z",
+      "side": 1,
+      "message": "nit: indent four spaces",
+      "range": {
+        "startLine": 160,
+        "startChar": 5,
+        "endLine": 160,
+        "endChar": 15
+      },
+      "revId": "c1e1a910198cda9d0e0cdeafa2b9451b4100425c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
