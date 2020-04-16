@@ -66,7 +66,11 @@ func getBuilders(c context.Context, host string) (*swarmbucket.LegacySwarmbucket
 	}
 
 	if data, err := json.Marshal(res); err == nil {
-		mc.SetValue(data).SetExpiration(10 * time.Minute)
+		// Large expiration is unfortunate as this slows down propagation of ACL
+		// changes limiting builder's visibility.
+		// TODO(crbug/1071316): switch to faster V2 Buildbucket API once available
+		// and reduce expiration to 10 minutes.
+		mc.SetValue(data).SetExpiration(12 * time.Hour)
 		if err := memcache.Set(c, mc); err != nil {
 			logging.WithError(err).Warningf(c, "failed to cache swarmbucket builders")
 		}
