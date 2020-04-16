@@ -23,7 +23,6 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -61,14 +60,8 @@ func channelOpts(ctx context.Context) *dispatcher.Options {
 }
 
 func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket) (ret dispatcher.Channel, err error) {
-	hostname := infraOpts.GetHostname()
-	if hostname == "" {
-		err = errors.New("missing hostname in build.infra.buildbucket")
-		return
-	}
-
 	var sendFn dispatcher.SendFn
-	if hostname == "" {
+	if hostname := infraOpts.GetHostname(); hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
 		sendFn = func(b *buffer.Batch) error {
 			return nil // noop
