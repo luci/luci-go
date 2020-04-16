@@ -56,6 +56,10 @@ type cmdEdit struct {
 	recipeName     string
 	experimental   string
 
+	recipeIsolate string
+	recipeCIPDPkg string
+	recipeCIPDVer string
+
 	processedDimensions job.DimensionEditCommands
 
 	swarmingHost string
@@ -86,6 +90,18 @@ func (c *cmdEdit) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.StringVar(&c.recipeName, "r", "",
 		"override the `recipe` to run.")
+
+	// These three are used by the 'recipe_engine/led' module to pin the user
+	// task across nested led invocations.
+	c.Flags.StringVar(&c.recipeIsolate, "rbh", "",
+		"override the recipe bundle `hash` (if not using CIPD or git). These should be prepared with"+
+			" `recipes.py bundle` from the repo containing your desired recipe and then isolating the"+
+			" resulting folder contents. The `led edit-recipe-bundle` subcommand does all this"+
+			" automatically.")
+	c.Flags.StringVar(&c.recipeCIPDPkg, "rpkg", "",
+		"override the recipe CIPD `package` (if not using isolated).")
+	c.Flags.StringVar(&c.recipeCIPDVer, "rver", "",
+		"override the recipe CIPD `version` (if not using isolated).")
 
 	c.Flags.StringVar(&c.swarmingHost, "S", "",
 		"override the swarming `host` to launch the task on (i.e. chromium-swarm.appspot.com).")
@@ -128,6 +144,22 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, inJob *job.Defini
 			je.Properties(c.propertiesAuto, true)
 			if c.recipeName != "" {
 				je.Properties(map[string]string{"recipe": c.recipeName}, true)
+			}
+			if c.recipeIsolate != "" || c.recipeCIPDPkg != "" || c.recipeCIPDVer != "" {
+				pkg, ver, path := inJob.HighLevelInfo().TaskPayload()
+				if c.recipeIsolate == "" {
+					if c.recipeCIPDPkg != "" {
+						pkg = c.recipeCIPDPkg
+					}
+					if c.recipeCIPDVer != "" {
+						ver = c.recipeCIPDVer
+					}
+				} else {
+					pkg = ""
+					ver = ""
+					inJob.UserPayload.Digest = c.recipeIsolate
+				}
+				je.TaskPayload(pkg, ver, path)
 			}
 			if c.experimental != "" {
 				je.Experimental(c.experimental == "true")
