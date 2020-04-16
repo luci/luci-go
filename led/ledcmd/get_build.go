@@ -31,6 +31,7 @@ type GetBuildOpts struct {
 	BuildbucketHost string
 	BuildID         int64
 	PinBotID        bool
+	KitchenSupport  job.KitchenSupport
 }
 
 // GetBuild retrieves a job Definition from a Buildbucket build.
@@ -41,7 +42,7 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 	answer, err := bbucket.GetBuild(ctx, &bbpb.GetBuildRequest{
 		Id: opts.BuildID,
 		Fields: &field_mask.FieldMask{
-			Paths: []string{"tags"},
+			Paths: []string{"infra"},
 		},
 	})
 	if err != nil {
@@ -50,20 +51,8 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 
 	logging.Infof(ctx, "getting build definition: done")
 
-	swarmingTaskID := ""
-	swarmingHostname := ""
-	for _, t := range answer.Tags {
-		key, value := t.Key, t.Value
-		switch key {
-		case "swarming_task_id":
-			swarmingTaskID = value
-		case "swarming_hostname":
-			swarmingHostname = value
-		}
-		if swarmingTaskID != "" && swarmingHostname != "" {
-			break
-		}
-	}
+	swarmingTaskID := answer.Infra.Swarming.TaskId
+	swarmingHostname := answer.Infra.Swarming.Hostname
 
 	if swarmingTaskID == "" {
 		return nil, errors.New("unable to find swarming task ID on buildbucket task")
@@ -73,9 +62,10 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 	}
 
 	return GetFromSwarmingTask(ctx, authClient, GetFromSwarmingTaskOpts{
-		SwarmingHost: swarmingHostname,
-		TaskID:       swarmingTaskID,
-		PinBotID:     opts.PinBotID,
-		Name:         fmt.Sprintf("get-build %d", opts.BuildID),
+		SwarmingHost:   swarmingHostname,
+		TaskID:         swarmingTaskID,
+		PinBotID:       opts.PinBotID,
+		Name:           fmt.Sprintf("get-build %d", opts.BuildID),
+		KitchenSupport: opts.KitchenSupport,
 	})
 }
