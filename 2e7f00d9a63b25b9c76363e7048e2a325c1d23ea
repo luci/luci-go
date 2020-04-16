@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "582e53bb_6e9ca88e",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/flags.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:59:53Z",
+      "side": 1,
+      "message": "we should remove this in favor of https://godoc.org/go.chromium.org/luci/lucictx#GetResultDB\n\nuse `rdb context` to pass them when debugging locally",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 0
+      },
+      "revId": "2e7f00d9a63b25b9c76363e7048e2a325c1d23ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78f3761c_554e9b51",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:59:53Z",
+      "side": 1,
+      "message": "this copies all flags. why not *Flags",
+      "range": {
+        "startLine": 77,
+        "startChar": 62,
+        "endLine": 77,
+        "endChar": 67
+      },
+      "revId": "2e7f00d9a63b25b9c76363e7048e2a325c1d23ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78b2d995_9a4d5ab8",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-16T15:59:53Z",
+      "side": 1,
+      "message": "consider\n\n  w.serverCfg \u003d ServerConfig { ... }\n\nit is less code and provides a guarantee that there is no residual state",
+      "revId": "2e7f00d9a63b25b9c76363e7048e2a325c1d23ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
