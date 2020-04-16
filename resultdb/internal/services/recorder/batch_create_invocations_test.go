@@ -43,14 +43,14 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 	Convey(`TestValidateBatchCreateInvocationsRequest`, t, func() {
 		Convey(`invalid request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(now,
-				[]*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u:a",
 				}}, "😃", false)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 		Convey(`non-matching request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(now,
-				[]*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u:a",
 					RequestId:    "valid, but different",
 				}}, "valid", false)
@@ -58,7 +58,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 		})
 		Convey(`valid`, func() {
 			ids, err := validateBatchCreateInvocationsRequest(now,
-				[]*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u:a",
 					RequestId:    "valid",
 				}}, "valid", false)
@@ -98,11 +98,11 @@ func TestBatchCreateInvocations(t *testing.T) {
 		Convey(`idempotent`, func() {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{
-					&pb.CreateInvocationRequest{
+					{
 						InvocationId: "u:batchinv",
 						RequestId:    "request id",
 					},
-					&pb.CreateInvocationRequest{
+					{
 						InvocationId: "u:batchinv2",
 						RequestId:    "request id",
 					},
@@ -130,7 +130,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			}
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{
-					&pb.CreateInvocationRequest{
+					{
 						InvocationId: "u:batch-inv",
 						Invocation: &pb.Invocation{
 							Deadline: deadline,
@@ -141,7 +141,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 							ProducerResource: "//builds.example.com/builds/1",
 						},
 					},
-					&pb.CreateInvocationRequest{
+					{
 						InvocationId: "u:batch-inv2",
 						Invocation: &pb.Invocation{
 							Deadline: deadline,

@@ -365,18 +365,18 @@ func TestValidateSinkArtifacts(t *testing.T) {
 	t.Parallel()
 	// valid artifacts
 	validArts := map[string]*sinkpb.Artifact{
-		"art1": &sinkpb.Artifact{
+		"art1": {
 			Body:        &sinkpb.Artifact_FilePath{"/tmp/foo"},
 			ContentType: "text/plain",
 		},
-		"art2": &sinkpb.Artifact{
+		"art2": {
 			Body:        &sinkpb.Artifact_Contents{[]byte("contents")},
 			ContentType: "text/plain",
 		},
 	}
 	// invalid artifacts
 	invalidArts := map[string]*sinkpb.Artifact{
-		"art1": &sinkpb.Artifact{ContentType: "text/plain"},
+		"art1": {ContentType: "text/plain"},
 	}
 
 	Convey("Succeeds", t, func() {
