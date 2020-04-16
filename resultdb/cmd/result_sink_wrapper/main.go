@@ -32,7 +32,7 @@ func main() {
 	ctx := context.Background()
 	logging.SetLevel(ctx, logging.Debug)
 
-	w, err := wrapper.NewWrapper()
+	w, err := wrapper.NewWrapper(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(wrapperErrorCode)
