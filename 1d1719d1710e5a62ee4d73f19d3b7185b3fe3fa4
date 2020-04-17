@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3bfb15f_308d6a02",
+        "filename": "server/auth/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-17T00:06:10Z",
+      "side": 1,
+      "message": "👍 WDYT about adding horizontal metric tracking # of unexpected errors / mismatches?",
+      "revId": "1d1719d1710e5a62ee4d73f19d3b7185b3fe3fa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
