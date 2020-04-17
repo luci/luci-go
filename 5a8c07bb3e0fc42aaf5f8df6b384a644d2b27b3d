@@ -16,6 +16,24 @@
       "revId": "5a8c07bb3e0fc42aaf5f8df6b384a644d2b27b3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aa086ff_c6c6b6ba",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-17T00:29:59Z",
+      "side": 1,
+      "message": "good idea. done",
+      "parentUuid": "bd20d27a_a24c3679",
+      "revId": "5a8c07bb3e0fc42aaf5f8df6b384a644d2b27b3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
