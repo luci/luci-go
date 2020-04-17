@@ -36,7 +36,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 					Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
 				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
-				So(rpcArts[0].Size, ShouldEqual, 3)
+				So(rpcArts[0].SizeBytes, ShouldEqual, 3)
 			})
 
 			Convey("with the size of the file", func() {
@@ -49,7 +49,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 
 				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
-				So(rpcArts[0].Size, ShouldEqual, len("test artifact"))
+				So(rpcArts[0].SizeBytes, ShouldEqual, len("test artifact"))
 			})
 
 			Convey("with -1 if the file is not accessible", func() {
@@ -57,7 +57,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 					Body: &sinkpb.Artifact_FilePath{FilePath: "does-not-exist/foo/bar"}}
 				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
-				So(rpcArts[0].Size, ShouldEqual, -1)
+				So(rpcArts[0].SizeBytes, ShouldEqual, -1)
 			})
 		})
 	})

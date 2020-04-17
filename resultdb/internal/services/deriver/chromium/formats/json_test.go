@@ -209,13 +209,13 @@ func TestJSONConversions(t *testing.T) {
 				Name:        "relative/path/to/log.txt",
 				FetchUrl:    "isolate://isosrv/a104",
 				ContentType: "text/plain",
-				Size:        32,
+				SizeBytes:   32,
 			},
 			"relative/path/to/diff.png": {
 				Name:        "relative/path/to/diff.png",
 				FetchUrl:    "isolate://isosrv/ad1ff",
 				ContentType: "image/png",
-				Size:        8192,
+				SizeBytes:   8192,
 			},
 		}
 
@@ -300,13 +300,13 @@ func TestJSONConversions(t *testing.T) {
 						Name:        "relative/path/to/diff.png",
 						FetchUrl:    "isolate://isosrv/ad1ff",
 						ContentType: "image/png",
-						Size:        8192,
+						SizeBytes:   8192,
 					},
 					{
 						Name:        "relative/path/to/log.txt",
 						FetchUrl:    "isolate://isosrv/a104",
 						ContentType: "text/plain",
-						Size:        32,
+						SizeBytes:   32,
 					},
 				},
 				SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,

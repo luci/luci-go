@@ -52,7 +52,7 @@ func TestIsolatedUtils(t *testing.T) {
 			f.Size = new(int64)
 			*f.Size = 4096
 			expectedArt.Name = "."
-			expectedArt.Size = 4096
+			expectedArt.SizeBytes = 4096
 			So(IsolatedFileToArtifact("iso.appspot.com", "default-zip", "", f),
 				ShouldResembleProto, expectedArt)
 		})

@@ -121,7 +121,7 @@ func sinkArtsToRpcArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (
 			Name: name,
 			// TODO(ddoman): set fetch_url and fetch_url_expiration
 			ContentType: sart.GetContentType(),
-			Size:        size,
+			SizeBytes:   size,
 		})
 	}
 	sort.Slice(rArts, func(i, j int) bool {
