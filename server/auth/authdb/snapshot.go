@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/authdb/internal/ipaddr"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
+	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 	"go.chromium.org/luci/server/auth/authdb/internal/seccfg"
 )
 
@@ -49,6 +50,7 @@ type SnapshotDB struct {
 	Rev            int64  // its revision number
 
 	groups         *graph.QueryableGraph  // queryable representation of groups
+	realms         *realmset.Realms       // queryable representation of realms
 	clientIDs      oauthid.Whitelist      // set of allowed client IDs
 	whitelistedIPs ipaddr.Whitelist       // set of named IP whitelists
 	securityCfg    *seccfg.SecurityConfig // parsed SecurityConfig proto
@@ -107,6 +109,14 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		return nil, errors.Annotate(err, "failed to build groups graph").Err()
 	}
 
+	var realms *realmset.Realms
+	if authDB.Realms != nil {
+		realms, err = realmset.Build(authDB.Realms, groups)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to prepare Realms DB").Err()
+		}
+	}
+
 	ipWL, err := ipaddr.NewWhitelist(authDB.IpWhitelists, authDB.IpWhitelistAssignments)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad IP whitelists in AuthDB").Err()
@@ -121,6 +131,7 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		AuthServiceURL:    authServiceURL,
 		Rev:               rev,
 		groups:            groups,
+		realms:            realms,
 		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
 		whitelistedIPs:    ipWL,
 		securityCfg:       securityCfg,
@@ -198,15 +209,55 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 
 // HasPermission returns true if the identity has the given permission in any
 // of the realms.
-func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realmsList []string) (ok bool, err error) {
 	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.HasPermission")
 	span.Attribute("cr.dev/permission", perm.Name())
-	span.Attribute("cr.dev/realms", strings.Join(realms, ", "))
-	defer span.End(nil)
+	span.Attribute("cr.dev/realms", strings.Join(realmsList, ", "))
+	defer func() { span.End(err) }()
 
-	// TODO(vadimsh): Implement.
+	// This may happen if the AuthDB proto has no Realms yet.
+	if db.realms == nil {
+		return false, errors.Reason("Realms API is not available").Err()
+	}
 
-	return false, errors.Reason("HasPermission is not implemented yet").Err()
+	permIdx, ok := db.realms.PermissionIndex(perm)
+	if !ok {
+		logging.Warningf(c, "Checking permission %q not present in the AuthDB", perm)
+		return false, nil
+	}
+
+	for _, realm := range realmsList {
+		// Verify such realm is defined in the DB or fallback to its @root.
+		if !db.realms.HasRealm(realm) {
+			if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+				return false, errors.Annotate(err, "when checking %q", perm).Err()
+			}
+			project, _ := realms.Split(realm)
+			root := realms.Join(project, realms.Root)
+			if realm == root {
+				logging.Warningf(c, "Checking %q in a non-existing root realm %q: denying", perm, realm)
+				continue
+			}
+			if !db.realms.HasRealm(root) {
+				logging.Warningf(c, "Checking %q in a non-existing realm %q that doesn't have a root realm (no such project?): denying", perm, realm)
+				continue
+			}
+			logging.Warningf(c, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
+			realm = root
+		}
+
+		// For the given <realm, permission> pair, get indexes of groups with
+		// principals that have the permission (if any) and a set of identities
+		// mentioned in the realm ACL explicitly (not via a group).
+		switch groups, idents := db.realms.QueryAuthorized(realm, permIdx); {
+		case idents.Has(string(id)):
+			return true, nil // `id` was granted the permission explicitly in the ACL
+		case db.groups.IsMemberOfAny(id, groups):
+			return true, nil // `id` has the permission through a group
+		}
+	}
+
+	return false, nil
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
