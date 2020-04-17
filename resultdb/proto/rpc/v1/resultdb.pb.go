@@ -687,6 +687,384 @@ func (m *QueryTestExonerationsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// A request message for GetArtifact RPC.
+type GetArtifactRequest struct {
+	// The name of the artifact to request, see Artifact.name.
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetArtifactRequest) Reset()         { *m = GetArtifactRequest{} }
+func (m *GetArtifactRequest) String() string { return proto.CompactTextString(m) }
+func (*GetArtifactRequest) ProtoMessage()    {}
+func (*GetArtifactRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b48732830a4fcfbd, []int{11}
+}
+
+func (m *GetArtifactRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetArtifactRequest.Unmarshal(m, b)
+}
+func (m *GetArtifactRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetArtifactRequest.Marshal(b, m, deterministic)
+}
+func (m *GetArtifactRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetArtifactRequest.Merge(m, src)
+}
+func (m *GetArtifactRequest) XXX_Size() int {
+	return xxx_messageInfo_GetArtifactRequest.Size(m)
+}
+func (m *GetArtifactRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetArtifactRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetArtifactRequest proto.InternalMessageInfo
+
+func (m *GetArtifactRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+// A request message for ListArtifacts RPC.
+type ListArtifactsRequest struct {
+	// Name of the parent, e.g. an invocation (see Invocation.name) or
+	// a test result (see TestResult.name).
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// The maximum number of artifacts to return.
+	//
+	// The service may return fewer than this value.
+	// If unspecified, at most 100 artifacts will be returned.
+	// The maximum value is 1000; values above 1000 will be coerced to 1000.
+	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// A page token, received from a previous `ListArtifacts` call.
+	// Provide this to retrieve the subsequent page.
+	//
+	// When paginating, all other parameters provided to `ListArtifacts` MUST
+	// match the call that provided the page token.
+	PageToken            string   `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListArtifactsRequest) Reset()         { *m = ListArtifactsRequest{} }
+func (m *ListArtifactsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListArtifactsRequest) ProtoMessage()    {}
+func (*ListArtifactsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b48732830a4fcfbd, []int{12}
+}
+
+func (m *ListArtifactsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListArtifactsRequest.Unmarshal(m, b)
+}
+func (m *ListArtifactsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListArtifactsRequest.Marshal(b, m, deterministic)
+}
+func (m *ListArtifactsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListArtifactsRequest.Merge(m, src)
+}
+func (m *ListArtifactsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListArtifactsRequest.Size(m)
+}
+func (m *ListArtifactsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListArtifactsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListArtifactsRequest proto.InternalMessageInfo
+
+func (m *ListArtifactsRequest) GetParent() string {
+	if m != nil {
+		return m.Parent
+	}
+	return ""
+}
+
+func (m *ListArtifactsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListArtifactsRequest) GetPageToken() string {
+	if m != nil {
+		return m.PageToken
+	}
+	return ""
+}
+
+// A response message for ListArtifacts RPC.
+type ListArtifactsResponse struct {
+	// The artifacts from the specified parent.
+	Artifacts []*Artifact `protobuf:"bytes,1,rep,name=artifacts,proto3" json:"artifacts,omitempty"`
+	// A token, which can be sent as `page_token` to retrieve the next page.
+	// If this field is omitted, there were no subsequent pages at the time of
+	// request.
+	// If the invocation is not finalized, more results may appear later.
+	NextPageToken        string   `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListArtifactsResponse) Reset()         { *m = ListArtifactsResponse{} }
+func (m *ListArtifactsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListArtifactsResponse) ProtoMessage()    {}
+func (*ListArtifactsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b48732830a4fcfbd, []int{13}
+}
+
+func (m *ListArtifactsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListArtifactsResponse.Unmarshal(m, b)
+}
+func (m *ListArtifactsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListArtifactsResponse.Marshal(b, m, deterministic)
+}
+func (m *ListArtifactsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListArtifactsResponse.Merge(m, src)
+}
+func (m *ListArtifactsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListArtifactsResponse.Size(m)
+}
+func (m *ListArtifactsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListArtifactsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListArtifactsResponse proto.InternalMessageInfo
+
+func (m *ListArtifactsResponse) GetArtifacts() []*Artifact {
+	if m != nil {
+		return m.Artifacts
+	}
+	return nil
+}
+
+func (m *ListArtifactsResponse) GetNextPageToken() string {
+	if m != nil {
+		return m.NextPageToken
+	}
+	return ""
+}
+
+// A request message for QueryArtifacts RPC.
+type QueryArtifactsRequest struct {
+	// Retrieve artifacts included in these invocations, directly or indirectly
+	// (via Invocation.included_invocations and via contained test results).
+	//
+	// Specifying multiple invocations is equivalent to querying one invocation
+	// that includes these.
+	Invocations []string `protobuf:"bytes,1,rep,name=invocations,proto3" json:"invocations,omitempty"`
+	// Specifies which edges to follow when retrieving directly/indirectly
+	// included artifacts.
+	// For example,
+	// - to retrieve only invocation-level artifacts, use
+	//   {included_invocations: true}.
+	// - to retrieve only test-result-level artifacts, use {test_results: true}.
+	//
+	// By default, follows all edges.
+	FollowEdges *QueryArtifactsRequest_EdgeTypeSet `protobuf:"bytes,2,opt,name=follow_edges,json=followEdges,proto3" json:"follow_edges,omitempty"`
+	// If an Artifact belongs to a TestResult, then the test result must satisfy
+	// this predicate.
+	// Field predicate.invocation is required.
+	Predicate *TestResultPredicate `protobuf:"bytes,3,opt,name=predicate,proto3" json:"predicate,omitempty"`
+	// The version of the state from which the response draws is allowed to be
+	// stale up to this duration.
+	// For example, with max staleness of 5m, the response might not contain
+	// artifacts uploaded 4m ago.
+	// Choosing a larger duration may reduce request latency.
+	// Must be <=30m.
+	MaxStaleness *duration.Duration `protobuf:"bytes,4,opt,name=max_staleness,json=maxStaleness,proto3" json:"max_staleness,omitempty"`
+	// The maximum number of artifacts to return.
+	//
+	// The service may return fewer than this value.
+	// If unspecified, at most 100 artifacts will be returned.
+	// The maximum value is 1000; values above 1000 will be coerced to 1000.
+	PageSize int32 `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// A page token, received from a previous `QueryArtifacts` call.
+	// Provide this to retrieve the subsequent page.
+	//
+	// When paginating, all other parameters provided to `QueryArtifacts` MUST
+	// match the call that provided the page token.
+	PageToken            string   `protobuf:"bytes,6,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *QueryArtifactsRequest) Reset()         { *m = QueryArtifactsRequest{} }
+func (m *QueryArtifactsRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryArtifactsRequest) ProtoMessage()    {}
+func (*QueryArtifactsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b48732830a4fcfbd, []int{14}
+}
+
+func (m *QueryArtifactsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_QueryArtifactsRequest.Unmarshal(m, b)
+}
+func (m *QueryArtifactsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_QueryArtifactsRequest.Marshal(b, m, deterministic)
+}
+func (m *QueryArtifactsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryArtifactsRequest.Merge(m, src)
+}
+func (m *QueryArtifactsRequest) XXX_Size() int {
+	return xxx_messageInfo_QueryArtifactsRequest.Size(m)
+}
+func (m *QueryArtifactsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryArtifactsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryArtifactsRequest proto.InternalMessageInfo
+
+func (m *QueryArtifactsRequest) GetInvocations() []string {
+	if m != nil {
+		return m.Invocations
+	}
+	return nil
+}
+
+func (m *QueryArtifactsRequest) GetFollowEdges() *QueryArtifactsRequest_EdgeTypeSet {
+	if m != nil {
+		return m.FollowEdges
+	}
+	return nil
+}
+
+func (m *QueryArtifactsRequest) GetPredicate() *TestResultPredicate {
+	if m != nil {
+		return m.Predicate
+	}
+	return nil
+}
+
+func (m *QueryArtifactsRequest) GetMaxStaleness() *duration.Duration {
+	if m != nil {
+		return m.MaxStaleness
+	}
+	return nil
+}
+
+func (m *QueryArtifactsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *QueryArtifactsRequest) GetPageToken() string {
+	if m != nil {
+		return m.PageToken
+	}
+	return ""
+}
+
+// A set of Invocation's outgoing edge types.
+type QueryArtifactsRequest_EdgeTypeSet struct {
+	// The edges represented by Invocation.included_invocations field.
+	IncludedInvocations bool `protobuf:"varint,1,opt,name=included_invocations,json=includedInvocations,proto3" json:"included_invocations,omitempty"`
+	// The parent-child relationship between Invocation and TestResult.
+	TestResults          bool     `protobuf:"varint,2,opt,name=test_results,json=testResults,proto3" json:"test_results,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *QueryArtifactsRequest_EdgeTypeSet) Reset()         { *m = QueryArtifactsRequest_EdgeTypeSet{} }
+func (m *QueryArtifactsRequest_EdgeTypeSet) String() string { return proto.CompactTextString(m) }
+func (*QueryArtifactsRequest_EdgeTypeSet) ProtoMessage()    {}
+func (*QueryArtifactsRequest_EdgeTypeSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b48732830a4fcfbd, []int{14, 0}
+}
+
+func (m *QueryArtifactsRequest_EdgeTypeSet) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_QueryArtifactsRequest_EdgeTypeSet.Unmarshal(m, b)
+}
+func (m *QueryArtifactsRequest_EdgeTypeSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_QueryArtifactsRequest_EdgeTypeSet.Marshal(b, m, deterministic)
+}
+func (m *QueryArtifactsRequest_EdgeTypeSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryArtifactsRequest_EdgeTypeSet.Merge(m, src)
+}
+func (m *QueryArtifactsRequest_EdgeTypeSet) XXX_Size() int {
+	return xxx_messageInfo_QueryArtifactsRequest_EdgeTypeSet.Size(m)
+}
+func (m *QueryArtifactsRequest_EdgeTypeSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryArtifactsRequest_EdgeTypeSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryArtifactsRequest_EdgeTypeSet proto.InternalMessageInfo
+
+func (m *QueryArtifactsRequest_EdgeTypeSet) GetIncludedInvocations() bool {
+	if m != nil {
+		return m.IncludedInvocations
+	}
+	return false
+}
+
+func (m *QueryArtifactsRequest_EdgeTypeSet) GetTestResults() bool {
+	if m != nil {
+		return m.TestResults
+	}
+	return false
+}
+
+// A response message for QueryArtifacts RPC.
+type QueryArtifactsResponse struct {
+	// Matched artifacts.
+	// First invocation-level artifacts, then test-result-level artifacts
+	// ordered by test id.
+	Artifacts []*Artifact `protobuf:"bytes,1,rep,name=artifacts,proto3" json:"artifacts,omitempty"`
+	// A token, which can be sent as `page_token` to retrieve the next page.
+	// If this field is omitted, there were no subsequent pages at the time of
+	// request.
+	NextPageToken        string   `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *QueryArtifactsResponse) Reset()         { *m = QueryArtifactsResponse{} }
+func (m *QueryArtifactsResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryArtifactsResponse) ProtoMessage()    {}
+func (*QueryArtifactsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b48732830a4fcfbd, []int{15}
+}
+
+func (m *QueryArtifactsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_QueryArtifactsResponse.Unmarshal(m, b)
+}
+func (m *QueryArtifactsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_QueryArtifactsResponse.Marshal(b, m, deterministic)
+}
+func (m *QueryArtifactsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryArtifactsResponse.Merge(m, src)
+}
+func (m *QueryArtifactsResponse) XXX_Size() int {
+	return xxx_messageInfo_QueryArtifactsResponse.Size(m)
+}
+func (m *QueryArtifactsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryArtifactsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryArtifactsResponse proto.InternalMessageInfo
+
+func (m *QueryArtifactsResponse) GetArtifacts() []*Artifact {
+	if m != nil {
+		return m.Artifacts
+	}
+	return nil
+}
+
+func (m *QueryArtifactsResponse) GetNextPageToken() string {
+	if m != nil {
+		return m.NextPageToken
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*GetInvocationRequest)(nil), "luci.resultdb.rpc.v1.GetInvocationRequest")
 	proto.RegisterType((*GetTestResultRequest)(nil), "luci.resultdb.rpc.v1.GetTestResultRequest")
@@ -699,6 +1077,12 @@ func init() {
 	proto.RegisterType((*QueryTestResultsResponse)(nil), "luci.resultdb.rpc.v1.QueryTestResultsResponse")
 	proto.RegisterType((*QueryTestExonerationsRequest)(nil), "luci.resultdb.rpc.v1.QueryTestExonerationsRequest")
 	proto.RegisterType((*QueryTestExonerationsResponse)(nil), "luci.resultdb.rpc.v1.QueryTestExonerationsResponse")
+	proto.RegisterType((*GetArtifactRequest)(nil), "luci.resultdb.rpc.v1.GetArtifactRequest")
+	proto.RegisterType((*ListArtifactsRequest)(nil), "luci.resultdb.rpc.v1.ListArtifactsRequest")
+	proto.RegisterType((*ListArtifactsResponse)(nil), "luci.resultdb.rpc.v1.ListArtifactsResponse")
+	proto.RegisterType((*QueryArtifactsRequest)(nil), "luci.resultdb.rpc.v1.QueryArtifactsRequest")
+	proto.RegisterType((*QueryArtifactsRequest_EdgeTypeSet)(nil), "luci.resultdb.rpc.v1.QueryArtifactsRequest.EdgeTypeSet")
+	proto.RegisterType((*QueryArtifactsResponse)(nil), "luci.resultdb.rpc.v1.QueryArtifactsResponse")
 }
 
 func init() {
@@ -706,50 +1090,65 @@ func init() {
 }
 
 var fileDescriptor_b48732830a4fcfbd = []byte{
-	// 685 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x56, 0x4f, 0x6f, 0xd3, 0x4e,
-	0x10, 0x8d, 0xd3, 0x3f, 0x6a, 0x26, 0xad, 0xda, 0xdf, 0xaa, 0x3f, 0x9a, 0xba, 0x2d, 0x44, 0x41,
-	0xa0, 0x82, 0x60, 0x4d, 0xdd, 0x13, 0x14, 0x21, 0x51, 0x8a, 0x2a, 0x24, 0x0e, 0xad, 0xdb, 0x13,
-	0x97, 0xc8, 0x71, 0xb6, 0xa9, 0x45, 0xe2, 0x35, 0xbb, 0xeb, 0x28, 0xed, 0x01, 0x10, 0x07, 0x38,
-	0x72, 0x87, 0x4f, 0xc0, 0xb7, 0xe2, 0xa3, 0xa0, 0xd8, 0x8e, 0xbd, 0x89, 0x37, 0x89, 0x73, 0xa1,
-	0x1c, 0x33, 0x3b, 0x6f, 0xf6, 0xcd, 0x7b, 0xb3, 0xe3, 0xc0, 0xd3, 0x16, 0xc5, 0xce, 0x25, 0xa3,
-	0x1d, 0x37, 0xe8, 0x60, 0xca, 0x5a, 0x46, 0x3b, 0x70, 0x5c, 0x83, 0x11, 0x1e, 0xb4, 0x45, 0xb3,
-	0x61, 0xf8, 0x8c, 0x0a, 0x6a, 0x30, 0xdf, 0x31, 0xba, 0x7b, 0x49, 0x14, 0x87, 0x51, 0xb4, 0xde,
-	0x4f, 0xc5, 0x49, 0x90, 0xf9, 0x0e, 0xee, 0xee, 0xe9, 0x77, 0x5a, 0x94, 0xb6, 0xda, 0xc4, 0xb0,
-	0x7d, 0xd7, 0xb8, 0x70, 0x49, 0xbb, 0x59, 0x6f, 0x90, 0x4b, 0xbb, 0xeb, 0x52, 0x16, 0xc1, 0xf4,
-	0xdb, 0x71, 0x42, 0xf8, 0xab, 0x11, 0x5c, 0x18, 0xcd, 0x80, 0xd9, 0xc2, 0xa5, 0x5e, 0x7c, 0x7e,
-	0x30, 0x03, 0x23, 0xd7, 0xeb, 0x52, 0x47, 0x06, 0x3f, 0x9b, 0x01, 0xec, 0x33, 0xd2, 0x74, 0x1d,
-	0x5b, 0x90, 0x18, 0xfb, 0x7c, 0x06, 0xac, 0x20, 0x5c, 0xd4, 0xa3, 0xa3, 0x08, 0x5d, 0x33, 0x60,
-	0xfd, 0x98, 0x88, 0x37, 0x09, 0x21, 0x8b, 0x7c, 0x08, 0x08, 0x17, 0x68, 0x03, 0xe6, 0x3d, 0xbb,
-	0x43, 0x2a, 0x5a, 0x55, 0xdb, 0x2d, 0x1d, 0xce, 0xfd, 0x7e, 0x59, 0xb4, 0xc2, 0x40, 0x0c, 0x38,
-	0x27, 0x5c, 0x58, 0x61, 0x9d, 0xa9, 0x80, 0x2b, 0xb8, 0xf5, 0xd6, 0xe5, 0x12, 0x82, 0x0f, 0x20,
-	0x77, 0x01, 0x52, 0x25, 0x64, 0xa0, 0x14, 0x46, 0x5b, 0x50, 0xf2, 0xed, 0x16, 0xa9, 0x73, 0xf7,
-	0x9a, 0x54, 0x8a, 0x55, 0x6d, 0x77, 0xc1, 0x5a, 0xea, 0x07, 0xce, 0xdc, 0x6b, 0x82, 0x76, 0x00,
-	0xc2, 0x43, 0x41, 0xdf, 0x13, 0xaf, 0x32, 0xd7, 0xaf, 0x60, 0x85, 0xe9, 0xe7, 0xfd, 0x40, 0xed,
-	0xab, 0x06, 0x1b, 0x99, 0xbb, 0xb9, 0x4f, 0x3d, 0x4e, 0xd0, 0x2b, 0x58, 0x96, 0xd4, 0xe0, 0x15,
-	0xad, 0x3a, 0xb7, 0x5b, 0x36, 0xab, 0x58, 0x35, 0x1d, 0x58, 0x6a, 0xb7, 0x2c, 0xd2, 0x62, 0xe8,
-	0x3e, 0xac, 0x7a, 0xa4, 0x27, 0xea, 0x12, 0x89, 0x62, 0x48, 0x62, 0xa5, 0x1f, 0x3e, 0x49, 0x88,
-	0x18, 0xb0, 0x19, 0x8b, 0xf6, 0xba, 0x47, 0x3d, 0xc2, 0x86, 0xa4, 0x46, 0xb2, 0x72, 0xb1, 0x68,
-	0x1f, 0x61, 0x6b, 0x40, 0x5c, 0x42, 0xfc, 0x3d, 0xe5, 0x7e, 0x68, 0xb0, 0xad, 0x26, 0x10, 0xcb,
-	0x67, 0xc1, 0x7f, 0xa1, 0x7c, 0x44, 0x3a, 0x8c, 0x35, 0xbc, 0x37, 0x5e, 0x43, 0xb9, 0xfb, 0x35,
-	0x31, 0x52, 0x3b, 0xb7, 0x9a, 0x9f, 0x8b, 0xb0, 0x71, 0x1a, 0x10, 0x76, 0xa5, 0x98, 0xa9, 0x2a,
-	0x94, 0x53, 0x09, 0x22, 0x46, 0x25, 0x4b, 0x0e, 0xa1, 0x63, 0x28, 0x25, 0x4f, 0x28, 0xac, 0x5f,
-	0x36, 0x1f, 0x4c, 0x73, 0xfd, 0x64, 0x00, 0xb0, 0x52, 0x2c, 0x7a, 0x01, 0x2b, 0x1d, 0xbb, 0x57,
-	0xe7, 0xc2, 0x6e, 0x13, 0x8f, 0x70, 0x1e, 0xaa, 0x58, 0x36, 0x37, 0x71, 0xb4, 0x29, 0xf0, 0x60,
-	0x53, 0xe0, 0xa3, 0x78, 0x53, 0x58, 0xcb, 0x1d, 0xbb, 0x77, 0x36, 0x48, 0x1f, 0xf6, 0x67, 0x7e,
-	0xa2, 0x3f, 0x0b, 0xa3, 0xfe, 0x7c, 0xd3, 0xa0, 0x92, 0x95, 0xe0, 0x26, 0x46, 0xfb, 0x7b, 0x11,
-	0xb6, 0x13, 0x26, 0xaa, 0x59, 0x9d, 0xee, 0xc8, 0x69, 0xd6, 0x11, 0x9c, 0x6b, 0x86, 0x12, 0x5b,
-	0xa2, 0xe1, 0xff, 0x47, 0xbc, 0xf9, 0xa9, 0xc1, 0xce, 0x18, 0x45, 0x6e, 0xfe, 0xf1, 0x98, 0xbf,
-	0x16, 0x61, 0x29, 0xf2, 0xf8, 0xe8, 0x10, 0xd5, 0x61, 0x65, 0x68, 0xfb, 0xa3, 0x87, 0xea, 0xeb,
-	0x55, 0x9f, 0x08, 0x7d, 0xcc, 0x40, 0xa5, 0x89, 0xb5, 0x42, 0x7c, 0x41, 0x3a, 0x63, 0x13, 0x2e,
-	0xc8, 0x7c, 0x52, 0xf4, 0xa9, 0x13, 0x5b, 0x2b, 0x20, 0x1f, 0x56, 0x47, 0x36, 0x3c, 0x7a, 0xa4,
-	0x86, 0xa9, 0x3f, 0x42, 0xfa, 0xe3, 0x9c, 0xd9, 0x91, 0x75, 0xb5, 0x02, 0xf2, 0x00, 0x65, 0x77,
-	0x39, 0x32, 0x26, 0xf6, 0x95, 0xdd, 0xfa, 0x7a, 0x3e, 0xa3, 0x6b, 0x05, 0xf4, 0x09, 0xd6, 0x55,
-	0x9b, 0x18, 0xed, 0x4d, 0x26, 0xae, 0x78, 0x8a, 0xba, 0x39, 0x0b, 0x24, 0x69, 0x98, 0xc3, 0xda,
-	0xe8, 0xaa, 0x41, 0x63, 0x54, 0x1b, 0xb3, 0x95, 0x75, 0x9c, 0x37, 0x3d, 0xb9, 0xf4, 0x8b, 0x06,
-	0xff, 0x2b, 0x1f, 0x11, 0x32, 0xa7, 0xd4, 0x52, 0x35, 0xbe, 0x3f, 0x13, 0x66, 0x40, 0xe2, 0xd0,
-	0x7c, 0xf7, 0x24, 0xff, 0x9f, 0xab, 0x03, 0xe6, 0x3b, 0x7e, 0xa3, 0xb1, 0x18, 0xc6, 0xf6, 0xff,
-	0x04, 0x00, 0x00, 0xff, 0xff, 0x09, 0x75, 0x6e, 0x7e, 0xa2, 0x0a, 0x00, 0x00,
+	// 918 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x57, 0x51, 0x6f, 0xdb, 0x54,
+	0x14, 0x8e, 0x93, 0xb6, 0x4a, 0x8e, 0x1b, 0x36, 0x2e, 0xd9, 0x9a, 0xb9, 0xdb, 0x08, 0x46, 0xa0,
+	0xc0, 0x56, 0x9b, 0x64, 0x0f, 0x08, 0x36, 0x21, 0xad, 0x6c, 0xaa, 0x26, 0xf1, 0xb0, 0xb9, 0x7d,
+	0xa1, 0x2f, 0x96, 0x63, 0xdf, 0xa4, 0x06, 0xc7, 0xd7, 0xd8, 0xd7, 0x21, 0xad, 0x44, 0x41, 0x3c,
+	0xc0, 0x23, 0xef, 0xf0, 0x63, 0xf8, 0x29, 0xf0, 0x53, 0x50, 0xec, 0x6b, 0xe7, 0xc6, 0x71, 0x62,
+	0x47, 0x45, 0x5d, 0x1f, 0x73, 0x7c, 0xbe, 0x7b, 0xce, 0xf9, 0xce, 0xb9, 0xdf, 0xb9, 0x81, 0x2f,
+	0x46, 0x44, 0x31, 0xcf, 0x7c, 0x32, 0xb6, 0xc3, 0xb1, 0x42, 0xfc, 0x91, 0xea, 0x84, 0xa6, 0xad,
+	0xfa, 0x38, 0x08, 0x1d, 0x6a, 0x0d, 0x54, 0xcf, 0x27, 0x94, 0xa8, 0xbe, 0x67, 0xaa, 0x93, 0x5e,
+	0x6a, 0x55, 0x22, 0x2b, 0x6a, 0xcd, 0x5c, 0x95, 0xd4, 0xe8, 0x7b, 0xa6, 0x32, 0xe9, 0x49, 0xef,
+	0x8f, 0x08, 0x19, 0x39, 0x58, 0x35, 0x3c, 0x5b, 0x1d, 0xda, 0xd8, 0xb1, 0xf4, 0x01, 0x3e, 0x33,
+	0x26, 0x36, 0xf1, 0x63, 0x98, 0xf4, 0x90, 0x39, 0x44, 0xbf, 0x06, 0xe1, 0x50, 0xb5, 0x42, 0xdf,
+	0xa0, 0x36, 0x71, 0xd9, 0xf7, 0x4d, 0x32, 0x32, 0x7c, 0x6a, 0x0f, 0x0d, 0x93, 0x32, 0xe8, 0xd3,
+	0x0d, 0xa0, 0xb6, 0x3b, 0x21, 0x26, 0x1f, 0xf7, 0xcb, 0x0d, 0xc0, 0x9e, 0x8f, 0x2d, 0xdb, 0x34,
+	0x28, 0x66, 0xd8, 0x67, 0x1b, 0x60, 0x29, 0x0e, 0xa8, 0x1e, 0x7f, 0x8a, 0xd1, 0xb2, 0x0a, 0xad,
+	0x23, 0x4c, 0x5f, 0xa5, 0x09, 0x69, 0xf8, 0x87, 0x10, 0x07, 0x14, 0xed, 0xc1, 0x96, 0x6b, 0x8c,
+	0x71, 0x5b, 0xe8, 0x08, 0xdd, 0xc6, 0x61, 0xed, 0xdf, 0xe7, 0x55, 0x2d, 0x32, 0x30, 0xc0, 0x09,
+	0x0e, 0xa8, 0x16, 0x9d, 0x53, 0x08, 0x38, 0x87, 0xbb, 0xdf, 0xd8, 0x01, 0x87, 0x08, 0x12, 0xc8,
+	0x87, 0x00, 0x73, 0x26, 0x78, 0x20, 0x67, 0x46, 0xfb, 0xd0, 0xf0, 0x8c, 0x11, 0xd6, 0x03, 0xfb,
+	0x02, 0xb7, 0xab, 0x1d, 0xa1, 0xbb, 0xad, 0xd5, 0x67, 0x86, 0x63, 0xfb, 0x02, 0xa3, 0x07, 0x00,
+	0xd1, 0x47, 0x4a, 0xbe, 0xc7, 0x6e, 0xbb, 0x36, 0x3b, 0x41, 0x8b, 0xdc, 0x4f, 0x66, 0x06, 0xf9,
+	0x37, 0x01, 0xf6, 0x96, 0x62, 0x07, 0x1e, 0x71, 0x03, 0x8c, 0xbe, 0x86, 0x5d, 0x8e, 0x8d, 0xa0,
+	0x2d, 0x74, 0x6a, 0x5d, 0xb1, 0xdf, 0x51, 0xf2, 0x06, 0x4b, 0xe1, 0xca, 0x15, 0xe9, 0xfc, 0x30,
+	0xf4, 0x31, 0xdc, 0x72, 0xf1, 0x94, 0xea, 0x5c, 0x12, 0xd5, 0x28, 0x89, 0xe6, 0xcc, 0xfc, 0x3a,
+	0x4d, 0x44, 0x85, 0x7b, 0x8c, 0xb4, 0x97, 0x53, 0xe2, 0x62, 0x7f, 0x81, 0x6a, 0xc4, 0x33, 0xc7,
+	0x48, 0xbb, 0x84, 0xfd, 0x24, 0x71, 0x0e, 0x71, 0x7d, 0xcc, 0xfd, 0x29, 0xc0, 0xfd, 0xfc, 0x04,
+	0x18, 0x7d, 0x1a, 0xbc, 0x1b, 0xd1, 0x87, 0xb9, 0x8f, 0x8c, 0xc3, 0x8f, 0x56, 0x73, 0xc8, 0x57,
+	0x7f, 0x9b, 0x66, 0xce, 0x2e, 0xcd, 0xe6, 0x2f, 0x55, 0xd8, 0x7b, 0x13, 0x62, 0xff, 0x3c, 0x67,
+	0xa6, 0x3a, 0x20, 0xce, 0x29, 0x88, 0x33, 0x6a, 0x68, 0xbc, 0x09, 0x1d, 0x41, 0x23, 0xbd, 0x42,
+	0xd1, 0xf9, 0x62, 0xff, 0x93, 0xa2, 0xae, 0xbf, 0x4e, 0x00, 0xda, 0x1c, 0x8b, 0xbe, 0x82, 0xe6,
+	0xd8, 0x98, 0xea, 0x01, 0x35, 0x1c, 0xec, 0xe2, 0x20, 0x88, 0x58, 0x14, 0xfb, 0xf7, 0x94, 0x58,
+	0x64, 0x94, 0x44, 0x64, 0x94, 0x17, 0x4c, 0x64, 0xb4, 0xdd, 0xb1, 0x31, 0x3d, 0x4e, 0xdc, 0x17,
+	0xfb, 0xb3, 0xb5, 0xb6, 0x3f, 0xdb, 0xd9, 0xfe, 0xfc, 0x2e, 0x40, 0x7b, 0x99, 0x82, 0xb7, 0x31,
+	0xda, 0x7f, 0x54, 0xe1, 0x7e, 0x9a, 0x49, 0xde, 0xac, 0x16, 0x77, 0xe4, 0xcd, 0x72, 0x47, 0x94,
+	0x52, 0x33, 0x94, 0xb6, 0x25, 0x1e, 0xfe, 0x1b, 0xd2, 0x9b, 0xbf, 0x04, 0x78, 0xb0, 0x82, 0x91,
+	0x1b, 0x70, 0x79, 0x0e, 0x00, 0x1d, 0x61, 0xfa, 0x9c, 0x2d, 0xaf, 0x42, 0xf5, 0x26, 0xd0, 0x9a,
+	0xe9, 0x40, 0xe2, 0x9f, 0x76, 0x75, 0x1f, 0x76, 0x3c, 0xc3, 0xc7, 0x2e, 0xe5, 0x21, 0xcc, 0x74,
+	0x25, 0xe5, 0xf9, 0x09, 0xee, 0x64, 0x02, 0x32, 0xd2, 0x9e, 0x41, 0x23, 0x59, 0xb9, 0x09, 0x59,
+	0x0f, 0xf3, 0xc9, 0x4a, 0x8b, 0x9b, 0x03, 0x4a, 0xd3, 0xf3, 0x77, 0x0d, 0xee, 0x44, 0xcd, 0x5b,
+	0xaa, 0xb8, 0x78, 0x8e, 0x4f, 0x61, 0x77, 0x48, 0x1c, 0x87, 0xfc, 0xa8, 0x63, 0x6b, 0x84, 0x03,
+	0x36, 0xca, 0x9f, 0xe7, 0x27, 0x99, 0x1b, 0x44, 0x79, 0x69, 0x8d, 0xf0, 0xc9, 0xb9, 0x87, 0x8f,
+	0x31, 0xd5, 0xc4, 0xf8, 0xb0, 0x99, 0x29, 0xa3, 0x5a, 0xb5, 0xff, 0x53, 0xb5, 0xb6, 0xae, 0x70,
+	0x33, 0xb6, 0xd7, 0xf6, 0x76, 0x27, 0xd3, 0x5b, 0xc9, 0x04, 0x91, 0x2b, 0x10, 0xf5, 0xa0, 0x65,
+	0xbb, 0xa6, 0x13, 0x5a, 0xd8, 0xd2, 0x17, 0xa9, 0x15, 0xba, 0x75, 0xed, 0xbd, 0xe4, 0xdb, 0x2b,
+	0x8e, 0xe2, 0x0f, 0x32, 0xd2, 0x56, 0x8d, 0x5c, 0x79, 0xe1, 0x92, 0x2f, 0xe1, 0x6e, 0x96, 0xdb,
+	0xeb, 0x9c, 0xa0, 0xfe, 0x3f, 0x75, 0xa8, 0xc7, 0xb9, 0xbc, 0x38, 0x44, 0x3a, 0x34, 0x17, 0x9e,
+	0x57, 0xe8, 0xd3, 0xfc, 0x80, 0x79, 0x6f, 0x30, 0x69, 0x85, 0x62, 0xcf, 0x1d, 0xe5, 0x0a, 0x0b,
+	0x30, 0xef, 0xf9, 0x9a, 0x00, 0x4b, 0x6f, 0x36, 0xa9, 0x70, 0x25, 0xc8, 0x15, 0xe4, 0xc1, 0xad,
+	0xcc, 0x13, 0x0a, 0x3d, 0xce, 0x87, 0xe5, 0xbf, 0xf2, 0xa4, 0x83, 0x92, 0xde, 0x71, 0x93, 0xe4,
+	0x0a, 0x72, 0x23, 0x85, 0xca, 0x28, 0x1e, 0x52, 0xd7, 0xd6, 0xb5, 0xfc, 0xac, 0x92, 0xca, 0x29,
+	0xa9, 0x5c, 0x41, 0x3f, 0xc7, 0x12, 0x97, 0x55, 0x6b, 0xd4, 0x5b, 0x9f, 0x78, 0xce, 0xae, 0x93,
+	0xfa, 0x9b, 0x40, 0xd2, 0x82, 0x03, 0xb8, 0x9d, 0xdd, 0xe5, 0xe8, 0x60, 0x8d, 0x6a, 0xe4, 0x90,
+	0xac, 0x94, 0x75, 0x4f, 0x83, 0xfe, 0x2a, 0x30, 0xa1, 0x5b, 0xaa, 0xbb, 0x5f, 0x70, 0x56, 0x5e,
+	0xe1, 0x4f, 0x36, 0xc2, 0xa4, 0x49, 0x7c, 0x0b, 0x22, 0xb7, 0x8c, 0x50, 0x77, 0x65, 0x8f, 0x33,
+	0xfb, 0x4a, 0x2a, 0xb8, 0xb7, 0x72, 0x05, 0x7d, 0x07, 0xcd, 0x85, 0x3d, 0xb2, 0xea, 0x62, 0xe4,
+	0x6d, 0x37, 0xe9, 0x51, 0x29, 0xdf, 0xb4, 0x8c, 0x31, 0xbc, 0xb3, 0x28, 0x39, 0xe8, 0xd1, 0x06,
+	0xa2, 0x2f, 0x3d, 0x2e, 0xe7, 0x9c, 0x84, 0x3b, 0xec, 0x9f, 0x7e, 0x56, 0xfe, 0x3f, 0xdf, 0x53,
+	0xdf, 0x33, 0xbd, 0xc1, 0x60, 0x27, 0xb2, 0x3d, 0xf9, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x4b, 0x20,
+	0xd1, 0xa3, 0x74, 0x0f, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -780,7 +1179,7 @@ type ResultDBClient interface {
 	// Note: response does not contain test results of included invocations.
 	// Use QueryTestExonerations instead.
 	ListTestExonerations(ctx context.Context, in *ListTestExonerationsRequest, opts ...grpc.CallOption) (*ListTestExonerationsResponse, error)
-	// Retrieves test results from an invocation.
+	// Retrieves test results from an invocation, recursively.
 	// Supports invocation inclusions.
 	// Supports advanced filtering.
 	QueryTestResults(ctx context.Context, in *QueryTestResultsRequest, opts ...grpc.CallOption) (*QueryTestResultsResponse, error)
@@ -788,6 +1187,18 @@ type ResultDBClient interface {
 	// Supports invocation inclusions.
 	// Supports advanced filtering.
 	QueryTestExonerations(ctx context.Context, in *QueryTestExonerationsRequest, opts ...grpc.CallOption) (*QueryTestExonerationsResponse, error)
+	// Retrieves an artifact.
+	GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error)
+	// Retrieves artifacts for a parent invocation/testResult.
+	//
+	// Note: if the parent is an invocation, the response does not contain
+	// artifacts of included invocations. Use QueryArtifacts instead.
+	ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error)
+	// Retrieves artifacts from an invocation, recursively.
+	// Can retrieve artifacts of test results included in the invocation
+	// directly or indirectly.
+	// Supports invocation inclusions.
+	QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error)
 }
 type resultDBPRPCClient struct {
 	client *prpc.Client
@@ -854,6 +1265,33 @@ func (c *resultDBPRPCClient) QueryTestResults(ctx context.Context, in *QueryTest
 func (c *resultDBPRPCClient) QueryTestExonerations(ctx context.Context, in *QueryTestExonerationsRequest, opts ...grpc.CallOption) (*QueryTestExonerationsResponse, error) {
 	out := new(QueryTestExonerationsResponse)
 	err := c.client.Call(ctx, "luci.resultdb.rpc.v1.ResultDB", "QueryTestExonerations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
+	out := new(Artifact)
+	err := c.client.Call(ctx, "luci.resultdb.rpc.v1.ResultDB", "GetArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error) {
+	out := new(ListArtifactsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.rpc.v1.ResultDB", "ListArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
+	out := new(QueryArtifactsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.rpc.v1.ResultDB", "QueryArtifacts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -931,6 +1369,33 @@ func (c *resultDBClient) QueryTestExonerations(ctx context.Context, in *QueryTes
 	return out, nil
 }
 
+func (c *resultDBClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
+	out := new(Artifact)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.rpc.v1.ResultDB/GetArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error) {
+	out := new(ListArtifactsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.rpc.v1.ResultDB/ListArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
+	out := new(QueryArtifactsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.rpc.v1.ResultDB/QueryArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResultDBServer is the server API for ResultDB service.
 type ResultDBServer interface {
 	// Retrieves an invocation.
@@ -949,7 +1414,7 @@ type ResultDBServer interface {
 	// Note: response does not contain test results of included invocations.
 	// Use QueryTestExonerations instead.
 	ListTestExonerations(context.Context, *ListTestExonerationsRequest) (*ListTestExonerationsResponse, error)
-	// Retrieves test results from an invocation.
+	// Retrieves test results from an invocation, recursively.
 	// Supports invocation inclusions.
 	// Supports advanced filtering.
 	QueryTestResults(context.Context, *QueryTestResultsRequest) (*QueryTestResultsResponse, error)
@@ -957,6 +1422,18 @@ type ResultDBServer interface {
 	// Supports invocation inclusions.
 	// Supports advanced filtering.
 	QueryTestExonerations(context.Context, *QueryTestExonerationsRequest) (*QueryTestExonerationsResponse, error)
+	// Retrieves an artifact.
+	GetArtifact(context.Context, *GetArtifactRequest) (*Artifact, error)
+	// Retrieves artifacts for a parent invocation/testResult.
+	//
+	// Note: if the parent is an invocation, the response does not contain
+	// artifacts of included invocations. Use QueryArtifacts instead.
+	ListArtifacts(context.Context, *ListArtifactsRequest) (*ListArtifactsResponse, error)
+	// Retrieves artifacts from an invocation, recursively.
+	// Can retrieve artifacts of test results included in the invocation
+	// directly or indirectly.
+	// Supports invocation inclusions.
+	QueryArtifacts(context.Context, *QueryArtifactsRequest) (*QueryArtifactsResponse, error)
 }
 
 // UnimplementedResultDBServer can be embedded to have forward compatible implementations.
@@ -983,6 +1460,15 @@ func (*UnimplementedResultDBServer) QueryTestResults(ctx context.Context, req *Q
 }
 func (*UnimplementedResultDBServer) QueryTestExonerations(ctx context.Context, req *QueryTestExonerationsRequest) (*QueryTestExonerationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTestExonerations not implemented")
+}
+func (*UnimplementedResultDBServer) GetArtifact(ctx context.Context, req *GetArtifactRequest) (*Artifact, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetArtifact not implemented")
+}
+func (*UnimplementedResultDBServer) ListArtifacts(ctx context.Context, req *ListArtifactsRequest) (*ListArtifactsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListArtifacts not implemented")
+}
+func (*UnimplementedResultDBServer) QueryArtifacts(ctx context.Context, req *QueryArtifactsRequest) (*QueryArtifactsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryArtifacts not implemented")
 }
 
 func RegisterResultDBServer(s prpc.Registrar, srv ResultDBServer) {
@@ -1115,6 +1601,60 @@ func _ResultDB_QueryTestExonerations_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResultDB_GetArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetArtifactRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).GetArtifact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.rpc.v1.ResultDB/GetArtifact",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).GetArtifact(ctx, req.(*GetArtifactRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_ListArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListArtifactsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).ListArtifacts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.rpc.v1.ResultDB/ListArtifacts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).ListArtifacts(ctx, req.(*ListArtifactsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_QueryArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryArtifactsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).QueryArtifacts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.rpc.v1.ResultDB/QueryArtifacts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).QueryArtifacts(ctx, req.(*QueryArtifactsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ResultDB_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.resultdb.rpc.v1.ResultDB",
 	HandlerType: (*ResultDBServer)(nil),
@@ -1146,6 +1686,18 @@ var _ResultDB_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryTestExonerations",
 			Handler:    _ResultDB_QueryTestExonerations_Handler,
+		},
+		{
+			MethodName: "GetArtifact",
+			Handler:    _ResultDB_GetArtifact_Handler,
+		},
+		{
+			MethodName: "ListArtifacts",
+			Handler:    _ResultDB_ListArtifacts_Handler,
+		},
+		{
+			MethodName: "QueryArtifacts",
+			Handler:    _ResultDB_QueryArtifacts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
