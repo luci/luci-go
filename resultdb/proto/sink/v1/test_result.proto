@@ -53,20 +53,16 @@ message TestResult {
   // Equivalent of luci.resultpb.TestResult.tags.
   repeated luci.resultdb.type.StringPair tags = 9;
 
-  // Equivalent of luci.resultpb.TestResult.input_artifacts.
-  // The map key is an artifact name.
-  map<string, Artifact> input_artifacts = 10;
-
-  // Equivalent of luci.resultpb.TestResult.output_artifacts.
-  // The map key is an artifact name.
-  map<string, Artifact> output_artifacts = 11;
+  // Artifacts to upload and associate with this test result.
+  // The map key is an artifact id.
+  map<string, Artifact> artifacts = 10;
 }
 
 // A local equivalent of luci.resultdb.Artifact message
-// in ../../rpc/v1/test_result.proto.
+// in ../../rpc/v1/artifact.proto.
 // See its comments for details.
-// Does not have a name because the latter is avialable as a map key in
-// TestResult.input_artifacts and TestResult.output_artifacts.
+// Does not have a name or artifact_id because they are represented by the
+// TestResult.artifacts map key.
 message Artifact {
   oneof body {
     // Absolute path to the artifact file on the same machine as the
