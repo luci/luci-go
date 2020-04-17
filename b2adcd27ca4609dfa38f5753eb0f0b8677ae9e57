@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69bbcd98_6f926b70",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "this is probably good enough, but if you want to make it bullet proof, fmt.Fprintf(\u0026sb, \"%q\", step.Name) would escape quotes in the step name",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "99d0ce4d_c2e00236",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "let\u0027s log the error so that we don\u0027t completely lose it\n\nor pass it to generateDefaultStatusMessage so that users see that and don\u0027t bother us with requests to look into the server logs to see what happened",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a677db04_09162565",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "what if there was no regexp? would the string be \" on https:/...\" ?",
+      "range": {
+        "startLine": 213,
+        "startChar": 33,
+        "endLine": 213,
+        "endChar": 52
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c61bb1f7_73432b2d",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "this error message has no indication that the built-in template failed, so users might get surprised.",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52b67150_95e30163",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "this parses the template each time it is called.\n\ntypically template structs are placed in a global variable",
+      "range": {
+        "startLine": 213,
+        "startChar": 1,
+        "endLine": 215,
+        "endChar": 52
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "947cb768_fa78e4bb",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "more typical: https://godoc.org/text/template#Must",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8a799a6_c96cb26d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "no longer necessary",
+      "range": {
+        "startLine": 355,
+        "startChar": 56,
+        "endLine": 355,
+        "endChar": 61
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bad8cdcf_e952a3d1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T05:42:10Z",
+      "side": 1,
+      "message": "nit: consider inlining it",
+      "range": {
+        "startLine": 369,
+        "startChar": 4,
+        "endLine": 369,
+        "endChar": 9
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
