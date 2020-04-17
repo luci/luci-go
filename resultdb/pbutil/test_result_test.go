@@ -76,20 +76,17 @@ func invalidArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 // validTestResult returns a valid TestResult sample.
 func validTestResult(now time.Time) *pb.TestResult {
 	st, _ := ptypes.TimestampProto(now.Add(-2 * time.Minute))
-	art1, art2 := validArtifacts(now)
 	return &pb.TestResult{
-		Name:            "invocations/a/tests/invocation_id1/results/result_id1",
-		TestId:          "this is testID",
-		ResultId:        "result_id1",
-		Variant:         Variant("a", "b"),
-		Expected:        true,
-		Status:          pb.TestStatus_PASS,
-		SummaryHtml:     "HTML summary",
-		StartTime:       st,
-		Duration:        ptypes.DurationProto(time.Minute),
-		Tags:            StringPairs("k1", "v1"),
-		InputArtifacts:  []*pb.Artifact{art1},
-		OutputArtifacts: []*pb.Artifact{art2},
+		Name:        "invocations/a/tests/invocation_id1/results/result_id1",
+		TestId:      "this is testID",
+		ResultId:    "result_id1",
+		Variant:     Variant("a", "b"),
+		Expected:    true,
+		Status:      pb.TestStatus_PASS,
+		SummaryHtml: "HTML summary",
+		StartTime:   st,
+		Duration:    ptypes.DurationProto(time.Minute),
+		Tags:        StringPairs("k1", "v1"),
 	}
 }
 
@@ -186,24 +183,6 @@ func TestValidateTestResult(t *testing.T) {
 			msg.Duration = nil
 			So(validate(msg), ShouldBeNil)
 		})
-
-		Convey("with empty artifacts", func() {
-			Convey("in InputArtifacts", func() {
-				msg.InputArtifacts = nil
-				So(validate(msg), ShouldBeNil)
-			})
-
-			Convey("in OutputArtifacts", func() {
-				msg.OutputArtifacts = nil
-				So(validate(msg), ShouldBeNil)
-			})
-
-			// or both
-			msg.InputArtifacts = nil
-			msg.OutputArtifacts = nil
-			So(validate(msg), ShouldBeNil)
-		})
-
 	})
 
 	Convey("Fails", t, func() {
@@ -291,28 +270,6 @@ func TestValidateTestResult(t *testing.T) {
 		Convey("with invalid StringPairs", func() {
 			msg.Tags = StringPairs("", "")
 			So(validate(msg), ShouldErrLike, `"":"": key: unspecified`)
-		})
-
-		Convey("with invalid artifacts", func() {
-			bart1, bart2 := invalidArtifacts(now)
-			nameErr := fieldDoesNotMatch("name", artifactNameRe)
-
-			Convey("in InputArtifacts", func() {
-				msg.InputArtifacts = []*pb.Artifact{bart1}
-				expected := fmt.Sprintf("input_artifacts: 0: %s", nameErr)
-				So(validate(msg), ShouldErrLike, expected)
-			})
-
-			Convey("in OutputArtifacts", func() {
-				msg.OutputArtifacts = []*pb.Artifact{bart1}
-				expected := fmt.Sprintf("output_artifacts: 0: %s", nameErr)
-				So(validate(msg), ShouldErrLike, expected)
-			})
-
-			// or both
-			msg.InputArtifacts = []*pb.Artifact{bart1}
-			msg.OutputArtifacts = []*pb.Artifact{bart2}
-			So(validate(msg), ShouldErrLike, fmt.Sprintf("input_artifacts: 0: %s", nameErr))
 		})
 	})
 }
