@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "1494f651_32bdce4c",
+        "filename": "server/auth/authdb/internal/realmset/realmset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-17T00:56:48Z",
+      "side": 1,
+      "message": "Yes, this is very internal API. I\u0027m trying to avoid map[...]map[...] because each map instance carries some overhead with it. Also using string keys in many maps requires some care to avoid storing multiple copies of the same string.",
+      "parentUuid": "d449f287_4baa5a8c",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 72
+      },
+      "revId": "964cb6dd0cd9ed1fb6f422d2dff3cb21b3ae403e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c62205eb_7f40642d",
         "filename": "server/auth/authdb/internal/realmset/realmset.go",
         "patchSetId": 3
@@ -60,6 +84,30 @@
       "writtenOn": "2020-04-16T23:36:28Z",
       "side": 1,
       "message": "is overhead due to string keys or due to a bunch of maps objects?",
+      "range": {
+        "startLine": 127,
+        "startChar": 17,
+        "endLine": 128,
+        "endChar": 34
+      },
+      "revId": "964cb6dd0cd9ed1fb6f422d2dff3cb21b3ae403e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "587bac67_31a9e901",
+        "filename": "server/auth/authdb/internal/realmset/realmset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-17T00:56:48Z",
+      "side": 1,
+      "message": "A bunch of map objects.",
+      "parentUuid": "c62205eb_7f40642d",
       "range": {
         "startLine": 127,
         "startChar": 17,
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "83c7b7a0_1328c2fa",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-17T00:56:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de191caa_4c458502",
+      "range": {
+        "startLine": 253,
+        "startChar": 7,
+        "endLine": 253,
+        "endChar": 21
+      },
+      "revId": "964cb6dd0cd9ed1fb6f422d2dff3cb21b3ae403e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69ccf28b_54559dde",
         "filename": "server/auth/authdb/snapshot_test.go",
         "patchSetId": 3
@@ -109,6 +181,24 @@
       "revId": "964cb6dd0cd9ed1fb6f422d2dff3cb21b3ae403e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5709dc4_cb434d0c",
+        "filename": "server/auth/authdb/snapshot_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-17T00:56:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69ccf28b_54559dde",
+      "revId": "964cb6dd0cd9ed1fb6f422d2dff3cb21b3ae403e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
