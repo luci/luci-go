@@ -21,7 +21,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -35,7 +35,7 @@ import (
 func TestReadInvocationFull(t *testing.T) {
 	Convey(`ReadInvocationFull`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		start := clock.Now(ctx).UTC()
+		start := testclock.TestRecentTimeUTC
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
