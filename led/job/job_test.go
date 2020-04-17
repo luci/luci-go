@@ -127,6 +127,24 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw.Task.TaskSlices[1].Expiration, ShouldResemble, &durpb.Duration{Seconds: 40000 - 240})
 		})
 
+		Convey(`no expiring dims`, func() {
+			bb := bbJob.GetBuildbucket()
+			for _, dim := range bb.GetBbagentArgs().Build.Infra.Swarming.TaskDimensions {
+				dim.Expiration = nil
+			}
+			for _, cache := range bb.GetBbagentArgs().Build.Infra.Swarming.Caches {
+				cache.WaitForWarmCache = nil
+			}
+
+			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+
+			sw := bbJob.GetSwarming()
+			So(sw, ShouldNotBeNil)
+			So(sw.Task.TaskSlices, ShouldHaveLength, 1)
+
+			So(sw.Task.TaskSlices[0].Expiration, ShouldResemble, &durpb.Duration{Seconds: 21600})
+		})
+
 		Convey(`UserPayload recipe`, func() {
 			SoHLEdit(bbJob, func(je HighLevelEditor) {
 				je.TaskPayload("", "", "some/path")
