@@ -32,7 +32,7 @@ import (
 
 func editCrCLCmd(opts cmdBaseOptions) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "edit-cr-cl [-remove] URL_TO_CHANGELIST",
+		UsageLine: "edit-cr-cl [-remove|-no-implicit-clear] URL_TO_CHANGELIST",
 		ShortDesc: "sets Chromium CL-related properties on this JobDefinition (for experimenting with tryjob recipes)",
 		LongDesc: `This allows you to edit a JobDefinition for some tryjob recipe
 (e.g. chromium_tryjob), and associate a changelist with it, as if the recipe
@@ -42,9 +42,12 @@ Recognized URLs:
 	https://<gerrit_host>/c/<path/to/project>/+/<issue>/<patchset>
 	https://<gerrit_host>/c/<path/to/project>/+/<issue>/<patchset>
 
-For tasks consuming multiple input CLs, you can adjust which of the CLs you wish
-to change by using the "-at-index" flag. By default this command modifies the
-first CL on the task.
+If you provide a CL missing <patchset> and <gerrit_host> has public read access,
+this will fill in the patchset from the latest version of the issue.
+
+By default, when adding a CL, this will clear all existing CLs on the job, unless
+you pass -no-implicit-clear. Most jobs (as of 2020Q2) only expect one CL, so we
+did this implicit clearing behavior for CLI ergonomic reasons.
 `,
 
 		CommandRun: func() subcommands.CommandRun {
@@ -58,12 +61,15 @@ first CL on the task.
 type cmdEditCl struct {
 	cmdBase
 
-	gerritChange *bbpb.GerritChange
-	remove       bool
+	gerritChange    *bbpb.GerritChange
+	remove          bool
+	noImplicitClear bool
 }
 
 func (c *cmdEditCl) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.remove, "remove", false, "If provided, will remove the given CL instead of adding it.")
+	c.Flags.BoolVar(&c.noImplicitClear, "no-implicit-clear", false,
+		"If provided, will not clear existing CLs when adding a new one.")
 	c.cmdBase.initFlags(opts)
 }
 
@@ -157,6 +163,10 @@ func parseCrChangeListURL(clURL string) (*bbpb.GerritChange, error) {
 }
 
 func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ subcommands.Env) (err error) {
+	if c.remove && c.noImplicitClear {
+		return errors.New("cannot specify both -remove and -no-implicit-clear")
+	}
+
 	c.gerritChange, err = parseCrChangeListURL(positionals[0])
 	return errors.Annotate(err, "invalid URL_TO_CHANGESET").Err()
 }
@@ -166,6 +176,9 @@ func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, inJob *job.Defi
 		if c.remove {
 			je.RemoveGerritChange(c.gerritChange)
 		} else {
+			if !c.noImplicitClear {
+				je.ClearGerritChanges()
+			}
 			je.AddGerritChange(c.gerritChange)
 		}
 
