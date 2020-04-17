@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package sink
 
 import (
@@ -82,16 +83,14 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 		tr := d.(*sinkpb.TestResult)
 		req.Requests = append(req.Requests, &pb.CreateTestResultRequest{
 			TestResult: &pb.TestResult{
-				TestId:          tr.GetTestId(),
-				ResultId:        tr.GetResultId(),
-				Variant:         tr.GetVariant(),
-				Expected:        tr.GetExpected(),
-				SummaryHtml:     tr.GetSummaryHtml(),
-				StartTime:       tr.GetStartTime(),
-				Duration:        tr.GetDuration(),
-				Tags:            tr.GetTags(),
-				InputArtifacts:  sinkArtsToRpcArts(ctx, tr.GetInputArtifacts()),
-				OutputArtifacts: sinkArtsToRpcArts(ctx, tr.GetOutputArtifacts()),
+				TestId:      tr.GetTestId(),
+				ResultId:    tr.GetResultId(),
+				Variant:     tr.GetVariant(),
+				Expected:    tr.GetExpected(),
+				SummaryHtml: tr.GetSummaryHtml(),
+				StartTime:   tr.GetStartTime(),
+				Duration:    tr.GetDuration(),
+				Tags:        tr.GetTags(),
 			},
 		})
 	}
@@ -99,7 +98,7 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 	return req
 }
 
-func sinkArtsToRpcArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
+func sinkArtsToRPCArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
 	for name, sart := range sArts {
 		var size int64 = -1
 		switch {

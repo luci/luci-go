@@ -106,10 +106,6 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, err
 	}
 
-	if err := s.rewriteArtifactLinks(ctx, trs...); err != nil {
-		return nil, err
-	}
-
 	return &pb.QueryTestResultsResponse{
 		NextPageToken: token,
 		TestResults:   trs,
