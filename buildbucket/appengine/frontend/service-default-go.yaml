@@ -15,7 +15,7 @@ automatic_scaling:
 instance_class: F4
 
 entrypoint: >
-  /usr/local/bin/start
+  main
   -auth-service-host ${AUTH_SERVICE_HOST}
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
