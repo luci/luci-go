@@ -25,6 +25,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luci_notify/api/config"
@@ -45,6 +46,23 @@ var Funcs = map[string]interface{}{
 		return t
 	},
 	"formatBuilderID": protoutil.FormatBuilderID,
+	"stepNames": func(steps []*buildbucketpb.Step) string {
+		var sb strings.Builder
+		for i, step := range steps {
+			if i != 0 {
+				sb.WriteString(", ")
+			}
+			sb.WriteRune('"')
+			sb.WriteString(step.Name)
+			sb.WriteRune('"')
+		}
+
+		return sb.String()
+	},
+	"buildUrl": func(input *config.TemplateInput) string {
+		return fmt.Sprintf("https://%s/build/%d",
+			input.BuildbucketHostname, input.Build.Id)
+	},
 }
 
 // Template is an email template.
@@ -140,6 +158,16 @@ func (b *Bundle) GenerateEmail(templateName string, input *config.TemplateInput)
 	return
 }
 
+// GenerateStatusMessage generates a message to be posted to a tree status instance.
+// If the template fails, a default template is used.
+func (b *Bundle) GenerateStatusMessage(templateName string, input *config.TemplateInput) (message string) {
+	var err error
+	if message, _, err = b.executeUserTemplate(templateName, input); err != nil {
+		message = generateDefaultStatusMessage(input)
+	}
+	return
+}
+
 // executeUserTemplate executed a user-defined template.
 func (b *Bundle) executeUserTemplate(templateName string, input *config.TemplateInput) (subject, body string, err error) {
 	var buf bytes.Buffer
@@ -179,6 +207,22 @@ func (b *Bundle) generateErrorEmail(templateName string, input *config.TemplateI
 	}
 	body = buf.String()
 	return
+}
+
+func generateDefaultStatusMessage(input *config.TemplateInput) string {
+	const template = "{{ stepNames .MatchingFailedSteps }} on {{ buildUrl . }} {{ .Build.Builder.Builder }} from {{ .Build.Output.GitilesCommit.Id }}"
+
+	t, err := text.New("").Funcs(Funcs).Parse(template)
+	if err != nil {
+		panic(errors.Annotate(err, "parsing of the default status message template has failed").Err())
+	}
+
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, input); err != nil {
+		panic(errors.Annotate(err, "execution of the default status message template has failed").Err())
+	}
+
+	return buf.String()
 }
 
 // SplitTemplateFile splits an email template file into subject and body.
