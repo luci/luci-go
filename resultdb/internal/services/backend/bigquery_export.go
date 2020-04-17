@@ -34,9 +34,9 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -103,10 +103,12 @@ func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error
 		return "", err
 	}
 
-	project, _, err := internal.ParseRealm(realm)
-	if err != nil {
-		return "", errors.Annotate(err, "invocation %q", invID.Name()).Err()
+	// TODO(nodir): remove this code after 2020-04-20
+	if realm == "chromium/public" {
+		return "chromium", nil
 	}
+
+	project, _ := realms.Split(realm)
 	return project, nil
 }
 

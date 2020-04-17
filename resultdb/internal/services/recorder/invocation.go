@@ -26,10 +26,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -135,7 +135,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
 		"Interrupted":  inv.Interrupted,
-		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
+		"Realm":        realms.Join("chromium", "public"), // TODO(crbug.com/1013316): accept realm in the proto
 		"CreatedBy":    inv.CreatedBy,
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
