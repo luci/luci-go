@@ -23,10 +23,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSinkArtsToRpcArts(t *testing.T) {
+func TestsinkArtsToRPCArts(t *testing.T) {
 	t.Parallel()
 
-	Convey("sinkArtsToRpcArts", t, func() {
+	Convey("sinkArtsToRPCArts", t, func() {
 		ctx := context.Background()
 		sinkArts := map[string]*sinkpb.Artifact{}
 
@@ -34,7 +34,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 			Convey("with the length of contents", func() {
 				sinkArts["art1"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRPCArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, 3)
 			})
@@ -47,7 +47,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 				})
 				defer os.Remove(sinkArts["art1"].GetFilePath())
 
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRPCArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, len("test artifact"))
 			})
@@ -55,7 +55,7 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 			Convey("with -1 if the file is not accessible", func() {
 				sinkArts["art1"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_FilePath{FilePath: "does-not-exist/foo/bar"}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRPCArts(ctx, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, -1)
 			})

@@ -90,8 +90,8 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 				StartTime:       tr.GetStartTime(),
 				Duration:        tr.GetDuration(),
 				Tags:            tr.GetTags(),
-				InputArtifacts:  sinkArtsToRpcArts(ctx, tr.GetInputArtifacts()),
-				OutputArtifacts: sinkArtsToRpcArts(ctx, tr.GetOutputArtifacts()),
+				InputArtifacts:  sinkArtsToRPCArts(ctx, tr.GetInputArtifacts()),
+				OutputArtifacts: sinkArtsToRPCArts(ctx, tr.GetOutputArtifacts()),
 			},
 		})
 	}
@@ -99,7 +99,7 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 	return req
 }
 
-func sinkArtsToRpcArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
+func sinkArtsToRPCArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
 	for name, sart := range sArts {
 		var size int64 = -1
 		switch {
