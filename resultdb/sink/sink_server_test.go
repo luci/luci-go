@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package sink
 
 import (
@@ -69,7 +70,7 @@ func TestReportTestResults(t *testing.T) {
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
-			req.TestResults[0].InputArtifacts["input_art2"] = &sinkpb.Artifact{}
+			req.TestResults[0].Artifacts["art2"] = &sinkpb.Artifact{}
 			_, err := sink.ReportTestResults(ctx, req)
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 		})

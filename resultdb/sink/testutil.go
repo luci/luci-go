@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package sink
 
 import (
@@ -103,11 +104,8 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		StartTime:   st,
 		Duration:    ptypes.DurationProto(time.Minute),
 		Tags:        pbutil.StringPairs("k1", "v1"),
-		InputArtifacts: map[string]*sinkpb.Artifact{
-			"input_art1": artf,
-		},
-		OutputArtifacts: map[string]*sinkpb.Artifact{
-			"output_art1": testArtifactWithContents([]byte("test artifact")),
+		Artifacts: map[string]*sinkpb.Artifact{
+			"art1": artf,
 		},
 	}, cleanup
 }

@@ -25,7 +25,6 @@ import (
 	dpb "github.com/golang/protobuf/ptypes/duration"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -146,22 +145,6 @@ func ValidateArtifact(art *pb.Artifact) (err error) {
 	return err
 }
 
-// ValidateArtifacts returns a non-nil error if any element of arts is invalid.
-func ValidateArtifacts(arts []*pb.Artifact) error {
-	// The name of each Artifact must be unique within the slice.
-	names := make(stringset.Set)
-	for i, art := range arts {
-		if names.Has(art.Name) {
-			return errors.Reason("%d: duplicate name %q", i, art.Name).Err()
-		}
-		names.Add(art.Name)
-		if err := ValidateArtifact(art); err != nil {
-			return errors.Annotate(err, "%d", i).Err()
-		}
-	}
-	return nil
-}
-
 // ValidateSinkArtifact returns a non-nil error if art is invalid.
 func ValidateSinkArtifact(art *sinkpb.Artifact) error {
 	if art.GetFilePath() == "" && art.GetContents() == nil {
@@ -204,8 +187,6 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	case ec.isErr(ValidateArtifacts(msg.InputArtifacts), "input_artifacts"):
-	case ec.isErr(ValidateArtifacts(msg.OutputArtifacts), "output_artifacts"):
 	}
 	return err
 }
@@ -224,8 +205,7 @@ func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	case ec.isErr(ValidateSinkArtifacts(msg.InputArtifacts), "input_artifacts"):
-	case ec.isErr(ValidateSinkArtifacts(msg.OutputArtifacts), "output_artifacts"):
+	case ec.isErr(ValidateSinkArtifacts(msg.Artifacts), "artifacts"):
 	}
 	return err
 }
@@ -266,8 +246,6 @@ func TestResultName(invID, testID, resultID string) string {
 // NormalizeTestResult converts inv to the canonical form.
 func NormalizeTestResult(tr *pb.TestResult) {
 	sortStringPairs(tr.Tags)
-	NormalizeArtifactSlice(tr.InputArtifacts)
-	NormalizeArtifactSlice(tr.OutputArtifacts)
 }
 
 // NormalizeTestResultSlice converts trs to the canonical form.
@@ -283,9 +261,4 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 		}
 		return a.Name < b.Name
 	})
-}
-
-// NormalizeArtifactSlice converts arts to the canonical form.
-func NormalizeArtifactSlice(arts []*pb.Artifact) {
-	sort.Slice(arts, func(i, j int) bool { return arts[i].Name < arts[j].Name })
 }
