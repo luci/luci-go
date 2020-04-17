@@ -205,22 +205,28 @@ func (jd *Definition) makeExpiringSliceData() (ret []*expiringDims, err error) {
 	}
 
 	ret = make([]*expiringDims, 0, len(expirationSet))
-	for _, data := range expirationSet {
-		ret = append(ret, data)
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].absolute < ret[j].absolute
-	})
-	ret[0].relative = ret[0].absolute
-	for i := range ret[1:] {
-		ret[i+1].relative = ret[i+1].absolute - ret[i].absolute
+	if len(expirationSet) > 0 {
+		for _, data := range expirationSet {
+			ret = append(ret, data)
+		}
+		sort.Slice(ret, func(i, j int) bool {
+			return ret[i].absolute < ret[j].absolute
+		})
+		ret[0].relative = ret[0].absolute
+		for i := range ret[1:] {
+			ret[i+1].relative = ret[i+1].absolute - ret[i].absolute
+		}
 	}
 	if total, err := ptypes.Duration(bb.BbagentArgs.Build.SchedulingTimeout); err == nil {
-		if ret[len(ret)-1].absolute < total {
+		if len(ret) == 0 || ret[len(ret)-1].absolute < total {
 			// if the task's total expiration time is greater than the last slice's
 			// expiration, then use nonExpiring as the last slice.
 			nonExpiring.absolute = total
-			nonExpiring.relative = total - ret[len(ret)-1].absolute
+			if len(ret) > 0 {
+				nonExpiring.relative = total - ret[len(ret)-1].absolute
+			} else {
+				nonExpiring.relative = total
+			}
 			ret = append(ret, nonExpiring)
 		} else {
 			// otherwise, add all of nonExpiring's guts to the last slice.
