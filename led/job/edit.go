@@ -107,6 +107,9 @@ type HighLevelEditor interface {
 	// TODO(iannucci): luciexe should be run_build
 	TaskPayload(cipdPkg, cipdVers string, dirInTask string)
 
+	// ClearGerritChanges removes all GerritChanges from the job.
+	ClearGerritChanges()
+
 	// AddGerritChange ensures the GerritChange is in the set of input CLs.
 	AddGerritChange(cl *bbpb.GerritChange)
 

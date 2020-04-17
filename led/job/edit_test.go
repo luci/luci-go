@@ -446,6 +446,23 @@ func TestGerritChange(t *testing.T) {
 		},
 
 		{
+			name:   "clear",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.AddGerritChange(mkChange("project"))
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+					mkChange("project"),
+				})
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.ClearGerritChanges()
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldBeEmpty)
+			},
+		},
+
+		{
 			name:   "dupe",
 			skipSW: true,
 			fn: func(jd *Definition) {

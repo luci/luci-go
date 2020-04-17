@@ -262,6 +262,13 @@ func (bbe *buildbucketEditor) PrefixPathEnv(values []string) {
 	})
 }
 
+func (bbe *buildbucketEditor) ClearGerritChanges() {
+	bbe.tweak(func() error {
+		bbe.bb.BbagentArgs.Build.Input.GerritChanges = nil
+		return nil
+	})
+}
+
 func (bbe *buildbucketEditor) AddGerritChange(cl *bbpb.GerritChange) {
 	if cl == nil {
 		return
