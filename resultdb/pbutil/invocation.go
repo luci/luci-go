@@ -18,7 +18,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const invocationIDPattern = `[a-z][a-z0-9_\-:]{0,63}`
+const invocationIDPattern = `[a-z][a-z0-9_\-:.]{0,63}`
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
