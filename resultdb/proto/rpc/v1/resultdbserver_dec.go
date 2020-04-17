@@ -141,3 +141,54 @@ func (s *DecoratedResultDB) QueryTestExonerations(ctx context.Context, req *Quer
 	}
 	return
 }
+
+func (s *DecoratedResultDB) GetArtifact(ctx context.Context, req *GetArtifactRequest) (rsp *Artifact, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetArtifact", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetArtifact(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetArtifact", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) ListArtifacts(ctx context.Context, req *ListArtifactsRequest) (rsp *ListArtifactsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ListArtifacts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ListArtifacts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ListArtifacts", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryArtifacts(ctx context.Context, req *QueryArtifactsRequest) (rsp *QueryArtifactsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryArtifacts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryArtifacts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryArtifacts", rsp, err)
+	}
+	return
+}
