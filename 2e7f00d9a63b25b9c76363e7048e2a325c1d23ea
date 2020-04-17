@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "df08fe9d_e829a30d",
+        "filename": "resultdb/cmd/result_sink_wrapper/wrapper/flags.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T08:35:42Z",
+      "side": 1,
+      "message": "good point. we should use it as a default\n\nin fact, this is exactly what rdb does already: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/baserun.go;l\u003d88\n\nthis actually makes me wonder.. should we add a rdb subcommand instead of creating a completely new binary?..\nthis designed as a new binary originally because we didn\u0027t plan to have Swarming:ResultDB integration, so this binary had to do swarming-specific stuff (e.g. read swarming-specific env variables), but now it doesn\u0027t.",
+      "parentUuid": "3ee3e954_4a2f4d51",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 0
+      },
+      "revId": "2e7f00d9a63b25b9c76363e7048e2a325c1d23ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "78f3761c_554e9b51",
         "filename": "resultdb/cmd/result_sink_wrapper/wrapper/wrapper.go",
         "patchSetId": 11
