@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6546c749_7d740cff",
+        "filename": "resultdb/internal/realm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T23:05:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7eb817a6_37ebb617",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 15
+      },
+      "revId": "bc23910dc56ac5d66a1d4fb3be5ec4f1951655fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "406549b7_9d6d2602",
         "filename": "resultdb/internal/services/deriver/invocation.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "bc23910dc56ac5d66a1d4fb3be5ec4f1951655fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e0934e4_9a5da5e6",
+        "filename": "resultdb/internal/services/deriver/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-17T23:05:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "406549b7_9d6d2602",
+      "range": {
+        "startLine": 49,
+        "startChar": 18,
+        "endLine": 49,
+        "endChar": 35
+      },
+      "revId": "bc23910dc56ac5d66a1d4fb3be5ec4f1951655fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
