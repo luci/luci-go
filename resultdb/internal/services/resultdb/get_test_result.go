@@ -46,26 +46,20 @@ func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResult
 		return nil, err
 	}
 
-	if err := s.rewriteArtifactLinks(ctx, tr); err != nil {
-		return nil, err
-	}
-
 	return tr, nil
 }
 
-func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, trs ...*pb.TestResult) error {
-	for _, tr := range trs {
-		for _, a := range tr.OutputArtifacts {
-			// If the URL looks an isolate URL, then generate a signed plain HTTP
-			// URL that serves the isolate file contents.
-			if host, ns, digest, err := internal.ParseIsolateURL(a.FetchUrl); err == nil {
-				u, exp, err := s.generateIsolateURL(ctx, host, ns, digest)
-				if err != nil {
-					return err
-				}
-				a.FetchUrl = u.String()
-				a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
+func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, artifacts ...*pb.Artifact) error {
+	for _, a := range artifacts {
+		// If the URL looks an isolate URL, then generate a signed plain HTTP
+		// URL that serves the isolate file contents.
+		if host, ns, digest, err := internal.ParseIsolateURL(a.FetchUrl); err == nil {
+			u, exp, err := s.generateIsolateURL(ctx, host, ns, digest)
+			if err != nil {
+				return err
 			}
+			a.FetchUrl = u.String()
+			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
 		}
 	}
 	return nil
