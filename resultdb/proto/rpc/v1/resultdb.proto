@@ -18,6 +18,7 @@ package luci.resultdb.rpc.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/artifact.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
@@ -52,7 +53,7 @@ service ResultDB {
   rpc ListTestExonerations(ListTestExonerationsRequest)
       returns (ListTestExonerationsResponse) {};
 
-  // Retrieves test results from an invocation.
+  // Retrieves test results from an invocation, recursively.
   // Supports invocation inclusions.
   // Supports advanced filtering.
   rpc QueryTestResults(QueryTestResultsRequest)
@@ -63,6 +64,23 @@ service ResultDB {
   // Supports advanced filtering.
   rpc QueryTestExonerations(QueryTestExonerationsRequest)
       returns (QueryTestExonerationsResponse) {};
+
+  // == Artifacts =============================================================
+
+  // Retrieves an artifact.
+  rpc GetArtifact(GetArtifactRequest) returns (Artifact) {};
+
+  // Retrieves artifacts for a parent invocation/testResult.
+  //
+  // Note: if the parent is an invocation, the response does not contain
+  // artifacts of included invocations. Use QueryArtifacts instead.
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse) {};
+
+  // Retrieves artifacts from an invocation, recursively.
+  // Can retrieve artifacts of test results included in the invocation
+  // directly or indirectly.
+  // Supports invocation inclusions.
+  rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
 }
 
 // A request message for GetInvocation RPC.
@@ -237,6 +255,113 @@ message QueryTestExonerationsResponse {
   // The order is not defined, but test exonerations from the same invocation
   // are contiguous.
   repeated TestExoneration test_exonerations = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there were no subsequent pages at the time of
+  // request.
+  string next_page_token = 2;
+}
+
+// A request message for GetArtifact RPC.
+message GetArtifactRequest {
+  // The name of the artifact to request, see Artifact.name.
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A request message for ListArtifacts RPC.
+message ListArtifactsRequest {
+  // Name of the parent, e.g. an invocation (see Invocation.name) or
+  // a test result (see TestResult.name).
+  string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The maximum number of artifacts to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 artifacts will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 2;
+
+  // A page token, received from a previous `ListArtifacts` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListArtifacts` MUST
+  // match the call that provided the page token.
+  string page_token = 3;
+}
+
+// A response message for ListArtifacts RPC.
+message ListArtifactsResponse {
+  // The artifacts from the specified parent.
+  repeated Artifact artifacts = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there were no subsequent pages at the time of
+  // request.
+  // If the invocation is not finalized, more results may appear later.
+  string next_page_token = 2;
+}
+
+// A request message for QueryArtifacts RPC.
+message QueryArtifactsRequest {
+  // Retrieve artifacts included in these invocations, directly or indirectly
+  // (via Invocation.included_invocations and via contained test results).
+  //
+  // Specifying multiple invocations is equivalent to querying one invocation
+  // that includes these.
+  repeated string invocations = 1;
+
+  // A set of Invocation's outgoing edge types.
+  message EdgeTypeSet {
+    // The edges represented by Invocation.included_invocations field.
+    bool included_invocations = 1;
+    // The parent-child relationship between Invocation and TestResult.
+    bool test_results = 2;
+  }
+
+  // Specifies which edges to follow when retrieving directly/indirectly
+  // included artifacts.
+  // For example,
+  // - to retrieve only invocation-level artifacts, use
+  //   {included_invocations: true}.
+  // - to retrieve only test-result-level artifacts, use {test_results: true}.
+  //
+  // By default, follows all edges.
+  EdgeTypeSet follow_edges = 2; // defaults to All.
+
+  // If an Artifact belongs to a TestResult, then the test result must satisfy
+  // this predicate.
+  // Field predicate.invocation is required.
+  TestResultPredicate predicate = 3;
+
+  // The version of the state from which the response draws is allowed to be
+  // stale up to this duration.
+  // For example, with max staleness of 5m, the response might not contain
+  // artifacts uploaded 4m ago.
+  // Choosing a larger duration may reduce request latency.
+  // Must be <=30m.
+  google.protobuf.Duration max_staleness = 4;
+
+  // The maximum number of artifacts to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 artifacts will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 5;
+
+  // A page token, received from a previous `QueryArtifacts` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryArtifacts` MUST
+  // match the call that provided the page token.
+  string page_token = 6;
+}
+
+// A response message for QueryArtifacts RPC.
+message QueryArtifactsResponse {
+  // Matched artifacts.
+  // First invocation-level artifacts, then test-result-level artifacts
+  // ordered by test id.
+  repeated Artifact artifacts = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of
