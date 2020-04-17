@@ -9,4 +9,4 @@ luci_gae_vars:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
 
 entrypoint: >
-  /usr/local/bin/start -auth-service-host ${AUTH_SERVICE_HOST}
+  main -auth-service-host ${AUTH_SERVICE_HOST}
