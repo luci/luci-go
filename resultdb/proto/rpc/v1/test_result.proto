@@ -34,7 +34,7 @@ message TestResult {
   // RPC.
   // Format:
   // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
-  // URL_ESCAPED_TEST_ID is test_id escaped with
+  // where URL_ESCAPED_TEST_ID is test_id escaped with
   // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -106,18 +106,6 @@ message TestResult {
   // It might describe this particular execution or the test case.
   repeated luci.resultdb.type.StringPair tags = 10
       [ (google.api.field_behavior) = IMMUTABLE ];
-
-  // Artifacts consumed by this test result.
-  //
-  // Example: building a Chrome OS image is expensive and non-deterministic, so
-  // they are retained and used as input artifact to a test case.
-  repeated Artifact input_artifacts = 11
-      [ (google.api.field_behavior) = IMMUTABLE ];
-
-  // Artifacts produced by this test result.
-  // Examples: traces, logs, screenshots, memory dumps, profiler output.
-  repeated Artifact output_artifacts = 12
-      [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Machine-readable status of a test result.
@@ -152,35 +140,6 @@ enum TestStatus {
   // - The test harness configuration specified that the test case MUST be
   //   skipped.
   SKIP = 5;
-}
-
-// A file produced/consumed by a test case.
-// See TestResult.output_artifacts for examples.
-message Artifact {
-  // A slash-separated relative path, identifies the artifact.
-  // Regex: ^[[:word:]]([[:print:]]{0,254}[[:word:]])?$
-  string name = 1 [ (google.api.field_behavior) = IMMUTABLE ];
-
-  // Machine-readable URL to fetch the contents of the artifact.
-  // This must be a plain (curlable) HTTPS URL.
-  //
-  // Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
-  // storage level, but it is converted to an HTTPS URL before serving.
-  string fetch_url = 2;
-
-  // When fetch_url expires. If expired, re-request this Artifact.
-  // If fetch_url does not expire, this is unset.
-  google.protobuf.Timestamp fetch_url_expiration = 3;
-
-  // Media type of the artifact.
-  // Logs are typically "text/plain" and screenshots are typically "image/png".
-  // Can be omitted.
-  string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
-
-  // Size of the file, in bytes.
-  // Can be used in UI to decide between displaying the artifact inline or only
-  // showing a link if it is too large.
-  int64 size = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame
