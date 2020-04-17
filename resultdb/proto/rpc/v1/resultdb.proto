@@ -94,10 +94,6 @@ message ListTestResultsRequest {
   //
   // When paginating, all other parameters provided to `ListTestResults` MUST
   // match the call that provided the page token.
-  //
-  // Does NOT guarantee returning all test results from chained reads until
-  // cursor exhaustion unless the invocation was finalized at the time of first
-  // ListTestResults request.
   string page_token = 3;
 }
 
@@ -161,8 +157,7 @@ message QueryTestResultsRequest {
   repeated string invocations = 1;
 
   // A test result in the response must satisfy this predicate.
-  // Field predicate.invocation is required.
-  TestResultPredicate predicate = 2 [ (google.api.field_behavior) = REQUIRED ];
+  TestResultPredicate predicate = 2;
 
   // The version of the state from which the response draws is allowed to be
   // stale up to this duration.

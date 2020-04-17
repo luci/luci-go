@@ -94,7 +94,7 @@ type TestResult struct {
 	// RPC.
 	// Format:
 	// "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
-	// URL_ESCAPED_TEST_ID is test_id escaped with
+	// where URL_ESCAPED_TEST_ID is test_id escaped with
 	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test id, a unique identifier of the test in a LUCI project.
