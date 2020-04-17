@@ -230,23 +230,22 @@ func TestJSONConversions(t *testing.T) {
 			OriginalFormatTagKey, FormatJTR,
 		))
 
+		// TODO(crbug.com/1071258): assert correctness of artifact associations.
 		So(testResults, ShouldResembleProto, []*pb.TestResult{
 			// Test 1.
 			{
-				TestId:          "ninja://tests/c1/c2/t1.html",
-				Status:          pb.TestStatus_PASS,
-				Expected:        true,
-				Duration:        &duration.Duration{Nanos: 3e8},
-				Tags:            pbutil.StringPairs("json_format_status", "PASS"),
-				OutputArtifacts: []*pb.Artifact{{Name: "log_0.txt"}},
+				TestId:   "ninja://tests/c1/c2/t1.html",
+				Status:   pb.TestStatus_PASS,
+				Expected: true,
+				Duration: &duration.Duration{Nanos: 3e8},
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
-				TestId:          "ninja://tests/c1/c2/t1.html",
-				Status:          pb.TestStatus_PASS,
-				Expected:        true,
-				Duration:        &duration.Duration{Nanos: 2e8},
-				Tags:            pbutil.StringPairs("json_format_status", "PASS"),
-				OutputArtifacts: []*pb.Artifact{{Name: "log_1.txt"}},
+				TestId:   "ninja://tests/c1/c2/t1.html",
+				Status:   pb.TestStatus_PASS,
+				Expected: true,
+				Duration: &duration.Duration{Nanos: 2e8},
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestId:   "ninja://tests/c1/c2/t1.html",
@@ -254,9 +253,6 @@ func TestJSONConversions(t *testing.T) {
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 1e8},
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
-				OutputArtifacts: []*pb.Artifact{
-					{Name: "log_2.txt"},
-				},
 			},
 
 			// Test 2.
@@ -291,24 +287,10 @@ func TestJSONConversions(t *testing.T) {
 
 			// Test 3
 			{
-				TestId:   "ninja://tests/c2/t3.html",
-				Status:   pb.TestStatus_FAIL,
-				Expected: false,
-				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
-				OutputArtifacts: []*pb.Artifact{
-					{
-						Name:        "relative/path/to/diff.png",
-						FetchUrl:    "isolate://isosrv/ad1ff",
-						ContentType: "image/png",
-						SizeBytes:   8192,
-					},
-					{
-						Name:        "relative/path/to/log.txt",
-						FetchUrl:    "isolate://isosrv/a104",
-						ContentType: "text/plain",
-						SizeBytes:   32,
-					},
-				},
+				TestId:      "ninja://tests/c2/t3.html",
+				Status:      pb.TestStatus_FAIL,
+				Expected:    false,
+				Tags:        pbutil.StringPairs("json_format_status", "FAIL"),
 				SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
 			},
 
@@ -364,8 +346,9 @@ func TestArtifactUtils(t *testing.T) {
 		artifactsPerRun, unresolved := f.getArtifacts(outputsToProcess)
 		So(artifactsPerRun, ShouldHaveLength, 1)
 
-		pbutil.NormalizeArtifactSlice(artifactsPerRun[0].artifacts)
-		So(artifactsPerRun[0].artifacts, ShouldResemble, []*pb.Artifact{
+		arts := artifactsPerRun[0].artifacts
+		sort.Slice(arts, func(i, j int) bool { return arts[i].Name < arts[j].Name })
+		So(arts, ShouldResemble, []*pb.Artifact{
 			{Name: "artifacts/a/stderr.txt"},
 			{Name: "artifacts/a/stdout.txt"},
 			{Name: "c/stderr.txt"},

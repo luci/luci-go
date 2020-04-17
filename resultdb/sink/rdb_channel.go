@@ -83,16 +83,14 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 		tr := d.(*sinkpb.TestResult)
 		req.Requests = append(req.Requests, &pb.CreateTestResultRequest{
 			TestResult: &pb.TestResult{
-				TestId:          tr.GetTestId(),
-				ResultId:        tr.GetResultId(),
-				Variant:         tr.GetVariant(),
-				Expected:        tr.GetExpected(),
-				SummaryHtml:     tr.GetSummaryHtml(),
-				StartTime:       tr.GetStartTime(),
-				Duration:        tr.GetDuration(),
-				Tags:            tr.GetTags(),
-				InputArtifacts:  sinkArtsToRPCArts(ctx, tr.GetInputArtifacts()),
-				OutputArtifacts: sinkArtsToRPCArts(ctx, tr.GetOutputArtifacts()),
+				TestId:      tr.GetTestId(),
+				ResultId:    tr.GetResultId(),
+				Variant:     tr.GetVariant(),
+				Expected:    tr.GetExpected(),
+				SummaryHtml: tr.GetSummaryHtml(),
+				StartTime:   tr.GetStartTime(),
+				Duration:    tr.GetDuration(),
+				Tags:        tr.GetTags(),
 			},
 		})
 	}

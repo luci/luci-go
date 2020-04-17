@@ -368,7 +368,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 				return nil, err
 			}
 			tr.SummaryHtml = buf.String()
-			tr.OutputArtifacts = container.artifacts
+			// TODO(crbug.com/1071258): associate artifacts with the test result.
 		}
 
 		if i < len(durations) {

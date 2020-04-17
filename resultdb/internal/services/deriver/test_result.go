@@ -40,9 +40,6 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int)
 		"StartTime":       tr.StartTime,
 		"RunDurationUsec": span.ToMicros(tr.Duration),
 		"Tags":            tr.Tags,
-
-		"InputArtifacts":  tr.InputArtifacts,
-		"OutputArtifacts": tr.OutputArtifacts,
 	}
 
 	// Populate IsUnexpected /only/ if true, to keep the index thin.

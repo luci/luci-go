@@ -83,8 +83,6 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 		"StartTime":       &tr.StartTime,
 		"RunDurationUsec": &micros,
 		"Tags":            &tr.Tags,
-		"InputArtifacts":  &tr.InputArtifacts,
-		"OutputArtifacts": &tr.OutputArtifacts,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -107,7 +105,6 @@ type TestResultQuery struct {
 	PageSize          int                     // must be positive
 	PageToken         string
 	SelectVariantHash bool
-	ExcludeArtifacts  bool
 }
 
 func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) (err error) {
@@ -121,9 +118,6 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	var extraSelect []string
 	if q.SelectVariantHash {
 		extraSelect = append(extraSelect, "tr.VariantHash")
-	}
-	if !q.ExcludeArtifacts {
-		extraSelect = append(extraSelect, "tr.InputArtifacts", "tr.OutputArtifacts")
 	}
 
 	from := "TestResults tr"
@@ -240,9 +234,6 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		}
 		if q.SelectVariantHash {
 			ptrs = append(ptrs, &variantHash)
-		}
-		if !q.ExcludeArtifacts {
-			ptrs = append(ptrs, &tr.InputArtifacts, &tr.OutputArtifacts)
 		}
 
 		err = b.FromSpanner(row, ptrs...)
