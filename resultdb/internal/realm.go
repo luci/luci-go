@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-var realmRe = regexp.MustCompile(`^(\w+)/(\w+)$`)
+var realmRe = regexp.MustCompile(`^(\w+):(\w+)$`)
 
 // ParseRealm returns LUCI project and ID of a realm.
 func ParseRealm(realm string) (project, realmID string, err error) {

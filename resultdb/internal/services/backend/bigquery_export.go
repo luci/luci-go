@@ -103,6 +103,11 @@ func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error
 		return "", err
 	}
 
+	// TODO(nodir): remove this code after 2020-04-20
+	if realm == "chromium/public" {
+		return "chromium", nil
+	}
+
 	project, _, err := internal.ParseRealm(realm)
 	if err != nil {
 		return "", errors.Annotate(err, "invocation %q", invID.Name()).Err()

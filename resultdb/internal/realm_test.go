@@ -23,7 +23,7 @@ import (
 
 func TestParseRealm(t *testing.T) {
 	Convey(`success`, t, func() {
-		luciProject, realmID, err := ParseRealm("chromium/public")
+		luciProject, realmID, err := ParseRealm("chromium:public")
 		So(luciProject, ShouldEqual, "chromium")
 		So(realmID, ShouldEqual, "public")
 		So(err, ShouldBeNil)
