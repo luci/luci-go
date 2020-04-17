@@ -30,7 +30,7 @@ const (
 
 func main() {
 	ctx := context.Background()
-	w, err := wrapper.NewWrapper()
+	w, err := wrapper.NewWrapper(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(wrapperErrorCode)
