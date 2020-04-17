@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/authdb/internal/legacy"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
+	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -55,6 +57,10 @@ func TestSnapshotDB(t *testing.T) {
 			`(.*-dot-)?i2\.example\.com`,
 		},
 	})
+
+	perm1 := realms.RegisterPermission("luci.dev.testing1")
+	perm2 := realms.RegisterPermission("luci.dev.testing2")
+	unknownPerm := realms.RegisterPermission("luci.dev.unknown")
 
 	db, err := NewSnapshotDB(&protocol.AuthDB{
 		OauthClientId: "primary-client-id",
@@ -187,6 +193,92 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com"), ShouldBeNil)
 		So(call("user:abc@example.com", "unknown", "direct"), ShouldResemble, []string{"direct"})
 		So(call("user:abc@example.com", "via glob", "direct"), ShouldResemble, []string{"via glob", "direct"})
+	})
+
+	Convey("HasPermission works", t, func() {
+		db, err := NewSnapshotDB(&protocol.AuthDB{
+			Groups: []*protocol.AuthGroup{
+				{
+					Name:    "direct",
+					Members: []string{"user:abc@example.com"},
+				},
+			},
+			Realms: &protocol.Realms{
+				ApiVersion: realmset.ExpectedAPIVersion,
+				Permissions: []*protocol.Permission{
+					{Name: perm1.Name()},
+					{Name: perm2.Name()},
+				},
+				Realms: []*protocol.Realm{
+					{
+						Name: "proj:@root",
+						Bindings: []*protocol.Binding{
+							{
+								Permissions: []uint32{0},
+								Principals:  []string{"user:root@example.com"},
+							},
+						},
+					},
+					{
+						Name: "proj:some/realm",
+						Bindings: []*protocol.Binding{
+							{
+								Permissions: []uint32{0},
+								Principals:  []string{"user:realm@example.com", "group:direct"},
+							},
+						},
+					},
+					{
+						Name: "proj:empty",
+					},
+				},
+			},
+		}, "http://auth-service", 1234, false)
+		So(err, ShouldBeNil)
+
+		// A direct hit.
+		ok, err := db.HasPermission(c, "user:realm@example.com", perm1, []string{"proj:some/realm"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeTrue)
+
+		// A hit through a group.
+		ok, err = db.HasPermission(c, "user:abc@example.com", perm1, []string{"proj:some/realm"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeTrue)
+
+		// Fallback to the root.
+		ok, err = db.HasPermission(c, "user:root@example.com", perm1, []string{"proj:unknown"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeTrue)
+
+		// Checking all realms in the list.
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"unknown:proj", "proj:some/realm"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeTrue)
+
+		// No permission.
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm2, []string{"proj:some/realm"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeFalse)
+
+		// Unknown root realm.
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"unknown:@root"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeFalse)
+
+		// Unknown permission.
+		ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, []string{"proj:some/realm"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeFalse)
+
+		// Empty realm.
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"proj:empty"})
+		So(err, ShouldBeNil)
+		So(ok, ShouldBeFalse)
+
+		// Invalid realm name.
+		_, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"@root"})
+		So(err, ShouldErrLike, "bad global realm name")
 	})
 
 	Convey("GetCertificates works", t, func(c C) {
