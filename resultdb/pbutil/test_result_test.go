@@ -41,14 +41,14 @@ func validArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 		FetchUrl:           "https://foo/bar",
 		FetchUrlExpiration: et,
 		ContentType:        "text/plain",
-		Size:               1024,
+		SizeBytes:          1024,
 	}
 	art2 := &pb.Artifact{
 		Name:               "this is artifact 2",
 		FetchUrl:           "https://foo/bar/log.png",
 		FetchUrlExpiration: et,
 		ContentType:        "image/png",
-		Size:               1024,
+		SizeBytes:          1024,
 	}
 	return art1, art2
 }
@@ -61,14 +61,14 @@ func invalidArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 		FetchUrl:           "https://foo/bar",
 		FetchUrlExpiration: et,
 		ContentType:        "text/plain",
-		Size:               1024,
+		SizeBytes:          1024,
 	}
 	art2 := &pb.Artifact{
 		Name:               "this has a bad fetch url",
 		FetchUrl:           "isolate://foo/bar/log.png",
 		FetchUrlExpiration: et,
 		ContentType:        "image/png",
-		Size:               1024,
+		SizeBytes:          1024,
 	}
 	return art1, art2
 }
@@ -425,7 +425,7 @@ func TestValidateArtifact(t *testing.T) {
 		})
 
 		Convey("with 0 in Size", func() {
-			art.Size = 0
+			art.SizeBytes = 0
 			So(validate(art), ShouldBeNil)
 		})
 	})

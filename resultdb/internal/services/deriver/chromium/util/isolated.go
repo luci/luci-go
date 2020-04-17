@@ -49,7 +49,7 @@ func IsolatedFileToArtifact(isolateServer, ns, relPath string, f *isolated.File)
 	}
 
 	if f.Size != nil {
-		a.Size = *f.Size
+		a.SizeBytes = *f.Size
 	}
 
 	switch path.Ext(relPath) {

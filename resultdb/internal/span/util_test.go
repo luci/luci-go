@@ -103,13 +103,13 @@ func TestTypeConversion(t *testing.T) {
 					Name:        "traces/a.txt",
 					FetchUrl:    "https://example.com/a",
 					ContentType: "text/plain",
-					Size:        4,
+					SizeBytes:   4,
 				},
 				{
 					Name:        "diff/b.png",
 					FetchUrl:    "https://example.com/b",
 					ContentType: "image/png",
-					Size:        16384,
+					SizeBytes:   16384,
 				},
 			},
 		}

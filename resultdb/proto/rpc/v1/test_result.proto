@@ -177,10 +177,10 @@ message Artifact {
   // Can be omitted.
   string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
-  // Size of the file, in bytes.
+  // Size of the file.
   // Can be used in UI to decide between displaying the artifact inline or only
   // showing a link if it is too large.
-  int64 size = 5 [ (google.api.field_behavior) = IMMUTABLE ];
+  int64 size_bytes = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame
