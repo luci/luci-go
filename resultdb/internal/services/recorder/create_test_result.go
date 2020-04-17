@@ -90,8 +90,6 @@ func insertTestResult(ctx context.Context, invID span.InvocationID, requestID st
 			"StartTime":       ret.StartTime,
 			"RunDurationUsec": runDuration,
 			"Tags":            ret.Tags,
-			"InputArtifacts":  ret.InputArtifacts,
-			"OutputArtifacts": ret.OutputArtifacts,
 		}),
 	)
 	return ret, mutation
