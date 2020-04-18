@@ -87,10 +87,6 @@ func (t *transformer) transformGoFile(filename string) error {
 func (t *transformer) transformFile(file *ast.File) error {
 	var includePrpc bool
 	for _, s := range t.services {
-		if err := s.complete(); err != nil {
-			return fmt.Errorf("incomplete service %q: %s", s.name, err)
-		}
-
 		t.transformRegisterServerFuncs(s)
 		if !t.inPRPCPackage {
 			includePrpc = true

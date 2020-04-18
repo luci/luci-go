@@ -16,6 +16,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"go/ast"
@@ -143,9 +144,14 @@ func getServices(file *ast.File) ([]*service, error) {
 
 	// Export our services as a slice, ordered by when the service was first
 	// encountered in the source file.
+	// Verify each service is complete.
 	services := make([]*service, len(serviceNames))
 	for i, k := range serviceNames {
-		services[i] = svcs[k]
+		s := svcs[k]
+		if err := s.complete(); err != nil {
+			return nil, fmt.Errorf("incomplete service %q: %s", s.name, err)
+		}
+		services[i] = s
 	}
 	return services, nil
 }
