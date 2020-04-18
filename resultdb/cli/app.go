@@ -54,6 +54,7 @@ func application(p Params) *cli.Application {
 			cmdQuery(p),
 			// TODO(crbug.com/1021849): Remove this in favor of cmdCall.
 			cmdUpdateInclusions(p),
+			cmdStream(p),
 
 			{}, // a separator
 			authcli.SubcommandLogin(p.Auth, "auth-login", false),
