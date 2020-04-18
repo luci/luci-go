@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb842499_938d6aa4",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "usually we use tags for stuff like this, e.g. https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/grpc/grpcutil/errors.go;l\u003d104?q\u003dgrpcutil%2F\nso that you can wrap an error and not lose exit code",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 23
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b914c521_39449936",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "an error is internal by default. would be simpler not to have this, and assume any unrecognized error is internal",
+      "range": {
+        "startLine": 56,
+        "startChar": 5,
+        "endLine": 56,
+        "endChar": 18
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97886ecd_ab42a563",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "there is already https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/59/2155559/7/resultdb/cli/baserun.go#140 for this",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18f144c9_e1e3a6ea",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "for a reader, unclear what IPC this is talking about. perhaps we need to add a link to the protocol description. i think sink package godoc would be a good place, and then we can put a link here.\n\nnot for this CL, so let\u0027s just add a TODO",
+      "range": {
+        "startLine": 74,
+        "startChar": 67,
+        "endLine": 74,
+        "endChar": 70
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ca68312_3e8ee9a5",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "use the current invocation, set in LUCI_CONTEXT.",
+      "range": {
+        "startLine": 84,
+        "startChar": 14,
+        "endLine": 84,
+        "endChar": 66
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "672b7456_d475b167",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "see also https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1932589",
+      "range": {
+        "startLine": 99,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 9
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6ff40fb6_d3805fed",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "i don\u0027t see a guarantee in *this* code that the input was invalid. initClients might fail for other reasons, e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/59/2155559/7/resultdb/cli/baserun.go#140\nor it might be changed in the future to fail for other reasons.\n\nalso this is inconsistent with other subcommands: others return same exit code.\nstepping back, in what scenario the caller needs to distinguish input errors and internal errors?",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 33
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c269f6ca_8673f1cc",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "the spec says, if `-new` is passed, then create a new one.\nif `-new` is not passed use the existing one (and fail, if it doesn\u0027t exist)",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 114,
+        "endChar": 54
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ab1191e_46918703",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "this deletes the context before it is used",
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d599e46f_50f23d55",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "we need a TODO to direct logs to a file, otherwise we are writing to the same stderr as the test command",
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27c0aeac_ef01150a",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-18T15:20:46Z",
+      "side": 1,
+      "message": "should this be outside of server.Run?",
+      "range": {
+        "startLine": 178,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 12
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
