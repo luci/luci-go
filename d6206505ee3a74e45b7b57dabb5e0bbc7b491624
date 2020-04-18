@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "924f49aa_871dfeb7",
+        "filename": "resultdb/proto/rpc/v1/artifact.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-18T04:30:17Z",
+      "side": 1,
+      "message": "2020, same for other new files",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "d6206505ee3a74e45b7b57dabb5e0bbc7b491624",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec60201f_f98585a3",
+        "filename": "resultdb/proto/rpc/v1/artifact.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-18T04:30:17Z",
+      "side": 1,
+      "message": "Order the fields in ascending order?",
+      "range": {
+        "startLine": 35,
+        "startChar": 15,
+        "endLine": 35,
+        "endChar": 17
+      },
+      "revId": "d6206505ee3a74e45b7b57dabb5e0bbc7b491624",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
