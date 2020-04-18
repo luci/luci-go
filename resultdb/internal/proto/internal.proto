@@ -18,7 +18,7 @@ package luci.resultdb.internal;
 
 option go_package = "internalpb";
 
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/artifact.proto";
 
 // A message for storing all the information attached to a page token.
 message PageToken {
@@ -32,4 +32,6 @@ message PageToken {
 
 // A container of artifacts.
 // Used to store artifacts in Spanner.
+//
+// TODO(crbug.com/1071258): remove this type.
 message Artifacts { repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1; }
