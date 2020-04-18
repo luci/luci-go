@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/usercontent"
@@ -71,4 +73,22 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	srv.PRPC.AccessControl = prpc.AllowOriginAll
 	return nil
+}
+
+// GetArtifact implements pb.ResultDBServer.
+func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
+	// TODO(crbug.com/1071258): implement.
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// ListArtifacts implements pb.ResultDBServer.
+func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+	// TODO(crbug.com/1071258): implement.
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// QueryArtifacts implements pb.ResultDBServer.
+func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
+	// TODO(crbug.com/1071258): implement.
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }

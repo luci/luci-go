@@ -25,22 +25,18 @@ import (
 	dpb "github.com/golang/protobuf/ptypes/duration"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
-// artifactFormatVersion identifies the version of artifact encoding format we're using.
 const (
-	artifactFormatVersion = 1
-	resultIDPattern       = `[[:ascii:]]{1,32}`
-	maxLenSummaryHTML     = 4 * 1024
+	resultIDPattern   = `[[:ascii:]]{1,32}`
+	maxLenSummaryHTML = 4 * 1024
 )
 
 var (
-	artifactNameRe   = regexp.MustCompile("^[[:word:]]([[:print:]]{0,254}[[:word:]])?$")
 	resultIDRe       = regexpf("^%s$", resultIDPattern)
 	testIDRe         = regexp.MustCompile(`^[[:print:]]{1,256}$`)
 	testResultNameRe = regexpf(
@@ -112,83 +108,6 @@ func ValidateStartTimeWithDuration(now time.Time, startTime *tspb.Timestamp, dur
 	return nil
 }
 
-// ValidateArtifactName returns a non-nil error if name is invalid.
-func ValidateArtifactName(name string) error {
-	return validateWithRe(artifactNameRe, name)
-}
-
-// ValidateArtifactFetchURL returns a non-nil error if rawurl is invalid.
-func ValidateArtifactFetchURL(rawurl string) error {
-	switch u, err := url.ParseRequestURI(rawurl); {
-	case err != nil:
-		return err
-	// ParseRequestURI un-capitalizes all the letters of Scheme.
-	case u.Scheme != "https":
-		return errors.Reason("the URL scheme is not HTTPS").Err()
-	case u.Host == "":
-		return errors.Reason("missing host").Err()
-	}
-	return nil
-}
-
-// ValidateArtifact returns a non-nil error if art is invalid.
-func ValidateArtifact(art *pb.Artifact) (err error) {
-	ec := checker{&err}
-	switch {
-	case art == nil:
-		return unspecified()
-	case ec.isErr(ValidateArtifactName(art.Name), "name"):
-	case ec.isErr(ValidateArtifactFetchURL(art.FetchUrl), "fetch_url"):
-		// skip `FetchUrlExpiration`
-		// skip `ContentType`
-		// skip `Size`
-	}
-	return err
-}
-
-// ValidateArtifacts returns a non-nil error if any element of arts is invalid.
-func ValidateArtifacts(arts []*pb.Artifact) error {
-	// The name of each Artifact must be unique within the slice.
-	names := make(stringset.Set)
-	for i, art := range arts {
-		if names.Has(art.Name) {
-			return errors.Reason("%d: duplicate name %q", i, art.Name).Err()
-		}
-		names.Add(art.Name)
-		if err := ValidateArtifact(art); err != nil {
-			return errors.Annotate(err, "%d", i).Err()
-		}
-	}
-	return nil
-}
-
-// ValidateSinkArtifact returns a non-nil error if art is invalid.
-func ValidateSinkArtifact(art *sinkpb.Artifact) error {
-	if art.GetFilePath() == "" && art.GetContents() == nil {
-		return errors.Reason("body: either file_path or contents must be provided").Err()
-	}
-	// TODO(1017288) - validate content_type
-	// skip `ContentType`
-	return nil
-}
-
-// ValidateSinkArtifacts returns a non-nil error if any element of arts is invalid.
-func ValidateSinkArtifacts(arts map[string]*sinkpb.Artifact) error {
-	for name, art := range arts {
-		if art == nil {
-			return errors.Reason("%s: %s", name, unspecified()).Err()
-		}
-		// the name should be a valid pb.Artifact.Name
-		if err := ValidateArtifactName(name); err != nil {
-			return errors.Annotate(err, "%s", name).Err()
-		}
-		if err := ValidateSinkArtifact(art); err != nil {
-			return errors.Annotate(err, "%s", name).Err()
-		}
-	}
-	return nil
-}
-
 // ValidateTestResult returns a non-nil error if msg is invalid.
 func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	ec := checker{&err}
@@ -222,8 +141,7 @@ func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	case ec.isErr(ValidateSinkArtifacts(msg.InputArtifacts), "input_artifacts"):
-	case ec.isErr(ValidateSinkArtifacts(msg.OutputArtifacts), "output_artifacts"):
+	case ec.isErr(ValidateSinkArtifacts(msg.Artifacts), "artifacts"):
 	}
 	return err
 }

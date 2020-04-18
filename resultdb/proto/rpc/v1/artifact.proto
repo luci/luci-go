@@ -1,0 +1,61 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.rpc.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// A file produced during a build/test, typically a test artifact.
+// The parent resource is either a TestResult or an Invocation.
+message Artifact {
+  // Can be used to refer to this artifact.
+  // Format:
+  // - For invocation-level artifacts:
+  //   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+  // - For test-result-level artifacts:
+  //   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  // where URL_ESCAPED_TEST_ID is the test_id escaped with
+  // https://golang.org/pkg/net/url/#PathEscape (see also https://aip.dev/122),
+  // and ARTIFACT_ID is documented below.
+  // Examples: "screenshot.png", "traces/a.txt".
+  string name = 1;
+
+  // A local identifier of the artifact, unique within the parent resource.
+  // MAY have slashes, but MUST NOT start with a slash.
+  // Regex: ^[[:word:]]([[:print:]]{0,254}[[:word:]])?$
+  string artifact_id = 2;
+
+  // A signed short-lived URL to fetch the contents of the artifact.
+  // See also fetch_url_expiration.
+  //
+  // Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
+  // storage level, but it is converted to an HTTPS URL before serving.
+  string fetch_url = 3;
+
+  // When fetch_url expires. If expired, re-request this Artifact.
+  google.protobuf.Timestamp fetch_url_expiration = 4;
+
+  // Media type of the artifact.
+  // Logs are typically "text/plain" and screenshots are typically "image/png".
+  // Optional.
+  string content_type = 5;
+
+  // Size of the file.
+  // Can be used in UI to decide between displaying the artifact inline or only
+  // showing a link if it is too large.
+  int64 size_bytes = 6;
+}
