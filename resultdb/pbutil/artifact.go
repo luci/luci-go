@@ -15,54 +15,72 @@
 package pbutil
 
 import (
+	"fmt"
 	"net/url"
-	"regexp"
 
 	"go.chromium.org/luci/common/errors"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
-// artifactFormatVersion identifies the version of artifact encoding format we're using.
 const (
-	artifactFormatVersion = 1
+	artifactIDPattern = `[[:word:]]([[:print:]]{0,254}[[:word:]])?`
 )
 
-var artifactNameRe = regexp.MustCompile("^[[:word:]]([[:print:]]{0,254}[[:word:]])?$")
+var (
+	artifactIDRe                  = regexpf("^%s$", artifactIDPattern)
+	invocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(%s)", invocationIDPattern, artifactIDPattern)
+	testResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(%s)", invocationIDPattern, resultIDPattern, artifactIDPattern)
+	invocationArtifactNameRe      = regexpf("^%s$", invocationArtifactNamePattern)
+	testResultArtifactNameRe      = regexpf("^%s$", testResultArtifactNamePattern)
+	artifactNameRe                = regexpf("^%s|%s$", testResultArtifactNamePattern, invocationArtifactNamePattern)
+)
+
+// ValidateArtifactID returns a non-nil error if id is invalid.
+func ValidateArtifactID(id string) error {
+	return validateWithRe(artifactIDRe, id)
+}
 
 // ValidateArtifactName returns a non-nil error if name is invalid.
 func ValidateArtifactName(name string) error {
 	return validateWithRe(artifactNameRe, name)
 }
 
-// ValidateArtifactFetchURL returns a non-nil error if rawurl is invalid.
-func ValidateArtifactFetchURL(rawurl string) error {
-	switch u, err := url.ParseRequestURI(rawurl); {
-	case err != nil:
-		return err
-	// ParseRequestURI un-capitalizes all the letters of Scheme.
-	case u.Scheme != "https":
-		return errors.Reason("the URL scheme is not HTTPS").Err()
-	case u.Host == "":
-		return errors.Reason("missing host").Err()
+// ParseArtifactName extracts the invocation ID, unescaped test id, result ID
+// and artifact ID.
+// The testID and resultID are empty if this is an invocation-level artifact.
+func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID string, err error) {
+	if name == "" {
+		err = unspecified()
+		return
 	}
-	return nil
-}
 
-// ValidateArtifact returns a non-nil error if art is invalid.
-func ValidateArtifact(art *pb.Artifact) (err error) {
-	ec := checker{&err}
-	switch {
-	case art == nil:
-		return unspecified()
-	case ec.isErr(ValidateArtifactName(art.Name), "name"):
-	case ec.isErr(ValidateArtifactFetchURL(art.FetchUrl), "fetch_url"):
-		// skip `FetchUrlExpiration`
-		// skip `ContentType`
-		// skip `Size`
+	if m := invocationArtifactNameRe.FindStringSubmatch(name); m != nil {
+		invocationID = m[1]
+		artifactID = m[2]
+		return
 	}
-	return err
+
+	if m := testResultArtifactNameRe.FindStringSubmatch(name); m != nil {
+		testID, err = url.PathUnescape(m[2])
+		if err != nil {
+			err = errors.Annotate(err, "test id %q", m[2]).Err()
+			return
+		}
+
+		if ve := validateWithRe(testIDRe, testID); ve != nil {
+			err = errors.Annotate(ve, "test id %q", testID).Err()
+			return
+		}
+
+		invocationID = m[1]
+		resultID = m[3]
+		artifactID = m[4]
+		return
+	}
+
+	err = doesNotMatch(artifactNameRe)
+	return
 }
 
 // ValidateSinkArtifact returns a non-nil error if art is invalid.
@@ -77,16 +95,15 @@ func ValidateSinkArtifact(art *sinkpb.Artifact) error {
 
 // ValidateSinkArtifacts returns a non-nil error if any element of arts is invalid.
 func ValidateSinkArtifacts(arts map[string]*sinkpb.Artifact) error {
-	for name, art := range arts {
+	for id, art := range arts {
 		if art == nil {
-			return errors.Reason("%s: %s", name, unspecified()).Err()
+			return errors.Reason("%s: %s", id, unspecified()).Err()
 		}
-		// the name should be a valid pb.Artifact.Name
-		if err := ValidateArtifactName(name); err != nil {
-			return errors.Annotate(err, "%s", name).Err()
+		if err := ValidateArtifactID(id); err != nil {
+			return errors.Annotate(err, "%s", id).Err()
 		}
 		if err := ValidateSinkArtifact(art); err != nil {
-			return errors.Annotate(err, "%s", name).Err()
+			return errors.Annotate(err, "%s", id).Err()
 		}
 	}
 	return nil
