@@ -151,16 +151,11 @@ CREATE TABLE TestResults (
   -- Tags associated with the test result, for example GTest-specific test
   -- status.
   Tags ARRAY<STRING(MAX)>,
-
-  -- Input artifacts, see also TestResult.input_artifacts in test_result.proto.
-  -- Encoded as luci.resultdb.internal.Artifacts message.
-  InputArtifacts BYTES(MAX),
-
-  -- Output artifacts, see also TestResult.output_artifacts in test_result.proto.
-  -- Encoded as luci.resultdb.internal.Artifacts message.
-  OutputArtifacts BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+
+-- TODO(crbug.com/1071258): add Artifacts table.
 
 -- Unexpected test results for each invocation.
 -- It is significantly smaller (<2%) than TestResult table and should be used
