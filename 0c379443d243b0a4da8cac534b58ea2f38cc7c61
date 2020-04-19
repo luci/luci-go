@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d57a7293_e7b6a009",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-19T01:52:13Z",
+      "side": 1,
+      "message": "That\u0027s cool. Thanks for a good suggestion.",
+      "parentUuid": "cb842499_938d6aa4",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 23
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b914c521_39449936",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "ef5c48ab_4798408d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-19T01:52:13Z",
+      "side": 1,
+      "message": "It doesn\u0027t allow me to return a custom exit code, but only 0 or 1.\nIs it still a requirement that stream(sink_wrapper) needs to exit with the same exit code that the test process returned?",
+      "parentUuid": "97886ecd_ab42a563",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "18f144c9_e1e3a6ea",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -82,6 +130,30 @@
       "writtenOn": "2020-04-18T15:20:46Z",
       "side": 1,
       "message": "for a reader, unclear what IPC this is talking about. perhaps we need to add a link to the protocol description. i think sink package godoc would be a good place, and then we can put a link here.\n\nnot for this CL, so let\u0027s just add a TODO",
+      "range": {
+        "startLine": 74,
+        "startChar": 67,
+        "endLine": 74,
+        "endChar": 70
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f5d054b_986557a8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-19T01:52:13Z",
+      "side": 1,
+      "message": "IMO, users would be more interested in whether their test commands support SinkAPIs integrated, because this flag is a command-line flag, and users will use this stream as a command-line tool.\n\nHow about this?\n\n```\nRun a given test command and update the results to ResultDB. Either use the current invocation from LUCI_CONTEXT or create/finalize a new one. Example:\n  rdb stream ./out/chrome/test/browser_tests\n\nTest binaries are required to integrate Sink APIs into themselves, or no test results will be uploaded. For a list of test frameworks with Sink APIs support,  visit https://foo/bar/sink-supported-test-frameworks.md.\n```\n\nThe MD file can include a list of known test frameworks, such as gtest, etc, and a link to a codelab for how to integrate SinkAPIs into test binaries/frameworks, which could also include a link to the protocol description.\n\nWDYT?",
+      "parentUuid": "18f144c9_e1e3a6ea",
       "range": {
         "startLine": 74,
         "startChar": 67,
@@ -140,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "ebf3ead1_47e2c067",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-19T01:52:13Z",
+      "side": 1,
+      "message": "noted. thanks.",
+      "parentUuid": "672b7456_d475b167",
+      "range": {
+        "startLine": 99,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 9
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ff40fb6_d3805fed",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -151,6 +247,30 @@
       "writtenOn": "2020-04-18T15:20:46Z",
       "side": 1,
       "message": "i don\u0027t see a guarantee in *this* code that the input was invalid. initClients might fail for other reasons, e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/59/2155559/7/resultdb/cli/baserun.go#140\nor it might be changed in the future to fail for other reasons.\n\nalso this is inconsistent with other subcommands: others return same exit code.\nstepping back, in what scenario the caller needs to distinguish input errors and internal errors?",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 33
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef229023_1716eb04",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-19T01:52:13Z",
+      "side": 1,
+      "message": "I don\u0027t have a scenario where the caller needs to distinguish input errors and internal errors. I wlll update stream to return 1001 in any case if it was not able to run the test command.\n\n\u003e\u003e also this is inconsistent with other subcommands: others return same exit code.\nDoes Swarming task need to distinguish the exit codes between test binary and stream?\ne.g., if an exit code indicates that there was an error from stream itself, mark the Swarming Task as failed.\n\nPerhaps, Swarming task only needs to know whether stream successfully executed the test command or not. Then, stream can use baserun.done() to exit 0 or 1, like other subcommands do.\n\nIt wouldn\u0027t even need to return 1001 for internal errors, either. The child exit codes will only be used to determine invocation.interrupted in the invocation finalize process.\n\nPlease correct me if I misunderstood what exit codes should be returned from Stream to Swarming task.",
+      "parentUuid": "6ff40fb6_d3805fed",
       "range": {
         "startLine": 110,
         "startChar": 21,
