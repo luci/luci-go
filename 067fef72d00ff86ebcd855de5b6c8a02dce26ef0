@@ -1,0 +1,308 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8126cc86_ffdcd02b",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "consistency: remove",
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c18218e7_4f090276",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "this defer must be inside the L88 if statement, otherwise it tries to finalize invocation that it did not create, implicitly.",
+      "range": {
+        "startLine": 104,
+        "startChar": 1,
+        "endLine": 104,
+        "endChar": 6
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6054396_cbdbcc52",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "in L82 a new err variable is declared and this code does not see it. it thinks err is nil.\n\nalso, looks like we print finalizeInvocation error message only if there was no other error. not sure this is correct. it should probably go to the log unconditionally\n\noverall, i think it would be less invasive, more precise and simpler to check ret.\n\n  if err :\u003d ....; err !\u003d nil {\n    logging.Errorf(...)\n    if ret \u003d\u003d 0 {\n      ret \u003d 1 // or create a new const\n    }\n  }",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 110,
+        "endChar": 19
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "023b4614_76ce41ec",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "i vaguely recall problems with this package on os x. Maybe they are resolved now.",
+      "range": {
+        "startLine": 173,
+        "startChar": 31,
+        "endLine": 173,
+        "endChar": 34
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e13bcfc9_94f5066a",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "consistency: other invocation ids use colons (:) as delimiters.",
+      "range": {
+        "startLine": 176,
+        "startChar": 24,
+        "endLine": 176,
+        "endChar": 25
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7843581b_1b399354",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "what is unts?",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 176,
+        "endChar": 5
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbb91dfb_502a9e79",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "users will see these strings. Consider making it more eye-friendly, e.g. \"2006-01-02T15:04:05\". also i think a random suffix would be good to prevent collisions if two programs happen to call this at the same time AND clocks are not super precise.",
+      "range": {
+        "startLine": 176,
+        "startChar": 50,
+        "endLine": 176,
+        "endChar": 78
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c132fc7d_6ed20c44",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "wouldn\u0027t CreateInvocation be simpler?",
+      "range": {
+        "startLine": 177,
+        "startChar": 25,
+        "endLine": 177,
+        "endChar": 47
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "411543dc_2c32de6c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "this field is not accepted from the clients\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2158088/",
+      "range": {
+        "startLine": 182,
+        "startChar": 5,
+        "endLine": 182,
+        "endChar": 14
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84120c8e_d8deca90",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "this is not a swarming task. this field should not be populated by rdb stream",
+      "range": {
+        "startLine": 183,
+        "startChar": 5,
+        "endLine": 184,
+        "endChar": 53
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6df475f1_4afa72ef",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "this error message won\u0027t say that we were trying to create an invocation, so it might be hard to tell where the error means. Normally error prefix describes what the code failed to do, e.g. \"failed to create an invocation\"",
+      "range": {
+        "startLine": 191,
+        "startChar": 53,
+        "endLine": 191,
+        "endChar": 57
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f994541a_eb4eea31",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "why not \n\n  fmt.Fprintf(os.Stderr, \"Invocation %q created\\n\", ret.Name)\n\nalso this will say word \"invocation\" twice, so I suggest \"created %q\"",
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e777c5a_19fa6d34",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "simpler: https://godoc.org/google.golang.org/grpc/metadata#AppendToOutgoingContext",
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20dfa8bb_67f4e597",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:55:26Z",
+      "side": 1,
+      "message": "i think this logic belongs to the callsite. IMO it would be cleaner to pass `interrupted bool` as param to this func",
+      "range": {
+        "startLine": 204,
+        "startChar": 15,
+        "endLine": 204,
+        "endChar": 22
+      },
+      "revId": "067fef72d00ff86ebcd855de5b6c8a02dce26ef0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
