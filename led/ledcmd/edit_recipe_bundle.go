@@ -53,17 +53,37 @@ type EditRecipeBundleOpts struct {
 	// recipe bundle as a 'sleep X' command after the invocation of the recipe
 	// itself.
 	DebugSleep time.Duration
-
-	// The subdirectory in the UserPayload of where the recipes should be
-	// isolated. If omitted, defaults to "led_recipe_bundle".
-	RecipeDirectory string
 }
+
+// This very unfortunate constant is here for a combination of reasons:
+//   1) swarming doesn't allow you to 'checkout' an isolate relative to any path
+//      in the task (other than the task root). This means that whatever value
+//      we pick for EditRecipeBundle must be used EVERYWHERE the isolated hash
+//      is used.
+//   2) Currently the 'recipe_engine/led' module will blindly take the isolated
+//      input and 'inject' it into further uses of led. This module currently
+//      doesn't specify the checkout dir, relying on kitchen's default value of
+//      (you guessed it) "kitchen-checkout".
+//
+// In order to fix this (and it will need to be fixed for bbagent support):
+//   * The 'recipe_engine/led' module needs to accept 'checkout-dir' as
+//     a parameter in its input properties.
+//   * led needs to start passing the checkout dir to the led module's input
+//     properties.
+//   * `led edit` needs a way to manipulate the checkout directory in a job
+//   * The 'recipe_engine/led' module needs to set this in the job
+//     alongside the isolate hash when it's doing the injection.
+//
+// For now, we just hard-code it.
+//
+// TODO(crbug.com/1072117): Fix this, it's weird.
+const RecipeDirectory = "kitchen-checkout"
 
 // EditRecipeBundle overrides the recipe bundle in the given job with one
 // located on disk.
 //
 // It isolates the recipes from the repository in the given working directory
-// into the UserPayload under the directory "led_recipe_bundle/". If there's an
+// into the UserPayload under the directory "kitchen-checkout/". If there's an
 // existing directory in the UserPayload at that location, it will be removed.
 func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Definition, opts *EditRecipeBundleOpts) error {
 	if jd.GetSwarming() != nil {
@@ -72,9 +92,6 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Defi
 
 	if opts == nil {
 		opts = &EditRecipeBundleOpts{}
-	}
-	if opts.RecipeDirectory == "" {
-		opts.RecipeDirectory = "led_recipe_bundle"
 	}
 
 	recipesPy, err := findRecipesPy(ctx, opts.RepoDir)
@@ -85,7 +102,7 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Defi
 
 	err = EditIsolated(ctx, authClient, jd, func(ctx context.Context, dir string) error {
 		logging.Infof(ctx, "bundling recipes")
-		bundlePath := filepath.Join(dir, opts.RecipeDirectory)
+		bundlePath := filepath.Join(dir, RecipeDirectory)
 		// Remove existing bundled recipes, if any. Ignore the error.
 		os.RemoveAll(bundlePath)
 		if err := opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath); err != nil {
@@ -99,7 +116,7 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Defi
 	}
 
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
-		je.TaskPayload("", "", opts.RecipeDirectory)
+		je.TaskPayload("", "", RecipeDirectory)
 	})
 }
 
