@@ -36,7 +36,6 @@ const BuilderSummaryKind = "BuilderSummary"
 // BuilderSummary holds builder state for the purpose of representing e.g. header consoles.
 type BuilderSummary struct {
 	// BuilderID is the global identifier for the builder that this Build belongs to, i.e.:
-	//   "buildbot/<mastername>/<buildername>"
 	//   "buildbucket/<bucketname>/<buildername>"
 	// Matches field in BuildSummary.
 	BuilderID string `gae:"$id"`

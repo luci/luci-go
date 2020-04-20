@@ -18,50 +18,23 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/api/config"
-	"go.chromium.org/luci/milo/buildsource/buildbot"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
-
-// handleBuildbotBuild renders a buildbot build.
-// Requires emulationMiddleware.
-func handleBuildbotBuild(c *router.Context) error {
-	buildNum, err := strconv.Atoi(c.Params.ByName("number"))
-	if err != nil {
-		return errors.Annotate(err, "build number is not a number").
-			Tag(grpcutil.InvalidArgumentTag).
-			Err()
-	}
-	id := buildbotapi.BuildID{
-		Master:  c.Params.ByName("master"),
-		Builder: c.Params.ByName("builder"),
-		Number:  buildNum,
-	}
-	if err := id.Validate(); err != nil {
-		return err
-	}
-
-	build, err := buildbot.GetBuild(c.Context, id)
-	return renderBuildLegacy(c, build, false, err)
-}
 
 func handleSwarmingBuild(c *router.Context) error {
 	host := c.Request.FormValue("server")
