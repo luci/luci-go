@@ -116,12 +116,6 @@ func Run(templatePath string) {
 		return BuilderHandlerLegacy(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
 	}))
-	r.GET("/buildbot/:master/", baseMW, func(c *router.Context) {
-		u := *c.Request.URL
-		u.Path = "/search"
-		u.RawQuery = fmt.Sprintf("q=%s", c.Params.ByName("master"))
-		http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
-	})
 
 	// LogDog Milo Annotation Streams.
 	// This mimics the `logdog://logdog_host/project/*path` url scheme seen on
