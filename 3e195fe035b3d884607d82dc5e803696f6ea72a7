@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "326a2f1e_3d4ef8bd",
+        "filename": "resultdb/pbutil/artifact_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-20T20:16:59Z",
+      "side": 1,
+      "message": "Add a test for ValidateArtifactName?",
+      "revId": "3e195fe035b3d884607d82dc5e803696f6ea72a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
