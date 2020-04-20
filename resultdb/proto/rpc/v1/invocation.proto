@@ -121,7 +121,7 @@ message Invocation {
   // Typically, a LUCI service account (e.g.
   // "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
   // (e.g. "user:johndoe@example.com").
-  string created_by = 10;
+  string created_by = 10 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Full name of the resource that produced results in this invocation.
   // See also https://aip.dev/122#full-resource-names
