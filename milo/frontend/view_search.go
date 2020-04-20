@@ -21,8 +21,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -41,18 +39,7 @@ var openSearchXML = `<?xml version="1.0" encoding="UTF-8"?>
 </OpenSearchDescription>`
 
 func searchHandler(c *router.Context) {
-	var buildbotService, buildbucketService *ui.CIService
-	err := parallel.FanOutIn(func(ch chan<- func() error) {
-		ch <- func() (err error) {
-			buildbotService, err = buildbot.CIService(c.Context)
-			return
-		}
-		ch <- func() (err error) {
-			buildbucketService, err = buildbucket.CIService(c.Context)
-			return
-		}
-	})
-
+	buildbucketService, err := buildbucket.CIService(c.Context)
 	errMsg := ""
 	if err != nil {
 		errMsg = err.Error()
@@ -60,9 +47,6 @@ func searchHandler(c *router.Context) {
 	services := make([]ui.CIService, 0, 2)
 	if buildbucketService != nil {
 		services = append(services, *buildbucketService)
-	}
-	if buildbotService != nil {
-		services = append(services, *buildbotService)
 	}
 	templates.MustRender(c.Context, c.Writer, "pages/search.html", templates.Args{
 		"search": &ui.Search{CIServices: services},
