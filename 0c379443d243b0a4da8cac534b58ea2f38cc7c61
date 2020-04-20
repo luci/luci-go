@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ecddc870_317cdb10",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "b914c521_39449936",
+      "range": {
+        "startLine": 56,
+        "startChar": 5,
+        "endLine": 56,
+        "endChar": 18
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97886ecd_ab42a563",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -116,6 +140,30 @@
       "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8425859f_e6327e9b",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "This now uses r.done(). PTAL",
+      "parentUuid": "ef5c48ab_4798408d",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +234,30 @@
       "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be5d2773_931dddd6",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ca68312_3e8ee9a5",
+      "range": {
+        "startLine": 84,
+        "startChar": 14,
+        "endLine": 84,
+        "endChar": 66
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -283,6 +355,30 @@
     },
     {
       "key": {
+        "uuid": "6ef3665d_ce77d497",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Changed to always return 0 or 1 with r.done(). PTAL",
+      "parentUuid": "ef229023_1716eb04",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 33
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c269f6ca_8673f1cc",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -306,6 +402,30 @@
     },
     {
       "key": {
+        "uuid": "c4c7a4a5_15538d45",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c269f6ca_8673f1cc",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 114,
+        "endChar": 54
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ab1191e_46918703",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -323,6 +443,24 @@
     },
     {
       "key": {
+        "uuid": "bcbcb4ae_4ff4133c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Moved to the block where cmd.start() is invoked.",
+      "parentUuid": "6ab1191e_46918703",
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d599e46f_50f23d55",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -337,6 +475,24 @@
       "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed1de1f5_be3928fa",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Added a TODO for adding --log-file",
+      "parentUuid": "d599e46f_50f23d55",
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -360,6 +516,30 @@
       "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "199fc1cc_6547f1df",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T10:39:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27c0aeac_ef01150a",
+      "range": {
+        "startLine": 178,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 12
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
