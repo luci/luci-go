@@ -100,9 +100,11 @@ func fooSetTo(c context.Context) func(interface{}, ...interface{}) string {
 	}
 }
 
+const dataLen = 26
+
 var (
-	dataMultiRoot  = make([]*Foo, 20)
-	dataSingleRoot = make([]*Foo, 20)
+	dataMultiRoot  = make([]*Foo, dataLen)
+	dataSingleRoot = make([]*Foo, dataLen)
 	hugeField      = make([]byte, DefaultSizeBudget/8)
 	hugeData       = make([]*Foo, 11)
 	root           = ds.MkKeyContext("something~else", "").MakeKey("Parent", 1)
@@ -116,12 +118,12 @@ func init() {
 	}
 
 	rs := rand.NewSource(0)
-	nums := make([]string, 20)
+	nums := make([]string, dataLen)
 	for i := range dataMultiRoot {
 		id := int64(i + 1)
 		nums[i] = cb(id)
 
-		val := make([]int64, rs.Int63()%20)
+		val := make([]int64, (rs.Int63()%dataLen)+1)
 		for j := range val {
 			r := rs.Int63()
 			val[j] = r
@@ -186,7 +188,7 @@ func TestTransactionBuffers(t *testing.T) {
 					// look! it remembers :)
 					So(4, fooShouldHave(c), 1, 2, 3, 4)
 					return nil
-				}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+				}, nil), ShouldBeNil)
 
 				// 2 because we are simulating a transaction failure
 				So(under.PutMulti.Total(), ShouldEqual, 2)
@@ -244,7 +246,7 @@ func TestTransactionBuffers(t *testing.T) {
 					// now we see it
 					So(3, fooShouldHave(c), 10, 20, 30, 40)
 					return nil
-				}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+				}, nil), ShouldBeNil)
 
 				// 2 because we are simulating a transaction failure
 				So(under.PutMulti.Total(), ShouldEqual, 2)
@@ -281,14 +283,17 @@ func TestTransactionBuffers(t *testing.T) {
 
 			Convey("too many roots", func() {
 				So(ds.RunInTransaction(c, func(c context.Context) error {
-					f := &Foo{ID: 7}
-					So(ds.Get(c, f), ShouldBeNil)
-					So(f, ShouldResemble, dataMultiRoot[6])
+					for i := 1; i < 26; i++ {
+						f := &Foo{ID: int64(i)}
+						So(ds.Get(c, f), ShouldBeNil)
+						So(f, ShouldResemble, dataMultiRoot[i-1])
+					}
 
 					So(ds.RunInTransaction(c, func(c context.Context) error {
-						return ds.Get(c, &Foo{ID: 5})
+						return ds.Get(c, &Foo{ID: 27})
 					}, nil), ShouldErrLike, "too many entity groups")
 
+					f := &Foo{ID: 7}
 					f.Value = []int64{9}
 					So(ds.Put(c, f), ShouldBeNil)
 
@@ -330,7 +335,7 @@ func TestHuge(t *testing.T) {
 				}, nil), ShouldErrLike, ErrTransactionTooLarge)
 
 				return nil
-			}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+			}, nil), ShouldBeNil)
 
 			So(18, fooShouldHave(c), hugeField)
 		})
@@ -351,7 +356,7 @@ func TestHuge(t *testing.T) {
 				}, nil), ShouldErrLike, ErrTransactionTooLarge)
 
 				return nil
-			}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+			}, nil), ShouldBeNil)
 
 			So(18, fooShouldHave(c), hugeField)
 		})
@@ -372,7 +377,7 @@ func TestHuge(t *testing.T) {
 				}, nil), ShouldBeNil)
 
 				return nil
-			}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+			}, nil), ShouldBeNil)
 
 			So(18, fooShouldHave(c), hugeField)
 		})
@@ -401,11 +406,11 @@ func TestQuerySupport(t *testing.T) {
 
 					vals := []*Foo{}
 					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 8)
+					So(len(vals), ShouldEqual, 15)
 
 					count, err := ds.Count(c, q)
 					So(err, ShouldBeNil)
-					So(count, ShouldEqual, 8)
+					So(count, ShouldEqual, 15)
 
 					f := &Foo{ID: 1, Parent: root}
 					So(ds.Get(c, f), ShouldBeNil)
@@ -415,7 +420,7 @@ func TestQuerySupport(t *testing.T) {
 					// Wowee, zowee, merged queries!
 					vals2 := []*Foo{}
 					So(ds.GetAll(c, q, &vals2), ShouldBeNil)
-					So(len(vals2), ShouldEqual, 9)
+					So(len(vals2), ShouldEqual, 16)
 					So(vals2[0], ShouldResemble, f)
 
 					vals2 = []*Foo{}
@@ -860,7 +865,7 @@ func TestQuerySupport(t *testing.T) {
 							return ds.Put(c, pm)
 						}, nil), ShouldBeNil)
 					})
-				}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+				}, nil), ShouldBeNil)
 
 				So(ds.Run(c, ds.NewQuery("Foo"), func(pm ds.PropertyMap) {
 					val := pm.Slice("Value")

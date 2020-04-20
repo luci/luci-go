@@ -33,15 +33,6 @@ func (g GeoPoint) Valid() bool {
 
 // TransactionOptions are the options for running a transaction.
 type TransactionOptions struct {
-	// XG is whether the transaction can cross multiple entity groups. In
-	// comparison, a single group transaction is one where all datastore keys
-	// used have the same root key. Note that cross group transactions do not
-	// have the same behavior as single group transactions. In particular, it
-	// is much more likely to see partially applied transactions in different
-	// entity groups, in global queries.
-	// It is valid to set XG to true even if the transaction is within a
-	// single entity group.
-	XG bool
 	// Attempts controls the number of retries to perform when commits fail
 	// due to a conflicting transaction. If omitted, it defaults to 3.
 	Attempts int

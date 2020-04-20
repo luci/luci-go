@@ -252,7 +252,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(f.ID, ShouldEqual, 3)
 
 						return nil
-					}, &ds.TransactionOptions{XG: true})
+					}, nil)
 					So(err, ShouldBeNil)
 
 					f := &Foo{ID: 2}
@@ -299,11 +299,13 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				Convey("A Get counts against your group count", func() {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						pm := ds.PropertyMap{}
-						So(pm.SetMeta("key", ds.NewKey(c, "Foo", "", 20, nil)), ShouldBeTrue)
-						So(ds.Get(c, pm), ShouldEqual, ds.ErrNoSuchEntity)
+						for i := 75; i < 100; i++ {
+							So(pm.SetMeta("key", ds.NewKey(c, "Foo", "", int64(i), nil)), ShouldBeTrue)
+							So(ds.Get(c, pm), ShouldEqual, ds.ErrNoSuchEntity)
+						}
 
 						So(pm.SetMeta("key", k), ShouldBeTrue)
-						So(ds.Get(c, pm).Error(), ShouldContainSubstring, "cross-group")
+						So(ds.Get(c, pm), ShouldErrLike, "too many entity groups")
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
@@ -441,20 +443,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				})
 
 				Convey("XG", func() {
-					Convey("Modifying two groups with XG=false is invalid", func() {
-						err := ds.RunInTransaction(c, func(c context.Context) error {
-							f := &Foo{ID: 1, Val: 200}
-							So(ds.Put(c, f), ShouldBeNil)
-
-							f.ID = 2
-							err := ds.Put(c, f)
-							So(err.Error(), ShouldContainSubstring, "cross-group")
-							return err
-						}, nil)
-						So(err.Error(), ShouldContainSubstring, "cross-group")
-					})
-
-					Convey("Modifying >25 groups with XG=true is invald", func() {
+					Convey("Modifying >25 groups is invald", func() {
 						err := ds.RunInTransaction(c, func(c context.Context) error {
 							foos := make([]Foo, 25)
 							for i := int64(1); i < 26; i++ {
@@ -465,7 +454,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 							err := ds.Put(c, &Foo{ID: 26})
 							So(err.Error(), ShouldContainSubstring, "too many entity groups")
 							return err
-						}, &ds.TransactionOptions{XG: true})
+						}, nil)
 						So(err.Error(), ShouldContainSubstring, "too many entity groups")
 					})
 				})

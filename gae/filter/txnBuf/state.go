@@ -133,10 +133,7 @@ type txnBufState struct {
 func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datastore.TransactionOptions) error {
 	parentState, _ := ctx.Value(&dsTxnBufParent).(*txnBufState)
 	roots := stringset.New(0)
-	rootLimit := 1
-	if opts != nil && opts.XG {
-		rootLimit = XGTransactionGroupLimit
-	}
+	rootLimit := XGTransactionGroupLimit
 	sizeBudget, writeCountBudget := DefaultSizeBudget, DefaultWriteCountBudget
 	if parentState != nil {
 		// TODO(riannucci): this is a bit wonky since it means that a child

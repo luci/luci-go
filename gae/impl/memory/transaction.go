@@ -27,7 +27,6 @@ import (
 type transactionImpl struct {
 	// boolean 0 or 1, use atomic.*Int32 to access.
 	closed int32
-	isXG   bool
 }
 
 func (ti *transactionImpl) close() error {

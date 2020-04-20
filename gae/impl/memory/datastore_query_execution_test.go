@@ -616,7 +616,7 @@ func TestQueryExecution(t *testing.T) {
 											So(r, ShouldResemble, expect.keys[i])
 										}
 										return nil
-									}, &ds.TransactionOptions{XG: true})
+									}, nil)
 									So(err, shouldBeSuccessful)
 								})
 							}
@@ -635,7 +635,7 @@ func TestQueryExecution(t *testing.T) {
 											So(r, ShouldResemble, expect.get[i])
 										}
 										return nil
-									}, &ds.TransactionOptions{XG: true})
+									}, nil)
 									So(err, shouldBeSuccessful)
 								})
 							}

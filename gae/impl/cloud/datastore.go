@@ -78,27 +78,20 @@ func (bds *boundDatastore) RunInTransaction(fn func(context.Context) error, opts
 		return errors.New("nested transactions are not supported")
 	}
 
-	// The cloud datastore SDK does not expose any transaction options.
+	var txOpts []datastore.TransactionOption
 	if opts != nil {
-		switch {
-		case opts.XG:
-			return errors.New("cross-group transactions are not supported")
+		if opts.ReadOnly {
+			txOpts = append(txOpts, datastore.ReadOnly)
+		}
+		if opts.Attempts > 0 {
+			txOpts = append(txOpts, datastore.MaxAttempts(opts.Attempts))
 		}
 	}
 
-	attempts := 3
-	if opts != nil && opts.Attempts > 0 {
-		attempts = opts.Attempts
-	}
-	for i := 0; i < attempts; i++ {
-		_, err := bds.client.RunInTransaction(bds, func(tx *datastore.Transaction) error {
-			return fn(withDatastoreTransaction(bds, tx))
-		})
-		if err = normalizeError(err); err != ds.ErrConcurrentTransaction {
-			return err
-		}
-	}
-	return ds.ErrConcurrentTransaction
+	_, err := bds.client.RunInTransaction(bds, func(tx *datastore.Transaction) error {
+		return fn(withDatastoreTransaction(bds, tx))
+	}, txOpts...)
+	return normalizeError(err)
 }
 
 func (bds *boundDatastore) DecodeCursor(s string) (ds.Cursor, error) {

@@ -207,7 +207,7 @@ func TestDSCache(t *testing.T) {
 
 						So(ds.Delete(c, ds.KeyForObj(c, &object{ID: 2})), ShouldBeNil)
 						return nil
-					}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
+					}, nil), ShouldBeNil)
 
 					_, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 1})))
 					So(err, ShouldEqual, mc.ErrCacheMiss)

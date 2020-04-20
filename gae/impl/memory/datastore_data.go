@@ -560,11 +560,9 @@ func (d *dataStoreData) mkTxn(o *ds.TransactionOptions) memContextObj {
 		// alias to the main datastore's so that testing code can have primitive
 		// access to break features inside of transactions.
 		parent: d,
-		txn: &transactionImpl{
-			isXG: o != nil && o.XG,
-		},
-		snap: d.takeSnapshot(),
-		muts: map[string][]txnMutation{},
+		txn:    &transactionImpl{},
+		snap:   d.takeSnapshot(),
+		muts:   map[string][]txnMutation{},
 	}
 }
 
@@ -637,16 +635,9 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 	defer td.lock.Unlock()
 
 	if _, ok := td.muts[rk]; !ok {
-		limit := 1
-		if td.txn.isXG {
-			limit = xgEGLimit
-		}
-		if len(td.muts)+1 > limit {
-			msg := "cross-group transaction need to be explicitly specified (xg=True)"
-			if td.txn.isXG {
-				msg = "operating on too many entity groups in a single transaction"
-			}
-			return errors.New(msg)
+		if len(td.muts)+1 > xgEGLimit {
+			return errors.New(
+				"operating on too many entity groups in a single transaction")
 		}
 		td.muts[rk] = []txnMutation{}
 	}
