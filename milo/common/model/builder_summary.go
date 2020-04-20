@@ -100,14 +100,10 @@ func BuilderIDLink(b, project string) string {
 		return InvalidBuilderIDURL
 	}
 
-	switch source := parts[0]; source {
-	case "buildbot":
-		return fmt.Sprintf("/buildbot/%s/%s", parts[1], parts[2])
-	case "buildbucket":
+	if parts[0] == "buildbucket" {
 		return fmt.Sprintf("/p/%s/builders/%s/%s", project, parts[1], parts[2])
-	default:
-		return InvalidBuilderIDURL
 	}
+	return InvalidBuilderIDURL
 }
 
 // UpdateBuilderForBuild updates the appropriate BuilderSummary for the
