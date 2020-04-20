@@ -157,7 +157,7 @@ func combineIsolateds(ctx context.Context, arc isoClientIface, isos ...*api.CAST
 	}
 
 	for _, iso := range isos {
-		if iso == nil {
+		if iso.GetDigest() == "" {
 			continue
 		}
 
