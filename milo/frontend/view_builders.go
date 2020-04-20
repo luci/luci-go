@@ -16,7 +16,6 @@ package frontend
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"go.chromium.org/gae/service/datastore"
@@ -32,7 +31,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -181,28 +179,6 @@ func getBuilderHistories(c context.Context, builders []string, project string, l
 	if err != nil {
 		return nil, err
 	}
-
-	// for all buildbot builders, we don't have pending BuildSummary entities,
-	// so load pending counts from buildstore.
-	var buildbotBuilders []string // "<master>/<builder>" strings
-	var buildbotHists []*builderHistory
-	for _, h := range hists {
-		backend, master, builder, err := h.BuilderID.Split()
-		if backend == "buildbot" && err == nil {
-			buildbotHists = append(buildbotHists, h)
-			buildbotBuilders = append(buildbotBuilders, fmt.Sprintf("%s/%s", master, builder))
-		}
-	}
-	if len(buildbotBuilders) > 0 {
-		pendingCounts, err := buildstore.GetPendingCounts(c, buildbotBuilders)
-		if err != nil {
-			return nil, err
-		}
-		for i, count := range pendingCounts {
-			buildbotHists[i].NumPending = count
-		}
-	}
-
 	return hists, nil
 }
 
@@ -248,7 +224,6 @@ func getBuildersForProject(c context.Context, project, console string) ([]string
 
 // getHistory gets the recent history of the given builder.
 // Depends on status.go for filtering finished builds.
-// If the builder starts with "buildbot/", does not load pending builds.
 func getHistory(c context.Context, builderID buildsource.BuilderID, project string, limit int) (*builderHistory, error) {
 	hist := builderHistory{
 		BuilderID:    builderID,
@@ -276,16 +251,14 @@ func getHistory(c context.Context, builderID buildsource.BuilderID, project stri
 			return nil
 		}
 
-		if !builderID.Buildbot() {
-			// Pending builds
-			fetch <- func() error {
-				q := datastore.NewQuery("BuildSummary").
-					Eq("BuilderID", builderID).
-					Eq("Summary.Status", model.NotRun)
-				pending, err := datastore.Count(c, q)
-				hist.NumPending = int(pending)
-				return err
-			}
+		// Pending builds
+		fetch <- func() error {
+			q := datastore.NewQuery("BuildSummary").
+				Eq("BuilderID", builderID).
+				Eq("Summary.Status", model.NotRun)
+			pending, err := datastore.Count(c, q)
+			hist.NumPending = int(pending)
+			return err
 		}
 
 		// Running builds
