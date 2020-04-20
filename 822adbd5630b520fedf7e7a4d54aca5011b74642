@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d19c625d_451ff62f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T17:09:53Z",
+      "side": 1,
+      "message": "nit: blank line before resultdb imports",
+      "revId": "822adbd5630b520fedf7e7a4d54aca5011b74642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df16be8a_6692c868",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T17:09:53Z",
+      "side": 1,
+      "message": "subprocess\u0027s stdout and stderr should go to steam\u0027s stdout and stderr.\n\nsteam\u0027s logging (logging.Debugf, etc) should go to -log, i.e. L139",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 14
+      },
+      "revId": "822adbd5630b520fedf7e7a4d54aca5011b74642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

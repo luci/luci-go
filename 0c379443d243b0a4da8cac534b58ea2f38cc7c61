@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "ad364506_0c62a794",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T17:09:53Z",
+      "side": 1,
+      "message": "yes, i think the subcommand should exit with the exit code of the subprocess (if possible). So PS8 does the right thing",
+      "parentUuid": "8425859f_e6327e9b",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18f144c9_e1e3a6ea",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -202,6 +226,30 @@
       "side": 1,
       "message": "IMO, users would be more interested in whether their test commands support SinkAPIs integrated, because this flag is a command-line flag, and users will use this stream as a command-line tool.\n\nHow about this?\n\n```\nRun a given test command and update the results to ResultDB. Either use the current invocation from LUCI_CONTEXT or create/finalize a new one. Example:\n  rdb stream ./out/chrome/test/browser_tests\n\nTest binaries are required to integrate Sink APIs into themselves, or no test results will be uploaded. For a list of test frameworks with Sink APIs support,  visit https://foo/bar/sink-supported-test-frameworks.md.\n```\n\nThe MD file can include a list of known test frameworks, such as gtest, etc, and a link to a codelab for how to integrate SinkAPIs into test binaries/frameworks, which could also include a link to the protocol description.\n\nWDYT?",
       "parentUuid": "18f144c9_e1e3a6ea",
+      "range": {
+        "startLine": 74,
+        "startChar": 67,
+        "endLine": 74,
+        "endChar": 70
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c682937_bcf0db86",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T17:09:53Z",
+      "side": 1,
+      "message": "I think, for user who wants to integrate, this still does not explain what is \"Sink API\".\n\nI also doubt this tool will be used by chromium developers directly. This tool accepts a raw path to the binary. As a chrome developer, I\u0027d expect to only provide a ninja/GN target, and expect the binary to be compiled/linked/executed for me (like blaze test). So I think people who are interested in the list of commands supporting the protocol won\u0027t be reading this help message. Instead, I think this help messages will be read by people who try to integrate with rdb stream.\n\nin general, i think a program should explain what it does, rather than letting the user infer its behavior based on higher-level descriptions",
+      "parentUuid": "5f5d054b_986557a8",
       "range": {
         "startLine": 74,
         "startChar": 67,
