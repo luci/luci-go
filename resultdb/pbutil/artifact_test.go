@@ -15,59 +15,75 @@
 package pbutil
 
 import (
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/golang/protobuf/ptypes"
-
-	"go.chromium.org/luci/common/clock/testclock"
-
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-// validArtifacts returns two valid Artifact samples.
-func validArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
-	et, _ := ptypes.TimestampProto(now.Add(24 * time.Hour))
-	art1 := &pb.Artifact{
-		Name:               "this is artifact 1",
-		FetchUrl:           "https://foo/bar",
-		FetchUrlExpiration: et,
-		ContentType:        "text/plain",
-		SizeBytes:          1024,
-	}
-	art2 := &pb.Artifact{
-		Name:               "this is artifact 2",
-		FetchUrl:           "https://foo/bar/log.png",
-		FetchUrlExpiration: et,
-		ContentType:        "image/png",
-		SizeBytes:          1024,
-	}
-	return art1, art2
+func TestParseArtifactName(t *testing.T) {
+	t.Parallel()
+	Convey(`ParseArtifactName`, t, func() {
+		Convey(`Invocation level`, func() {
+			Convey(`Success`, func() {
+				invocationID, testID, resultID, artifactID, err := ParseArtifactName("invocations/inv/artifacts/a")
+				So(err, ShouldBeNil)
+				So(invocationID, ShouldEqual, "inv")
+				So(testID, ShouldEqual, "")
+				So(resultID, ShouldEqual, "")
+				So(artifactID, ShouldEqual, "a")
+			})
+
+			Convey(`With a slash`, func() {
+				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/artifacts/a/b")
+				So(err, ShouldBeNil)
+				So(artifactID, ShouldEqual, "a/b")
+			})
+		})
+
+		Convey(`Test result level`, func() {
+			Convey(`Success`, func() {
+				invocationID, testID, resultID, artifactID, err := ParseArtifactName("invocations/inv/tests/t/results/r/artifacts/a")
+				So(err, ShouldBeNil)
+				So(invocationID, ShouldEqual, "inv")
+				So(testID, ShouldEqual, "t")
+				So(resultID, ShouldEqual, "r")
+				So(artifactID, ShouldEqual, "a")
+			})
+
+			Convey(`With a slash in test ID`, func() {
+				_, testID, _, _, err := ParseArtifactName("invocations/inv/tests/t%2F/results/r/artifacts/a/b")
+				So(err, ShouldBeNil)
+				So(testID, ShouldEqual, "t/")
+			})
+
+			Convey(`With a slash`, func() {
+				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/tests/t/results/r/artifacts/a/b")
+				So(err, ShouldBeNil)
+				So(artifactID, ShouldEqual, "a/b")
+			})
+		})
+	})
 }
 
-// invalidArtifacts returns two invalid Artifact samples.
-func invalidArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
-	et, _ := ptypes.TimestampProto(now.Add(24 * time.Hour))
-	art1 := &pb.Artifact{
-		Name:               " this is a bad artifact name.",
-		FetchUrl:           "https://foo/bar",
-		FetchUrlExpiration: et,
-		ContentType:        "text/plain",
-		SizeBytes:          1024,
-	}
-	art2 := &pb.Artifact{
-		Name:               "this has a bad fetch url",
-		FetchUrl:           "isolate://foo/bar/log.png",
-		FetchUrlExpiration: et,
-		ContentType:        "image/png",
-		SizeBytes:          1024,
-	}
-	return art1, art2
+func TestValidateArtifactName(t *testing.T) {
+	t.Parallel()
+	Convey(`ValidateArtifactName`, t, func() {
+		Convey(`Invocation level`, func() {
+			err := ValidateArtifactName("invocations/inv/artifacts/a/b")
+			So(err, ShouldBeNil)
+		})
+		Convey(`Test result level`, func() {
+			err := ValidateArtifactName("invocations/inv/tests/t/results/r/artifacts/a")
+			So(err, ShouldBeNil)
+		})
+		Convey(`Invalid`, func() {
+			err := ValidateArtifactName("abc")
+			So(err, ShouldErrLike, "does not match")
+		})
+	})
 }
 
 func TestValidateSinkArtifacts(t *testing.T) {
@@ -108,83 +124,6 @@ func TestValidateSinkArtifacts(t *testing.T) {
 		Convey("with a mix of valid and invalid artifacts", func() {
 			invalidArts["art2"] = validArts["art2"]
 			So(ValidateSinkArtifacts(invalidArts), ShouldErrLike, expected)
-		})
-	})
-}
-
-func TestValidateArtifact(t *testing.T) {
-	t.Parallel()
-	now := testclock.TestRecentTimeUTC
-	validate := func(art *pb.Artifact) error {
-		return ValidateArtifact(art)
-	}
-
-	Convey("Succeeds", t, func() {
-		art, _ := validArtifacts(now)
-		So(validate(art), ShouldBeNil)
-
-		Convey("with no FetchUrlExpiration", func() {
-			art.FetchUrlExpiration = nil
-			So(validate(art), ShouldBeNil)
-		})
-
-		Convey("with empty ContentType", func() {
-			art.ContentType = ""
-			So(validate(art), ShouldBeNil)
-		})
-
-		Convey("with 0 in Size", func() {
-			art.SizeBytes = 0
-			So(validate(art), ShouldBeNil)
-		})
-	})
-
-	Convey("Fails", t, func() {
-		art, _ := validArtifacts(now)
-
-		Convey("with nil", func() {
-			So(validate(nil), ShouldErrLike, unspecified())
-		})
-
-		Convey("with empty Name", func() {
-			art.Name = ""
-			So(validate(art), ShouldErrLike, fieldUnspecified("name"))
-		})
-
-		Convey("with invalid Name", func() {
-			badInputs := []string{
-				" name", "name ", "name ##", "name ?", "name 1@",
-				strings.Repeat("n", 256+1),
-			}
-			for _, in := range badInputs {
-				art.Name = in
-				So(validate(art), ShouldErrLike, fieldDoesNotMatch("name", artifactNameRe))
-			}
-		})
-
-		Convey("with empty FetchUrl", func() {
-			art.FetchUrl = ""
-			So(validate(art), ShouldErrLike, "empty url")
-		})
-
-		Convey("with invalid URI", func() {
-			art.FetchUrl = "a/b"
-			So(validate(art), ShouldErrLike, "invalid URI for request")
-		})
-
-		Convey("with unsupported Scheme", func() {
-			badInputs := []string{
-				"/my_test", "http://host/page", "isolate://a/b",
-			}
-			for _, in := range badInputs {
-				art.FetchUrl = in
-				So(validate(art), ShouldErrLike, "the URL scheme is not HTTPS")
-			}
-		})
-
-		Convey("without host", func() {
-			art.FetchUrl = "https://"
-			So(validate(art), ShouldErrLike, "missing host")
 		})
 	})
 }
