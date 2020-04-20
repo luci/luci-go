@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16739350_2986513e",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-20T07:05:45Z",
+      "side": 0,
+      "message": "^ this entity too.",
+      "range": {
+        "startLine": 278,
+        "startChar": 0,
+        "endLine": 278,
+        "endChar": 33
+      },
+      "revId": "f8bcafe4d7646b1f3999c413247496a4327cc2bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e007cba0_48376f65",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-20T07:05:45Z",
+      "side": 0,
+      "message": "this and all other buildbot-specific entities (e.g. builderEntity, and I suspect there are others) should be deleted from the datastore, too.",
+      "range": {
+        "startLine": 324,
+        "startChar": 5,
+        "endLine": 324,
+        "endChar": 17
+      },
+      "revId": "f8bcafe4d7646b1f3999c413247496a4327cc2bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
