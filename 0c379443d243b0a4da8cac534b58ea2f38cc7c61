@@ -262,6 +262,30 @@
     },
     {
       "key": {
+        "uuid": "4239c893_979b4c17",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T19:02:06Z",
+      "side": 1,
+      "message": "Acked. Added a TODO",
+      "parentUuid": "8c682937_bcf0db86",
+      "range": {
+        "startLine": 74,
+        "startChar": 67,
+        "endLine": 74,
+        "endChar": 70
+      },
+      "revId": "0c379443d243b0a4da8cac534b58ea2f38cc7c61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ca68312_3e8ee9a5",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7

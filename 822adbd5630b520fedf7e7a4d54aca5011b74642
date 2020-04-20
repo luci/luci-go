@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e2512d32_e517791d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T19:02:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d19c625d_451ff62f",
+      "revId": "822adbd5630b520fedf7e7a4d54aca5011b74642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df16be8a_6692c868",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -39,6 +57,30 @@
       "revId": "822adbd5630b520fedf7e7a4d54aca5011b74642",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92149c21_51305ff2",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-20T19:02:06Z",
+      "side": 1,
+      "message": "TODO removed.",
+      "parentUuid": "df16be8a_6692c868",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 14
+      },
+      "revId": "822adbd5630b520fedf7e7a4d54aca5011b74642",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
