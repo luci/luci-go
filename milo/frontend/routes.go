@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 )
@@ -112,10 +111,6 @@ func Run(templatePath string) {
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
 	r.GET("/buildbot/:master/:builder/:number", htmlMW, handleError(handleBuildbotBuild))
-	r.GET("/buildbot/:master/:builder/", htmlMW, handleError(func(c *router.Context) error {
-		return BuilderHandlerLegacy(c, buildsource.BuilderID(
-			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
-	}))
 	r.GET("/buildbot/:master/", baseMW, func(c *router.Context) {
 		u := *c.Request.URL
 		u.Path = "/search"
