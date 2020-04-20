@@ -108,16 +108,6 @@ func Run(templatePath string) {
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 
-	// Buildbot
-	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
-	r.GET("/buildbot/:master/:builder/:number", htmlMW, handleError(handleBuildbotBuild))
-	r.GET("/buildbot/:master/", baseMW, func(c *router.Context) {
-		u := *c.Request.URL
-		u.Path = "/search"
-		u.RawQuery = fmt.Sprintf("q=%s", c.Params.ByName("master"))
-		http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
-	})
-
 	// LogDog Milo Annotation Streams.
 	// This mimics the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
