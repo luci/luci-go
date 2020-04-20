@@ -16,6 +16,24 @@
       "revId": "3e195fe035b3d884607d82dc5e803696f6ea72a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "940a6def_c41f8c80",
+        "filename": "resultdb/pbutil/artifact_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-20T22:18:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "326a2f1e_3d4ef8bd",
+      "revId": "3e195fe035b3d884607d82dc5e803696f6ea72a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
