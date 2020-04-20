@@ -154,6 +154,52 @@ CREATE TABLE TestResults (
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
+-- Stores artifacts. Interleaved in Invocations.
+CREATE TABLE Artifacts (
+  -- Id of the parent Invocations row.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- An invocation-local ID of the Artifact parent:
+  -- *   "" for invocation-level artifacts.
+  -- *   "tr/{test_id}/{result_id}" for test-result-level artifacts.
+  --     test_id is NOT URL-encoded because result_id cannot have a slash.
+  ParentId STRING(MAX) NOT NULL,
+
+  -- Unique identifier of the artifact within the parent.
+  -- May have slashes.
+  -- Example: "stdout" of a test result.
+  ArtifactId STRING(MAX) NOT NULL,
+
+  -- Media type of the artifact content.
+  ContentType STRING(MAX),
+
+  -- Content size in bytes.
+  Size INT64,
+
+  -- Hash of the artifact content if it is stored in RBE-CAS.
+  -- Format: "sha256:{hash}" where the hash is a lower-case hex-encoded SHA256
+  -- hash of the artifact content.
+  -- Example: e.g. "sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+  --
+  -- The RBE-CAS instance is in the same Cloud project, named "artifacts".
+  RBECASHash STRING(MAX),
+) PRIMARY KEY (InvocationId, ParentId, ArtifactId),
+  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- RBE-CAS digests that have been seen from a given Realm before.
+-- Used for control access to blobs against realms.
+CREATE TABLE RBECASBlobs (
+  -- Realm name, e.g. "chromium:ci"
+  Realm STRING(MAX) NOT NULL,
+
+  -- Content hash in the same format as Artifacts.RBECASHash.
+  ContentHash STRING(MAX) NOT NULL,
+
+  -- Content size.
+  -- It is a part of the PK because it is a part of PK in RBE-CAS
+  -- https://github.com/bazelbuild/remote-apis/blob/67e8026c2118c1e1506e6efeb3a6d0e2609a7d61/build/bazel/remote/execution/v2/remote_execution.proto#L228
+  Size INT64 NOT NULL,
+) PRIMARY KEY (Realm, ContentHash, Size);
 
 -- TODO(crbug.com/1071258): add Artifacts table.
 
