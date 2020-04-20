@@ -16,9 +16,13 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"os/user"
+	"time"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
@@ -29,6 +33,8 @@ import (
 	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/resultdb/sink"
+
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 func cmdStream(p Params) *subcommands.Command {
@@ -69,7 +75,7 @@ type streamRun struct {
 	invocation lucictx.Invocation
 }
 
-func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) (ret int) {
 	ctx := cli.GetContext(a, r, env)
 
 	// init client
@@ -80,8 +86,11 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
 	if r.isNew {
-		// TODO(ddoman): create an invocation
-		return r.done(errors.Reason("Not implemented").Err())
+		ninv, err := r.createInvocation(ctx)
+		if err != nil {
+			return r.done(err)
+		}
+		r.invocation = ninv
 	} else {
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -90,17 +99,23 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 
 	// run the command
+	var err error
+	var testExitCode = 1001
+	defer func() {
+		fierr := r.finalizeInvocation(ctx, testExitCode)
+		if err == nil {
+			ret = r.done(fierr)
+			return
+		}
+		ret = r.done(err)
+	}()
+
 	cmd, err := r.makeTestCmd(ctx, args)
 	if err != nil {
-		return r.done(err)
+		return
 	}
-	testExitCode, err := r.runTestCmd(ctx, cmd)
-
-	// TODO(ddoman): finalize the invocation
-	if err != nil {
-		return r.done(err)
-	}
-	return testExitCode
+	testExitCode, err = r.runTestCmd(ctx, cmd)
+	return
 }
 
 func (r *streamRun) makeTestCmd(ctx context.Context, args []string) (*exec2.Cmd, error) {
@@ -150,4 +165,43 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	}
 	logging.Infof(ctx, "Child process terminated with %d", ec)
 	return ec, nil
+}
+
+func (r *streamRun) createInvocation(ctx context.Context) (lucictx.Invocation, error) {
+	whoami, err := user.Current()
+	if err != nil {
+		return lucictx.Invocation{}, err
+	}
+	now := time.Now()
+	unts := fmt.Sprintf("%s-%d_%d", whoami.Username, now.Unix(), now.Nanosecond())
+	resp, err := r.recorder.BatchCreateInvocations(ctx, &pb.BatchCreateInvocationsRequest{
+		Requests: []*pb.CreateInvocationRequest{
+			&pb.CreateInvocationRequest{
+				InvocationId: fmt.Sprintf("u:%s", unts),
+				Invocation: &pb.Invocation{
+					CreatedBy: whoami.Username,
+					ProducerResource: fmt.Sprintf(
+						"//chromium-swarm.appspot.com/tasks/%s", unts),
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		return lucictx.Invocation{}, errors.Annotate(err, "u:%s", unts).Err()
+	}
+	ret := lucictx.Invocation{resp.Invocations[0].Name, resp.UpdateTokens[0]}
+	fmt.Fprintln(os.Stderr, fmt.Sprintf("Invocation %q created", ret.Name))
+	return ret, nil
+}
+
+func (r *streamRun) finalizeInvocation(ctx context.Context, ec int) error {
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
+		"update-token", r.invocation.UpdateToken))
+	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
+		Name: r.invocation.Name,
+		// TODO(ddoman): handle complete-invocation-exit-codes
+		Interrupted: ec != 0,
+	})
+	return err
 }
