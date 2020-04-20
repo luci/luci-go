@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d44e346f_390170eb",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-20T07:36:40Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "16739350_2986513e",
+      "range": {
+        "startLine": 278,
+        "startChar": 0,
+        "endLine": 278,
+        "endChar": 33
+      },
+      "revId": "f8bcafe4d7646b1f3999c413247496a4327cc2bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e007cba0_48376f65",
         "filename": "milo/buildsource/buildbot/buildstore/master.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "f8bcafe4d7646b1f3999c413247496a4327cc2bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6079608b_e25346f6",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-20T07:36:40Z",
+      "side": 0,
+      "message": "Ack, thanks.",
+      "parentUuid": "e007cba0_48376f65",
+      "range": {
+        "startLine": 324,
+        "startChar": 5,
+        "endLine": 324,
+        "endChar": 17
+      },
+      "revId": "f8bcafe4d7646b1f3999c413247496a4327cc2bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
