@@ -20,7 +20,7 @@ import (
 	"github.com/smartystreets/assertions"
 
 	luciassertions "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/grpc/appstatus"
 )
 
 // ShouldHaveAppStatus asserts that error `actual` has an
