@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e8685e5f_557a067d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T04:39:41Z",
+      "side": 1,
+      "message": "The purpose is to only fetch the descendant of a node.\nThis is useful when user selects a branch that is not fully loaded, and we want to load the remaining tests of that node.\nWithout this, clicking \u0027load more\u0027 when a not-fully-loaded branch is selected will grow the test tree.\nFor instance, we have test tree\n\na/b/\n c/d\n d/e\n\nand unloaded tests \u0027a/c/d\u0027. \u0027a/b/\u0027 is currently selected.\nwe are not sure if \u0027a/b/\u0027 is fully loaded because \u0027a/c\u0027 is still on the server, and we can\u0027t tell if there\u0027s a test like \u0027a/b/d/f\u0027.\nSo user should be able to see the load more button at the end of the test list.\nAfter they click on it, nothing will show up on the list, but the tree will grow to\n\na/\n b/\n   c/d\n   d/e\n c/d\n\nwhich is quite weird.",
+      "parentUuid": "6fe14e4a_95241dd4",
+      "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8fb764de_343b4196",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 7
@@ -39,6 +57,30 @@
       "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7130361d_14ccbca3",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T04:39:41Z",
+      "side": 1,
+      "message": "You are right. Didn\u0027t catch that. Fixed.",
+      "parentUuid": "8fb764de_343b4196",
+      "range": {
+        "startLine": 102,
+        "startChar": 17,
+        "endLine": 102,
+        "endChar": 24
+      },
+      "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
