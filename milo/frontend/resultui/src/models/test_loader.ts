@@ -17,8 +17,9 @@
  * results and exonerations from resultDb to a TestNode.
  */
 
-import { computed, observable } from 'mobx';
+import { action, computed, observable } from 'mobx';
 
+import { PeekableAsyncIterator } from '../libs/peekable_iter';
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
 import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExoneration, VariantStatus } from './test_node';
 
@@ -33,6 +34,8 @@ import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExon
  * different levels.
  */
 export class TestLoader {
+  private testIter: PeekableAsyncIterator<ReadonlyTest>;
+
   @computed get isLoading() { return !this.done && this.loadingReqCount !== 0; }
   @observable.ref private loadingReqCount = 0;
 
@@ -43,40 +46,59 @@ export class TestLoader {
    * @param testIter the tests should be sorted by id.
    */
   constructor(
-    readonly node: TestNode,
-    private readonly testIter: AsyncIterator<ReadonlyTest>,
-  ) {}
+    readonly root: TestNode,
+    testIter: AsyncIterator<ReadonlyTest>,
+  ) {
+    this.testIter = new PeekableAsyncIterator(testIter);
+  }
 
   private loadPromise = Promise.resolve();
 
   /**
-   * Loads more tests from the iterator to the node.
+   * Loads more tests into the given node (or root node).
+   * Only tests that have ID prefix matching the path of the target node will be
+   * loaded.
    */
-  loadMore(limit = 100) {
+  @action
+  loadMore(limit = 100, node?: TestNode) {
     if (this.done) {
       return this.loadPromise;
     }
     this.loadingReqCount++;
     // TODO(weiweilin): better error handling.
-    this.loadPromise = this.loadPromise.then(() => this.loadMoreInternal(limit));
+    this.loadPromise = this.loadPromise.then(() => this.loadMoreInternal(limit, node));
     return this.loadPromise.then(() => this.loadingReqCount--);
   }
 
   /**
-   * Loads more tests from the iterator to the node.
+   * Loads more tests into the given node (or root node).
+   * Only tests that have ID prefix matching the path of the target node will be
+   * loaded.
    *
    * @precondition there should not exist a running instance of
-   * this.loadMoreInternal
+   *     this.loadMoreInternal
    */
-  private async loadMoreInternal(limit: number) {
+  // TODO(weiweilin): we might be able to improve the performance by keeping a
+  // 'pivot' instead of always searching the child node from root.
+  private async loadMoreInternal(limit: number, node?: TestNode) {
     while (limit > 0) {
-      const {value, done} = await this.testIter.next();
-      if (done) {
-        this._done = true;
-        this.node.finalizeLoading();
+      const peeked = await this.testIter.peek();
+      // Use '' instead of this.root.path because when loading tests into root,
+      // we don't want to match the prefix of root's test ID.
+      if (!peeked.done && !peeked.value.id.startsWith(node?.path || '')) {
+        node!.finalizeLoading();
         break;
       }
-      this.node.addTest(value);
+      const next = await this.testIter.next();
+      if (next.done) {
+        this._done = true;
+        // Finalize the root node (not just the target node), when the iterator
+        // is exhausted.
+        this.root.finalizeLoading();
+        break;
+      }
+
+      this.root.addTest(next.value);
       limit--;
     }
   }

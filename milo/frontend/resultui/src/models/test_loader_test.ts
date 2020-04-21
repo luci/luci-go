@@ -35,11 +35,15 @@ describe('test_loader', () => {
   // Result with a different test ID and the same variant.
   const testResult4 = {testId: 'b', resultId: '1', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
   // Result with multiple variant keys.
-  const testResult5 = {testId: 'c', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult5 = {testId: 'c/d', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
   // Result with the same variant but variant keys are in different order.
-  const testResult6 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult6 = {testId: 'c/d', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, expected: false} as Partial<TestResult> as TestResult;
   // Result with partially different variant.
-  const testResult7 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult7 = {testId: 'c/d', resultId: '5', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  // Result shears the same prefix with the previous one.
+  const testResult8 = {testId: 'c/e', resultId: '4', variant: {def: {}}, expected: false} as Partial<TestResult> as TestResult;
+  // Result shears the same prefix with the previous one.
+  const testResult9 = {testId: 'c/f', resultId: '4', variant: {def: {}}, expected: false} as Partial<TestResult> as TestResult;
 
   // Exoneration that shares the same ID and variant with a result.
   // TODO(weiweilin): is this possible?
@@ -90,7 +94,7 @@ describe('test_loader', () => {
   };
 
   const test3 = {
-    id: 'c',
+    id: 'c/d',
     variants: [
       {
         variant: {def: {'key1': 'val2', 'key2': 'val1'}},
@@ -108,6 +112,31 @@ describe('test_loader', () => {
   };
 
   const test4 = {
+    id: 'c/e',
+    variants: [
+      {
+        variant: {def: {}},
+        status: VariantStatus.Unexpected,
+        results: [testResult8],
+        exonerations: [],
+      },
+    ],
+  };
+
+
+  const test5 = {
+    id: 'c/f',
+    variants: [
+      {
+        variant: {def: {}},
+        status: VariantStatus.Unexpected,
+        results: [testResult9],
+        exonerations: [],
+      },
+    ],
+  };
+
+  const test6 = {
     id: 'd',
     variants: [
       {
@@ -124,7 +153,7 @@ describe('test_loader', () => {
       },
     ],
   };
-  const test5 = {
+  const test7 = {
     id: 'e',
     variants: [
       {
@@ -151,11 +180,13 @@ describe('test_loader', () => {
           yield test3;
           yield test4;
           yield test5;
+          yield test6;
+          yield test7;
         })(),
       );
     });
 
-    it('should load tests to test node on request', async () => {
+    it('should load tests to root node on request', async () => {
       assert.strictEqual(addTestSpy.callCount, 0);
       await testLoader.loadMore(5);
       assert.strictEqual(addTestSpy.callCount, 5);
@@ -170,60 +201,86 @@ describe('test_loader', () => {
     it('should preserve loading progress', async () => {
       assert.isFalse(testLoader.done);
 
-      await testLoader.loadMore(2);
-      assert.strictEqual(addTestSpy.callCount, 2);
+      await testLoader.loadMore(3);
+      assert.strictEqual(addTestSpy.callCount, 3);
       assert.strictEqual(addTestSpy.getCall(0).args[0], test1);
       assert.strictEqual(addTestSpy.getCall(1).args[0], test2);
-      assert.isFalse(testLoader.done);
-
-      await testLoader.loadMore(2);
-      assert.strictEqual(addTestSpy.callCount, 4);
       assert.strictEqual(addTestSpy.getCall(2).args[0], test3);
-      assert.strictEqual(addTestSpy.getCall(3).args[0], test4);
       assert.isFalse(testLoader.done);
 
-      await testLoader.loadMore(2);
-      assert.strictEqual(addTestSpy.callCount, 5);
+      await testLoader.loadMore(3);
+      assert.strictEqual(addTestSpy.callCount, 6);
+      assert.strictEqual(addTestSpy.getCall(3).args[0], test4);
       assert.strictEqual(addTestSpy.getCall(4).args[0], test5);
+      assert.strictEqual(addTestSpy.getCall(5).args[0], test6);
+      assert.isFalse(testLoader.done);
+
+      await testLoader.loadMore(3);
+      assert.strictEqual(addTestSpy.callCount, 7);
+      assert.strictEqual(addTestSpy.getCall(6).args[0], test7);
       assert.isTrue(testLoader.done);
 
       // Should not load when the iterator is exhausted.
-      await testLoader.loadMore(2);
-      assert.strictEqual(addTestSpy.callCount, 5);
+      await testLoader.loadMore(3);
+      assert.strictEqual(addTestSpy.callCount, 7);
       assert.isTrue(testLoader.done);
     });
 
     it('should handle concurrent loadMore calls correctly', async () => {
       assert.isFalse(testLoader.isLoading);
-      const loadReq1 = testLoader.loadMore(3);
-      const loadReq2 = testLoader.loadMore(3);
-      const loadReq3 = testLoader.loadMore(3);
+      const loadReq1 = testLoader.loadMore(4);
+      const loadReq2 = testLoader.loadMore(4);
+      const loadReq3 = testLoader.loadMore(4);
       assert.isTrue(testLoader.isLoading);
 
       await loadReq1;
-      assert.strictEqual(addTestSpy.callCount, 3);
+      assert.strictEqual(addTestSpy.callCount, 4);
       // loadReq2 has not finished loading yet.
       assert.isTrue(testLoader.isLoading);
       assert.isFalse(testLoader.done);
 
       await loadReq2;
-      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 7);
       // The list is exhausted, loadReq3 should not change the loading state.
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
 
       await loadReq3;
-      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.callCount, 7);
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
     });
 
     it('should signal loading is finalized after all tests are loaded', async () => {
       assert.isTrue(finalizeLoadingSpy.notCalled);
-      await testLoader.loadMore(3);
+      await testLoader.loadMore(4);
       assert.isTrue(finalizeLoadingSpy.notCalled);
+      await testLoader.loadMore(4);
+      assert.isTrue(finalizeLoadingSpy.called);
+    });
+
+    it('should load tests to a given node on request', async () => {
+      // Load the first node of 'c/'.
       await testLoader.loadMore(3);
-      assert.isTrue(finalizeLoadingSpy.calledOnce);
+      const childFinalizeLoadingSpy = sinon.spy();
+      const mockChild = {path: 'c/', addTest: addTestSpy, finalizeLoading: childFinalizeLoadingSpy} as Partial<TestNode> as TestNode;
+
+      await testLoader.loadMore(1, mockChild);
+      assert.strictEqual(addTestSpy.callCount, 4);
+      assert.strictEqual(addTestSpy.getCall(3).args[0], test4);
+      assert.isFalse(childFinalizeLoadingSpy.called);
+
+      await testLoader.loadMore(2, mockChild);
+      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.strictEqual(addTestSpy.getCall(4).args[0], test5);
+      assert.isTrue(childFinalizeLoadingSpy.called);
+
+      await testLoader.loadMore(2, mockChild);
+      assert.strictEqual(addTestSpy.callCount, 5);
+      assert.isTrue(childFinalizeLoadingSpy.called);
+
+      assert.isFalse(testLoader.done);
+      assert.isFalse(finalizeLoadingSpy.called);
     });
   });
 
@@ -284,6 +341,8 @@ describe('test_loader', () => {
         yield testResult5;
         yield testResult6;
         yield testResult7;
+        yield testResult8;
+        yield testResult9;
       })();
       const exonerationIter = (async function*() {
         yield testExoneration1;
@@ -296,8 +355,7 @@ describe('test_loader', () => {
       for await (const test of streamTests(resultIter, exonerationIter)) {
         tests.push(test);
       }
-
-      assert.strictEqual(tests.length, 5);
+      assert.strictEqual(tests.length, 7);
 
       // Use recursiveDeepInclude to avoid (nested) private properties in actual
       // causing the test to fail.
@@ -306,6 +364,8 @@ describe('test_loader', () => {
       assert.recursiveDeepInclude(tests[2], test3);
       assert.recursiveDeepInclude(tests[3], test4);
       assert.recursiveDeepInclude(tests[4], test5);
+      assert.recursiveDeepInclude(tests[5], test6);
+      assert.recursiveDeepInclude(tests[6], test7);
     });
   });
 });
