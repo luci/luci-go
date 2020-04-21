@@ -220,6 +220,24 @@
     },
     {
       "key": {
+        "uuid": "03c8cc08_40d82ecd",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T06:18:39Z",
+      "side": 1,
+      "message": "Filed https://crbug.com/1072940 to address this in the future.",
+      "parentUuid": "fb1972c8_4195d178",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "52b67150_95e30163",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
