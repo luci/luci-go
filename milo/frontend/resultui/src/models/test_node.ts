@@ -100,6 +100,7 @@ export class TestNode {
   @computed get path() { return this.elidedNode.node.unelidedPath; }
   @computed get name() { return this.elidedNode.name; }
   @computed get children(): readonly TestNode[] { return this.elidedNode.node.unelidedChildren; }
+  @computed get fullyLoaded() { return this.elidedNode.node.unelidedFullyLoaded; }
   @computed private get elidedNode() {
     let name = this.unelidedName;
 
@@ -112,8 +113,7 @@ export class TestNode {
     return {name, node};
   }
 
-  @computed get fullyLoaded() { return this._fullyLoaded; }
-  @observable.ref private _fullyLoaded = false;
+  @observable.ref private unelidedFullyLoaded = false;
 
   static newRoot() { return new TestNode('', ''); }
   private constructor(prefix: string, private readonly unelidedName: string) {
@@ -186,10 +186,10 @@ export class TestNode {
    * This method should be called after the last test is added to the node.
    */
   finalizeLoading() {
-    if (this._fullyLoaded) {
+    if (this.unelidedFullyLoaded) {
       return;
     }
-    this._fullyLoaded = true;
+    this.unelidedFullyLoaded = true;
     const child = this.unelidedChildren.last;
     child?.finalizeLoading();
   }
