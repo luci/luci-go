@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "891f9319_40214630",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T05:54:11Z",
+      "side": 1,
+      "message": "seems incorrect English though",
+      "parentUuid": "597b47e2_0f622d1e",
+      "range": {
+        "startLine": 213,
+        "startChar": 33,
+        "endLine": 213,
+        "endChar": 52
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c61bb1f7_73432b2d",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
@@ -151,6 +175,24 @@
       "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb1972c8_4195d178",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T05:54:11Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "015b652e_8d065c3f",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -271,6 +313,30 @@
       "side": 1,
       "message": "We still return an error if getBundle fails.",
       "parentUuid": "e8a799a6_c96cb26d",
+      "range": {
+        "startLine": 355,
+        "startChar": 56,
+        "endLine": 355,
+        "endChar": 61
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6c774aa0_8642ee6c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T05:54:11Z",
+      "side": 1,
+      "message": "you are right",
+      "parentUuid": "7487ba32_5ccc7a4e",
       "range": {
         "startLine": 355,
         "startChar": 56,

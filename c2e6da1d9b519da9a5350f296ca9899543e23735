@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1804b64_b3efab86",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T05:54:11Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 166,
+        "startChar": 73,
+        "endLine": 166,
+        "endChar": 81
+      },
+      "revId": "c2e6da1d9b519da9a5350f296ca9899543e23735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
