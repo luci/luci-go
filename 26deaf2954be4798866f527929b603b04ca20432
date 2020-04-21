@@ -45,6 +45,30 @@
       "revId": "26deaf2954be4798866f527929b603b04ca20432",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7969abbf_4ca48b3b",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-21T23:21:32Z",
+      "side": 1,
+      "message": "I guess but it wouldn\u0027t have the annotation reminding me why this shouldn\u0027t happen.",
+      "parentUuid": "915876a7_09c5294c",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 112,
+        "endChar": 98
+      },
+      "revId": "26deaf2954be4798866f527929b603b04ca20432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
