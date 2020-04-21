@@ -22,6 +22,30 @@
       "revId": "8573190e7cd5ebda6405f800df02b8e66c37adc7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c97a699_5bfbdead",
+        "filename": "luci_notify/doc/email_templates.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T06:51:34Z",
+      "side": 1,
+      "message": "Ah, didn\u0027t know you could put a code block inside a link name. Done.",
+      "parentUuid": "b587ad43_bb6d31d6",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "8573190e7cd5ebda6405f800df02b8e66c37adc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
