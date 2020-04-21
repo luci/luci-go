@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "85a71f67_dccf73de",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T04:42:53Z",
+      "side": 1,
+      "message": "continue from last comment:\nand \u0027a/\u0027 is selected instead of \u0027a/b/\u0027. because \u0027a/b/\u0027 is unelided\n\ngerrit has been flaky for me today. Didn\u0027t save my last edit.",
+      "parentUuid": "e8685e5f_557a067d",
+      "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8fb764de_343b4196",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 7
