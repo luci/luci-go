@@ -88,18 +88,18 @@ describe('TestNode', () => {
     node.addTest(test4);
 
     assert.equal(node.fullyLoaded, false);
-    assert.equal(node.children[0].fullyLoaded, true);
-    assert.equal(node.children[1].fullyLoaded, true);
-    assert.equal(node.children[1].children[0].fullyLoaded, true);
-    assert.equal(node.children[1].children[1].fullyLoaded, true);
-    assert.equal(node.children[2].fullyLoaded, false);
+    assert.equal(node.children[0].fullyLoaded, true, '1');
+    assert.equal(node.children[1].fullyLoaded, true, '2');
+    assert.equal(node.children[1].children[0].fullyLoaded, true, '3');
+    assert.equal(node.children[1].children[1].fullyLoaded, true, '4');
+    assert.equal(node.children[2].fullyLoaded, false, '5');
 
     node.finalizeLoading();
-    assert.equal(node.fullyLoaded, true);
+    assert.equal(node.fullyLoaded, true, '6');
     assert.equal(node.children[0].fullyLoaded, true);
     assert.equal(node.children[1].fullyLoaded, true);
     assert.equal(node.children[1].children[0].fullyLoaded, true);
     assert.equal(node.children[1].children[1].fullyLoaded, true);
-    assert.equal(node.children[2].fullyLoaded, true);
+    assert.equal(node.children[2].fullyLoaded, true, '7');
   });
 });
