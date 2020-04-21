@@ -23,10 +23,12 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/data/stringset"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -201,26 +203,16 @@ func TestJSONConversions(t *testing.T) {
 			},
 		}
 
-		isolatedOutputs := map[string]*pb.Artifact{
-			"harness/log.txt":         {Name: "log_0.txt"},
-			"harness/retry_1/log.txt": {Name: "log_1.txt"},
-			"harness/retry_2/log.txt": {Name: "log_2.txt"},
-			"relative/path/to/log.txt": {
-				Name:        "relative/path/to/log.txt",
-				FetchUrl:    "isolate://isosrv/a104",
-				ContentType: "text/plain",
-				SizeBytes:   32,
-			},
-			"relative/path/to/diff.png": {
-				Name:        "relative/path/to/diff.png",
-				FetchUrl:    "isolate://isosrv/ad1ff",
-				ContentType: "image/png",
-				SizeBytes:   8192,
-			},
-		}
+		availableArtifacts := stringset.NewFromSlice(
+			"harness/log.txt",
+			"harness/retry_1/log.txt",
+			"harness/retry_2/log.txt",
+			"relative/path/to/log.txt",
+			"relative/path/to/diff.png",
+		)
 
 		inv := &pb.Invocation{}
-		testResults, err := results.ToProtos(ctx, "ninja://tests/", inv, isolatedOutputs)
+		testResults, a2tr, err := results.ToProtos(ctx, "ninja://tests/", inv, availableArtifacts)
 		So(err, ShouldBeNil)
 		So(inv.Interrupted, ShouldEqual, true)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
@@ -230,7 +222,6 @@ func TestJSONConversions(t *testing.T) {
 			OriginalFormatTagKey, FormatJTR,
 		))
 
-		// TODO(crbug.com/1071258): assert correctness of artifact associations.
 		So(testResults, ShouldResembleProto, []*pb.TestResult{
 			// Test 1.
 			{
@@ -315,6 +306,15 @@ func TestJSONConversions(t *testing.T) {
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 		})
+
+		So(a2tr, ShouldResemble, map[string]*pb.TestResult{
+			"harness/log.txt":         testResults[0],
+			"harness/retry_1/log.txt": testResults[1],
+			"harness/retry_2/log.txt": testResults[2],
+
+			"relative/path/to/diff.png": testResults[7],
+			"relative/path/to/log.txt":  testResults[7],
+		})
 	})
 }
 
@@ -331,29 +331,30 @@ func TestArtifactUtils(t *testing.T) {
 	})
 
 	Convey(`Checking subdirs`, t, func() {
-		outputsToProcess := map[string]*pb.Artifact{
-			"artifacts/a/stdout.txt":           {Name: "artifacts/a/stdout.txt"},
-			"artifacts/a/stderr.txt":           {Name: "artifacts/a/stderr.txt"},
-			"layout-test-results/b/stderr.txt": {Name: "layout-test-results/b/stderr.txt"},
-			"c/stderr.txt":                     {Name: "c/stderr.txt"},
-		}
+		ctx := testutil.TestingContext()
+
+		available := stringset.NewFromSlice(
+			"artifacts/a/stdout.txt",
+			"artifacts/a/stderr.txt",
+			"layout-test-results/b/stderr.txt",
+			"c/stderr.txt",
+		)
 		f := &TestFields{Artifacts: map[string][]string{
 			"a": {"a/stdout.txt", "a\\stderr.txt"},
 			"b": {"b/stderr.txt"},
 			"c": {"c/stderr.txt"},
 		}}
 
-		artifactsPerRun, unresolved := f.getArtifacts(outputsToProcess)
+		artifactsPerRun := f.parseArtifacts(ctx, available, "testID")
 		So(artifactsPerRun, ShouldHaveLength, 1)
 
 		arts := artifactsPerRun[0].artifacts
-		sort.Slice(arts, func(i, j int) bool { return arts[i].Name < arts[j].Name })
-		So(arts, ShouldResemble, []*pb.Artifact{
-			{Name: "artifacts/a/stderr.txt"},
-			{Name: "artifacts/a/stdout.txt"},
-			{Name: "c/stderr.txt"},
-			{Name: "layout-test-results/b/stderr.txt"},
+		sort.Strings(arts)
+		So(arts, ShouldResemble, []string{
+			"artifacts/a/stderr.txt",
+			"artifacts/a/stdout.txt",
+			"c/stderr.txt",
+			"layout-test-results/b/stderr.txt",
 		})
-		So(unresolved, ShouldBeEmpty)
 	})
 }
