@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "4c1de806_8f35b10d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T05:31:20Z",
+      "side": 1,
+      "message": "the following two sentences seem contradictory?\n\n1) nothing will show up on the list\n2) \u0027a/\u0027 is selected\n\nbecause a/c/d will show up, which is probably what the user expects?\n\n-----------\n\noverall, to be honest, it is not obvious to me that this problem is worth the complexity this CL is adding: right now the app loads all test results (does not use VARIANTS_WITH_UNEXPECTED_RESULTS) and thus there are a lot of pages to fetch. When Chan adds Stats RPC, we will no longer need to fetch all test results (we can use VARIANTS_WITH_UNEXPECTED_RESULTS), so this problem will become *much* less important, because most of the time all results will fetch the first page-that-we-fetch.\n\nAlso currently app uses pageSize\u003d100. I don\u0027t actually understand this. The app receives 1000 results from the server, but displays only 10% of that and makes the user click \"Load more\" button to see more. If we used same pageSize in loadMore() and in requests, then we\u0027d never be in a state that app has the data, but does not display it.",
+      "parentUuid": "85a71f67_dccf73de",
+      "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8fb764de_343b4196",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 7
