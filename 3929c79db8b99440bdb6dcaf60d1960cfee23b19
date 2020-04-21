@@ -164,6 +164,30 @@
       "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83502fde_c3706860",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T02:58:51Z",
+      "side": 1,
+      "message": "It\u0027s the other way around, it can be fully loaded after elision, but not fully loaded before elision.\nSay, we have test \u0027a/b/c\u0027, \u0027a/b/d\u0027 and \u0027a/c\u0027, \u0027a/d\u0027\nWhen we add \u0027a/b/c\u0027 and \u0027a/b\u0027d\u0027 to the node. the root node will elide to \u0027a/b\u0027.\nAfter elision, the branch it represent, \u0027a/b\u0027, can be considered fully loaded.\nBut when we add a new test \u0027a/c\u0027. The root node becomes \u0027a/\u0027 after elision. It\u0027s no longer fully loaded.",
+      "parentUuid": "1b31e709_b0ab7294",
+      "range": {
+        "startLine": 116,
+        "startChar": 26,
+        "endLine": 116,
+        "endChar": 45
+      },
+      "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
