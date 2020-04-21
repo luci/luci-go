@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b587ad43_bb6d31d6",
+        "filename": "luci_notify/doc/email_templates.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T06:47:01Z",
+      "side": 1,
+      "message": "code blocks escape automatically:\n\n  `[]*Step`",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 14
+      },
+      "revId": "8573190e7cd5ebda6405f800df02b8e66c37adc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
