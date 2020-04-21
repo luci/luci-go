@@ -15,6 +15,4 @@
 // Package appstatus can attach/reterieve an application-specific response
 // status to/from an error. It designed to prevent accidental exposure of
 // internal statuses to RPC clients, for example Spanner's statuses.
-//
-// TODO(nodir): move the package to luci/grpc if this approach proves useful.
 package appstatus
