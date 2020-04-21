@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "781a10c9_85cf5501",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/context.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T21:24:28Z",
+      "side": 1,
+      "message": "Multi node selection was in the experimental repo. But I choose not to implement it here.\nMainly because shift-selection adds a lot of code and time complexity.\nAnd I\u0027m not sure how useful would multi-node selection be.\nI\u0027ll implement it if someone finds it useful in the future.",
+      "parentUuid": "1d4a4e87_6d0fbd5a",
+      "range": {
+        "startLine": 24,
+        "startChar": 18,
+        "endLine": 24,
+        "endChar": 35
+      },
+      "revId": "e9af13103d80459638a774c8d49ea0a967fe4752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1b865bc9_def19b5d",
         "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
         "patchSetId": 10
@@ -36,6 +60,24 @@
       "writtenOn": "2020-04-21T21:05:42Z",
       "side": 1,
       "message": "should we add a new base class that has this as disposers array, so that this class just add a function there? does not have to be in this CL though",
+      "revId": "e9af13103d80459638a774c8d49ea0a967fe4752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60e5e8d0_09fa782f",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T21:24:28Z",
+      "side": 1,
+      "message": "I don\u0027t think that adds a lot of value and it\u0027s not obvious when the disposers will be called.\nAnd in some cases, we may want to call/replace exposers in other places.",
+      "parentUuid": "1b865bc9_def19b5d",
       "revId": "e9af13103d80459638a774c8d49ea0a967fe4752",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
