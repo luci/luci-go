@@ -189,6 +189,7 @@ func createVM(c context.Context, payload proto.Message) error {
 		default:
 			return nil
 		}
+		model.CopyToBinaryInVM(vm)
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
