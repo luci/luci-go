@@ -188,6 +188,30 @@
       "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "508fec80_f0514f82",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-21T03:08:07Z",
+      "side": 1,
+      "message": "OK, I see. I\u0027d recommend adding a short explanation of that in a comment to help future readers of the code understand.",
+      "parentUuid": "83502fde_c3706860",
+      "range": {
+        "startLine": 116,
+        "startChar": 26,
+        "endLine": 116,
+        "endChar": 45
+      },
+      "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
