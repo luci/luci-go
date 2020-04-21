@@ -337,7 +337,7 @@ func computeStatus(cfgTreeCloser *config.TreeCloser, build *buildbucketpb.Build)
 
 // UpdateTreeClosers finds all the TreeClosers that care about a particular
 // build, and updates their status according to the results of the build.
-func UpdateTreeClosers(c context.Context, build *buildbucketpb.Build) error {
+func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.Status) error {
 	// This reads, modifies and writes back entities in datastore. Hence, it should
 	// be called within a transaction to avoid races.
 	if datastore.CurrentTransaction(c) == nil {
@@ -347,26 +347,43 @@ func UpdateTreeClosers(c context.Context, build *buildbucketpb.Build) error {
 	project := &config.Project{Name: build.Builder.Project}
 	parentBuilder := &config.Builder{
 		ProjectKey: datastore.KeyForObj(c, project),
-		ID:         getBuilderID(build),
+		ID:         getBuilderID(&build.Build),
 	}
 	q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, parentBuilder))
 
 	toUpdate := []*config.TreeCloser{}
-	err := datastore.Run(c, q, func(tc *config.TreeCloser) {
+	err := datastore.Run(c, q, func(tc *config.TreeCloser) error {
 		// Don't update the status at all unless we have a definite
 		// success or failure - infra failures, for example, shouldn't
 		// cause us to close or re-open the tree.
 		if build.Status != buildbucketpb.Status_SUCCESS && build.Status != buildbucketpb.Status_FAILURE {
-			return
+			return nil
 		}
 
-		newStatus := computeStatus(tc, build)
+		newStatus := computeStatus(tc, &build.Build)
 		if tc.Status != newStatus {
 			tc.Status = newStatus
 			tc.Timestamp = time.Now().UTC()
 
+			if newStatus == config.Closed {
+				bundle, err := getBundle(c, project.Name)
+				if err != nil {
+					return err
+				}
+				tc.Message = bundle.GenerateStatusMessage(c, tc.TreeCloser.Template,
+					&notifypb.TemplateInput{
+						BuildbucketHostname: build.BuildbucketHostname,
+						Build:               &build.Build,
+						OldStatus:           oldStatus,
+						// TODO: Fill this out.
+						MatchingFailedSteps: nil,
+					})
+			}
+
 			toUpdate = append(toUpdate, tc)
 		}
+
+		return nil
 	})
 	if err != nil {
 		return err

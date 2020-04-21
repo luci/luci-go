@@ -168,7 +168,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	notifyAndUpdateTrees := func(c context.Context, b config.Builder, oldStatus buildbucketpb.Status) error {
 		return parallel.FanOutIn(func(ch chan<- func() error) {
 			ch <- func() error { return notifyNoBlame(c, b, oldStatus) }
-			ch <- func() error { return UpdateTreeClosers(c, &build.Build) }
+			ch <- func() error { return UpdateTreeClosers(c, build, oldStatus) }
 		})
 	}
 
@@ -317,7 +317,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		return parallel.FanOutIn(func(ch chan<- func() error) {
 			ch <- func() error { return Notify(c, d, recipients, templateInput) }
 			ch <- func() error { return datastore.Put(c, &updatedBuilder) }
-			ch <- func() error { return UpdateTreeClosers(c, &build.Build) }
+			ch <- func() error { return UpdateTreeClosers(c, build, 0) }
 		})
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
