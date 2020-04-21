@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f1a33355_cbced6b4",
+        "filename": "cq/appengine/frontend/app.yaml",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-21T02:17:13Z",
+      "side": 1,
+      "message": "Strictly speaking all this crap should also be in luci_gae_vars :(",
+      "range": {
+        "startLine": 16,
+        "startChar": 2,
+        "endLine": 17,
+        "endChar": 104
+      },
+      "revId": "0fbfe6a81c26b1321d31117a5fc80a4ee36c58e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
