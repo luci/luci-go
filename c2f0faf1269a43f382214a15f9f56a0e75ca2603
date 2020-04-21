@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "927f70af_5e25cb12",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-21T22:15:22Z",
+      "side": 1,
+      "message": "since type is known now, return it directly:\n  if res, err :\u003d desirealzie...(mc.Value()); err \u003d\u003d nil {\n    return res, nil\n  }\n  logging.Warn(...)",
+      "range": {
+        "startLine": 55,
+        "startChar": 50,
+        "endLine": 55,
+        "endChar": 56
+      },
+      "revId": "c2f0faf1269a43f382214a15f9f56a0e75ca2603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68e464cf_00cc0cfd",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-21T22:15:22Z",
+      "side": 1,
+      "message": "nit here and below in almost every condition: inline\n  if _, err :\u003d w.Write(data); err !\u003d nil {\n    return  ...\n  }\n\ndisclaimer: this is typical luci-go de-facto style, but somewhat personal and undocumented, so feel free to disagree.",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 2
+      },
+      "revId": "c2f0faf1269a43f382214a15f9f56a0e75ca2603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
