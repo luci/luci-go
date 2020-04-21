@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "76c43f05_57d297d0",
+        "filename": "milo/frontend/resultui/src/libs/peekable_iter.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T02:18:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "002594c9_74f585f6",
+      "range": {
+        "startLine": 19,
+        "startChar": 2,
+        "endLine": 19,
+        "endChar": 6
+      },
+      "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "270f2a76_11e3a02e",
         "filename": "milo/frontend/resultui/src/libs/peekable_iter.ts",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a3936d2e_300758e5",
+        "filename": "milo/frontend/resultui/src/libs/peekable_iter.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T02:18:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "270f2a76_11e3a02e",
+      "range": {
+        "startLine": 34,
+        "startChar": 31,
+        "endLine": 34,
+        "endChar": 56
+      },
+      "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e811998_f1fbbd45",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5a89cd8_1f903675",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T02:18:48Z",
+      "side": 1,
+      "message": "It means whether the node, before elision, is fulling loaded or not.\nMoved this to the top where other unelided properties are.\n\nIt is possible to have a different value than fullyLoaded, just like the rest of the unelided properties.",
+      "parentUuid": "5e811998_f1fbbd45",
+      "range": {
+        "startLine": 116,
+        "startChar": 26,
+        "endLine": 116,
+        "endChar": 45
+      },
+      "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
