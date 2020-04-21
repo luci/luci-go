@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "00616f88_86e9938d",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-21T20:10:27Z",
+      "side": 1,
+      "message": "Realm is queried but not verified?",
+      "range": {
+        "startLine": 179,
+        "startChar": 14,
+        "endLine": 179,
+        "endChar": 19
+      },
+      "revId": "6666d144f431b8bd8c378987a0fba2bf5ae4ea7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
