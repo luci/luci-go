@@ -34,7 +34,7 @@ export class TestNavTreeElement extends MobxLitElement {
   @observable.ref testLoader?: TestLoader;
 
   protected render() {
-    const root = this.testLoader?.node!;
+    const root = this.testLoader?.root!;
 
     return html`
       <div id="container">
