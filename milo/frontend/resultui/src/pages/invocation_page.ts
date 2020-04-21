@@ -93,12 +93,12 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   @computed
   private get selectedTests(): readonly ReadonlyTest[] {
     // TODO(weiweilin): implement this.selectedTests()
-    return this.testLoader.node.allTests;
+    return this.testLoader.root.allTests;
   }
 
   @computed
   private get rootName(): string {
-    return this.testLoader.node.name;
+    return this.testLoader.root.name;
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
