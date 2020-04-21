@@ -173,7 +173,116 @@ func TestGetBuild(t *testing.T) {
 				}
 				rsp, err := srv.GetBuild(ctx, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.Build{
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Input: &pb.Build_Input{},
+				})
+			})
+		})
+
+		Convey("index", func() {
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				BucketID: "project/bucket",
+				Tags:     []string{"build_address:luci.project.bucket/builder/1"},
+			}), ShouldBeNil)
+
+			Convey("error", func() {
+				Convey("incomplete index", func() {
+					So(datastore.Put(ctx, &model.TagIndex{
+						ID: ":2:build_address:luci.project.bucket/builder/1",
+						Entries: []model.TagIndexEntry{
+							{
+								BuildID: 1,
+							},
+						},
+						Incomplete: true,
+					}), ShouldBeNil)
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						BuildNumber: 1,
+					}
+					rsp, err := srv.GetBuild(ctx, req)
+					So(err, ShouldErrLike, "unexpected incomplete index")
+					So(rsp, ShouldBeNil)
+				})
+
+				Convey("insufficient results", func() {
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						BuildNumber: 2,
+					}
+					rsp, err := srv.GetBuild(ctx, req)
+					So(err, ShouldErrLike, "unexpected number of results")
+					So(rsp, ShouldBeNil)
+				})
+
+				Convey("excessive results", func() {
+					So(datastore.Put(ctx, &model.TagIndex{
+						ID: ":2:build_address:luci.project.bucket/builder/1",
+						Entries: []model.TagIndexEntry{
+							{
+								BuildID: 1,
+							},
+							{
+								BuildID: 2,
+							},
+						},
+					}), ShouldBeNil)
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						BuildNumber: 1,
+					}
+					rsp, err := srv.GetBuild(ctx, req)
+					So(err, ShouldErrLike, "unexpected number of results")
+					So(rsp, ShouldBeNil)
+				})
+			})
+
+			Convey("ok", func() {
+				So(datastore.Put(ctx, &model.TagIndex{
+					ID: ":2:build_address:luci.project.bucket/builder/1",
+					Entries: []model.TagIndexEntry{
+						{
+							BuildID: 1,
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.GetBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					BuildNumber: 1,
+				}
+				rsp, err := srv.GetBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",

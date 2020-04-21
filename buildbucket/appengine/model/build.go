@@ -42,6 +42,8 @@ type Build struct {
 
 	// LegacyProperties are properties set for v1 legacy builds.
 	LegacyProperties
+	// UnusedProperties are properties set previously but currently unused.
+	UnusedProperties
 
 	// Proto is the pb.Build proto representation of the build.
 	//
@@ -136,16 +138,8 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := datastore.Get(ctx, dets); err != nil {
-		merr, ok := err.(errors.MultiError)
-		if !ok {
-			return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
-		}
-		for _, e := range merr {
-			if e != nil && e != datastore.ErrNoSuchEntity {
-				return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
-			}
-		}
+	if err := GetIgnoreMissing(ctx, dets); err != nil {
+		return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
 	}
 	p.Infra = &inf.Proto
 	if p.Input == nil {
