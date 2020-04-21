@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3954cc54_62289df3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T03:34:56Z",
+      "side": 1,
+      "message": "this CL descriptoin seems to be too short for the level of sophistication of this CL.",
+      "revId": "b779790ced8465b902bb2a416d84ea4bd89ceef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a616c36_54ffbfb9",
+        "filename": "milo/frontend/resultui/src/libs/peekable_iter.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T03:34:56Z",
+      "side": 1,
+      "message": "this means, if I call peek twice without waiting for the first one, the two calls will pull two items instead of one. i think we should not await in this func.",
+      "range": {
+        "startLine": 41,
+        "startChar": 18,
+        "endLine": 41,
+        "endChar": 23
+      },
+      "revId": "b779790ced8465b902bb2a416d84ea4bd89ceef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
