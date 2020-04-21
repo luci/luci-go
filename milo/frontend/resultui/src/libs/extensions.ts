@@ -75,6 +75,12 @@ declare global {
      */
     readonly last: T | undefined;
   }
+  interface ReadonlyArray<T> {
+    /**
+     * The last element in the array.
+     */
+    readonly last: T | undefined;
+  }
 }
 Object.defineProperty(Array.prototype, 'last', {
   get(this: unknown[]) {
