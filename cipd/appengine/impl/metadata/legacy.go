@@ -279,7 +279,7 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 		}
 		updated = mergeIntoPrefixMetadata(ctx, prefix, ents)
 		return nil
-	}, &datastore.TransactionOptions{XG: true})
+	}, nil)
 
 	switch {
 	case cbErr != nil:
