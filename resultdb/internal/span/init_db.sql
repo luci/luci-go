@@ -201,8 +201,6 @@ CREATE TABLE RBECASBlobs (
   Size INT64 NOT NULL,
 ) PRIMARY KEY (Realm, ContentHash, Size);
 
--- TODO(crbug.com/1071258): add Artifacts table.
-
 -- Unexpected test results for each invocation.
 -- It is significantly smaller (<2%) than TestResult table and should be used
 -- for most queries.

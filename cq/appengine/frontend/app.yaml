@@ -4,10 +4,8 @@ runtime: go113
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
 luci_gae_vars:
-  commit-queue-dev:
-    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
-  commit-queue:
-    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+  example-app-id:
+    AUTH_SERVICE_HOST: auth-service.example.com
 
 automatic_scaling:
   min_idle_instances: 1
