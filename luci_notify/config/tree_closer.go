@@ -53,4 +53,9 @@ type TreeCloser struct {
 	// the current status. This is used to decide which template to use
 	// when setting the tree status message.
 	Timestamp time.Time
+
+	// Message contains the status message to use if this TreeCloser is the
+	// one that updates the status of the tree. Only valid if Status is
+	// Closed.
+	Message string
 }
