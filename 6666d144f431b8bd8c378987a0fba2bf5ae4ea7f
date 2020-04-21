@@ -22,6 +22,30 @@
       "revId": "6666d144f431b8bd8c378987a0fba2bf5ae4ea7f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aeb13843_c6aed297",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T20:33:10Z",
+      "side": 1,
+      "message": "wrote this code too soon. In another CL I plan to use it. Removed it for now.",
+      "parentUuid": "00616f88_86e9938d",
+      "range": {
+        "startLine": 179,
+        "startChar": 14,
+        "endLine": 179,
+        "endChar": 19
+      },
+      "revId": "6666d144f431b8bd8c378987a0fba2bf5ae4ea7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
