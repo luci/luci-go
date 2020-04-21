@@ -15,19 +15,24 @@
 package recorder
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 const (
@@ -70,8 +75,10 @@ func handleArtifactCreation(c *router.Context) {
 	st, ok := appstatus.Get(err)
 	switch {
 	case ok:
+		logging.Warningf(c.Context, "Responding with %s: %s", st.Code(), err)
 		http.Error(c.Writer, st.Message(), grpcutil.CodeStatus(st.Code()))
 	case err != nil:
+		logging.Errorf(c.Context, "Internal server error: %s", err)
 		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 	default:
 		c.Writer.WriteHeader(http.StatusNoContent)
@@ -79,9 +86,19 @@ func handleArtifactCreation(c *router.Context) {
 }
 
 func (ac *artifactCreator) handle(c *router.Context) error {
+	ctx := c.Context
+
 	// Parse and validate the request.
 	if err := ac.parseRequest(c); err != nil {
 		return err
+	}
+
+	// Read and verify the current state.
+	switch sameExists, err := ac.verifyStateBeforeWriting(ctx); {
+	case err != nil:
+		return err
+	case sameExists:
+		return nil
 	}
 
 	// TODO(crbug.com/1071258): implement the rest.
@@ -133,4 +150,65 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	}
 
 	return nil
+}
+
+// verifyStateBeforeWriting checks Spanner state in a read-only transaction,
+// see verifyState comment.
+func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAlreadyExists bool, err error) {
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+	return ac.verifyState(ctx, txn)
+}
+
+// verifyState checks if the Spanner state is compatible with creation of the
+// artifact. If an identical artifact already exists, sameAlreadyExists is true.
+func (ac *artifactCreator) verifyState(ctx context.Context, txn span.Txn) (sameAlreadyExists bool, err error) {
+	var (
+		invState       pb.Invocation_State
+		hash           spanner.NullString
+		size           spanner.NullInt64
+		artifactExists bool
+	)
+
+	// Read the state concurrently.
+	err = parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			invState, err = span.ReadInvocationState(ctx, txn, ac.invID)
+			return
+		}
+
+		work <- func() error {
+			key := ac.invID.Key(ac.localParentID, ac.artifactID)
+			err := span.ReadRow(ctx, txn, "Artifacts", key, map[string]interface{}{
+				"RBECASHash": &hash,
+				"Size":       &size,
+			})
+			artifactExists = err == nil
+			if spanner.ErrCode(err) == codes.NotFound {
+				// This is expected.
+				return nil
+			}
+			return err
+		}
+	})
+
+	// Interpret the state.
+	switch {
+	case err != nil:
+		return false, err
+
+	case invState != pb.Invocation_ACTIVE:
+		return false, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
+
+	case hash.Valid && hash.StringVal == ac.hash && size.Valid && size.Int64 == ac.size:
+		// The same artifact already exists.
+		return true, nil
+
+	case artifactExists:
+		// A different artifact already exists.
+		return false, appstatus.Errorf(codes.AlreadyExists, "artifact %q already exists", ac.artifactName)
+
+	default:
+		return false, nil
+	}
 }
