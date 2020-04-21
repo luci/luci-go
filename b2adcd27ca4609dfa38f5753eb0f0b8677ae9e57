@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "37800fd3_6ea68e14",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T06:01:12Z",
+      "side": 1,
+      "message": "Yes, but it\u0027s still easily understandable IMO.",
+      "parentUuid": "891f9319_40214630",
+      "range": {
+        "startLine": 213,
+        "startChar": 33,
+        "endLine": 213,
+        "endChar": 52
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c61bb1f7_73432b2d",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
