@@ -51,6 +51,14 @@ The following functions are available to templates in addition to the
   [BuilderID](https://godoc.org/go.chromium.org/luci/buildbucket/proto#BuilderID)
   to a `<project>/<bucket>/<builder>` string.
   Example: `{{.Build.Builder | formatBuilderID}}`
+* `stepNames`: converts a
+  [`[]*Step`](https://godoc.org/go.chromium.org/luci/buildbucket/proto#Step) to
+  a comma-separated list of quoted step names.
+  Example: `{{.MatchingFailedSteps | stepNames}}`
+* `buildUrl`: converts the entire
+  [TemplateInput](https://godoc.org/go.chromium.org/luci/luci_notify/api/config#TemplateInput)
+  into a URL pointing to the milo page for the build in question.
+  Example: `{{. | buildUrl}}`
 
 ## Template example
 
