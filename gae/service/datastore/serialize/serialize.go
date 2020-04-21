@@ -277,6 +277,8 @@ func writeIndexValue(buf WriteBuffer, context KeyContext, v interface{}) (err er
 		_, err = cmpbin.WriteBytes(buf, t)
 	case ds.GeoPoint:
 		err = WriteGeoPoint(buf, t)
+	case ds.PropertyMap:
+		err = WritePropertyMap(buf, context, t)
 	case *ds.Key:
 		err = WriteKey(buf, context, t)
 
@@ -316,6 +318,8 @@ func ReadProperty(buf ReadBuffer, context KeyContext, kc ds.KeyContext) (p ds.Pr
 		val, err = ReadTime(buf)
 	case ds.PTGeoPoint:
 		val, err = ReadGeoPoint(buf)
+	case ds.PTPropertyMap:
+		val, err = ReadPropertyMap(buf, context, kc)
 	case ds.PTKey:
 		val, err = ReadKey(buf, context, kc)
 	case ds.PTBlobKey:

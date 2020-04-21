@@ -89,7 +89,7 @@ func TestBoundDatastore(t *testing.T) {
 								{
 									Name:    "[]byte",
 									NoIndex: true,
-									Value:   []byte{'b', 'y', 't', 'e'},
+									Value:   []byte("byte"),
 								},
 								{
 									Name:    "[]interface",
@@ -137,7 +137,7 @@ func TestBoundDatastore(t *testing.T) {
 				"__key__": ds.MkProperty(bds.kc.NewKey("kind", "", 1, nil)),
 				"bool":    ds.MkProperty(true),
 				"entity": ds.MkProperty(ds.PropertyMap{
-					"[]byte": ds.MkPropertyNI([]byte{'b', 'y', 't', 'e'}),
+					"[]byte": ds.MkPropertyNI([]byte("byte")),
 					"[]interface": ds.PropertySlice{
 						ds.MkPropertyNI("interface"),
 					},

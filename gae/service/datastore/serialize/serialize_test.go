@@ -86,6 +86,20 @@ func TestPropertyMapSerialization(t *testing.T) {
 			},
 		},
 		{
+			"property map",
+			ds.PropertyMap{
+				"pm": ds.PropertySlice{
+					mpNI(ds.PropertyMap{
+						"k": mpNI(mkKey("entity", "id")),
+						"map": mpNI(ds.PropertyMap{
+							"b": mpNI([]byte("byte")),
+						}),
+						"str": mpNI("string")},
+					),
+				},
+			},
+		},
+		{
 			"geo",
 			ds.PropertyMap{
 				"G": mp(ds.GeoPoint{Lat: 1, Lng: 2}),

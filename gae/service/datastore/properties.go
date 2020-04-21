@@ -472,10 +472,11 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 //	- string
 //	- []byte
 //	- GeoPoint
+//	- PropertyMap
 //	- *Key
 func (p Property) IndexTypeAndValue() (PropertyType, interface{}) {
 	switch t := p.propType; t {
-	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTKey:
+	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTPropertyMap, PTKey:
 		return t, p.Value()
 
 	case PTTime:
