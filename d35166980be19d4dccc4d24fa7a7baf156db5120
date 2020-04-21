@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f99c457d_8d7dc9cd",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-21T23:57:52Z",
+      "side": 1,
+      "message": "You can do this outside the txn to save a small amount of time because the VM is put iff it didn\u0027t already exist.",
+      "revId": "d35166980be19d4dccc4d24fa7a7baf156db5120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
