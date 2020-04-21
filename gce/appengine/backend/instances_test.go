@@ -254,6 +254,7 @@ func TestCreate(t *testing.T) {
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Created, ShouldNotEqual, 0)
+					So(v.BinaryAttributes.VM, ShouldResemble, v.Attributes)
 					So(v.NetworkInterfaces, ShouldResemble, []model.NetworkInterface{
 						{
 							InternalIP: "0.0.0.1",
