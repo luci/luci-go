@@ -94,12 +94,21 @@ export class TestNode {
   private readonly unelidedPath: string;
   @observable.shallow private readonly unelidedChildren: TestNode[] = [];
   private readonly unelidedTests: ReadonlyTest[] = [];
+  @observable.ref private unelidedFullyLoaded = false;
 
   // The properties belongs to the elided node
   // (descendants with no siblings are elided into this node).
   @computed get path() { return this.elidedNode.node.unelidedPath; }
   @computed get name() { return this.elidedNode.name; }
   @computed get children(): readonly TestNode[] { return this.elidedNode.node.unelidedChildren; }
+  /**
+   * Indicates whether a node is fully loaded.
+   *
+   * Note that this is representing whether the elided node is fully loaded.
+   * If a fully loaded node elides to a different branch after a new test is
+   * added, it's no longer fully loaded.
+   */
+  @computed get fullyLoaded() { return this.elidedNode.node.unelidedFullyLoaded; }
   @computed private get elidedNode() {
     let name = this.unelidedName;
 
@@ -111,9 +120,6 @@ export class TestNode {
     }
     return {name, node};
   }
-
-  @computed get fullyLoaded() { return this._fullyLoaded; }
-  @observable.ref private _fullyLoaded = false;
 
   static newRoot() { return new TestNode('', ''); }
   private constructor(prefix: string, private readonly unelidedName: string) {
@@ -186,11 +192,11 @@ export class TestNode {
    * This method should be called after the last test is added to the node.
    */
   finalizeLoading() {
-    if (this._fullyLoaded) {
+    if (this.fullyLoaded) {
       return;
     }
-    this._fullyLoaded = true;
-    const child = this.unelidedChildren.last;
+    this.elidedNode.node.unelidedFullyLoaded = true;
+    const child = this.children.last;
     child?.finalizeLoading();
   }
 }
