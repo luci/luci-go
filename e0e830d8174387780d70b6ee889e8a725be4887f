@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6fe14e4a_95241dd4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T04:07:38Z",
+      "side": 1,
+      "message": "Weiwei, what problems does this CL solve (to justify the complexity it is adding)?\n\nI would understand this CL if we were able to load only prefixes of test ids (say, first 1-2 layers of nodes: root, root children, root grandchildren), but that is not the case. We always fetch from the lowest test-id towards the highest. This means that at any point of time, in our tree of nodes, [all nodes not on the path from root to the right-most leaf] will be fully loaded. The only nodes that might be not fully loaded are [nodes on the path from the root to the right-most leaf]. If click load() on any of them, this is roughly equivalent to simply continue fetching (like we did before this CL). I say \"roughly\" because it seems worse because we\u0027d be fetching only descendants of that node, and \"next\" nodes do not benefit from this fetch (although they totally could). What am I missing?",
+      "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
