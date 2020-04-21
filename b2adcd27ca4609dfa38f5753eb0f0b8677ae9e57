@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "87a24058_facb6e5c",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "69bbcd98_6f926b70",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "99d0ce4d_c2e00236",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88fbefd7_dbe961c3",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99d0ce4d_c2e00236",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "597b47e2_0f622d1e",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "Yes. I think this is okay though. This matches the existing template used on chromium-status and it keeps this default template pretty simple.",
+      "parentUuid": "a677db04_09162565",
+      "range": {
+        "startLine": 213,
+        "startChar": 33,
+        "endLine": 213,
+        "endChar": 52
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c61bb1f7_73432b2d",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
@@ -70,6 +130,24 @@
       "writtenOn": "2020-04-17T05:42:10Z",
       "side": 1,
       "message": "this error message has no indication that the built-in template failed, so users might get surprised.",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "015b652e_8d065c3f",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "This is true, but I don\u0027t really want to put an error message into the status, as it\u0027s displayed prominently to all developers and the error is only relevant to the template author. \n\nIn lieu of this, is there another easy way to address this issue? If not, perhaps we should file a bug for it and deal with it in another CL.",
+      "parentUuid": "c61bb1f7_73432b2d",
       "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "78feef0f_95f843bc",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52b67150_95e30163",
+      "range": {
+        "startLine": 213,
+        "startChar": 1,
+        "endLine": 215,
+        "endChar": 52
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "947cb768_fa78e4bb",
         "filename": "luci_notify/mailtmpl/bundle.go",
         "patchSetId": 3
@@ -113,6 +215,24 @@
       "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34d1ac05_720bf1a7",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "947cb768_fa78e4bb",
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -139,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "7487ba32_5ccc7a4e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "We still return an error if getBundle fails.",
+      "parentUuid": "e8a799a6_c96cb26d",
+      "range": {
+        "startLine": 355,
+        "startChar": 56,
+        "endLine": 355,
+        "endChar": 61
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bad8cdcf_e952a3d1",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 3
@@ -159,6 +303,30 @@
       "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d38f72b5_d2a92b68",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-04-21T05:46:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bad8cdcf_e952a3d1",
+      "range": {
+        "startLine": 369,
+        "startChar": 4,
+        "endLine": 369,
+        "endChar": 9
+      },
+      "revId": "b2adcd27ca4609dfa38f5753eb0f0b8677ae9e57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
