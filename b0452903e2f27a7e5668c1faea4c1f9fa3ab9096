@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "786fae3d_a0a1fbff",
+        "filename": "cq/appengine/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-21T01:33:33Z",
+      "side": 0,
+      "message": "luci_gae_vars section is still needed to declare that ${AUTH_SERVICE_HOST} exists and to make sure \"gcloud app deploy\" will refuse to upload it (since uploading it without substituting ${AUTH_SERVICE_HOST} is wrong).\n\nMake it:\n\nluci_gae_vars:\n  example-app-id:\n    AUTH_SERVICE_HOST: auth-service.example.com\n\nOr something.",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 13
+      },
+      "revId": "b0452903e2f27a7e5668c1faea4c1f9fa3ab9096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
