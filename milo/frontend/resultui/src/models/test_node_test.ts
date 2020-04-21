@@ -15,6 +15,7 @@
 import { assert } from 'chai';
 
 import { TestNode } from './test_node';
+import { boundActionDecorator } from 'mobx/lib/internal';
 
 
 describe('TestNode', () => {
@@ -82,6 +83,7 @@ describe('TestNode', () => {
     const test2 = {id: 'a/b/c/e/f', variants: []};
     const test3 = {id: 'a/b/c/e/g', variants: []};
     const test4 = {id: 'a/b/c/f', variants: []};
+    const test5 = {id: 'a/c', variants: []};
     node.addTest(test1);
     node.addTest(test2);
     node.addTest(test3);
@@ -101,5 +103,9 @@ describe('TestNode', () => {
     assert.equal(node.children[1].children[0].fullyLoaded, true);
     assert.equal(node.children[1].children[1].fullyLoaded, true);
     assert.equal(node.children[2].fullyLoaded, true);
+
+    node.addTest(test5);
+    // root node is changed from 'a/b/' to 'a/'.
+    assert.equal(node.fullyLoaded, false);
   });
 });
