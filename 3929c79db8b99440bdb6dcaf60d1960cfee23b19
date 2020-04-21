@@ -140,6 +140,30 @@
       "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1b31e709_b0ab7294",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-21T02:40:40Z",
+      "side": 1,
+      "message": "If the node is fully loaded before elision, how can it not be fully loaded after elision?",
+      "parentUuid": "e5a89cd8_1f903675",
+      "range": {
+        "startLine": 116,
+        "startChar": 26,
+        "endLine": 116,
+        "endChar": 45
+      },
+      "revId": "3929c79db8b99440bdb6dcaf60d1960cfee23b19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
