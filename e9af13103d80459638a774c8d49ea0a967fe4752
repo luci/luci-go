@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d4a4e87_6d0fbd5a",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/context.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T21:05:42Z",
+      "side": 1,
+      "message": "i believe we wanted to support multi-node selection. Do you plan to refactor this code into a array later?",
+      "range": {
+        "startLine": 24,
+        "startChar": 18,
+        "endLine": 24,
+        "endChar": 35
+      },
+      "revId": "e9af13103d80459638a774c8d49ea0a967fe4752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b865bc9_def19b5d",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-21T21:05:42Z",
+      "side": 1,
+      "message": "should we add a new base class that has this as disposers array, so that this class just add a function there? does not have to be in this CL though",
+      "revId": "e9af13103d80459638a774c8d49ea0a967fe4752",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
