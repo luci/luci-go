@@ -235,7 +235,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		}
 
 		return model.UpdateBuilderForBuild(c, bs)
-	}, &datastore.TransactionOptions{XG: true}))
+	}, nil))
 }
 
 // MakeBuildKey returns a new datastore Key for a buildbucket.Build.
