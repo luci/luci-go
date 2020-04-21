@@ -22,6 +22,30 @@
       "revId": "b0452903e2f27a7e5668c1faea4c1f9fa3ab9096",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63795aab_4b2f2da2",
+        "filename": "cq/appengine/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-21T02:02:56Z",
+      "side": 0,
+      "message": "Oh, i see. I didn\u0027t think through how starlark\u0027s simple_app actually knows where to stick. Fixed.",
+      "parentUuid": "786fae3d_a0a1fbff",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 6,
+        "endChar": 13
+      },
+      "revId": "b0452903e2f27a7e5668c1faea4c1f9fa3ab9096",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
