@@ -19,7 +19,7 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction, when } from 'mobx';
+import { autorun, computed, observable, when } from 'mobx';
 
 import '../components/invocation_details';
 import '../components/page_header';
@@ -90,11 +90,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     return ret;
   }
 
-  @computed
-  private get selectedTests(): readonly ReadonlyTest[] {
-    // TODO(weiweilin): implement this.selectedTests()
-    return this.testLoader.node.allTests;
-  }
+  @observable.ref selectedNode = this.testLoader.node;
 
   @computed
   private get rootName(): string {
@@ -117,13 +113,14 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       () => this.invocationReq.get().tag === 'err',
       () => Router.go('/error'),
     ));
-    // Load the first batch whenever this.testLoader is updated.
-    this.disposers.push(reaction(
-      () => this.testLoader,
+    // Load more tests when there are more tests to be displayed but not loaded.
+    this.disposers.push(autorun(
       () => {
-        this.testLoader.loadMore();
+        if (this.selectedNode.fullyLoaded || this.testLoader.isLoading || this.pageLength <= this.selectedNode.allTests.length) {
+          return;
+        }
+        this.testLoader.loadMore(this.pageLength - this.selectedNode.allTests.length);
       },
-      {fireImmediately: true},
     ));
   }
   disconnectedCallback() {
@@ -171,7 +168,10 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
           id="left-panel"
           style=${styleMap({display: this.leftPanelExpanded ? '' : 'none'})}
         >
-          <tr-test-nav-tree .testLoader=${this.testLoader}></tr-test-nav-tree>
+          <tr-test-nav-tree
+            .testLoader=${this.testLoader}
+            .onSelectedNodeChanged=${(node: TestNode) => this.selectedNode = node}
+          ></tr-test-nav-tree>
         </div>
         <div id="test-result-view">
           <div id="test-result-header">
@@ -181,24 +181,20 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
             <span id="root-name" title="common test ID prefix">${this.rootName}</span>
           </div>
           <div id="test-result-content">
-            ${repeat(this.selectedTests.slice(0, this.pageLength), (t) => t.id, (t, i) => html`
+            ${repeat(this.selectedNode.allTests.slice(0, this.pageLength), (t) => t.id, (t, i) => html`
             <tr-test-entry
               .test=${t}
               .rootName=${this.rootName}
-              .prevTestId=${(this.selectedTests[i-1]?.id || this.rootName)}
-              .expanded=${this.selectedTests.length === 1}
+              .prevTestId=${(this.selectedNode.allTests[i-1]?.id || this.rootName)}
+              .expanded=${this.selectedNode.allTests.length === 1}
             ></tr-test-entry>
             `)}
             <div id="list-tail">
-              <span>Showing ${Math.min(this.selectedTests.length, this.pageLength)}/${this.selectedTests.length} tests.</span>
+              <span>Showing ${Math.min(this.selectedNode.allTests.length, this.pageLength)}/${this.selectedNode.allTests.length}${this.selectedNode.fullyLoaded ? '' : '+'} tests.</span>
               <span
                 id="load-more"
-                style=${styleMap({'display': this.pageLength >= this.selectedTests.length ? 'none' : ''})}
-                @click=${() => {
-                  // TODO(weiweilin): trigger this.testLoader.loadMore() when
-                  // needed.
-                  this.pageLength += 100;
-                }}
+                style=${styleMap({'display': this.pageLength >= this.selectedNode.allTests.length && this.selectedNode.fullyLoaded ? 'none' : ''})}
+                @click=${() => this.pageLength += 100}
               >
                 Load More
               </span>
@@ -294,5 +290,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 }
 
 customElement('tr-invocation-page')(
-  contextConsumer('appState')(InvocationPageElement),
+  contextConsumer('appState')(
+    InvocationPageElement,
+  ),
 );
