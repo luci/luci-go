@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "7e3abb6b_8b8cb582",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-21T06:07:09Z",
+      "side": 1,
+      "message": "\u003e 1) nothing will show up on the list\n\nSorry I meant no new tests will be added to the existing list.\n\n\u003e When Chan adds Stats RPC, we will no longer need to fetch all test results (we can use VARIANTS_WITH_UNEXPECTED_RESULTS), so this problem will become *much* less important, because most of the time all results will fetch the first page-that-we-fetch.\n\nI agree if everything is included in the first page. The issue will be a lot less important. I should\u0027ve got the filter CL in first.\n\n\u003e Also currently app uses pageSize\u003d100. I don\u0027t actually understand this.\n\nThis can be easily tweaked. It was added to\n1. make the number of tests in a page consistent. This can variant a lot if we only display all the data we have, since one test can have varying number of results/exonerations.\n2. reduce rendering time. This is probably less important after I stop rendering content of test entries (to DOM) that were never expanded.\n\n\u003e If we used same pageSize in loadMore() and in requests, then we\u0027d never be in a state that app has the data, but does not display it.\n\nThe number of tests is different from number of results, since one test can have multiple variants and results, with or without VARIANTS_WITH_UNEXPECTED_RESULTS flag.\nAnd some data will still not be displayed. Since we only display a test when all of its results \u0026 exonerations are fetched (this is because having partially loaded test can be confusing).",
+      "parentUuid": "4c1de806_8f35b10d",
+      "revId": "e0e830d8174387780d70b6ee889e8a725be4887f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8fb764de_343b4196",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 7
