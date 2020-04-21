@@ -337,10 +337,8 @@ message Verifiers {
     // Optional, defaulting to no retries whatsoever.
     RetryConfig retry_config = 2;
 
-    // EXPERIMENTAL & DEPRECATED. Use per-builder `cancel_stale`
-    // instead. Current default is NO, but see https://crbug.com/1001182 for
-    // the up-to-date information.
-    Toggle cancel_stale_tryjobs = 3;
+    // DEPRECATED & IGNORED BY CQ. Use per-builder `cancel_stale` to opt out.
+    Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
       // Next field number: 12
