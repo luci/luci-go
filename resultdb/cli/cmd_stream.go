@@ -16,18 +16,28 @@ package cli
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"os"
+	"os/user"
+	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
+	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	"go.chromium.org/luci/resultdb/sink"
 )
 
@@ -69,7 +79,7 @@ type streamRun struct {
 	invocation lucictx.Invocation
 }
 
-func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) (ret int) {
 	ctx := cli.GetContext(a, r, env)
 
 	// init client
@@ -79,9 +89,26 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
+	var testExitCode int = 1001
 	if r.isNew {
-		// TODO(ddoman): create an invocation
-		return r.done(errors.Reason("Not implemented").Err())
+		ninv, err := r.createInvocation(ctx)
+		if err != nil {
+			return r.done(err)
+		}
+		r.invocation = ninv
+
+		// finalize the invocation on exit
+		defer func() {
+			// TODO(ddoman): handle complete-invocation-exit-codes
+			interrupted := testExitCode != 0
+			if err := r.finalizeInvocation(ctx, interrupted); err != nil {
+				logging.Errorf(ctx, "failed to finalize the invocation: %s", err)
+
+				if ret == 0 {
+					ret = 1
+				}
+			}
+		}()
 	} else {
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -92,15 +119,10 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// run the command
 	cmd, err := r.makeTestCmd(ctx, args)
 	if err != nil {
-		return r.done(err)
+		return
 	}
-	testExitCode, err := r.runTestCmd(ctx, cmd)
-
-	// TODO(ddoman): finalize the invocation
-	if err != nil {
-		return r.done(err)
-	}
-	return testExitCode
+	testExitCode, err = r.runTestCmd(ctx, cmd)
+	return r.done(err)
 }
 
 func (r *streamRun) makeTestCmd(ctx context.Context, args []string) (*exec2.Cmd, error) {
@@ -123,8 +145,27 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 		UpdateToken: r.invocation.UpdateToken,
 	})
 	if err != nil {
-		return -1, errors.Annotate(err, "Failed to create SinkServer").Err()
+		return -1, errors.Annotate(err, "failed to create SinkServer").Err()
 	}
+
+	// close the server before return
+	// TODO(ddoman): add --close-wait-timeout to specify the timeout value
+	timedCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	defer func() {
+		logging.Debugf(ctx, "Waiting for SinkServer to process all the pending requests")
+		if err := server.Close(); err != nil {
+			logging.Errorf(ctx, "Failed to close SinkServer: %s", err)
+			return
+		}
+
+		select {
+		case <-server.Done():
+			logging.Infof(ctx, "SinkServer terminated")
+		case <-timedCtx.Done():
+			logging.Infof(ctx, "Context timed-out before SinkServer terminated")
+		}
+	}()
 
 	// reset and install a lucictx with r.host and r.invocation just in case they were not
 	// derived from the current lucictx.
@@ -134,7 +175,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	})
 	exported, err := lucictx.Export(ctx)
 	if err != nil {
-		return -1, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
+		return -1, errors.Annotate(err, "failed to export LUCI_CONTEXT").Err()
 	}
 	defer exported.Close()
 	exported.SetInCmd(cmd.Cmd)
@@ -142,6 +183,15 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 	// TODO(ddoman): handle interrupts with luci/common/system/signals.
 	err = server.Run(ctx, func(ctx context.Context) error {
+		// install the lucicontext into cmd again so that all the lucictx added inside
+		// sinlucitx.ResultSink becomes visible to the test process.
+		exported, err := lucictx.Export(ctx)
+		if err != nil {
+			return err
+		}
+		defer exported.Close()
+		exported.SetInCmd(cmd.Cmd)
+
 		logging.Debugf(ctx, "Starting: %q", cmd.Args)
 		if err := cmd.Start(); err != nil {
 			return errors.Annotate(err, "cmd.start").Err()
@@ -154,4 +204,58 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	}
 	logging.Infof(ctx, "Child process terminated with %d", ec)
 	return ec, nil
+}
+
+func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocation, err error) {
+	invID, err := genInvID(ctx)
+	if err != nil {
+		return
+	}
+
+	md := metadata.MD{}
+	resp, err := r.recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
+		InvocationId: invID,
+		Invocation:   &pb.Invocation{},
+	}, prpc.Header(&md))
+	if err != nil {
+		err = errors.Annotate(err, "failed to create an invocation").Err()
+		return
+	}
+	tks := md.Get(recorder.UpdateTokenMetadataKey)
+	if len(tks) == 0 {
+		err = errors.Reason("Missing header: update-token").Err()
+		return
+	}
+
+	ret = lucictx.Invocation{resp.Name, tks[0]}
+	fmt.Fprintln(os.Stderr, fmt.Sprintf("%q created", ret.Name))
+	return
+}
+
+func (r *streamRun) finalizeInvocation(ctx context.Context, interrupted bool) error {
+	ctx = metadata.AppendToOutgoingContext(
+		ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
+	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
+		Name:        r.invocation.Name,
+		Interrupted: interrupted,
+	})
+	return err
+}
+
+func genInvID(ctx context.Context) (string, error) {
+	// username
+	whoami, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	// date
+	date := time.Now().UTC().Format(time.RFC3339)
+	// random suffix
+	buf := make([]byte, 8)
+	if _, err := cryptorand.Read(ctx, buf); err != nil {
+		return "", err
+	}
+	suffix := hex.EncodeToString(buf)
+
+	return strings.ToLower(fmt.Sprintf("u:%s:%s:%s", whoami.Username, date, suffix)), nil
 }
