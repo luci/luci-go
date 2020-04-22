@@ -117,11 +117,24 @@ func TestAuthenticate(t *testing.T) {
 		c := injectTestDB(context.Background(), &fakeDB{
 			allowedClientID: "some_client_id",
 		})
+		c = injectFrontendClientID(c, "frontend_client_id")
 		auth := Authenticator{
 			Methods: []Method{fakeAuthMethod{clientID: "another_client_id"}},
 		}
 		_, err := auth.Authenticate(c, makeRequest())
 		So(err, ShouldEqual, ErrBadClientID)
+	})
+
+	Convey("IsAllowedOAuthClientID with frontend client_id", t, func() {
+		c := injectTestDB(context.Background(), &fakeDB{
+			allowedClientID: "some_client_id",
+		})
+		c = injectFrontendClientID(c, "frontend_client_id")
+		auth := Authenticator{
+			Methods: []Method{fakeAuthMethod{clientID: "frontend_client_id"}},
+		}
+		_, err := auth.Authenticate(c, makeRequest())
+		So(err, ShouldBeNil) // success!
 	})
 
 	Convey("IP whitelist restriction works", t, func() {
@@ -276,6 +289,15 @@ func injectTestDB(c context.Context, d authdb.DB) context.Context {
 	return ModifyConfig(c, func(cfg Config) Config {
 		cfg.DBProvider = func(c context.Context) (authdb.DB, error) {
 			return d, nil
+		}
+		return cfg
+	})
+}
+
+func injectFrontendClientID(c context.Context, clientID string) context.Context {
+	return ModifyConfig(c, func(cfg Config) Config {
+		cfg.FrontendClientID = func(context.Context) (string, error) {
+			return clientID, nil
 		}
 		return cfg
 	})

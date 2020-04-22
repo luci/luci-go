@@ -62,7 +62,8 @@ var (
 		AnonymousTransport: func(ctx context.Context) http.RoundTripper {
 			return &contextAwareURLFetch{ctx}
 		},
-		IsDevMode: appengine.IsDevAppServer(),
+		FrontendClientID: gaeauth.FetchFrontendClientID,
+		IsDevMode:        appengine.IsDevAppServer(),
 	}
 
 	// globalTsMonState holds configuration and state related to time series

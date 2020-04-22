@@ -1198,6 +1198,7 @@ func (s *Server) initAuth() error {
 		Signer:              nil, // TODO(vadimsh): Implement.
 		AccessTokenProvider: s.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
+		FrontendClientID:    nil, // TODO(vadimsh): Implement.
 		EndUserIP:           getRemoteIP,
 		IsDevMode:           !s.Options.Prod,
 	})
