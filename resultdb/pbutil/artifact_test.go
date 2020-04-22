@@ -68,6 +68,22 @@ func TestParseArtifactName(t *testing.T) {
 	})
 }
 
+func TestArtifactName(t *testing.T) {
+	t.Parallel()
+	Convey(`ArtifactName`, t, func() {
+
+		Convey(`Invocation level`, func() {
+			name := InvocationArtifactName("inv", "a")
+			So(name, ShouldEqual, "invocations/inv/artifacts/a")
+		})
+
+		Convey(`Test result level`, func() {
+			name := TestResultArtifactName("inv", "t r", "r", "a")
+			So(name, ShouldEqual, "invocations/inv/tests/t%20r/results/r/artifacts/a")
+		})
+	})
+}
+
 func TestValidateArtifactName(t *testing.T) {
 	t.Parallel()
 	Convey(`ValidateArtifactName`, t, func() {

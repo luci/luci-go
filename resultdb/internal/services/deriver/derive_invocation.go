@@ -188,12 +188,15 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 
 	// Get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", originTask.TaskId, in.SwarmingTask.Hostname)
-	results, err := chromium.DeriveTestResults(ctx, originTask, in, originInv)
+	results, arts, err := chromium.DeriveTestResults(ctx, originTask, in, originInv)
 	if err != nil {
 		return nil, errors.Annotate(err,
 			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, originTask.Name).Err()
 	}
 	// TODO(jchinlee): Validate invocation and results.
+
+	_ = arts
+	// TODO(crbug.com/1071258): write artifacts to Spanner.
 
 	// Write test results in batches concurrently, updating inv with the names of the invocations
 	// that will be included.
