@@ -22,6 +22,10 @@ import { computed, observable } from 'mobx';
 import { Invocation } from '../services/resultdb';
 
 
+function stripInvocationPrefix(invocationName: string): string {
+  return invocationName.slice('invocations/'.length);
+}
+
 @customElement('tr-invocation-details')
 export class InvocationDetailsElement extends MobxLitElement {
   // Must be provided by the parent element.
@@ -56,7 +60,8 @@ export class InvocationDetailsElement extends MobxLitElement {
         >Included Invocations:
           <ul>
           ${this.invocation!.includedInvocations.map(invocationName => html`
-            <li><a href="/invocation/${encodeURIComponent(invocationName)}">${invocationName.slice('invocations/'.length)}</a></li>
+            <li><a href="/inv/${encodeURIComponent(stripInvocationPrefix(invocationName))}"
+                  >${stripInvocationPrefix(invocationName)}</a></li>
           `)}
           </ul>
         </div>
