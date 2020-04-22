@@ -137,6 +137,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	exported.SetInCmd(cmd.Cmd)
 
 	// TODO(ddoman): send the logs of SinkServer to --log-file
+	// TODO(ddoman): handle interrupts with luci/common/system/signals.
 	err = server.Run(ctx, func(ctx context.Context) error {
 		logging.Debugf(ctx, "Starting: %q", cmd.Args)
 		if err := cmd.Start(); err != nil {
