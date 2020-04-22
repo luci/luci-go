@@ -24,7 +24,7 @@ const config: webpack.Configuration = {
     index: './src/index.ts',
   },
   output: {
-    path: path.resolve(__dirname, '../appengine/resultui/static/dist/scripts/'),
+    path: path.resolve(__dirname, './out/static/dist/scripts/'),
     publicPath: '/static/dist/scripts/',
     filename: '[name].[contenthash].bundle.js',
     chunkFilename: '[name].[contenthash].bundle.js',
@@ -68,12 +68,12 @@ const config: webpack.Configuration = {
     new HtmlWebpackPlugin({
       alwaysWriteToDisk: true,
       template: path.resolve(__dirname, './index.html'),
-      filename: path.resolve(__dirname, '../appengine/resultui/index.html'),
+      filename: path.resolve(__dirname, './out/index.html'),
     }),
     new HtmlWebpackHarddiskPlugin(),
   ],
   devServer: {
-    contentBase: path.join(__dirname, '../appengine/resultui/'),
+    contentBase: path.join(__dirname, './out/'),
     historyApiFallback: true,
   },
 };
