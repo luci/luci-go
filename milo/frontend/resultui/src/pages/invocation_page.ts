@@ -54,12 +54,17 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   @observable.ref appState = new AppState();
 
   @computed
+  private get invocationNameWithPrefix(): string {
+    return 'invocations/' + this.invocationName;
+  }
+
+  @computed
   private get invocationReq(): ObservablePromise<Invocation> {
     if (!this.appState.resultDb) {
       return observable.box({tag: 'loading', v: null}, {deep: false});
     }
     return this.appState.resultDb
-      .getInvocation({name: this.invocationName})
+      .getInvocation({name: this.invocationNameWithPrefix})
       .toObservable();
   }
 
@@ -78,8 +83,8 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       return (async function*() {})();
     }
     return streamTests(
-      streamTestResults({invocations: [this.invocationName]}, this.appState.resultDb),
-      streamTestExonerations({invocations: [this.invocationName]}, this.appState.resultDb),
+      streamTestResults({invocations: [this.invocationNameWithPrefix]}, this.appState.resultDb),
+      streamTestExonerations({invocations: [this.invocationNameWithPrefix]}, this.appState.resultDb),
     );
   }
 
@@ -155,7 +160,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       <div id="test-invocation-summary">
         <div id="test-invocation-id">
           <span id="test-invocation-id-label">Invocation ID </span>
-          <span>${this.invocationName.slice('invocations/'.length)}</span>
+          <span>${this.invocationName}</span>
         </div>
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
