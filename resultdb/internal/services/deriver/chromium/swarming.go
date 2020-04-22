@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -108,10 +110,16 @@ func DeriveChromiumInvocation(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.
 	}
 }
 
+// TestResult combines test result with the associated artifacts.
+type TestResult struct {
+	*pb.TestResult
+	Artifacts []*pb.Artifact
+}
+
 // DeriveTestResults derives the protos with the data from the given task and request.
 //
 // The derived Invocation and TestResult protos will be written by the caller.
-func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
+func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*TestResult, error) {
 	// Parse swarming tags.
 	baseVariant, ninjaTarget := parseSwarmingTags(task)
 	testIDPrefix := ""
@@ -122,12 +130,12 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	}
 
 	// Fetch outputs, converting if any.
-	var results []*pb.TestResult
+	var ret []*TestResult
 	var err error
 	ref := task.OutputsRef
 
 	if ref != nil && ref.Isolated != "" {
-		if results, err = processOutputs(ctx, ref, testIDPrefix, inv, req); err != nil {
+		if ret, err = processOutputs(ctx, ref, testIDPrefix, inv, req); err != nil {
 			logging.Errorf(ctx, "isolated outputs at %q in %q, %q: %s",
 				ref.Isolated, ref.Isolatedserver, ref.Namespace, err)
 		}
@@ -142,11 +150,11 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 		if err != nil {
 			return nil, attachInvalidTaskf(err, "failed to convert the task to a test result")
 		}
-		results = append(results, result)
+		ret = []*TestResult{{TestResult: result}}
 	}
 
 	// Apply the base variant.
-	for _, r := range results {
+	for _, r := range ret {
 		if len(r.Variant.GetDef()) == 0 {
 			r.Variant = baseVariant
 			continue
@@ -160,7 +168,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 		}
 	}
 
-	return results, nil
+	return ret, nil
 }
 
 func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, ninjaTarget string) {
@@ -263,9 +271,10 @@ func convertTaskToResult(testID string, task *swarmingAPI.SwarmingRpcsTaskResult
 	return ret, nil
 }
 
-// processOutputs fetches the output.json from the given task and processes it using whichever
-// additional isolated outputs necessary.
-func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) (results []*pb.TestResult, err error) {
+// processOutputs fetches the output.json from the given task and processes it
+// using whichever artifacts necessary.
+func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) ([]*TestResult, error) {
+
 	isoClient := isolatedclient.NewClient(
 		outputsRef.Isolatedserver, isolatedclient.WithAuthClient(internal.HTTPClient(ctx)), isolatedclient.WithNamespace(outputsRef.Namespace))
 
@@ -274,6 +283,10 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	if err != nil {
 		return nil, errors.Annotate(err, "getting isolated outputs").Err()
 	}
+	availableArtifacts := stringset.New(len(outputs))
+	for key := range outputs {
+		availableArtifacts.Add(key)
+	}
 
 	// Fetch the output.json file itself and convert it.
 	outputJSON, err := FetchOutputJSON(ctx, isoClient, outputs)
@@ -281,27 +294,59 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 		return nil, errors.Annotate(err, "getting output JSON file").Err()
 	}
 
-	// Convert the isolated.File outputs to pb.Artifacts for later processing.
-	outputArtifacts := make(map[string]*pb.Artifact, len(outputs))
-	for path, f := range outputs {
-		art := util.IsolatedFileToArtifact(
-			outputsRef.Isolatedserver, outputsRef.Namespace, path, &f)
-		if art == nil {
-			logging.Warningf(ctx, "Could not process artifact %q", path)
-		}
-
-		outputArtifacts[util.NormalizeIsolatedPath(path)] = art
-	}
-
 	// Convert the output JSON.
-	if results, err = ConvertOutputJSON(ctx, inv, testIDPrefix, outputJSON, outputArtifacts); err != nil {
+	results, artifactToTestResult, err := ConvertOutputJSON(ctx, inv, testIDPrefix, outputJSON, availableArtifacts)
+	if err != nil {
 		return nil, attachInvalidTaskf(err, "invalid output: %s", err)
 	}
 
-	// TODO(crbug/1032779): Mark artifacts we know we may not process.
-	// TODO(crbug/1032779): Mark artifacts that have been processed.
+	// Join test results and artifacts into one slice.
+	// Convert the isolated.File outputs to pb.Artifacts.
+	ret := make([]*TestResult, len(results))
+	trMap := make(map[*pb.TestResult]*TestResult, len(results))
+	for i, r := range results {
+		ret[i] = &TestResult{TestResult: r}
+		trMap[r] = ret[i]
+	}
+	for key, f := range outputs {
+		a := isolatedFileToArtifact(
+			outputsRef.Isolatedserver,
+			outputsRef.Namespace,
+			key,
+			f,
+		)
+		tr := artifactToTestResult[key]
+		if a != nil && tr != nil {
+			trMap[tr].Artifacts = append(trMap[tr].Artifacts, a)
+		}
+	}
 
-	return results, nil
+	return ret, nil
+}
+
+func isolatedFileToArtifact(isolateServer, ns, relPath string, f isolated.File) *pb.Artifact {
+	// We don't know how to handle symlink files, so return nil for the caller to deal with it.
+	if f.Link != nil {
+		return nil
+	}
+
+	a := &pb.Artifact{
+		ArtifactId: util.NormalizeIsolatedPath(relPath),
+		FetchUrl:   internal.IsolateURL(util.IsolateServerToHost(isolateServer), ns, string(f.Digest)),
+	}
+
+	if f.Size != nil {
+		a.SizeBytes = *f.Size
+	}
+
+	switch path.Ext(relPath) {
+	case ".txt":
+		a.ContentType = "text/plain"
+	case ".png":
+		a.ContentType = "image/png"
+	}
+
+	return a
 }
 
 // GetOutputs gets the map of isolated.Files associated with the given task.
@@ -362,31 +407,33 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 // ConvertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix string, data []byte, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix string, data []byte, availableArtifacts stringset.Set) (
+	testResults []*pb.TestResult, artifactToTestResult map[string]*pb.TestResult, err error) {
+
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, testIDPrefix, inv, outputs)
+		testResults, artifactToTestResult, err = jsonFormat.ToProtos(ctx, testIDPrefix, inv, availableArtifacts)
 		if err != nil {
-			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
+			err = errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
-		return results, nil
+		return
 	}
 
 	// Try to convert the buffer treating its format as that of GTests.
 	gtestFormat := &formats.GTestResults{}
 	gtestErr := gtestFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if gtestErr == nil {
-		results, err := gtestFormat.ToProtos(ctx, testIDPrefix, inv)
+		testResults, err = gtestFormat.ToProtos(ctx, testIDPrefix, inv)
 		if err != nil {
-			return nil, errors.Annotate(err, "converting as GTest results format").Err()
+			err = errors.Annotate(err, "converting as GTest results format").Err()
 		}
-		return results, nil
+		return
 	}
 
 	// Conversion with either format failed, but we don't support other formats.
-	return nil, errors.NewMultiError(gtestErr, jsonErr)
+	return nil, nil, errors.NewMultiError(gtestErr, jsonErr)
 }
 
 // convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.
