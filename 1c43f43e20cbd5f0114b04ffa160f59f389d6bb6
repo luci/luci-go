@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a750c0e_78540c23",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T07:39:34Z",
+      "side": 1,
+      "message": "nit: invocation name is always with prefix. \nthe one without prefix is called \"invocation id\"",
+      "range": {
+        "startLine": 57,
+        "startChar": 14,
+        "endLine": 57,
+        "endChar": 38
+      },
+      "revId": "1c43f43e20cbd5f0114b04ffa160f59f389d6bb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2e9e0e9_3b9d353b",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T07:39:34Z",
+      "side": 1,
+      "message": "invocation_id",
+      "range": {
+        "startLine": 51,
+        "startChar": 23,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "1c43f43e20cbd5f0114b04ffa160f59f389d6bb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
