@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "74695feb_6c967973",
+        "filename": "server/auth/handlers.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T22:15:09Z",
+      "side": 1,
+      "message": "not for this CL, but it seems we might be exposing internal details in the response. In case of HTTP 500, maybe we should log the details and respond without details.",
+      "range": {
+        "startLine": 72,
+        "startChar": 97,
+        "endLine": 72,
+        "endChar": 100
+      },
+      "revId": "b4c601c90989efeaf4a70200c25d11af5b15e5a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a48a7e03_974656a8",
         "filename": "server/server.go",
         "patchSetId": 1
