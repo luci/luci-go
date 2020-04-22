@@ -82,6 +82,7 @@ type ServerConfig struct {
 type Server struct {
 	cfg     ServerConfig
 	errC    chan error
+	doneC   chan struct{}
 	httpSrv http.Server
 
 	// 1 indicates that the server is starting or has started. 0, otherwise.
@@ -118,10 +119,16 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	}
 
 	s := &Server{
-		cfg:  srvCfg,
-		errC: make(chan error, 1),
+		cfg:   srvCfg,
+		errC:  make(chan error, 1),
+		doneC: make(chan struct{}, 1),
 	}
 	return s, nil
+}
+
+// Done returns a channel that is closed when the server terminates.
+func (s *Server) Done() <-chan struct{} {
+	return s.doneC
 }
 
 // Config retrieves the ServerConfig of a previously created Server.
@@ -142,37 +149,47 @@ func (s *Server) ErrC() <-chan error {
 
 // Run invokes callback in a context where the server is running.
 //
-// The context passed to callback will be cancelled if the server encounters
-// an error. The context also has the server's information exported into it.
-// If callback finishes running, Run will return the error it returned.
+// The context passed to callback will be cancelled if the server has stopped due to
+// critical errors or Close being invoked. The context also has the server's information
+// exported into it. If callback finishes, Run will return the error the callback returned.
 func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
-	ctx, cancel := context.WithCancel(ctx)
+
+	// start a sink server
+	err := s.Start(ctx)
+	if err != nil {
+		return err
+	}
+	// TODO(ddoman): Run and Start can be invoked multiple times in parallel.
+	// s.Start
+	//   - starts a singleton sinkServer on the first-time invocation
+	//   - returns nil immediately after the first-time invocation
+	//   - returns an error once Close is invoked
+	// s.Close
+	//   - stops the HTTP server
+	//
+	// s.Run
+	//   - invokes Start
+	//   - returns an error if the server has stopped already
+	//   - can be invoked multiple times in parallel, until the server gets closed.
+	//
+	// The caller of sink.NewServer is responsible to call Close and wait for Done when
+	// the server is no longer needed.
+
+	// launch and wait until callback returns.
+	cbCtx, cancel := context.WithCancel(s.Export(ctx))
 	defer cancel()
-	// TODO(sajjadm): Add Export here when implemented and explain it in the function comment.
-	if err := s.Start(ctx); err != nil {
-		return err
-	}
-	defer s.Close()
-
-	done := make(chan error)
 	go func() {
-		done <- callback(ctx)
+		select {
+		case <-s.Done():
+			// cancel the context if the server terminates before the callback finishes.
+			cancel()
+		case <-cbCtx.Done():
+		}
 	}()
-
-	select {
-	case err := <-s.errC:
-		cancel()
-		<-done
-		return err
-	case err := <-done:
-		return err
-	}
+	return callback(cbCtx)
 }
 
 // Start runs the server.
-//
-// On success, Start will return nil, and a subsequent error will be sent on
-// the server's ErrC channel.
 func (s *Server) Start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
 		return errors.Reason("cannot call Start twice").Err()
@@ -193,7 +210,6 @@ func (s *Server) Start(ctx context.Context) error {
 	prpc.InstallHandlers(routes, router.MiddlewareChain{})
 	sinkpb.RegisterSinkServer(prpc, ss)
 
-	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		var err error
 		defer func() {
@@ -201,7 +217,8 @@ func (s *Server) Start(ctx context.Context) error {
 			// before sending a signal to s.errC.
 			closeSinkServer(ctx, ss)
 			s.errC <- err
-			cancel()
+			close(s.errC)
+			close(s.doneC)
 		}()
 		if s.testListener == nil {
 			err = s.httpSrv.ListenAndServe()
@@ -210,21 +227,23 @@ func (s *Server) Start(ctx context.Context) error {
 			err = s.httpSrv.Serve(s.testListener)
 		}
 	}()
-	go func() {
-		<-ctx.Done()
-		// TODO(ddoman): handle errors from s.httpSrv.Close()
-		s.httpSrv.Close()
-	}()
 	return nil
 }
 
-// Close immediately stops the servers and cancels the requests that are being processed.
+// Close stops the server.
+//
+// SinkServer processes sinkRequests asychronously, and Close doesn't guarantee completion
+// of all the scheduled requests. Use Done to ensure that all the scheduled requests have
+// been processed.
 func (s *Server) Close() error {
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started
 		return ErrCloseBeforeStart
 	}
-	return s.httpSrv.Close()
+	if err := s.httpSrv.Close(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Export exports lucictx.ResultSink derived from the server configuration into
