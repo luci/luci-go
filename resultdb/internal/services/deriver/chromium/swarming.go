@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -108,10 +110,16 @@ func DeriveChromiumInvocation(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.
 	}
 }
 
+// TestResult combines test result with the associated artifacts.
+type TestResult struct {
+	*pb.TestResult
+	Artifacts []*pb.Artifact
+}
+
 // DeriveTestResults derives the protos with the data from the given task and request.
 //
 // The derived Invocation and TestResult protos will be written by the caller.
-func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
+func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*TestResult, error) {
 	// Parse swarming tags.
 	baseVariant, ninjaTarget := parseSwarmingTags(task)
 	testIDPrefix := ""
@@ -122,7 +130,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	}
 
 	// Fetch outputs, converting if any.
-	var results []*pb.TestResult
+	var results []*TestResult
 	var err error
 	ref := task.OutputsRef
 
@@ -142,7 +150,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 		if err != nil {
 			return nil, attachInvalidTaskf(err, "failed to convert the task to a test result")
 		}
-		results = append(results, result)
+		results = []*TestResult{{TestResult: result}}
 	}
 
 	// Apply the base variant.
@@ -263,9 +271,10 @@ func convertTaskToResult(testID string, task *swarmingAPI.SwarmingRpcsTaskResult
 	return ret, nil
 }
 
-// processOutputs fetches the output.json from the given task and processes it using whichever
-// additional isolated outputs necessary.
-func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) (results []*pb.TestResult, err error) {
+// processOutputs fetches the output.json from the given task and processes it
+// using whichever artifacts necessary.
+func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) ([]*TestResult, error) {
+
 	isoClient := isolatedclient.NewClient(
 		outputsRef.Isolatedserver, isolatedclient.WithAuthClient(internal.HTTPClient(ctx)), isolatedclient.WithNamespace(outputsRef.Namespace))
 
@@ -274,6 +283,10 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	if err != nil {
 		return nil, errors.Annotate(err, "getting isolated outputs").Err()
 	}
+	availableArtifacts := stringset.New(len(outputs))
+	for key := range outputs {
+		availableArtifacts.Add(key)
+	}
 
 	// Fetch the output.json file itself and convert it.
 	outputJSON, err := FetchOutputJSON(ctx, isoClient, outputs)
@@ -281,27 +294,54 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 		return nil, errors.Annotate(err, "getting output JSON file").Err()
 	}
 
-	// Convert the isolated.File outputs to pb.Artifacts for later processing.
-	outputArtifacts := make(map[string]*pb.Artifact, len(outputs))
-	for path, f := range outputs {
-		art := util.IsolatedFileToArtifact(
-			outputsRef.Isolatedserver, outputsRef.Namespace, path, &f)
-		if art == nil {
-			logging.Warningf(ctx, "Could not process artifact %q", path)
-		}
-
-		outputArtifacts[util.NormalizeIsolatedPath(path)] = art
-	}
-
 	// Convert the output JSON.
-	if results, err = ConvertOutputJSON(ctx, inv, testIDPrefix, outputJSON, outputArtifacts); err != nil {
+	results, err := convertOutputJSON(ctx, inv, testIDPrefix, outputJSON, availableArtifacts)
+	if err != nil {
 		return nil, attachInvalidTaskf(err, "invalid output: %s", err)
 	}
 
-	// TODO(crbug/1032779): Mark artifacts we know we may not process.
-	// TODO(crbug/1032779): Mark artifacts that have been processed.
+	// Convert formats.TestResult to TestResult and convert the isolated.File
+	// to pb.Artifacts.
+	ret := make([]*TestResult, len(results))
+	for i, r := range results {
+		ret[i] = &TestResult{
+			TestResult: r.TestResult,
+			Artifacts:  make([]*pb.Artifact, 0, len(r.ArtifactKeys)),
+		}
 
-	return results, nil
+		for _, key := range r.ArtifactKeys {
+			a := isolatedFileToArtifact(outputsRef.Isolatedserver, outputsRef.Namespace, key, outputs[key])
+			if a != nil {
+				ret[i].Artifacts = append(ret[i].Artifacts, a)
+			}
+		}
+	}
+	return ret, nil
+}
+
+func isolatedFileToArtifact(isolateServer, ns, relPath string, f isolated.File) *pb.Artifact {
+	// We don't know how to handle symlink files, so return nil for the caller to deal with it.
+	if f.Link != nil {
+		return nil
+	}
+
+	a := &pb.Artifact{
+		ArtifactId: util.NormalizeIsolatedPath(relPath),
+		FetchUrl:   internal.IsolateURL(util.IsolateServerToHost(isolateServer), ns, string(f.Digest)),
+	}
+
+	if f.Size != nil {
+		a.SizeBytes = *f.Size
+	}
+
+	switch path.Ext(relPath) {
+	case ".txt":
+		a.ContentType = "text/plain"
+	case ".png":
+		a.ContentType = "image/png"
+	}
+
+	return a
 }
 
 // GetOutputs gets the map of isolated.Files associated with the given task.
@@ -359,15 +399,15 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 	return buf.Bytes(), nil
 }
 
-// ConvertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
+// convertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix string, data []byte, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func convertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix string, data []byte, availableArtifacts stringset.Set) ([]*formats.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, testIDPrefix, inv, outputs)
+		results, err := jsonFormat.ToProtos(ctx, testIDPrefix, inv, availableArtifacts)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}

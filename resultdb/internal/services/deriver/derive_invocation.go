@@ -235,7 +235,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
 // returning container ids.
-func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
+func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*chromium.TestResult, batchSize int) (span.InvocationIDSet, error) {
 	batches := batchTestResults(trs, batchSize)
 	includedInvs := make(span.InvocationIDSet, len(batches))
 
@@ -266,7 +266,8 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 
 			// Convert the TestResults in the batch.
 			for k, tr := range batch {
-				muts = append(muts, insertOrUpdateTestResult(batchID, tr, k))
+				muts = append(muts, insertOrUpdateTestResult(batchID, tr.TestResult, k))
+				// TODO(crbug.com/1071258): write artifacts.
 			}
 
 			if _, err := client.Apply(ctx, muts); err != nil {
@@ -292,8 +293,8 @@ func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID 
 }
 
 // batchTestResults batches the given TestResults given the maximum batch size.
-func batchTestResults(trs []*pb.TestResult, batchSize int) [][]*pb.TestResult {
-	batches := make([][]*pb.TestResult, 0, len(trs)/batchSize+1)
+func batchTestResults(trs []*chromium.TestResult, batchSize int) [][]*chromium.TestResult {
+	batches := make([][]*chromium.TestResult, 0, len(trs)/batchSize+1)
 	for len(trs) > 0 {
 		end := batchSize
 		if end > len(trs) {
