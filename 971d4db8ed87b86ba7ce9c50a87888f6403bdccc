@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "352e0279_4c44b1de",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-22T07:47:26Z",
+      "side": 1,
+      "message": "update?",
+      "range": {
+        "startLine": 119,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 13
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e985794_3df7beb9",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-22T07:47:26Z",
+      "side": 1,
+      "message": "I think the expectation might be wrong: see https://screenshot.googleplex.com/qu3tKvtC3NT",
+      "range": {
+        "startLine": 334,
+        "startChar": 0,
+        "endLine": 337,
+        "endChar": 81
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86466eae_e2516779",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-22T07:47:26Z",
+      "side": 1,
+      "message": "I can also see some html files in https://isolateserver.appspot.com/browse?namespace\u003ddefault-gzip\u0026hash\u003d74338a0c94899e92482598ba6d301093eee7aadf\n\nShould we add a case for them?",
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed69d2eb_f523f3ed",
+        "filename": "resultdb/pbutil/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-22T07:47:26Z",
+      "side": 1,
+      "message": "ValidateInvocationID",
+      "range": {
+        "startLine": 87,
+        "startChar": 30,
+        "endLine": 87,
+        "endChar": 48
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c9165c4_6a5c2533",
+        "filename": "resultdb/pbutil/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-22T07:47:26Z",
+      "side": 1,
+      "message": "ValidateInvocationID",
+      "range": {
+        "startLine": 93,
+        "startChar": 30,
+        "endLine": 93,
+        "endChar": 48
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
