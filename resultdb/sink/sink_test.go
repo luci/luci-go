@@ -39,14 +39,24 @@ func TestNewServer(t *testing.T) {
 	defer ctl.Finish()
 
 	Convey("NewServer", t, func() {
+		ctx := context.Background()
+
 		Convey("succeeds", func() {
-			srv := NewServer(testServerConfig(ctl, ":42", "hello"))
+			srv, err := NewServer(ctx, testServerConfig(ctl, ":42", "my_token"))
+			So(err, ShouldBeNil)
 			So(srv, ShouldNotBeNil)
 		})
-		Convey("uses the default address, if not given", func() {
-			srv := NewServer(testServerConfig(ctl, "", ""))
+		Convey("uses the default address, if missing", func() {
+			srv, err := NewServer(ctx, testServerConfig(ctl, "", "my_token"))
+			So(err, ShouldBeNil)
 			So(srv, ShouldNotBeNil)
 			So(srv.cfg.Address, ShouldNotEqual, "")
+		})
+		Convey("generates a random auth token, if missing", func() {
+			srv, err := NewServer(ctx, testServerConfig(ctl, ":42", ""))
+			So(err, ShouldBeNil)
+			So(srv, ShouldNotBeNil)
+			So(srv.cfg.AuthToken, ShouldNotEqual, "")
 		})
 	})
 }
@@ -61,16 +71,10 @@ func TestServer(t *testing.T) {
 		ctx := authtest.MockAuthConfig(context.Background())
 
 		// a test server with a test listener
-		srv := NewServer(testServerConfig(ctl, "", "secret"))
-		So(srv, ShouldNotBeNil)
+		srv, err := NewServer(ctx, testServerConfig(ctl, "", "secret"))
+		So(err, ShouldBeNil)
 		addr, cleanup := installTestListener(srv)
 		defer cleanup()
-
-		Convey("Creates a random auth token, if not given", func() {
-			srv.cfg.AuthToken = ""
-			So(srv.Start(ctx), ShouldBeNil)
-			So(srv.cfg.AuthToken, ShouldNotEqual, "")
-		})
 
 		Convey("Start fails", func() {
 			So(srv.Start(ctx), ShouldBeNil)
@@ -191,8 +195,8 @@ func TestServerExport(t *testing.T) {
 
 	Convey("Export returns the configured address and auth_token", t, func() {
 		ctx := context.Background()
-		srv := NewServer(testServerConfig(ctl, ":42", "hello"))
-		So(srv, ShouldNotBeNil)
+		srv, err := NewServer(ctx, testServerConfig(ctl, ":42", "hello"))
+		So(err, ShouldBeNil)
 
 		ctx = srv.Export(ctx)
 		sink := lucictx.GetResultSink(ctx)
