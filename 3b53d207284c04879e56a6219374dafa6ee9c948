@@ -1,0 +1,233 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da7a9386_2b621ada",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "note: it is resultdb, not resultsdb",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 10
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a4cc97a9_75375ff7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 12,
+        "startChar": 66,
+        "endLine": 12,
+        "endChar": 68
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ace8331_8a820386",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "ErrC",
+      "range": {
+        "startLine": 12,
+        "startChar": 82,
+        "endLine": 12,
+        "endChar": 86
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ead00c34_60b60112",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "nit: normally lines in a commit message do not exceed a limit, e.g. 72. Looks like this CL does not respect any limit.",
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8e35601_7ccb2f52",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "not needed?",
+      "range": {
+        "startLine": 124,
+        "startChar": 27,
+        "endLine": 124,
+        "endChar": 30
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdd6e3dd_93d1d779",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "this is obvious from the code, so I see little value in this comment",
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8e1d755_c948da2a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "nit: consolidate",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 160,
+        "endChar": 16
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a37ffa7_bfc3270a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "what are the use cases for justify this complexity of supporting this? why not return an error on any unexpected behavior of the caller?",
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb48533e_2bfd4580",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "we don\u0027t use ctx below, so why do we need to distinguish cbCtx and ctx? consider reusing ctx variable",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 6
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba7bd11d_a65edb0f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "now that we have done, i think errC should be turned into a field of type `error` and protected with mutex (or sync.Once),\n\nbasically like context",
+      "range": {
+        "startLine": 218,
+        "startChar": 11,
+        "endLine": 218,
+        "endChar": 15
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dba19ff0_5e74edd1",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T16:10:55Z",
+      "side": 1,
+      "message": "move up, this is not resultdb",
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
