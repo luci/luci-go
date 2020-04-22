@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8d1ecd27_96c44afc",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-22T00:35:09Z",
+      "side": 1,
+      "message": "nit: prefer early return rather than late, ie swap cond to err \u003d\u003d nil.",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab26e50c_b4822495",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-22T00:35:09Z",
+      "side": 1,
+      "message": "prefer\n  b :\u003d bytes.Buffer{} \n  p :\u003d \u0026bytes.Buffer{} \nand \n  var b *bytes.Buffer // only if you want init a pointer to nil",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 19
+      },
+      "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7af92e0a_f042301e",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-22T00:35:09Z",
+      "side": 1,
+      "message": "per above, prefer:\nres :\u003d swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage{}\n\nbut here since you are returning a pointer, then allocate on the heap immediately, ie:\n\nres :\u003d \u0026swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage{}\n... \nreturn res, nil\n\n\n(even though in theory compiler ought to figure this out and optimize away)",
+      "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "1f7e7377_1593540f",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-22T00:35:09Z",
+      "side": 1,
+      "message": "yeah, what you did is fine, sorry I missed the else block, which will have err in it.",
+      "parentUuid": "227066e8_6aa55f80",
+      "range": {
+        "startLine": 55,
+        "startChar": 50,
+        "endLine": 55,
+        "endChar": 56
+      },
+      "revId": "c2f0faf1269a43f382214a15f9f56a0e75ca2603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68e464cf_00cc0cfd",
         "filename": "milo/buildsource/buildbucket/buckets.go",
         "patchSetId": 2
