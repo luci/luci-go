@@ -22,6 +22,30 @@
       "revId": "011137f101e33df999984f0a283e929e548de8a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11443872_c8ff58ab",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-22T23:37:15Z",
+      "side": 1,
+      "message": "We can migrate this specific module to go113 earlier, but there\u0027s a complication. Soon resultui will be using /auth/api/v1/server/client_id endpoint to fetch client ID for the frontend. On GAEv1 the value being served is configured via http://luci-milo-dev.appspot.com/admin/portal. On non-GAEv1 this admin settings subsystem no longer exists (because it depends on \"login: admin\" URLs and on datastore). Instead we expect to be using CLI flags (like here https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/cq/appengine/frontend/app.yaml#15). \n\nBut we probably do not want to commit client IDs in the source code. Instead app.yaml will have something like:\n\n  entrypoint: \u003e\n    main ... -frontend-client-id ${FRONTEND_CLIENT_ID}\n\nAnd actual values for FRONTEND_CLIENT_ID (per environment) will be specified in our deployment configuration repo (gae.git, the one with Starlark files). This mechanism already exists.\n\nIt\u0027s not clear yet how this would work when deploying code from the workstation directly bypassing configuration in gae.git.",
+      "parentUuid": "1a7a64d4_22ec5c21",
+      "range": {
+        "startLine": 9,
+        "startChar": 14,
+        "endLine": 9,
+        "endChar": 19
+      },
+      "revId": "011137f101e33df999984f0a283e929e548de8a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
