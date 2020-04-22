@@ -23,15 +23,15 @@ import { InvocationPageElement } from './invocation_page';
 
 
 describe('Invocation Test Page', () => {
-  it('should get invocation name from URL', async () => {
+  it('should get invocation ID from URL', async () => {
     const page = await fixture<InvocationPageElement>(html`<tr-invocation-page></tr-invocation-page>`);
-    const location = {params: {'invocation_name': 'invocation_name'}} as Partial<RouterLocation> as RouterLocation;
+    const location = {params: {'invocation_id': 'invocation_id'}} as Partial<RouterLocation> as RouterLocation;
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
-    assert.strictEqual(page.invocationName, location.params['invocation_name']);
+    assert.strictEqual(page.invocationId, location.params['invocation_id']);
   });
 
-  it('should redirect to "/not-found" when invocation_name is not provided', async () => {
+  it('should redirect to "/not-found" when invocation_id is not provided', async () => {
     const page = await fixture<InvocationPageElement>(html`<tr-invocation-page></tr-invocation-page>`);
     const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
     const redirect = sinon.spy();
