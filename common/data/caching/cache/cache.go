@@ -16,6 +16,7 @@ package cache
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/json"
 	"fmt"
@@ -105,11 +106,12 @@ func NewMemory(policies Policies, namespace string) Cache {
 //
 // It may return both a valid Cache and an error if it failed to load the
 // previous cache metadata. It is safe to ignore this error.
-func NewDisk(policies Policies, path, namespace string) (Cache, error) {
+func NewDisk(ctx context.Context, policies Policies, path, namespace string) (Cache, error) {
 	if !filepath.IsAbs(path) {
 		return nil, errors.Reason("must use absolute path: %s", path).Err()
 	}
 	d := &disk{
+		ctx:      ctx,
 		policies: policies,
 		path:     path,
 		h:        isolated.GetHash(namespace),
@@ -289,6 +291,7 @@ func (m *memory) GetUsed() []int64 {
 
 type disk struct {
 	// Immutable.
+	ctx      context.Context
 	policies Policies
 	path     string
 	h        crypto.Hash

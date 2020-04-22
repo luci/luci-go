@@ -164,7 +164,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 		if err := os.MkdirAll(c.cacheDir, os.ModePerm); err != nil {
 			return errors.Annotate(err, "failed to create cache dir: %s", c.cacheDir).Err()
 		}
-		diskCache, err = cache.NewDisk(cache.Policies{
+		diskCache, err = cache.NewDisk(ctx, cache.Policies{
 			MaxSize:      units.Size(c.maxSize),
 			MaxItems:     c.maxItems,
 			MinFreeSpace: units.Size(c.minFreeSpace),
