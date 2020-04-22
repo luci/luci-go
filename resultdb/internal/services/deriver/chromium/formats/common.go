@@ -20,6 +20,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
+
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 const (
@@ -33,6 +35,12 @@ const (
 	// FormatGTest is Chromium's GTest format.
 	FormatGTest = "chromium_gtest"
 )
+
+// TestResult combines a test result with associated artifact keys.
+type TestResult struct {
+	*pb.TestResult
+	ArtifactKeys []string
+}
 
 // summaryTmpl is used to generate SummaryHTML in GTest and JTR-based test
 // results.

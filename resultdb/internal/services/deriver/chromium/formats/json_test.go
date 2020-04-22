@@ -23,6 +23,9 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 
+	"go.chromium.org/luci/common/data/stringset"
+
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -201,26 +204,16 @@ func TestJSONConversions(t *testing.T) {
 			},
 		}
 
-		isolatedOutputs := map[string]*pb.Artifact{
-			"harness/log.txt":         {Name: "log_0.txt"},
-			"harness/retry_1/log.txt": {Name: "log_1.txt"},
-			"harness/retry_2/log.txt": {Name: "log_2.txt"},
-			"relative/path/to/log.txt": {
-				Name:        "relative/path/to/log.txt",
-				FetchUrl:    "isolate://isosrv/a104",
-				ContentType: "text/plain",
-				SizeBytes:   32,
-			},
-			"relative/path/to/diff.png": {
-				Name:        "relative/path/to/diff.png",
-				FetchUrl:    "isolate://isosrv/ad1ff",
-				ContentType: "image/png",
-				SizeBytes:   8192,
-			},
-		}
+		availableArtifacts := stringset.NewFromSlice(
+			"harness/log.txt",
+			"harness/retry_1/log.txt",
+			"harness/retry_2/log.txt",
+			"relative/path/to/log.txt",
+			"relative/path/to/diff.png",
+		)
 
 		inv := &pb.Invocation{}
-		testResults, err := results.ToProtos(ctx, "ninja://tests/", inv, isolatedOutputs)
+		testResults, err := results.ToProtos(ctx, "ninja://tests/", inv, availableArtifacts)
 		So(err, ShouldBeNil)
 		So(inv.Interrupted, ShouldEqual, true)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
@@ -230,92 +223,125 @@ func TestJSONConversions(t *testing.T) {
 			OriginalFormatTagKey, FormatJTR,
 		))
 
-		// TODO(crbug.com/1071258): assert correctness of artifact associations.
-		So(testResults, ShouldResembleProto, []*pb.TestResult{
+		assertTestResultsResemble(testResults, []*TestResult{
 			// Test 1.
 			{
-				TestId:   "ninja://tests/c1/c2/t1.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 3e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t1.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 3e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+				ArtifactKeys: []string{"harness/log.txt"},
 			},
 			{
-				TestId:   "ninja://tests/c1/c2/t1.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 2e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t1.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 2e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+				ArtifactKeys: []string{"harness/retry_1/log.txt"},
 			},
 			{
-				TestId:   "ninja://tests/c1/c2/t1.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 1e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t1.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 1e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+				ArtifactKeys: []string{"harness/retry_2/log.txt"},
 			},
 
 			// Test 2.
 			{
-				TestId:   "ninja://tests/c1/c2/t2.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t2.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 5e7},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
 			},
 			{
-				TestId:   "ninja://tests/c1/c2/t2.html",
-				Status:   pb.TestStatus_FAIL,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t2.html",
+					Status:   pb.TestStatus_FAIL,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 5e7},
+					Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
+				},
 			},
 			{
-				TestId:   "ninja://tests/c1/c2/t2.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t2.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 5e7},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
 			},
 			{
-				TestId:   "ninja://tests/c1/c2/t2.html",
-				Status:   pb.TestStatus_CRASH,
-				Expected: false,
-				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     pbutil.StringPairs("json_format_status", "CRASH"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c1/c2/t2.html",
+					Status:   pb.TestStatus_CRASH,
+					Expected: false,
+					Duration: &duration.Duration{Nanos: 5e7},
+					Tags:     pbutil.StringPairs("json_format_status", "CRASH"),
+				},
 			},
 
 			// Test 3
 			{
-				TestId:      "ninja://tests/c2/t3.html",
-				Status:      pb.TestStatus_FAIL,
-				Expected:    false,
-				Tags:        pbutil.StringPairs("json_format_status", "FAIL"),
-				SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
+				TestResult: &pb.TestResult{
+					TestId:      "ninja://tests/c2/t3.html",
+					Status:      pb.TestStatus_FAIL,
+					Expected:    false,
+					Tags:        pbutil.StringPairs("json_format_status", "FAIL"),
+					SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
+				},
+				ArtifactKeys: []string{"relative/path/to/diff.png", "relative/path/to/log.txt"},
 			},
 
 			// Test 4
 			{
-				TestId:   "ninja://tests/c2/t4.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 3e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c2/t4.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &duration.Duration{Nanos: 3e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
 			},
 			{
-				TestId:   "ninja://tests/c2/t4.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c2/t4.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
 			},
 			{
-				TestId:   "ninja://tests/c2/t4.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c2/t4.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
 			},
 		})
 	})
+}
+
+func assertTestResultsResemble(actual, expected []*TestResult) {
+	So(actual, ShouldHaveLength, len(expected))
+	for i := range actual {
+		So(actual[i].TestResult, ShouldResembleProto, expected[i].TestResult)
+		So(actual[i].ArtifactKeys, ShouldResemble, expected[i].ArtifactKeys)
+	}
 }
 
 func TestArtifactUtils(t *testing.T) {
@@ -331,29 +357,30 @@ func TestArtifactUtils(t *testing.T) {
 	})
 
 	Convey(`Checking subdirs`, t, func() {
-		outputsToProcess := map[string]*pb.Artifact{
-			"artifacts/a/stdout.txt":           {Name: "artifacts/a/stdout.txt"},
-			"artifacts/a/stderr.txt":           {Name: "artifacts/a/stderr.txt"},
-			"layout-test-results/b/stderr.txt": {Name: "layout-test-results/b/stderr.txt"},
-			"c/stderr.txt":                     {Name: "c/stderr.txt"},
-		}
+		ctx := testutil.TestingContext()
+
+		available := stringset.NewFromSlice(
+			"artifacts/a/stdout.txt",
+			"artifacts/a/stderr.txt",
+			"layout-test-results/b/stderr.txt",
+			"c/stderr.txt",
+		)
 		f := &TestFields{Artifacts: map[string][]string{
 			"a": {"a/stdout.txt", "a\\stderr.txt"},
 			"b": {"b/stderr.txt"},
 			"c": {"c/stderr.txt"},
 		}}
 
-		artifactsPerRun, unresolved := f.getArtifacts(outputsToProcess)
+		artifactsPerRun := f.parseArtifacts(ctx, available, "testID")
 		So(artifactsPerRun, ShouldHaveLength, 1)
 
 		arts := artifactsPerRun[0].artifacts
-		sort.Slice(arts, func(i, j int) bool { return arts[i].Name < arts[j].Name })
-		So(arts, ShouldResemble, []*pb.Artifact{
-			{Name: "artifacts/a/stderr.txt"},
-			{Name: "artifacts/a/stdout.txt"},
-			{Name: "c/stderr.txt"},
-			{Name: "layout-test-results/b/stderr.txt"},
+		sort.Strings(arts)
+		So(arts, ShouldResemble, []string{
+			"artifacts/a/stderr.txt",
+			"artifacts/a/stdout.txt",
+			"c/stderr.txt",
+			"layout-test-results/b/stderr.txt",
 		})
-		So(unresolved, ShouldBeEmpty)
 	})
 }
