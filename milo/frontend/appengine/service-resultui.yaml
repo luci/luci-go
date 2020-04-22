@@ -1,11 +1,15 @@
 service: resultui
-runtime: go113
+runtime: go111
 
 handlers:
 # For static resources such as css and js files.
 - url: /static
   secure: always
   static_dir: resultui/static
+
+- url: /auth/.*
+  secure: always
+  script: auto
 
 # Everything goes here.
 - url: /.*
