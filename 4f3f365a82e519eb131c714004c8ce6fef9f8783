@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "295d08a8_d22b74f4",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-22T22:45:09Z",
+      "side": 1,
+      "message": "eep, yep, this is stale :)",
+      "parentUuid": "4ce8a82f_fcce6fcc",
+      "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4160ba2_e92099f9",
         "filename": "luciexe/build_proto.go",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "4a829fea_becb04b0",
+        "filename": "luciexe/build_proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-22T22:45:09Z",
+      "side": 1,
+      "message": "Yeah, you\u0027re right... this made sense to me last night, but this should be in terms of the flag package (even though \"-output\" would also be parsed by the flag package, which isn\u0027t strictly correct).\n\nI was originally trying to stick to the spec (i.e. just \"--output\") and allow this to be somewhat of a preprocessor for args instead of part of a full flag parser.\n\nI\u0027ll rework this... serves me right for working on this stuff while tired and also watching tv.....",
+      "parentUuid": "a4160ba2_e92099f9",
+      "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3bb81bec_80d3e9f8",
         "filename": "luciexe/exe/exe.go",
         "patchSetId": 1
@@ -50,6 +86,24 @@
       "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a75a178c_d30cc19d",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-22T22:45:09Z",
+      "side": 1,
+      "message": "Oops! Yes you\u0027re totally right; BuildFileCodec is meant to return this, but doesn\u0027t. \n\nThis and the other comment made me rework the whole thing :D",
+      "parentUuid": "3bb81bec_80d3e9f8",
+      "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
