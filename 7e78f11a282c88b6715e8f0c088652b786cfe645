@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed4f0faf_a3d002d5",
+        "filename": "milo/Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-22T23:10:03Z",
+      "side": 1,
+      "message": "gae.py is capable of discovering yamls in subdirectories",
+      "range": {
+        "startLine": 9,
+        "startChar": 1,
+        "endLine": 9,
+        "endChar": 7
+      },
+      "revId": "7e78f11a282c88b6715e8f0c088652b786cfe645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
