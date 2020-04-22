@@ -26,6 +26,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -52,13 +53,18 @@ type ledProperties struct {
 	CIPDInput *cipdInput `json:"cipd_input,omitempty"`
 }
 
-func (jd *Definition) addLedProperties(ctx context.Context, uid string) error {
+func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err error) {
 	// Set the "$recipe_engine/led" recipe properties.
 	bb := jd.GetBuildbucket()
 	if bb == nil {
 		panic("impossible: Buildbucket is nil while flattening to swarming")
 	}
 	bb.EnsureBasics()
+
+	bb.BbagentArgs.Build.CreateTime, err = ptypes.TimestampProto(clock.Now(ctx))
+	if err != nil {
+		return errors.Annotate(err, "populating creation time").Err()
+	}
 
 	buf := make([]byte, 32)
 	if _, err := cryptorand.Read(ctx, buf); err != nil {
