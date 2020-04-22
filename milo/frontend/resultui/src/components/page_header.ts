@@ -17,18 +17,14 @@ import '@chopsui/chops-signin';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
+import { contextConsumer } from '../context';
 
 /**
  * Renders page header, including a sign-in widget, at the top of the child
  * nodes.
  */
-@customElement('tr-page-header')
 export class PageHeaderElement extends MobxLitElement {
-  // TODO(weiweilin): load the clientId from somewhere instead of hard-coding
-  // it.
-  @observable
-      .ref clientId =
-      '897369734084-d3t2c39aht2aqeop0f42pp48ejpr54up.apps.googleusercontent.com';
+  @observable.ref clientId!: string;
 
   protected render() {
     return html`
@@ -78,3 +74,9 @@ export class PageHeaderElement extends MobxLitElement {
     }
   `;
 }
+
+customElement('tr-page-header')(
+  contextConsumer('clientId')(
+    PageHeaderElement,
+  ),
+);

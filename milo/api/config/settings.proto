@@ -88,4 +88,6 @@ message Settings {
   // Multiple records are allowed, but each host and project must appear only in
   // one record.
   repeated SourceAcls source_acls = 4;
+
+  string client_id = 5;
 }
