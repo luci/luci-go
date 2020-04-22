@@ -15,8 +15,17 @@
 package luciexe
 
 import (
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"strings"
+
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/errors"
 )
 
 const (
@@ -47,13 +56,197 @@ const (
 	OutputCLIArg = "--output"
 )
 
+// ParseOutputFlag will parse the --output flag from a list of args.
+//
+// This parses the first instance of the argument the form:
+//
+//    --output path/to/file.ext   OR
+//    --output=path/to/file.ext   OR
+//    --output=
+//
+// The value and the remaining args will be returned. ".ext" must be one of the
+// valid build file codec extensions.
+//
+// If the output argument is not present, `outputPath` will be
+// "" and `rest` will be the unaltered args.
+func ParseOutputFlag(args []string) (outputPath string, rest []string, err error) {
+	var i int
+	var deleteCount int
+
+searchLoop:
+	for i = range args {
+		value := args[i]
+		if value == OutputCLIArg {
+			if len(args) > i+1 {
+				outputPath = args[i+1]
+				deleteCount = 2
+			} else {
+				err = errors.Reason("malformed %s argument: two argument form with no value", OutputCLIArg).Err()
+			}
+			break searchLoop
+		} else if strings.HasPrefix(value, OutputCLIArg+"=") {
+			outputPath = value[len(OutputCLIArg)+1:]
+			deleteCount = 1
+			break searchLoop
+		}
+	}
+
+	if err != nil || deleteCount == 0 || outputPath == "" {
+		rest = args
+		return
+	}
+	if _, _, err = BuildFileCodec(outputPath); err != nil {
+		rest = args
+		return
+	}
+
+	rest = make([]string, 0, len(args)-deleteCount)
+	rest = append(rest, args[:i]...)
+	rest = append(rest, args[i+deleteCount:]...)
+	return
+}
+
 // These file extensions are used with the `--output` flag to determine the
 // output serialization type for the luciexe's final Build message.
 const (
-	OutputBinaryFileExt = ".pb"
-	OutputTextFileExt   = ".textpb"
-	OutputJSONFileExt   = ".json"
+	BuildFileNone      = "<NONE>" // for empty build paths
+	BuildFileBinaryExt = ".pb"
+	BuildFileTextExt   = ".textpb"
+	BuildFileJSONExt   = ".json"
 )
+
+// Codec is a pair of encode/decode functions for a specific output format of
+// the Build message.
+type Codec struct {
+	Enc func(build *bbpb.Build, w io.Writer) error
+	Dec func(build *bbpb.Build, r io.Reader) error
+}
+
+// BuildFileCodecs is the mapping from output extensions to their encode/decode
+// functions.
+//
+// BuildFileNone is intentionally omitted; lookups for BuildFileCodecs[BuildFileNone]
+// will return an empty codec (i.e. pair of nil functions).
+var BuildFileCodecs = map[string]Codec{
+	BuildFileBinaryExt: {
+		Enc: func(build *bbpb.Build, w io.Writer) error {
+			data, err := proto.Marshal(build)
+			if err != nil {
+				return err
+			}
+			_, err = w.Write(data)
+			return err
+		},
+		Dec: func(build *bbpb.Build, r io.Reader) error {
+			data, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+			return proto.Unmarshal(data, build)
+		},
+	},
+
+	BuildFileTextExt: {
+		Enc: func(build *bbpb.Build, w io.Writer) error {
+			return proto.MarshalText(w, build)
+		},
+		Dec: func(build *bbpb.Build, r io.Reader) error {
+			data, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+			return proto.UnmarshalText(string(data), build)
+		},
+	},
+
+	BuildFileJSONExt: {
+		Enc: func(build *bbpb.Build, w io.Writer) error {
+			return (&jsonpb.Marshaler{
+				OrigName: true,
+				Indent:   "  ",
+			}).Marshal(w, build)
+		},
+		Dec: func(build *bbpb.Build, r io.Reader) error {
+			return (&jsonpb.Unmarshaler{
+				AllowUnknownFields: true,
+			}).Unmarshal(r, build)
+		},
+	},
+}
+
+// BuildFileCodec returns the file extension and the codec for the given
+// buildFilePath.
+//
+// If this returns
+//
+// Returns an error if buildFilePath does not have a valid extension.
+func BuildFileCodec(buildFilePath string) (ext string, codec Codec, err error) {
+	if buildFilePath == "" {
+		return
+	}
+
+	switch ext = path.Ext(buildFilePath); ext {
+	case BuildFileBinaryExt, BuildFileTextExt, BuildFileJSONExt:
+		codec = BuildFileCodecs[ext]
+		return
+	}
+
+	validExts := make([]string, 0, len(BuildFileCodecs))
+	for k := range BuildFileCodecs {
+		validExts = append(validExts, k)
+	}
+	err = errors.Reason(
+		"bad extension for build proto file path: %q (expected one of: %s)",
+		buildFilePath, strings.Join(validExts, ", ")).Err()
+	return
+}
+
+// ReadBuildFile parses a Build message from a file.
+//
+// This uses the file extension of buildFilePath to look up the appropriate
+// codec.
+//
+// If buildFilePath is "", does nothing.
+func ReadBuildFile(buildFilePath string) (ret *bbpb.Build, err error) {
+	_, codec, err := BuildFileCodec(buildFilePath)
+	if err != nil {
+		return nil, err
+	}
+	if decFn := codec.Dec; decFn != nil {
+		file, err := os.Open(buildFilePath)
+		if err != nil {
+			return nil, errors.Annotate(err, "opening build file %q", buildFilePath).Err()
+		}
+		defer file.Close()
+
+		ret = &bbpb.Build{}
+		err = errors.Annotate(decFn(ret, file), "parsing build file %q", buildFilePath).Err()
+	}
+	return
+}
+
+// WriteBuildFile writes a Build message to a file.
+//
+// This uses the file extension of buildFilePath to look up the appropriate
+// codec.
+//
+// If buildFilePath is "", does nothing.
+func WriteBuildFile(buildFilePath string, build *bbpb.Build) (err error) {
+	_, codec, err := BuildFileCodec(buildFilePath)
+	if err != nil {
+		return err
+	}
+
+	if encFn := codec.Enc; encFn != nil {
+		file, err := os.Create(buildFilePath)
+		if err != nil {
+			return errors.Annotate(err, "opening build file %q", buildFilePath).Err()
+		}
+		defer file.Close()
+		err = errors.Annotate(encFn(build, file), "writing build file %q", buildFilePath).Err()
+	}
+	return
+}
 
 // IsMergeStep returns true iff the given step is identified as a 'merge step'.
 //
