@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5050d4d1_6d82273c",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-22T01:40:27Z",
+      "side": 1,
+      "message": "brainmelt...",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 29
+      },
+      "revId": "eea005a2b3a75a14ae1cd85d787135f6681176b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a4bc40a8_5018e197",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-22T01:40:27Z",
+      "side": 1,
+      "message": "\"else if\" x 2 \u003d\u003e definitely use switch.",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 106,
+        "endChar": 33
+      },
+      "revId": "eea005a2b3a75a14ae1cd85d787135f6681176b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
