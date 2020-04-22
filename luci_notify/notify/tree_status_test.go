@@ -235,14 +235,14 @@ func TestUpdateTrees(t *testing.T) {
 						message:   "Closed up",
 						key:       -1,
 						status:    config.Closed,
-						timestamp: earlierTime,
+						timestamp: evenEarlierTime,
 					},
 					"v8-status.appspot.com": treeStatus{
 						username:  botUsername,
 						message:   "Open for business",
 						key:       -1,
 						status:    config.Open,
-						timestamp: earlierTime,
+						timestamp: evenEarlierTime,
 					},
 				},
 			}
@@ -288,7 +288,8 @@ func TestUpdateTrees(t *testing.T) {
 				TreeStatusHost: "v8-status.appspot.com",
 				TreeCloser:     notifypb.TreeCloser{},
 				Status:         config.Closed,
-				Timestamp:      time.Now().UTC(),
+				Timestamp:      earlierTime,
+				Message:        "Correct message",
 			}), ShouldBeNil)
 
 			defer cleanup()
@@ -298,10 +299,12 @@ func TestUpdateTrees(t *testing.T) {
 			status, err := ts.getStatus(c, "chromium-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 
 			status, err = ts.getStatus(c, "v8-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
+			So(status.message, ShouldEqual, "Tree is closed (Automatic: Correct message)")
 		})
 
 		Convey("No action when build is older than last status update", func() {
