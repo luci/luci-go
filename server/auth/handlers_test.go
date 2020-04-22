@@ -106,6 +106,42 @@ func TestServiceInfoHandler(t *testing.T) {
 	})
 }
 
+func TestClientIDHandler(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		var clientIDErr error
+		modConfig := router.NewMiddlewareChain(
+			func(c *router.Context, next router.Handler) {
+				c.Context = ModifyConfig(c.Context, func(cfg Config) Config {
+					cfg.FrontendClientID = func(context.Context) (string, error) {
+						return "fake-client-id", clientIDErr
+					}
+					return cfg
+				})
+				next(c)
+			},
+		)
+
+		r := router.New()
+		InstallHandlers(r, modConfig)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/auth/api/v1/server/client_id", nil)
+		r.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, 200)
+		So(w.Body.String(), ShouldResemble, `{"client_id":"fake-client-id"}`+"\n")
+
+		clientIDErr = errors.New("fail")
+
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("GET", "/auth/api/v1/server/client_id", nil)
+		r.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, 500)
+		So(w.Body.String(), ShouldResemble, "{\"error\":\"Can't grab the client ID - fail\"}\n")
+	})
+}
+
 ///
 
 type phonySigner struct {

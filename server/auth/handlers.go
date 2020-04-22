@@ -32,6 +32,7 @@ import (
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/auth/api/v1/server/certificates", base, certsHandler)
 	r.GET("/auth/api/v1/server/info", base, infoHandler)
+	r.GET("/auth/api/v1/server/client_id", base, clientIDHandler)
 }
 
 // certsHandler servers public certificates of the signer in the context.
@@ -61,6 +62,16 @@ func infoHandler(c *router.Context) {
 		httpReplyError(c, http.StatusInternalServerError, fmt.Sprintf("Can't grab service info - %s", err))
 	} else {
 		httpReply(c, http.StatusOK, info)
+	}
+}
+
+// clientIDHandler returns OAuth2.0 client ID intended for the frontend.
+func clientIDHandler(c *router.Context) {
+	clientID, err := GetFrontendClientID(c.Context)
+	if err != nil {
+		httpReplyError(c, http.StatusInternalServerError, fmt.Sprintf("Can't grab the client ID - %s", err))
+	} else {
+		httpReply(c, http.StatusOK, map[string]string{"client_id": clientID})
 	}
 }
 

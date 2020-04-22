@@ -83,6 +83,18 @@ type Config struct {
 	// them.
 	EndUserIP func(r *http.Request) string
 
+	// FrontendClientID returns an OAuth 2.0 client ID to use from the frontend.
+	//
+	// It will be served via /auth/api/v1/server/client_id endpoint (so that the
+	// frontend can grab it), and the auth library will permit access tokens with
+	// this client as an audience when authenticating requests.
+	//
+	// May return an empty string if the client ID is not configured. All errors
+	// are treated as transient.
+	//
+	// Should be fast. Will be called each time a token needs to be authenticated.
+	FrontendClientID func(context.Context) (string, error)
+
 	// IsDevMode is true when running the server locally during development.
 	//
 	// Setting this to true changes default deadlines. For instance, GAE dev
@@ -167,4 +179,19 @@ func GetSigner(c context.Context) signing.Signer {
 		return cfg.Signer
 	}
 	return nil
+}
+
+// GetFrontendClientID returns an OAuth 2.0 client ID to use from the frontend.
+//
+// If it is not configured returns an empty string. May return an error if
+// it could not be fetched. Such error should be treated as transient.
+//
+// This client ID is served via /auth/api/v1/server/client_id endpoint (so that
+// the frontend can grab it), and the auth library permits access tokens with
+// this client as an audience when authenticating requests.
+func GetFrontendClientID(c context.Context) (string, error) {
+	if cfg := getConfig(c); cfg != nil && cfg.FrontendClientID != nil {
+		return cfg.FrontendClientID(c)
+	}
+	return "", nil
 }

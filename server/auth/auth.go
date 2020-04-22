@@ -244,10 +244,20 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 
 	// If using OAuth2, make sure ClientID is whitelisted.
 	if s.user.ClientID != "" {
+		// Check the global client ID whitelist in the AuthDB first.
 		valid, err := s.db.IsAllowedOAuthClientID(tracedCtx, s.user.Email, s.user.ClientID)
 		if err != nil {
 			report(err, "ERROR_TRANSIENT_IN_OAUTH_WHITELIST")
 			return nil, err
+		}
+		// It may be an app-specific client ID supplied via cfg.FrontendClientID.
+		if !valid && cfg.FrontendClientID != nil {
+			frontendClientID, err := cfg.FrontendClientID(tracedCtx)
+			if err != nil {
+				report(err, "ERROR_TRANSIENT_IN_OAUTH_WHITELIST")
+				return nil, err
+			}
+			valid = s.user.ClientID == frontendClientID
 		}
 		if !valid {
 			logging.Warningf(
