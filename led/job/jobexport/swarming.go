@@ -91,11 +91,36 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 			}
 		}
 
-		if iso := props.GetCasInputs(); iso.GetDigest() != "" || iso.GetServer() != "" || iso.GetNamespace() != "" {
+		// This is really awkward!
+		//
+		//   If the slice has a digest, then we always use all that info.
+		//   Otherwise if the job-global "UserPayload" has a digest, then use all of
+		//     that info.
+		//   Otherwise, if the slice has just namespace/server info, then use that.
+		//   Finally, fall back to the server info in UserPayload
+		//
+		// Isn't isolate so simple?
+		var isoToUse *apipb.CASTree
+		sliceIso := props.CasInputs
+		jobIso := jd.UserPayload
+		switch {
+		case sliceIso.GetDigest() != "":
+			isoToUse = sliceIso
+
+		case jobIso.GetDigest() != "":
+			isoToUse = jobIso
+
+		case sliceIso.GetServer() != "" || sliceIso.GetNamespace() != "":
+			isoToUse = sliceIso
+
+		default:
+			isoToUse = jobIso
+		}
+		if isoToUse != nil {
 			toAdd.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
-				Isolated:       iso.GetDigest(),
-				Isolatedserver: iso.GetServer(),
-				Namespace:      iso.GetNamespace(),
+				Isolated:       isoToUse.Digest,
+				Isolatedserver: isoToUse.Server,
+				Namespace:      isoToUse.Namespace,
 			}
 		}
 
