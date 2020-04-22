@@ -1,0 +1,25 @@
+service: resultui
+runtime: go111
+
+handlers:
+# For admin resources.
+- url: /admin/.*
+  script: auto
+  secure: always
+  login: admin
+
+# Auth related endpoints are handled by go handlers.
+- url: /auth/.*
+  script: auto
+  secure: always
+
+# For static resources such as css and js files.
+- url: /static
+  secure: always
+  static_dir: out/static
+
+# Everything goes here.
+- url: /.*
+  secure: always
+  static_files: out/index.html
+  upload: out/index.html
