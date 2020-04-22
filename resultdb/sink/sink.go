@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
@@ -91,19 +92,36 @@ type Server struct {
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
-// It panics if cfg.Recorder is nil.
-func NewServer(cfg ServerConfig) *Server {
-	if cfg.Address == "" {
-		cfg.Address = DefaultAddr
-	}
+func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
+	// validate the config first
 	if cfg.Recorder == nil {
-		panic("the Recorder client must be set")
+		return nil, errors.Reason("ServerConfig.Recorder: unspecified").Err()
 	}
+	if err := pbutil.ValidateInvocationName(cfg.Invocation); err != nil {
+		return nil, errors.Annotate(err, "ServerConfig.Invocation").Err()
+	}
+	if cfg.UpdateToken == "" {
+		return nil, errors.Reason("ServerConfig.UpdateToken: unspecified").Err()
+	}
+
+	// set the default values for the optional config fields missing.
+	srvCfg := cfg
+	if srvCfg.Address == "" {
+		srvCfg.Address = DefaultAddr
+	}
+	if srvCfg.AuthToken == "" {
+		tk, err := genAuthToken(ctx)
+		if err != nil {
+			return nil, errors.Annotate(err, "ServerConfig.AuthToken").Err()
+		}
+		srvCfg.AuthToken = tk
+	}
+
 	s := &Server{
-		cfg:  cfg,
+		cfg:  srvCfg,
 		errC: make(chan error, 1),
 	}
-	return s
+	return s, nil
 }
 
 // Config retrieves the ServerConfig of a previously created Server.
@@ -158,13 +176,6 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 func (s *Server) Start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
 		return errors.Reason("cannot call Start twice").Err()
-	}
-	if s.cfg.AuthToken == "" {
-		t, err := genAuthToken(ctx)
-		if err != nil {
-			return err
-		}
-		s.cfg.AuthToken = t
 	}
 
 	// launch an HTTP server
