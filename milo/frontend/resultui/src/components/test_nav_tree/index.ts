@@ -17,10 +17,12 @@ import '@material/mwc-button';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import { observable } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import { TestLoader } from '../../models/test_loader';
+import { TestNode } from '../../models/test_node';
 import '../dot_spinner';
+import { contextProvider, TestNavTreeState } from './context';
 import './test_nav_node';
 
 
@@ -29,9 +31,27 @@ import './test_nav_node';
  * Segments ending with /\W/ in test IDs are treated as "folders".
  * When a node has no sibling, it's collapsed into its parent.
  */
-@customElement('tr-test-nav-tree')
 export class TestNavTreeElement extends MobxLitElement {
-  @observable.ref testLoader?: TestLoader;
+  @observable.ref testLoader!: TestLoader;
+  onSelectedNodeChanged: (node: TestNode) => void = () => {};
+
+  treeState = new TestNavTreeState();
+
+  private disposer: () => void = () => {};
+  connectedCallback() {
+    super.connectedCallback();
+    // Notify the listener when the selected node is changed.
+    this.disposer = reaction(
+      // When no child node is selected, select the root node.
+      () => this.treeState.selectedChildNode || this.testLoader.node,
+      (node) => this.onSelectedNodeChanged(node),
+      {fireImmediately: true},
+    );
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.disposer();
+  }
 
   protected render() {
     const root = this.testLoader?.node!;
@@ -50,12 +70,12 @@ export class TestNavTreeElement extends MobxLitElement {
           <mwc-button
             id="load-more-btn"
             unelevated dense
-            @click=${() => this.testLoader!.loadMore()}
-            ?disabled=${this.testLoader!.done || this.testLoader!.isLoading}
+            @click=${() => this.testLoader.loadMore()}
+            ?disabled=${this.testLoader.done || this.testLoader.isLoading}
           >
-            ${this.testLoader!.isLoading ?
+            ${this.testLoader.isLoading ?
               html`Loading <tr-dot-spinner></tr-dot-spinner>` :
-              this.testLoader!.done ? 'All Tests are Loaded' : 'Load the next 100 Tests'
+              this.testLoader.done ? 'All Tests are Loaded' : 'Load the next 100 Tests'
             }
           </mwc-button>
         </div>
@@ -92,3 +112,9 @@ export class TestNavTreeElement extends MobxLitElement {
     }
   `;
 }
+
+customElement('tr-test-nav-tree')(
+  contextProvider('treeState')(
+    TestNavTreeElement,
+  ),
+);

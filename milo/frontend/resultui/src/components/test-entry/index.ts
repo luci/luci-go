@@ -40,7 +40,15 @@ export class TestEntryElement extends MobxLitElement {
   @observable.ref rootName = '';
   @observable.ref prevTestId = '';
 
-  @observable.ref expanded = false;
+  @observable.ref private _expanded = false;
+  @computed get expanded() {
+    return this._expanded;
+  }
+  set expanded(newVal: boolean) {
+    this._expanded = newVal;
+    this.wasExpanded = this.wasExpanded || newVal;
+  }
+
   // Always render the children once it was expanded so the children's state
   // don't get reset after the node is collapsed.
   @observable.ref private wasExpanded = false;
@@ -65,10 +73,7 @@ export class TestEntryElement extends MobxLitElement {
       <div class=${classMap({unexpected: this.hasUnexpected})}>
         <div
           class="expandable-header"
-          @click=${() => {
-            this.expanded = !this.expanded;
-            this.wasExpanded = true;
-          }}
+          @click=${() => this.expanded = !this.expanded}
         >
           <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
           <div id="header" class="one-line-content">

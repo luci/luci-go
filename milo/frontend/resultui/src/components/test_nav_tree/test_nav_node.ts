@@ -15,50 +15,64 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
+import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import { TestNode } from '../../models/test_node';
+import { contextConsumer, TestNavTreeState } from './context';
+
 
 /**
  * A node in tr-test-nav-tree. Collapsed by default.
  */
-@customElement('tr-test-nav-node')
 export class TestNavNodeElement extends MobxLitElement {
   @observable.ref depth = 0;
-  @observable.ref node?: TestNode;
-  @observable.ref expanded = false;
+  @observable.ref node!: TestNode;
+  @observable.ref treeState!: TestNavTreeState;
+
+  @observable.ref private _expanded = false;
+  @computed get expanded() {
+    return this._expanded;
+  }
+  set expanded(newVal: boolean) {
+    this._expanded = newVal;
+    this.wasExpanded = this.wasExpanded || newVal;
+  }
 
   // Always render the children once it was expanded so the children's state
   // don't get reset after the node is collapsed.
   @observable.ref private wasExpanded = false;
 
+  @computed private get isSelected() { return this.treeState.selectedChildNode === this.node; }
+
   protected render() {
     return html`
       <div
-        class="expandable-header"
+        class=${classMap({
+          'selected': this.isSelected,
+          'expandable-header': true,
+        })}
         style=${styleMap({
           'padding-left': `${this.depth * 10}px`,
         })}
       >
         <mwc-icon
           class="expand-toggle"
-          style=${styleMap({ display: this.node!.children.length === 0 ? 'none' : '' })}
-          @click=${() => {
-            this.expanded = !this.expanded;
-            this.wasExpanded = true;
-          }}
+          style=${styleMap({ display: this.node.children.length === 0 ? 'none' : '' })}
+          @click=${() => this.expanded = !this.expanded}
         >
           ${this.expanded ? 'expand_more' : 'chevron_right'}
         </mwc-icon>
         <span
           class="one-line-content name-label"
           style=${styleMap({
-            'grid-column': this.node!.children.length === 0 ? '1/3' : '',
-            'padding-left': this.node!.children.length === 0 ? '8px' : '',
+            'grid-column': this.node.children.length === 0 ? '1/3' : '',
+            'padding-left': this.node.children.length === 0 ? '8px' : '',
           })}
-          title=${this.node!.name}
+          title=${this.node.name}
+          @click=${() => this.treeState.selectedChildNode = this.isSelected ? null : this.node}}
         >${this.node!.name}</span>
       </div>
       <div id="body">
@@ -67,7 +81,7 @@ export class TestNavNodeElement extends MobxLitElement {
           id="content"
           style=${styleMap({ display: this.expanded ? '' : 'none' })}
         >
-          ${repeat(this.wasExpanded ? this.node!.children : [], (node) => node.name, (node) => html`
+          ${repeat(this.wasExpanded ? this.node.children : [], (node) => node.name, (node) => html`
           <tr-test-nav-node
             .depth=${this.depth + 1}
             .node=${node}
@@ -133,5 +147,15 @@ export class TestNavNodeElement extends MobxLitElement {
       grid-column: 1/3;
       grid-row: 1;
     }
+
+    .expandable-header.selected {
+        background-color: #66ccff;
+    }
   `;
 }
+
+customElement('tr-test-nav-node')(
+  contextConsumer('treeState')(
+    TestNavNodeElement,
+  ),
+);
