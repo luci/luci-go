@@ -22,10 +22,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"sync"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -71,49 +69,17 @@ func mkOutputHandler(args *[]string, build *bbpb.Build) func() {
 		}
 	}
 
-	if output == "" {
+	codec, err := luciexe.BuildFileCodecForPath(output)
+	if err != nil {
+		panic(errors.Annotate(err, "%s", luciexe.OutputCLIArg).Err())
+	}
+	if codec.IsNoop() {
 		return nil
 	}
 
-	var writeBuild func(*os.File) error
-
-	switch filepath.Ext(output) {
-	case luciexe.OutputBinaryFileExt:
-		writeBuild = func(out *os.File) error {
-			data, err := proto.Marshal(build)
-			if err == nil {
-				_, err = out.Write(data)
-			}
-			return err
-		}
-
-	case luciexe.OutputTextFileExt:
-		writeBuild = func(out *os.File) error {
-			return proto.MarshalText(out, build)
-		}
-
-	case luciexe.OutputJSONFileExt:
-		writeBuild = func(out *os.File) error {
-			m := &jsonpb.Marshaler{Indent: "  ", OrigName: true}
-			return m.Marshal(out, build)
-		}
-
-	default:
-		panic(errors.Reason("output file has unsupported suffix: %q", output))
-	}
-
 	return func() {
-		out, err := os.Create(output)
-		if err != nil {
-			panic(errors.Annotate(err, "opening final output file").Err())
-		}
-		defer func() {
-			if err := out.Close(); err != nil {
-				panic(err)
-			}
-		}()
-		if err := writeBuild(out); err != nil {
-			panic(errors.Annotate(err, "marshaling final build").Err())
+		if err := luciexe.WriteBuildFile(output, build); err != nil {
+			panic(errors.Annotate(err, "writing final build").Err())
 		}
 	}
 }
