@@ -20,7 +20,8 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/led/job"
-	"go.chromium.org/luci/swarming/proto/api"
+	"go.chromium.org/luci/luciexe"
+	apipb "go.chromium.org/luci/swarming/proto/api"
 )
 
 // ToSwarmingNewTask renders a (swarming) Definition to
@@ -28,8 +29,12 @@ import (
 //
 // If you call this on something other than a swarming Definition, it will
 // panic.
-func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks job.KitchenSupport) (*swarming.SwarmingRpcsNewTaskRequest, error) {
-	if err := jd.FlattenToSwarming(ctx, uid, ks); err != nil {
+func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks job.KitchenSupport, finalBuildProto string) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+	if _, _, err := luciexe.BuildFileCodec(finalBuildProto); err != nil {
+		return nil, err
+	}
+
+	if err := jd.FlattenToSwarming(ctx, uid, ks, finalBuildProto); err != nil {
 		return nil, errors.Annotate(err, "flattening to swarming Definition").Err()
 	}
 

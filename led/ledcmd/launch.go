@@ -82,7 +82,7 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 
 	logging.Infof(ctx, "building swarming task")
 
-	st, err := jobexport.ToSwarmingNewTask(ctx, jd, opts.UserID, opts.KitchenSupport)
+	st, err := jobexport.ToSwarmingNewTask(ctx, jd, opts.UserID, opts.KitchenSupport, opts.FinalBuildProto)
 	if err != nil {
 		return nil, nil, err
 	}

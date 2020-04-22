@@ -256,16 +256,23 @@ func (jd *Definition) makeExpiringSliceData() (ret []*expiringDims, err error) {
 func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([]string, error) {
 	bb := jd.GetBuildbucket()
 
+	finalBuildProto := ""
+	if bb.FinalBuildProtoPath != "" {
+		finalBuildProto = path.Join("${ISOLATED_OUTDIR}", bb.FinalBuildProtoPath)
+	}
+
 	if bb.LegacyKitchen {
-		return ks.GenerateCommand(ctx, bb)
+		return ks.GenerateCommand(ctx, bb, finalBuildProto)
 	}
 
 	// TODO(iannucci): have bbagent set 'logdog.viewer_url' to the milo build
 	// view URL if there's no buildbucket build associated with it.
 
-	return []string{
-		"bbagent${EXECUTABLE_SUFFIX}", bbinput.Encode(bb.BbagentArgs),
-	}, nil
+	ret := []string{"bbagent${EXECUTABLE_SUFFIX}"}
+	if finalBuildProto != "" {
+		ret = append(ret, "--output", finalBuildProto)
+	}
+	return append(ret, bbinput.Encode(bb.BbagentArgs)), nil
 }
 
 // FlattenToSwarming modifies this Definition to populate the Swarming field
@@ -273,7 +280,7 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 //
 // After flattening, HighLevelEdit functionality will no longer work on this
 // Definition.
-func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks KitchenSupport) error {
+func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks KitchenSupport, finalBuildProto string) error {
 	if jd.GetSwarming() != nil {
 		return nil
 	}

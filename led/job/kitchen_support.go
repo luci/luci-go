@@ -30,7 +30,7 @@ import (
 // in luci-go. Once kitchen is deleted, this will go away as well.
 type KitchenSupport interface {
 	FromSwarming(ctx context.Context, in *swarming.SwarmingRpcsNewTaskRequest, out *Buildbucket) error
-	GenerateCommand(ctx context.Context, bb *Buildbucket) ([]string, error)
+	GenerateCommand(ctx context.Context, bb *Buildbucket, finalBuildProto string) ([]string, error)
 }
 
 // NoKitchenSupport returns a null implementation of KitchenSupport which always
@@ -45,6 +45,6 @@ func (nullKitchenSupport) FromSwarming(context.Context, *swarming.SwarmingRpcsNe
 	return errors.New("kitchen job Definitions not supported by this binary")
 }
 
-func (nullKitchenSupport) GenerateCommand(ctx context.Context, bb *Buildbucket) ([]string, error) {
+func (nullKitchenSupport) GenerateCommand(context.Context, *Buildbucket, string) ([]string, error) {
 	return nil, errors.New("kitchen job Definitions not supported by this binary")
 }

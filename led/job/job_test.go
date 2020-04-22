@@ -33,6 +33,10 @@ import (
 func TestFlattenToSwarming(t *testing.T) {
 	t.Parallel()
 
+	flatten := func(ctx context.Context, jd *Definition) error {
+		return jd.FlattenToSwarming(ctx, "username", NoKitchenSupport(), "buildpb.json")
+	}
+
 	Convey(`FlattenToSwarming`, t, func() {
 		fixture, err := os.Open("jobcreate/testdata/bbagent.job.json")
 		So(err, ShouldBeNil)
@@ -46,7 +50,7 @@ func TestFlattenToSwarming(t *testing.T) {
 		totalExpiration := bb.BbagentArgs.Build.SchedulingTimeout.Seconds
 
 		Convey(`bbagent`, func() {
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(flatten(ctx, bbJob), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
@@ -109,15 +113,14 @@ func TestFlattenToSwarming(t *testing.T) {
 
 		Convey(`kitchen`, func() {
 			bb.LegacyKitchen = true
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldErrLike,
-				"kitchen job Definitions not supported")
+			So(flatten(ctx, bbJob), ShouldErrLike, "kitchen job Definitions not supported")
 		})
 
 		Convey(`explicit max expiration`, func() {
 			// set a dimension to expire after end of current task
 			editDims(bbJob, "final=value@40000")
 
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(flatten(ctx, bbJob), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
@@ -136,7 +139,7 @@ func TestFlattenToSwarming(t *testing.T) {
 				cache.WaitForWarmCache = nil
 			}
 
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(flatten(ctx, bbJob), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
@@ -151,7 +154,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			})
 			bbJob.UserPayload.Digest = "beef"
 
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(flatten(ctx, bbJob), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)

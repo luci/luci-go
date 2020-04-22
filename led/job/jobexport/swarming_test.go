@@ -43,7 +43,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 	So(jd, ShouldNotBeNil)
 
 	ctx := cryptorand.MockForTest(context.Background(), 0)
-	ret, err := ToSwarmingNewTask(ctx, jd, "testuser@example.com", job.NoKitchenSupport())
+	ret, err := ToSwarmingNewTask(ctx, jd, "testuser@example.com", job.NoKitchenSupport(), "build.proto.json")
 	So(err, ShouldBeNil)
 
 	outFile := fmt.Sprintf("testdata/%s.swarm.json", fixtureBaseName)
