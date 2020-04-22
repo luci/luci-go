@@ -36,6 +36,7 @@ const (
 	loginURL    = "/auth/openid/login"
 	logoutURL   = "/auth/openid/logout"
 	callbackURL = "/auth/openid/callback"
+	clientIDURL = "/auth/openid/client-id"
 )
 
 // errBadDestinationURL is returned by normalizeURL on errors.
@@ -80,6 +81,7 @@ func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareCha
 	r.GET(loginURL, base, m.loginHandler)
 	r.GET(logoutURL, base, m.logoutHandler)
 	r.GET(callbackURL, base, m.callbackHandler)
+	r.GET(clientIDURL, base, m.handleGetClientID)
 }
 
 // Warmup prepares local caches. It's optional.
@@ -331,6 +333,20 @@ func (m *AuthMethod) removeIncompatibleCookies(rw http.ResponseWriter, r *http.R
 	for _, cookie := range m.IncompatibleCookies {
 		removeCookie(rw, r, cookie)
 	}
+}
+
+// handleGetClientID returns the client ID, which can be used by browser components
+// to perform login with implicit flow.
+func (m *AuthMethod) handleGetClientID(ctx *router.Context) {
+	c, rw := ctx.Context, ctx.Writer
+
+	cfg, err := fetchCachedSettings(c)
+	if err != nil {
+		replyError(c, rw, err, "Can't load OpenID settings - %s", err)
+		return
+	}
+
+	rw.Write([]byte(cfg.ClientID))
 }
 
 ////
