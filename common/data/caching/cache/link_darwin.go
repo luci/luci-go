@@ -21,6 +21,6 @@ func link(src, dst string) error {
 	// `not assigning AT_SYMLINK_FOLLOW to flag may result in some filesystems return-
 	// ing an error.` in
 	// https://opensource.apple.com/source/xnu/xnu-3789.21.4/bsd/man/man2/link.2.auto.html
-	// So this is skeptical linkat usage for crbug.com/1073368
+	// So this is just in case linkat usage for crbug.com/1073368
 	return unix.Linkat(unix.AT_FDCWD, src, unix.AT_FDCWD, dst, unix.AT_SYMLINK_FOLLOW)
 }
