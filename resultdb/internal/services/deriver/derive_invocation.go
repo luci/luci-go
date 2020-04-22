@@ -236,17 +236,14 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
 // returning container ids.
 func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
-	batches := batchTestResults(trs, batchSize)
-	includedInvs := make(span.InvocationIDSet, len(batches))
+	includedInvs := make(span.InvocationIDSet)
 
 	invID := span.MustParseInvocationName(inv.Name)
 	eg, ctx := errgroup.WithContext(ctx)
 	client := span.Client(ctx)
-	for i, batch := range batches {
-		i := i
-		batch := batch
 
-		batchID := batchInvocationID(invID, i)
+	insertBatch := func(batch []*pb.TestResult) {
+		batchID := batchInvocationID(invID, len(includedInvs))
 		includedInvs.Add(batchID)
 
 		eg.Go(func() error {
@@ -279,6 +276,18 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 		})
 	}
 
+	curBatch := make([]*pb.TestResult, 0, batchSize)
+	for _, tr := range trs {
+		if len(curBatch) >= batchSize {
+			insertBatch(curBatch)
+			curBatch = make([]*pb.TestResult, 0, batchSize)
+		}
+		curBatch = append(curBatch, tr)
+	}
+	if len(curBatch) > 0 {
+		insertBatch(curBatch)
+	}
+
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
@@ -289,20 +298,4 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 // batchInvocationID returns an InvocationID for the Invocation containing the referenced batch.
 func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID {
 	return span.InvocationID(fmt.Sprintf("%s::batch::%d", invID, batchInd))
-}
-
-// batchTestResults batches the given TestResults given the maximum batch size.
-func batchTestResults(trs []*pb.TestResult, batchSize int) [][]*pb.TestResult {
-	batches := make([][]*pb.TestResult, 0, len(trs)/batchSize+1)
-	for len(trs) > 0 {
-		end := batchSize
-		if end > len(trs) {
-			end = len(trs)
-		}
-
-		batches = append(batches, trs[:end])
-		trs = trs[end:]
-	}
-
-	return batches
 }
