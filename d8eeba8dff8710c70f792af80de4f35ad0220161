@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0590ad0a_8d567a10",
+        "filename": "luciexe/build_file_codecs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-22T23:56:17Z",
+      "side": 1,
+      "message": "Nice! This implementation is more intuitive than the previous one.",
+      "revId": "d8eeba8dff8710c70f792af80de4f35ad0220161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "daccb0db_9909032b",
+        "filename": "luciexe/build_proto_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-22T23:56:17Z",
+      "side": 1,
+      "message": "Rename the file to build_file_codecs.go to match the source change?",
+      "revId": "d8eeba8dff8710c70f792af80de4f35ad0220161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
