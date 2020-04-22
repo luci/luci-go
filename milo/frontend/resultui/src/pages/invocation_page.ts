@@ -41,17 +41,22 @@ const INVOCATION_STATE_DISPLAY_MAP = {
 
 /**
  * Main test results page.
- * Reads invocation_name from URL params.
+ * Reads invocation_id from URL params.
  * If not logged in, redirects to '/login?redirect=${current_url}'.
- * If invocation_name not provided, redirects to '/not-found'.
+ * If invocation_id not provided, redirects to '/not-found'.
  * Otherwise, shows results for the invocation.
  */
 export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
-  @observable.ref invocationName = '';
+  @observable.ref invocationId = '';
   @observable.ref leftPanelExpanded = false;
   @observable.ref pageLength = 100;
 
   @observable.ref appState = new AppState();
+
+  @computed
+  private get invocationName(): string {
+    return 'invocations/' + this.invocationId;
+  }
 
   @computed
   private get invocationReq(): ObservablePromise<Invocation> {
@@ -98,11 +103,11 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const invocationName = location.params['invocation_name'];
-    if (typeof invocationName !== 'string') {
+    const invocationId = location.params['invocation_id'];
+    if (typeof invocationId !== 'string') {
       return cmd.redirect('/not-found');
     }
-    this.invocationName = invocationName;
+    this.invocationId = invocationId;
     return;
   }
 
@@ -152,7 +157,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       <div id="test-invocation-summary">
         <div id="test-invocation-id">
           <span id="test-invocation-id-label">Invocation ID </span>
-          <span>${this.invocationName.slice('invocations/'.length)}</span>
+          <span>${this.invocationId}</span>
         </div>
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>

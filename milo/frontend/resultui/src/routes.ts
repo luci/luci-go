@@ -48,7 +48,7 @@ router.setRoutes({
       component: 'tr-app-state-provider',
       children: [
         {
-          path: '/invocation/:invocation_name',
+          path: '/inv/:invocation_id',
           action: async (_ctx, cmd) => {
             await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
             return cmd.component('tr-invocation-page');
