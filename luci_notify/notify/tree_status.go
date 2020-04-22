@@ -202,10 +202,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	if overallStatus == config.Open {
 		message = fmt.Sprintf("Tree is open (Automatic: %s)", randomEmoji())
 	} else {
-		// TODO: We actually want to render the template from oldestClosed.
-		// We can't do this yet as we don't store the necessary info in the
-		// TreeCloser config struct.
-		message = fmt.Sprintf("Tree is closed (Automatic: %s)", "TODO")
+		message = fmt.Sprintf("Tree is closed (Automatic: %s)", oldestClosed.Message)
 	}
 
 	return ts.putStatus(c, host, message, treeStatus.key)
