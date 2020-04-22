@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ce8a82f_fcce6fcc",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-22T18:15:26Z",
+      "side": 1,
+      "message": "I thought it\u0027s already dumped at L176. Removed?",
+      "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4160ba2_e92099f9",
+        "filename": "luciexe/build_proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-22T18:15:26Z",
+      "side": 1,
+      "message": "This is probably okay for now. But are we expecting adding more flags to bbagent in the future? If so, WDYT about using the built-in `flag` package so that we don\u0027t need implement this parsing logic?",
+      "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bb81bec_80d3e9f8",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-04-22T18:15:26Z",
+      "side": 1,
+      "message": "`BuildFileCodec` func will never return ext as `BuildFileNone`? Maybe either \n  1. Return `BuildFileNone` for `BuildFileCodec` func given empty output path\n  2. Delete this check and let `WriteBuildFile` handle the empty path",
+      "revId": "4f3f365a82e519eb131c714004c8ce6fef9f8783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
