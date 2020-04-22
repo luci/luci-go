@@ -15,10 +15,13 @@
 package buildbucket
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -41,17 +44,17 @@ func GetBuilders(c context.Context) (*swarmbucket.LegacySwarmbucketApiGetBuilder
 }
 
 func getBuilders(c context.Context, host string) (*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage, error) {
-	mc := memcache.NewItem(c, fmt.Sprintf("swarmbucket-builders-%q-%q", host, auth.CurrentIdentity(c)))
+	key := fmt.Sprintf("swarmbucket-builders-%q-%q", host, auth.CurrentIdentity(c))
+	mc := memcache.NewItem(c, key)
 	switch err := memcache.Get(c, mc); {
 	case err == memcache.ErrCacheMiss:
 	case err != nil:
 		logging.WithError(err).Warningf(c, "memcache.get failed while loading swarmbucket builders")
 	default:
-		var res swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage
-		if err := json.Unmarshal(mc.Value(), &res); err != nil {
-			logging.WithError(err).Warningf(c, "corrupted swarmbucket builders cache")
+		if res, err := deserializeBuildersResponse(mc.Value()); err == nil {
+			return res, nil
 		} else {
-			return &res, nil
+			logging.WithError(err).Warningf(c, "corrupted swarmbucket builders cache")
 		}
 	}
 
@@ -65,17 +68,61 @@ func getBuilders(c context.Context, host string) (*swarmbucket.LegacySwarmbucket
 		return nil, err
 	}
 
-	if data, err := json.Marshal(res); err == nil {
+	if data, err := serializeBuildersResponse(res); err == nil {
 		// Large expiration is unfortunate as this slows down propagation of ACL
 		// changes limiting builder's visibility.
 		// TODO(crbug/1071316): switch to faster V2 Buildbucket API once available
 		// and reduce expiration to 10 minutes.
 		mc.SetValue(data).SetExpiration(12 * time.Hour)
 		if err := memcache.Set(c, mc); err != nil {
-			logging.WithError(err).Warningf(c, "failed to cache swarmbucket builders")
+			logging.WithError(err).Warningf(c, "failed to cache swarmbucket builder list of size %d with key %q", len(data), key)
 		}
 	}
 
+	return res, nil
+}
+
+// serializeBuildersResponse converts a response message into compressed JSON form, suitable for storing in memcache.
+func serializeBuildersResponse(message *swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage) ([]byte, error) {
+	// Convert to JSON.
+	data, err := json.Marshal(message)
+	if err != nil {
+		return nil, err
+	}
+
+	// Compress using zlib.
+	b := bytes.Buffer{}
+	w := zlib.NewWriter(&b)
+	if _, err := w.Write(data); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
+
+// deserializeBuildersResponse converts a response message back from compressed JSON form.
+func deserializeBuildersResponse(serialized []byte) (*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage, error) {
+	// Decompress using zlib.
+	r, err := zlib.NewReader(bytes.NewReader(serialized))
+	if err != nil {
+		return nil, err
+	}
+	var jsonMessage []byte
+	if jsonMessage, err = ioutil.ReadAll(r); err != nil {
+		return nil, err
+	}
+	if err := r.Close(); err != nil {
+		return nil, err
+	}
+
+	// Convert from JSON.
+	res := &swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage{}
+	if err := json.Unmarshal(jsonMessage, res); err != nil {
+		return nil, err
+	}
 	return res, nil
 }
 
