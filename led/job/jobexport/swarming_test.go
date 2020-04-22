@@ -27,6 +27,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/led/job"
 )
@@ -43,6 +44,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 	So(jd, ShouldNotBeNil)
 
 	ctx := cryptorand.MockForTest(context.Background(), 0)
+	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 	ret, err := ToSwarmingNewTask(ctx, jd, "testuser@example.com", job.NoKitchenSupport())
 	So(err, ShouldBeNil)
 
