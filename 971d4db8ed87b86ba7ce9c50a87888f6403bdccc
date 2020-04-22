@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "868dbb15_2b0cf219",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T22:46:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "352e0279_4c44b1de",
+      "range": {
+        "startLine": 119,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 13
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e985794_3df7beb9",
         "filename": "resultdb/internal/services/deriver/chromium/formats/json.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e4fed73e_349b3045",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T22:46:38Z",
+      "side": 1,
+      "message": "in this your example, i see one artifact in each key (e.g. one pretty_text_diff, one text_diff) and one result (`\"actual\": \"FAIL\"`, not `\"actual\": [\"FAIL\", \"FAIL\"]`)\n\nstepping back, this is a problem, but i don\u0027t know what can we do about this: the design of this format is fundamentally flawed.",
+      "parentUuid": "5e985794_3df7beb9",
+      "range": {
+        "startLine": 334,
+        "startChar": 0,
+        "endLine": 337,
+        "endChar": 81
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86466eae_e2516779",
         "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
         "patchSetId": 5
@@ -62,6 +110,24 @@
       "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bfbb8ff_7b934448",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T22:46:38Z",
+      "side": 1,
+      "message": "yes, in another CL",
+      "parentUuid": "86466eae_e2516779",
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "60506624_87f94c4d",
+        "filename": "resultdb/pbutil/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T22:46:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed69d2eb_f523f3ed",
+      "range": {
+        "startLine": 87,
+        "startChar": 30,
+        "endLine": 87,
+        "endChar": 48
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c9165c4_6a5c2533",
         "filename": "resultdb/pbutil/artifact.go",
         "patchSetId": 5
@@ -108,6 +198,30 @@
       "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6f46b75_09d9c418",
+        "filename": "resultdb/pbutil/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-22T22:46:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0c9165c4_6a5c2533",
+      "range": {
+        "startLine": 93,
+        "startChar": 30,
+        "endLine": 93,
+        "endChar": 48
+      },
+      "revId": "971d4db8ed87b86ba7ce9c50a87888f6403bdccc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
