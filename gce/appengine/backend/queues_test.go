@@ -166,6 +166,15 @@ func TestQueues(t *testing.T) {
 								},
 							},
 						},
+						BinaryAttributes: config.BinaryVM{
+							config.VM{
+								Disk: []*config.Disk{
+									{
+										Image: "image",
+									},
+								},
+							},
+						},
 						AttributesIndexed: []string{
 							"disk.image:image",
 						},

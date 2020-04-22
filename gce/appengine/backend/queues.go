@@ -181,6 +181,7 @@ func createVM(c context.Context, payload proto.Message) error {
 	default:
 		return nil
 	}
+	model.CopyToBinaryInVM(vm)
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:
