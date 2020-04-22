@@ -59,9 +59,11 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 
 func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 	return ServerConfig{
-		Address:   addr,
-		AuthToken: tk,
-		Recorder:  pb.NewMockRecorderClient(ctl),
+		Address:     addr,
+		AuthToken:   tk,
+		Recorder:    pb.NewMockRecorderClient(ctl),
+		Invocation:  "invocations/u:foo-1587421194_893166206",
+		UpdateToken: "UpdateToken-ABC",
 	}
 }
 
