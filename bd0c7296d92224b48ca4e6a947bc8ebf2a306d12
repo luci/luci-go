@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e216046c_0f0c5020",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-22T00:44:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d1ecd27_96c44afc",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 3
+      },
+      "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab26e50c_b4822495",
         "filename": "milo/buildsource/buildbucket/buckets.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "77551604_40cc3bdc",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-22T00:44:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab26e50c_b4822495",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 19
+      },
+      "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7af92e0a_f042301e",
         "filename": "milo/buildsource/buildbucket/buckets.go",
         "patchSetId": 4
@@ -62,6 +110,24 @@
       "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f15916cb_0139ff53",
+        "filename": "milo/buildsource/buildbucket/buckets.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-22T00:44:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7af92e0a_f042301e",
+      "revId": "bd0c7296d92224b48ca4e6a947bc8ebf2a306d12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
