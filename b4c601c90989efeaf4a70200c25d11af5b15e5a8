@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d4d4c684_d763ba6e",
+        "filename": "appengine/gaeauth/server/oauth_settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-22T21:09:31Z",
+      "side": 1,
+      "message": "Looks like this: https://screenshot.googleplex.com/7XDBvhok8gQ.png",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 22
+      },
+      "revId": "b4c601c90989efeaf4a70200c25d11af5b15e5a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a48a7e03_974656a8",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-22T21:09:31Z",
+      "side": 1,
+      "message": "This is what\u0027s used on GAEv2 and GKE, there\u0027s no settings system there (and no /admin/portal), because there\u0027s no \"login: admin\" endpoints. I didn\u0027t expose frontend client ID on non-GAEv1 yet, but it is trivial to add a CLI flag for it (we\u0027ve been using CLI flags are replacement for /admin/portal settings).",
+      "range": {
+        "startLine": 1193,
+        "startChar": 1,
+        "endLine": 1204,
+        "endChar": 3
+      },
+      "revId": "b4c601c90989efeaf4a70200c25d11af5b15e5a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
