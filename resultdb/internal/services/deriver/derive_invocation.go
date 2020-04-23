@@ -17,6 +17,7 @@ package deriver
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/spanner"
@@ -33,11 +34,13 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 // testResultBatchSizeMax is the maximum number of TestResults to include per transaction.
-const testResultBatchSizeMax = 1000
+// Note that the same transaction is used for both test results and artifacts.
+const testResultBatchSizeMax = 500
 
 var urlPrefixes = []string{"http://", "https://"}
 
@@ -267,7 +270,9 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 			// Convert the TestResults in the batch.
 			for k, tr := range batch {
 				muts = append(muts, insertOrUpdateTestResult(batchID, tr.TestResult, k))
-				// TODO(crbug.com/1071258): write artifacts.
+				for _, a := range tr.Artifacts {
+					muts = append(muts, insertOrUpdateArtifact(batchID, tr.TestResult, a))
+				}
 			}
 
 			if _, err := client.Apply(ctx, muts); err != nil {
@@ -306,4 +311,40 @@ func batchTestResults(trs []*chromium.TestResult, batchSize int) [][]*chromium.T
 	}
 
 	return batches
+}
+
+func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int) *spanner.Mutation {
+	trMap := map[string]interface{}{
+		"InvocationId": invID,
+		"TestId":       tr.TestId,
+		"ResultId":     strconv.Itoa(i),
+
+		"Variant":     tr.Variant,
+		"VariantHash": pbutil.VariantHash(tr.Variant),
+
+		"CommitTimestamp": spanner.CommitTimestamp,
+
+		"Status":          tr.Status,
+		"SummaryHTML":     span.Compressed([]byte(tr.SummaryHtml)),
+		"StartTime":       tr.StartTime,
+		"RunDurationUsec": span.ToMicros(tr.Duration),
+		"Tags":            tr.Tags,
+	}
+
+	// Populate IsUnexpected /only/ if true, to keep the index thin.
+	if !tr.Expected {
+		trMap["IsUnexpected"] = true
+	}
+
+	return span.InsertOrUpdateMap("TestResults", trMap)
+}
+
+func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
+	return span.InsertOrUpdateMap("Artifacts", map[string]interface{}{
+		"InvocationId": invID,
+		"ParentId":     fmt.Sprintf("tr/%s/%s", tr.TestId, tr.ResultId),
+		"ArtifactId":   a.ArtifactId,
+		"ContentType":  a.ContentType,
+		"Size":         a.SizeBytes,
+	})
 }
