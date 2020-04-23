@@ -75,6 +75,12 @@ const config: webpack.Configuration = {
   devServer: {
     contentBase: path.join(__dirname, './out/'),
     historyApiFallback: true,
+    before: (app) => {
+      const config = require('./local-dev-config.json');
+      app.get('/auth/api/v1/server/client_id', (_req, res) => {
+        res.json({client_id: config.client_id});
+      });
+    },
   },
 };
 
