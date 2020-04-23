@@ -264,13 +264,6 @@ func TestManageBot(t *testing.T) {
 						Hostname: "name",
 						Lifetime: 1,
 						URL:      "url",
-						Attributes: config.VM{
-							Disk: []*config.Disk{
-								{
-									Image: "image",
-								},
-							},
-						},
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -282,13 +275,6 @@ func TestManageBot(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
-						Disk: []*config.Disk{
-							{
-								Image: "image",
-							},
-						},
-					})
 				})
 
 				Convey("drained", func() {
@@ -502,13 +488,6 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-						Attributes: config.VM{
-							Disk: []*config.Disk{
-								{
-									Image: "image",
-								},
-							},
-						},
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -520,13 +499,6 @@ func TestManageBot(t *testing.T) {
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
 					So(v.Connected, ShouldNotEqual, 0)
-					So(v.BinaryAttributes.VM, ShouldResemble, config.VM{
-						Disk: []*config.Disk{
-							{
-								Image: "image",
-							},
-						},
-					})
 				})
 			})
 		})
