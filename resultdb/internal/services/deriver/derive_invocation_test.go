@@ -259,6 +259,8 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/c2/t3.html")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
+			
+
 			// Read InvocationTask to confirm it's added.
 			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.Name).RowID()))
 			var payload []byte
