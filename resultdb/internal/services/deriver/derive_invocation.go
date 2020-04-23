@@ -269,7 +269,8 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 
 			// Convert the TestResults in the batch.
 			for k, tr := range batch {
-				muts = append(muts, insertOrUpdateTestResult(batchID, tr.TestResult, k))
+				tr.ResultId = strconv.Itoa(k)
+				muts = append(muts, insertOrUpdateTestResult(batchID, tr.TestResult))
 				for _, a := range tr.Artifacts {
 					muts = append(muts, insertOrUpdateArtifact(batchID, tr.TestResult, a))
 				}
@@ -313,11 +314,11 @@ func batchTestResults(trs []*chromium.TestResult, batchSize int) [][]*chromium.T
 	return batches
 }
 
-func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int) *spanner.Mutation {
+func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spanner.Mutation {
 	trMap := map[string]interface{}{
 		"InvocationId": invID,
 		"TestId":       tr.TestId,
-		"ResultId":     strconv.Itoa(i),
+		"ResultId":     tr.ResultId,
 
 		"Variant":     tr.Variant,
 		"VariantHash": pbutil.VariantHash(tr.Variant),
@@ -346,5 +347,6 @@ func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Ar
 		"ArtifactId":   a.ArtifactId,
 		"ContentType":  a.ContentType,
 		"Size":         a.SizeBytes,
+		"IsolateURL":   a.FetchUrl,
 	})
 }
