@@ -806,11 +806,11 @@ func (m *Builder_Recipe) GetPropertiesJ() []string {
 
 // ResultDB-specific information for a builder.
 type Builder_ResultDB struct {
-	// Whether to sync builds in this builder with a ResultDB instance.
+	// Whether to enable ResultDB:Buildbucket integration.
 	Enable bool `protobuf:"varint,1,opt,name=enable,proto3" json:"enable,omitempty"`
 	// Configuration for exporting test results to BigQuery.
 	// This can have multiple values to export results to multiple BigQuery
-	// datasets, or to support multiple test result predicates.
+	// tables, or to support multiple test result predicates.
 	BqExports            []*v1.BigQueryExport `protobuf:"bytes,2,rep,name=bq_exports,json=bqExports,proto3" json:"bq_exports,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
