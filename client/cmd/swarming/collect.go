@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/sync/semaphore"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -85,6 +86,13 @@ func (t *taskOutputOption) includesConsole() bool {
 	return (*t & taskOutputConsole) != 0
 }
 
+// weightedSemaphore allows mocking semaphore.Weighted in tests.
+type weightedSemaphore interface {
+	Acquire(context.Context, int64) error
+	TryAcquire(int64) bool
+	Release(int64)
+}
+
 // taskResult is a consolidation of the results of packaging up swarming
 // task results from collect.
 type taskResult struct {
@@ -140,6 +148,7 @@ type collectRun struct {
 	taskSummaryPython bool
 	taskOutput        taskOutputOption
 	outputDir         string
+	eager             bool
 	perf              bool
 	jsonInput         string
 }
@@ -153,6 +162,7 @@ func (c *collectRun) Init(defaultAuthOpts auth.Options) {
 	//TODO(tikuta): Remove this flag once crbug.com/894045 is fixed.
 	c.Flags.BoolVar(&c.taskSummaryPython, "task-summary-python", false, "Generate python client compatible task summary json.")
 
+	c.Flags.BoolVar(&c.eager, "eager", false, "Return after first task completion.")
 	c.Flags.BoolVar(&c.perf, "perf", false, "Includes performance statistics.")
 	c.Flags.Var(&c.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
 	c.Flags.StringVar(&c.outputDir, "output-dir", "", "Where to download isolated output to.")
@@ -218,7 +228,12 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 	return 0
 }
 
-func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, service swarmingService) taskResult {
+func (c *collectRun) fetchTaskResults(
+	ctx context.Context,
+	taskID string,
+	service swarmingService,
+	downloadSem weightedSemaphore,
+) taskResult {
 	defer logging.Debugf(ctx, "Finished fetching task result: %s", taskID)
 	var result *swarming.SwarmingRpcsTaskResult
 	var output string
@@ -232,6 +247,14 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		if err != nil {
 			return tagTransientGoogleAPIError(err)
 		}
+
+		// Signal that we want to start downloading outputs. We'll only proceed
+		// to download them if another task has not already finished and
+		// triggered an eager return.
+		if !downloadSem.TryAcquire(1) {
+			return errors.New("canceled by first task")
+		}
+		defer downloadSem.Release(1)
 
 		// TODO(mknyszek): Fetch output and outputs in parallel.
 
@@ -270,11 +293,16 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 	}
 }
 
-func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService) taskResult {
+func (c *collectRun) pollForTaskResult(
+	ctx context.Context,
+	taskID string,
+	service swarmingService,
+	downloadSem weightedSemaphore,
+) taskResult {
 	var result taskResult
 	startedTime := clock.Now(ctx)
 	for {
-		result = c.fetchTaskResults(ctx, taskID, service)
+		result = c.fetchTaskResults(ctx, taskID, service, downloadSem)
 		if result.err != nil {
 			// If we received an error from fetchTaskResults, it either hit a fatal
 			// failure, or it hit too many transient failures.
@@ -367,7 +395,55 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 	return json.MarshalIndent(jsonResults, "", "  ")
 }
 
-func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
+func (c *collectRun) pollForTasks(
+	ctx context.Context,
+	taskIDs []string,
+	service swarmingService,
+	downloadSem weightedSemaphore,
+) []taskResult {
+	if len(taskIDs) == 0 {
+		return nil
+	}
+
+	var cancel context.CancelFunc
+	if c.timeout > 0 {
+		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+	defer cancel()
+
+	// Aggregate results by polling and fetching across multiple goroutines.
+	results := make([]taskResult, len(taskIDs))
+	var wg sync.WaitGroup
+	wg.Add(len(taskIDs))
+	taskFinished := make(chan int, len(taskIDs))
+	for i := range taskIDs {
+		go func(i int) {
+			defer func() {
+				taskFinished <- i
+				wg.Done()
+			}()
+			results[i] = c.pollForTaskResult(ctx, taskIDs[i], service, downloadSem)
+		}(i)
+	}
+
+	if c.eager {
+		go func() {
+			<-taskFinished
+			// After the first task finishes, block any new tasks from starting
+			// to download outputs, but let any in-progress downloads complete.
+			downloadSem.Acquire(ctx, int64(len(taskIDs)))
+			cancel()
+		}()
+	}
+
+	wg.Wait()
+
+	return results
+}
+
+func (c *collectRun) main(_ subcommands.Application, taskIDs []string) error {
 	// Set up swarming service.
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
@@ -376,24 +452,8 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 		return err
 	}
 
-	// Prepare context.
-	if c.timeout > 0 {
-		var cancel func()
-		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
-		defer cancel()
-	}
-
-	// Aggregate results by polling and fetching across multiple goroutines.
-	results := make([]taskResult, len(taskIDs))
-	var wg sync.WaitGroup
-	wg.Add(len(taskIDs))
-	for i := range taskIDs {
-		go func(i int) {
-			defer wg.Done()
-			results[i] = c.pollForTaskResult(ctx, taskIDs[i], service)
-		}(i)
-	}
-	wg.Wait()
+	downloadSem := semaphore.NewWeighted(int64(len(taskIDs)))
+	results := c.pollForTasks(ctx, taskIDs, service, downloadSem)
 
 	// Summarize and write summary json if applicable.
 	if c.taskSummaryJSON != "" {

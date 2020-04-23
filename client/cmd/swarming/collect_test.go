@@ -17,9 +17,11 @@ package main
 import (
 	"context"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
+	"golang.org/x/sync/semaphore"
 	googleapi "google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/auth"
@@ -80,17 +82,33 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 	})
 }
 
-func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
+func setupClock() (context.Context, context.CancelFunc) {
 	ctx, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
-	defer cancel()
 
 	// Set a callback to make the timer finish.
 	clk.SetTimerCallback(func(amt time.Duration, t clock.Timer) {
 		clk.Add(amt)
 	})
+	return ctx, cancel
+}
 
-	return runner.pollForTaskResult(ctx, "10982374012938470", s)
+func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
+	ctx, cancel := setupClock()
+	defer cancel()
+
+	return runner.pollForTaskResult(ctx, "10982374012938470", s, semaphore.NewWeighted(1))
+}
+
+func testCollectPollForTasks(runner *collectRun, taskIDs []string, s *testService, downloadSem weightedSemaphore) []taskResult {
+	ctx, cancel := setupClock()
+	defer cancel()
+
+	if downloadSem == nil {
+		downloadSem = semaphore.NewWeighted(int64(len(taskIDs)))
+	}
+
+	return runner.pollForTasks(ctx, taskIDs, s, downloadSem)
 }
 
 func TestCollectPollForTaskResult(t *testing.T) {
@@ -166,6 +184,162 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.err, ShouldBeNil)
 		So(result.result, ShouldNotBeNil)
 		So(result.result.State, ShouldResemble, "COMPLETED")
+	})
+
+}
+
+// mockSemaphore is a thin wrapper around semaphore.Weighted that adds a
+// notification hook to Acquire().
+type mockSemaphore struct {
+	*semaphore.Weighted
+
+	acquireCalls chan int64
+}
+
+func newMockSemaphore(n int64) *mockSemaphore {
+	return &mockSemaphore{
+		Weighted:     semaphore.NewWeighted(n),
+		acquireCalls: make(chan int64),
+	}
+}
+
+func (s *mockSemaphore) Acquire(ctx context.Context, n int64) error {
+	s.acquireCalls <- n
+	return s.Weighted.Acquire(ctx, n)
+}
+
+func TestCollectPollForTasks(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test eager return cancels polling goroutines`, t, func() {
+		firstID, lastID := "1", "2"
+		outputFetched := sync.Map{}
+
+		service := &testService{
+			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				if taskID != firstID {
+					// Simulate the second task not finishing until the first
+					// task has already finished, downloaded its outputs, and
+					// canceled the context.
+					<-c.Done()
+					return nil, c.Err()
+				}
+				return &swarming.SwarmingRpcsTaskResult{
+					State:      "COMPLETED",
+					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+				}, nil
+			},
+			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				outputFetched.Store(taskID, true)
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+		}
+		runner := &collectRun{
+			taskOutput: taskOutputAll,
+			eager:      true,
+		}
+
+		taskIDs := []string{firstID, lastID}
+		results := testCollectPollForTasks(runner, taskIDs, service, nil)
+		So(results, ShouldHaveLength, len(taskIDs))
+		_, firstOutputFetched := outputFetched.Load(firstID)
+		_, lastOutputFetched := outputFetched.Load(lastID)
+		So(firstOutputFetched, ShouldBeTrue)
+		So(lastOutputFetched, ShouldBeFalse)
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[1].err, ShouldUnwrapTo, context.Canceled)
+		So(results[1].result, ShouldBeNil)
+	})
+
+	Convey(`Test eager return lets downloading complete`, t, func() {
+		firstID, lastID := "1", "2"
+		outputFetched := sync.Map{}
+
+		runner := &collectRun{
+			taskOutput: taskOutputAll,
+			eager:      true,
+		}
+		firstTaskComplete := make(chan struct{})
+		lastTaskDownloading := make(chan struct{})
+		service := &testService{
+			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return &swarming.SwarmingRpcsTaskResult{
+					State:      "COMPLETED",
+					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+				}, nil
+			},
+			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				// Make sure that the two tasks are downloading outputs at the
+				// same time, but have the second task wait for the first task's
+				// download to complete before continuing the download.
+				if taskID == firstID {
+					<-lastTaskDownloading
+				} else {
+					close(lastTaskDownloading)
+					<-firstTaskComplete
+				}
+				outputFetched.Store(taskID, true)
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+		}
+
+		taskIDs := []string{firstID, lastID}
+		downloadSem := newMockSemaphore(int64(len(taskIDs)))
+		defer close(downloadSem.acquireCalls)
+		go func() {
+			// When the semaphore is acquired with an argument equal to the
+			// number of tasks, that means the first task has finished
+			// downloading and is triggering the eager return mechanism.
+			for n := range downloadSem.acquireCalls {
+				if n == int64(len(taskIDs)) {
+					close(firstTaskComplete)
+				}
+			}
+		}()
+
+		results := testCollectPollForTasks(runner, taskIDs, service, downloadSem)
+		So(results, ShouldHaveLength, len(taskIDs))
+		_, firstOutputFetched := outputFetched.Load(firstID)
+		_, lastOutputFetched := outputFetched.Load(lastID)
+		So(firstOutputFetched, ShouldBeTrue)
+		So(lastOutputFetched, ShouldBeTrue)
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
+	})
+
+	Convey(`Test eager return with one task`, t, func() {
+		taskID := "1"
+		outputFetched := false
+
+		service := &testService{
+			getTaskResult: func(c context.Context, taskID string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
+				return &swarming.SwarmingRpcsTaskResult{
+					State:      "COMPLETED",
+					OutputsRef: &swarming.SwarmingRpcsFilesRef{Isolated: "aaaaaaaaa"},
+				}, nil
+			},
+			getTaskOutput: func(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+				outputFetched = true
+				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
+			},
+		}
+		runner := &collectRun{
+			taskOutput: taskOutputAll,
+			eager:      true,
+		}
+
+		results := testCollectPollForTasks(runner, []string{taskID}, service, nil)
+		So(results, ShouldHaveLength, 1)
+		So(outputFetched, ShouldBeTrue)
+		So(results[0].err, ShouldBeNil)
+		So(results[0].result, ShouldNotBeNil)
+		So(results[0].result.State, ShouldResemble, "COMPLETED")
 	})
 }
 
