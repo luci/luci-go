@@ -17,6 +17,7 @@ import { AppState } from './app_state';
 
 export interface Context {
   appState: AppState;
+  clientId: string;
 }
 
 export const contextConsumer = contextConsumerMixinBuilder<Context>();
