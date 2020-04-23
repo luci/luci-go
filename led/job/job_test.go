@@ -70,7 +70,11 @@ func TestFlattenToSwarming(t *testing.T) {
 				{Key: "pool", Values: []string{"Chrome"}},
 			})
 
-			bbArgs, err := bbinput.Parse(slice0.Properties.Command[1])
+			So(slice0.Properties.Command[:3], ShouldResemble, []string{
+				"bbagent${EXECUTABLE_SUFFIX}", "--output",
+				"${ISOLATED_OUTDIR}/build.proto.json",
+			})
+			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
 			So(err, ShouldBeNil)
 
 			So(bbArgs.ExecutablePath, ShouldResemble, "kitchen-checkout/luciexe")
@@ -163,7 +167,11 @@ func TestFlattenToSwarming(t *testing.T) {
 				So(pkg.Version, ShouldNotEqual, "refs/heads/master")
 			}
 
-			bbArgs, err := bbinput.Parse(slice0.Properties.Command[1])
+			So(slice0.Properties.Command[:3], ShouldResemble, []string{
+				"bbagent${EXECUTABLE_SUFFIX}", "--output",
+				"${ISOLATED_OUTDIR}/build.proto.json",
+			})
+			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
 			So(err, ShouldBeNil)
 
 			So(bbArgs.ExecutablePath, ShouldResemble, "some/path/luciexe")

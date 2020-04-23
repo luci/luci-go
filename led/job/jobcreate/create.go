@@ -59,13 +59,13 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 
 	switch detectMode(r) {
 	case "bbagent":
-		bb := &job.Buildbucket{Name: name}
+		bb := &job.Buildbucket{}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
 		bbCommonFromTaskRequest(bb, r)
 		bb.BbagentArgs, err = bbinput.Parse(r.TaskSlices[0].Properties.Command[1])
 
 	case "kitchen":
-		bb := &job.Buildbucket{LegacyKitchen: true, Name: name}
+		bb := &job.Buildbucket{LegacyKitchen: true}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
 		bbCommonFromTaskRequest(bb, r)
 		err = ks.FromSwarming(ctx, r, bb)
@@ -82,6 +82,9 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	}
 
 	if bb := ret.GetBuildbucket(); err == nil && bb != nil {
+		bb.Name = name
+		bb.FinalBuildProtoPath = "build.proto.json"
+
 		// set all buildbucket type tasks to experimental by default.
 		bb.BbagentArgs.Build.Input.Experimental = true
 

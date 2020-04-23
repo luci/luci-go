@@ -269,9 +269,11 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 	// TODO(iannucci): have bbagent set 'logdog.viewer_url' to the milo build
 	// view URL if there's no buildbucket build associated with it.
 
-	return []string{
-		"bbagent${EXECUTABLE_SUFFIX}", bbinput.Encode(bb.BbagentArgs),
-	}, nil
+	ret := []string{"bbagent${EXECUTABLE_SUFFIX}"}
+	if bb.FinalBuildProtoPath != "" {
+		ret = append(ret, "--output", path.Join("${ISOLATED_OUTDIR}", bb.FinalBuildProtoPath))
+	}
+	return append(ret, bbinput.Encode(bb.BbagentArgs)), nil
 }
 
 // FlattenToSwarming modifies this Definition to populate the Swarming field

@@ -55,6 +55,18 @@ message Buildbucket {
 
   // Eventually becomes the name of the launched swarming task.
   string name = 10;
+
+  // This field contains the path relative to ${ISOLATED_OUTDIR} for the final
+  // build.proto result. If blank, will cause the job not to emit any build
+  // proto to the output directory.
+  //
+  // For bbagent-based jobs this must have the file extension ".pb", ".textpb"
+  // or ".json", to get the respective encoding.
+  //
+  // For legacy kitchen jobs this must have the file extension ".json".
+  //
+  // By default, led will populate this with "build.proto.json".
+  string final_build_proto_path = 11;
 }
 
 // Swarming is the raw TaskRequest. When a Definition is in this form, the
