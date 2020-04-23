@@ -413,6 +413,7 @@ func convertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix str
 		}
 		return results, nil
 	}
+	logging.Warningf(ctx, "did not recognize as JSON Test Results: %s", jsonErr)
 
 	// Try to convert the buffer treating its format as that of GTests.
 	gtestFormat := &formats.GTestResults{}
@@ -424,6 +425,7 @@ func convertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix str
 		}
 		return results, nil
 	}
+	logging.Warningf(ctx, "did not recognize as GTest: %s", gtestErr)
 
 	// Conversion with either format failed, but we don't support other formats.
 	return nil, errors.NewMultiError(gtestErr, jsonErr)
