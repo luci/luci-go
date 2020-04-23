@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "ca340c27_a70af836",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:02:55Z",
+      "side": 1,
+      "message": "wait a second, I don\u0027t understand this. Taking care of Starting and Closing is the point of Run() function. Calling Start() in Run(), but not Stop() is asymmetric. \n\ni think what we are missing is Shutdown() that we\u0027d call in the end of Run()",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 157
+      },
+      "revId": "3b53d207284c04879e56a6219374dafa6ee9c948",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a4cc97a9_75375ff7",
         "filename": "/COMMIT_MSG",
         "patchSetId": 9
