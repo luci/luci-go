@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/luciexe"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -29,7 +30,7 @@ import (
 // Subprocess represents a running luciexe.
 type Subprocess struct {
 	Step        *bbpb.Step
-	parseOutput func() (*bbpb.Build, error)
+	collectPath string
 
 	cmd *exec.Cmd
 
@@ -98,7 +99,7 @@ func Start(ctx context.Context, luciexePath string, input *bbpb.Build, opts *Opt
 
 	return &Subprocess{
 		Step:        launchOpts.step,
-		parseOutput: launchOpts.parseOutput,
+		collectPath: launchOpts.collectPath,
 		cmd:         cmd,
 
 		closeChannels: closeChannels,
@@ -132,7 +133,7 @@ func (s *Subprocess) Wait() (*bbpb.Build, error) {
 			s.err = errors.Annotate(s.err, "waiting for luciexe").Err()
 			return
 		}
-		s.build, s.err = s.parseOutput()
+		s.build, s.err = luciexe.ReadBuildFile(s.collectPath)
 	})
 	return s.build, s.err
 }
