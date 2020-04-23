@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3dab404_43a14343",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-23T03:54:57Z",
+      "side": 1,
+      "message": "I think the Python code might not handle this case...? But the proto comments and config validation allow it.",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2b82b69_103371a9",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-23T03:54:57Z",
+      "side": 1,
+      "message": "Would be nice to fix. Would you consider it a breaking change for users?",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
