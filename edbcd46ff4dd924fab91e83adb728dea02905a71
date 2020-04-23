@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa3f4b60_7af3ace2",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-23T05:19:11Z",
+      "side": 1,
+      "message": "I (almost) confused it with https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2159857/8/resultdb/internal/services/deriver/chromium/formats/common.go#23 .\n\nI don\u0027t know how to improve this though",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 15
+      },
+      "revId": "edbcd46ff4dd924fab91e83adb728dea02905a71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8ba0a474_ba194677",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-23T05:19:11Z",
+      "side": 1,
+      "message": "This approach will not work for invocation artifacts, right?\n\nThough stepping back, this is for derive invocation, and we probably don\u0027t have such a case for gtest and isolated script tests in chromium anyways?",
+      "revId": "edbcd46ff4dd924fab91e83adb728dea02905a71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
