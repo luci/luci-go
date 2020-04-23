@@ -94,6 +94,30 @@
       "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1de8438_f88d8c7c",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:29:35Z",
+      "side": 1,
+      "message": "i mean ps1, where this comment thread is.\n\nbut i agree with you that ps2 is better. In particular, I agree that merely displaying \"Expected\" does not really entail that unchecking that will display unexpected.",
+      "parentUuid": "512b4a8e_a0e6be19",
+      "range": {
+        "startLine": 53,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
