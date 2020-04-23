@@ -22,6 +22,30 @@
       "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79863d22_b6c252d2",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-23T04:33:04Z",
+      "side": 1,
+      "message": "I find radio button to be confusing.\nBecause we also have the exonerated toggle.\nShow All doesn\u0027t show exonerated variants.\nResultDb doesn\u0027t support querying variants with only expected results.\nDoing the filtering work on the frontend is a bit complicated because we need to group the results into variants before applying the filter.\nI added a dummy \"expected\" button for now.\nHopefully that conveys the idea that expected results are always shown.\nIf we want to show only the expected variant, it\u0027s probably better to add that filter to resultDB first. Then we can enable the expected button in the frontend.",
+      "parentUuid": "66531228_916f98de",
+      "range": {
+        "startLine": 53,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
