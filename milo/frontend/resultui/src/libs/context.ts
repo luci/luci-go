@@ -201,7 +201,6 @@ export function contextProviderMixinBuilder<Ctx>() {
             return;
           }
           consumer[key] = newValue;
-          consumer.requestUpdate(key, oldValue);
         }
 
         connectedCallback() {

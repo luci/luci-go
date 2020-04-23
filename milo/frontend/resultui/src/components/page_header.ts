@@ -14,21 +14,31 @@
 
 import '@chopsui/chops-signin';
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { css, customElement, html, LitElement, property, PropertyValues } from 'lit-element';
+import { contextConsumer } from '../context';
 
 /**
  * Renders page header, including a sign-in widget, at the top of the child
  * nodes.
+ * Refreshes the page when a new clientId is provided.
  */
-@customElement('tr-page-header')
-export class PageHeaderElement extends MobxLitElement {
-  // TODO(weiweilin): load the clientId from somewhere instead of hard-coding
-  // it.
-  @observable
-      .ref clientId =
-      '897369734084-d3t2c39aht2aqeop0f42pp48ejpr54up.apps.googleusercontent.com';
+export class PageHeaderElement extends LitElement {
+  @property() clientId!: string;
+
+  private rendered = false;
+  protected firstUpdated() {
+    this.rendered = true;
+  }
+
+  protected shouldUpdate(changedProperties: PropertyValues) {
+    if (this.rendered && changedProperties.has('clientId')) {
+      // <chops-signin> (gapi.auth2) can not be initialized with a different
+      // client-id. Refresh the page when a new clientId is provided.
+      window.location.reload();
+      return false;
+    }
+    return true;
+  }
 
   protected render() {
     return html`
@@ -78,3 +88,9 @@ export class PageHeaderElement extends MobxLitElement {
     }
   `;
 }
+
+customElement('tr-page-header')(
+  contextConsumer('clientId')(
+    PageHeaderElement,
+  ),
+);
