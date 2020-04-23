@@ -15,6 +15,7 @@
 import { Route, Router } from '@vaadin/router';
 
 import './context/app_state_provider';
+import './context/config_provider';
 
 const notFoundRoute: Route = {
   path: '/:path*',
@@ -27,36 +28,42 @@ const notFoundRoute: Route = {
 const router = new Router(document.getElementById('app-root'));
 router.setRoutes({
   path: '/',
-  component: 'tr-page-header',
-  children: [
-    {
-      path: '/login',
-      action: async (_ctx, cmd) => {
-        await import(/* webpackChunkName: "login_page" */ './pages/login_page');
-        return cmd.component('tr-login-page');
-      },
-    },
-    {
-      path: '/error',
-      action: async (_ctx, cmd) => {
-        await import(/* webpackChunkName: "error_page" */ './pages/error_page');
-        return cmd.component('tr-error-page');
-      },
-    },
-    {
-      path: '/',
-      component: 'tr-app-state-provider',
-      children: [
-        {
-          path: '/inv/:invocation_id',
-          action: async (_ctx, cmd) => {
-            await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
-            return cmd.component('tr-invocation-page');
+    component: 'tr-config-provider',
+    children: [
+      {
+        path: '/',
+        component: 'tr-page-header',
+        children: [
+          {
+            path: '/login',
+            action: async (_ctx, cmd) => {
+              await import(/* webpackChunkName: "login_page" */ './pages/login_page');
+              return cmd.component('tr-login-page');
+            },
           },
-        },
-        notFoundRoute,
-      ],
-    },
-    notFoundRoute,
-  ],
+          {
+            path: '/error',
+            action: async (_ctx, cmd) => {
+              await import(/* webpackChunkName: "error_page" */ './pages/error_page');
+              return cmd.component('tr-error-page');
+            },
+          },
+          {
+            path: '/',
+            component: 'tr-app-state-provider',
+            children: [
+              {
+                path: '/inv/:invocation_id',
+                action: async (_ctx, cmd) => {
+                  await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+                  return cmd.component('tr-invocation-page');
+                },
+              },
+              notFoundRoute,
+            ],
+          },
+          notFoundRoute,
+        ],
+      },
+    ],
 });
