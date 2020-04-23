@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2b79c7b9_06c213ce",
+        "filename": "luciexe/build_file_codecs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-23T00:10:51Z",
+      "side": 1,
+      "message": "thanks to your review comments!! :)",
+      "parentUuid": "0590ad0a_8d567a10",
+      "revId": "d8eeba8dff8710c70f792af80de4f35ad0220161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "daccb0db_9909032b",
         "filename": "luciexe/build_proto_test.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "d8eeba8dff8710c70f792af80de4f35ad0220161",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d75f262a_c652044c",
+        "filename": "luciexe/build_proto_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-23T00:10:51Z",
+      "side": 1,
+      "message": "good call, done.",
+      "parentUuid": "daccb0db_9909032b",
+      "revId": "d8eeba8dff8710c70f792af80de4f35ad0220161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
