@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "8d2c5e53_dbc963b8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T06:32:10Z",
+      "side": 1,
+      "message": "golint nit: public symbols must have a comment",
+      "revId": "136adb5ab7e9e452fa84057f65dd424561f77e32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28250630_3f9e275c",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -19,6 +36,23 @@
         "endLine": 271,
         "endChar": 91
       },
+      "revId": "136adb5ab7e9e452fa84057f65dd424561f77e32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d52ec72_1c52c8d5",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T06:32:10Z",
+      "side": 1,
+      "message": "nitty nit: this allocates a slice backed by a zero-length array, which is not useful\n\n  var steps []*buildbucketpb.Step",
       "revId": "136adb5ab7e9e452fa84057f65dd424561f77e32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
