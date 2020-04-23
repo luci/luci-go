@@ -41,6 +41,9 @@ func logDetails(ctx context.Context, methodName string, req proto.Message) (cont
 // have correct ACLs checks.
 // TODO(crbug/1042991): Remove once methods are implemented.
 func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	if methodName == "GetBuild" {
+		return nil
+	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 	return status.Errorf(codes.Unimplemented, "method not implemented")
 }
@@ -67,12 +70,12 @@ func (*Builds) SearchBuilds(ctx context.Context, req *buildbucketpb.SearchBuilds
 	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// ScheduleBuilds handles a request to schedule a build. Implements buildbucketpb.BuildsServer
+// ScheduleBuild handles a request to schedule a build. Implements buildbucketpb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *buildbucketpb.ScheduleBuildRequest) (*buildbucketpb.Build, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// UpdateBuilds handles a request to update a build. Implements buildbucketpb.UpdateBuild.
+// UpdateBuild handles a request to update a build. Implements buildbucketpb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *buildbucketpb.UpdateBuildRequest) (*buildbucketpb.Build, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
 }

@@ -44,12 +44,6 @@ func TestBuilds(t *testing.T) {
 				So(rsp, ShouldBeNil)
 			})
 
-			Convey("GetBuild", func() {
-				rsp, err := srv.GetBuild(ctx, nil)
-				So(err, ShouldErrLike, "method not implemented")
-				So(rsp, ShouldBeNil)
-			})
-
 			Convey("ScheduleBuild", func() {
 				rsp, err := srv.ScheduleBuild(ctx, nil)
 				So(err, ShouldErrLike, "method not implemented")
