@@ -2,6 +2,63 @@
   "comments": [
     {
       "key": {
+        "uuid": "c753606b_0c12dc7b",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:26:03Z",
+      "side": 1,
+      "message": "would be nice to say exactly which ones",
+      "range": {
+        "startLine": 48,
+        "startChar": 25,
+        "endLine": 48,
+        "endChar": 33
+      },
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7828ddbb_0915c841",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:26:03Z",
+      "side": 1,
+      "message": "i suspect the orig code indexes this by accident",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "160903d5_9f62d777",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:26:03Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3dab404_43a14343",
         "filename": "buildbucket/appengine/model/bucket.go",
         "patchSetId": 1
@@ -19,6 +76,24 @@
     },
     {
       "key": {
+        "uuid": "9d9963a9_0271b2f7",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:26:03Z",
+      "side": 1,
+      "message": "it does https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/user.py;l\u003d308?q\u003dcr-buildbucket%2Fuser.py",
+      "parentUuid": "d3dab404_43a14343",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d2b82b69_103371a9",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 1
@@ -33,6 +108,41 @@
       "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b4807b2_c42c1b34",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:26:03Z",
+      "side": 1,
+      "message": "do you mean it leaks existence because python version return not_found, but this returns permission_denied? i don\u0027t see an issue because only one of implementations will be available at a time.\n\notherwise i don\u0027t see how it leaks existence",
+      "parentUuid": "d2b82b69_103371a9",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9c5b602_3d7a3d37",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:26:03Z",
+      "side": 1,
+      "message": "this might leak existance",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
