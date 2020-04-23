@@ -183,6 +183,11 @@ CREATE TABLE Artifacts (
   --
   -- The RBE-CAS instance is in the same Cloud project, named "artifacts".
   RBECASHash STRING(MAX),
+
+  -- A string of format "isolate://{isolateServerHost}/{namespace}/{hash}"
+  -- if this artifact is stored in isolate.
+  -- TODO(nodir): remove this when we completely switch to ResultSink.
+  IsolateURL STRING(MAX),
 ) PRIMARY KEY (InvocationId, ParentId, ArtifactId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
