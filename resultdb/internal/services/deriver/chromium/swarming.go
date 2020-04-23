@@ -284,8 +284,8 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 		return nil, errors.Annotate(err, "getting isolated outputs").Err()
 	}
 	availableArtifacts := stringset.New(len(outputs))
-	for key := range outputs {
-		availableArtifacts.Add(key)
+	for path := range outputs {
+		availableArtifacts.Add(util.NormalizeIsolatedPath(path))
 	}
 
 	// Fetch the output.json file itself and convert it.
