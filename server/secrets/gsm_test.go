@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/googleapis/gax-go"
+	"golang.org/x/oauth2"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,24 +33,25 @@ func TestSecretManagerSource(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	fakeTS := oauth2.StaticTokenSource(&oauth2.Token{})
 
 	Convey("Constructor", t, func() {
 		Convey("Works", func() {
-			s, err := NewSecretManagerSource(ctx, "sm://project/secret", nil)
+			s, err := NewSecretManagerSource(ctx, "sm://project/secret", fakeTS)
 			So(err, ShouldBeNil)
 			So(s.project, ShouldEqual, "project")
 			So(s.secret, ShouldEqual, "secret")
 		})
 
 		Convey("Not sm://", func() {
-			_, err := NewSecretManagerSource(ctx, "zz://project/secret", nil)
+			_, err := NewSecretManagerSource(ctx, "zz://project/secret", fakeTS)
 			So(err, ShouldErrLike, "not a sm://... URL")
 		})
 
 		Convey("Wrong sm:// format", func() {
-			_, err := NewSecretManagerSource(ctx, "sm://project", nil)
+			_, err := NewSecretManagerSource(ctx, "sm://project", fakeTS)
 			So(err, ShouldErrLike, "should have form")
-			_, err = NewSecretManagerSource(ctx, "sm://project/secret/zzz", nil)
+			_, err = NewSecretManagerSource(ctx, "sm://project/secret/zzz", fakeTS)
 			So(err, ShouldErrLike, "should have form")
 		})
 	})
