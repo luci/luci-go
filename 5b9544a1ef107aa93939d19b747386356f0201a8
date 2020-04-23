@@ -1,0 +1,233 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7369885_cf0f40e1",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "testExitCode :\u003d 1001\n\nhowever, what\u0027s the purpose of doing this? this value is overwritten in L124. The only case where 1001 is preserved in L122",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d7a729c_fc321a9d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "if L124 returned an error, it is interrupted too.\n\ni think it would be more correct to compute `interrupted` after L124, i.e. replace testExitCode in L92 with interrupted",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41fed7c9_11f9fa4c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "related to https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2159995/6/resultdb/cli/cmd_stream.go#77\nwe will probably need to return another exit code. we need a const",
+      "range": {
+        "startLine": 108,
+        "startChar": 11,
+        "endLine": 108,
+        "endChar": 12
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a29c2027_cc09831d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "this means we give the subprocess only 30 seconds to finish its job. This is too small for most tests.\n\ni am not sure about the timeout. There is already a timeout outside of our process - we\u0027d get a SIGTERM on timeout, so perhaps we don\u0027t need this",
+      "range": {
+        "startLine": 153,
+        "startChar": 46,
+        "endLine": 153,
+        "endChar": 60
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef2e4b98_f59f79b1",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "in L105, a logging message starts with a lower-case letter. please be consistent",
+      "range": {
+        "startLine": 156,
+        "startChar": 23,
+        "endLine": 156,
+        "endChar": 24
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f10b18ec_73f82c32",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "from https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/13/2157613/4/resultdb/sink/sink.go#233\n\n// SinkServer processes sinkRequests asynchronously, and Close doesn\u0027t guarantee completion\n// of all the ongoing requests. Use Done to ensure that all the requests have been\n// processed.\n\nperhaps we need something like https://godoc.org/net/http#Server.Shutdown",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a99fee2_e8b48cb8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 218,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 33
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8005dab8_6a59cb58",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "fmt.Fprintf(os.Stderr, \"%q created\\n\", ret.Name)",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffd20424_82b12657",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "this comment doesn\u0027t really explain anything that isn\u0027t already obvious from the code. A more useful comment would be explaining why we chose the date (i.e. the rationale from my comment). And stepping back, maybe the function comment would be a better place for it.",
+      "range": {
+        "startLine": 251,
+        "startChar": 4,
+        "endLine": 251,
+        "endChar": 8
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c66ee56_5ac5420f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "nit: cryprorand seems overkill for this purpose. why not https://godoc.org/go.chromium.org/luci/common/data/rand/mathrand",
+      "range": {
+        "startLine": 255,
+        "startChar": 14,
+        "endLine": 255,
+        "endChar": 24
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13fd4be2_d0cd5708",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:05:05Z",
+      "side": 1,
+      "message": "there is a couple of ways this may violate the regexp https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/invocation.go;l\u003d21?q\u003dpbutil%2Finvocation.\n\ni think we have to sanitize the returned string.",
+      "range": {
+        "startLine": 260,
+        "startChar": 57,
+        "endLine": 260,
+        "endChar": 65
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
