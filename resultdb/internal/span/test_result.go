@@ -107,7 +107,7 @@ type TestResultQuery struct {
 	SelectVariantHash bool
 }
 
-func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) (err error) {
+func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(TestResultQueryItem) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.queryTestResults")
 	defer func() { ts.End(err) }()
 
@@ -217,8 +217,8 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
-		var variantHash string
 		tr := &pb.TestResult{}
+		item := TestResultQueryItem{TestResult: tr}
 
 		ptrs := []interface{}{
 			&invID,
@@ -233,7 +233,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			&tr.Tags,
 		}
 		if q.SelectVariantHash {
-			ptrs = append(ptrs, &variantHash)
+			ptrs = append(ptrs, &item.VariantHash)
 		}
 
 		err = b.FromSpanner(row, ptrs...)
@@ -246,7 +246,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
 
-		return f(tr, variantHash)
+		return f(item)
 	})
 }
 
@@ -258,8 +258,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	err = queryTestResults(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
-		trs = append(trs, tr)
+	err = queryTestResults(ctx, txn, q, func(item TestResultQueryItem) error {
+		trs = append(trs, item.TestResult)
 		return nil
 	})
 	if err != nil {
@@ -277,9 +277,15 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return
 }
 
+// TestResultQueryItem is one element returned by a TestResultQuery.
+type TestResultQueryItem struct {
+	*pb.TestResult
+	VariantHash string
+}
+
 // QueryTestResultsStreaming is like QueryTestResults, but returns calls fn
 // instead of returning a slice.
-func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) error {
+func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(TestResultQueryItem) error) error {
 	if q.PageSize > 0 {
 		panic("PageSize is specified when QueryTestResultsStreaming")
 	}

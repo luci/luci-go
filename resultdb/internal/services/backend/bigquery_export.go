@@ -256,10 +256,10 @@ func (b *bqExporter) queryTestResultsStreaming(
 
 	rows := make([]*bigquery.StructSaver, 0, b.maxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
-	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
-		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
+	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr span.TestResultQueryItem) error {
+		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := span.MustParseTestResultName(tr.Name)
-		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr, exonerated, variantHash))
+		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
 		batchSize += proto.Size(tr)
 		if len(rows) >= b.maxBatchRowCount || batchSize >= b.maxBatchSize {
 			select {
