@@ -39,7 +39,9 @@ const (
 // TestResult combines a test result with associated artifact keys.
 type TestResult struct {
 	*pb.TestResult
-	ArtifactKeys []string
+
+	// Artifacts maps from short artifact names to artifact keys.
+	Artifacts map[string]string
 }
 
 // summaryTmpl is used to generate SummaryHTML in GTest and JTR-based test
