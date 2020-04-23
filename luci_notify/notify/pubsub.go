@@ -53,8 +53,9 @@ func getBuilderID(b *buildbucketpb.Build) string {
 
 // EmailNotify contains information for delivery and personalization of notification emails.
 type EmailNotify struct {
-	Email    string `json:"email"`
-	Template string `json:"template"`
+	Email         string `json:"email"`
+	Template      string `json:"template"`
+	MatchingSteps []*buildbucketpb.Step
 }
 
 // sortEmailNotify sorts a list of EmailNotify by Email, then Template.
@@ -86,6 +87,8 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 			ret[i] = EmailNotify{
 				Email:    notifyFields["email"].GetStringValue(),
 				Template: notifyFields["template"].GetStringValue(),
+				// MatchingSteps is left blank, as it is only available for recipients
+				// derived from Notifications with step filters.
 			}
 		}
 		return ret, nil

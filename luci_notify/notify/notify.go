@@ -70,6 +70,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 		if _, ok := taskTemplates[name]; ok {
 			continue
 		}
+		input.MatchingFailedSteps = r.MatchingSteps
 
 		subject, body := bundle.GenerateEmail(name, input)
 
@@ -135,12 +136,21 @@ func BlamelistRepoWhiteset(notifications notifypb.Notifications) stringset.Set {
 	return whiteset
 }
 
+// ToNotify encapsulates a notification, along with the list of matching steps
+// necessary to render templates for that notification. It's used to pass this
+// data between the filtering/matching code and the code responsible for sending
+// emails and updating tree status.
+type ToNotify struct {
+	Notification  *notifypb.Notification
+	MatchingSteps []*buildbucketpb.Step
+}
+
 // ComputeRecipients computes the set of recipients given a set of
 // notifications, and potentially "input" and "output" blamelists.
 //
 // An "input" blamelist is computed from the input commit to a build, while an
 // "output" blamelist is derived from output commits.
-func ComputeRecipients(c context.Context, notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
+func ComputeRecipients(c context.Context, notifications []ToNotify, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
 	return computeRecipientsInternal(c, notifications, inputBlame, outputBlame,
 		func(c context.Context, url string) ([]byte, error) {
 			transport, err := auth.GetRPCTransport(c, auth.AsSelf)
@@ -171,43 +181,55 @@ func ComputeRecipients(c context.Context, notifications notifypb.Notifications, 
 
 // computeRecipientsInternal also takes fetchFunc, so http requests can be
 // mocked out for testing.
-func computeRecipientsInternal(c context.Context, notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs, fetchFunc func(context.Context, string) ([]byte, error)) []EmailNotify {
+func computeRecipientsInternal(c context.Context, notifications []ToNotify, inputBlame []*gitpb.Commit, outputBlame Logs, fetchFunc func(context.Context, string) ([]byte, error)) []EmailNotify {
 	recipients := make([]EmailNotify, 0)
-	for _, notification := range notifications.GetNotifications() {
+	for _, toNotify := range notifications {
+		appendRecipient := func(e EmailNotify) {
+			e.MatchingSteps = toNotify.MatchingSteps
+			recipients = append(recipients, e)
+		}
+
+		n := toNotify.Notification
+
 		// Aggregate the static list of recipients from the Notifications.
-		for _, recipient := range notification.GetEmail().GetRecipients() {
-			recipients = append(recipients, EmailNotify{
+		for _, recipient := range n.GetEmail().GetRecipients() {
+			appendRecipient(EmailNotify{
 				Email:    recipient,
-				Template: notification.Template,
+				Template: n.Template,
 			})
 		}
 
 		// Don't bother dealing with anything blamelist related if there's no config for it.
-		if notification.NotifyBlamelist == nil {
+		if n.NotifyBlamelist == nil {
 			continue
 		}
 
 		// If the whitelist is empty, use the static blamelist.
-		whitelist := notification.NotifyBlamelist.GetRepositoryWhitelist()
+		whitelist := n.NotifyBlamelist.GetRepositoryWhitelist()
 		if len(whitelist) == 0 {
-			recipients = append(recipients, commitsBlamelist(inputBlame, notification.Template)...)
+			for _, e := range commitsBlamelist(inputBlame, n.Template) {
+				appendRecipient(e)
+			}
 			continue
 		}
 
 		// If the whitelist is non-empty, use the dynamic blamelist.
 		whiteset := stringset.NewFromSlice(whitelist...)
-		recipients = append(recipients, outputBlame.Filter(whiteset).Blamelist(notification.Template)...)
+		for _, e := range outputBlame.Filter(whiteset).Blamelist(n.Template) {
+			appendRecipient(e)
+		}
 	}
 
 	// Acquired before appending to "recipients" from the tasks below.
 	mRecipients := sync.Mutex{}
 	err := parallel.WorkPool(8, func(ch chan<- func() error) {
-		for _, notification := range notifications.GetNotifications() {
-			template := notification.Template
-			for _, rotation := range notification.GetEmail().GetRotaNgRotations() {
+		for _, toNotify := range notifications {
+			template := toNotify.Notification.Template
+			steps := toNotify.MatchingSteps
+			for _, rotation := range toNotify.Notification.GetEmail().GetRotaNgRotations() {
 				rotation := rotation
 				ch <- func() error {
-					return fetchRotaOncallers(c, rotation, template, fetchFunc, &recipients, &mRecipients)
+					return fetchRotaOncallers(c, rotation, template, steps, fetchFunc, &recipients, &mRecipients)
 				}
 			}
 		}
@@ -222,7 +244,7 @@ func computeRecipientsInternal(c context.Context, notifications notifypb.Notific
 	return recipients
 }
 
-func fetchRotaOncallers(c context.Context, rotation, template string, fetchFunc func(context.Context, string) ([]byte, error), recipients *[]EmailNotify, mRecipients *sync.Mutex) error {
+func fetchRotaOncallers(c context.Context, rotation, template string, matchingSteps []*buildbucketpb.Step, fetchFunc func(context.Context, string) ([]byte, error), recipients *[]EmailNotify, mRecipients *sync.Mutex) error {
 	address := "https://rota-ng.appspot.com/legacy/" + url.PathEscape(rotation) + ".json"
 	resp, err := fetchFunc(c, address)
 	if err != nil {
@@ -241,16 +263,18 @@ func fetchRotaOncallers(c context.Context, rotation, template string, fetchFunc 
 	defer mRecipients.Unlock()
 	for _, email := range oncallEmails.Emails {
 		*recipients = append(*recipients, EmailNotify{
-			Email:    email,
-			Template: template,
+			Email:         email,
+			Template:      template,
+			MatchingSteps: matchingSteps,
 		})
 	}
 
 	return nil
 }
 
-// ShouldNotify is the predicate function for whether a trigger's conditions have been met.
-func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) bool {
+// ShouldNotify determines whether a trigger's conditions have been met, and returns the list
+// of steps matching the filters on the notification, if any.
+func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) (bool, []*buildbucketpb.Step) {
 	newStatus := newBuild.Status
 
 	switch {
@@ -267,13 +291,13 @@ func ShouldNotify(n *notifypb.Notification, oldStatus buildbucketpb.Status, newB
 	case n.OnNewFailure && newStatus == buildbucketpb.Status_FAILURE && oldStatus != buildbucketpb.Status_FAILURE:
 
 	default:
-		return false
+		return false, nil
 	}
 
-	return stepsMatch(newBuild, n.FailedStepRegexp, n.FailedStepRegexpExclude)
+	return matchingSteps(newBuild, n.FailedStepRegexp, n.FailedStepRegexpExclude)
 }
 
-func stepsMatch(build *buildbucketpb.Build, failedStepRegexp, failedStepRegexpExclude string) bool {
+func matchingSteps(build *buildbucketpb.Build, failedStepRegexp, failedStepRegexpExclude string) (bool, []*buildbucketpb.Step) {
 	var includeRegex *regexp.Regexp
 	if failedStepRegexp != "" {
 		// We should never get an invalid regex here, as our validation should catch this.
@@ -288,31 +312,39 @@ func stepsMatch(build *buildbucketpb.Build, failedStepRegexp, failedStepRegexpEx
 
 	// Don't scan steps if we have no regexes.
 	if includeRegex == nil && excludeRegex == nil {
-		return true
+		return true, nil
 	}
 
+	var steps []*buildbucketpb.Step
 	for _, step := range build.Steps {
 		if step.Status == buildbucketpb.Status_FAILURE {
 			if (includeRegex == nil || includeRegex.MatchString(step.Name)) &&
 				(excludeRegex == nil || !excludeRegex.MatchString(step.Name)) {
-				return true
+				steps = append(steps, step)
 			}
 		}
 	}
-	return false
+
+	if len(steps) > 0 {
+		return true, steps
+	}
+	return false, nil
 }
 
 // Filter filters out Notification objects from Notifications by checking if we ShouldNotify
 // based on two build statuses.
-func Filter(n *notifypb.Notifications, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) notifypb.Notifications {
+func Filter(n *notifypb.Notifications, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) []ToNotify {
 	notifications := n.GetNotifications()
-	filtered := make([]*notifypb.Notification, 0, len(notifications))
+	filtered := make([]ToNotify, 0, len(notifications))
 	for _, notification := range notifications {
-		if ShouldNotify(notification, oldStatus, newBuild) {
-			filtered = append(filtered, notification)
+		if match, steps := ShouldNotify(notification, oldStatus, newBuild); match {
+			filtered = append(filtered, ToNotify{
+				Notification:  notification,
+				MatchingSteps: steps,
+			})
 		}
 	}
-	return notifypb.Notifications{Notifications: filtered}
+	return filtered
 }
 
 // contains checks whether or not a build status is in a list of build statuses.
@@ -328,7 +360,8 @@ func contains(status buildbucketpb.Status, statusList []buildbucketpb.Status) bo
 func computeStatus(cfgTreeCloser *config.TreeCloser, build *buildbucketpb.Build) config.TreeCloserStatus {
 	if build.Status == buildbucketpb.Status_FAILURE {
 		tc := cfgTreeCloser.TreeCloser
-		if stepsMatch(build, tc.FailedStepRegexp, tc.FailedStepRegexpExclude) {
+		// TODO: Propagate the list of matching steps up to the caller.
+		if match, _ := matchingSteps(build, tc.FailedStepRegexp, tc.FailedStepRegexpExclude); match {
 			return config.Closed
 		}
 	}
