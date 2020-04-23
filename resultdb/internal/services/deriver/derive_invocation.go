@@ -272,6 +272,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				tr.ResultId = strconv.Itoa(k)
 				muts = append(muts, insertOrUpdateTestResult(batchID, tr.TestResult))
 				for _, a := range tr.Artifacts {
+					a.Name = pbutil.TestResultArtifactName(string(invID), tr.TestId, tr.ResultId, a.ArtifactId)
 					muts = append(muts, insertOrUpdateArtifact(batchID, tr.TestResult, a))
 				}
 			}
@@ -343,7 +344,7 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spann
 func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
 	return span.InsertOrUpdateMap("Artifacts", map[string]interface{}{
 		"InvocationId": invID,
-		"ParentId":     fmt.Sprintf("tr/%s/%s", tr.TestId, tr.ResultId),
+		"ParentId":     span.ArtifactParentID(a.Name),
 		"ArtifactId":   a.ArtifactId,
 		"ContentType":  a.ContentType,
 		"Size":         a.SizeBytes,
