@@ -358,9 +358,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 				return err
 			}
 			tr.SummaryHtml = buf.String()
-
-			tr.ArtifactKeys = container.artifacts
-			sort.Strings(tr.ArtifactKeys)
+			tr.Artifacts = container.artifacts
 		}
 
 		if i < len(durations) {
@@ -375,7 +373,8 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 }
 
 type parsedArtifacts struct {
-	artifacts []string
+	// artifacts maps from a short name to an artifact key
+	artifacts map[string]string
 	links     map[string]string
 }
 
@@ -402,7 +401,8 @@ func (f *TestFields) parseArtifacts(ctx context.Context, availableArtifacts stri
 			container := artifacts[runID]
 			if container == nil {
 				container = &parsedArtifacts{
-					links: map[string]string{},
+					links:     map[string]string{},
+					artifacts: map[string]string{},
 				}
 				artifacts[runID] = container
 			}
@@ -410,7 +410,7 @@ func (f *TestFields) parseArtifacts(ctx context.Context, availableArtifacts stri
 			// Look for the path in isolated outputs.
 			// TODO(crbug/1032779): Track outputs that were processed.
 			if key := findArtifact(availableArtifacts, normPath); key != "" {
-				container.artifacts = append(container.artifacts, key)
+				container.artifacts[name] = key
 				continue
 			}
 
