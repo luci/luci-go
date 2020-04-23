@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66531228_916f98de",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-23T01:19:59Z",
+      "side": 1,
+      "message": "The way this is set up makes sense for the implementation, but it creates a confusing mental model for the user.\n\nIMO there need to be checkboxes for every type of result: unexpected, expected, exonerated; and unexpected should be checked by default.\n\nIf this is unfeasible for some reason, another option could be to reword it and use radio buttons (e.g. \"show all\" vs \"unexpected results only\").",
+      "range": {
+        "startLine": 53,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
