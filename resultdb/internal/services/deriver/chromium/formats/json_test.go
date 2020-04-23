@@ -233,7 +233,7 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 3e8},
 					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 				},
-				ArtifactKeys: []string{"harness/log.txt"},
+				Artifacts: map[string]string{"isolate_object_list": "harness/log.txt"},
 			},
 			{
 				TestResult: &pb.TestResult{
@@ -243,7 +243,7 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 2e8},
 					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 				},
-				ArtifactKeys: []string{"harness/retry_1/log.txt"},
+				Artifacts: map[string]string{"isolate_object_list": "harness/retry_1/log.txt"},
 			},
 			{
 				TestResult: &pb.TestResult{
@@ -253,7 +253,7 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 1e8},
 					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 				},
-				ArtifactKeys: []string{"harness/retry_2/log.txt"},
+				Artifacts: map[string]string{"isolate_object_list": "harness/retry_2/log.txt"},
 			},
 
 			// Test 2.
@@ -303,7 +303,10 @@ func TestJSONConversions(t *testing.T) {
 					Tags:        pbutil.StringPairs("json_format_status", "FAIL"),
 					SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
 				},
-				ArtifactKeys: []string{"relative/path/to/diff.png", "relative/path/to/log.txt"},
+				Artifacts: map[string]string{
+					"isolate_object_list": "relative/path/to/diff.png",
+					"isolate_object":      "relative/path/to/log.txt",
+				},
 			},
 
 			// Test 4
@@ -340,7 +343,7 @@ func assertTestResultsResemble(actual, expected []*TestResult) {
 	So(actual, ShouldHaveLength, len(expected))
 	for i := range actual {
 		So(actual[i].TestResult, ShouldResembleProto, expected[i].TestResult)
-		So(actual[i].ArtifactKeys, ShouldResemble, expected[i].ArtifactKeys)
+		So(actual[i].Artifacts, ShouldResemble, expected[i].Artifacts)
 	}
 }
 
@@ -361,26 +364,26 @@ func TestArtifactUtils(t *testing.T) {
 
 		available := stringset.NewFromSlice(
 			"artifacts/a/stdout.txt",
-			"artifacts/a/stderr.txt",
-			"layout-test-results/b/stderr.txt",
-			"c/stderr.txt",
+			"artifacts/b/stderr.txt",
+			"layout-test-results/c/stderr.txt",
+			"d/stderr.txt",
 		)
 		f := &TestFields{Artifacts: map[string][]string{
-			"a": {"a/stdout.txt", "a\\stderr.txt"},
-			"b": {"b/stderr.txt"},
+			"a": {"a/stdout.txt"},
+			"b": {"b\\stderr.txt"},
 			"c": {"c/stderr.txt"},
+			"d": {"d/stderr.txt"},
 		}}
 
 		artifactsPerRun := f.parseArtifacts(ctx, available, "testID")
 		So(artifactsPerRun, ShouldHaveLength, 1)
 
 		arts := artifactsPerRun[0].artifacts
-		sort.Strings(arts)
-		So(arts, ShouldResemble, []string{
-			"artifacts/a/stderr.txt",
-			"artifacts/a/stdout.txt",
-			"c/stderr.txt",
-			"layout-test-results/b/stderr.txt",
+		So(arts, ShouldResemble, map[string]string{
+			"a": "artifacts/a/stdout.txt",
+			"b": "artifacts/b/stderr.txt",
+			"c": "layout-test-results/c/stderr.txt",
+			"d": "d/stderr.txt",
 		})
 	})
 }

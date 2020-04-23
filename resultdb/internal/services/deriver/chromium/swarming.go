@@ -284,8 +284,8 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 		return nil, errors.Annotate(err, "getting isolated outputs").Err()
 	}
 	availableArtifacts := stringset.New(len(outputs))
-	for key := range outputs {
-		availableArtifacts.Add(key)
+	for path := range outputs {
+		availableArtifacts.Add(util.NormalizeIsolatedPath(path))
 	}
 
 	// Fetch the output.json file itself and convert it.
@@ -306,11 +306,11 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	for i, r := range results {
 		ret[i] = &TestResult{
 			TestResult: r.TestResult,
-			Artifacts:  make([]*pb.Artifact, 0, len(r.ArtifactKeys)),
+			Artifacts:  make([]*pb.Artifact, 0, len(r.Artifacts)),
 		}
 
-		for _, key := range r.ArtifactKeys {
-			a := isolatedFileToArtifact(outputsRef.Isolatedserver, outputsRef.Namespace, key, outputs[key])
+		for name, relPath := range r.Artifacts {
+			a := isolatedFileToArtifact(outputsRef.Isolatedserver, outputsRef.Namespace, relPath, outputs[relPath], name)
 			if a != nil {
 				ret[i].Artifacts = append(ret[i].Artifacts, a)
 			}
@@ -319,14 +319,14 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	return ret, nil
 }
 
-func isolatedFileToArtifact(isolateServer, ns, relPath string, f isolated.File) *pb.Artifact {
+func isolatedFileToArtifact(isolateServer, ns, relPath string, f isolated.File, artifactID string) *pb.Artifact {
 	// We don't know how to handle symlink files, so return nil for the caller to deal with it.
 	if f.Link != nil {
 		return nil
 	}
 
 	a := &pb.Artifact{
-		ArtifactId: util.NormalizeIsolatedPath(relPath),
+		ArtifactId: artifactID,
 		FetchUrl:   internal.IsolateURL(util.IsolateServerToHost(isolateServer), ns, string(f.Digest)),
 	}
 
