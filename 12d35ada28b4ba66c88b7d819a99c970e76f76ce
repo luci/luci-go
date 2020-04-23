@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45019e1e_d8cafca2",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-23T05:21:15Z",
+      "side": 1,
+      "message": "As a side note, I think whether this goes in the tree panel or not depends heavily on whether we commit to showing the tree panel all the time, or have it hidden by default as it is now. If hidden by default, I think we should move the filters out.\n\nLet\u0027s get some user feedback before making that decision though.",
+      "range": {
+        "startLine": 190,
+        "startChar": 10,
+        "endLine": 196,
+        "endChar": 27
+      },
+      "revId": "12d35ada28b4ba66c88b7d819a99c970e76f76ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -70,6 +70,30 @@
       "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "512b4a8e_a0e6be19",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-23T05:21:15Z",
+      "side": 1,
+      "message": "You mean patchset 1 or patchset 2? I prefer patchset 2 because it seems easier to understand to me.\n\nI agree there\u0027s no point supporting the case where nothing is checked, but to me the disabled checkbox makes it a little clearer that unexpected results will always be shown. I think it\u0027ll be even more useful when we can put a number from the stats API next to it.",
+      "parentUuid": "c5c18a03_e3e94f91",
+      "range": {
+        "startLine": 53,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
