@@ -19,9 +19,6 @@ import (
 	"path"
 	"strings"
 
-	"go.chromium.org/luci/common/isolated"
-
-	"go.chromium.org/luci/resultdb/internal"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -35,39 +32,13 @@ func IsolatedFilesToString(fMap map[string]*pb.Artifact) string {
 	return strings.Join(msg, "\n")
 }
 
-// IsolatedFileToArtifact returns a possibly partial pb.Artifact representing the isolated.File.
-func IsolatedFileToArtifact(isolateServer, ns, relPath string, f *isolated.File) *pb.Artifact {
-	// We don't know how to handle symlink files, so return nil for the caller to deal with it.
-	if f.Link != nil {
-		return nil
-	}
-
-	// Otherwise, populate the artifact fields.
-	a := &pb.Artifact{
-		Name:     NormalizeIsolatedPath(relPath),
-		FetchUrl: internal.IsolateURL(isolateServerToHost(isolateServer), ns, string(f.Digest)),
-	}
-
-	if f.Size != nil {
-		a.SizeBytes = *f.Size
-	}
-
-	switch path.Ext(relPath) {
-	case ".txt":
-		a.ContentType = "text/plain"
-	case ".png":
-		a.ContentType = "image/png"
-	}
-
-	return a
-}
-
 // NormalizeIsolatedPath converts the isolated path to the canonical form.
 func NormalizeIsolatedPath(p string) string {
 	return path.Clean(strings.ReplaceAll(p, "\\", "/"))
 }
 
-func isolateServerToHost(server string) string {
+// IsolateServerToHost converts an Isolate URL to a hostname.
+func IsolateServerToHost(server string) string {
 	host := server
 	host = strings.TrimPrefix(host, "https://")
 	host = strings.TrimPrefix(host, "http://")

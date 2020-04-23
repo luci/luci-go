@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -331,14 +332,14 @@ func TestBatchInsertTestResults(t *testing.T) {
 			FinalizeTime: startTS,
 			Deadline:     startTS,
 		}
-		results := []*pb.TestResult{
-			{TestId: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS},
-			{TestId: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL},
-			{TestId: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
+		results := []*chromium.TestResult{
+			{TestResult: &pb.TestResult{TestId: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS}},
+			{TestResult: &pb.TestResult{TestId: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL}},
+			{TestResult: &pb.TestResult{TestId: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH}},
 		}
 		deriver := newTestDeriverServer()
 
-		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*pb.TestResult) {
+		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*chromium.TestResult) {
 			// Check included Invocations.
 			expectedInclusions := make(span.InvocationIDSet, len(expectedBatches))
 			for i := range expectedBatches {
@@ -371,7 +372,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 			inv.Name = baseID.Name()
 			actualInclusions, err := deriver.batchInsertTestResults(ctx, inv, results, 5)
 			So(err, ShouldBeNil)
-			checkBatches(baseID, actualInclusions, [][]*pb.TestResult{results})
+			checkBatches(baseID, actualInclusions, [][]*chromium.TestResult{results})
 		})
 
 		Convey(`for multiple batches`, func() {
@@ -379,7 +380,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 			inv.Name = baseID.Name()
 			actualInclusions, err := deriver.batchInsertTestResults(ctx, inv, results, 2)
 			So(err, ShouldBeNil)
-			checkBatches(baseID, actualInclusions, [][]*pb.TestResult{results[:2], results[2:]})
+			checkBatches(baseID, actualInclusions, [][]*chromium.TestResult{results[:2], results[2:]})
 
 			Convey(`with batch size a factor of number of TestResults`, func() {
 				baseID := span.InvocationID("multiple_batches_factor")
@@ -387,7 +388,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 				actualInclusions, err := deriver.batchInsertTestResults(ctx, inv, results, 1)
 				So(err, ShouldBeNil)
 				checkBatches(baseID, actualInclusions,
-					[][]*pb.TestResult{results[:1], results[1:2], results[2:]})
+					[][]*chromium.TestResult{results[:1], results[1:2], results[2:]})
 			})
 		})
 	})

@@ -116,10 +116,8 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
-// Uses outputs, the isolated outputs associated with the task, to populate
-// artifacts.
-// Does not populate TestResult.Name; that happens server-side on RPC response.
-func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+// Does not populate TestResult.Name or TestResult.ResultId.
+func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation, availableArtifacts stringset.Set) ([]*TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
@@ -131,23 +129,13 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv
 	}
 	sort.Strings(testNames)
 
-	ret := make([]*pb.TestResult, 0, len(r.Tests))
+	ret := make([]*TestResult, 0, len(r.Tests))
 	buf := &strings.Builder{}
 	for _, name := range testNames {
 		testID := testIDPrefix + name
-
 		// Populate protos.
-		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testID, outputs, buf)
-		if err != nil {
+		if err := r.Tests[name].toProtos(ctx, &ret, testID, availableArtifacts, buf); err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
-		}
-
-		// If any outputs cannot be processed, don't cause the rest of processing to fail, but do log.
-		if len(unresolvedOutputs) > 0 {
-			logging.Errorf(ctx,
-				"Test %s could not generate artifact protos for the following:\n%s",
-				testID,
-				artifactsToString(unresolvedOutputs))
 		}
 	}
 
@@ -306,8 +294,8 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 // toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
 //
-// TODO(crbug/1032779): Track artifacts that did not get processed.
-func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testID string, outputs map[string]*pb.Artifact, buf *strings.Builder) (map[string][]string, error) {
+// Logs unresolved artifacts.
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID string, availableArtifacts stringset.Set, buf *strings.Builder) error {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
@@ -321,7 +309,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 	// Time and Times are both optional, but if Times is present, its length should match the number
 	// of runs. Otherwise we have only Time as the duration of the first run.
 	if len(f.Times) > 0 && len(f.Times) != len(actualStatuses) {
-		return nil, errors.Reason(
+		return errors.Reason(
 			"%d durations populated but has %d test statuses; should match",
 			len(f.Times), len(actualStatuses)).Err()
 	}
@@ -338,7 +326,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 	// should match the number of actual runs. Because the arts are a map from run index to
 	// *pb.Artifacts slice, we will not error if artifacts are missing for a run, but log a warning
 	// in case the number of runs do not match each other for further investigation.
-	arts, unresolved := f.getArtifacts(outputs)
+	arts := f.parseArtifacts(ctx, availableArtifacts, testID)
 	if len(arts) > 0 && len(actualStatuses) != len(arts) {
 		logging.Infof(ctx,
 			"Test %s generated %d statuses (%v); does not match number of runs generated from artifacts (%d)",
@@ -349,14 +337,16 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 	for i, runStatus := range actualStatuses {
 		status, err := fromJSONStatus(runStatus)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		tr := &pb.TestResult{
-			TestId:   testID,
-			Expected: expectedSet.Has(runStatus),
-			Status:   status,
-			Tags:     pbutil.StringPairs("json_format_status", runStatus),
+		tr := &TestResult{
+			TestResult: &pb.TestResult{
+				TestId:   testID,
+				Expected: expectedSet.Has(runStatus),
+				Status:   status,
+				Tags:     pbutil.StringPairs("json_format_status", runStatus),
+			},
 		}
 
 		if container, ok := arts[i]; ok {
@@ -365,40 +355,38 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 				"links": container.links,
 			})
 			if err != nil {
-				return nil, err
+				return err
 			}
 			tr.SummaryHtml = buf.String()
-			// TODO(crbug.com/1071258): associate artifacts with the test result.
+
+			tr.ArtifactKeys = container.artifacts
+			sort.Strings(tr.ArtifactKeys)
 		}
 
 		if i < len(durations) {
 			tr.Duration = secondsToDuration(durations[i])
 		}
 
-		pbutil.NormalizeTestResult(tr)
+		pbutil.NormalizeTestResult(tr.TestResult)
 		*dest = append(*dest, tr)
 	}
 
-	return unresolved, nil
+	return nil
 }
 
-// testArtifactsPerRun maps a run index to artifacts and links.
-type testArtifactsPerRun map[int]*parsedArtifacts
-
 type parsedArtifacts struct {
-	artifacts []*pb.Artifact
+	artifacts []string
 	links     map[string]string
 }
 
-// getArtifacts gets pb.Artifacts corresponding to the TestField's artifacts.
+// parseArtifacts parses f.Artifacts field.
 //
-// It tries to derive the pb.Artifacts in the following order:
+// It tries to derive the artifacts in the following order:
 //   - look for them in the isolated outputs represented as pb.Artifacts
 //   - check if they're a known special case
 //   - fail to process and mark them as `unresolvedArtifacts`
-func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts testArtifactsPerRun, unresolvedArtifacts map[string][]string) {
-	artifacts = testArtifactsPerRun{}
-	unresolvedArtifacts = map[string][]string{}
+func (f *TestFields) parseArtifacts(ctx context.Context, availableArtifacts stringset.Set, testID string) map[int]*parsedArtifacts {
+	artifacts := map[int]*parsedArtifacts{}
 
 	for name, paths := range f.Artifacts {
 		for i, path := range paths {
@@ -408,7 +396,7 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 			// Get the run ID of the artifact. Defaults to 0 (i.e. assumes there is only one run).
 			runID, err := artifactRunID(normPath)
 			if err != nil {
-				unresolvedArtifacts[name] = append(unresolvedArtifacts[name], path)
+				logging.Warningf(ctx, "Test %q: failed to extract artifact run id from %q", testID, normPath)
 				continue
 			}
 			container := artifacts[runID]
@@ -421,8 +409,8 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 
 			// Look for the path in isolated outputs.
 			// TODO(crbug/1032779): Track outputs that were processed.
-			if _, art := checkIsolatedOutputs(outputs, normPath); art != nil {
-				container.artifacts = append(container.artifacts, art)
+			if key := findArtifact(availableArtifacts, normPath); key != "" {
+				container.artifacts = append(container.artifacts, key)
 				continue
 			}
 
@@ -440,12 +428,12 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 				continue
 			}
 
-			// Otherwise, could not populate artifact, so mark it as unresolved.
-			unresolvedArtifacts[name] = append(unresolvedArtifacts[name], path)
+			// Otherwise, could not populate artifact, log it as unresolved.
+			logging.Warningf(ctx, "Test %q: failed to resolve artifact %q:%q", testID, name, path)
 		}
 	}
 
-	return
+	return artifacts
 }
 
 // artifactRunID extracts a run ID, defaulting to 0, or error if it doesn't recognize the format.
@@ -479,22 +467,23 @@ func artifactsToString(arts map[string][]string) string {
 	return msg.String()
 }
 
-// checkIsolatedOutputs looks for the given output path in the isolated output directory.
+// findArtifact looks for an artifact key by path.
 // Checks the root directory as well as known possible subdirectories.
-func checkIsolatedOutputs(outputs map[string]*pb.Artifact, normPath string) (string, *pb.Artifact) {
+// Returns an artifact key.
+func findArtifact(available stringset.Set, normPath string) string {
 	// Check root.
-	if art, ok := outputs[normPath]; ok {
-		return normPath, art
+	if available.Has(normPath) {
+		return normPath
 	}
 
 	// Check known candidate subdirectories.
 	// TODO(1027708,1031296): Remove.
 	for _, dir := range artifactDirectories {
 		key := path.Join(dir, normPath)
-		if art, ok := outputs[key]; ok {
-			return key, art
+		if available.Has(key) {
+			return key
 		}
 	}
 
-	return "", nil
+	return ""
 }

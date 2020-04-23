@@ -139,8 +139,8 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
-// Does not populate TestResult.Name.
-func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation) ([]*pb.TestResult, error) {
+// Does not populate TestResult.Name or TestResult.ResultId.
+func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation) ([]*TestResult, error) {
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
 	// more than one to confirm and track.
 	if len(r.PerIterationData) > 1 {
@@ -151,7 +151,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 	// we'll mark as otherwise.
 	inv.Interrupted = false
 
-	var ret []*pb.TestResult
+	var ret []*TestResult
 	var testNames []string
 	buf := &strings.Builder{}
 	for _, data := range r.PerIterationData {
@@ -193,7 +193,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 					inv.Interrupted = true
 				}
 
-				ret = append(ret, rpb)
+				ret = append(ret, &TestResult{TestResult: rpb})
 			}
 		}
 	}

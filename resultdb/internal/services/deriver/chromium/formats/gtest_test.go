@@ -351,76 +351,92 @@ func TestGTestConversions(t *testing.T) {
 			testResults, err := results.ToProtos(ctx, "ninja://tests/", inv)
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatGTest)), ShouldBeTrue)
-			So(testResults, ShouldResembleProto, []*pb.TestResult{
+			assertTestResultsResemble(testResults, []*TestResult{
 				// Iteration 1.
 				{
-					TestId:   "ninja://tests/BazTest.DoesQux",
-					Expected: true,
-					Status:   pb.TestStatus_PASS,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "SUCCESS",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId:   "ninja://tests/BazTest.DoesQux",
+						Expected: true,
+						Status:   pb.TestStatus_PASS,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "SUCCESS",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 				{
-					TestId: "ninja://tests/BazTest.DoesQux",
-					Status: pb.TestStatus_FAIL,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "FAILURE",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId: "ninja://tests/BazTest.DoesQux",
+						Status: pb.TestStatus_FAIL,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "FAILURE",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 				{
-					TestId: "ninja://tests/FooTest.DoesBar",
-					Status: pb.TestStatus_FAIL,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "EXCESSIVE_OUTPUT",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId: "ninja://tests/FooTest.DoesBar",
+						Status: pb.TestStatus_FAIL,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "EXCESSIVE_OUTPUT",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 				{
-					TestId: "ninja://tests/FooTest.DoesBar",
-					Status: pb.TestStatus_FAIL,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "FAILURE_ON_EXIT",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId: "ninja://tests/FooTest.DoesBar",
+						Status: pb.TestStatus_FAIL,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "FAILURE_ON_EXIT",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 
 				// Iteration 2.
 				{
-					TestId:   "ninja://tests/BazTest.DoesQux",
-					Expected: true,
-					Status:   pb.TestStatus_PASS,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "SUCCESS",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId:   "ninja://tests/BazTest.DoesQux",
+						Expected: true,
+						Status:   pb.TestStatus_PASS,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "SUCCESS",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 				{
-					TestId:   "ninja://tests/BazTest.DoesQux",
-					Expected: true,
-					Status:   pb.TestStatus_PASS,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "SUCCESS",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId:   "ninja://tests/BazTest.DoesQux",
+						Expected: true,
+						Status:   pb.TestStatus_PASS,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "SUCCESS",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 				{
-					TestId: "ninja://tests/FooTest.DoesBar",
-					Status: pb.TestStatus_FAIL,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "FAILURE",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId: "ninja://tests/FooTest.DoesBar",
+						Status: pb.TestStatus_FAIL,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "FAILURE",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 				{
-					TestId: "ninja://tests/FooTest.DoesBar",
-					Status: pb.TestStatus_FAIL,
-					Tags: pbutil.StringPairs(
-						"gtest_status", "FAILURE_ON_EXIT",
-						"lossless_snippet", "false",
-					),
+					TestResult: &pb.TestResult{
+						TestId: "ninja://tests/FooTest.DoesBar",
+						Status: pb.TestStatus_FAIL,
+						Tags: pbutil.StringPairs(
+							"gtest_status", "FAILURE_ON_EXIT",
+							"lossless_snippet", "false",
+						),
+					},
 				},
 			})
 		})

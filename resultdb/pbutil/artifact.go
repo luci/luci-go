@@ -83,6 +83,19 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 	return
 }
 
+// InvocationArtifactName synthesizes a name of an invocation-level artifact.
+// Does not validate IDs, use ValidateInvocationID and ValidateArtifactID.
+func InvocationArtifactName(invocationID, artifactID string) string {
+	return fmt.Sprintf("invocations/%s/artifacts/%s", invocationID, artifactID)
+}
+
+// TestResultArtifactName synthesizes a name of an test-result-level artifact.
+// Does not validate IDs, use ValidateInvocationID, ValidateTestID,
+// ValidateResultID and ValidateArtifactID.
+func TestResultArtifactName(invocationID, testID, resulID, artifactID string) string {
+	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, artifactID)
+}
+
 // ValidateSinkArtifact returns a non-nil error if art is invalid.
 func ValidateSinkArtifact(art *sinkpb.Artifact) error {
 	if art.GetFilePath() == "" && art.GetContents() == nil {
