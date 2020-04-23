@@ -337,6 +337,8 @@ func isolatedFileToArtifact(isolateServer, ns, relPath string, f isolated.File) 
 	switch path.Ext(relPath) {
 	case ".txt":
 		a.ContentType = "text/plain"
+	case ".html":
+		a.ContentType = "text/html"
 	case ".png":
 		a.ContentType = "image/png"
 	}
