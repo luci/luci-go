@@ -58,117 +58,123 @@ func TestNotify(t *testing.T) {
 		failedBuild := &buildbucketpb.Build{Status: failure}
 		infraFailedBuild := &buildbucketpb.Build{Status: infraFailure}
 
+		// Helper wrapper which discards the steps and just returns the bool.
+		s := func(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) bool {
+			should, _ := ShouldNotify(n, oldStatus, newBuild)
+			return should
+		}
+
 		Convey("Success", func() {
 			n.OnOccurrence = append(n.OnOccurrence, success)
 
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeTrue)
+			So(s(unspecified, successfulBuild), ShouldBeTrue)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeTrue)
 		})
 
 		Convey("Failure", func() {
 			n.OnOccurrence = append(n.OnOccurrence, failure)
 
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeTrue)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
 		})
 
 		Convey("InfraFailure", func() {
 			n.OnOccurrence = append(n.OnOccurrence, infraFailure)
 
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeTrue)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(infraFailure, infraFailedBuild), ShouldBeTrue)
+			So(s(success, successfulBuild), ShouldBeFalse)
 		})
 
 		Convey("Failure and InfraFailure", func() {
 			n.OnOccurrence = append(n.OnOccurrence, failure, infraFailure)
 
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeTrue)
+			So(s(unspecified, infraFailedBuild), ShouldBeTrue)
+			So(s(failure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeTrue)
+			So(s(success, successfulBuild), ShouldBeFalse)
 		})
 
 		Convey("New Failure", func() {
 			n.OnNewStatus = append(n.OnNewStatus, failure)
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeTrue)
+			So(s(success, infraFailedBuild), ShouldBeFalse)
+			So(s(failure, successfulBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeFalse)
+			So(s(infraFailure, successfulBuild), ShouldBeFalse)
+			So(s(infraFailure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 
 		Convey("New InfraFailure", func() {
 			n.OnNewStatus = append(n.OnNewStatus, infraFailure)
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeFalse)
+			So(s(success, infraFailedBuild), ShouldBeTrue)
+			So(s(failure, successfulBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeTrue)
+			So(s(infraFailure, successfulBuild), ShouldBeFalse)
+			So(s(infraFailure, failedBuild), ShouldBeFalse)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 
 		Convey("New Failure and new InfraFailure", func() {
 			n.OnNewStatus = append(n.OnNewStatus, failure, infraFailure)
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeTrue)
+			So(s(success, infraFailedBuild), ShouldBeTrue)
+			So(s(failure, successfulBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeTrue)
+			So(s(infraFailure, successfulBuild), ShouldBeFalse)
+			So(s(infraFailure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 
 		Convey("InfraFailure and new Failure and new Success", func() {
 			n.OnOccurrence = append(n.OnOccurrence, infraFailure)
 			n.OnNewStatus = append(n.OnNewStatus, failure, success)
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeTrue)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeTrue)
+			So(s(success, infraFailedBuild), ShouldBeTrue)
+			So(s(failure, successfulBuild), ShouldBeTrue)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeTrue)
+			So(s(infraFailure, successfulBuild), ShouldBeTrue)
+			So(s(infraFailure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeTrue)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeTrue)
 		})
 
 		Convey("Failure with step regex", func() {
@@ -176,151 +182,159 @@ func TestNotify(t *testing.T) {
 			n.FailedStepRegexp = "yes"
 			n.FailedStepRegexpExclude = "no"
 
-			So(ShouldNotify(n, success, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			shouldHaveStep := func(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build, stepName string) {
+				should, steps := ShouldNotify(n, oldStatus, newBuild)
+
+				So(should, ShouldBeTrue)
+				So(steps, ShouldHaveLength, 1)
+				So(steps[0].Name, ShouldEqual, stepName)
+			}
+
+			So(s(success, failedBuild), ShouldBeFalse)
+			shouldHaveStep(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "yes",
 						Status: failure,
 					},
 				},
-			}), ShouldBeTrue)
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			}, "yes")
+			So(s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "yes",
 						Status: success,
 					},
 				},
 			}), ShouldBeFalse)
 
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			So(s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "no",
 						Status: failure,
 					},
 				},
 			}), ShouldBeFalse)
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			So(s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "yes",
 						Status: success,
 					},
-					&buildbucketpb.Step{
+					{
 						Name:   "no",
 						Status: failure,
 					},
 				},
 			}), ShouldBeFalse)
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			shouldHaveStep(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "yes",
 						Status: failure,
 					},
-					&buildbucketpb.Step{
+					{
 						Name:   "no",
 						Status: failure,
 					},
 				},
-			}), ShouldBeTrue)
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			}, "yes")
+			So(s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "yesno",
 						Status: failure,
 					},
 				},
 			}), ShouldBeFalse)
-			So(ShouldNotify(n, success, &buildbucketpb.Build{
+			shouldHaveStep(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{
+					{
 						Name:   "yesno",
 						Status: failure,
 					},
-					&buildbucketpb.Step{
+					{
 						Name:   "yes",
 						Status: failure,
 					},
 				},
-			}), ShouldBeTrue)
+			}, "yes")
 		})
 
 		Convey("OnSuccess deprecated", func() {
 			n.OnSuccess = true
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeTrue)
+			So(s(success, failedBuild), ShouldBeFalse)
+			So(s(success, infraFailedBuild), ShouldBeFalse)
+			So(s(failure, successfulBuild), ShouldBeTrue)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeFalse)
+			So(s(infraFailure, successfulBuild), ShouldBeTrue)
+			So(s(infraFailure, failedBuild), ShouldBeFalse)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeTrue)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 
 		Convey("OnFailure deprecated", func() {
 			n.OnFailure = true
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeTrue)
+			So(s(success, infraFailedBuild), ShouldBeFalse)
+			So(s(failure, successfulBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeTrue)
+			So(s(failure, infraFailedBuild), ShouldBeFalse)
+			So(s(infraFailure, successfulBuild), ShouldBeFalse)
+			So(s(infraFailure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeTrue)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 
 		Convey("OnChange deprecated", func() {
 			n.OnChange = true
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeTrue)
+			So(s(success, infraFailedBuild), ShouldBeTrue)
+			So(s(failure, successfulBuild), ShouldBeTrue)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeTrue)
+			So(s(infraFailure, successfulBuild), ShouldBeTrue)
+			So(s(infraFailure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeFalse)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 
 		Convey("OnNewFailure deprecated", func() {
 			n.OnNewFailure = true
 
-			So(ShouldNotify(n, success, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, success, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, success, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, failedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, failure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, infraFailure, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, successfulBuild), ShouldBeFalse)
-			So(ShouldNotify(n, unspecified, failedBuild), ShouldBeTrue)
-			So(ShouldNotify(n, unspecified, infraFailedBuild), ShouldBeFalse)
+			So(s(success, successfulBuild), ShouldBeFalse)
+			So(s(success, failedBuild), ShouldBeTrue)
+			So(s(success, infraFailedBuild), ShouldBeFalse)
+			So(s(failure, successfulBuild), ShouldBeFalse)
+			So(s(failure, failedBuild), ShouldBeFalse)
+			So(s(failure, infraFailedBuild), ShouldBeFalse)
+			So(s(infraFailure, successfulBuild), ShouldBeFalse)
+			So(s(infraFailure, failedBuild), ShouldBeTrue)
+			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
+			So(s(unspecified, successfulBuild), ShouldBeFalse)
+			So(s(unspecified, failedBuild), ShouldBeTrue)
+			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
 		})
 	})
 
@@ -357,6 +371,12 @@ func TestNotify(t *testing.T) {
 				SubjectTextTemplate: "Build {{.Build.Id}} completed from non-default template",
 				BodyHTMLTemplate:    "Build {{.Build.Id}} completed with status {{.Build.Status}} from non-default template",
 			},
+			{
+				ProjectKey:          datastore.KeyForObj(c, project),
+				Name:                "with-steps",
+				SubjectTextTemplate: "Subject {{ stepNames .MatchingFailedSteps }}",
+				BodyHTMLTemplate:    "Body {{ stepNames .MatchingFailedSteps }}",
+			},
 		}
 		So(datastore.Put(c, project, templates), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -373,14 +393,24 @@ func TestNotify(t *testing.T) {
 					Email:    "don@example.com",
 					Template: "non-default",
 				},
+				{
+					Email:    "juan@example.com",
+					Template: "with-steps",
+					MatchingSteps: []*buildbucketpb.Step{
+						{
+							Name: "step name",
+						},
+					},
+				},
 			}
+
 			tasks, err := createEmailTasks(c, emailNotify, &notifypb.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
 				Build:               &build.Build,
 				OldStatus:           buildbucketpb.Status_SUCCESS,
 			})
 			So(err, ShouldBeNil)
-			So(tasks, ShouldHaveLength, 3)
+			So(tasks, ShouldHaveLength, 4)
 
 			t := tasks[0].Payload.(*internal.EmailTask)
 			So(tasks[0].DeduplicationKey, ShouldEqual, "54-default-jane@example.com")
@@ -399,6 +429,12 @@ func TestNotify(t *testing.T) {
 			So(t.Recipients, ShouldResemble, []string{"don@example.com"})
 			So(t.Subject, ShouldEqual, "Build 54 completed from non-default template")
 			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS from non-default template")
+
+			t = tasks[3].Payload.(*internal.EmailTask)
+			So(tasks[3].DeduplicationKey, ShouldEqual, "54-with-steps-juan@example.com")
+			So(t.Recipients, ShouldResemble, []string{"juan@example.com"})
+			So(t.Subject, ShouldEqual, `Subject "step name"`)
+			So(decompress(t.BodyGzip), ShouldEqual, "Body &#34;step name&#34;")
 		})
 
 		Convey("createEmailTasks with dup notifies", func() {
@@ -456,15 +492,17 @@ func TestComputeRecipients(t *testing.T) {
 		}
 
 		Convey("ComputeRecipients fetches all sheriffs", func() {
-			n := notifypb.Notifications{
-				Notifications: []*notifypb.Notification{
-					&notifypb.Notification{
+			n := []ToNotify{
+				{
+					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"sheriff"},
 						},
 					},
-					&notifypb.Notification{
+				},
+				{
+					Notification: &notifypb.Notification{
 						Template: "sheriff_ios_template",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"sheriff_ios"},
@@ -481,27 +519,27 @@ func TestComputeRecipients(t *testing.T) {
 			})
 
 			So(emails, ShouldResemble, []EmailNotify{
-				EmailNotify{
+				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff2@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff3@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff4@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff5@google.com",
 					Template: "sheriff_ios_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff6@google.com",
 					Template: "sheriff_ios_template",
 				},
@@ -509,15 +547,17 @@ func TestComputeRecipients(t *testing.T) {
 		})
 
 		Convey("ComputeRecipients drops missing", func() {
-			n := notifypb.Notifications{
-				Notifications: []*notifypb.Notification{
-					&notifypb.Notification{
+			n := []ToNotify{
+				{
+					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"sheriff"},
 						},
 					},
-					&notifypb.Notification{
+				},
+				{
+					Notification: &notifypb.Notification{
 						Template: "what",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"huh"},
@@ -534,19 +574,19 @@ func TestComputeRecipients(t *testing.T) {
 			})
 
 			So(emails, ShouldResemble, []EmailNotify{
-				EmailNotify{
+				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff2@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff3@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff4@google.com",
 					Template: "sheriff_template",
 				},
@@ -554,15 +594,17 @@ func TestComputeRecipients(t *testing.T) {
 		})
 
 		Convey("ComputeRecipients includes static emails", func() {
-			n := notifypb.Notifications{
-				Notifications: []*notifypb.Notification{
-					&notifypb.Notification{
+			n := []ToNotify{
+				{
+					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"sheriff"},
 						},
 					},
-					&notifypb.Notification{
+				},
+				{
+					Notification: &notifypb.Notification{
 						Template: "other_template",
 						Email: &notifypb.Notification_Email{
 							Recipients: []string{"someone@google.com"},
@@ -579,23 +621,23 @@ func TestComputeRecipients(t *testing.T) {
 			})
 
 			So(emails, ShouldResemble, []EmailNotify{
-				EmailNotify{
+				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff2@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff3@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff4@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "someone@google.com",
 					Template: "other_template",
 				},
@@ -603,15 +645,17 @@ func TestComputeRecipients(t *testing.T) {
 		})
 
 		Convey("ComputeRecipients drops bad JSON", func() {
-			n := notifypb.Notifications{
-				Notifications: []*notifypb.Notification{
-					&notifypb.Notification{
+			n := []ToNotify{
+				{
+					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"sheriff"},
 						},
 					},
-					&notifypb.Notification{
+				},
+				{
+					Notification: &notifypb.Notification{
 						Template: "bad JSON",
 						Email: &notifypb.Notification_Email{
 							RotaNgRotations: []string{"bad"},
@@ -628,21 +672,89 @@ func TestComputeRecipients(t *testing.T) {
 			})
 
 			So(emails, ShouldResemble, []EmailNotify{
-				EmailNotify{
+				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff2@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff3@google.com",
 					Template: "sheriff_template",
 				},
-				EmailNotify{
+				{
 					Email:    "sheriff4@google.com",
 					Template: "sheriff_template",
+				},
+			})
+		})
+
+		Convey("ComputeRecipients propagates MatchingSteps", func() {
+			sheriffSteps := []*buildbucketpb.Step{
+				{
+					Name: "sheriff step",
+				},
+			}
+			otherSteps := []*buildbucketpb.Step{
+				{
+					Name: "other step",
+				},
+			}
+			n := []ToNotify{
+				{
+					Notification: &notifypb.Notification{
+						Template: "sheriff_template",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"sheriff"},
+						},
+					},
+					MatchingSteps: sheriffSteps,
+				},
+				{
+					Notification: &notifypb.Notification{
+						Template: "other_template",
+						Email: &notifypb.Notification_Email{
+							Recipients: []string{"someone@google.com"},
+						},
+					},
+					MatchingSteps: otherSteps,
+				},
+			}
+			emails := computeRecipientsInternal(c, n, nil, nil, fetch)
+
+			// ComputeRecipients is concurrent, hence we have no guarantees as to the order.
+			// So we sort here to ensure a consistent ordering.
+			sort.Slice(emails, func(i, j int) bool {
+				return emails[i].Email < emails[j].Email
+			})
+
+			So(emails, ShouldResemble, []EmailNotify{
+				{
+					Email:         "sheriff1@google.com",
+					Template:      "sheriff_template",
+					MatchingSteps: sheriffSteps,
+				},
+				{
+					Email:         "sheriff2@google.com",
+					Template:      "sheriff_template",
+					MatchingSteps: sheriffSteps,
+				},
+				{
+					Email:         "sheriff3@google.com",
+					Template:      "sheriff_template",
+					MatchingSteps: sheriffSteps,
+				},
+				{
+					Email:         "sheriff4@google.com",
+					Template:      "sheriff_template",
+					MatchingSteps: sheriffSteps,
+				},
+				{
+					Email:         "someone@google.com",
+					Template:      "other_template",
+					MatchingSteps: otherSteps,
 				},
 			})
 		})
