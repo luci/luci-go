@@ -216,7 +216,8 @@
     "containment": {
 
     },
-    "name": "led: test_name"
+    "name": "led: test_name",
+    "final_build_proto_path": "build.proto.json"
   },
   "user_payload": {
     "server": "https://isolateserver-dev.appspot.com",

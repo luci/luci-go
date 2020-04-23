@@ -45,6 +45,6 @@ func (nullKitchenSupport) FromSwarming(context.Context, *swarming.SwarmingRpcsNe
 	return errors.New("kitchen job Definitions not supported by this binary")
 }
 
-func (nullKitchenSupport) GenerateCommand(ctx context.Context, bb *Buildbucket) ([]string, error) {
+func (nullKitchenSupport) GenerateCommand(context.Context, *Buildbucket) ([]string, error) {
 	return nil, errors.New("kitchen job Definitions not supported by this binary")
 }
