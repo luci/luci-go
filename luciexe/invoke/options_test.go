@@ -265,7 +265,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
 			So(lo.args, ShouldBeEmpty)
-			out, err := lo.parseOutput()
+			out, err := luciexe.ReadBuildFile(lo.collectPath)
 			So(err, ShouldBeNil)
 			So(out, ShouldBeNil)
 		})
@@ -274,7 +274,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 			Convey(`bad extension`, func() {
 				o.CollectOutputPath = filepath.Join(tdir, "output.fleem")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "CollectOutputPath has bad extension")
+				So(err, ShouldErrLike, "bad extension for build proto file path")
 			})
 
 			Convey(`already exists`, func() {
@@ -310,12 +310,12 @@ func TestOptionsCollectOutput(t *testing.T) {
 				So(lo.args[0], ShouldEqual, luciexe.OutputCLIArg)
 				checkFilename(lo.args[1])
 
-				_, err = lo.parseOutput()
-				So(err, ShouldErrLike, "reading output file")
+				_, err = luciexe.ReadBuildFile(lo.collectPath)
+				So(err, ShouldErrLike, "opening build file")
 
 				So(ioutil.WriteFile(lo.args[1], expectedData, 0666), ShouldBeNil)
 
-				build, err := lo.parseOutput()
+				build, err := luciexe.ReadBuildFile(lo.collectPath)
 				So(err, ShouldBeNil)
 				So(build, ShouldResembleProto, expected)
 			}
@@ -326,7 +326,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 				So(err, ShouldBeNil)
 				testParseOutput(data, func(filename string) {
 					So(filename, ShouldStartWith, tdir)
-					So(filename, ShouldEndWith, luciexe.OutputBinaryFileExt)
+					So(filename, ShouldEndWith, luciexe.BuildFileCodecBinary.FileExtension())
 				})
 			})
 

@@ -24,6 +24,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/host"
 	"go.chromium.org/luci/luciexe/invoke"
 
@@ -63,11 +65,15 @@ func mainImpl() int {
 		}
 	}
 
-	if len(os.Args) != 2 {
-		check(errors.Reason("expected 1 argument after arg0, got %d", len(os.Args)-1).Err())
+	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
+	flag.Parse()
+	args := flag.Args()
+
+	if len(args) != 1 {
+		check(errors.Reason("expected 1 argument: got %d", len(args)).Err())
 	}
 
-	input, err := bbinput.Parse(os.Args[1])
+	input, err := bbinput.Parse(args[0])
 	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
@@ -155,7 +161,7 @@ func mainImpl() int {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
 	}
 
-	var finalStatus bbpb.Status
+	var finalBuild *bbpb.Build
 
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
@@ -163,10 +169,13 @@ func mainImpl() int {
 		// TODO(iannucci): add backchannel from buildbucket prpc client to shut
 		// down/cancel the build.
 		bbClient.C <- build
-		finalStatus = build.Status
+		finalBuild = build
 	}
 
-	if finalStatus != bbpb.Status_SUCCESS {
+	check(errors.Annotate(
+		outputFile.Write(finalBuild), "writing final build").Err())
+
+	if finalBuild.Status != bbpb.Status_SUCCESS {
 		return 1
 	}
 	return 0

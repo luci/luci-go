@@ -27,8 +27,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -131,15 +129,13 @@ type launchOptions struct {
 	// args are the CLI arguments to the luciexe.
 	args []string
 
-	// parseOutput is a bound function which will return the parsed final Build.
-	//
-	// May return (nil, nil) if the user indicated that they didn't want us to
-	// parse the final output.
-	parseOutput func() (*bbpb.Build, error)
-
 	// These are the open streams ready to attach to the subprocess.
 	stdout io.WriteCloser
 	stderr io.WriteCloser
+
+	// collectPath, if set, is the build file to read after the completion of the
+	// subprocess.
+	collectPath string
 
 	// env is an environment suitable to run the luciexe in.
 	env environ.Env
@@ -216,13 +212,12 @@ func (o *Options) prepCacheDir(ctx context.Context, cdir string, lo *launchOptio
 
 func (o *Options) prepCollection(outDir string, lo *launchOptions) error {
 	if !o.CollectOutput && o.CollectOutputPath == "" {
-		lo.parseOutput = func() (*bbpb.Build, error) { return nil, nil }
 		return nil
 	}
 
 	collect := o.CollectOutputPath
 	if collect == "" {
-		collect = filepath.Join(outDir, "out"+luciexe.OutputBinaryFileExt)
+		collect = filepath.Join(outDir, "out"+luciexe.BuildFileCodecBinary.FileExtension())
 	} else {
 		parDir := filepath.Dir(collect)
 		finfo, err := os.Stat(parDir)
@@ -237,49 +232,13 @@ func (o *Options) prepCollection(outDir string, lo *launchOptions) error {
 			return errors.Reason("CollectOutputPath points to an existing file: %q", collect).Err()
 		}
 	}
-	lo.args = []string{luciexe.OutputCLIArg, collect}
 
-	switch ext := filepath.Ext(collect); ext {
-	case luciexe.OutputBinaryFileExt:
-		lo.parseOutput = func() (*bbpb.Build, error) {
-			fileData, err := ioutil.ReadFile(collect)
-			if err != nil {
-				return nil, errors.Annotate(err, "reading output file %q", collect).Err()
-			}
-			ret := &bbpb.Build{}
-			err = errors.Annotate(proto.Unmarshal(fileData, ret), "parsing output file %q", collect).Err()
-			return ret, err
-		}
-
-	case luciexe.OutputTextFileExt:
-		lo.parseOutput = func() (*bbpb.Build, error) {
-			fileData, err := ioutil.ReadFile(collect)
-			if err != nil {
-				return nil, errors.Annotate(err, "reading output file %q", collect).Err()
-			}
-			ret := &bbpb.Build{}
-			err = errors.Annotate(proto.UnmarshalText(
-				string(fileData), ret), "parsing output file %q", collect).Err()
-			return ret, err
-		}
-
-	case luciexe.OutputJSONFileExt:
-		lo.parseOutput = func() (*bbpb.Build, error) {
-			file, err := os.Open(collect)
-			if err != nil {
-				return nil, errors.Annotate(err, "reading output file %q", collect).Err()
-			}
-			defer file.Close()
-
-			ret := &bbpb.Build{}
-			err = errors.Annotate(jsonpb.Unmarshal(file, ret), "parsing output file %q", collect).Err()
-			return ret, err
-		}
-
-	default:
-		return errors.Reason("CollectOutputPath has bad extension: %q", collect).Err()
+	if _, err := luciexe.BuildFileCodecForPath(collect); err != nil {
+		return errors.Annotate(err, "CollectOutputPath").Err()
 	}
 
+	lo.args = []string{luciexe.OutputCLIArg, collect}
+	lo.collectPath = collect
 	return nil
 }
 

@@ -38,21 +38,6 @@ const (
 	// TODO(iannucci): Maybe change protocol so that build.proto stream can be
 	// opened by the invoking process instead of the invoked process.
 	BuildProtoStreamSuffix = "build.proto"
-
-	// OutputCLIArg is the CLI argument to luciexe binaries to instruct them to
-	// dump their final Build message. The value of this flag must be an absolute
-	// path to a file which doesn't exist in a directory which does (and which the
-	// luciexe binary has access to write in). See Output*FileExt for valid
-	// extensions.
-	OutputCLIArg = "--output"
-)
-
-// These file extensions are used with the `--output` flag to determine the
-// output serialization type for the luciexe's final Build message.
-const (
-	OutputBinaryFileExt = ".pb"
-	OutputTextFileExt   = ".textpb"
-	OutputJSONFileExt   = ".json"
 )
 
 // IsMergeStep returns true iff the given step is identified as a 'merge step'.
