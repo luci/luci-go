@@ -46,6 +46,30 @@
       "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5c18a03_e3e94f91",
+        "filename": "milo/frontend/resultui/src/components/test_filter.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:13:37Z",
+      "side": 1,
+      "message": "\u003e ResultDb doesn\u0027t support querying variants with only expected results.\n\nthis is basically querying all results because vast majority of results are expected.\n\n----------\n\nhaving checkboxes for expected and unexpected allows a state where none of them are checked, which isn\u0027t useful (\"don\u0027t show me anything\").\n\nI, for one, actually like what is currently in the patchset. \nand +1 to no double negatives (pun unintended)",
+      "parentUuid": "79863d22_b6c252d2",
+      "range": {
+        "startLine": 53,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 22
+      },
+      "revId": "38d53b64acb2a221af60bc118912f12c5698efbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
