@@ -22,6 +22,30 @@
       "revId": "12d35ada28b4ba66c88b7d819a99c970e76f76ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b09bcc3b_63c27832",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-23T05:27:03Z",
+      "side": 1,
+      "message": "I agree. That\u0027s my plan too. I noted that in another comment.\nThis is especially important because we will change the filter to include expected result when there\u0027s no unexpected ones. Hiding the filters will then become troublesome.\nThat will be in a separate CL though.",
+      "parentUuid": "45019e1e_d8cafca2",
+      "range": {
+        "startLine": 190,
+        "startChar": 10,
+        "endLine": 196,
+        "endChar": 27
+      },
+      "revId": "12d35ada28b4ba66c88b7d819a99c970e76f76ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
