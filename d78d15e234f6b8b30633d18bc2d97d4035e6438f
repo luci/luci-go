@@ -16,6 +16,24 @@
       "revId": "d78d15e234f6b8b30633d18bc2d97d4035e6438f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e15e4b1f_138e54aa",
+        "filename": "server/secrets/gsm_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-23T22:17:41Z",
+      "side": 1,
+      "message": "Ack, I\u0027ll take a look.",
+      "parentUuid": "73d7a3b4_1bc16552",
+      "revId": "d78d15e234f6b8b30633d18bc2d97d4035e6438f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
