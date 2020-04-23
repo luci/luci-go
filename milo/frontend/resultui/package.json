@@ -9,6 +9,8 @@
     "@chopsui/chops-signin": "^0.3.1",
     "@chopsui/prpc-client": "^1.1.0",
     "@material/mwc-button": "^0.14.1",
+    "@material/mwc-checkbox": "^0.14.1",
+    "@material/mwc-formfield": "^0.14.1",
     "@material/mwc-icon": "^0.14.1",
     "@vaadin/router": "^1.7.1",
     "copy-to-clipboard": "^3.3.1",

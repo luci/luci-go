@@ -25,12 +25,14 @@ import '../components/invocation_details';
 import '../components/page_header';
 import '../components/status_bar';
 import '../components/test-entry';
+import '../components/test_filter';
+import { TestFilter } from '../components/test_filter';
 import '../components/test_nav_tree';
 import { contextConsumer } from '../context';
 import { AppState } from '../context/app_state';
 import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
 import { ReadonlyTest, TestNode } from '../models/test_node';
-import { Invocation, InvocationState } from '../services/resultdb';
+import { Expectancy, Invocation, InvocationState } from '../services/resultdb';
 
 const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
@@ -50,6 +52,8 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   @observable.ref invocationId = '';
   @observable.ref leftPanelExpanded = false;
   @observable.ref pageLength = 100;
+  @observable.ref showExpected = false;
+  @observable.ref showExonerated = false;
 
   @observable.ref appState = new AppState();
 
@@ -83,8 +87,18 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       return (async function*() {})();
     }
     return streamTests(
-      streamTestResults({invocations: [this.invocationName]}, this.appState.resultDb),
-      streamTestExonerations({invocations: [this.invocationName]}, this.appState.resultDb),
+      streamTestResults(
+        {
+          invocations: [this.invocationName],
+          predicate: {
+            expectancy: this.showExpected ? Expectancy.All : Expectancy.VariantsWithUnexpectedResults,
+          },
+        },
+        this.appState.resultDb,
+      ),
+      this.showExonerated ?
+        streamTestExonerations({invocations: [this.invocationName]}, this.appState.resultDb) :
+        (async function*() {})(),
     );
   }
 
@@ -163,7 +177,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       </div>
       <tr-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
-        .loading=${this.invocationReq.get().tag === 'loading'}
+        .loading=${this.invocationReq.get().tag === 'loading' || this.testLoader.isLoading}
       ></tr-status-bar>
       ${!this.invocation ? null : html`
       <tr-invocation-details .invocation=${this.invocation}></tr-invocation-details>
@@ -173,6 +187,13 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
           id="left-panel"
           style=${styleMap({display: this.leftPanelExpanded ? '' : 'none'})}
         >
+          <tr-test-filter
+            .onFilterChanged=${(filter: TestFilter) => {
+              this.showExonerated = filter.showExonerated;
+              this.showExpected = filter.showExpected;
+            }}
+          >
+          </tr-test-filter>
           <tr-test-nav-tree
             .testLoader=${this.testLoader}
             .onSelectedNodeChanged=${(node: TestNode) => this.selectedNode = node}
