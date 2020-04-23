@@ -38,53 +38,53 @@ func TestJSONConversions(t *testing.T) {
 	ctx := context.Background()
 
 	Convey(`From JSON works`, t, func() {
-		buf := []byte(
-			`{
-					"version": 3,
-					"interrupted": false,
-					"path_delimiter": "::",
-					"metadata": {"test_name_prefix": "prefix."},
-					"builder_name": "Linux Tests",
-					"build_number": "82046",
-					"tests": {
-						"c1": {
-							"c2": {
-								"t1.html": {
-									"actual": "PASS PASS PASS",
-									"expected": "PASS",
-									"time": 0.3,
-									"times": [ 0.2, 0.1 ]
-								},
-								"t2.html": {
-									"actual": "PASS FAIL PASS",
-									"expected": "PASS FAIL",
-									"times": [ 0.05 ]
-								}
-							}
+		buf := []byte(`
+		{
+			"version": 3,
+			"interrupted": false,
+			"path_delimiter": "::",
+			"metadata": {"test_name_prefix": "prefix."},
+			"builder_name": "Linux Tests",
+			"build_number": "82046",
+			"tests": {
+				"c1": {
+					"c2": {
+						"t1.html": {
+							"actual": "PASS PASS PASS",
+							"expected": "PASS",
+							"time": 0.3,
+							"times": [0.2, 0.1]
 						},
-						"c2": {
-							"t3.html": {
-								"actual": "FAIL",
-								"expected": "PASS",
-								"artifacts": {
-									"log": [ "relative/path/to/log" ]
-								}
-							}
-						},
-						"c3": {
-							"time": {
-								"time-t1.html": {
-									"actual": "PASS",
-									"expected": "PASS",
-									"time": 0.4,
-									"artifacts": {
-										"reason": "inlined string"
-									}
-								}
+						"t2.html": {
+							"actual": "PASS FAIL PASS",
+							"expected": "PASS FAIL",
+							"times": [0.05]
+						}
+					}
+				},
+				"c2": {
+					"t3.html": {
+						"actual": "FAIL",
+						"expected": "PASS",
+						"artifacts": {
+							"log": ["relative/path/to/log"]
+						}
+					}
+				},
+				"c3": {
+					"time": {
+						"time-t1.html": {
+							"actual": "PASS",
+							"expected": "PASS",
+							"time": 0.4,
+							"artifacts": {
+								"reason": "inlined string"
 							}
 						}
 					}
-				}`)
+				}
+			}
+		}`)
 
 		Convey(`Works`, func() {
 			results := &JSONTestResults{}
@@ -112,7 +112,7 @@ func TestJSONConversions(t *testing.T) {
 					Actual:   "FAIL",
 					Expected: "PASS",
 					ArtifactsRaw: map[string]json.RawMessage{
-						"log": json.RawMessage(`[ "relative/path/to/log" ]`),
+						"log": json.RawMessage(`["relative/path/to/log"]`),
 					},
 					Artifacts: map[string][]string{
 						"log": {"relative/path/to/log"},

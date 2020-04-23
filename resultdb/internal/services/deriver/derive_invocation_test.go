@@ -127,29 +127,28 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		defer isoServer.Close()
 
 		// Inject isolated objects.
-		testJSON := []byte(`{
-			"all_tests": [
-				"FooTest.TestDoBar",
-				"FooTest.DoesBar"
-			],
-			"per_iteration_data": [{
-				"MyInstantiation/FooTest.DoesBar/1": [
-					{
-						"status": "SUCCESS",
-						"elapsed_time_ms": 100
+		testJSON := []byte(`
+		{
+			"version": 3,
+			"interrupted": false,
+			"path_delimiter": "/",
+			"tests": {
+				"c1": {
+					"t1.html": {
+						"actual": "FAIL PASS",
+						"expected": "PASS"
 					}
-				],
-				"FooTest.TestDoBar": [
-					{
-						"status": "CRASH",
-						"elapsed_time_ms": 200
-					},
-					{
-						"status": "FAILURE",
-						"elapsed_time_ms": 300
+				},
+				"c2": {
+					"t3.html": {
+						"actual": "FAIL",
+						"expected": "PASS",
+						"artifacts": {
+							"log": ["relative/path/to/log"]
+						}
 					}
-				]
-			}]
+				}
+			}
 		}`)
 		size := int64(len(testJSON))
 		fileDigest := isoFake.Inject("ns", testJSON)
@@ -227,7 +226,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				Name:                inv.Name, // inv.Name is non-determinisic in this test
 				State:               pb.Invocation_FINALIZED,
 				CreateTime:          &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
-				Tags:                pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
+				Tags:                pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR),
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				IncludedInvocations: []string{inv.Name + "::batch::0"},
@@ -246,18 +245,18 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
-			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/FooTest.DoesBar")
-			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
+			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
+			So(trs[0].Status, ShouldEqual, pb.TestStatus_FAIL)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
 				"bucket", "bkt",
 				"builder", "blder",
 				"test_suite", "foo_unittests",
-				"param/instantiation", "MyInstantiation",
-				"param/id", "1",
 			))
-			So(trs[1].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
-			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
-			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
+
+			So(trs[1].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
+			So(trs[1].Status, ShouldEqual, pb.TestStatus_PASS)
+
+			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/c2/t3.html")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
 			// Read InvocationTask to confirm it's added.
@@ -293,18 +292,18 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
-			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/FooTest.DoesBar")
-			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
+			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
+			So(trs[0].Status, ShouldEqual, pb.TestStatus_FAIL)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
 				"bucket", "bkt",
 				"builder", "blder",
 				"test_suite", "foo_unittests",
-				"param/instantiation", "MyInstantiation",
-				"param/id", "1",
 			))
-			So(trs[1].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
-			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
-			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
+
+			So(trs[1].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
+			So(trs[1].Status, ShouldEqual, pb.TestStatus_PASS)
+
+			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/c2/t3.html")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
 			// Read InvocationTask to confirm it's added for origin task.
