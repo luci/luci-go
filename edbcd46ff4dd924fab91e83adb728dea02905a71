@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "664e84e1_439f2fe2",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:33:17Z",
+      "side": 1,
+      "message": "the light in the end of the tunnel is that we will delete this code when everyone switches to resultsink",
+      "parentUuid": "aa3f4b60_7af3ace2",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 15
+      },
+      "revId": "edbcd46ff4dd924fab91e83adb728dea02905a71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ba0a474_ba194677",
         "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
         "patchSetId": 8
@@ -39,6 +63,24 @@
       "revId": "edbcd46ff4dd924fab91e83adb728dea02905a71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b4411d2_7fd7b7f3",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-23T05:33:17Z",
+      "side": 1,
+      "message": "yes, that was my reasoning. I think its OK to say \"sorry, we don\u0027t support invocation-level artifacts in DeriveInvocation. Use fully-fledged ResultSink instead\"",
+      "parentUuid": "8ba0a474_ba194677",
+      "revId": "edbcd46ff4dd924fab91e83adb728dea02905a71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
