@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28250630_3f9e275c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-23T06:28:41Z",
+      "side": 1,
+      "message": "Suggest adding another sentence to this function doc explaining what the other return value is (since a predicate normally just returns a bool)",
+      "range": {
+        "startLine": 271,
+        "startChar": 0,
+        "endLine": 271,
+        "endChar": 91
+      },
+      "revId": "136adb5ab7e9e452fa84057f65dd424561f77e32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
