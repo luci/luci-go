@@ -234,7 +234,7 @@ func TestHandleBuild(t *testing.T) {
 		template := &config.EmailTemplate{
 			ProjectKey:          datastore.KeyForObj(c, project),
 			Name:                "template",
-			SubjectTextTemplate: "Builder {{.Build.Builder.Builder}} failed",
+			SubjectTextTemplate: "Builder {{.Build.Builder.Builder}} failed on steps {{stepNames .MatchingFailedSteps}}",
 		}
 		So(datastore.Put(c, project, builders, template), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -605,7 +605,7 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`Status message`, func() {
 			tc := runHandleBuild(buildbucketpb.Status_FAILURE, config.Open, []string{"include"})
 
-			So(tc.Message, ShouldEqual, "Builder test-builder-tree-closer failed")
+			So(tc.Message, ShouldEqual, `Builder test-builder-tree-closer failed on steps "include"`)
 		})
 	})
 }
