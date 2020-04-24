@@ -92,9 +92,7 @@ type VM struct {
 	// Attributes is the config.VM describing the GCE instance to create.
 	// Indexing is not useful here since this field contains textproto.
 	// noindex is not respected here. See config.VM.ToProperty.
-	Attributes config.VM `gae:"attributes,noindex"`
-	// BinaryAttributes contains binary protos and will substitute the text proto.
-	BinaryAttributes config.BinaryVM `gae:"binary_attributes,noindex"`
+	Attributes config.VM `gae:"binary_attributes,noindex"`
 	// AttributesIndexed is a slice of strings in "key:value" form where the key is
 	// the path to a field in Attributes and the value is its associated value.
 	// Allows fields from Attributes to be indexed.
