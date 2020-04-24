@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "d00bc6fc_95df72b4",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T04:46:39Z",
+      "side": 1,
+      "message": "no, let\u0027s drop indexes after we switch off of python",
+      "parentUuid": "67a38b21_292010e7",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "160903d5_9f62d777",
         "filename": "buildbucket/appengine/model/bucket.go",
         "patchSetId": 1
@@ -183,6 +201,24 @@
       "side": 1,
       "message": "Maybe I misread the code, I thought the Python version returned permission denied and I copied that behavior here. In this code any instance of \"permission denied\" implies the requested build did exist, and this code is open source so anyone can verify that. Ideally it should return \"not found\". I\u0027d like to change it to \"not found\", which may not match Python server behavior anymore. Is that fine? Changing return codes could theoretically be considered a breaking API change (although it\u0027s really a security bug fix).",
       "parentUuid": "7b4807b2_c42c1b34",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc3ef717_165ac811",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T04:46:39Z",
+      "side": 1,
+      "message": "python returns 404 in both cases\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/api.py;l\u003d116?q\u003dcr-buildbucket%2Fapi.py\nso it does not leak existence\n\nso this can be changed to NotFound without breaking changes.\nAlso I doubt it would break anyone in practice",
+      "parentUuid": "f47ba6a5_41854a69",
       "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
