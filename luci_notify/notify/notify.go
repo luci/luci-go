@@ -357,17 +357,6 @@ func contains(status buildbucketpb.Status, statusList []buildbucketpb.Status) bo
 	return false
 }
 
-func computeStatus(cfgTreeCloser *config.TreeCloser, build *buildbucketpb.Build) config.TreeCloserStatus {
-	if build.Status == buildbucketpb.Status_FAILURE {
-		tc := cfgTreeCloser.TreeCloser
-		// TODO: Propagate the list of matching steps up to the caller.
-		if match, _ := matchingSteps(build, tc.FailedStepRegexp, tc.FailedStepRegexpExclude); match {
-			return config.Closed
-		}
-	}
-	return config.Open
-}
-
 // UpdateTreeClosers finds all the TreeClosers that care about a particular
 // build, and updates their status according to the results of the build.
 func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.Status) error {
@@ -393,7 +382,16 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 			return nil
 		}
 
-		newStatus := computeStatus(tc, &build.Build)
+		newStatus := config.Open
+		var steps []*buildbucketpb.Step
+		if build.Status == buildbucketpb.Status_FAILURE {
+			t := tc.TreeCloser
+			var match bool
+			if match, steps = matchingSteps(&build.Build, t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
+				newStatus = config.Closed
+			}
+		}
+
 		if tc.Status != newStatus {
 			tc.Status = newStatus
 			tc.Timestamp = time.Now().UTC()
@@ -408,8 +406,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 						BuildbucketHostname: build.BuildbucketHostname,
 						Build:               &build.Build,
 						OldStatus:           oldStatus,
-						// TODO: Fill this out.
-						MatchingFailedSteps: nil,
+						MatchingFailedSteps: steps,
 					})
 			}
 
