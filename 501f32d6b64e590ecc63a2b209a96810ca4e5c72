@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "074e21b8_10a10ea1",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-24T05:11:34Z",
+      "side": 1,
+      "message": "2020, same for other new files",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "501f32d6b64e590ecc63a2b209a96810ca4e5c72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48ce6251_9a89cdf8",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-24T05:11:34Z",
+      "side": 1,
+      "message": "(Not related to this change) do we need to rename this file as well (similar to https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2163870 )?",
+      "revId": "501f32d6b64e590ecc63a2b209a96810ca4e5c72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
