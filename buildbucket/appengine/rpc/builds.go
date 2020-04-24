@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -41,8 +42,9 @@ func logDetails(ctx context.Context, methodName string, req proto.Message) (cont
 // have correct ACLs checks.
 // TODO(crbug/1042991): Remove once methods are implemented.
 func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	err = grpcutil.GRPCifyAndLogErr(ctx, err)
 	if methodName == "GetBuild" {
-		return nil
+		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 	return status.Errorf(codes.Unimplemented, "method not implemented")
