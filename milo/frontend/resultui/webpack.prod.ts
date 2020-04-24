@@ -17,9 +17,28 @@ import merge from 'webpack-merge';
 
 import common from './webpack.common';
 
-const config: webpack.Configuration = merge(common, {
+// TODO(weiweilin): once ts-loader is able to produce hash independent of
+// the project's absolute path
+//  * remove HashOutputPlugin
+//  * replace [chunkhash] with [contenthash]
+//  * enable source-map
+//  * simplify prod config because it should share more commonalities with
+//    ./webpack.common
+// Related: https://github.com/TypeStrong/ts-loader/pull/1085
+
+// Use require since webpack-plugin-hash-output has no type declaration files.
+// tslint:disable-next-line: variable-name
+const HashOutputPlugin = require('webpack-plugin-hash-output');
+
+const config: webpack.Configuration = merge.strategy({plugins: 'prepend'})(common, {
+  output: {
+    filename: '[name].[chunkhash].bundle.js',
+    chunkFilename: '[name].[chunkhash].bundle.js',
+  },
   mode: 'production',
-  devtool: 'source-map',
+  plugins: [
+    new HashOutputPlugin(),
+  ],
 });
 
 // Default export is required by webpack.
