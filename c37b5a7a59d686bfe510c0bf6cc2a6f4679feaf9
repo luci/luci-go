@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f97e9a19_3996f751",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-24T23:17:02Z",
+      "side": 1,
+      "message": "nit: \"context-scopes\" would be clearer to me (e.g. luci auth-login -context-scopes)",
+      "range": {
+        "startLine": 216,
+        "startChar": 18,
+        "endLine": 216,
+        "endChar": 25
+      },
+      "revId": "c37b5a7a59d686bfe510c0bf6cc2a6f4679feaf9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
