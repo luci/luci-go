@@ -121,11 +121,11 @@ type TestResult struct {
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*TestResult, error) {
 	// Parse swarming tags.
-	baseVariant, ninjaTarget := parseSwarmingTags(task)
+	baseVariant, testIDPrefixFromTag := parseSwarmingTags(task)
 	testIDPrefix := ""
 	taskTestID := ""
-	if ninjaTarget != "" {
-		taskTestID = fmt.Sprintf("ninja:%s", ninjaTarget)
+	if testIDPrefixFromTag != "" {
+		taskTestID = fmt.Sprintf("ninja:%s", testIDPrefixFromTag)
 		testIDPrefix = fmt.Sprintf("%s/", taskTestID)
 	}
 
@@ -171,7 +171,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	return results, nil
 }
 
-func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, ninjaTarget string) {
+func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, testIDPrefixFromTag string) {
 	baseVariant = &typepb.Variant{Def: make(map[string]string, 3)}
 	for _, t := range task.Tags {
 		switch k, v := strpair.Parse(t); k {
@@ -181,8 +181,13 @@ func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *t
 			baseVariant.Def["builder"] = v
 		case "test_suite":
 			baseVariant.Def["test_suite"] = v
+		case "test_id_prefix":
+			testIDPrefixFromTag = v
+		// TODO(crbug.com/1074033): Remove checking on ninja_target tag.
 		case "ninja_target":
-			ninjaTarget = v
+			if testIDPrefixFromTag == "" {
+				testIDPrefixFromTag = v
+			}
 		}
 	}
 	return
