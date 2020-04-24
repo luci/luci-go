@@ -22,6 +22,7 @@ import (
 	"github.com/maruel/subcommands"
 	"go.chromium.org/luci/grpc/prpc"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -62,6 +63,9 @@ func cmdDerive(p Params) *subcommands.Command {
 				Wait for the tasks to complete.
 				Without waiting, if the task is incomplete, exits with an error.
 			`))
+			r.Flags.IntVar(&r.maxConcurrentRPCs, "max-concurrent", 20, text.Doc(`
+				Max concurrent RPCs.
+			`))
 			return r
 		},
 	}
@@ -69,9 +73,10 @@ func cmdDerive(p Params) *subcommands.Command {
 
 type deriveRun struct {
 	queryRunBase
-	swarmingHost string
-	taskIDs      []string
-	wait         bool
+	swarmingHost      string
+	taskIDs           []string
+	wait              bool
+	maxConcurrentRPCs int
 }
 
 func (r *deriveRun) parseArgs(args []string) error {
@@ -84,6 +89,10 @@ func (r *deriveRun) parseArgs(args []string) error {
 
 	if strings.Contains(r.swarmingHost, "/") {
 		return errors.Reason("invalid swarming host %q", r.swarmingHost).Err()
+	}
+
+	if r.maxConcurrentRPCs <= 0 {
+		return errors.Reason("invalid -max-concurrent %d", r.maxConcurrentRPCs).Err()
 	}
 
 	return r.queryRunBase.validate()
@@ -113,10 +122,16 @@ func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommand
 func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 	ret := make([]string, len(r.taskIDs))
+	sem := semaphore.NewWeighted(int64(r.maxConcurrentRPCs))
 	for i, tid := range r.taskIDs {
 		i := i
 		tid := tid
 		eg.Go(func() error {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
+			defer sem.Release(1)
+
 			res, err := r.deriveInvocation(ctx, tid)
 			if err != nil {
 				return err
