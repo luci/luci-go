@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e053ea97_e5dd6f52",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T22:26:30Z",
+      "side": 1,
+      "message": "*printRun",
+      "range": {
+        "startLine": 144,
+        "startChar": 8,
+        "endLine": 144,
+        "endChar": 16
+      },
+      "revId": "2f682117deeef08e31b470d7746c46ab13c4291f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "570d26f1_082d12d1",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T22:26:30Z",
+      "side": 1,
+      "message": "nit: for consistency\n\n  default:\n    return nil",
+      "revId": "2f682117deeef08e31b470d7746c46ab13c4291f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
