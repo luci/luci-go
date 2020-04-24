@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ae3907bf_9f42c368",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T23:55:46Z",
+      "side": 1,
+      "message": "if it is really a prefix, it should already contain \"ninja:\"",
+      "range": {
+        "startLine": 128,
+        "startChar": 39,
+        "endLine": 128,
+        "endChar": 58
+      },
+      "revId": "90ad4162cc3e8855b56611fc17e39fbcfb50b913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "415d7383_a0a356a0",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T23:55:46Z",
+      "side": 1,
+      "message": "nit: just \"testIDPrefix\". this func name is already entails that this is from tags",
+      "range": {
+        "startLine": 174,
+        "startChar": 95,
+        "endLine": 174,
+        "endChar": 114
+      },
+      "revId": "90ad4162cc3e8855b56611fc17e39fbcfb50b913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0273d427_e088f2d8",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T23:55:46Z",
+      "side": 1,
+      "message": "tab",
+      "range": {
+        "startLine": 186,
+        "startChar": 29,
+        "endLine": 186,
+        "endChar": 30
+      },
+      "revId": "90ad4162cc3e8855b56611fc17e39fbcfb50b913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e31d63a_4ce4f34f",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T23:55:46Z",
+      "side": 1,
+      "message": "\"ninja:\" + v",
+      "range": {
+        "startLine": 189,
+        "startChar": 26,
+        "endLine": 189,
+        "endChar": 27
+      },
+      "revId": "90ad4162cc3e8855b56611fc17e39fbcfb50b913",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
