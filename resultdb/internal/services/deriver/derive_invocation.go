@@ -343,7 +343,7 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spann
 func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
 	return span.InsertOrUpdateMap("Artifacts", map[string]interface{}{
 		"InvocationId": invID,
-		"ParentId":     fmt.Sprintf("tr/%s/%s", tr.TestId, tr.ResultId),
+		"ParentId":     span.ArtifactParentID(tr.TestId, tr.ResultId),
 		"ArtifactId":   a.ArtifactId,
 		"ContentType":  a.ContentType,
 		"Size":         a.SizeBytes,

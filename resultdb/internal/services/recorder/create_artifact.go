@@ -16,7 +16,6 @@ package recorder
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -116,9 +115,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 		return appstatus.Errorf(codes.InvalidArgument, "bad artifact name: %s", err)
 	}
 	ac.invID = span.InvocationID(invIDString)
-	if ac.testID != "" {
-		ac.localParentID = fmt.Sprintf("tr/%s/%s", ac.testID, ac.resultID)
-	}
+	ac.localParentID = span.ArtifactParentID(ac.testID, ac.resultID)
 
 	// Parse and validate the hash.
 	switch ac.hash = c.Request.Header.Get(artifactContentHashHeaderKey); {
