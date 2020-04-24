@@ -40,7 +40,5 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-
-	// TODO(crbug.com/1071258): populate fetch_url and fetch_url_expiration fields.
 	return span.ReadArtifact(ctx, txn, in.Name)
 }

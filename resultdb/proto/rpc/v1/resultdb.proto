@@ -331,7 +331,7 @@ message QueryArtifactsRequest {
   // If an Artifact belongs to a TestResult, then the test result must satisfy
   // this predicate.
   // Field predicate.invocation is required.
-  TestResultPredicate predicate = 3;
+  TestResultPredicate test_result_predicate = 3;
 
   // The version of the state from which the response draws is allowed to be
   // stale up to this duration.
