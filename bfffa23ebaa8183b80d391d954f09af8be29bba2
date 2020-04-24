@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "639d6568_c97d59d3",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-24T23:27:47Z",
+      "side": 1,
+      "message": "IIUC, the exit code matters only for -complete-invocation-exit-codes and invocation.interrupted.\n\nOriginally, I thought rdb-stream would return\n- the exit code from the test process, OR\n- a special exit code, 1001, if rdb-stream was not able to run the test command for whatever reasons.\n\nHowever, this requires the user of rdb-stream, such as Swarming Task, to handle -complete-invocation-exit-codes.\n\nWhat I current have in mind is\n(1) rdb-stream always returns 0 or 1.\n- rdb-stream handles -complete-invocation-exit-codes\n- if rdb-stream was able to run the test command, and the test process exited with 0 or any of the exit codes listed in -complete-invocation-exit-codes, rdb-stream exits with 0. In any other cases, it exits with 1.\n\n(2) Swarming Task always marks the invocation.interrupted with !exit_code_from_rdb_stream.\n\nWDYT?",
+      "parentUuid": "495fad4a_ca41b387",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 15
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fa172c51_83dc252a",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 6
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "930e47c6_5e30f4ed",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-24T23:27:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa172c51_83dc252a",
+      "range": {
+        "startLine": 126,
+        "startChar": 9,
+        "endLine": 126,
+        "endChar": 11
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11207fa1_9e109957",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-24T23:27:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0566338_352cb487",
+      "range": {
+        "startLine": 126,
+        "startChar": 35,
+        "endLine": 126,
+        "endChar": 36
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea8da20b_5ad1e700",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 6
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "7e1bfcf1_8ace5ef6",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-24T23:27:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea8da20b_5ad1e700",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 105,
+        "endChar": 2
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84a9d22d_a588d7c8",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 6
@@ -114,6 +210,30 @@
       "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af5e460a_d75b69dd",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-24T23:27:47Z",
+      "side": 1,
+      "message": "oops. I missed that the param itself is already a copy. Removed",
+      "parentUuid": "84a9d22d_a588d7c8",
+      "range": {
+        "startLine": 108,
+        "startChar": 1,
+        "endLine": 108,
+        "endChar": 7
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
