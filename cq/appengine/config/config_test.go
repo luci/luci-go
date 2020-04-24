@@ -445,6 +445,13 @@ func TestTryjobValidation(t *testing.T) {
 		}
 
 		So(validate(``), ShouldErrLike, "at least 1 builder required")
+		// cancel_stale_tryjobs: YES is still allowed.
+		So(validate(`
+			cancel_stale_tryjobs: YES
+			builders {name: "a/b/c"}`), ShouldBeNil)
+		So(validate(`
+			cancel_stale_tryjobs: NO
+			builders {name: "a/b/c"}`), ShouldErrLike, "use per-builder `cancel_stale` instead")
 
 		Convey("builder name", func() {
 			So(validate(`builders {}`), ShouldErrLike, "name is required")
