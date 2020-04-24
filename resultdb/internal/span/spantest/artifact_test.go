@@ -73,7 +73,7 @@ func TestReadArtifact(t *testing.T) {
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
 
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_FINALIZED, nil))
 
 		Convey(`Does not exist`, func() {
 			_, err := span.ReadArtifact(ctx, txn, "invocations/i/artifacts/a")
@@ -81,7 +81,7 @@ func TestReadArtifact(t *testing.T) {
 		})
 
 		Convey(`Exists`, func() {
-			MustApply(ctx, InsertTestResultArtifact("inv", "t", "r", "a", map[string]interface{}{
+			MustApply(ctx, InsertTestResultArtifact("inv1", "t", "r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))
