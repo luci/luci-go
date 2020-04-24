@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5d2dd31_1a43cc10",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T06:56:22Z",
+      "side": 1,
+      "message": "i don\u0027t recommend this function because it relies on grpcutil.Tag which I don\u0027t recommend because of the reasons I\u0027ve described in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1984537\n\nin particular, if bb makes a call to, say, cloud datastore which returns an error, that error may also look like a status error (say PRECONDITOIN_FAILED because a composite index does not exist), here we wouldn\u0027t be able to distinguish \"our\" and \"their\" errors, although we want \"their\" errors to turn into INVALID errors when returning to the users.\n\nwe\u0027ve experienced this problem in resultdb\n\nWDYT?",
+      "range": {
+        "startLine": 45,
+        "startChar": 16,
+        "endLine": 45,
+        "endChar": 32
+      },
+      "revId": "8e70c46a826b3ce143e5443ff8cad0e9c87eeaca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
