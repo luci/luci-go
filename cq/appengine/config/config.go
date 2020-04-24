@@ -413,9 +413,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			// Don't validate TriggeredBy as builder name, it should just match
 			// another main builder name, which will be validated anyway.
 			triggersMap[b.TriggeredBy] = append(triggersMap[b.TriggeredBy], b.Name)
-			if b.IncludableOnly {
-				ctx.Errorf("includable_only is not combinable with triggered_by")
-			}
 			if b.ExperimentPercentage != 0 {
 				ctx.Errorf("experiment_percentage is not combinable with triggered_by")
 			}

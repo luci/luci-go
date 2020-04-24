@@ -614,17 +614,15 @@ func TestTryjobValidation(t *testing.T) {
 				}`),
 				ShouldErrLike,
 				"includable_only is not combinable with location_regexp[_exclude]")
+
+			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
 			So(validate(`
 				builders {name: "pa/re/nt"}
 				builders {
 					name: "a/b/c"
 					triggered_by: "pa/re/nt"
 					includable_only: true
-				}`),
-				ShouldErrLike,
-				"includable_only is not combinable with triggered_by")
-
-			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
+				}`), ShouldBeNil)
 		})
 
 		Convey("triggered_by", func() {
