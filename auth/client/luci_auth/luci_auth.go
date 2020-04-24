@@ -44,9 +44,10 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 				ScopesFlag:  true,
 			}),
 			authcli.SubcommandLoginWithParams(authcli.CommandParams{
-				Name:        "login",
-				AuthOptions: defaultAuthOpts,
-				ScopesFlag:  true,
+				Name:              "login",
+				AuthOptions:       defaultAuthOpts,
+				ScopesFlag:        true,
+				ContextScopesFlag: true,
 			}),
 			authcli.SubcommandLogoutWithParams(authcli.CommandParams{
 				Name:        "logout",
