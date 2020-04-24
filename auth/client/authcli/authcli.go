@@ -21,19 +21,19 @@
 // Minimal example of using flags parsing:
 //
 //
-//	authFlags := authcli.Flags{}
-//	defaults := ... // prepare default auth.Options
-//	authFlags.Register(flag.CommandLine, defaults)
-//	flag.Parse()
-//	opts, err := authFlags.Options()
-//	if err != nil {
-//	  // handle error
-//	}
-//	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
-//	httpClient, err := authenticator.Client()
-//	if err != nil {
-//	  // handle error
-//	}
+//  authFlags := authcli.Flags{}
+//  defaults := ... // prepare default auth.Options
+//  authFlags.Register(flag.CommandLine, defaults)
+//  flag.Parse()
+//  opts, err := authFlags.Options()
+//  if err != nil {
+//    // handle error
+//  }
+//  authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+//  httpClient, err := authenticator.Client()
+//  if err != nil {
+//    // handle error
+//  }
 //
 //
 // This assumes that either a service account credentials are used (passed via
@@ -53,35 +53,35 @@
 // of a CLI application:
 //
 //
-//	import (
-//	  ...
-//	  "go.chromium.org/luci/client/authcli"
-//	  "go.chromium.org/luci/common/cli"
-//	)
+//  import (
+//    ...
+//    "go.chromium.org/luci/client/authcli"
+//    "go.chromium.org/luci/common/cli"
+//  )
 //
-//	func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
-//	  return &cli.Application{
-//	    Name:  "app_name",
+//  func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+//    return &cli.Application{
+//      Name:  "app_name",
 //
-//	    Context: func(ctx context.Context) context.Context {
-//	      ... configure logging, etc. ...
-//	      return ctx
-//	    },
+//      Context: func(ctx context.Context) context.Context {
+//        ... configure logging, etc. ...
+//        return ctx
+//      },
 //
-//	    Commands: []*subcommands.Command{
-//	      authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
-//	      authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
-//	      authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
-//	      ...
-//	    },
-//	  }
-//	}
+//      Commands: []*subcommands.Command{
+//        authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
+//        authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+//        authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
+//        ...
+//      },
+//    }
+//  }
 //
-//	func main() {
-//	  defaultAuthOpts := ...
-//	  app := GetApplication(defaultAuthOpts)
-//		os.Exit(subcommands.Run(app, nil))
-//	}
+//  func main() {
+//    defaultAuthOpts := ...
+//    app := GetApplication(defaultAuthOpts)
+//    os.Exit(subcommands.Run(app, nil))
+//  }
 package authcli
 
 import (
@@ -110,15 +110,22 @@ import (
 
 // CommandParams specifies various parameters for a subcommand.
 type CommandParams struct {
-	Name     string // name of the subcommand.
+	Name     string // name of the subcommand
 	Advanced bool   // subcommands should treat this as an 'advanced' command
 
-	AuthOptions auth.Options // default auth options.
+	AuthOptions auth.Options // default auth options
 
 	// ScopesFlag specifies if -scope flag must be registered.
+	//
 	// AuthOptions.Scopes is used as a default value.
-	// If it is empty, defaults to "https://www.googleapis.com/auth/userinfo.email".
+	// If it is empty, defaults to https://www.googleapis.com/auth/userinfo.email.
 	ScopesFlag bool
+
+	// ContextScopesFlag specifies if -context-scopes flag must be registered.
+	//
+	// Used only by `login` subcommand. Presence of this flag indicates to `login`
+	// to setup refresh token with scopes necessary to run `context` subcommand.
+	ContextScopesFlag bool
 }
 
 // Flags defines command line flags related to authentication.
@@ -139,7 +146,7 @@ func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 		if defaultScopes == "" {
 			defaultScopes = auth.OAuthScopeEmail
 		}
-		f.StringVar(&fl.scopes, "scopes", defaultScopes, "space-separated OAuth 2.0 scopes")
+		f.StringVar(&fl.scopes, "scopes", defaultScopes, "Space-separated list of OAuth 2.0 scopes")
 	}
 }
 
@@ -163,6 +170,15 @@ const (
 	ExitCodeInternalError
 	ExitCodeBadLogin
 )
+
+// List of scopes needed to run `luci-auth context`. It correlates with a list
+// of requested features in authctx.Context{...} construction in contextRun.
+var allContextScopes = []string{
+	"https://www.googleapis.com/auth/cloud-platform",
+	"https://www.googleapis.com/auth/firebase",
+	"https://www.googleapis.com/auth/gerritcodereview",
+	"https://www.googleapis.com/auth/userinfo.email",
+}
 
 type commandRunBase struct {
 	subcommands.CommandRunBase
@@ -195,6 +211,12 @@ func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 			c := &loginRun{}
 			c.params = &params
 			c.registerBaseFlags()
+			if params.ContextScopesFlag {
+				c.Flags.BoolVar(
+					&c.contextScopes, "context-scopes", false,
+					"When set, request all scopes needed to run `context` subcommand. Overrides -scopes when present.",
+				)
+			}
 			return c
 		},
 	}
@@ -202,6 +224,7 @@ func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 
 type loginRun struct {
 	commandRunBase
+	contextScopes bool
 }
 
 func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.Env) int {
@@ -209,6 +232,9 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return ExitCodeInvalidInput
+	}
+	if c.contextScopes {
+		opts.Scopes = allContextScopes
 	}
 	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
@@ -415,13 +441,7 @@ func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
 // SubcommandContextWithParams returns subcommand.Command that can be used to
 // setup new LUCI authentication context for a process tree.
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
-	// By default request all scopes used by authctx.Context.
-	params.AuthOptions.Scopes = []string{
-		"https://www.googleapis.com/auth/cloud-platform",
-		"https://www.googleapis.com/auth/firebase",
-		"https://www.googleapis.com/auth/gerritcodereview",
-		"https://www.googleapis.com/auth/userinfo.email",
-	}
+	params.AuthOptions.Scopes = allContextScopes
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
 		UsageLine: fmt.Sprintf("%s [flags] [--] <bin> [args]", params.Name),
@@ -487,19 +507,19 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	if opts.Method == auth.AutoSelectMethod {
 		opts.Method = auth.SelectBestMethod(ctx, opts)
 	}
-	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
-	err = authenticator.CheckLoginRequired()
-	if err == auth.ErrLoginRequired {
-		fmt.Printf("Need to login first!\n\n")
-		err = authenticator.Login()
-	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+	if err = authenticator.CheckLoginRequired(); err != nil {
+		if err == auth.ErrLoginRequired {
+			fmt.Fprintln(os.Stderr, "Not logged in. Run 'luci-auth login -context-scopes'.")
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		return ExitCodeNoValidToken
 	}
 
 	// Now that there exists a cached token for requested options, we can launch
-	// an auth context with all bells and whistles.
+	// an auth context with all bells and whistles. If you enable or disable
+	// a feature here, make sure to adjust allContextScopes as well.
 	authCtx := authctx.Context{
 		ID:                 "luci-auth",
 		Options:            opts,
