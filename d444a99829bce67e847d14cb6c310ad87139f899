@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "288b29ba_de0d0f20",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-24T04:44:37Z",
+      "side": 1,
+      "message": "Used 66 to give it a little bigger room.",
+      "revId": "d444a99829bce67e847d14cb6c310ad87139f899",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
