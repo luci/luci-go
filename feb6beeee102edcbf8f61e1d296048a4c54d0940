@@ -34,6 +34,24 @@
       "revId": "feb6beeee102edcbf8f61e1d296048a4c54d0940",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "886b626a_f5f9a778",
+        "filename": "buildbucket/appengine/model/unused.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T07:30:54Z",
+      "side": 1,
+      "message": "ah, it must have been stored in the \"proto\" property.",
+      "parentUuid": "672a7662_e5b012ea",
+      "revId": "feb6beeee102edcbf8f61e1d296048a4c54d0940",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
