@@ -101,8 +101,8 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 // TestResultQuery specifies test results to fetch.
 type TestResultQuery struct {
 	InvocationIDs     InvocationIDSet
-	Predicate         *pb.TestResultPredicate // Predicate.Invocation must be nil.
-	PageSize          int                     // must be positive
+	Predicate         *pb.TestResultPredicate
+	PageSize          int // must be positive
 	PageToken         string
 	SelectVariantHash bool
 }
@@ -250,8 +250,8 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	})
 }
 
-// QueryTestResults reads test results matching the predicate.
-// Returned test results from the same invocation are contiguous.
+// QueryTestResults reads test results matching q.
+// Returned test results are ordered by test ID.
 func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
