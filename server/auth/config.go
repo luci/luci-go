@@ -164,6 +164,7 @@ func GetDB(c context.Context) (authdb.DB, error) {
 	if cfg := getConfig(c); cfg != nil && cfg.DBProvider != nil {
 		return cfg.DBProvider(c)
 	}
+	panic("GetDB")
 	return authdb.ErroringDB{Error: ErrNotConfigured}, nil
 }
 

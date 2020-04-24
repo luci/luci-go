@@ -57,7 +57,7 @@ func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (c
 	}
 	ctx = WithHTTPClient(ctx, &http.Client{Transport: tr})
 
-	if err := verifyAccess(ctx); err != nil {
+	if err := VerifyAccess(ctx); err != nil {
 		return nil, err
 	}
 	return ctx, nil
@@ -97,7 +97,9 @@ func statusFromError(err error) *status.Status {
 	return status.New(codes.Internal, "internal server error")
 }
 
-func verifyAccess(ctx context.Context) error {
+// VerifyAccess returns a non-nil error if the current identity is not a member
+// of a global access group.
+func VerifyAccess(ctx context.Context) error {
 	// TODO(crbug.com/1013316): use realms.
 
 	// WARNING: removing this restriction requires removing AsSelf HTTP client

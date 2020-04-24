@@ -191,6 +191,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 	// We will need working DB factory below to check IP whitelist.
 	cfg := getConfig(tracedCtx)
 	if cfg == nil || cfg.DBProvider == nil || len(a.Methods) == 0 {
+		panic(cfg.DBProvider)
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}

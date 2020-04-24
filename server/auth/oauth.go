@@ -102,6 +102,7 @@ var _ UserCredentialsGetter = (*GoogleOAuth2Method)(nil)
 func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (user *User, err error) {
 	cfg := getConfig(c)
 	if cfg == nil || cfg.AnonymousTransport == nil {
+		panic(cfg.AnonymousTransport)
 		return nil, ErrNotConfigured
 	}
 
