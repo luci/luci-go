@@ -25,12 +25,42 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 var idFieldMask = &field_mask.FieldMask{Paths: []string{"id"}}
+var allFieldMask = &field_mask.FieldMask{Paths: []string{"*"}}
+var defaultFieldMask = &field_mask.FieldMask{
+	Paths: []string{
+		"builder",
+		"create_time",
+		"created_by",
+		"end_time",
+		"id",
+		"input.experimental",
+		"input.gerrit_changes",
+		"input.gitiles_commit",
+		"number",
+		"start_time",
+		"status",
+		"status_details",
+		"summary_markdown",
+		"tags",
+		"update_time",
+	},
+}
+
+// extraFields are fields that will be added to result field mask
+// when `-field` flag is given and output is non-json.
+var extraFields = []string{
+	"id",
+	"status",
+	"builder",
+}
+var extraFieldsStr = strings.Join(extraFields, ", ")
 
 // printRun is a base command run for subcommands that print
 // builds.
@@ -67,70 +97,43 @@ func (r *printRun) RegisterFieldFlags() {
 	`))
 	r.Flags.BoolVar(&r.steps, "steps", false, "Print steps")
 	r.Flags.BoolVar(&r.properties, "p", false, "Print input/output properties")
-	r.Flags.StringVar(&r.fields, "fields", "", doc(`
+	r.Flags.StringVar(&r.fields, "fields", "", doc(fmt.Sprintf(`
 		Print only provided fields. Fields should be passed as a comma separated
 		string to match the JSON encoding schema of FieldMask.
+
+		Without -json, fields: [%s] will also be printed for better result
+		readability even if not requested.
 
 		This flag is mutually exclusive with -A, -p, -steps and -id.
 
 		See: https://developers.google.com/protocol-buffers/docs/proto3#json
-
-		Example: print id and status for all builds
-			bb ls -fields id,status
-`))
+	`, extraFieldsStr)))
 }
 
 // FieldMask returns the field mask to use in buildbucket requests.
 func (r *printRun) FieldMask() (*field_mask.FieldMask, error) {
-	if r.fields != "" {
-		if r.all || r.properties || r.steps || r.id {
-			return nil, fmt.Errorf("-fields is mutually exclusive with -A, -p, -steps and -id")
-		}
+	if err := r.validateFlags(); err != nil {
+		return nil, err
+	}
 
+	switch {
+	case r.id:
+		return proto.Clone(idFieldMask).(*field_mask.FieldMask), nil
+	case r.all:
+		return proto.Clone(allFieldMask).(*field_mask.FieldMask), nil
+	case r.fields != "" && r.json:
 		// TODO(crbug/1039823): Use Unmarshal feature in JSONPB when protobuf v2
 		// API is released. Currently, there's an existing issue in Go JSONPB
 		// implementation which results in serialization and deserialization of
 		// FieldMask not working as expected.
 		// See: https://github.com/golang/protobuf/issues/745
-		fieldMask := &field_mask.FieldMask{
-			Paths: strings.Split(r.fields, ","),
-		}
-		return fieldMask, nil
+		return &field_mask.FieldMask{Paths: strings.Split(r.fields, ",")}, nil
+	case r.fields != "" && !r.json:
+		pathSet := stringset.NewFromSlice(strings.Split(r.fields, ",")...)
+		pathSet.AddAll(extraFields)
+		return &field_mask.FieldMask{Paths: pathSet.ToSortedSlice()}, nil
 	}
-
-	if r.id {
-		if r.all || r.properties || r.steps {
-			return nil, fmt.Errorf("-id is mutually exclusive with -A, -p and -steps")
-		}
-		return proto.Clone(idFieldMask).(*field_mask.FieldMask), nil
-	}
-
-	if r.all {
-		if r.properties || r.steps {
-			return nil, fmt.Errorf("-A is mutually exclusive with -p and -steps")
-		}
-		return &field_mask.FieldMask{Paths: []string{"*"}}, nil
-	}
-
-	ret := &field_mask.FieldMask{
-		Paths: []string{
-			"builder",
-			"create_time",
-			"created_by",
-			"end_time",
-			"id",
-			"input.experimental",
-			"input.gerrit_changes",
-			"input.gitiles_commit",
-			"number",
-			"start_time",
-			"status",
-			"status_details",
-			"summary_markdown",
-			"tags",
-			"update_time",
-		},
-	}
+	ret := proto.Clone(defaultFieldMask).(*field_mask.FieldMask)
 
 	if r.properties {
 		ret.Paths = append(ret.Paths, "input.properties", "output.properties")
@@ -139,8 +142,19 @@ func (r *printRun) FieldMask() (*field_mask.FieldMask, error) {
 	if r.steps {
 		ret.Paths = append(ret.Paths, "steps")
 	}
-
 	return ret, nil
+}
+
+func (r printRun) validateFlags() error {
+	switch {
+	case r.fields != "" && (r.all || r.properties || r.steps || r.id):
+		return fmt.Errorf("-fields is mutually exclusive with -A, -p, -steps and -id")
+	case r.id && (r.all || r.properties || r.steps):
+		return fmt.Errorf("-id is mutually exclusive with -A, -p and -steps")
+	case r.all && (r.properties || r.steps):
+		return fmt.Errorf("-A is mutually exclusive with -p and -steps")
+	}
+	return nil
 }
 
 func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
