@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "aa270c08_910bbb3d",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-24T03:13:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c753606b_0c12dc7b",
+      "range": {
+        "startLine": 48,
+        "startChar": 25,
+        "endLine": 48,
+        "endChar": 33
+      },
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7828ddbb_0915c841",
         "filename": "buildbucket/appengine/model/bucket.go",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2020-04-23T05:26:03Z",
       "side": 1,
       "message": "i suspect the orig code indexes this by accident",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "67a38b21_292010e7",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-24T03:13:48Z",
+      "side": 1,
+      "message": "It does, and I think ,index is implied for string and int32 so this preserves that. Do you want it switched to not be indexed?",
+      "parentUuid": "7828ddbb_0915c841",
       "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -129,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "f47ba6a5_41854a69",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-24T03:13:48Z",
+      "side": 1,
+      "message": "Maybe I misread the code, I thought the Python version returned permission denied and I copied that behavior here. In this code any instance of \"permission denied\" implies the requested build did exist, and this code is open source so anyone can verify that. Ideally it should return \"not found\". I\u0027d like to change it to \"not found\", which may not match Python server behavior anymore. Is that fine? Changing return codes could theoretically be considered a breaking API change (although it\u0027s really a security bug fix).",
+      "parentUuid": "7b4807b2_c42c1b34",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f9c5b602_3d7a3d37",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 1
@@ -140,6 +200,24 @@
       "writtenOn": "2020-04-23T05:26:03Z",
       "side": 1,
       "message": "this might leak existance",
+      "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "259522af_d32f20a1",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-24T03:13:48Z",
+      "side": 1,
+      "message": "Non-gRPC error will be captured and logged, returning only generic HTTP 500 to the user.",
+      "parentUuid": "f9c5b602_3d7a3d37",
       "revId": "5c5baf2a4628b73501b18c653ee146cd5674c4e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
