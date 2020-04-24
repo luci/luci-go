@@ -24,6 +24,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
@@ -61,6 +62,8 @@ func TestQueryArtifacts(t *testing.T) {
 	Convey(`QueryArtifacts`, t, func() {
 		ctx := SpannerTestContext(t)
 
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+
 		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
 		req := &pb.QueryArtifactsRequest{
 			Invocations:         []string{"invocations/inv1"},
@@ -85,17 +88,31 @@ func TestQueryArtifacts(t *testing.T) {
 			return names
 		}
 
-		Convey(`Reads fields correctly`, func() {
+		Convey(`Populates fields correctly`, func() {
 			MustApply(ctx,
 				InsertInvocationArtifact("inv1", "a", map[string]interface{}{
 					"ContentType": "text/plain",
-					"Size":        54,
+					"Size":        64,
 				}),
 			)
 			actual, _ := mustQuery(req)
 			So(actual, ShouldHaveLength, 1)
 			So(actual[0].ContentType, ShouldEqual, "text/plain")
-			So(actual[0].SizeBytes, ShouldEqual, 54)
+			So(actual[0].SizeBytes, ShouldEqual, 64)
+			So(actual[0].FetchUrl, ShouldEqual, "https://signed-url.example.com")
+		})
+
+		Convey(`Generates a fetch URL`, func() {
+			MustApply(ctx,
+				InsertInvocationArtifact("inv1", "a", map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        64,
+				}),
+			)
+			actual, _ := mustQuery(req)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].ContentType, ShouldEqual, "text/plain")
+			So(actual[0].SizeBytes, ShouldEqual, 64)
 		})
 
 		Convey(`Reads both invocation and test result artifacts`, func() {

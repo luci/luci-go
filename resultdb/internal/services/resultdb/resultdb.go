@@ -25,7 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/usercontent"
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -34,7 +34,7 @@ import (
 // It does not return gRPC-native errors; use DecoratedResultDB with
 // internal.CommonPostlude.
 type resultDBServer struct {
-	generateIsolateURL func(ctx context.Context, host, ns, digest string) (u *url.URL, expiration time.Time, err error)
+	generateArtifactURL func(ctx context.Context, artifactName string) (u *url.URL, expiration time.Time, err error)
 }
 
 // Options is resultdb server configuration.
@@ -47,15 +47,16 @@ type Options struct {
 
 // InitServer initializes a resultdb server.
 func InitServer(srv *server.Server, opts Options) error {
-	contentServer, err := usercontent.NewServer(srv.Context, opts.InsecureSelfURLs, opts.ContentHostname)
+	contentServer, err := artifactcontent.NewServer(srv.Context, opts.InsecureSelfURLs, opts.ContentHostname)
 	if err != nil {
 		return err
 	}
+
 	contentServer.InstallHandlers(srv.VirtualHost(opts.ContentHostname))
 
 	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
 		Service: &resultDBServer{
-			generateIsolateURL: contentServer.GenerateSignedIsolateURL,
+			generateArtifactURL: contentServer.GenerateSignedURL,
 		},
 		Prelude:  internal.CommonPrelude,
 		Postlude: internal.CommonPostlude,
