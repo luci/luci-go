@@ -39,6 +39,24 @@
       "revId": "501f32d6b64e590ecc63a2b209a96810ca4e5c72",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41af241b_1127885f",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T05:49:57Z",
+      "side": 1,
+      "message": "this file must be fine because this entire package is imported only by _test.go files",
+      "parentUuid": "48ce6251_9a89cdf8",
+      "revId": "501f32d6b64e590ecc63a2b209a96810ca4e5c72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
