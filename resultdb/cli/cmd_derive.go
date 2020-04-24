@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/maruel/subcommands"
 	"go.chromium.org/luci/grpc/prpc"
 	"golang.org/x/sync/errgroup"
@@ -62,6 +64,9 @@ func cmdDerive(p Params) *subcommands.Command {
 				Wait for the tasks to complete.
 				Without waiting, if the task is incomplete, exits with an error.
 			`))
+			r.Flags.Float64Var((*float64)(&r.rateLimit), "rate-limit", 10, text.Doc(`
+				Max RPCs per second.
+			`))
 			return r
 		},
 	}
@@ -72,6 +77,7 @@ type deriveRun struct {
 	swarmingHost string
 	taskIDs      []string
 	wait         bool
+	rateLimit    rate.Limit
 }
 
 func (r *deriveRun) parseArgs(args []string) error {
@@ -84,6 +90,10 @@ func (r *deriveRun) parseArgs(args []string) error {
 
 	if strings.Contains(r.swarmingHost, "/") {
 		return errors.Reason("invalid swarming host %q", r.swarmingHost).Err()
+	}
+
+	if r.rateLimit < 1 {
+		return errors.Reason("invalid -rate-limit %d", r.rateLimit).Err()
 	}
 
 	return r.queryRunBase.validate()
@@ -113,10 +123,14 @@ func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommand
 func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 	ret := make([]string, len(r.taskIDs))
+	limiter := rate.NewLimiter(r.rateLimit, 0)
 	for i, tid := range r.taskIDs {
 		i := i
 		tid := tid
 		eg.Go(func() error {
+			if err := limiter.Wait(ctx); err != nil {
+				return err
+			}
 			res, err := r.deriveInvocation(ctx, tid)
 			if err != nil {
 				return err
