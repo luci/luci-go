@@ -48,6 +48,12 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 			Convey(`invalid`, func() {
 				So(validate(")"), ShouldErrLike, "test_id_regexp: error parsing regex")
 			})
+			Convey(`^`, func() {
+				So(validate("^a"), ShouldErrLike, "test_id_regexp: must not contain ^ or $")
+			})
+			Convey(`$`, func() {
+				So(validate("a$"), ShouldErrLike, "test_id_regexp: must not contain ^ or $")
+			})
 		})
 
 		Convey(`Test variant`, func() {
