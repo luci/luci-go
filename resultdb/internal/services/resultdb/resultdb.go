@@ -80,9 +80,3 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	// TODO(crbug.com/1071258): implement.
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
-
-// QueryArtifacts implements pb.ResultDBServer.
-func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
-	// TODO(crbug.com/1071258): implement.
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
-}
