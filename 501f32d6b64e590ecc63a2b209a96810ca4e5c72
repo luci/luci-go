@@ -57,6 +57,24 @@
       "revId": "501f32d6b64e590ecc63a2b209a96810ca4e5c72",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8bb88879_2fc36714",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T06:03:00Z",
+      "side": 1,
+      "message": "in fact, if we rename this spantest_test.go, then _test.go files in other packages won\u0027t be able to import this code.",
+      "parentUuid": "41af241b_1127885f",
+      "revId": "501f32d6b64e590ecc63a2b209a96810ca4e5c72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
