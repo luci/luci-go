@@ -41,8 +41,21 @@ func logDetails(ctx context.Context, methodName string, req proto.Message) (cont
 // have correct ACLs checks.
 // TODO(crbug/1042991): Remove once methods are implemented.
 func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	if methodName == "GetBuild" {
+		return nil
+	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 	return status.Errorf(codes.Unimplemented, "method not implemented")
+}
+
+// notFound returns a generic error message indicating the resource requested
+// was not found with a hint that the user may not have permission to view
+// it. By not differentiating between "not found" and "permission denied"
+// errors, leaking existence of resources a user doesn't have permission to
+// view can be avoided. Should be used everywhere a "not found" or
+// "permission denied" error occurs.
+func notFound(ctx context.Context) error {
+	return status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", auth.CurrentIdentity(ctx))
 }
 
 // Builds implements buildbucketpb.BuildsServer.
@@ -67,12 +80,12 @@ func (*Builds) SearchBuilds(ctx context.Context, req *buildbucketpb.SearchBuilds
 	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// ScheduleBuilds handles a request to schedule a build. Implements buildbucketpb.BuildsServer
+// ScheduleBuild handles a request to schedule a build. Implements buildbucketpb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *buildbucketpb.ScheduleBuildRequest) (*buildbucketpb.Build, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// UpdateBuilds handles a request to update a build. Implements buildbucketpb.UpdateBuild.
+// UpdateBuild handles a request to update a build. Implements buildbucketpb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *buildbucketpb.UpdateBuildRequest) (*buildbucketpb.Build, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
 }

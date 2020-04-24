@@ -20,6 +20,9 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -157,7 +160,42 @@ func TestGetBuild(t *testing.T) {
 				So(rsp, ShouldBeNil)
 			})
 
+			Convey("permission denied", func() {
+				So(datastore.Put(ctx, &model.Build{
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.GetBuildRequest{
+					Id: 1,
+				}
+				rsp, err := srv.GetBuild(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
 			Convey("found", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: identity.Identity("user:user"),
+				})
+				So(datastore.Put(ctx, &model.Bucket{
+					ID: "bucket",
+					Parent: datastore.KeyForObj(ctx, &model.Project{
+						ID: "project",
+					}),
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+							},
+						},
+					},
+				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
 					Proto: pb.Build{
 						Id: 1,
@@ -264,6 +302,22 @@ func TestGetBuild(t *testing.T) {
 			})
 
 			Convey("ok", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: identity.Identity("user:user"),
+				})
+				So(datastore.Put(ctx, &model.Bucket{
+					ID: "bucket",
+					Parent: datastore.KeyForObj(ctx, &model.Project{
+						ID: "project",
+					}),
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+							},
+						},
+					},
+				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.TagIndex{
 					ID: ":2:build_address:luci.project.bucket/builder/1",
 					Entries: []model.TagIndexEntry{

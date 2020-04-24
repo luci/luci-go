@@ -49,7 +49,7 @@ type Build struct {
 	//
 	// infra, input.properties, output.properties, and steps
 	// are zeroed and stored in separate datastore entities
-	// due to their potentially large size.
+	// due to their potentially large size (see details.go).
 	// tags are given their own field so they can be indexed.
 	//
 	// noindex is not respected here, it's set in pb.Build.ToProperty.

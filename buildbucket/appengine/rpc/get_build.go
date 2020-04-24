@@ -105,29 +105,44 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		return nil, status.Errorf(codes.InvalidArgument, "invalid field mask")
 	}
 	if req.Id == 0 {
-		build_addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)
-		switch ents, err := model.SearchTagIndex(ctx, "build_address", build_addr); {
+		addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)
+		switch ents, err := model.SearchTagIndex(ctx, "build_address", addr); {
 		case model.TagIndexIncomplete.In(err):
 			// Shouldn't happen because build address is globally unique (exactly one entry in a complete index).
-			return nil, errors.Reason("unexpected incomplete index for build address %q", build_addr).Err()
+			return nil, errors.Reason("unexpected incomplete index for build address %q", addr).Err()
 		case err != nil:
 			return nil, err
 		case len(ents) == 1:
 			req.Id = ents[0].BuildID
 		default:
 			// Shouldn't happen because build address is globally unique and created before the build.
-			return nil, errors.Reason("unexpected number of results for build address %q: %d", build_addr, len(ents)).Err()
+			return nil, errors.Reason("unexpected number of results for build address %q: %d", addr, len(ents)).Err()
 		}
 	}
-	ent := &model.Build{
+	bld := &model.Build{
 		ID: req.Id,
 	}
-	switch err := datastore.Get(ctx, ent); {
+	switch err := datastore.Get(ctx, bld); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "not found")
+		return nil, notFound(ctx)
 	case err != nil:
 		return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
 	}
-	// TODO(crbug/1042991): Check that the user can view this build.
-	return ent.ToProto(ctx, m)
+	bck := &model.Bucket{
+		ID:     bld.Proto.Builder.Bucket,
+		Parent: datastore.KeyForObj(ctx, &model.Project{ID: bld.Proto.Builder.Project}),
+	}
+	switch err := datastore.Get(ctx, bck); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, notFound(ctx)
+	case err != nil:
+		return nil, errors.Annotate(err, "error fetching bucket %q", bld.BucketID).Err()
+	}
+	switch can, err := bck.CanView(ctx); {
+	case err != nil:
+		return nil, err
+	case !can:
+		return nil, notFound(ctx)
+	}
+	return bld.ToProto(ctx, m)
 }
