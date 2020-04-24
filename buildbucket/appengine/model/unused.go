@@ -16,7 +16,15 @@ package model
 
 // UnusedProperties are properties previously set but currently unused.
 type UnusedProperties struct {
+	// Infra was used to store the proto's infra field value in order to reduce
+	// the size of the proto being unmarshalled in projection queries.
+	// Since moved to its own entity (see details.go) and backfilled for all builds.
+	Infra []byte `gae:"infra_bytes,noindex"`
+	// InputProperties was used to store the proto's input.properties field value
+	// in order to reduce the size of the proto being unmarshalled in projection queries.
+	// Since moved to its own entity (see details.go) and backfilled for all builds.
+	InputProperties []byte `gae:"input_properties_bytes,noindex"`
 	// SwarmingTaskKey was used before Swarming task creation was made idempotent
 	// in order to ensure only one task could call UpdateBuild.
-	SwarmingTaskKey string `gae:"swarming_task_key"`
+	SwarmingTaskKey string `gae:"swarming_task_key,noindex"`
 }
