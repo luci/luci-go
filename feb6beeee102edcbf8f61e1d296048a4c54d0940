@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8348ca3e_3c851f94",
+        "filename": "buildbucket/appengine/model/unused.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-24T07:11:57Z",
+      "side": 1,
+      "message": "output properties also where there at some point.\nexact property name would have to be digged in git history",
+      "revId": "feb6beeee102edcbf8f61e1d296048a4c54d0940",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
