@@ -75,12 +75,6 @@ func InitServer(srv *server.Server, opts Options) error {
 	return nil
 }
 
-// GetArtifact implements pb.ResultDBServer.
-func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
-	// TODO(crbug.com/1071258): implement.
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
-}
-
 // ListArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
 	// TODO(crbug.com/1071258): implement.

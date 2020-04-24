@@ -208,6 +208,12 @@ func fatalIf(err error) {
 	}
 }
 
+func updateDict(dest, source map[string]interface{}) {
+	for k, v := range source {
+		dest[k] = v
+	}
+}
+
 // InsertInvocation returns a spanner mutation that inserts an invocation.
 func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValues map[string]interface{}) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -226,9 +232,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValu
 	if state == pb.Invocation_FINALIZED {
 		values["FinalizeTime"] = spanner.CommitTimestamp
 	}
-	for k, v := range extraValues {
-		values[k] = v
-	}
+	updateDict(values, extraValues)
 	return span.InsertMap("Invocations", values)
 }
 
@@ -292,6 +296,18 @@ func InsertTestExonerations(invID span.InvocationID, testID string, variant *typ
 		})
 	}
 	return ms
+}
+
+// InsertTestResultArtifact returns a spanner mutation to insert a test result
+// artifact.
+func InsertTestResultArtifact(invID span.InvocationID, testID, resultID, artifcactID string, extraValues map[string]interface{}) *spanner.Mutation {
+	values := map[string]interface{}{
+		"InvocationId": invID,
+		"ParentID":     span.ArtifactParentID(testID, resultID),
+		"ArtifactId":   artifcactID,
+	}
+	updateDict(values, extraValues)
+	return span.InsertMap("Artifacts", values)
 }
 
 // MakeTestResults creates test results.
