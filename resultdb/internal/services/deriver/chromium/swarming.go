@@ -136,7 +136,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 
 	if ref != nil && ref.Isolated != "" {
 		if results, err = processOutputs(ctx, ref, testIDPrefix, inv, req); err != nil {
-			logging.Errorf(ctx, "isolated outputs at %q in %q, %q: %s",
+			logging.Warningf(ctx, "isolated outputs at %q in %q, %q: %s",
 				ref.Isolated, ref.Isolatedserver, ref.Namespace, err)
 		}
 	} else {
