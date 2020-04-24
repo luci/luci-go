@@ -298,13 +298,25 @@ func InsertTestExonerations(invID span.InvocationID, testID string, variant *typ
 	return ms
 }
 
+// InsertInvocationArtifact returns a spanner mutation to insert an invocation
+// artifact.
+func InsertInvocationArtifact(invID span.InvocationID, artifactID string, extraValues map[string]interface{}) *spanner.Mutation {
+	values := map[string]interface{}{
+		"InvocationId": invID,
+		"ParentID":     "",
+		"ArtifactId":   artifactID,
+	}
+	updateDict(values, extraValues)
+	return span.InsertMap("Artifacts", values)
+}
+
 // InsertTestResultArtifact returns a spanner mutation to insert a test result
 // artifact.
-func InsertTestResultArtifact(invID span.InvocationID, testID, resultID, artifcactID string, extraValues map[string]interface{}) *spanner.Mutation {
+func InsertTestResultArtifact(invID span.InvocationID, testID, resultID, artifactID string, extraValues map[string]interface{}) *spanner.Mutation {
 	values := map[string]interface{}{
 		"InvocationId": invID,
 		"ParentID":     span.ArtifactParentID(testID, resultID),
-		"ArtifactId":   artifcactID,
+		"ArtifactId":   artifactID,
 	}
 	updateDict(values, extraValues)
 	return span.InsertMap("Artifacts", values)

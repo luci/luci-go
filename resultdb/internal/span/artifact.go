@@ -17,6 +17,7 @@ package span
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -24,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -46,6 +48,26 @@ func ArtifactParentID(testID, resultID string) string {
 		return fmt.Sprintf("tr/%s/%s", testID, resultID)
 	}
 	return ""
+}
+
+// ParseArtifactParentID parses parentID into testID and resultID.
+// If the artifact's parent is invocation, then testID and resultID are "".
+func ParseArtifactParentID(parentID string) (testID, resultID string, err error) {
+	if parentID == "" {
+		return "", "", nil
+	}
+
+	if !strings.HasPrefix(parentID, "tr/") {
+		return "", "", errors.Reason("unrecognized artifact parent ID %q", parentID).Err()
+	}
+	parentID = strings.TrimPrefix(parentID, "tr/")
+
+	lastSlash := strings.LastIndexByte(parentID, '/')
+	if lastSlash == -1 || lastSlash == 0 || lastSlash == len(parentID)-1 {
+		return "", "", errors.Reason("unrecognized artifact parent ID %q", parentID).Err()
+	}
+
+	return parentID[:lastSlash], parentID[lastSlash+1:], nil
 }
 
 // ReadArtifact reads an artifact from Spanner.
@@ -84,4 +106,113 @@ func ReadArtifact(ctx context.Context, txn Txn, name string) (*pb.Artifact, erro
 		ret.SizeBytes = size.Int64
 		return ret, nil
 	}
+}
+
+// ArtifactQuery specifies artifacts to fetch.
+type ArtifactQuery struct {
+	InvocationIDs       InvocationIDSet
+	FollowEdges         *pb.QueryArtifactsRequest_EdgeTypeSet
+	TestResultPredicate *pb.TestResultPredicate
+	PageSize            int // must be positive
+	PageToken           string
+}
+
+// parseArtifactPageToken parses the page token into invocation ID, parentID
+// and artifactId.
+func parseArtifactPageToken(pageToken string) (parentID string, inv InvocationID, artifactID string, err error) {
+	switch pos, tokErr := pagination.ParseToken(pageToken); {
+	case tokErr != nil:
+		err = pageTokenError(tokErr)
+
+	case pos == nil:
+
+	case len(pos) != 3:
+		err = pageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
+
+	default:
+		parentID = pos[0]
+		inv = InvocationID(pos[1])
+		artifactID = pos[2]
+	}
+
+	return
+}
+
+// QueryArtifacts fetches artifacts matching q.
+//
+// Returned artifacts are ordered by level (invocation or test result).
+// Test result artifacts are sorted by test id.
+func QueryArtifacts(ctx context.Context, txn Txn, q ArtifactQuery) (arts []*pb.Artifact, nextPageToken string, err error) {
+	if q.PageSize <= 0 {
+		panic("PageSize <= 0")
+	}
+
+	st := spanner.NewStatement(`
+		SELECT InvocationId, ParentId, ArtifactId, ContentType, Size
+		FROM Artifacts
+		WHERE InvocationId IN UNNEST(@invIDs)
+			# Skip artifacts after the one specified in the page token.
+			AND (
+				(ParentId > @afterParentId) OR
+				(ParentId = @afterParentId AND InvocationId > @afterInvocationId) OR
+				(ParentId = @afterParentId AND InvocationId = @afterInvocationId AND ArtifactId > @afterArtifactId)
+		  )
+		ORDER BY ParentId, InvocationId, ArtifactId
+		LIMIT @limit
+	`)
+
+	st.Params["invIDs"] = q.InvocationIDs
+	st.Params["limit"] = q.PageSize
+	st.Params["afterParentId"],
+		st.Params["afterInvocationId"],
+		st.Params["afterArtifactId"],
+		err = parseArtifactPageToken(q.PageToken)
+	if err != nil {
+		return
+	}
+
+	// TODO(nodir): add support for q.TestResultPredicate
+	// TODO(nodir): add support for q.FollowEdges
+
+	var b Buffer
+	err = Query(ctx, txn, st, func(row *spanner.Row) error {
+		var invID InvocationID
+		var parentID string
+		var contentType spanner.NullString
+		var size spanner.NullInt64
+		a := &pb.Artifact{}
+		if err := b.FromSpanner(row, &invID, &parentID, &a.ArtifactId, &contentType, &size); err != nil {
+			return err
+		}
+
+		// Initialize artifact name.
+		switch testID, resultID, err := ParseArtifactParentID(parentID); {
+		case err != nil:
+			return err
+		case testID == "":
+			a.Name = pbutil.InvocationArtifactName(string(invID), a.ArtifactId)
+		default:
+			a.Name = pbutil.TestResultArtifactName(string(invID), testID, resultID, a.ArtifactId)
+		}
+
+		a.ContentType = contentType.StringVal
+		a.SizeBytes = size.Int64
+
+		arts = append(arts, a)
+		return nil
+	})
+	if err != nil {
+		arts = nil
+		return
+	}
+
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if len(arts) == q.PageSize {
+		last := arts[q.PageSize-1]
+		invID, testID, resultID, artifactID := MustParseArtifactName(last.Name)
+		parentID := ArtifactParentID(testID, resultID)
+		nextPageToken = pagination.Token(parentID, string(invID), artifactID)
+	}
+	return
 }

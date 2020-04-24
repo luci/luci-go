@@ -78,16 +78,15 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 // TestExonerationQuery specifies test exonerations to fetch.
 type TestExonerationQuery struct {
 	InvocationIDs InvocationIDSet
-	Predicate     *pb.TestExonerationPredicate // Predicate.Invocation must be nil.
-	PageSize      int                          // must be positive
+	Predicate     *pb.TestExonerationPredicate
+	PageSize      int // must be positive
 	PageToken     string
 }
 
 // QueryTestExonerations reads test exonerations matching the predicate.
 // Returned test exonerations from the same invocation are contiguous.
 func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextPageToken string, err error) {
-	switch {
-	case q.PageSize <= 0:
+	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
 
