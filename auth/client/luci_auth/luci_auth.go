@@ -21,9 +21,13 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging/gologger"
 )
+
+// Version is the version of luci-auth tool.
+const Version = "1.0.0"
 
 // GetApplication returns cli.Application that implements 'luci-auth'.
 //
@@ -32,17 +36,16 @@ import (
 func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 	return &cli.Application{
 		Name:  "luci-auth",
-		Title: "LUCI Authentication Utility",
+		Title: "LUCI Authentication Utility (luci-auth v" + Version + ")",
+
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)
 		},
+
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
-			authcli.SubcommandInfoWithParams(authcli.CommandParams{
-				Name:        "info",
-				AuthOptions: defaultAuthOpts,
-				ScopesFlag:  true,
-			}),
+			versioncli.CmdVersion("luci-auth v" + Version),
+
 			authcli.SubcommandLoginWithParams(authcli.CommandParams{
 				Name:              "login",
 				AuthOptions:       defaultAuthOpts,
@@ -54,14 +57,20 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 				AuthOptions: defaultAuthOpts,
 				ScopesFlag:  true,
 			}),
+
+			authcli.SubcommandInfoWithParams(authcli.CommandParams{
+				Name:        "info",
+				AuthOptions: defaultAuthOpts,
+				ScopesFlag:  true,
+			}),
 			authcli.SubcommandTokenWithParams(authcli.CommandParams{
 				Name:        "token",
 				AuthOptions: defaultAuthOpts,
 				ScopesFlag:  true,
 			}),
+
 			authcli.SubcommandContextWithParams(authcli.CommandParams{
 				Name:        "context",
-				Advanced:    true,
 				AuthOptions: defaultAuthOpts,
 				ScopesFlag:  true,
 			}),
