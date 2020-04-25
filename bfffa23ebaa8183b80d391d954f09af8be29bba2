@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "ff4adc14_0cd5885e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-25T02:26:48Z",
+      "side": 1,
+      "message": "Thanks for clarifications. I will make the changes in a follow-up CL then.",
+      "parentUuid": "ff82959e_3784b39b",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 15
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa172c51_83dc252a",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 6
