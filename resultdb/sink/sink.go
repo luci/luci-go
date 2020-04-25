@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
@@ -53,32 +54,37 @@ const (
 // started.
 var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").Err()
 
-// ServerConfig defines the parameters of the server.
-type ServerConfig struct {
+// Config defines sink parameters.
+type Config struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
+	// If nil, Chrome's production instance is used.
 	Recorder pb.RecorderClient
 
-	// AuthToken is a secret token to expect from clients. If it is "" then it
-	// will be randomly generated in a secure way.
-	AuthToken string
 	// Address is the HTTP address to listen on. If empty, the server will use
 	// the default address.
 	Address string
 
+	// AuthToken is a secret token to expect from clients. If it is "" then it
+	// will be randomly generated in a secure way.
+	AuthToken string
+
 	// Invocation is the name of the invocation that test results should append
 	// to.
+	// Defaults to the invocation in LUCI_CONTEXT.
 	Invocation string
 	// UpdateToken is the token that allows writes to Invocation.
+	//
+	// If Invocation is "", then this value is ignored and the value in
+	// LUCI_CONTEXT is used instead.
 	UpdateToken string
 
-	// TestIDPrefix will be prepended to the test_id of each TestResult.
+	// TestIDPrefix will be prepended to the test_id of each TestResult before
+	// uploading to ResultDB.
 	TestIDPrefix string
 }
 
-func (c *ServerConfig) Validate() error {
-	if c.Recorder == nil {
-		return errors.Reason("Recorder: unspecified").Err()
-	}
+// Validate returns a non-nil error if it is invalid.
+func (c *Config) Validate() error {
 	if err := pbutil.ValidateInvocationName(c.Invocation); err != nil {
 		return errors.Annotate(err, "Invocation").Err()
 	}
@@ -89,12 +95,12 @@ func (c *ServerConfig) Validate() error {
 	return nil
 }
 
-// Server contains state relevant to the server itself.
-// It should always be created by a call to NewServer.
-// After a call to Serve(), Server will accept connections on its Port and
-// gather test results to send to its Recorder.
-type Server struct {
-	cfg     ServerConfig
+// Sink uploads results to ResultDB.
+// It should always be created using New.
+// After Serve() call, Sink will accepts connections at its address, collects
+// results and uploads them to ResultDB.
+type Sink struct {
+	cfg     Config
 	errC    chan error
 	httpSrv http.Server
 
@@ -105,11 +111,15 @@ type Server struct {
 	testListener net.Listener
 }
 
-// NewServer creates a Server value and populates optional values with defaults.
-func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
+// New creates a Sink.
+func New(ctx context.Context, cfg Config) (*Sink, error) {
 	// validate the config for required fields
 	if err := cfg.Validate(); err != nil {
 		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
+	}
+
+	if cfg.Recorder == nil {
+		cfg.Recorder = pb.NewRecorderPRPCClient(&prpc.Client{Host: chromeinfra.ResultDBHost})
 	}
 
 	// set the default values for the optional config fields missing.
@@ -124,18 +134,18 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 		cfg.AuthToken = tk
 	}
 
-	s := &Server{
+	s := &Sink{
 		cfg:  cfg,
 		errC: make(chan error, 1),
 	}
 	return s, nil
 }
 
-// Config retrieves the ServerConfig of a previously created Server.
+// Config returns a copy of sink's configuration.
 //
 // Use this to retrieve the resolved values of unset optional fields in the
 // original ServerConfig.
-func (s *Server) Config() ServerConfig {
+func (s *Sink) Config() Config {
 	return s.cfg
 }
 
@@ -143,7 +153,7 @@ func (s *Server) Config() ServerConfig {
 //
 // Receiving an error on this channel implies that the server has either
 // stopped running or is in the process of stopping.
-func (s *Server) ErrC() <-chan error {
+func (s *Sink) ErrC() <-chan error {
 	return s.errC
 }
 
@@ -152,7 +162,7 @@ func (s *Server) ErrC() <-chan error {
 // The context passed to callback will be cancelled if the server encounters
 // an error. The context also has the server's information exported into it.
 // If callback finishes running, Run will return the error it returned.
-func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
+func (s *Sink) Run(ctx context.Context, callback func(context.Context) error) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// TODO(sajjadm): Add Export here when implemented and explain it in the function comment.
@@ -180,7 +190,7 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 //
 // On success, Start will return nil, and a subsequent error will be sent on
 // the server's ErrC channel.
-func (s *Server) Start(ctx context.Context) error {
+func (s *Sink) Start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
 		return errors.Reason("cannot call Start twice").Err()
 	}
@@ -226,7 +236,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 // Close immediately stops the servers and cancels the requests that are being processed.
-func (s *Server) Close() error {
+func (s *Sink) Close() error {
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started
 		return ErrCloseBeforeStart
@@ -236,7 +246,7 @@ func (s *Server) Close() error {
 
 // Export exports lucictx.ResultSink derived from the server configuration into
 // the context.
-func (s *Server) Export(ctx context.Context) context.Context {
+func (s *Sink) Export(ctx context.Context) context.Context {
 	return lucictx.SetResultSink(ctx, &lucictx.ResultSink{
 		Address:   s.cfg.Address,
 		AuthToken: s.cfg.AuthToken,

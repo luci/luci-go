@@ -38,7 +38,7 @@ type rdbChannel struct {
 	testResultCh *dispatcher.Channel
 }
 
-func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
+func (rdbc *rdbChannel) init(ctx context.Context, cfg Config) error {
 	// install a dispatcher channel for pb.TestResult
 	rdopts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),

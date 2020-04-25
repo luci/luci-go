@@ -31,11 +31,11 @@ import (
 
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
-	cfg   ServerConfig
+	cfg   Config
 	rdbCh rdbChannel
 }
 
-func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
+func newSinkServer(ctx context.Context, cfg Config) (sinkpb.SinkServer, error) {
 	ss := &sinkServer{cfg: cfg}
 	if err := ss.rdbCh.init(ctx, cfg); err != nil {
 		return nil, err

@@ -36,7 +36,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func installTestListener(srv *Server) (string, func() error) {
+func installTestListener(srv *Sink) (string, func() error) {
 	l, err := net.Listen("tcp", "localhost:0")
 	So(err, ShouldBeNil)
 	srv.testListener = l
@@ -57,8 +57,8 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 	return sinkClient.ReportTestResults(ctx, in)
 }
 
-func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
-	return ServerConfig{
+func testServerConfig(ctl *gomock.Controller, addr, tk string) Config {
+	return Config{
 		Address:     addr,
 		AuthToken:   tk,
 		Recorder:    pb.NewMockRecorderClient(ctl),

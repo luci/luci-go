@@ -117,7 +117,7 @@ func (r *streamRun) makeTestCmd(ctx context.Context, args []string) (*exec2.Cmd,
 
 func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error) {
 	// Set the server configs based on the flags and lucictx
-	server, err := sink.NewServer(ctx, sink.ServerConfig{
+	server, err := sink.New(ctx, sink.Config{
 		Recorder:    r.recorder,
 		Invocation:  r.invocation.Name,
 		UpdateToken: r.invocation.UpdateToken,
