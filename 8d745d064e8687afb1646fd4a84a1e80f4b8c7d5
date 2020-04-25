@@ -39,6 +39,24 @@
       "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ff0a068_06e0a66d",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T02:30:07Z",
+      "side": 1,
+      "message": "\u003e hm, this means the client passed \"test_id_prefix:ninja://foo\" tag, then we will use \"ninjatest_id_prefix:ninja://foo\"\n\ni meant ninjaninja://foo",
+      "parentUuid": "ecc11f36_da0c69fa",
+      "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
