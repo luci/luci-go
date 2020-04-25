@@ -79,6 +79,14 @@ func ValidateRequestID(requestID string) error {
 	return nil
 }
 
+// ValidateBatchRequestCount validates the number of requests in a batch request.
+func ValidateBatchRequestCount(count, limit int) error {
+	if count > limit {
+		return errors.Reason("the number of requests in the batch exceeds %d", limit).Err()
+	}
+	return nil
+}
+
 // ValidateMaxStaleness returns a non-nil error if maxStaleness is invalid.
 func ValidateMaxStaleness(maxStaleness *durationpb.Duration) error {
 	if maxStaleness == nil {
