@@ -20,11 +20,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestMustParseArtifactName(t *testing.T) {
@@ -69,11 +69,11 @@ func TestArtifactParentID(t *testing.T) {
 
 func TestReadArtifact(t *testing.T) {
 	Convey(`TestReadArtifact`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
 
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
 
 		Convey(`Does not exist`, func() {
 			_, err := span.ReadArtifact(ctx, txn, "invocations/i/artifacts/a")
@@ -81,7 +81,7 @@ func TestReadArtifact(t *testing.T) {
 		})
 
 		Convey(`Exists`, func() {
-			MustApply(ctx, InsertTestResultArtifact("inv", "t", "r", "a", map[string]interface{}{
+			testutil.MustApply(ctx, testutil.InsertTestResultArtifact("inv", "t", "r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))

@@ -27,12 +27,12 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
@@ -107,7 +107,7 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 
 func TestCreateTestResult(t *testing.T) {
 	Convey(`CreateTestResult`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 		req := validCreateTestResultRequest(
 			clock.Now(ctx).UTC(), "invocations/u:build-1", "test-id",
@@ -128,7 +128,7 @@ func TestCreateTestResult(t *testing.T) {
 			// variant hash
 			key := span.InvocationID("u:build-1").Key("test-id", "result-id-0")
 			var variantHash string
-			MustReadRow(ctx, "TestResults", key, map[string]interface{}{
+			testutil.MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 				"VariantHash": &variantHash,
 			})
 			So(variantHash, ShouldEqual, "c8643f74854d84b4")
@@ -138,8 +138,8 @@ func TestCreateTestResult(t *testing.T) {
 		tok, err := generateInvocationToken(ctx, "u:build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, nil)
-		MustApply(ctx, mut)
+		mut := testutil.InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, nil)
+		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {

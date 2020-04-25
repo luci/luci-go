@@ -17,12 +17,12 @@ package resultdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateGetArtifactRequest(t *testing.T) {
@@ -42,14 +42,14 @@ func TestValidateGetArtifactRequest(t *testing.T) {
 
 func TestGetArtifact(t *testing.T) {
 	Convey(`GetArtifact`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		srv := newTestResultDBService()
 
 		Convey(`Exists`, func() {
 			// Insert a Artifact.
-			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
-				InsertTestResultArtifact("inv", "t t", "r", "a", nil),
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+				testutil.InsertTestResultArtifact("inv", "t t", "r", "a", nil),
 			)
 			const name = "invocations/inv/tests/t%20t/results/r/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}

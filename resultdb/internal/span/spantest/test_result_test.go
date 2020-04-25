@@ -21,12 +21,12 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestMustParseTestResultName(t *testing.T) {
@@ -56,17 +56,17 @@ func TestMustParseTestResultName(t *testing.T) {
 
 func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
-		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
 		q := span.TestResultQuery{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
 			InvocationIDs: span.NewInvocationIDSet("inv1"),
 		}
 
-		makeTestResults := MakeTestResults
-		insertTestResults := InsertTestResults
+		makeTestResults := testutil.MakeTestResults
+		insertTestResults := testutil.InsertTestResults
 
 		read := func(q span.TestResultQuery) (trs []*pb.TestResult, token string, err error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -99,14 +99,14 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			MustApply(ctx,
-				InsertInvocation("inv0", pb.Invocation_ACTIVE, nil),
-				InsertInvocation("inv2", pb.Invocation_ACTIVE, nil),
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, nil),
+				testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, nil),
 			)
-			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(expected),
-				insertTestResults(makeTestResults("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				testutil.InsertTestResults(makeTestResults("inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				testutil.InsertTestResults(expected),
+				testutil.InsertTestResults(makeTestResults("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 			)...)
 
 			actual, _ := mustRead(q)
@@ -114,14 +114,14 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
-			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "T2", nil, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "T1", nil, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "T2", nil, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv1", "T3", nil, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "T4", nil, pb.TestStatus_FAIL)),
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				testutil.InsertTestResults(makeTestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				testutil.InsertTestResults(makeTestResults("inv0", "T2", nil, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "T1", nil, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "T2", nil, pb.TestStatus_FAIL)),
+				testutil.InsertTestResults(makeTestResults("inv1", "T3", nil, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "T4", nil, pb.TestStatus_FAIL)),
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
@@ -140,13 +140,13 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Test id filter`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
-			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "1-2", nil, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "1-1", nil, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2-1", nil, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2", nil, pb.TestStatus_FAIL)),
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				testutil.InsertTestResults(makeTestResults("inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				testutil.InsertTestResults(makeTestResults("inv0", "1-2", nil, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "1-1", nil, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "2-1", nil, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "2", nil, pb.TestStatus_FAIL)),
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
@@ -161,15 +161,15 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Variant equals`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
 
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
-			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "1-2", v2, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "1-1", v1, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2-1", v2, pb.TestStatus_PASS)),
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				testutil.InsertTestResults(makeTestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				testutil.InsertTestResults(makeTestResults("inv0", "1-2", v2, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "1-1", v1, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "2-1", v2, pb.TestStatus_PASS)),
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
@@ -185,16 +185,16 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Variant contains`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
 
 			v1 := pbutil.Variant("k", "1")
 			v11 := pbutil.Variant("k", "1", "k2", "1")
 			v2 := pbutil.Variant("k", "2")
-			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "1-2", v11, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "1-1", v1, pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2-1", v2, pb.TestStatus_PASS)),
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				testutil.InsertTestResults(makeTestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				testutil.InsertTestResults(makeTestResults("inv0", "1-2", v11, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "1-1", v1, pb.TestStatus_PASS)),
+				testutil.InsertTestResults(makeTestResults("inv1", "2-1", v2, pb.TestStatus_PASS)),
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
@@ -218,7 +218,7 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			MustApply(ctx, insertTestResults(trs)...)
+			testutil.MustApply(ctx, insertTestResults(trs)...)
 
 			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestResult) string {
 				q2 := q

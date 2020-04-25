@@ -26,15 +26,15 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestCreateArtifact(t *testing.T) {
 	Convey(`CreateArtifact`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
 		send := func(artifact, hash string, size int64, updateToken string) *httptest.ResponseRecorder {
 			rec := httptest.NewRecorder()
@@ -118,15 +118,15 @@ func TestCreateArtifact(t *testing.T) {
 			})
 
 			Convey(`Invocation is finalized`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
 				rec := send("invocations/inv/artifacts/a", "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok)
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "invocations/inv is not active")
 			})
 
 			Convey(`Same artifact exists`, func() {
-				MustApply(ctx,
-					InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+				testutil.MustApply(ctx,
+					testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
 					span.InsertMap("Artifacts", map[string]interface{}{
 						"InvocationId": span.InvocationID("inv"),
 						"ParentId":     "",
@@ -140,8 +140,8 @@ func TestCreateArtifact(t *testing.T) {
 			})
 
 			Convey(`Different artifact exists`, func() {
-				MustApply(ctx,
-					InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+				testutil.MustApply(ctx,
+					testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
 					span.InsertMap("Artifacts", map[string]interface{}{
 						"InvocationId": span.InvocationID("inv"),
 						"ParentId":     "",

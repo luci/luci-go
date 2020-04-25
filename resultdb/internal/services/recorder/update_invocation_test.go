@@ -26,12 +26,12 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
@@ -97,7 +97,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 func TestUpdateInvocation(t *testing.T) {
 	Convey(`TestUpdateInvocation`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		start := clock.Now(ctx).UTC()
 
 		recorder := newTestRecorderServer()
@@ -130,7 +130,7 @@ func TestUpdateInvocation(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{
@@ -152,7 +152,7 @@ func TestUpdateInvocation(t *testing.T) {
 				Name: expected.Name,
 			}
 			invID := span.InvocationID("inv")
-			MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
 				"Deadline": &actual.Deadline,
 			})
 			So(actual, ShouldResembleProto, expected)

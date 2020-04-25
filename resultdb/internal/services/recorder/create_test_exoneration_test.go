@@ -22,12 +22,12 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
@@ -77,7 +77,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 
 func TestCreateTestExoneration(t *testing.T) {
 	Convey(`TestCreateTestExoneration`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
 		recorder := newTestRecorderServer()
 
@@ -108,7 +108,7 @@ func TestCreateTestExoneration(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.CreateTestExonerationRequest{
@@ -147,7 +147,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			// Check variant hash.
 			key := span.InvocationID("inv").Key(res.TestId, res.ExonerationId)
 			var variantHash string
-			MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
+			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
 				"VariantHash": &variantHash,
 			})
 			So(variantHash, ShouldEqual, pbutil.VariantHash(res.Variant))

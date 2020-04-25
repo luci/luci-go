@@ -22,11 +22,11 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateFinalizeInvocationRequest(t *testing.T) {
@@ -49,7 +49,7 @@ func TestValidateFinalizeInvocationRequest(t *testing.T) {
 
 func TestFinalizeInvocation(t *testing.T) {
 	Convey(`TestFinalizeInvocation`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "inv")
@@ -57,8 +57,8 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		Convey(`finalized failed`, func() {
-			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
 					"Interrupted": true,
 				}),
 			)
@@ -67,7 +67,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`Idempotent`, func() {
-			MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
@@ -79,7 +79,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`Success`, func() {
-			MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
@@ -91,7 +91,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			var taskInv span.InvocationID
 			taskID := "finalize/" + span.InvocationID("inv").RowID()
-			MustReadRow(ctx, "InvocationTasks", tasks.TryFinalizeInvocation.Key(taskID), map[string]interface{}{
+			testutil.MustReadRow(ctx, "InvocationTasks", tasks.TryFinalizeInvocation.Key(taskID), map[string]interface{}{
 				"InvocationId": &taskInv,
 			})
 			So(taskInv, ShouldEqual, span.InvocationID("inv"))
