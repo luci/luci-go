@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea0227da_cef8c9b8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T00:03:03Z",
+      "side": 1,
+      "message": "invalid ServerConfig",
+      "range": {
+        "startLine": 112,
+        "startChar": 36,
+        "endLine": 112,
+        "endChar": 67
+      },
+      "revId": "20024eacae19dafa3309e505a22567cc428f056b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

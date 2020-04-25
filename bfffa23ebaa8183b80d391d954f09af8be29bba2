@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "39611757_cb215303",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T00:03:03Z",
+      "side": 1,
+      "message": "\u003e IIUC, the exit code matters only for -complete-invocation-exit-codes and invocation.interrupted.\n\u003e \n\u003e Originally, I thought rdb-stream would return\n\u003e - the exit code from the test process, OR\n\u003e - a special exit code, 1001, if rdb-stream was not able to run the test command for whatever reasons.\n\nthis SGTM.\n\n\u003e \n\u003e However, this requires the user of rdb-stream, such as Swarming Task, to handle -complete-invocation-exit-codes.\n\nI don\u0027t think so. If the subprocess died badly, we *should* finalize the invocation as interrupted, even if we didn\u0027t create it. I think I was very unclear last time about this last time. \nThe reasoning is, the invocation is definitely incomplete in this case.\nIf everything appears to be OK, then we just exit without finalizing, and swarming will finalize it. \n\nNote that this handles the following case:\n- at our level, everything appears to be OK\n- later somethings fails and swarming task is FAILED\n- then swarming correctly finalized the inv as interrupted\n\n\u003e \n\u003e What I current have in mind is\n\u003e (1) rdb-stream always returns 0 or 1.\n\u003e - rdb-stream handles -complete-invocation-exit-codes\n\u003e - if rdb-stream was able to run the test command, and the test process exited with 0 or any of the exit codes listed in -complete-invocation-exit-codes, rdb-stream exits with 0. In any other cases, it exits with 1.\n\ni think this is intrusive: this means if someone really needs this exit code, they cannot wrap with rdb-stream.\n\n\u003e (2) Swarming Task always marks the invocation.interrupted with !exit_code_from_rdb_stream.\n\nwe should not add rdb-stream knowledge to swarming.\n\nI *think* my above proposal covers these cases. WDYT?",
+      "parentUuid": "639d6568_c97d59d3",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 15
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fa172c51_83dc252a",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 6
