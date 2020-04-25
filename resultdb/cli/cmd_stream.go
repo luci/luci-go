@@ -117,11 +117,14 @@ func (r *streamRun) makeTestCmd(ctx context.Context, args []string) (*exec2.Cmd,
 
 func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error) {
 	// Set the server configs based on the flags and lucictx
-	server := sink.NewServer(sink.ServerConfig{
+	server, err := sink.NewServer(ctx, sink.ServerConfig{
 		Recorder:    r.recorder,
 		Invocation:  r.invocation.Name,
 		UpdateToken: r.invocation.UpdateToken,
 	})
+	if err != nil {
+		return 1, errors.Annotate(err, "failed to create SinkServer").Err()
+	}
 
 	// reset and install a lucictx with r.host and r.invocation just in case they were not
 	// derived from the current lucictx.
@@ -131,7 +134,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	})
 	exported, err := lucictx.Export(ctx)
 	if err != nil {
-		return -1, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
+		return 1, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
 	}
 	defer exported.Close()
 	exported.SetInCmd(cmd.Cmd)
@@ -147,7 +150,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	})
 	ec, ok := exitcode.Get(err)
 	if !ok {
-		return -1, err
+		return 1, err
 	}
 	logging.Infof(ctx, "Child process terminated with %d", ec)
 	return ec, nil

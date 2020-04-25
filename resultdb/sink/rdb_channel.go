@@ -23,11 +23,13 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
+	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
@@ -47,6 +49,8 @@ func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
 		},
 	}
+
+	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
 		req := prepareReportTestResultsRequest(ctx, cfg.Invocation, b)
 		_, err := cfg.Recorder.BatchCreateTestResults(ctx, req)

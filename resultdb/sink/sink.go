@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
@@ -74,6 +75,20 @@ type ServerConfig struct {
 	TestIDPrefix string
 }
 
+func (c *ServerConfig) Validate() error {
+	if c.Recorder == nil {
+		return errors.Reason("Recorder: unspecified").Err()
+	}
+	if err := pbutil.ValidateInvocationName(c.Invocation); err != nil {
+		return errors.Annotate(err, "Invocation").Err()
+	}
+	if c.UpdateToken == "" {
+		return errors.Reason("UpdateToken: unspecified").Err()
+	}
+
+	return nil
+}
+
 // Server contains state relevant to the server itself.
 // It should always be created by a call to NewServer.
 // After a call to Serve(), Server will accept connections on its Port and
@@ -91,19 +106,29 @@ type Server struct {
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
-// It panics if cfg.Recorder is nil.
-func NewServer(cfg ServerConfig) *Server {
+func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
+	// validate the config for required fields
+	if err := cfg.Validate(); err != nil {
+		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
+	}
+
+	// set the default values for the optional config fields missing.
 	if cfg.Address == "" {
 		cfg.Address = DefaultAddr
 	}
-	if cfg.Recorder == nil {
-		panic("the Recorder client must be set")
+	if cfg.AuthToken == "" {
+		tk, err := genAuthToken(ctx)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to generate AuthToken").Err()
+		}
+		cfg.AuthToken = tk
 	}
+
 	s := &Server{
 		cfg:  cfg,
 		errC: make(chan error, 1),
 	}
-	return s
+	return s, nil
 }
 
 // Config retrieves the ServerConfig of a previously created Server.
@@ -158,13 +183,6 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 func (s *Server) Start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
 		return errors.Reason("cannot call Start twice").Err()
-	}
-	if s.cfg.AuthToken == "" {
-		t, err := genAuthToken(ctx)
-		if err != nil {
-			return err
-		}
-		s.cfg.AuthToken = t
 	}
 
 	// launch an HTTP server
