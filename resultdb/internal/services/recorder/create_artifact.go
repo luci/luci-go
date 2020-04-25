@@ -38,7 +38,7 @@ const (
 	artifactContentHashHeaderKey = "Content-Hash"
 	artifactContentSizeHeaderKey = "Content-Length"
 	updateTokenHeaderKey         = "Update-Token"
-	maxArtifactContentSize       = 68719476736 // 64 MiB.
+	maxArtifactContentSize       = 64 * 1024 * 1024 // 64 MiB.
 )
 
 var artifactContentHashRe = regexp.MustCompile("^sha256:[0-9a-f]{64}$")
