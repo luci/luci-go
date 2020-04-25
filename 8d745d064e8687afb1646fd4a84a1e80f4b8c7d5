@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1625705_11852cb6",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T00:28:31Z",
+      "side": 1,
+      "message": "i think if a user gives us a prefix, we should use it as is\nthe prefix might already have \"/\" or it might have a different ending of user\u0027s preference.",
+      "range": {
+        "startLine": 128,
+        "startChar": 29,
+        "endLine": 128,
+        "endChar": 35
+      },
+      "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecc11f36_da0c69fa",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T00:28:31Z",
+      "side": 1,
+      "message": "hm, this means the client passed \"test_id_prefix:ninja://foo\" tag, then we will use \"ninjatest_id_prefix:ninja://foo\"\n\ni think we need ninjaTarget variable, set in L187, and used after the loop if testIDPrefix is still empty  after the loop",
+      "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
