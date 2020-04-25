@@ -16,12 +16,13 @@ package chunkstream
 
 import (
 	"errors"
+	"sync"
 )
 
 // Buffer is a collection of ordered Chunks that can cheaply read and shifted
 // as if it were a continuous byte stream.
 //
-// A Buffer is not goroutine-safe.
+// A Buffer is goroutine-safe.
 //
 // The primary means of interacting with a Buffer is to construct a View and
 // then use it to access the Buffer's contents. Views can be used concurrently,
@@ -37,6 +38,8 @@ type Buffer struct {
 
 	// fidx is the current byte offset in first.
 	fidx int
+
+	lock sync.RWMutex
 }
 
 // Append adds additional Chunks to the buffer.
@@ -44,6 +47,8 @@ type Buffer struct {
 // After completion, the Chunk is now owned by the Buffer and should not be used
 // anymore externally.
 func (b *Buffer) Append(c ...Chunk) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	for _, chunk := range c {
 		b.appendChunk(chunk)
 	}
@@ -73,6 +78,8 @@ func (b *Buffer) appendChunk(c Chunk) {
 // This is a potentially expensive operation, and should generally be used only
 // for debugging and tests, as it defeats most of the purpose of this package.
 func (b *Buffer) Bytes() []byte {
+	b.lock.RLock()
+	defer b.lock.RLock()
 	if b.Len() == 0 {
 		return nil
 	}
@@ -88,12 +95,29 @@ func (b *Buffer) Bytes() []byte {
 
 // Len returns the total amount of data in the buffer.
 func (b *Buffer) Len() int64 {
+	b.lock.RLock()
+	defer b.lock.RLock()
 	return b.size
+}
+
+// ChunkLen returns number of chunk nodes hold in this buffer
+func (b *Buffer) ChunkLen() int64 {
+	b.lock.RLock()
+	defer b.lock.RLock()
+	var count int64
+	node := b.first
+	for node != nil {
+		count++
+		node = node.next
+	}
+	return count
 }
 
 // FirstChunk returns the first Chunk in the Buffer, or nil if the Buffer has
 // no Chunks.
 func (b *Buffer) FirstChunk() Chunk {
+	b.lock.RLock()
+	defer b.lock.RLock()
 	if b.first == nil {
 		return nil
 	}
@@ -105,6 +129,8 @@ func (b *Buffer) FirstChunk() Chunk {
 //
 // The View is no longer valid after Consume is called on the Buffer.
 func (b *Buffer) View() *View {
+	b.lock.RLock()
+	defer b.lock.RLock()
 	return b.ViewLimit(b.size)
 }
 
@@ -114,6 +140,8 @@ func (b *Buffer) View() *View {
 // This is useful when reading a subset of the data into a Buffer, as ReadFrom
 // does not allow a size to be specified.
 func (b *Buffer) ViewLimit(limit int64) *View {
+	b.lock.RLock()
+	defer b.lock.RLock()
 	if limit > b.size {
 		limit = b.size
 	}
@@ -131,6 +159,8 @@ func (b *Buffer) ViewLimit(limit int64) *View {
 // Buffer. If Consume skips past all of the data in a Chunk is no longer needed,
 // it is Release()d.
 func (b *Buffer) Consume(c int64) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if c == 0 {
 		return
 	}

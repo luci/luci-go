@@ -15,9 +15,11 @@
 package bundler
 
 import (
+	"encoding/base64"
 	"io"
 
 	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -65,7 +67,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	// datagrams will never fail to emit a LogEntry, so s.remaining will have been
 	// reset to zero by the next call.
 	if s.remaining == 0 {
-		bv := s.View()
+		bv := s.b.View()
 
 		// Read the next datagram size header.
 		rio := recordio.NewReader(bv, s.maxSize)
@@ -73,6 +75,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		if err != nil {
 			switch err {
 			case io.EOF:
+				logging.Warningf(s.ctx, "BufferLen: %d; ChunkLen: %d; Data: %s ", s.b.Len(), s.b.ChunkLen(), base64.StdEncoding.EncodeToString(s.b.Bytes()))
 				// Not enough data for a size header.
 				return nil, nil
 
@@ -89,7 +92,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		s.remaining = size
 
 		// Don't need to read the size header again.
-		s.Consume(bv.Consumed())
+		s.b.Consume(bv.Consumed())
 	}
 
 	// If we read this, will it be partial?
@@ -100,7 +103,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		emitCount = int64(c.limit)
 	}
 
-	bv := s.ViewLimit(s.remaining)
+	bv := s.b.ViewLimit(s.remaining)
 	if r := bv.Remaining(); r < emitCount {
 		// Not enough buffered data to complete the datagram in one round.
 		continued = true
@@ -129,7 +132,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	if emitCount > 0 {
 		dg.Data = make([]byte, emitCount)
 		bv.Read(dg.Data)
-		s.Consume(emitCount)
+		s.b.Consume(emitCount)
 	}
 
 	le := s.baseLogEntry(ts)

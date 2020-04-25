@@ -47,7 +47,7 @@ func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	txt := logpb.Text{}
 	lineCount := 0
 	for limit > 0 {
-		br := p.ViewLimit(limit)
+		br := p.b.ViewLimit(limit)
 		if br.Remaining() == 0 {
 			// Exceeded either limit or available buffer data.
 			break
@@ -94,7 +94,7 @@ func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 				// If we're closed and this is the last byte in the stream, it is a
 				// dangling "\r" and we should include it. Otherwise, leave it for the
 				// next round.
-				split = !(c.closed && int64(p.buf.Len()) == p.Len())
+				split = !(c.closed && int64(p.buf.Len()) == p.b.Len())
 			}
 
 			if split {
@@ -131,7 +131,7 @@ func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 			Value:     append([]byte(nil), p.buf.Bytes()...), // Make a copy.
 			Delimiter: newline,
 		})
-		p.Consume(int64(p.buf.Len() + len(newline)))
+		p.b.Consume(int64(p.buf.Len() + len(newline)))
 		limit -= int64(p.buf.Len() + len(newline))
 	}
 

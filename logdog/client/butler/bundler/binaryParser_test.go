@@ -37,7 +37,7 @@ func TestBinaryParser(t *testing.T) {
 		}
 
 		Convey(`Loaded with data below the threshold`, func() {
-			p.Append(data(s.now, 1))
+			p.b.Append(data(s.now, 1))
 			Convey(`Returns nil when reading data smaller than the threshold.`, func() {
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
@@ -59,7 +59,7 @@ func TestBinaryParser(t *testing.T) {
 		})
 
 		Convey(`Loaded with 10 bytes of data`, func() {
-			p.Append(data(s.now, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+			p.b.Append(data(s.now, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
 
 			Convey(`Should yield all data with a limit of 32.`, func() {
 				le, err := p.nextEntry(c)
@@ -95,7 +95,7 @@ func TestBinaryParser(t *testing.T) {
 
 		Convey(`Loaded with 8 bytes of data from different times.`, func() {
 			for i := 0; i < 8; i++ {
-				p.Append(data(s.now.Add(time.Duration(i)*time.Second), byte(i)))
+				p.b.Append(data(s.now.Add(time.Duration(i)*time.Second), byte(i)))
 			}
 
 			Convey(`Ignores the time boundary and returns all 8 bytes.`, func() {

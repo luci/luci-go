@@ -205,7 +205,7 @@ func TestTextParser(t *testing.T) {
 				now := s.now
 				aggregate := []byte{}
 				for _, chunk := range tst.source {
-					p.Append(dstr(now, chunk))
+					p.b.Append(dstr(now, chunk))
 					aggregate = append(aggregate, []byte(chunk)...)
 					now = now.Add(tst.increment)
 				}
