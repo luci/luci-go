@@ -85,13 +85,13 @@ func TestCreateArtifact(t *testing.T) {
 			Convey(`Size is negative`, func() {
 				rec := send("invocations/inv/artifacts/a", "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -100, "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 68719476736")
+				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 67108864")
 			})
 
 			Convey(`Size is too large`, func() {
-				rec := send("invocations/inv/artifacts/a", "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 1<<40, "")
+				rec := send("invocations/inv/artifacts/a", "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 1<<30, "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 68719476736")
+				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 67108864")
 			})
 
 			Convey(`Update token is missing`, func() {
