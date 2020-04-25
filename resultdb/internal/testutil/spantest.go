@@ -326,7 +326,7 @@ func InsertTestResultArtifact(invID span.InvocationID, testID, resultID, artifac
 func MakeTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
-		resultID := fmt.Sprintf("%d", i)
+		resultID := fmt.Sprintf("%s:%d", pbutil.VariantHash(v), i)
 		trs[i] = &pb.TestResult{
 			Name:     pbutil.TestResultName(invID, testID, resultID),
 			TestId:   testID,
