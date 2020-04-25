@@ -15,6 +15,7 @@
 package bundler
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -64,8 +65,9 @@ type parser interface {
 	firstChunkTime() (time.Time, bool)
 }
 
-func newParser(d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
+func newParser(ctx context.Context, d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
 	base := baseParser{
+		ctx:      ctx,
 		counter:  c,
 		timeBase: google.TimeFromProto(d.Timestamp),
 	}
@@ -96,6 +98,7 @@ func newParser(d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
 type baseParser struct {
 	chunkstream.Buffer
 
+	ctx     context.Context
 	counter *counter
 
 	timeBase  time.Time

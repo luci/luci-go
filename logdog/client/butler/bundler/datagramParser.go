@@ -15,9 +15,11 @@
 package bundler
 
 import (
+	"encoding/base64"
 	"io"
 
 	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -73,6 +75,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		if err != nil {
 			switch err {
 			case io.EOF:
+				logging.Warningf(s.ctx, "BufferLen: %d; ChunkLen: %d; Data: %s ", s.Len(), s.ChunkLen(), base64.StdEncoding.EncodeToString(s.Bytes()))
 				// Not enough data for a size header.
 				return nil, nil
 

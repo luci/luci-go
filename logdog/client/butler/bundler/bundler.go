@@ -59,7 +59,8 @@ type bundlerStream interface {
 // Bundler is the main Bundler instance. It exposes goroutine-safe endpoints for
 // stream registration and bundle consumption.
 type Bundler struct {
-	c *Config
+	c   *Config
+	ctx context.Context
 
 	// finishedC is closed when makeBundles goroutine has terminated.
 	finishedC chan struct{}
@@ -80,9 +81,10 @@ type Bundler struct {
 }
 
 // New instantiates a new Bundler instance.
-func New(c Config) *Bundler {
+func New(c Config, ctx context.Context) *Bundler {
 	b := Bundler{
 		c:             &c,
+		ctx:           ctx,
 		finishedC:     make(chan struct{}),
 		bundleC:       make(chan *logpb.ButlerLogBundle),
 		streams:       map[string]bundlerStream{},
@@ -123,7 +125,7 @@ func (b *Bundler) Register(d *logpb.LogStreamDescriptor) (Stream, error) {
 	}
 
 	err := error(nil)
-	c.parser, err = newParser(d, &b.prefixCounter)
+	c.parser, err = newParser(b.ctx, d, &b.prefixCounter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stream parser: %s", err)
 	}
