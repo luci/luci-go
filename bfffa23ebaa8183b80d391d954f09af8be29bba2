@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "1fb1edf7_ccfdd726",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-25T01:16:08Z",
+      "side": 1,
+      "message": "Here is my understanding of your proposal.\n\n`rdb-stream` finalizes the invocation, if\n(1) the invocation was created by itself with -new, or\n(2) the sub-process dided *badly*\n\nQ1. what\u0027s the condition to determine a sub-process died badly?\nQ2. what if `rdb-stream` was not able to run the command? i.e., all the cases, where `rdb-stream` returned 1001.\nShould `rdb-stream` consider it as a case of the sub-process died badly and finalize the invocation?",
+      "parentUuid": "39611757_cb215303",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 15
+      },
+      "revId": "bfffa23ebaa8183b80d391d954f09af8be29bba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fa172c51_83dc252a",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 6
