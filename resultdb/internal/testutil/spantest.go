@@ -259,7 +259,12 @@ func InsertInclusion(including, included span.InvocationID) *spanner.Mutation {
 }
 
 // InsertTestResults returns spanner mutations to insert test results
-func InsertTestResults(trs []*pb.TestResult) []*spanner.Mutation {
+func InsertTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
+	return InsertTestResultMessages(MakeTestResults(invID, testID, v, statuses...))
+}
+
+// InsertTestResultMessages returns spanner mutations to insert test results
+func InsertTestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
 		invID, testID, resultID := span.MustParseTestResultName(tr.Name)

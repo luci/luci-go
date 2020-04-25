@@ -84,13 +84,14 @@ func TestQueryTestResults(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		insertInv := testutil.InsertFinalizedInvocationWithInclusions
+		insertTRs := testutil.InsertTestResults
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("a", "b"),
 			insertInv("b", "c"),
 			insertInv("c"),
-			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS)),
-			testutil.InsertTestResults(testutil.MakeTestResults("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)),
-			testutil.InsertTestResults(testutil.MakeTestResults("c", "C", nil, pb.TestStatus_PASS)),
+			insertTRs("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insertTRs("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insertTRs("c", "C", nil, pb.TestStatus_PASS),
 		)...)
 
 		srv := newTestResultDBService()
