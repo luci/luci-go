@@ -324,7 +324,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 		if err != nil {
 			// Log the error, but we shouldn't fail to convert an entire invocation just because we can't
 			// convert a summary.
-			logging.Errorf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
+			logging.Warningf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
 		} else {
 			snippet = string(outputBytes)
 		}
