@@ -22,6 +22,30 @@
       "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89b45731_4c2d6fdd",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T07:14:37Z",
+      "side": 1,
+      "message": "i don\u0027t know. It would be used only in place.\n\nor do you mean one constant for all? i\u0027ve intentionally kept them separate because we might want to have different limits for different rows. But on the other hand, this is unlikely. So I\u0027ve move the value into the function itself. WDYT?",
+      "parentUuid": "6e807686_f9a9d93c",
+      "range": {
+        "startLine": 43,
+        "startChar": 55,
+        "endLine": 43,
+        "endChar": 58
+      },
+      "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
