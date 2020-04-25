@@ -41,7 +41,7 @@ func (p *binaryParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		threshold = 0
 	}
 
-	count := p.Len()
+	count := p.b.Len()
 	if count <= int64(threshold) {
 		return nil, nil
 	}
@@ -53,7 +53,7 @@ func (p *binaryParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	size := int(count)
 
 	data := make([]byte, size)
-	size, _ = p.View().Read(data)
+	size, _ = p.b.View().Read(data)
 	memoryCorruptionIf(int64(size) != count, errors.New("partial buffer read"))
 
 	ts, _ := p.firstChunkTime()
@@ -63,7 +63,7 @@ func (p *binaryParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	}}
 	e.Sequence = uint64(p.offset)
 
-	p.Consume(int64(size))
+	p.b.Consume(int64(size))
 	p.offset += int64(size)
 	return e, nil
 }

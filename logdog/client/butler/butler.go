@@ -165,7 +165,7 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 			bc.MaxBufferDelay = DefaultMaxBufferAge
 		}
 	}
-	b.bundler = bundler.New(bc)
+	b.bundler = bundler.New(bc, ctx)
 
 	// Load bundles from our Bundler into the queue.
 	go func() {
