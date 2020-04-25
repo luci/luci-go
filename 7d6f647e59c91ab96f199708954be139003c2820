@@ -22,6 +22,30 @@
       "revId": "7d6f647e59c91ab96f199708954be139003c2820",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e80cfd83_fc0b4e93",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-25T07:18:07Z",
+      "side": 1,
+      "message": "ContainsAny checks for middle of the string, so it would be rejected.\ni am not sure why anyone want to put $ or ^ in the middle. I think it does not match anything, so it isn\nt very useful. Easier to simply reject such requests.",
+      "parentUuid": "92219fc3_6c9a946e",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 35
+      },
+      "revId": "7d6f647e59c91ab96f199708954be139003c2820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
