@@ -53,6 +53,14 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 			So(err, ShouldErrLike, `request_id: does not match`)
 		})
 
+		Convey(`Too many requests`, func() {
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+				Invocation: "invocations/a",
+				Requests:   make([]*pb.CreateTestExonerationRequest, 1000),
+			})
+			So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
+		})
+
 		Convey(`Invalid sub-request`, func() {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",

@@ -42,19 +42,31 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 	Convey(`TestValidateBatchCreateInvocationsRequest`, t, func() {
 		Convey(`invalid request id - Batch`, func() {
-			_, err := validateBatchCreateInvocationsRequest(now,
-				[]*pb.CreateInvocationRequest{{
-					InvocationId: "u:a",
-				}}, "😃", false)
+			_, err := validateBatchCreateInvocationsRequest(
+				now,
+				[]*pb.CreateInvocationRequest{{InvocationId: "u:a"}},
+				"😃",
+				false,
+			)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 		Convey(`non-matching request id - Batch`, func() {
-			_, err := validateBatchCreateInvocationsRequest(now,
-				[]*pb.CreateInvocationRequest{{
-					InvocationId: "u:a",
-					RequestId:    "valid, but different",
-				}}, "valid", false)
+			_, err := validateBatchCreateInvocationsRequest(
+				now,
+				[]*pb.CreateInvocationRequest{{InvocationId: "u:a", RequestId: "valid, but different"}},
+				"valid",
+				false,
+			)
 			So(err, ShouldErrLike, `request_id: "valid" does not match`)
+		})
+		Convey(`Too many requests`, func() {
+			_, err := validateBatchCreateInvocationsRequest(
+				now,
+				make([]*pb.CreateInvocationRequest, 1000),
+				"valid",
+				false,
+			)
+			So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
 		})
 		Convey(`valid`, func() {
 			ids, err := validateBatchCreateInvocationsRequest(now,
