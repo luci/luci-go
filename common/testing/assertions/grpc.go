@@ -25,8 +25,25 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 )
+
+// ShouldHaveAppStatus asserts that error `actual` has an
+// application-specific status and it matches the expectations.
+// See ShouldBeLikeStatus for the format of `expected`.
+// See appstatus package for application-specific statuses.
+func ShouldHaveAppStatus(actual interface{}, expected ...interface{}) string {
+	if ret := assertions.ShouldImplement(actual, (*error)(nil)); ret != "" {
+		return ret
+	}
+	actualStatus, ok := appstatus.Get(actual.(error))
+	if !ok {
+		return fmt.Sprintf("expected error %q to have an explicit application status", actual)
+	}
+
+	return ShouldBeLikeStatus(actualStatus, expected...)
+}
 
 // ShouldHaveRPCCode is a goconvey assertion, asserting that the supplied
 // "actual" value has a gRPC code value and, optionally, errors like a supplied

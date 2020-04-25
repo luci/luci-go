@@ -21,11 +21,11 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
@@ -85,24 +85,24 @@ func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 
 func TestUpdateIncludedInvocations(t *testing.T) {
 	Convey(`TestIncludedInvocations`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "including")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
-		insInv := InsertInvocation
+		insInv := testutil.InsertInvocation
 
 		assertIncluded := func(includedInvID span.InvocationID) {
 			var throwAway span.InvocationID
-			MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+			testutil.MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
 		assertNotIncluded := func(includedInvID span.InvocationID) {
 			var throwAway span.InvocationID
-			MustNotFindRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+			testutil.MustNotFindRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
@@ -131,7 +131,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 			})
 
 			Convey(`With existing inclusion`, func() {
-				MustApply(ctx,
+				testutil.MustApply(ctx,
 					insInv("including", pb.Invocation_ACTIVE, nil),
 					insInv("toberemoved", pb.Invocation_FINALIZED, nil),
 				)
@@ -148,7 +148,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 				})
 
 				Convey(`Success - idempotent`, func() {
-					MustApply(ctx,
+					testutil.MustApply(ctx,
 						insInv("included", pb.Invocation_FINALIZED, nil),
 						insInv("included2", pb.Invocation_FINALIZED, nil),
 					)

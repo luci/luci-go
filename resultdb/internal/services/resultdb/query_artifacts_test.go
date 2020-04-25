@@ -21,11 +21,11 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateQueryArtifactsRequest(t *testing.T) {
@@ -59,9 +59,9 @@ func TestValidateQueryArtifactsRequest(t *testing.T) {
 
 func TestQueryArtifacts(t *testing.T) {
 	Convey(`QueryArtifacts`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
-		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
 		req := &pb.QueryArtifactsRequest{
 			Invocations:         []string{"invocations/inv1"},
 			PageSize:            100,
@@ -86,8 +86,8 @@ func TestQueryArtifacts(t *testing.T) {
 		}
 
 		Convey(`Reads fields correctly`, func() {
-			MustApply(ctx,
-				InsertInvocationArtifact("inv1", "a", map[string]interface{}{
+			testutil.MustApply(ctx,
+				testutil.InsertInvocationArtifact("inv1", "a", map[string]interface{}{
 					"ContentType": "text/plain",
 					"Size":        54,
 				}),
@@ -99,9 +99,9 @@ func TestQueryArtifacts(t *testing.T) {
 		})
 
 		Convey(`Reads both invocation and test result artifacts`, func() {
-			MustApply(ctx,
-				InsertInvocationArtifact("inv1", "a", nil),
-				InsertTestResultArtifact("inv1", "t t", "r", "a", nil),
+			testutil.MustApply(ctx,
+				testutil.InsertInvocationArtifact("inv1", "a", nil),
+				testutil.InsertTestResultArtifact("inv1", "t t", "r", "a", nil),
 			)
 			actual := mustQueryNames(req)
 			So(actual, ShouldResemble, []string{
@@ -111,24 +111,24 @@ func TestQueryArtifacts(t *testing.T) {
 		})
 
 		Convey(`Does not fetch artifacts of other invocations`, func() {
-			MustApply(ctx,
-				InsertInvocation("inv0", pb.Invocation_ACTIVE, nil),
-				InsertInvocation("inv2", pb.Invocation_ACTIVE, nil),
-				InsertInvocationArtifact("inv0", "a", nil),
-				InsertInvocationArtifact("inv1", "a", nil),
-				InsertInvocationArtifact("inv2", "a", nil),
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, nil),
+				testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, nil),
+				testutil.InsertInvocationArtifact("inv0", "a", nil),
+				testutil.InsertInvocationArtifact("inv1", "a", nil),
+				testutil.InsertInvocationArtifact("inv2", "a", nil),
 			)
 			actual := mustQueryNames(req)
 			So(actual, ShouldResemble, []string{"invocations/inv1/artifacts/a"})
 		})
 
 		Convey(`Paging`, func() {
-			MustApply(ctx,
-				InsertInvocationArtifact("inv1", "a0", nil),
-				InsertInvocationArtifact("inv1", "a1", nil),
-				InsertInvocationArtifact("inv1", "a2", nil),
-				InsertInvocationArtifact("inv1", "a3", nil),
-				InsertInvocationArtifact("inv1", "a4", nil),
+			testutil.MustApply(ctx,
+				testutil.InsertInvocationArtifact("inv1", "a0", nil),
+				testutil.InsertInvocationArtifact("inv1", "a1", nil),
+				testutil.InsertInvocationArtifact("inv1", "a2", nil),
+				testutil.InsertInvocationArtifact("inv1", "a3", nil),
+				testutil.InsertInvocationArtifact("inv1", "a4", nil),
 			)
 
 			mustReadPage := func(pageToken string, pageSize int, expectedArtifactIDs ...string) string {

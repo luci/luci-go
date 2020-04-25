@@ -33,12 +33,12 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateInvocationDeadline(t *testing.T) {
@@ -177,7 +177,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 		// Configure mock authentication to allow creation of custom invocation ids.
 		ctx = authtest.MockAuthConfig(ctx)
 		db := authtest.FakeDB{
@@ -213,7 +213,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`already exists`, func() {
 			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-				InsertInvocation("u:inv", 1, nil),
+				testutil.InsertInvocation("u:inv", 1, nil),
 			})
 			So(err, ShouldBeNil)
 

@@ -22,12 +22,12 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
@@ -123,7 +123,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 
 func TestBatchCreateTestExonerations(t *testing.T) {
 	Convey(`TestBatchCreateTestExonerations`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
 		recorder := newTestRecorderServer()
 
@@ -148,7 +148,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.BatchCreateTestExonerationsRequest{
