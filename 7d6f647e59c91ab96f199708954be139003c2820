@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92219fc3_6c9a946e",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-25T07:01:14Z",
+      "side": 1,
+      "message": "Should we check if \u0027^\u0027 is the first char or \u0027$\u0027 is the last? what if they are in the middle of the string?",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 35
+      },
+      "revId": "7d6f647e59c91ab96f199708954be139003c2820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
