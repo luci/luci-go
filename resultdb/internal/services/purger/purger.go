@@ -106,8 +106,7 @@ func purgeOneInvocation(ctx context.Context, invID span.InvocationID) error {
 		return nil
 	}
 
-	// Stream test results that need to be purged, and set Purge=true on them,
-	// in batches.
+	// Stream test results that need to be purged and delete them in batches.
 	// Note that we cannot use Partitioned UPDATE here because its time complexity
 	// is currently O(table size).
 	var ms []*spanner.Mutation
