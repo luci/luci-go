@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e807686_f9a9d93c",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-25T07:06:14Z",
+      "side": 1,
+      "message": "make it a const?",
+      "range": {
+        "startLine": 43,
+        "startChar": 55,
+        "endLine": 43,
+        "endChar": 58
+      },
+      "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
