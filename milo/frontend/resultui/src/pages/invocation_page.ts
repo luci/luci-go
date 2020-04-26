@@ -20,6 +20,7 @@ import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { autorun, computed, observable, when } from 'mobx';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../components/invocation_details';
 import '../components/page_header';
@@ -63,22 +64,20 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   }
 
   @computed
-  private get invocationReq(): ObservablePromise<Invocation> {
+  private get invocationReq(): IPromiseBasedObservable<Invocation> {
     if (!this.appState.resultDb) {
-      return observable.box({tag: 'loading', v: null}, {deep: false});
+      // Returns a promise that never resolves when resultDb isn't ready.
+      return fromPromise(new Promise(() => {}));
     }
-    return this.appState.resultDb
-      .getInvocation({name: this.invocationName})
-      .toObservable();
+    return fromPromise(this.appState.resultDb.getInvocation({name: this.invocationName}));
   }
 
   @computed
   private get invocation(): Invocation | null {
-    const req = this.invocationReq.get();
-    if (req.tag !== 'ok') {
+    if (this.invocationReq.state !== 'fulfilled') {
       return null;
     }
-    return req.v;
+    return this.invocationReq.value;
   }
 
   @computed
@@ -129,7 +128,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   connectedCallback() {
     super.connectedCallback();
     this.disposers.push(when(
-      () => this.invocationReq.get().tag === 'err',
+      () => this.invocationReq.state === 'rejected',
       () => Router.go('/error'),
     ));
     // Load more tests when there are more tests to be displayed but not loaded.
@@ -177,7 +176,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       </div>
       <tr-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
-        .loading=${this.invocationReq.get().tag === 'loading' || this.testLoader.isLoading}
+        .loading=${this.invocationReq.state === 'pending' || this.testLoader.isLoading}
       ></tr-status-bar>
       ${!this.invocation ? null : html`
       <tr-invocation-details .invocation=${this.invocation}></tr-invocation-details>
