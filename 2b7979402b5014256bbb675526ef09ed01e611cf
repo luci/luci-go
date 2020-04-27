@@ -16,6 +16,24 @@
       "revId": "2b7979402b5014256bbb675526ef09ed01e611cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25fcfbe9_ee1fc3d7",
+        "filename": "milo/frontend/resultui/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-27T00:57:59Z",
+      "side": 1,
+      "message": "Good point. Thinking back to why I did this in the first place, I realise that actually the only place I want to avoid this is in tests, since the extra 4s is annoying there. And in that case I can just manually run `npm run test` for faster cycles.",
+      "parentUuid": "5e9240a4_b21bc7e3",
+      "revId": "2b7979402b5014256bbb675526ef09ed01e611cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
