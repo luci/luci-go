@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "079d7aec_fa05b2e3",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T22:18:20Z",
+      "side": 1,
+      "message": "Reuse test_id_predix as it is, so it has the slash as suffix",
+      "range": {
+        "startLine": 263,
+        "startChar": 4,
+        "endLine": 263,
+        "endChar": 73
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

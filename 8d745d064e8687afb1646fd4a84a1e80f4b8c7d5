@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c5abb5f3_05f1eca2",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T22:18:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1625705_11852cb6",
+      "range": {
+        "startLine": 128,
+        "startChar": 29,
+        "endLine": 128,
+        "endChar": 35
+      },
+      "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecc11f36_da0c69fa",
         "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
         "patchSetId": 4
@@ -54,6 +78,24 @@
       "side": 1,
       "message": "\u003e hm, this means the client passed \"test_id_prefix:ninja://foo\" tag, then we will use \"ninjatest_id_prefix:ninja://foo\"\n\ni meant ninjaninja://foo",
       "parentUuid": "ecc11f36_da0c69fa",
+      "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec4504a2_307abcf7",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T22:18:20Z",
+      "side": 1,
+      "message": "That means we cannot replace \u0027ninja_target\u0027 tag with \u0027test_id_prefix\u0027 tag, instead we need to keep both? I mean for most of test_suites, only ninja_target will be set, and for telemetry_gpu_integration_test, only \u0027test_id_prefix\u0027 is set",
+      "parentUuid": "0ff0a068_06e0a66d",
       "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
