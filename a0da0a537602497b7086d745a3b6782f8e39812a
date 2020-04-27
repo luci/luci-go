@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6b55a96a_a11f2ed7",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T23:49:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "502983de_f3b2c07c",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 11
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "079d7aec_fa05b2e3",
         "filename": "resultdb/internal/services/deriver/chromium/swarming_test.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c71ffbf6_79427c3d",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T23:49:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "079d7aec_fa05b2e3",
+      "range": {
+        "startLine": 263,
+        "startChar": 4,
+        "endLine": 263,
+        "endChar": 73
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -91,6 +139,54 @@
       "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48c95daf_650c4933",
+        "filename": "resultdb/proto/rpc/v1/deriver.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T23:49:57Z",
+      "side": 1,
+      "message": "Done.\n\nI actually brought ninja_target back so we still have those 2 examples for those 2 tags.",
+      "parentUuid": "f0159f1b_e0ea6132",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 70
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03983c50_9bef6965",
+        "filename": "resultdb/proto/rpc/v1/deriver.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T23:49:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0c13401_9c56d5b3",
+      "range": {
+        "startLine": 52,
+        "startChar": 67,
+        "endLine": 52,
+        "endChar": 70
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
