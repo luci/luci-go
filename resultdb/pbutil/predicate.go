@@ -16,6 +16,7 @@ package pbutil
 
 import (
 	"regexp/syntax"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -64,8 +65,20 @@ func ValidateTestExonerationPredicate(p *pb.TestExonerationPredicate) error {
 // expression.
 func validateRegexp(re string) error {
 	// Note: regexp.Compile uses syntax.Perl.
-	_, err := syntax.Parse(re, syntax.Perl)
-	return err
+	if _, err := syntax.Parse(re, syntax.Perl); err != nil {
+		return err
+	}
+
+	// Do not allow ^ and $ in the regexp, because we need to be able to prepend
+	// a pattern to the user-supplied pattern.
+	if strings.HasPrefix(re, "^") {
+		return errors.Reason("must not start with ^; it is prepended automatically").Err()
+	}
+	if strings.HasSuffix(re, "$") {
+		return errors.Reason("must not end with $; it is appended automatically").Err()
+	}
+
+	return nil
 }
 
 // ValidateVariantPredicate returns a non-nil error if p is determined to be
