@@ -106,15 +106,16 @@ func purgeOneInvocation(ctx context.Context, invID span.InvocationID) error {
 		return nil
 	}
 
-	// Stream test results that need to be purged, and set Purge=true on them,
-	// in batches.
+	// Stream rows that need to be purged and delete them in batches.
 	// Note that we cannot use Partitioned UPDATE here because its time complexity
 	// is currently O(table size).
+	// Also Partitioned DML does not support JOINs which we need to purge both
+	// test results and artifacts.
 	var ms []*spanner.Mutation
 	count := 0
-	err := testResultsToPurge(ctx, txn, invID, func(testID, resultID string) error {
+	err := rowsToPurge(ctx, txn, invID, func(table string, key spanner.Key) error {
 		count++
-		ms = append(ms, spanner.Delete("TestResults", invID.Key(testID, resultID)))
+		ms = append(ms, spanner.Delete(table, key))
 		// Flush if the batch is too large.
 		// Cloud Spanner limitation is 20k mutations per txn.
 		// One deletion is one mutation.
@@ -149,8 +150,8 @@ func purgeOneInvocation(ctx context.Context, invID span.InvocationID) error {
 	return nil
 }
 
-// testResultsToPurge calls f for test results that should be purged.
-func testResultsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv span.InvocationID, f func(testID, resultID string) error) error {
+// rowsToPurge calls f for rows that should be purged.
+func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv span.InvocationID, f func(table string, key spanner.Key) error) error {
 	st := spanner.NewStatement(`
 		WITH DoNotPurge AS (
 			SELECT DISTINCT TestId, VariantHash
@@ -158,20 +159,48 @@ func testResultsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, i
 			WHERE InvocationId = @invocationId
 			  AND IsUnexpected = TRUE
 		)
-		SELECT tr.TestId, tr.ResultId
+		SELECT tr.TestId, tr.ResultId, art.ArtifactId
 		FROM TestResults tr
 		LEFT JOIN DoNotPurge dnp ON tr.TestId = dnp.TestId AND tr.VariantHash = dnp.VariantHash
-		WHERE InvocationId = @invocationId
+		LEFT JOIN Artifacts art
+		  ON art.InvocationId = tr.InvocationId AND FORMAT("tr/%s/%s", tr.TestId, tr.ResultId) = art.ParentId
+		WHERE tr.InvocationId = @invocationId
 			AND dnp.VariantHash IS NULL
 	`)
 
 	st.Params["invocationId"] = inv
+
+	var lastTestID, lastResultID string
 	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var testID, resultID string
-		if err := row.Columns(&testID, &resultID); err != nil {
+		var artifactID spanner.NullString
+		if err := row.Columns(&testID, &resultID, &artifactID); err != nil {
 			return err
 		}
-		return f(testID, resultID)
+
+		// Given that we join by TestId and ResultId, result rows with the same
+		// test id and result id will be contiguous.
+		// This is not guaranteed, but happens in practice.
+		// Even if we encounter (testID, resultID) that we've deleted before, this
+		// is OK because a Spanner Delete ignores absence of the target row.
+		// Ultimately, this is an optimization + code simplfication.
+		if testID != lastTestID || resultID != lastResultID {
+			if err := f("TestResults", inv.Key(testID, resultID)); err != nil {
+				return err
+			}
+
+			lastTestID = testID
+			lastResultID = resultID
+		}
+
+		if artifactID.Valid {
+			parentID := span.ArtifactParentID(testID, resultID)
+			if err := f("Artifacts", inv.Key(parentID, artifactID)); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 }
 

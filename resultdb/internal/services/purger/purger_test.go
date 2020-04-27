@@ -17,6 +17,7 @@ package purger
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 	return trs
 }
 
-func insertInvocationWithTestResults(ctx context.Context, invID span.InvocationID, nTests, nPassingVariants, nFailedVariants int) span.InvocationID {
+func insertInvocation(ctx context.Context, invID span.InvocationID, nTests, nPassingVariants, nFailedVariants, nArtifactsPerResult int) span.InvocationID {
 	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
@@ -75,43 +76,67 @@ func insertInvocationWithTestResults(ctx context.Context, invID span.InvocationI
 		"FinalizeTime":                      now.Add(-time.Hour),
 	}))
 
+	// Insert test results and artifacts.
 	inserts := []*spanner.Mutation{}
 	for i := 0; i < nTests; i++ {
 		results := makeTestResultsWithVariants(string(invID), fmt.Sprintf("Test%d", i), nPassingVariants, nFailedVariants)
 		inserts = append(inserts, testutil.InsertTestResultMessages(results)...)
+		for _, res := range results {
+			for j := 0; j < nArtifactsPerResult; j++ {
+				inserts = append(inserts, testutil.InsertTestResultArtifact(invID, res.TestId, res.ResultId, strconv.Itoa(j), nil))
+			}
+		}
 	}
 	testutil.MustApply(ctx, testutil.CombineMutations(inserts)...)
 	return invID
 }
 
-func countTestResults(ctx context.Context, invID span.InvocationID) int64 {
+func countRows(ctx context.Context, invID span.InvocationID) (testResults, artifacts int64) {
 	st := spanner.NewStatement(`
-		SELECT COUNT(*) FROM TestResults
-		WHERE InvocationId = @invocationId`)
+		SELECT
+			(SELECT COUNT(*) FROM TestResults WHERE InvocationId = @invocationId),
+			(SELECT COUNT(*) FROM Artifacts WHERE InvocationId = @invocationId),
+		`)
 	st.Params["invocationId"] = span.ToSpanner(invID)
-	var res int64
-	So(span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &res), ShouldBeNil)
-	return res
+	So(span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &testResults, &artifacts), ShouldBeNil)
+	return
 }
 
 func TestPurgeExpiredResults(t *testing.T) {
 	Convey(`TestPurgeExpiredResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		// Insert three invocations with their data.
-		invocations := []span.InvocationID{
-			insertInvocationWithTestResults(ctx, "inv-some-unexpected", 10, 9, 1),
-			insertInvocationWithTestResults(ctx, "inv-no-unexpected", 10, 10, 0),
-		}
 
-		// Purge expired data.
-		err := purgeOneShard(ctx, 0)
-		So(err, ShouldBeNil)
+		Convey(`Some results are unexpected`, func() {
+			inv := insertInvocation(ctx, "inv-some-unexpected", 10, 9, 1, 0)
 
-		// Count remaining results
-		// 10 tests * 1 variant with unexpected results * 2 results per test variant
-		So(countTestResults(ctx, invocations[0]), ShouldEqual, 20)
+			err := purgeOneShard(ctx, 0)
+			So(err, ShouldBeNil)
 
-		// 10 tests * 0 variants with unexpected results * 2 results per test variant
-		So(countTestResults(ctx, invocations[1]), ShouldEqual, 0)
+			// 10 tests * 1 variant with unexpected results * 2 results per test variant.
+			testResults, _ := countRows(ctx, inv)
+			So(testResults, ShouldEqual, 20)
+		})
+
+		Convey(`No unexpected results`, func() {
+			inv := insertInvocation(ctx, "inv-no-unexpected", 10, 10, 0, 0)
+
+			err := purgeOneShard(ctx, 0)
+			So(err, ShouldBeNil)
+
+			// 10 tests * 0 variants with unexpected results * 2 results per test variant.
+			testResults, _ := countRows(ctx, inv)
+			So(testResults, ShouldEqual, 0)
+		})
+
+		Convey(`Purge artifacts`, func() {
+			inv := insertInvocation(ctx, "inv", 10, 9, 1, 10)
+
+			err := purgeOneShard(ctx, 0)
+			So(err, ShouldBeNil)
+
+			// 10 tests * 1 variant with unexpected results * 2 results per test variant * 10 artifacts..
+			_, artifacts := countRows(ctx, inv)
+			So(artifacts, ShouldEqual, 200)
+		})
 	})
 }
