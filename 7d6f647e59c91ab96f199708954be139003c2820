@@ -70,6 +70,30 @@
       "revId": "7d6f647e59c91ab96f199708954be139003c2820",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e684530_4a127c41",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T17:52:15Z",
+      "side": 1,
+      "message": "Roberto, what do you mean?",
+      "parentUuid": "53298693_59e2a974",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 35
+      },
+      "revId": "7d6f647e59c91ab96f199708954be139003c2820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
