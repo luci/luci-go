@@ -94,6 +94,30 @@
       "revId": "7d6f647e59c91ab96f199708954be139003c2820",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27c8b47b_18525824",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-04-27T17:57:30Z",
+      "side": 1,
+      "message": "That regexes allow the use of ^ for one case other than \"beginning of match\", in the case of negative character match: For example, [^abc] matches any character other than \"a\", \"b\", or \"c\".",
+      "parentUuid": "0e684530_4a127c41",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 35
+      },
+      "revId": "7d6f647e59c91ab96f199708954be139003c2820",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
