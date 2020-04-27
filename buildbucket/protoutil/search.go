@@ -143,13 +143,11 @@ func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client pb.Builds
 func searchResponses(ctx context.Context, resC chan<- *pb.SearchBuildsResponse, client pb.BuildsClient, req *pb.SearchBuildsRequest) error {
 	req = proto.Clone(req).(*pb.SearchBuildsRequest)
 
-	// Ensure next_page_token and build id, builder, status are requested.
+	// Ensure next_page_token and build id are requested
 	if paths := req.GetFields().GetPaths(); len(paths) > 0 {
 		pathSet := stringset.NewFromSlice(paths...)
 		pathSet.Add("next_page_token")
 		pathSet.Add("builds.*.id")
-		pathSet.Add("builds.*.builder")
-		pathSet.Add("builds.*.status")
 		req.Fields.Paths = pathSet.ToSortedSlice()
 	}
 
