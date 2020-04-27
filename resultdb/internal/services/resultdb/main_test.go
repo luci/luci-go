@@ -16,8 +16,6 @@ package resultdb
 
 import (
 	"context"
-	"fmt"
-	"net/url"
 	"testing"
 	"time"
 
@@ -31,12 +29,8 @@ func TestMain(m *testing.M) {
 
 func newTestResultDBService() *resultDBServer {
 	return &resultDBServer{
-		generateIsolateURL: func(ctx context.Context, host, ns, digest string) (u *url.URL, expiration time.Time, err error) {
-			u = &url.URL{
-				Scheme: "http",
-				Host:   "results.usercontent.example.com",
-				Path:   fmt.Sprintf("/isolate/%s/%s/%s", host, ns, digest),
-			}
+		generateArtifactURL: func(ctx context.Context, artifactName string) (u string, expiration time.Time, err error) {
+			u = "https://signed-url.example.com/" + artifactName
 			expiration = clock.Now(ctx).UTC().Add(time.Hour)
 			return
 		},
