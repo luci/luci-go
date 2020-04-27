@@ -361,9 +361,7 @@ func (b *Bundler) bundleRoundLocked(bb *builder, state *streamState) bool {
 			sendNow = true
 		}
 
-		if s.isDrained() {
-			state.removeStream(s.name())
-		}
+		state.removeStream(s.name())
 	}
 
 	// Second pass: bundle any available data.
