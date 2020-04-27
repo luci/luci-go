@@ -70,6 +70,30 @@
       "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5dc2d70_bbcf6200",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T18:10:15Z",
+      "side": 1,
+      "message": "SGTM.",
+      "parentUuid": "f59149cc_6fd43238",
+      "range": {
+        "startLine": 43,
+        "startChar": 55,
+        "endLine": 43,
+        "endChar": 58
+      },
+      "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
