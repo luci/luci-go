@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5e9240a4_b21bc7e3",
+        "filename": "milo/frontend/resultui/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-27T00:42:27Z",
+      "side": 1,
+      "message": "I think it\u0027s better to always run npm install.\nnpm install will not reinstall deps if they are up to date anyway. It only take ~4s when no update is required.\nConsidering that it\u0027s pretty rare to run `npm run build` anyway (during development, you can run `npm run dev`). 4s is pretty acceptable.",
+      "revId": "2b7979402b5014256bbb675526ef09ed01e611cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
