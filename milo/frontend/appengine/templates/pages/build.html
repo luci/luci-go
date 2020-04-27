@@ -69,7 +69,9 @@
         {{- end }}
       </li>
     {{ else }}
-      <li class="sublink"> - no logs - </li>
+      {{ if not .Children }}
+        <li class="sublink"> - no logs - </li>
+      {{ end }}
     {{ end }}
   </ul>
   {{ if .Children }}
