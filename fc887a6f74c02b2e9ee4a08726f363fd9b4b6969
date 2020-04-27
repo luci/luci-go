@@ -46,6 +46,30 @@
       "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f59149cc_6fd43238",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T17:36:16Z",
+      "side": 1,
+      "message": "Gentle Monday ping.",
+      "parentUuid": "89b45731_4c2d6fdd",
+      "range": {
+        "startLine": 43,
+        "startChar": 55,
+        "endLine": 43,
+        "endChar": 58
+      },
+      "revId": "fc887a6f74c02b2e9ee4a08726f363fd9b4b6969",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
