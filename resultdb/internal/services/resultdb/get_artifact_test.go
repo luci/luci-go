@@ -15,11 +15,18 @@
 package resultdb
 
 import (
+	"context"
+	"net/url"
 	"testing"
+	"time"
+
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -40,6 +47,16 @@ func TestValidateGetArtifactRequest(t *testing.T) {
 	})
 }
 
+func AssertFetchURLCorrectness(ctx context.Context, a *pb.Artifact) {
+	fetchURL, err := url.Parse(a.FetchUrl)
+	So(err, ShouldBeNil)
+	So(fetchURL.Query().Get("token"), ShouldNotBeEmpty)
+	So(fetchURL.RawPath, ShouldEqual, "/"+a.Name)
+
+	So(a.FetchUrlExpiration, ShouldNotBeNil)
+	So(pbutil.MustTimestamp(a.FetchUrlExpiration), ShouldHappenWithin, 10*time.Second, clock.Now(ctx))
+}
+
 func TestGetArtifact(t *testing.T) {
 	Convey(`GetArtifact`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
@@ -49,16 +66,20 @@ func TestGetArtifact(t *testing.T) {
 			// Insert a Artifact.
 			testutil.MustApply(ctx,
 				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
-				testutil.InsertTestResultArtifact("inv", "t t", "r", "a", nil),
+				testutil.InsertTestResultArtifact("inv", "t t", "r", "a", map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        64,
+				}),
 			)
 			const name = "invocations/inv/tests/t%20t/results/r/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}
-			tr, err := srv.GetArtifact(ctx, req)
+			art, err := srv.GetArtifact(ctx, req)
 			So(err, ShouldBeNil)
-			So(tr, ShouldResembleProto, &pb.Artifact{
-				Name:       name,
-				ArtifactId: "a",
-			})
+			So(art.Name, ShouldEqual, name)
+			So(art.ArtifactId, ShouldEqual, "a")
+			So(art.ContentType, ShouldEqual, "text/plain")
+			So(art.SizeBytes, ShouldEqual, 64)
+			So(art.FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv/tests/t%20t/results/r/artifacts/a")
 		})
 
 		Convey(`Does not exist`, func() {

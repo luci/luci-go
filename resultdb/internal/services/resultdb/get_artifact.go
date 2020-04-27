@@ -42,6 +42,28 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
-	// TODO(crbug.com/1071258): populate fetch_url and fetch_url_expiration fields.
-	return span.ReadArtifact(ctx, txn, in.Name)
+	art, err := span.ReadArtifact(ctx, txn, in.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.populateFetchURLs(ctx, art); err != nil {
+		return nil, err
+	}
+
+	return art, nil
+}
+
+// populateFetchURLs populates FetchUrl and FetchUrlExpiration fields
+// of the artifacts.
+func (s *resultDBServer) populateFetchURLs(ctx context.Context, artifacts ...*pb.Artifact) error {
+	for _, a := range artifacts {
+		url, exp, err := s.generateArtifactURL(ctx, a.Name)
+		if err != nil {
+			return err
+		}
+		a.FetchUrl = url
+		a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
+	}
+	return nil
 }

@@ -85,17 +85,18 @@ func TestQueryArtifacts(t *testing.T) {
 			return names
 		}
 
-		Convey(`Reads fields correctly`, func() {
+		Convey(`Populates fields correctly`, func() {
 			testutil.MustApply(ctx,
 				testutil.InsertInvocationArtifact("inv1", "a", map[string]interface{}{
 					"ContentType": "text/plain",
-					"Size":        54,
+					"Size":        64,
 				}),
 			)
 			actual, _ := mustQuery(req)
 			So(actual, ShouldHaveLength, 1)
 			So(actual[0].ContentType, ShouldEqual, "text/plain")
-			So(actual[0].SizeBytes, ShouldEqual, 54)
+			So(actual[0].SizeBytes, ShouldEqual, 64)
+			So(actual[0].FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv1/artifacts/a")
 		})
 
 		Convey(`Reads both invocation and test result artifacts`, func() {
