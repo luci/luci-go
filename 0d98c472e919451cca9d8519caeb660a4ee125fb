@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "57184565_df9ad00d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T20:06:31Z",
+      "side": 1,
+      "message": "Yes my question is about overall API. It\u0027s just this comment triggers it.\n\nI think that\u0027s OK, since it\u0027s an easy enough to parse artifact names, and we don\u0027t expect to change artifact name format.",
+      "parentUuid": "46edc3eb_4b09fe0e",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 9
+      },
+      "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e8abe28_a8d69ade",
         "filename": "resultdb/internal/span/artifact.go",
         "patchSetId": 5
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "we have a separate field to control that: FollowEdges. I think API should be explicit, in particular IMO \"test result predicate is set\" should not imply \"FollowEdges\u003d{test_results:true, invocations:false}\".\n\nif the user really doesn\u0027t want to see invocation level artifacts, can they set FollowEdges explicitly?",
       "parentUuid": "2e8abe28_a8d69ade",
+      "range": {
+        "startLine": 178,
+        "startChar": 7,
+        "endLine": 178,
+        "endChar": 51
+      },
+      "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab6e60f5_668af3c0",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T20:06:31Z",
+      "side": 1,
+      "message": "What you mentioned will definitely work. \n\nThough my question is more about: why the invocation-level artifacts are included in the first place? It\u0027s not that we need to spend extra effort to filter them out from the results; on the contrary this case is explicitly supported.",
+      "parentUuid": "b77750cd_7396be16",
       "range": {
         "startLine": 178,
         "startChar": 7,
