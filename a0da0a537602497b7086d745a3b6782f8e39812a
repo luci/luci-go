@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "502983de_f3b2c07c",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T23:22:33Z",
+      "side": 1,
+      "message": "the value of this variable is no longer conditional, so we can just inline this variable.",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 11
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "079d7aec_fa05b2e3",
         "filename": "resultdb/internal/services/deriver/chromium/swarming_test.go",
         "patchSetId": 5
@@ -18,6 +41,52 @@
         "startChar": 4,
         "endLine": 263,
         "endChar": 73
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0c13401_9c56d5b3",
+        "filename": "resultdb/proto/rpc/v1/deriver.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T23:22:33Z",
+      "side": 1,
+      "message": "missing delimiter in the end, e.g. \"trace_test/\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 67,
+        "endLine": 52,
+        "endChar": 70
+      },
+      "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0159f1b_e0ea6132",
+        "filename": "resultdb/proto/rpc/v1/deriver.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T23:22:33Z",
+      "side": 1,
+      "message": "this tells the user to pass a prefix without \"ninja:\" prefix and without \"/\" suffix. It should be corrected.\n\nnit: also, at this level of abstraction, i don\u0027t see a big difference between these two bullet points. We can narrow it down to one example e.g. \"ninja://chrome/test:browser_tests/\". Since it is just an example (not a rule), the reader would understand that they are still allowed to pass more than that, e.g. \"ninja://chrome/test:telemetry_gpu_integration_test/trace_test/\".",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 70
       },
       "revId": "a0da0a537602497b7086d745a3b6782f8e39812a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",

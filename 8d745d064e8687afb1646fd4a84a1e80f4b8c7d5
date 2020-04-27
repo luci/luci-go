@@ -99,6 +99,24 @@
       "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c6b8fa1_cc6857d4",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T23:22:33Z",
+      "side": 1,
+      "message": "i was point out the bug that this code would produce \"ninjaninja://foo\". I think we agree that this is a bug. PS5 looks better",
+      "parentUuid": "ec4504a2_307abcf7",
+      "revId": "8d745d064e8687afb1646fd4a84a1e80f4b8c7d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
