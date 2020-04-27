@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8b8de2a_56c43504",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T18:46:34Z",
+      "side": 1,
+      "message": "So if the user (e.g. UI) needs to relate an artifact with a test result, they need to parse the ParentID/artifact.Name themselves?",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 9
+      },
+      "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e8abe28_a8d69ade",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T18:46:34Z",
+      "side": 1,
+      "message": "If a user specifies TestIdRegexp in query, I would assume they are only interested in artifacts of those tests, so I\u0027m not sure why are the invocation-level artifacts included.",
+      "range": {
+        "startLine": 178,
+        "startChar": 7,
+        "endLine": 178,
+        "endChar": 51
+      },
+      "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
