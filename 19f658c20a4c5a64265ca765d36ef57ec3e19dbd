@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4a3137f_b0c64879",
+        "filename": "resultdb/internal/artifactcontent/isolate.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T19:52:02Z",
+      "side": 1,
+      "message": "I don\u0027t understand this case, so it\u0027s a case where error occurs when headers have been written?",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 12
+      },
+      "revId": "19f658c20a4c5a64265ca765d36ef57ec3e19dbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10dc1eb0_2cc941f2",
+        "filename": "resultdb/internal/services/resultdb/get_artifact.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-04-27T19:52:02Z",
+      "side": 1,
+      "message": "Nit: I think url is short enough and easier to understand.",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 3
+      },
+      "revId": "19f658c20a4c5a64265ca765d36ef57ec3e19dbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
