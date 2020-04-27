@@ -78,7 +78,7 @@ func insertInvocationWithTestResults(ctx context.Context, invID span.InvocationI
 	inserts := []*spanner.Mutation{}
 	for i := 0; i < nTests; i++ {
 		results := makeTestResultsWithVariants(string(invID), fmt.Sprintf("Test%d", i), nPassingVariants, nFailedVariants)
-		inserts = append(inserts, testutil.InsertTestResults(results)...)
+		inserts = append(inserts, testutil.InsertTestResultMessages(results)...)
 	}
 	testutil.MustApply(ctx, testutil.CombineMutations(inserts)...)
 	return invID
