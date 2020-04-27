@@ -19,7 +19,7 @@
     "lit-html": "^1.2.1",
     "lodash-es": "^4.17.15",
     "mobx": "^5.15.4",
-    "mobx-utils": "^5.5.5"
+    "mobx-utils": "^5.5.7"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.9.0",

@@ -12,61 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IObservableValue, observable } from 'mobx';
-
-declare global {
-  interface Promise<T> {
-    /**
-     * Converts a promise to an observable.
-     */
-    toObservable(): ObservablePromise<T>;
-  }
-  /**
-   * Tagged type. Can be used to construct algebraic sum type.
-   * Example:
-   *  type Result<T, E> = Tagged<'ok', T> | Tagged<'err', E>;
-   */
-  interface Tagged<T, V> {
-    tag: T;
-    v: V;
-  }
-  type ObservablePromise<T> = IObservableValue<Tagged<'loading', null> | Tagged<'ok', T> | Tagged<'err', unknown>>;
-}
-Promise.prototype.toObservable = function<T>(this: Promise<T>): ObservablePromise<T> {
-  const ret = observable.box({tag: 'loading', v: null}, {deep: false}) as ObservablePromise<T>;
-  this.then((v) => ret.set({tag: 'ok', v}));
-  this.catch((err) => ret.set({tag: 'err', v: err}));
-  return ret;
-};
-
-declare global {
-  interface Object {
-    /**
-     * Performs type assertion as a trailing method call.
-     * Makes it easier to chain and type assertions with methods and property access.
-     *
-     * Example:
-     *  ((grandParentWithLongName
-     *    .parentWithLongName as SomeType)
-     *    .childWithLongName
-     *    .aCasualMethodCall() as SomeOtherType)
-     *    .attribute;
-     *
-     * can be written as
-     *  grandParent
-     *    .parentWithLongName
-     *    .as<SomeType>()
-     *    .childWithLongName
-     *    .aCasualMethodCall()
-     *    .as<SomeOtherType>()
-     *    .attribute;
-     */
-    as<T>(this: T): T;
-  }
-}
-Object.prototype.as = function<T>(this: T) {
-  return this;
-};
+// Indicates that this is a module. See ts(2669).
+export {};
 
 declare global {
   interface Array<T> {
