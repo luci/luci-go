@@ -79,10 +79,10 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 		})
 
 		Convey("fails with", func() {
-			Convey("empty requests", func() {
-				req.Requests = []*pb.CreateTestResultRequest{}
+			Convey(`Too many requests`, func() {
+				req.Requests = make([]*pb.CreateTestResultRequest, 1000)
 				err := validateBatchCreateTestResultsRequest(req, now)
-				So(err, ShouldErrLike, "requests: unspecified")
+				So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
 			})
 
 			Convey("invocation", func() {

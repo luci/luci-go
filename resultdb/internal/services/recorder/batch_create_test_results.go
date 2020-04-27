@@ -37,21 +37,24 @@ func emptyOrEqual(name, actual, expected string) error {
 	return errors.Reason("%s must be either empty or equal to %q, but %q", name, expected, actual).Err()
 }
 
-func validateBatchCreateTestResultsRequest(msg *pb.BatchCreateTestResultsRequest, now time.Time) error {
-	if err := pbutil.ValidateInvocationName(msg.Invocation); err != nil {
+func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest, now time.Time) error {
+	if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
 		return errors.Annotate(err, "invocation").Err()
 	}
-	if err := pbutil.ValidateRequestID(msg.RequestId); err != nil {
+
+	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
 		return errors.Annotate(err, "request_id").Err()
 	}
-	if len(msg.Requests) == 0 {
-		return errors.Reason("requests: unspecified").Err()
+
+	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
+		return err
 	}
-	for i, r := range msg.Requests {
-		if err := emptyOrEqual("invocation", r.Invocation, msg.Invocation); err != nil {
+
+	for i, r := range req.Requests {
+		if err := emptyOrEqual("invocation", r.Invocation, req.Invocation); err != nil {
 			return errors.Annotate(err, "requests: %d", i).Err()
 		}
-		if err := emptyOrEqual("request_id", r.RequestId, msg.RequestId); err != nil {
+		if err := emptyOrEqual("request_id", r.RequestId, req.RequestId); err != nil {
 			return errors.Annotate(err, "requests: %d", i).Err()
 		}
 		if err := pbutil.ValidateTestResult(now, r.TestResult); err != nil {

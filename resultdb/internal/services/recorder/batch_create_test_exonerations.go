@@ -36,6 +36,10 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 		return errors.Annotate(err, "request_id").Err()
 	}
 
+	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
+		return err
+	}
+
 	for i, sub := range req.Requests {
 		if err := validateCreateTestExonerationRequest(sub, false); err != nil {
 			return errors.Annotate(err, "requests[%d]", i).Err()

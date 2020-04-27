@@ -105,6 +105,8 @@ message CreateInvocationRequest {
 message BatchCreateInvocationsRequest {
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
+  //
+  // Up to 500 requests.
   repeated CreateInvocationRequest requests = 1;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
@@ -113,6 +115,22 @@ message BatchCreateInvocationsRequest {
   // strongly recommended to populate this field.
   string request_id = 2;
 }
+
+
+// A response message for BatchCreateInvocations RPC.
+message BatchCreateInvocationsResponse {
+  // Invocations created.
+  repeated Invocation invocations = 1;
+
+  // One token per each created invocation.
+  // These are passed in the response instead of as metadata, because large
+  // batches increase the size of the response headers beyond allowed limits and
+  // cause failures like crbug.com/1064496
+  // update_tokens[i] corresponds to invocations[i].
+  // *Do not log these values*.
+  repeated string update_tokens = 2;
+}
+
 
 // A request message for UpdateInvocation RPC.
 message UpdateInvocationRequest {
@@ -191,6 +209,8 @@ message BatchCreateTestResultsRequest {
   // message.
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
+  //
+  // Up to 500 requests.
   repeated CreateTestResultRequest requests = 2;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
@@ -232,6 +252,8 @@ message BatchCreateTestExonerationsRequest {
   // message.
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
+  //
+  // Up to 500 requests.
   repeated CreateTestExonerationRequest requests = 2;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
@@ -245,18 +267,4 @@ message BatchCreateTestExonerationsRequest {
 message BatchCreateTestExonerationsResponse {
   // Test exonerations created.
   repeated TestExoneration test_exonerations = 1;
-}
-
-// A response message for BatchCreateInvocations RPC.
-message BatchCreateInvocationsResponse {
-  // Invocations created.
-  repeated Invocation invocations = 1;
-
-  // One token per each created invocation.
-  // These are passed in the response instead of as metadata, because large
-  // batches increase the size of the response headers beyond allowed limits and
-  // cause failures like crbug.com/1064496
-  // update_tokens[i] corresponds to invocations[i].
-  // *Do not log these values*.
-  repeated string update_tokens = 2;
 }

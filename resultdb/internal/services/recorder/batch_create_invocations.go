@@ -39,6 +39,11 @@ func validateBatchCreateInvocationsRequest(
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
 		return nil, errors.Annotate(err, "request_id").Err()
 	}
+
+	if err := pbutil.ValidateBatchRequestCount(len(reqs)); err != nil {
+		return nil, err
+	}
+
 	idSet := make(span.InvocationIDSet, len(reqs))
 	for i, req := range reqs {
 		if err := validateCreateInvocationRequest(req, now, allowCustomID); err != nil {
