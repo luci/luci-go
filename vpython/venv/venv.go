@@ -601,26 +601,29 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 
 	logging.Debugf(c, "Creating VirtualEnv at: %s", e.Root)
 
-	cmd := e.Config.systemInterpreter().IsolatedCommand(c,
+	cmd := e.Config.systemInterpreter().MkIsolatedCommand(c,
 		python.ScriptTarget{Path: "virtualenv.py"},
 		"--no-download",
 		e.Root)
+	defer cmd.Cleanup()
 	cmd.Env = env
 	cmd.Dir = venvDir
-	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
+
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd.Cmd)
 	if err := cmd.Run(); err != nil {
 		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to create VirtualEnv").Err()
 	}
 
 	logging.Debugf(c, "Making VirtualEnv relocatable at: %s", e.Root)
-	cmd = e.Interpreter().IsolatedCommand(c,
+	cmd = e.Interpreter().MkIsolatedCommand(c,
 		python.ScriptTarget{Path: "virtualenv.py"},
 		"--relocatable",
 		e.Root)
+	defer cmd.Cleanup()
 	cmd.Env = env
 	cmd.Dir = venvDir
-	dumpOutput = attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput = attachOutputForLogging(c, logging.Debug, cmd.Cmd)
 	if err := cmd.Run(); err != nil {
 		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to make VirtualEnv relocatable").Err()
@@ -637,13 +640,14 @@ func (e *Env) getStdlibPath(c context.Context, env []string) (string, error) {
 	// indicator of where 'stdlib' imports exist.
 	const script = `import os, site, sys; ` +
 		`sys.stdout.write(os.path.dirname(site.__file__))`
-	cmd := e.Interpreter().IsolatedCommand(c, python.CommandTarget{Command: script})
+	cmd := e.Interpreter().MkIsolatedCommand(c, python.CommandTarget{Command: script})
+	defer cmd.Cleanup()
 	cmd.Env = env
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 
-	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd.Cmd)
 	if err := cmd.Run(); err != nil {
 		dumpOutput(c, logging.Error)
 		return "", errors.Annotate(err, "failed to get stdlib module path").Err()
@@ -673,13 +677,14 @@ sys.stdout.write(json.dumps(pep425tags.get_supported()))
 func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425Tag, error) {
 	type pep425TagEntry []string
 
-	cmd := e.Interpreter().IsolatedCommand(c, python.CommandTarget{Command: pep425TagsScript})
+	cmd := e.Interpreter().MkIsolatedCommand(c, python.CommandTarget{Command: pep425TagsScript})
+	defer cmd.Cleanup()
 	cmd.Env = env
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 
-	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd.Cmd)
 	if err := cmd.Run(); err != nil {
 		dumpOutput(c, logging.Error)
 		return nil, errors.Annotate(err, "failed to get PEP425 tags").Err()
@@ -747,11 +752,12 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 		pythonCmd = append(pythonCmd, opt.installFlag)
 	}
 
-	cmd := e.Interpreter().IsolatedCommand(c,
+	cmd := e.Interpreter().MkIsolatedCommand(c,
 		python.ModuleTarget{Module: "pip"},
 		pythonCmd...)
+	defer cmd.Cleanup()
 	cmd.Env = env
-	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd)
+	dumpOutput := attachOutputForLogging(c, logging.Debug, cmd.Cmd)
 	if err := cmd.Run(); err != nil {
 		dumpOutput(c, logging.Error)
 		return errors.Annotate(err, "failed to install wheels").Err()

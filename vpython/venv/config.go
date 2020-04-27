@@ -310,7 +310,9 @@ func fillRuntime(c context.Context, i *python.Interpreter, r *vpython.Runtime) e
 
 	// Probe the runtime information.
 	var stdout, stderr bytes.Buffer
-	cmd := i.IsolatedCommand(c, python.CommandTarget{Command: script})
+	cmd := i.MkIsolatedCommand(c, python.CommandTarget{Command: script})
+	defer cmd.Cleanup()
+
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to get runtime information:\n%s", stderr.Bytes())
