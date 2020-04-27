@@ -22,6 +22,30 @@
       "revId": "c347f9685795e775e36d5fbd1e7a45f510cb9ffe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f07cc633_57f2d7d8",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-27T18:53:03Z",
+      "side": 1,
+      "message": "\u003e I believe this, but I am not sure this is guaranteed. (I couldn\u0027t find any documentation about it, except \"If an ORDER BY clause is not present, the order of the results of a query is not defined.\").\n\nThat\u0027s right: it is not guaranteed. Updated the comment.\n\n\u003e I was wondering if we could add an ORDER BY that explicitly ensures this assumption is true without incurring a performance cost. WDYT?\n\nI think if we add ORDER BY or GROUP BY, it will require the server to do more work, although what it is doing already is fine. The point of this code is optimization, so adding ordering/grouping go against it.\n\n\u003e Otherwise, the worst case is that we end up having multiple deletes for the same TestResults row, which we can make non-problematic by passing https://godoc.org/cloud.google.com/go/spanner#ApplyAtLeastOnce in lines 124 and 138.\n\nI am not sure there is a problem to solve: https://pkg.go.dev/cloud.google.com/go/spanner?tab\u003ddoc#Delete says \"It succeeds whether or not the keys were present.\".\nWhat problem do you see?",
+      "parentUuid": "65c6a23e_ac9af274",
+      "range": {
+        "startLine": 181,
+        "startChar": 2,
+        "endLine": 182,
+        "endChar": 46
+      },
+      "revId": "c347f9685795e775e36d5fbd1e7a45f510cb9ffe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
