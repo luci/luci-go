@@ -15,6 +15,7 @@
 package bundler
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -64,8 +65,9 @@ type parser interface {
 	firstChunkTime() (time.Time, bool)
 }
 
-func newParser(d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
+func newParser(ctx context.Context, d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
 	base := baseParser{
+		ctx:      ctx,
 		counter:  c,
 		timeBase: google.TimeFromProto(d.Timestamp),
 	}
@@ -94,8 +96,9 @@ func newParser(d *logpb.LogStreamDescriptor, c *counter) (parser, error) {
 
 // baseParser is a common set of parser capabilities.
 type baseParser struct {
-	chunkstream.Buffer
+	b chunkstream.Buffer
 
+	ctx     context.Context
 	counter *counter
 
 	timeBase  time.Time
@@ -113,16 +116,16 @@ func (p *baseParser) baseLogEntry(ts time.Time) *logpb.LogEntry {
 }
 
 func (p *baseParser) appendData(d Data) {
-	p.Append(d)
+	p.b.Append(d)
 }
 
 func (p *baseParser) bufferedBytes() int64 {
-	return p.Len()
+	return p.b.Len()
 }
 
 func (p *baseParser) firstChunkTime() (time.Time, bool) {
 	// Get the first data chunk in our Buffer.
-	chunk := p.FirstChunk()
+	chunk := p.b.FirstChunk()
 	if chunk == nil {
 		return time.Time{}, false
 	}

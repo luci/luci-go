@@ -74,7 +74,7 @@ func TestDatagramParser(t *testing.T) {
 				{0xd0, 0x65, 0x10, 0xbb, 0x12},
 			} {
 				chunks, offset := spread(now, time.Second, 2, dgram(b...))
-				p.Append(chunks...)
+				p.b.Append(chunks...)
 				now = now.Add(offset)
 			}
 
@@ -169,7 +169,7 @@ func TestDatagramParser(t *testing.T) {
 
 		Convey(`Datagram [<1>, 0xFF]`, func() {
 			Convey(`Returns nothing when the data is only partially available.`, func() {
-				p.Append(data(s.now, 0x01))
+				p.b.Append(data(s.now, 0x01))
 				c.limit = 1
 				c.allowSplit = true
 
@@ -181,7 +181,7 @@ func TestDatagramParser(t *testing.T) {
 
 		Convey(`A datagram with a incomplete size header {0x80, 0x80}`, func() {
 			Convey(`Returns no log entries.`, func() {
-				p.Append(data(s.now, 0x80, 0x80))
+				p.b.Append(data(s.now, 0x80, 0x80))
 
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
@@ -191,7 +191,7 @@ func TestDatagramParser(t *testing.T) {
 
 		Convey(`A datagram that is larger than the maximum size`, func() {
 			Convey(`Returns no log entries.`, func() {
-				p.Append(data(s.now, 0x80, 0x80, 0x01))
+				p.b.Append(data(s.now, 0x80, 0x80, 0x01))
 
 				_, err := p.nextEntry(c)
 				So(err, ShouldEqual, recordio.ErrFrameTooLarge)
