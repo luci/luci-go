@@ -27,4 +27,11 @@ type UnusedProperties struct {
 	// SwarmingTaskKey was used before Swarming task creation was made idempotent
 	// in order to ensure only one task could call UpdateBuild.
 	SwarmingTaskKey string `gae:"swarming_task_key,noindex"`
+	// PubSubCallback is normally a struct (see build.go), which translates into datastore
+	// fields pubsub_callback.auth_token, pubsub_callback.topic, pubsub_callback.user_data
+	// with no actual field called pubsub_callback. However, nil values in the datastore
+	// may exist for pubsub_callback (should instead be represented by having all three
+	// pubsub_callback.* fields nil, but isn't). Capture such nil values here.
+	// TODO(crbug/1042991): Support this case properly in gae datastore package.
+	PubSubCallback []byte `gae:"pubsub_callback,noindex"`
 }
