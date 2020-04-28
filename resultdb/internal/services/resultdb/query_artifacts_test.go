@@ -140,6 +140,70 @@ func TestQueryArtifacts(t *testing.T) {
 			})
 		})
 
+		Convey(`Follow edges`, func() {
+			testutil.MustApply(ctx,
+				testutil.InsertInvocationArtifact("inv1", "a0", nil),
+				testutil.InsertInvocationArtifact("inv1", "a1", nil),
+				testutil.InsertTestResultArtifact("inv1", "t", "r", "a0", nil),
+				testutil.InsertTestResultArtifact("inv1", "t", "r", "a1", nil),
+			)
+
+			Convey(`Unspecified`, func() {
+				actual := mustQueryNames(req)
+				So(actual, ShouldResemble, []string{
+					"invocations/inv1/artifacts/a0",
+					"invocations/inv1/artifacts/a1",
+					"invocations/inv1/tests/t/results/r/artifacts/a0",
+					"invocations/inv1/tests/t/results/r/artifacts/a1",
+				})
+			})
+
+			Convey(`Only invocations`, func() {
+				req.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+					IncludedInvocations: true,
+				}
+				actual := mustQueryNames(req)
+				So(actual, ShouldResemble, []string{
+					"invocations/inv1/artifacts/a0",
+					"invocations/inv1/artifacts/a1",
+				})
+
+				Convey(`Test result predicate is ignored`, func() {
+					req.TestResultPredicate.TestIdRegexp = "t."
+					actual := mustQueryNames(req)
+					So(actual, ShouldResemble, []string{
+						"invocations/inv1/artifacts/a0",
+						"invocations/inv1/artifacts/a1",
+					})
+				})
+			})
+
+			Convey(`Only test results`, func() {
+				req.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+					TestResults: true,
+				}
+				actual := mustQueryNames(req)
+				So(actual, ShouldResemble, []string{
+					"invocations/inv1/tests/t/results/r/artifacts/a0",
+					"invocations/inv1/tests/t/results/r/artifacts/a1",
+				})
+			})
+
+			Convey(`Both`, func() {
+				req.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+					IncludedInvocations: true,
+					TestResults:         true,
+				}
+				actual := mustQueryNames(req)
+				So(actual, ShouldResemble, []string{
+					"invocations/inv1/artifacts/a0",
+					"invocations/inv1/artifacts/a1",
+					"invocations/inv1/tests/t/results/r/artifacts/a0",
+					"invocations/inv1/tests/t/results/r/artifacts/a1",
+				})
+			})
+		})
+
 		Convey(`Paging`, func() {
 			testutil.MustApply(ctx,
 				testutil.InsertInvocationArtifact("inv1", "a0", nil),
