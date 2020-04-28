@@ -88,6 +88,24 @@
       "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2ccae74_8de24d47",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T07:06:36Z",
+      "side": 1,
+      "message": "ok, i found it: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/grpc/prpc/encoding.go;l\u003d151?q\u003dunwrap%20f:prpc%2Fencoding.go\u0026sq\u003d\n\ncurrent code happens to work because we don\u0027t use Attachf (except here which happens to use the code INTERNAL which is the default interpretation). In a more advanced case that we will have at some point, we will want to use appstatus.Attachf on an existing non-status error. Then this code will break.\nappstatus.Errorf happens to work because its impl is 1) create a true status error 2) call Attachf on it.\n\nFWIW it is not great that prpc does this. Maybe it shouldn\u0027t.",
+      "parentUuid": "1378a0fa_656c33cd",
+      "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
