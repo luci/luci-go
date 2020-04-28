@@ -189,6 +189,30 @@
       "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fafc822_eff82db1",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T04:18:33Z",
+      "side": 1,
+      "message": "Sorry, I don\u0027t understand your concern, or what we agree on and what we disagree on. How about a GVC tomorrow?",
+      "parentUuid": "9d101dba_90f2eb54",
+      "range": {
+        "startLine": 178,
+        "startChar": 7,
+        "endLine": 178,
+        "endChar": 51
+      },
+      "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
