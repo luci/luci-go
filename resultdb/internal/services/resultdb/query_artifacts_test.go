@@ -123,6 +123,23 @@ func TestQueryArtifacts(t *testing.T) {
 			So(actual, ShouldResemble, []string{"invocations/inv1/artifacts/a"})
 		})
 
+		Convey(`Test ID regexp`, func() {
+			testutil.MustApply(ctx,
+				testutil.InsertInvocationArtifact("inv1", "a", nil),
+				testutil.InsertTestResultArtifact("inv1", "t00", "r", "a", nil),
+				testutil.InsertTestResultArtifact("inv1", "t10", "r", "a", nil),
+				testutil.InsertTestResultArtifact("inv1", "t11", "r", "a", nil),
+				testutil.InsertTestResultArtifact("inv1", "t20", "r", "a", nil),
+			)
+			req.TestResultPredicate.TestIdRegexp = "t1."
+			actual := mustQueryNames(req)
+			So(actual, ShouldResemble, []string{
+				"invocations/inv1/artifacts/a",
+				"invocations/inv1/tests/t10/results/r/artifacts/a",
+				"invocations/inv1/tests/t11/results/r/artifacts/a",
+			})
+		})
+
 		Convey(`Paging`, func() {
 			testutil.MustApply(ctx,
 				testutil.InsertInvocationArtifact("inv1", "a0", nil),
