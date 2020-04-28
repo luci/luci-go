@@ -15,6 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
+import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
@@ -42,7 +43,6 @@ export class ResultEntryElement extends MobxLitElement {
 
   @observable.ref private outputArtifactsExpanded = true;
   @observable.ref private inputArtifactsExpanded = false;
-  @observable.ref private summaryExpanded = true;
   @observable.ref private tagExpanded = false;
 
   private renderSummaryHtml() {
@@ -51,14 +51,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <div
-        class="expandable-header"
-        @click=${() => this.summaryExpanded = !this.summaryExpanded}
-      >
-        <mwc-icon class="expand-toggle">${this.summaryExpanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <div class="one-line-content">Summary:</div>
-      </div>
-      <div id="summary-html" style=${styleMap({display: this.summaryExpanded ? '' : 'none'})}>
+      <div id="summary-html">
         ${sanitizeHTML(this.testResult!.summaryHtml)}
       </div>
     `;
@@ -156,9 +149,11 @@ export class ResultEntryElement extends MobxLitElement {
         >
           <mwc-icon class="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
           <span class="one-line-content">
-            #${this.id}
-            ${this.testResult!.expected ? '' : html`<span style="color: rgb(210, 63, 49);">unexpectedly</span>`}
-            ${STATUS_DISPLAY_MAP[this.testResult!.status]} after ${this.testResult!.duration || '-s'}
+            run #${this.id}
+            <span class=${classMap({'unexpected-result': !this.testResult!.expected})}>
+              ${this.testResult!.expected ? '' : html`unexpectedly`}
+              ${STATUS_DISPLAY_MAP[this.testResult!.status]}
+            </span> after ${this.testResult!.duration || '-s'}
           </span>
         </div>
         <div id="body">
@@ -200,6 +195,10 @@ export class ResultEntryElement extends MobxLitElement {
       font-weight: 500;
     }
 
+    .unexpected-result {
+      color: rgb(210, 63, 49);
+    }
+
     #body {
       display: grid;
       grid-template-columns: 24px 1fr;
@@ -213,6 +212,14 @@ export class ResultEntryElement extends MobxLitElement {
     #summary-html {
       background-color: rgb(245, 245, 245);
       padding: 5px;
+    }
+    #summary-html pre {
+      margin: 0;
+      font-size: 12px;
+    }
+    #summary-html ul {
+      margin: 3px 0;
+      padding-inline-start: 28px;
     }
 
     .kv-key::after {
