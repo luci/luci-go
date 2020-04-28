@@ -14,8 +14,7 @@
 
 import { BeforeEnterObserver } from '@vaadin/router';
 import { customElement, html, LitElement, property } from 'lit-element';
-
-import { contextProvider } from '.';
+import { provideContext } from '../libs/context';
 
 const CLIENT_ID_KEY = 'client-id';
 
@@ -54,5 +53,5 @@ export class ConfigProviderElement extends LitElement implements BeforeEnterObse
 }
 
 customElement('tr-config-provider')(
-  contextProvider('clientId')(ConfigProviderElement),
+  provideContext('clientId')(ConfigProviderElement),
 );

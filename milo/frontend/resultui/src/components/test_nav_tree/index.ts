@@ -19,11 +19,19 @@ import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { observable, reaction } from 'mobx';
 
+import { provideContext } from '../../libs/context';
 import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
 import '../dot_spinner';
-import { contextProvider, TestNavTreeState } from './context';
 import './test_nav_node';
+
+
+/**
+ * Records the test nav tree's state.
+ */
+export class TestNavTreeState {
+  @observable.ref selectedChildNode: TestNode | null = null;
+}
 
 
 /**
@@ -114,7 +122,7 @@ export class TestNavTreeElement extends MobxLitElement {
 }
 
 customElement('tr-test-nav-tree')(
-  contextProvider('treeState')(
+  provideContext('treeState')(
     TestNavTreeElement,
   ),
 );

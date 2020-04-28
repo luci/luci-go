@@ -15,10 +15,26 @@
 import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { customElement, html, LitElement } from 'lit-element';
-import { action } from 'mobx';
+import { action, computed, observable } from 'mobx';
 
-import { contextProvider } from '.';
-import { AppState } from './app_state';
+import { provideContext } from '../libs/context';
+import { ResultDb } from '../services/resultdb';
+
+/**
+ * Records the app-level state.
+ */
+export class AppState {
+  @observable.ref accessToken = '';
+
+  @computed
+  get resultDb(): ResultDb | null {
+    if (!this.accessToken) {
+      return null;
+    }
+    // TODO(weiweilin): set the host dynamically (from a config file?).
+    return new ResultDb('staging.results.api.cr.dev', this.accessToken);
+  }
+}
 
 /**
  * Provides appState to be shared across the app.
@@ -70,5 +86,5 @@ export class AppStateProviderElement extends LitElement implements BeforeEnterOb
 }
 
 customElement('tr-app-state-provider')(
-  contextProvider('appState')(AppStateProviderElement),
+  provideContext('appState')(AppStateProviderElement),
 );
