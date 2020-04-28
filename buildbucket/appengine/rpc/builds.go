@@ -20,9 +20,9 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -41,11 +41,12 @@ func logDetails(ctx context.Context, methodName string, req proto.Message) (cont
 // have correct ACLs checks.
 // TODO(crbug/1042991): Remove once methods are implemented.
 func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	err = appstatus.GRPCifyAndLog(ctx, err)
 	if methodName == "GetBuild" {
-		return nil
+		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
-	return status.Errorf(codes.Unimplemented, "method not implemented")
+	return appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // notFound returns a generic error message indicating the resource requested
@@ -55,7 +56,7 @@ func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto
 // view can be avoided. Should be used everywhere a "not found" or
 // "permission denied" error occurs.
 func notFound(ctx context.Context) error {
-	return status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", auth.CurrentIdentity(ctx))
+	return appstatus.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", auth.CurrentIdentity(ctx))
 }
 
 // Builds implements buildbucketpb.BuildsServer.
@@ -67,27 +68,27 @@ var _ buildbucketpb.BuildsServer = &Builds{}
 
 // Batch handles a batch request. Implements buildbucketpb.BuildsServer.
 func (*Builds) Batch(ctx context.Context, req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
+	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // CancelBuild handles a request to cancel a build. Implements buildbucketpb.BuildsServer.
 func (*Builds) CancelBuild(ctx context.Context, req *buildbucketpb.CancelBuildRequest) (*buildbucketpb.Build, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
+	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // SearchBuilds handles a request to search for builds. Implements buildbucketpb.BuildsServer.
 func (*Builds) SearchBuilds(ctx context.Context, req *buildbucketpb.SearchBuildsRequest) (*buildbucketpb.SearchBuildsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
+	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // ScheduleBuild handles a request to schedule a build. Implements buildbucketpb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *buildbucketpb.ScheduleBuildRequest) (*buildbucketpb.Build, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
+	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // UpdateBuild handles a request to update a build. Implements buildbucketpb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *buildbucketpb.UpdateBuildRequest) (*buildbucketpb.Build, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method not implemented")
+	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // New returns a new buildbucketpb.BuildsServer.
