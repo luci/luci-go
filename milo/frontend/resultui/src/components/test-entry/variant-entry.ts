@@ -39,6 +39,16 @@ const STATUS_CLASS_MAP = {
   [VariantStatus.Flaky]: 'flaky',
 };
 
+// This list defines the order in which variant def keys should be displayed.
+// Any unrecognized keys will be listed after the ones defined below.
+const ORDERED_VARIANT_DEF_KEYS = [
+  'bucket',
+  'builder',
+  'test_suite',
+  'param/instantiation',
+  'param/id',
+];
+
 /**
  * Renders an expandable entry of the given test variant.
  */
@@ -53,6 +63,25 @@ export class VariantEntryElement extends MobxLitElement {
   @computed
   private get hasSingleChild() {
     return (this.variant!.results.length + this.variant!.exonerations.length) === 1;
+  }
+
+  @computed
+  private get variantDef() {
+    const def = this.variant!.variant.def;
+    const res = [];
+    const seen = new Set();
+    for (const key of ORDERED_VARIANT_DEF_KEYS) {
+      if (def.hasOwnProperty(key)) {
+        res.push([key, def[key]]);
+        seen.add(key);
+      }
+    }
+    for (const [key, value] of Object.entries(def)) {
+      if (!seen.has(key)) {
+        res.push([key, value]);
+      }
+    }
+    return res;
   }
 
   protected render() {
@@ -71,7 +100,7 @@ export class VariantEntryElement extends MobxLitElement {
             >${STATUS_DISPLAY_MAP[this.variant!.status]} result</span>
             |
             <span class="light">
-              ${Object.entries(this.variant!.variant.def).map(([k, v]) => html`
+              ${this.variantDef.map(([k, v]) => html`
               <span class="kv-key">${k}</span>
               <span class="kv-value">${v}</span>
               `)}
