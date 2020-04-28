@@ -22,9 +22,8 @@ import { observable, reaction } from 'mobx';
 import { TestLoader } from '../../models/test_loader';
 import { TestNode } from '../../models/test_node';
 import '../dot_spinner';
-import { contextProvider, TestNavTreeState } from './context';
+import { provideTreeState, TestNavTreeState } from './context';
 import './test_nav_node';
-
 
 /**
  * Display all test IDs in a folder-like tree structure.
@@ -114,7 +113,7 @@ export class TestNavTreeElement extends MobxLitElement {
 }
 
 customElement('tr-test-nav-tree')(
-  contextProvider('treeState')(
+  provideTreeState(
     TestNavTreeElement,
   ),
 );
