@@ -26,22 +26,22 @@ import (
 )
 
 var (
-	permJobGet     = realms.RegisterPermission("scheduler.job.get")
-	permJobPause   = realms.RegisterPermission("scheduler.job.pause")
-	permJobResume  = realms.RegisterPermission("scheduler.job.resume")
-	permJobAbort   = realms.RegisterPermission("scheduler.job.abort")
-	permJobTrigger = realms.RegisterPermission("scheduler.job.trigger")
+	permJobsGet     = realms.RegisterPermission("scheduler.jobs.get")
+	permJobsPause   = realms.RegisterPermission("scheduler.jobs.pause")
+	permJobsResume  = realms.RegisterPermission("scheduler.jobs.resume")
+	permJobsAbort   = realms.RegisterPermission("scheduler.jobs.abort")
+	permJobsTrigger = realms.RegisterPermission("scheduler.jobs.trigger")
 )
 
 // Mapping from Realms permissions to legacy roles.
 //
 // Will be removed once legacy ACLs are gone.
 var permToRole = map[realms.Permission]acl.Role{
-	permJobGet:     acl.Reader,
-	permJobPause:   acl.Owner,
-	permJobResume:  acl.Owner,
-	permJobAbort:   acl.Owner,
-	permJobTrigger: acl.Triggerer,
+	permJobsGet:     acl.Reader,
+	permJobsPause:   acl.Owner,
+	permJobsResume:  acl.Owner,
+	permJobsAbort:   acl.Owner,
+	permJobsTrigger: acl.Triggerer,
 }
 
 // checkPermission returns nil if the caller has the given permission for the
