@@ -16,27 +16,9 @@ import { fixture } from '@open-wc/testing';
 import { assert } from 'chai';
 import { customElement, html, LitElement, property } from 'lit-element';
 
-import { contextConsumerMixinBuilder, contextProviderMixinBuilder } from './context';
+import { consumeContext, provideContext } from './context';
 
-interface Context {
-  // Provided by outer provider.
-  // But only associated with a unannotated property of the provider.
-  outerProviderInactiveKey: string;
-
-  // Provided by the outer provider.
-  outerProviderKey: string;
-
-  // Provided by both the outer provider and the inner provider.
-  providerKey: string;
-
-  // Provided but unobserved key.
-  outerUnobservedKey: string;
-}
-
-const contextProvider = contextProviderMixinBuilder<Context>();
-const contextConsumer = contextConsumerMixinBuilder<Context>();
-
-
+@provideContext('outerProviderInactiveKey')
 class OuterContextProvider extends LitElement {
   outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val0';
 
@@ -53,8 +35,14 @@ class OuterContextProvider extends LitElement {
   unprovidedKey = 'outer_provider-unprovided-val0';
 }
 customElement('tr-outer-context-provider-test')(
-  contextProvider('outerProviderInactiveKey', 'outerProviderKey', 'providerKey', 'outerUnobservedKey')(
-    OuterContextProvider,
+  provideContext('outerProviderInactiveKey')(
+    provideContext('outerProviderKey')(
+      provideContext('providerKey')(
+        provideContext('outerUnobservedKey')(
+          OuterContextProvider,
+        ),
+      ),
+    ),
   ),
 );
 
@@ -64,7 +52,9 @@ class InnerContextProvider extends LitElement {
   providerKey = 'inner_provider-provider-val0';
 }
 customElement('tr-inner-context-provider-test')(
-  contextProvider('providerKey')(InnerContextProvider),
+  provideContext('providerKey')(
+    InnerContextProvider,
+  ),
 );
 
 
@@ -85,13 +75,14 @@ class ContextConsumer extends LitElement {
   outerUnobservedKey = 'local-unobserved';
 }
 customElement('tr-context-consumer-test')(
-  contextConsumer(
-    'outerProviderInactiveKey',
-    'outerProviderKey',
-    'providerKey',
-  )(ContextConsumer),
+  consumeContext('outerProviderInactiveKey')(
+    consumeContext('outerProviderKey')(
+      consumeContext('providerKey')(
+        ContextConsumer,
+      ),
+    ),
+  ),
 );
-
 
 @customElement('tr-context-consumer-wrapper-test')
 export class ContextConsumerWrapper extends LitElement {
