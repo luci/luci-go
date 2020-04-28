@@ -34,6 +34,24 @@
       "revId": "f3633e15f0d44179b52b6240ed5c9a6094f97b48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "369de0a5_3340cd0c",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-28T07:01:23Z",
+      "side": 1,
+      "message": "You are right. I somehow thought the first loop was looping through entries of def as well.",
+      "parentUuid": "dd053c3c_d43edf29",
+      "revId": "f3633e15f0d44179b52b6240ed5c9a6094f97b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
