@@ -239,10 +239,11 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 
 			invIDs, err := span.ReadReachableInvocations(ctx, txn, 100, span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name)))
 			So(err, ShouldBeNil)
-			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+			q := span.TestResultQuery{
 				InvocationIDs: invIDs,
 				PageSize:      100,
-			})
+			}
+			trs, _, err := q.Fetch(ctx, txn)
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
 			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
@@ -286,10 +287,11 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(invIDs), ShouldEqual, 3)
 
-			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+			q := span.TestResultQuery{
 				InvocationIDs: invIDs,
 				PageSize:      100,
-			})
+			}
+			trs, _, err := q.Fetch(ctx, txn)
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
 			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
@@ -351,10 +353,11 @@ func TestBatchInsertTestResults(t *testing.T) {
 
 			// Check that the TestResults are batched as expected.
 			for i, expectedBatch := range expectedBatches {
-				actualResults, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+				q := span.TestResultQuery{
 					InvocationIDs: span.NewInvocationIDSet(batchInvocationID(baseID, i)),
 					PageSize:      100,
-				})
+				}
+				actualResults, _, err := q.Fetch(ctx, txn)
 				So(err, ShouldBeNil)
 				So(actualResults, ShouldHaveLength, len(expectedBatch))
 
