@@ -70,7 +70,10 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
-	// TODO(crbug.com/1071258): populate fetch_url and fetch_url_expiration fields.
+	if err := s.populateFetchURLs(ctx, arts...); err != nil {
+		return nil, err
+	}
+
 	return &pb.QueryArtifactsResponse{
 		Artifacts:     arts,
 		NextPageToken: token,

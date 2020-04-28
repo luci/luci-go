@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -47,20 +46,4 @@ func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResult
 	}
 
 	return tr, nil
-}
-
-func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, artifacts ...*pb.Artifact) error {
-	for _, a := range artifacts {
-		// If the URL looks an isolate URL, then generate a signed plain HTTP
-		// URL that serves the isolate file contents.
-		if host, ns, digest, err := internal.ParseIsolateURL(a.FetchUrl); err == nil {
-			u, exp, err := s.generateIsolateURL(ctx, host, ns, digest)
-			if err != nil {
-				return err
-			}
-			a.FetchUrl = u.String()
-			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
-		}
-	}
-	return nil
 }

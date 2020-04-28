@@ -12,5 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package usercontent can serve user content via plain HTTP securely.
-package usercontent
+package artifactcontent
+
+import (
+	"testing"
+
+	"go.chromium.org/luci/resultdb/internal/testutil"
+)
+
+func TestMain(m *testing.M) {
+	testutil.SpannerTestMain(m)
+}
