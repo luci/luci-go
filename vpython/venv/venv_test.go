@@ -199,7 +199,9 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 					Path: filepath.Join(testDataDir, "setup_check.py"),
 				}
 				checkOut := filepath.Join(tdir, "output.json")
-				cmd := v.Interpreter().IsolatedCommand(c, testScriptTarget, "--json-output", checkOut)
+				cmd := v.Interpreter().MkIsolatedCommand(c, testScriptTarget, "--json-output", checkOut)
+				defer cmd.Cleanup()
+				cmd.Dir = "" // we want cwd
 				So(cmd.Run(), ShouldBeNil)
 
 				var m setupCheckManifest

@@ -16,6 +16,8 @@ package python
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"sync"
 
@@ -46,26 +48,54 @@ func (i *Interpreter) Normalize() error {
 	return filesystem.AbsPath(&i.Python)
 }
 
-// IsolatedCommand returns a configurable exec.Cmd structure bound to this
+// IsolatedCommand has an *exec.Cmd, as well as the temporary directory
+// created for this Cmd.
+type IsolatedCommand struct {
+	*exec.Cmd
+	dir string
+}
+
+// Cleanup must be called after the IsolatedCommand is no longer needed.
+func (iso IsolatedCommand) Cleanup() {
+	if err := os.RemoveAll(iso.dir); err != nil {
+		panic(errors.Annotate(err, "removing IsolatedCommand's directory").Err())
+	}
+}
+
+// MkIsolatedCommand returns a configurable exec.Cmd structure bound to this
 // Interpreter.
 //
 // The supplied arguments have several Python isolation flags prepended to them
 // to remove environmental factors such as:
 //	- The user's "site.py".
 //	- The current PYTHONPATH environment variable.
+//	- The current working directory (i.e. avoids `import foo` picking up local
+//	  foo.py)
 //	- Compiled ".pyc/.pyo" files.
-func (i *Interpreter) IsolatedCommand(c context.Context, target Target, args ...string) *exec.Cmd {
+//
+// The caller MUST call IsolatedCommand.Cleanup when they no longer need the
+// IsolatedCommand.
+func (i *Interpreter) MkIsolatedCommand(c context.Context, target Target, args ...string) IsolatedCommand {
 	// Isolate the supplied arguments.
 	cl := CommandLine{
 		Target: target,
 		Args:   args,
 	}
-	cl.SetIsolatedFlags()
+	cl.AddSingleFlag("B") // Don't compile "pyo" binaries.
+	cl.AddSingleFlag("E") // Don't use PYTHON* environment variables.
+	cl.AddSingleFlag("s") // Don't use user 'site.py'.
 	cmd := exec.CommandContext(c, i.Python, cl.BuildArgs()...)
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(errors.Annotate(err, "creating IsolatedCommand's directory").Err())
+	}
+	cmd.Dir = dir
+	defer func() {
+	}()
 	if i.testCommandHook != nil {
 		i.testCommandHook(cmd)
 	}
-	return cmd
+	return IsolatedCommand{cmd, dir}
 }
 
 // GetVersion runs the specified Python interpreter to extract its version
@@ -80,9 +110,10 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 		return
 	}
 
-	cmd := i.IsolatedCommand(c, CommandTarget{
+	cmd := i.MkIsolatedCommand(c, CommandTarget{
 		"import platform, sys; sys.stdout.write(platform.python_version())",
 	})
+	defer cmd.Cleanup()
 
 	out, err := cmd.Output()
 	if err != nil {

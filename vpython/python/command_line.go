@@ -158,20 +158,6 @@ func (cl *CommandLine) BuildArgs() []string {
 	return args
 }
 
-// SetIsolatedFlags updates cl to include command-line flags to run in an
-// isolated environment.
-//
-// The supplied arguments have several Python isolation flags prepended to them
-// to remove environmental factors such as:
-//	- The user's "site.py".
-//	- The current PYTHONPATH environment variable.
-//	- Compiled ".pyc/.pyo" files.
-func (cl *CommandLine) SetIsolatedFlags() {
-	cl.AddSingleFlag("B") // Don't compile "pyo" binaries.
-	cl.AddSingleFlag("E") // Don't use PYTHON* environment variables.
-	cl.AddSingleFlag("s") // Don't use user 'site.py'.
-}
-
 // AddFlag adds an interpreter flag to cl if it's not already present.
 func (cl *CommandLine) AddFlag(flag CommandLineFlag) {
 	if strings.HasPrefix(flag.Flag, "-") {
