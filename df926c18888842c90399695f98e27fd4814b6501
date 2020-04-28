@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4785ab1f_59d64592",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T06:17:23Z",
+      "side": 1,
+      "message": "i think this will be very confusing for non-Chrome, as it may cause different filters to look identical.\n\nwhy is this needed? can we put unrecognized keys in the end?",
+      "range": {
+        "startLine": 43,
+        "startChar": 29,
+        "endLine": 43,
+        "endChar": 73
+      },
+      "revId": "df926c18888842c90399695f98e27fd4814b6501",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dce9429a_e00caab0",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T06:17:23Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 7
+      },
+      "revId": "df926c18888842c90399695f98e27fd4814b6501",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
