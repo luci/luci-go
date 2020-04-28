@@ -22,11 +22,11 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -83,26 +83,26 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	switch {
 	case req.GetId() != 0:
 		if req.Builder != nil || req.BuildNumber != 0 {
-			return nil, status.Errorf(codes.InvalidArgument, "id is mutually exclusive with (builder and build_number)")
+			return nil, appstatus.Errorf(codes.InvalidArgument, "id is mutually exclusive with (builder and build_number)")
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
 		// TODO(crbug/1042991): Move pb.BuilderID validation to a common location.
 		switch parts := strings.Split(req.Builder.Bucket, "."); {
 		case !projRegex.MatchString(req.Builder.Project):
-			return nil, status.Errorf(codes.InvalidArgument, "builder.project must match %q", projRegex.String())
+			return nil, appstatus.Errorf(codes.InvalidArgument, "builder.project must match %q", projRegex.String())
 		case !bucketRegex.MatchString(req.Builder.Bucket):
-			return nil, status.Errorf(codes.InvalidArgument, "builder.bucket must match %q", bucketRegex.String())
+			return nil, appstatus.Errorf(codes.InvalidArgument, "builder.bucket must match %q", bucketRegex.String())
 		case !builderRegex.MatchString(req.Builder.Builder):
-			return nil, status.Errorf(codes.InvalidArgument, "builder.builder must match %q", builderRegex.String())
+			return nil, appstatus.Errorf(codes.InvalidArgument, "builder.builder must match %q", builderRegex.String())
 		case parts[0] == "luci" && len(parts) > 2:
-			return nil, status.Errorf(codes.InvalidArgument, "invalid use of v1 builder.bucket in v2 API (hint: try %q)", parts[2])
+			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid use of v1 builder.bucket in v2 API (hint: try %q)", parts[2])
 		}
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "one of id or (builder and build_number) is required")
+		return nil, appstatus.Errorf(codes.InvalidArgument, "one of id or (builder and build_number) is required")
 	}
 	m, err := getFieldMask(req.Fields)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid field mask")
+		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid field mask")
 	}
 	if req.Id == 0 {
 		addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)
