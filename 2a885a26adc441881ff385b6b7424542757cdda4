@@ -52,6 +52,24 @@
       "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "419c8aa5_af576919",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-28T06:39:02Z",
+      "side": 1,
+      "message": "It\u0027s failing to parse app.yaml which is intentionally invalid to avoid overwriting the python app\u0027s default service. You have to restrict upload to the go service:\n$ gae.py upload --app-id cr-buildbucket-dev default-go",
+      "parentUuid": "709c2b67_c2acf209",
+      "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
