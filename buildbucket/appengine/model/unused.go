@@ -16,6 +16,9 @@ package model
 
 // UnusedProperties are properties previously set but currently unused.
 type UnusedProperties struct {
+	// CanaryPreference was used to indicate if the build may use canary infrastructure.
+	// Since replaced by the proto's canary field.
+	CanaryPreference int32 `gae:"canary_preference,noindex"`
 	// Infra was used to store the proto's infra field value in order to reduce
 	// the size of the proto being unmarshalled in projection queries.
 	// Since moved to its own entity (see details.go) and backfilled for all builds.
