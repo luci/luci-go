@@ -546,7 +546,6 @@ type QueryTestExonerationsRequest struct {
 	// that includes these.
 	Invocations []string `protobuf:"bytes,1,rep,name=invocations,proto3" json:"invocations,omitempty"`
 	// A test exoneration in the response must satisfy this predicate.
-	// Field predicate.invocation is required.
 	Predicate *TestExonerationPredicate `protobuf:"bytes,2,opt,name=predicate,proto3" json:"predicate,omitempty"`
 	// The version of the state from which the response draws is allowed to be
 	// stale up to this duration.
@@ -868,7 +867,8 @@ type QueryArtifactsRequest struct {
 	FollowEdges *QueryArtifactsRequest_EdgeTypeSet `protobuf:"bytes,2,opt,name=follow_edges,json=followEdges,proto3" json:"follow_edges,omitempty"`
 	// If an Artifact belongs to a TestResult, then the test result must satisfy
 	// this predicate.
-	// Field predicate.invocation is required.
+	// Note: this predicate does NOT apply to invocation-level artifacts.
+	// To exclude them from the response, use follow_edges.
 	TestResultPredicate *TestResultPredicate `protobuf:"bytes,3,opt,name=test_result_predicate,json=testResultPredicate,proto3" json:"test_result_predicate,omitempty"`
 	// The version of the state from which the response draws is allowed to be
 	// stale up to this duration.

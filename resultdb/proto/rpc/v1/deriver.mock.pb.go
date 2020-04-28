@@ -11,30 +11,30 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// MockDeriverClient is a mock of DeriverClient interface
+// MockDeriverClient is a mock of DeriverClient interface.
 type MockDeriverClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockDeriverClientMockRecorder
 }
 
-// MockDeriverClientMockRecorder is the mock recorder for MockDeriverClient
+// MockDeriverClientMockRecorder is the mock recorder for MockDeriverClient.
 type MockDeriverClientMockRecorder struct {
 	mock *MockDeriverClient
 }
 
-// NewMockDeriverClient creates a new mock instance
+// NewMockDeriverClient creates a new mock instance.
 func NewMockDeriverClient(ctrl *gomock.Controller) *MockDeriverClient {
 	mock := &MockDeriverClient{ctrl: ctrl}
 	mock.recorder = &MockDeriverClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDeriverClient) EXPECT() *MockDeriverClientMockRecorder {
 	return m.recorder
 }
 
-// DeriveChromiumInvocation mocks base method
+// DeriveChromiumInvocation mocks base method.
 func (m *MockDeriverClient) DeriveChromiumInvocation(ctx context.Context, in *DeriveChromiumInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
@@ -47,37 +47,37 @@ func (m *MockDeriverClient) DeriveChromiumInvocation(ctx context.Context, in *De
 	return ret0, ret1
 }
 
-// DeriveChromiumInvocation indicates an expected call of DeriveChromiumInvocation
+// DeriveChromiumInvocation indicates an expected call of DeriveChromiumInvocation.
 func (mr *MockDeriverClientMockRecorder) DeriveChromiumInvocation(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeriveChromiumInvocation", reflect.TypeOf((*MockDeriverClient)(nil).DeriveChromiumInvocation), varargs...)
 }
 
-// MockDeriverServer is a mock of DeriverServer interface
+// MockDeriverServer is a mock of DeriverServer interface.
 type MockDeriverServer struct {
 	ctrl     *gomock.Controller
 	recorder *MockDeriverServerMockRecorder
 }
 
-// MockDeriverServerMockRecorder is the mock recorder for MockDeriverServer
+// MockDeriverServerMockRecorder is the mock recorder for MockDeriverServer.
 type MockDeriverServerMockRecorder struct {
 	mock *MockDeriverServer
 }
 
-// NewMockDeriverServer creates a new mock instance
+// NewMockDeriverServer creates a new mock instance.
 func NewMockDeriverServer(ctrl *gomock.Controller) *MockDeriverServer {
 	mock := &MockDeriverServer{ctrl: ctrl}
 	mock.recorder = &MockDeriverServerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDeriverServer) EXPECT() *MockDeriverServerMockRecorder {
 	return m.recorder
 }
 
-// DeriveChromiumInvocation mocks base method
+// DeriveChromiumInvocation mocks base method.
 func (m *MockDeriverServer) DeriveChromiumInvocation(arg0 context.Context, arg1 *DeriveChromiumInvocationRequest) (*Invocation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeriveChromiumInvocation", arg0, arg1)
@@ -86,7 +86,7 @@ func (m *MockDeriverServer) DeriveChromiumInvocation(arg0 context.Context, arg1 
 	return ret0, ret1
 }
 
-// DeriveChromiumInvocation indicates an expected call of DeriveChromiumInvocation
+// DeriveChromiumInvocation indicates an expected call of DeriveChromiumInvocation.
 func (mr *MockDeriverServerMockRecorder) DeriveChromiumInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeriveChromiumInvocation", reflect.TypeOf((*MockDeriverServer)(nil).DeriveChromiumInvocation), arg0, arg1)
