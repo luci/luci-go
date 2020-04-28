@@ -106,6 +106,24 @@
       "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecbb782b_bb3c7402",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-04-28T07:13:54Z",
+      "side": 1,
+      "message": "Can resultdb\u0027s GRPCifyAndLog be the appstatus\u0027s GRPCifyAndLog? Seems generic to me, and grpcutil used to have a GRPCifyAndLog function.",
+      "parentUuid": "d2ccae74_8de24d47",
+      "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
