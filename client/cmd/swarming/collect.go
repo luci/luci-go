@@ -313,9 +313,11 @@ func (c *collectRun) pollForTaskResult(
 		// Only stop if the swarming bot is "dead" (i.e. not running).
 		state, err := parseTaskState(result.result.State)
 		if err != nil {
+			logging.Debugf(ctx, "Task %s failed with error: %v", taskID, err)
 			return taskResult{taskID: taskID, err: err}
 		}
 		if !state.Alive() {
+			logging.Debugf(ctx, "Task completed successfully: %s", taskID)
 			return result
 		}
 
@@ -327,6 +329,8 @@ func (c *collectRun) pollForTaskResult(
 		if delay >= 15*time.Second {
 			delay = 15 * time.Second
 		}
+
+		logging.Debugf(ctx, "Waiting %s for task: %s", delay.Round(time.Millisecond), taskID)
 		timerResult := <-clock.After(ctx, delay)
 
 		// timerResult should have an error if the context's deadline was exceeded,
@@ -340,8 +344,6 @@ func (c *collectRun) pollForTaskResult(
 			}
 			return result
 		}
-
-		logging.Debugf(ctx, "Waiting task_id: %s", taskID)
 	}
 }
 

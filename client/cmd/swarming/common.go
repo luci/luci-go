@@ -157,9 +157,10 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 			filesMu.Unlock()
 		},
 		FileStatsCallback: func(fileStats downloader.FileStats, _ time.Duration) {
-			logging.Debugf(ctx, "Downloaded %d of %d bytes in %d of %d files...",
+			logging.Debugf(ctx, "Downloaded %d of %d bytes in %d of %d files for task: %s",
 				fileStats.BytesCompleted, fileStats.BytesScheduled,
-				fileStats.CountCompleted, fileStats.CountScheduled)
+				fileStats.CountCompleted, fileStats.CountScheduled,
+				taskID)
 		},
 	}
 	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(ref.Isolated), dir, opts)
