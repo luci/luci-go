@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3feb3bd3_1e3f7f49",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T23:41:20Z",
+      "side": 1,
+      "message": "nit: TabDef",
+      "range": {
+        "startLine": 19,
+        "startChar": 17,
+        "endLine": 19,
+        "endChar": 26
+      },
+      "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26af0ca0_b2161c55",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T23:41:20Z",
+      "side": 1,
+      "message": "FWIU selectedTabId is settable by code outside of this class, which means we need a setter that calls this, right?",
+      "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
