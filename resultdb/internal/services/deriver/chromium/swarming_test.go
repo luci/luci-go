@@ -93,7 +93,7 @@ func TestSwarming(t *testing.T) {
 					"bucket:bkt",
 					"builder:blder",
 					"test_suite:foo_unittests",
-					"ninja_target:chrome/tests:browser_tests",
+					"test_id_prefix:ninja://chrome/tests:browser_tests/",
 				},
 			}
 			hasCompletion := true
@@ -155,6 +155,22 @@ func TestSwarming(t *testing.T) {
 
 			case fmt.Sprintf("/%stask/no-completion-task/result", swarmingAPIEndpoint):
 				resp.State = "BOT_DIED"
+				hasCompletion = false
+
+			case fmt.Sprintf("/%stask/no-test-id-prefix/result", swarmingAPIEndpoint):
+				resp.State = "COMPLETED"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(outputsDigest),
+				}
+				resp.Tags = []string{
+					"bucket:bkt",
+					"builder:blder",
+					"test_suite:foo_unittests",
+					"ninja_target://chrome/tests:browser_tests",
+				}
+
 				hasCompletion = false
 
 			default:
@@ -244,7 +260,7 @@ func TestSwarming(t *testing.T) {
 				res, err := DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 				So(len(res), ShouldEqual, 1)
-				So(res[0].TestId, ShouldEqual, "ninja:chrome/tests:browser_tests")
+				So(res[0].TestId, ShouldEqual, "ninja://chrome/tests:browser_tests/")
 				So(res[0].Expected, ShouldBeTrue)
 				So(res[0].Status, ShouldEqual, pb.TestStatus_PASS)
 			})
@@ -287,6 +303,17 @@ func TestSwarming(t *testing.T) {
 
 			Convey(`and do`, func() {
 				task, err := swarmSvc.Task.Result("completed-outputs-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				inv, err := DeriveChromiumInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+				_, err = DeriveTestResults(ctx, task, req, inv)
+				So(err, ShouldBeNil)
+			})
+
+			Convey(`and do with ninja_target`, func() {
+				task, err := swarmSvc.Task.Result("no-test-id-prefix").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
 				inv, err := DeriveChromiumInvocation(task, req)
