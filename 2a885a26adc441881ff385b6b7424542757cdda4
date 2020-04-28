@@ -70,6 +70,24 @@
       "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1378a0fa_656c33cd",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T06:47:53Z",
+      "side": 1,
+      "message": "Thanks, this works. Yes, this code works. Now I am trying to understand why, at least for myself.",
+      "parentUuid": "419c8aa5_af576919",
+      "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
