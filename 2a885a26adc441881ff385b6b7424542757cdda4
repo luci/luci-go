@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ced309ed_164a8192",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T06:01:17Z",
+      "side": 1,
+      "message": "i think now it returns INTERNAL errors in all error cases because it does not convert from appstatus error to true-grpc status errors. we need something like this: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/common.go;l\u003d84?q\u003dappstatus%20f:resultdb%20f:common",
+      "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
