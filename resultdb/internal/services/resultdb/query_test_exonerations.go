@@ -60,12 +60,13 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 	}
 
 	// Query test results.
-	tes, token, err := span.QueryTestExonerations(ctx, txn, span.TestExonerationQuery{
+	q := span.TestExonerationQuery{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		InvocationIDs: invs,
-	})
+	}
+	tes, token, err := q.Fetch(ctx, txn)
 	if err != nil {
 		return nil, err
 	}
