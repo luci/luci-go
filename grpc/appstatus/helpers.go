@@ -15,10 +15,14 @@
 package appstatus
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // BadRequest annotates err as a bad request.
@@ -45,4 +49,32 @@ func MustWithDetails(s *status.Status, details ...proto.Message) *status.Status 
 		panic(err)
 	}
 	return s
+}
+
+// GRPCifyAndLog returns a GRPC error. If the error doesn't have a GRPC status
+// attached by this package, internal error is assumed. Any internal or unknown
+// errors are logged.
+func GRPCifyAndLog(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	s := statusFromError(err)
+	if s.Code() == codes.Internal || s.Code() == codes.Unknown {
+		errors.Log(ctx, err)
+	}
+	return s.Err()
+}
+
+// statusFromError returns a status to return to the client based on the error.
+func statusFromError(err error) *status.Status {
+	if s, ok := Get(err); ok {
+		return s
+	}
+
+	if err := errors.Unwrap(err); err == context.DeadlineExceeded || err == context.Canceled {
+		return status.FromContextError(err)
+	}
+
+	return status.New(codes.Internal, "internal server error")
 }

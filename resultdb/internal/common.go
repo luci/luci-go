@@ -21,9 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 )
@@ -68,33 +66,7 @@ func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (c
 // Extracts a status using appstatus and returns to the requester.
 // If the error is internal or unknown, logs the stack trace.
 func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	return GRPCifyAndLog(ctx, err)
-}
-
-// GRPCifyAndLog converts the error to a GRPC error and potentially logs it.
-func GRPCifyAndLog(ctx context.Context, err error) error {
-	if err == nil {
-		return nil
-	}
-
-	s := statusFromError(err)
-	if s.Code() == codes.Internal || s.Code() == codes.Unknown {
-		errors.Log(ctx, err)
-	}
-	return s.Err()
-}
-
-// statusFromError returns a status to return to the client based on the error.
-func statusFromError(err error) *status.Status {
-	if s, ok := appstatus.Get(err); ok {
-		return s
-	}
-
-	if err := errors.Unwrap(err); err == context.DeadlineExceeded || err == context.Canceled {
-		return status.FromContextError(err)
-	}
-
-	return status.New(codes.Internal, "internal server error")
+	return appstatus.GRPCifyAndLog(ctx, err)
 }
 
 func verifyAccess(ctx context.Context) error {
