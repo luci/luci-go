@@ -24,6 +24,10 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // A file produced during a build/test, typically a test artifact.
 // The parent resource is either a TestResult or an Invocation.
+//
+// An invocation-level artifact might be related to tests, or it might not, for
+// example it may be used to store build step logs when streaming support is
+// added.
 type Artifact struct {
 	// Can be used to refer to this artifact.
 	// Format:

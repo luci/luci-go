@@ -221,7 +221,6 @@ message QueryTestExonerationsRequest {
   repeated string invocations = 1;
 
   // A test exoneration in the response must satisfy this predicate.
-  // Field predicate.invocation is required.
   TestExonerationPredicate predicate = 2
       [ (google.api.field_behavior) = REQUIRED ];
 
@@ -330,7 +329,8 @@ message QueryArtifactsRequest {
 
   // If an Artifact belongs to a TestResult, then the test result must satisfy
   // this predicate.
-  // Field predicate.invocation is required.
+  // Note: this predicate does NOT apply to invocation-level artifacts.
+  // To exclude them from the response, use follow_edges.
   TestResultPredicate test_result_predicate = 3;
 
   // The version of the state from which the response draws is allowed to be
