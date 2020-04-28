@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -97,7 +97,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 		server := &prpctest.Server{}
 		server.UnaryServerInterceptor = func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 			res, err := handler(ctx, req)
-			err = internal.GRPCifyAndLog(ctx, err)
+			err = appstatus.GRPCifyAndLog(ctx, err)
 			return res, err
 		}
 		pb.RegisterRecorderServer(server, newTestRecorderServer())
