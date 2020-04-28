@@ -167,7 +167,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 					"bucket:bkt",
 					"buildername:blder",
 					"test_suite:foo_unittests",
-					"ninja_target://tests:tests",
+					"test_id_prefix:ninja://tests:tests/",
 				},
 				State:       "COMPLETED",
 				CompletedTs: "2019-10-14T14:49:16.01",

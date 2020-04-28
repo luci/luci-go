@@ -121,13 +121,7 @@ type TestResult struct {
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*TestResult, error) {
 	// Parse swarming tags.
-	baseVariant, ninjaTarget := parseSwarmingTags(task)
-	testIDPrefix := ""
-	taskTestID := ""
-	if ninjaTarget != "" {
-		taskTestID = fmt.Sprintf("ninja:%s", ninjaTarget)
-		testIDPrefix = fmt.Sprintf("%s/", taskTestID)
-	}
+	baseVariant, testIDPrefix := parseSwarmingTags(task)
 
 	// Fetch outputs, converting if any.
 	var results []*TestResult
@@ -146,7 +140,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	if err != nil {
 		// Either no output to process or we don't understand the output,
 		// fall back to convert the whole task as one result.
-		result, err := convertTaskToResult(taskTestID, task, req)
+		result, err := convertTaskToResult(testIDPrefix, task, req)
 		if err != nil {
 			return nil, attachInvalidTaskf(err, "failed to convert the task to a test result")
 		}
@@ -171,8 +165,9 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	return results, nil
 }
 
-func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, ninjaTarget string) {
+func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, testIDPrefix string) {
 	baseVariant = &typepb.Variant{Def: make(map[string]string, 3)}
+	ninjaTarget := ""
 	for _, t := range task.Tags {
 		switch k, v := strpair.Parse(t); k {
 		case "bucket":
@@ -181,9 +176,14 @@ func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *t
 			baseVariant.Def["builder"] = v
 		case "test_suite":
 			baseVariant.Def["test_suite"] = v
+		case "test_id_prefix":
+			testIDPrefix = v
 		case "ninja_target":
 			ninjaTarget = v
 		}
+	}
+	if testIDPrefix == "" && ninjaTarget != "" {
+		testIDPrefix = fmt.Sprintf("ninja:%s/", ninjaTarget)
 	}
 	return
 }
