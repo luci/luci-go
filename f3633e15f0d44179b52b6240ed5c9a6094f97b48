@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8ce0a1b_b0947441",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-28T06:36:55Z",
+      "side": 1,
+      "message": "Instead of a seen Set. Can we just have an another set contains all not-yet-pushed entries?\n\n```\nconst others \u003d [];\nfor (const key of ORDERED_VARIANT_DEF_KEYS) {\n  if (def.hasOwnProperty(key)) {\n    res.push([key, def[key]]);\n  } else {\n    others.push([key, def[key]]);\n  }\n}\nres.push(...others)\n```",
+      "revId": "f3633e15f0d44179b52b6240ed5c9a6094f97b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
