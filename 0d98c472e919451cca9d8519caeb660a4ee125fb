@@ -237,6 +237,30 @@
       "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8814881_e9e5cdca",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T19:31:33Z",
+      "side": 1,
+      "message": "addressed confusion in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2166450",
+      "parentUuid": "4b770299_94ab9ab9",
+      "range": {
+        "startLine": 178,
+        "startChar": 7,
+        "endLine": 178,
+        "endChar": 51
+      },
+      "revId": "0d98c472e919451cca9d8519caeb660a4ee125fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
