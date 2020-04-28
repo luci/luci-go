@@ -31,7 +31,7 @@ up-dev-default:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend default
 
 up-dev-resultui: build-resultui
-	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend resultui
+	gcloud app deploy ./frontend/resultui/service-resultui.yaml --project luci-milo-dev --no-promote -v $$USER
 
 switch:
 	gae.py switch -A luci-milo --app-dir $(projdir)/frontend
