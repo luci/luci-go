@@ -156,7 +156,8 @@ func QueryArtifacts(ctx context.Context, txn Txn, q ArtifactQuery) (arts []*pb.A
 				(ParentId > @afterParentId) OR
 				(ParentId = @afterParentId AND InvocationId > @afterInvocationId) OR
 				(ParentId = @afterParentId AND InvocationId = @afterInvocationId AND ArtifactId > @afterArtifactId)
-		  )
+			)
+			AND REGEXP_CONTAINS(ParentId, @ParentIdRegexp)
 		ORDER BY ParentId, InvocationId, ArtifactId
 		LIMIT @limit
 	`)
@@ -170,8 +171,20 @@ func QueryArtifacts(ctx context.Context, txn Txn, q ArtifactQuery) (arts []*pb.A
 	if err != nil {
 		return
 	}
+	st.Params["ParentIdRegexp"] = ".*"
 
-	// TODO(nodir): add support for q.TestResultPredicate
+	if re := q.TestResultPredicate.GetTestIdRegexp(); re != "" {
+		// Allow any of
+		// - empty string, for invocation-level artifacts
+		// - tr/<test_id_re>/<any_result_id}, for test-result-level artifacts
+		//
+		// Note: the surrounding parens are important. Without them any expression
+		// matches.
+		st.Params["ParentIdRegexp"] = fmt.Sprintf("^(|tr/%s/[^/]+)$", re)
+	}
+
+	// TODO(nodir): add support for q.TestResultPredicate.Variant
+	// TODO(nodir): add support for q.TestResultPredicate.Expectancy
 	// TODO(nodir): add support for q.FollowEdges
 
 	var b Buffer
