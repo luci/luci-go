@@ -34,6 +34,24 @@
       "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "709c2b67_c2acf209",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-28T06:34:19Z",
+      "side": 1,
+      "message": "this is very unexpected. I tried your version \"30998-04d8ff1-tainted-smut-bb\" and it indeed worked, but I do not understand why it works. Everything I know about prpc and appstatus tells me that it should not. \n\ni tried to repro it myself, but gae.py but it fails for me (https://paste.googleplex.com/4744529154408448). How do you do deployments?\n\nLGTM to unblock, since most of this code looks good, but\n1) please double-check that the version you\u0027ve uploaded matches PS2\n2) i strongly suspect a bug, but don\u0027t know where exactly (or perhaps even number of bugs)",
+      "parentUuid": "6250519e_4ff12bf8",
+      "revId": "2a885a26adc441881ff385b6b7424542757cdda4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
