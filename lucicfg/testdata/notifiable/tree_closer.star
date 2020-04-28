@@ -6,6 +6,7 @@ luci.project(
     notify = 'luci-notify.appspot.com',
     swarming = 'chromium-swarm.appspot.com',
 )
+luci.notify(tree_closing_enabled = True)
 luci.bucket(name = 'bucket')
 luci.builder(
     name = 'builder 1',
@@ -97,6 +98,7 @@ luci.tree_closer(
 #     template: "tree_status"
 #   >
 # >
+# tree_closing_enabled: true
 # ===
 #
 # === luci-notify/email-templates/tree_status.template

@@ -1604,6 +1604,20 @@ the console declaration. In particular useful in functions. For example:
 
 
 
+### luci.notify {#luci.notify}
+
+```python
+luci.notify()
+```
+
+
+
+
+
+
+
+
+
 ### luci.notifier {#luci.notifier}
 
 ```python

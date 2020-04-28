@@ -27,6 +27,10 @@ message ProjectConfig {
   // Notifiers is a list of Notifiers which watch builders and send
   // notifications for this project.
   repeated Notifier notifiers = 1;
+
+  // If false, then LUCI-Notify won't actually close trees, only log what
+  // actions it would have taken.
+  bool tree_closing_enabled = 2;
 }
 
 // Notifier contains a set of notification configurations (which specify
