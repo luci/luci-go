@@ -65,8 +65,11 @@ export class VariantEntryElement extends MobxLitElement {
         >
           <mwc-icon class="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
           <span class="one-line-content">
-            <span id="status" class=${STATUS_CLASS_MAP[this.variant!.status]}>${STATUS_DISPLAY_MAP[this.variant!.status]}</span>
-            variant:
+            <span
+              id="status"
+              class=${STATUS_CLASS_MAP[this.variant!.status]}
+            >${STATUS_DISPLAY_MAP[this.variant!.status]} result</span>
+            |
             <span class="light">
               ${Object.entries(this.variant!.variant.def).map(([k, v]) => html`
               <span class="kv-key">${k}</span>
@@ -80,14 +83,14 @@ export class VariantEntryElement extends MobxLitElement {
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
             ${repeat(this.variant!.results, (r) => r.resultId, (r, i) => html`
             <tr-result-entry
-              .id=${i}
+              .id=${i + 1}
               .testResult=${r}
               .expanded=${this.hasSingleChild || !r.expected}
             ></tr-result-entry>
             `)}
             ${repeat(this.variant!.exonerations, (e) => e.exonerationId, (e, i) => html`
             <tr-exoneration-entry
-              .id=${this.variant!.results.length + i}
+              .id=${this.variant!.results.length + i + 1}
               .testExoneration=${e}
               .expanded=${this.hasSingleChild}
             ></tr-exoneration-entry>
@@ -160,6 +163,7 @@ export class VariantEntryElement extends MobxLitElement {
     }
     .light {
       color: grey;
+      font-weight: 400;
     }
   `;
 }
