@@ -16,6 +16,24 @@
       "revId": "f3633e15f0d44179b52b6240ed5c9a6094f97b48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd053c3c_d43edf29",
+        "filename": "milo/frontend/resultui/src/components/test-entry/variant-entry.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-28T06:38:54Z",
+      "side": 1,
+      "message": "That code doesn\u0027t work, because in your else clause def[key] doesn\u0027t exist. We need a separate loop to iterate over the un-pushed properties in def.",
+      "parentUuid": "a8ce0a1b_b0947441",
+      "revId": "f3633e15f0d44179b52b6240ed5c9a6094f97b48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
