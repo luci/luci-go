@@ -239,7 +239,6 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
       }
 
       connectedCallback() {
-        super.connectedCallback();
         const props = providerPropsWeakMap.get(this)!;
 
         /**
@@ -267,13 +266,14 @@ export function provideContext<K extends string, Ctx>(contextKey: K) {
 
         this.addEventListener(`tr-subscribe-context-${contextKey}`, props.onSubscribeContext);
         this.addEventListener(`tr-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext);
+        super.connectedCallback();
       }
 
       disconnectedCallback() {
-        super.disconnectedCallback();
         const props = providerPropsWeakMap.get(this)!;
         this.removeEventListener(`tr-subscribe-context-${contextKey}`, props.onSubscribeContext!);
         this.removeEventListener(`tr-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext!);
+        super.disconnectedCallback();
       }
 
     }
@@ -320,13 +320,13 @@ export function consumeContext<K extends string, Ctx>(contextKey: K) {
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class Consumer extends (cls as Constructor<LitElement>) {
       connectedCallback() {
-        super.connectedCallback();
         emitEvents(this as LitElement as T, 'subscribe');
+        super.connectedCallback();
       }
 
       disconnectedCallback() {
-        super.disconnectedCallback();
         emitEvents(this as LitElement as T, 'unsubscribe');
+        super.disconnectedCallback();
       }
     }
     // Recover the type information that lost in the down-casting above.
