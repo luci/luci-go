@@ -99,6 +99,24 @@
       "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "439f2f1c_4ddcd9f7",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T17:48:44Z",
+      "side": 1,
+      "message": "not sure if you saw this comment",
+      "parentUuid": "933a4729_5de7dda4",
+      "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
