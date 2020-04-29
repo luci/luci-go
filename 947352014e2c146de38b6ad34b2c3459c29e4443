@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "627e5d9f_78fb0eea",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T04:55:41Z",
+      "side": 1,
+      "message": "It doesn\u0027t know. unkown type will be assigned in that case.",
+      "parentUuid": "1b622744_46a07173",
+      "range": {
+        "startLine": 26,
+        "startChar": 4,
+        "endLine": 26,
+        "endChar": 18
+      },
+      "revId": "947352014e2c146de38b6ad34b2c3459c29e4443",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae9b5778_f0b41582",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 6
@@ -36,6 +60,24 @@
       "writtenOn": "2020-04-29T04:24:27Z",
       "side": 1,
       "message": "now that one provideContext/consumeContext call consumes only one key, wouldn\u0027t it be simpler to use a property decorator?\n\n  class ContextProvider extends LitElement {\n    @provideContext @property() contextKey1 \u003d \u0027value\u0027;\n    @provideContext @property() contextKey2 \u003d 1;\n \n    protected render() {\n      html`\n        \u003cslot\u003e\u003c/slot\u003e\n      `;\n    }\n  }\n\nsame can be used for @consumeContext.\n\nThe decorator would have access to both instance and property name.",
+      "revId": "947352014e2c146de38b6ad34b2c3459c29e4443",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e6d6374_01c46438",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T04:55:41Z",
+      "side": 1,
+      "message": "Decorator syntax is discouraged in go/tsstyle.\nCalling property decorators as functions are quite awkward (comparing to calling class decorators as functions).\nI think it\u0027s probably wait for https://github.com/tc39/proposal-decorators before converting this to property decorators.",
+      "parentUuid": "ae9b5778_f0b41582",
       "revId": "947352014e2c146de38b6ad34b2c3459c29e4443",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
