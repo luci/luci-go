@@ -93,7 +93,8 @@ func TestServer(t *testing.T) {
 			So(srv.Close(), ShouldBeNil)
 
 			_, err := reportTestResults(ctx, addr, "secret", req)
-			So(err, ShouldErrLike, "connect: connection refused")
+			// 'connection reset by peer' OR 'connect: connection refused'
+			So(err, ShouldErrLike, "connection")
 		})
 
 		Convey("Close fails before Start being called", func() {
