@@ -83,9 +83,9 @@ type TestExonerationQuery struct {
 	PageToken     string
 }
 
-// QueryTestExonerations reads test exonerations matching the predicate.
-// Returned test exonerations from the same invocation are contiguous.
-func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextPageToken string, err error) {
+// Fetch returns a page test of exonerations matching the query.
+// Returned test exonerations are ordered by test id.
+func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tes []*pb.TestExoneration, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}

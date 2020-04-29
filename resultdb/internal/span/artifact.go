@@ -138,11 +138,11 @@ func parseArtifactPageToken(pageToken string) (parentID string, inv InvocationID
 	return
 }
 
-// QueryArtifacts fetches artifacts matching q.
+// Fetch returns a page of artifacts matching q.
 //
 // Returned artifacts are ordered by level (invocation or test result).
 // Test result artifacts are sorted by test id.
-func QueryArtifacts(ctx context.Context, txn Txn, q ArtifactQuery) (arts []*pb.Artifact, nextPageToken string, err error) {
+func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}

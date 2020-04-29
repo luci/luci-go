@@ -96,12 +96,13 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}
 
 	// Query test results.
-	trs, token, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+	q := span.TestResultQuery{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		InvocationIDs: invs,
-	})
+	}
+	trs, token, err := q.Fetch(ctx, txn)
 	if err != nil {
 		return nil, err
 	}
