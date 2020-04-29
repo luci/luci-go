@@ -52,7 +52,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 		PageToken:     in.PageToken,
 		InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(in.Invocation)),
 	}
-	trs, tok, err := span.QueryTestResults(ctx, txn, q)
+	trs, tok, err := q.Fetch(ctx, txn)
 	if err != nil {
 		return nil, err
 	}

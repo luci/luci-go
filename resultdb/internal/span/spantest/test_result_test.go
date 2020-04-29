@@ -71,7 +71,7 @@ func TestQueryTestResults(t *testing.T) {
 		read := func(q span.TestResultQuery) (trs []*pb.TestResult, token string, err error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
-			return span.QueryTestResults(ctx, txn, q)
+			return q.Fetch(ctx, txn)
 		}
 
 		mustRead := func(q span.TestResultQuery) (trs []*pb.TestResult, token string) {
@@ -251,13 +251,13 @@ func TestQueryTestResults(t *testing.T) {
 
 				Convey(`From bad position`, func() {
 					q.PageToken = "CgVoZWxsbw=="
-					_, _, err := span.QueryTestResults(ctx, txn, q)
+					_, _, err := q.Fetch(ctx, txn)
 					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 				})
 
 				Convey(`From decoding`, func() {
 					q.PageToken = "%%%"
-					_, _, err := span.QueryTestResults(ctx, txn, q)
+					_, _, err := q.Fetch(ctx, txn)
 					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 				})
 			})

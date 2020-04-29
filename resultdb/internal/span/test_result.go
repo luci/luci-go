@@ -107,8 +107,8 @@ type TestResultQuery struct {
 	SelectVariantHash bool
 }
 
-func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(TestResultQueryItem) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.queryTestResults")
+func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(TestResultQueryItem) error) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "QueryTestResults.run")
 	defer func() { ts.End(err) }()
 
 	if q.PageSize < 0 {
@@ -250,15 +250,15 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	})
 }
 
-// QueryTestResults reads test results matching q.
+// Fetch returns a page of test results matching q.
 // Returned test results are ordered by test ID.
-func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
+func (q *TestResultQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (trs []*pb.TestResult, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	err = queryTestResults(ctx, txn, q, func(item TestResultQueryItem) error {
+	err = q.run(ctx, txn, func(item TestResultQueryItem) error {
 		trs = append(trs, item.TestResult)
 		return nil
 	})
@@ -283,13 +283,13 @@ type TestResultQueryItem struct {
 	VariantHash string
 }
 
-// QueryTestResultsStreaming is like QueryTestResults, but returns calls fn
-// instead of returning a slice.
-func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(TestResultQueryItem) error) error {
+// Run calls f for test results matching the query.
+// The test results are ordered by test id.
+func (q *TestResultQuery) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(TestResultQueryItem) error) error {
 	if q.PageSize > 0 {
-		panic("PageSize is specified when QueryTestResultsStreaming")
+		panic("PageSize is specified when TestResultQuery.Run")
 	}
-	return queryTestResults(ctx, txn, q, f)
+	return q.run(ctx, txn, f)
 }
 
 func populateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {

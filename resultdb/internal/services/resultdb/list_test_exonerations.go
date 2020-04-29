@@ -52,7 +52,7 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-	tes, tok, err := span.QueryTestExonerations(ctx, txn, q)
+	tes, tok, err := q.Fetch(ctx, txn)
 	if err != nil {
 		return nil, err
 	}

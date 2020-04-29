@@ -241,7 +241,7 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	return tvs, nil
 }
 
-func (b *bqExporter) queryTestResultsStreaming(
+func (b *bqExporter) queryTestResults(
 	ctx context.Context,
 	txn *spanner.ReadOnlyTransaction,
 	exportedID span.InvocationID,
@@ -256,7 +256,7 @@ func (b *bqExporter) queryTestResultsStreaming(
 
 	rows := make([]*bigquery.StructSaver, 0, b.maxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
-	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr span.TestResultQueryItem) error {
+	err = q.Run(ctx, txn, func(tr span.TestResultQueryItem) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := span.MustParseTestResultName(tr.Name)
 		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
@@ -394,7 +394,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 	eg.Go(func() error {
 		defer close(batchC)
-		return b.queryTestResultsStreaming(ctx, txn, invID, q, exoneratedTestVariants, batchC)
+		return b.queryTestResults(ctx, txn, invID, q, exoneratedTestVariants, batchC)
 	})
 
 	return eg.Wait()
