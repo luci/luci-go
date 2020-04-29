@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "288e9635_ed6de86c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Moved. PTAL",
+      "parentUuid": "d7369885_cf0f40e1",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d7a729c_fc321a9d",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12c0da5c_54644150",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Moved before r.makeTestCmd(). PTAL",
+      "parentUuid": "9d7a729c_fc321a9d",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "74996971_0393449c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "ExitCodeStreamError has been added. I will make a follow-up CL to tag the exit code into the error and r.done() return the tagged exit code, if the error was tagged.\n\nTODO has also been added.",
+      "parentUuid": "41fed7c9_11f9fa4c",
+      "range": {
+        "startLine": 108,
+        "startChar": 11,
+        "endLine": 108,
+        "endChar": 12
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a29c2027_cc09831d",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -79,6 +139,30 @@
       "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df54cad4_ec420ed7",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Removed timeout handling.\nHandling SGTM sounds a better idea, and, there is a TODO for handling signals in L184.",
+      "parentUuid": "a29c2027_cc09831d",
+      "range": {
+        "startLine": 153,
+        "startChar": 46,
+        "endLine": 153,
+        "endChar": 60
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "4f89d031_03a220f1",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef2e4b98_f59f79b1",
+      "range": {
+        "startLine": 156,
+        "startChar": 23,
+        "endLine": 156,
+        "endChar": 24
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f10b18ec_73f82c32",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -119,6 +227,24 @@
       "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2681cd1_dbeb272c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "This whole deferred func() has been removed, as Run invokes Shutdown before returning to the parent.",
+      "parentUuid": "f10b18ec_73f82c32",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "6e5212be_ed45ab35",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a99fee2_e8b48cb8",
+      "range": {
+        "startLine": 218,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 33
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8005dab8_6a59cb58",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -159,6 +309,24 @@
       "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d1dcbfe_7c35685f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8005dab8_6a59cb58",
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -185,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "dac35f2b_e8fe73fb",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "ffd20424_82b12657",
+      "range": {
+        "startLine": 251,
+        "startChar": 4,
+        "endLine": 251,
+        "endChar": 8
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c66ee56_5ac5420f",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -208,6 +400,30 @@
     },
     {
       "key": {
+        "uuid": "230cd40c_0f2850f7",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c66ee56_5ac5420f",
+      "range": {
+        "startLine": 255,
+        "startChar": 14,
+        "endLine": 255,
+        "endChar": 24
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13fd4be2_d0cd5708",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 4
@@ -228,6 +444,30 @@
       "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bfe1b7d_8e618277",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-29T00:56:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13fd4be2_d0cd5708",
+      "range": {
+        "startLine": 260,
+        "startChar": 57,
+        "endLine": 260,
+        "endChar": 65
+      },
+      "revId": "5b9544a1ef107aa93939d19b747386356f0201a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
