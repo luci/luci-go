@@ -57,7 +57,6 @@ customElement('tr-inner-context-provider-test')(
   ),
 );
 
-
 class ContextConsumer extends LitElement {
   @property()
   outerProviderInactiveKey = 'local-outer_provider_inactive';
