@@ -30,6 +30,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+var followAllEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
+	IncludedInvocations: true,
+	TestResults:         true,
+}
+
 // MustParseArtifactName extracts invocation, test, result and artifactIDs.
 // Test and result IDs are "" if this is a invocation-level artifact.
 // Panics on failure.
@@ -171,21 +176,11 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 	if err != nil {
 		return
 	}
-	st.Params["ParentIdRegexp"] = ".*"
 
-	if re := q.TestResultPredicate.GetTestIdRegexp(); re != "" {
-		// Allow any of
-		// - empty string, for invocation-level artifacts
-		// - tr/<test_id_re>/<any_result_id}, for test-result-level artifacts
-		//
-		// Note: the surrounding parens are important. Without them any expression
-		// matches.
-		st.Params["ParentIdRegexp"] = fmt.Sprintf("^(|tr/%s/[^/]+)$", re)
-	}
+	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
 
 	// TODO(nodir): add support for q.TestResultPredicate.Variant
 	// TODO(nodir): add support for q.TestResultPredicate.Expectancy
-	// TODO(nodir): add support for q.FollowEdges
 
 	var b Buffer
 	err = Query(ctx, txn, st, func(row *spanner.Row) error {
@@ -228,4 +223,43 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 		nextPageToken = pagination.Token(parentID, string(invID), artifactID)
 	}
 	return
+}
+
+// parentIDRegexp returns a regular expression for ParentId column.
+// Uses q.FollowEdges and q.TestResultPredicate.TestIdRegexp to compute it.
+func (q *ArtifactQuery) parentIDRegexp() string {
+	testIDRE := q.TestResultPredicate.GetTestIdRegexp()
+	hasTestIDRE := testIDRE != "" && testIDRE != ".*"
+
+	edges := q.FollowEdges
+	if edges == nil {
+		edges = followAllEdges
+	}
+
+	if edges.IncludedInvocations && edges.TestResults && !hasTestIDRE {
+		// Fast path.
+		return ".*"
+	}
+
+	// Collect alternatives and then combine them with "|".
+	var alts []string
+
+	if edges.IncludedInvocations {
+		// Invocation-level artifacts have empty parent ID.
+		alts = append(alts, "")
+	}
+
+	if edges.TestResults {
+		// TestResult-level artifacts have parent ID formatted as
+		// "tr/{testID}/{resultID}"
+		if hasTestIDRE {
+			alts = append(alts, fmt.Sprintf("tr/%s/[^/]+", testIDRE))
+		} else {
+			alts = append(alts, "tr/.+")
+		}
+	}
+
+	// Note: the surrounding parens are important. Without them any expression
+	// matches.
+	return fmt.Sprintf("^(%s)$", strings.Join(alts, "|"))
 }
