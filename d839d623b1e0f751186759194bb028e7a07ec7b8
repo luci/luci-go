@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "91b1002e_d9dccd5d",
+        "filename": "milo/frontend/resultui/src/components/page_header.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T00:22:32Z",
+      "side": 1,
+      "message": "It would. But I think having this hierarchy is more readable than fitting them in one line.\nThis looks closer to the decorator syntax. Each line is a separate decorator. Just instead of @, we have spaces and ().",
+      "parentUuid": "e4639d47_4189fc00",
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b720c037_d0f20902",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 4
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "f2fb09d8_a0a9f676",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T00:22:32Z",
+      "side": 1,
+      "message": "I think it\u0027s up-to-date though?\nWhat am I missing?",
+      "parentUuid": "b720c037_d0f20902",
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "759c65ed_1d6c9d93",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 4
@@ -47,6 +83,24 @@
       "writtenOn": "2020-04-29T00:11:06Z",
       "side": 1,
       "message": "this seems unnecessary.\nI think this map will always have only one key: https://www.typescriptlang.org/play/?experimentalDecorators\u003dtrue\u0026target\u003d6\u0026ssl\u003d16\u0026ssc\u003d1\u0026pln\u003d17\u0026pc\u003d1#code/C4TwDgpgBAwg9gOwM7AE4FcDGw6oDwAqANFAApQQAewECAJklOggNYJwDuCA2gLpQBeKHwB8gqAggcoACgB0CsAENUSgLZIAXGQCUgsQQDcAKGMBLBDVQAzJZmgAZM8ACiAGwhrawKAG9jUFAAFhBubnAyOtoAbnBmdCYAvqbWzNhmiFBqZpQWhBTUtAxQTq4eXpYkMAU09IzwyGhYOPgEIiIymG5asHr+AVCYiChQYKhm0Uo0AMrAU9BCALJTQXKq9HBqkSYDXUpIjIs5FjVFjJ3dUPuww03YuHil7p7eIn0DgUONGPeokX4fQJQJDoSB-HQmIFQRJQwEhMIRd5QwIgsFyeHhbaAz7DOAeOThADmMjGE3ms3mEMByUCyQGAHp6VAAEoQIbRCCoKDAELc8DQCzWXBqKYZBDcoJTKAca7hEYnHnQOicBAAWkw+2AFkJVwARnAOXIBqgIMB0KhxUdcuLrg0UD8WoQxLakqZjAABbLWj1eizGPYHKAADQBgQxiNDQK+SDxEAJcGJACJw4mqbTjHTJlzKOJJNIg1jKOjQpidEA",
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1c4ffb0_25f3ff72",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T00:22:32Z",
+      "side": 1,
+      "message": "It can have multiple keys when there are multiple instances of the same provider class.\nAlthough that\u0027s pretty rare, when we do have multiple instances, it will be a nightmare to debug without this map.",
+      "parentUuid": "759c65ed_1d6c9d93",
       "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
