@@ -153,6 +153,7 @@ kinds = struct(
     CQ = 'luci.cq',
     CQ_GROUP = 'luci.cq_group',
     CQ_TRYJOB_VERIFIER = 'luci.cq_tryjob_verifier',
+    NOTIFY = 'luci.notify',
     NOTIFIABLE = 'luci.notifiable',  # either luci.notifier or luci.tree_closer
     NOTIFIER_TEMPLATE = 'luci.notifier_template',
 
@@ -188,6 +189,7 @@ keys = struct(
     cq = lambda: _namespaced_key(kinds.CQ, '...'),
     cq_group = lambda ref: _project_scoped_key(kinds.CQ_GROUP, 'cq_group', ref),
 
+    notify = lambda: _namespaced_key(kinds.NOTIFY, '...'),
     notifiable = lambda ref: _project_scoped_key(kinds.NOTIFIABLE, 'notifies', ref),
     notifier_template = lambda ref: _project_scoped_key(kinds.NOTIFIER_TEMPLATE, 'template', ref),
 
