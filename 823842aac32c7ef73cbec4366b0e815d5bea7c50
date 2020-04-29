@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ebe7d0dd_396376af",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "this is not necessarily true, right? it is possible that the server was closed because the client asked us to, but then we failed to uploading pending results and we want to expose that error.\n\nalso i think exposing https://pkg.go.dev/net/http?tab\u003ddoc#ErrServerClosed here seems a layering violation. I think we should either return nil in Shutdown and here if server was closed as expected, or create a new sentinel error variable in this package and return that.",
+      "range": {
+        "startLine": 152,
+        "startChar": 29,
+        "endLine": 152,
+        "endChar": 79
+      },
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec030d4f_53524be9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "didn\u0027t we agree to make Run a global function and add server config to the callback?",
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0904bdd_3113cce3",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "this will set s.err to nil if this code panics, which means we don\u0027t actually get the benefit of having this code inside defer. i think it would be simpler to have it after L235",
+      "range": {
+        "startLine": 226,
+        "startChar": 11,
+        "endLine": 226,
+        "endChar": 14
+      },
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf99db9_f226bd78",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "it should also explain that it waits for all pending results to be uploaded.",
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a46f3342_50447192",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "this doesn\u0027t do what is claimed in the comment because it calls httpSrv.Close() instead of httpSrv.Shutdown",
+      "range": {
+        "startLine": 246,
+        "startChar": 13,
+        "endLine": 246,
+        "endChar": 18
+      },
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d887ed87_0d0caebc",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "Server\n\nreaders of package doc don\u0027t know about private sinkServer",
+      "range": {
+        "startLine": 263,
+        "startChar": 3,
+        "endLine": 263,
+        "endChar": 13
+      },
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc2d9833_989a9061",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:31:00Z",
+      "side": 1,
+      "message": "this suggests that the user should first wait for Done() to be closed, and then call this.\nbut this wouldn\u0027t work because Done() would never get closed until something triggers closure.\n\ni think we should recommend Shutdown",
+      "range": {
+        "startLine": 264,
+        "startChar": 32,
+        "endLine": 265,
+        "endChar": 13
+      },
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
