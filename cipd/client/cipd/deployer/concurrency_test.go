@@ -17,6 +17,7 @@ package deployer
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -24,38 +25,43 @@ import (
 	"sync"
 	"testing"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMultipleDeployProcesses(t *testing.T) {
 	const procs = 30
 
-	Convey("Collide multiple deploy processes", t, func() {
-		tempDir := mkTempDir()
+	tempDir, err := ioutil.TempDir("", "cipd_test")
+	if err != nil {
+		t.Fatalf("TempDir: %s", err)
+	}
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
-		wg := sync.WaitGroup{}
-		wg.Add(procs)
-		for p := 0; p < procs; p++ {
-			p := p
-			go func() {
-				defer wg.Done()
-				// Run a crashing process first, to emulate an unowned lock.
-				_, err := runDeployerProc(p, tempDir, true)
-				if err == nil {
-					panic(fmt.Sprintf("Subprocess %d unexpectedly succeeded", p))
-				}
-				// Now run a non-crashing deployer, it should succeed.
-				out, err := runDeployerProc(p, tempDir, false)
-				if err != nil {
-					panic(fmt.Sprintf("Subprocess %d failed (%s):\n%s", p, err, out))
-				}
-			}()
-		}
-		wg.Wait()
-	})
+	wg := sync.WaitGroup{}
+	wg.Add(procs)
+	for p := 0; p < procs; p++ {
+		p := p
+		go func() {
+			defer wg.Done()
+			// Run a crashing process first, to emulate an unowned lock.
+			_, err := runDeployerProc(p, tempDir, true)
+			if err == nil {
+				t.Errorf("Subprocess %d unexpectedly succeeded", p)
+				return
+			}
+			// Now run a non-crashing deployer, it should succeed.
+			out, err := runDeployerProc(p, tempDir, false)
+			if err != nil {
+				t.Errorf("Subprocess %d failed (%s):\n%s", p, err, out)
+				return
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 func runDeployerProc(idx int, tempDir string, crash bool) (out []byte, err error) {
@@ -99,9 +105,17 @@ func TestDeployHelperProcess(t *testing.T) {
 		installMode = pkg.InstallModeCopy
 	}
 
+	// Verbose logging to stderr.
+	ctx := gologger.StdConfig.Use(context.Background())
+	ctx = logging.SetLevel(ctx, logging.Debug)
+
 	// Do multiple rounds to increase the chance of collision.
 	for r := 0; r < 20; r++ {
 		instID := (int(idx) + r) % 5
+
+		logging.Infof(ctx, "------------------------------------------------------")
+		logging.Infof(ctx, "Round %d", r)
+		logging.Infof(ctx, "------------------------------------------------------")
 
 		inst := makeTestInstance(fmt.Sprintf("pkg/%d", instID), []fs.File{
 			fs.NewTestFile(fmt.Sprintf("private_%d", instID), "data", fs.TestFileOpts{}),
@@ -111,9 +125,9 @@ func TestDeployHelperProcess(t *testing.T) {
 
 		d := New(tempDir)
 		maxThreads := 16
-		_, err = d.DeployInstance(context.Background(), "", inst, maxThreads)
+		_, err = d.DeployInstance(ctx, "", inst, maxThreads)
 		if err != nil {
-			t.Fatalf("DeployInstance failed: %s", err)
+			t.Fatalf("DeployInstance failed on round %d: %s", r, err)
 		}
 	}
 }
