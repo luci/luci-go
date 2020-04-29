@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { observable } from 'mobx';
-import { contextConsumerMixinBuilder, contextProviderMixinBuilder } from '../../libs/context';
+
+import { consumeContext, provideContext } from '../../libs/context';
 import { TestNode } from '../../models/test_node';
 
 /**
@@ -24,9 +24,5 @@ export class TestNavTreeState {
   @observable.ref selectedChildNode: TestNode | null = null;
 }
 
-export interface Context {
-  treeState: TestNavTreeState;
-}
-
-export const contextConsumer = contextConsumerMixinBuilder<Context>();
-export const contextProvider = contextProviderMixinBuilder<Context>();
+export const consumeTreeState = consumeContext<'treeState', TestNavTreeState>('treeState');
+export const provideTreeState = provideContext<'treeState', TestNavTreeState>('treeState');

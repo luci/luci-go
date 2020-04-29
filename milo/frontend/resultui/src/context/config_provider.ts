@@ -14,10 +14,12 @@
 
 import { BeforeEnterObserver } from '@vaadin/router';
 import { customElement, html, LitElement, property } from 'lit-element';
-
-import { contextProvider } from '.';
+import { consumeContext, provideContext } from '../libs/context';
 
 const CLIENT_ID_KEY = 'client-id';
+
+export const consumeClientId = consumeContext<'clientId', string>('clientId');
+export const provideClientId = provideContext<'clientId', string>('clientId');
 
 /**
  * Provides app configs to be shared across the app.
@@ -54,5 +56,5 @@ export class ConfigProviderElement extends LitElement implements BeforeEnterObse
 }
 
 customElement('tr-config-provider')(
-  contextProvider('clientId')(ConfigProviderElement),
+  provideClientId(ConfigProviderElement),
 );
