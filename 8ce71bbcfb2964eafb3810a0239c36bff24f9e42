@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b4143e9_f9d36a47",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-29T01:26:17Z",
+      "side": 1,
+      "message": "we don\u0027t support multiple keys anymore, right?",
+      "range": {
+        "startLine": 81,
+        "startChar": 20,
+        "endLine": 81,
+        "endChar": 48
+      },
+      "revId": "8ce71bbcfb2964eafb3810a0239c36bff24f9e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8581087_0981fabd",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-29T01:26:17Z",
+      "side": 1,
+      "message": "nit: happen",
+      "range": {
+        "startLine": 201,
+        "startChar": 16,
+        "endLine": 201,
+        "endChar": 23
+      },
+      "revId": "8ce71bbcfb2964eafb3810a0239c36bff24f9e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
