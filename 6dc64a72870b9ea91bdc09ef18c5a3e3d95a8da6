@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e79cd8a6_f32dda05",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:41:27Z",
+      "side": 1,
+      "message": "it is typical to return zero values when returning a non-nil error. So, it would be simpler to write\n\n\tinterrupted :\u003d true\n\tdefer func() {\n\t\t// TODO(ddoman): handle complete-invocation-exit-codes\n\t\tif err :\u003d r.maybeFinalizeInvocation(ctx, interrupted); err !\u003d nil {\n\t\t\tlogging.Errorf(ctx, \"failed to finalize the invocation: %s\", err)\n\t\t\tret \u003d r.done(err)\n\t\t}\n\t}()\n\tcmd, err :\u003d r.makeTestCmd(ctx, args)\n\tif err !\u003d nil {\n\t\treturn r.done(err)\n\t}\n\texitCode, err \u003d r.runTestCmd(ctx, cmd)\n        if err !\u003d nil {\n            return r.done(err)\n        }\n        interrupted \u003d false\n        return exitCode\n\nthen we don\u0027t have to have the ExitCodeStreamError constant.\n\n----------\n\nalso, btw this code does not return test program\u0027s exit code like it should",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e21c46b7_ea423d13",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:41:27Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 217,
+        "startChar": 16,
+        "endLine": 217,
+        "endChar": 20
+      },
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f56d84a1_ccfd3780",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:41:27Z",
+      "side": 1,
+      "message": "i think this belongs to the callsite. then you don\u0027t have to have \"maybe\" in the function name, or explain the maybe-condition in the comment",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bb5de53_7a3423f3",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T06:41:27Z",
+      "side": 1,
+      "message": "as a user, what am i expected to do with this error?\n\ncan we fix it ourselves? e.g. replace invalid chars with _ or something like that, trim the length, if it is too long, etc",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
