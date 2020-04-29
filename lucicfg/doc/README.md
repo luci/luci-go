@@ -1604,6 +1604,23 @@ the console declaration. In particular useful in functions. For example:
 
 
 
+### luci.notify {#luci.notify}
+
+```python
+luci.notify(tree_closing_enabled = None)
+```
+
+
+
+Defines configuration of the LUCI-Notify service for this project.
+
+#### Arguments {#luci.notify-args}
+
+* **tree_closing_enabled**: if this is set to False, LUCI-Notify won't close trees for this project, just monitor builders and log what actions it would have taken.
+
+
+
+
 ### luci.notifier {#luci.notifier}
 
 ```python

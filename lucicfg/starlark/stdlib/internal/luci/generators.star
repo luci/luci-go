@@ -968,6 +968,9 @@ def _cq_visibility(val):
 
 
 def gen_notify_cfg(ctx):
+  opts = graph.node(keys.notify())
+  tree_closing_enabled = opts.props.tree_closing_enabled if opts else False
+
   notifiables = graph.children(keys.project(), kinds.NOTIFIABLE)
   templates = graph.children(keys.project(), kinds.NOTIFIER_TEMPLATE)
   if not notifiables and not templates:
@@ -1031,6 +1034,7 @@ def gen_notify_cfg(ctx):
           notifiers_pb,
           key = lambda n: (n.builders[0].bucket, n.builders[0].name)
       ),
+      tree_closing_enabled = tree_closing_enabled,
   ))
 
 
