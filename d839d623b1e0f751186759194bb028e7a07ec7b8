@@ -55,6 +55,46 @@
     },
     {
       "key": {
+        "uuid": "306ea017_a1a6e750",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-29T00:28:47Z",
+      "side": 1,
+      "message": "nit: a couple of odd whitespace changes adding noise to this CL. in this file you add a blank line before the first class def, and in the next file (test_nav_tree/index.ts) you remove one?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 0
+      },
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9bbe279_0a12bbdd",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-04-29T00:28:47Z",
+      "side": 1,
+      "message": "Honestly it hurts my brain trying to understand this file; if you want me to do a proper review it might be worth walking me through it over VC. Otherwise I\u0027m happy for you to just get Nodir\u0027s +1.",
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b720c037_d0f20902",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 4
