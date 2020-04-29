@@ -59,13 +59,14 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	}
 
 	// Query artifacts.
-	arts, token, err := span.QueryArtifacts(ctx, txn, span.ArtifactQuery{
+	q := span.ArtifactQuery{
 		InvocationIDs:       invs,
 		TestResultPredicate: in.TestResultPredicate,
 		PageSize:            pagination.AdjustPageSize(in.PageSize),
 		PageToken:           in.PageToken,
 		FollowEdges:         in.FollowEdges,
-	})
+	}
+	arts, token, err := q.Fetch(ctx, txn)
 	if err != nil {
 		return nil, err
 	}
