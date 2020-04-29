@@ -14,15 +14,10 @@
  */
 
 body {
-    height: 100vh;
     margin: 0;
     padding: 0px;
     color: #212121;
     font-family: Roboto, "Helvetica Neue", sans-serif;
     font-size: 14px;
     letter-spacing: 0.25px;
-}
-
-#app-root {
-    height: 100%;
 }
