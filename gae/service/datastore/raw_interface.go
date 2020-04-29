@@ -53,10 +53,7 @@ type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) error
 // may be called out of order. The "idx" variable describes which element is
 // being processed. If any callbacks are invoked, exactly one callback will be
 // invoked for each supplied element.
-//
-// Return nil to continue iterating, or an error to stop. If you return the
-// error `Stop`, then GetMulti will stop the query and return nil.
-type GetMultiCB func(idx int, val PropertyMap, err error) error
+type GetMultiCB func(idx int, val PropertyMap, err error)
 
 // NewKeyCB is the callback signature provided to RawInterface.PutMulti and
 // RawInterface.AllocateIDs. It is invoked once for each positional key that
@@ -72,10 +69,7 @@ type GetMultiCB func(idx int, val PropertyMap, err error) error
 // may be called out of order. The "idx" variable describes which element is
 // being processed. If any callbacks are invoked, exactly one callback will be
 // invoked for each supplied element.
-//
-// Return nil to continue iterating, or an error to stop. If you return the
-// error `Stop`, then PutMulti will stop the query and return nil.
-type NewKeyCB func(idx int, key *Key, err error) error
+type NewKeyCB func(idx int, key *Key, err error)
 
 // DeleteMultiCB is the callback signature provided to RawInterface.DeleteMulti
 //
@@ -86,10 +80,7 @@ type NewKeyCB func(idx int, key *Key, err error) error
 // may be called out of order. The "idx" variable describes which element is
 // being processed. If any callbacks are invoked, exactly one callback will be
 // invoked for each supplied element.
-//
-// Return nil to continue iterating, or an error to stop. If you return the
-// error `Stop`, then DeleteMulti will stop the query and return nil.
-type DeleteMultiCB func(idx int, err error) error
+type DeleteMultiCB func(idx int, err error)
 
 // Constraints represent implementation constraints.
 //

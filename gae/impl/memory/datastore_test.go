@@ -133,12 +133,11 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				}
 				So(ds.Delete(c, keys), ShouldBeNil)
 				count := 0
-				So(ds.Raw(c).DeleteMulti(keys, func(idx int, err error) error {
+				So(ds.Raw(c).DeleteMulti(keys, func(idx int, err error) {
 					gctx.So(idx, ShouldEqual, count)
 					gctx.So(err, ShouldBeNil)
 
 					count++
-					return nil
 				}), ShouldBeNil)
 				So(count, ShouldEqual, len(keys))
 			})

@@ -101,13 +101,15 @@ func TestCount(t *testing.T) {
 			So(ctr.GetMulti.Total(), ShouldEqual, 2)
 		})
 
-		Convey(`datastore.Stop does not count as an error`, func() {
-			fb.BreakFeatures(ds.Stop, "GetMulti")
+		Convey(`datastore.Stop does not count as an error for queries`, func() {
+			fb.BreakFeatures(ds.Stop, "Run")
 
-			So(ds.Get(c, vals), ShouldBeNil)
-			So(ctr.GetMulti.Successes(), ShouldEqual, 1)
-			So(ctr.GetMulti.Errors(), ShouldEqual, 0)
-			So(ctr.GetMulti.Total(), ShouldEqual, 1)
+			So(ds.Run(c, ds.NewQuery("foof"), func(_ ds.PropertyMap) error {
+				return nil
+			}), ShouldBeNil)
+			So(ctr.Run.Successes(), ShouldEqual, 1)
+			So(ctr.Run.Errors(), ShouldEqual, 0)
+			So(ctr.Run.Total(), ShouldEqual, 1)
 		})
 	})
 

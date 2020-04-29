@@ -149,12 +149,10 @@ func fixMultiError(err error) error {
 	return err
 }
 
-func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error {
+func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 	if err == nil {
 		for i := 0; i < amt; i++ {
-			if err := cb(i, nil); err != nil {
-				return err
-			}
+			cb(i, nil)
 		}
 		return nil
 	}
@@ -162,9 +160,7 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error 
 	err = fixMultiError(err)
 	if me, ok := err.(errors.MultiError); ok {
 		for i, err := range me {
-			if err := cb(i, normalizeError(err)); err != nil {
-				return err
-			}
+			cb(i, normalizeError(err))
 		}
 		return nil
 	}
@@ -187,8 +183,8 @@ func (bds *boundDatastore) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb
 		err = bds.client.GetMulti(bds, nativeKeys, nativePLS)
 	}
 
-	return idxCallbacker(err, len(nativePLS), func(idx int, err error) error {
-		return cb(idx, nativePLS[idx].pmap, err)
+	return idxCallbacker(err, len(nativePLS), func(idx int, err error) {
+		cb(idx, nativePLS[idx].pmap, err)
 	})
 }
 
@@ -238,11 +234,12 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 		nativeKeys, err = bds.client.PutMulti(bds, nativeKeys, nativePLS)
 	}
 
-	return idxCallbacker(err, len(nativeKeys), func(idx int, err error) error {
+	return idxCallbacker(err, len(nativeKeys), func(idx int, err error) {
 		if err == nil {
-			return cb(idx, bds.nativeKeysToGAE(nativeKeys[idx])[0], nil)
+			cb(idx, bds.nativeKeysToGAE(nativeKeys[idx])[0], nil)
+			return
 		}
-		return cb(idx, nil, err)
+		cb(idx, nil, err)
 	})
 }
 
@@ -258,9 +255,7 @@ func (bds *boundDatastore) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) erro
 		err = bds.client.DeleteMulti(bds, nativeKeys)
 	}
 
-	return idxCallbacker(err, len(nativeKeys), func(idx int, err error) error {
-		return cb(idx, err)
-	})
+	return idxCallbacker(err, len(nativeKeys), cb)
 }
 
 func (bds *boundDatastore) WithoutTransaction() context.Context {

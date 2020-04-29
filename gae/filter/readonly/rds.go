@@ -41,7 +41,7 @@ type readOnlyDatastore struct {
 	isRO Predicate
 }
 
-type perKeyCB func(idx int, err error) error
+type perKeyCB func(idx int, err error)
 type implCB func(mutable []int, cb perKeyCB) error
 
 func (r *readOnlyDatastore) run(keys []*ds.Key, impl implCB, cb perKeyCB) error {
@@ -66,9 +66,7 @@ func (r *readOnlyDatastore) run(keys []*ds.Key, impl implCB, cb perKeyCB) error 
 			cur++
 			continue // results for 'idx' was already delivered above
 		}
-		if err := cb(idx, ErrReadOnly); err != nil {
-			return err
-		}
+		cb(idx, ErrReadOnly)
 	}
 
 	return nil
@@ -80,12 +78,12 @@ func (r *readOnlyDatastore) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 		for i, idx := range mutable {
 			mutableKeys[i] = keys[idx]
 		}
-		return r.RawInterface.AllocateIDs(mutableKeys, func(idx int, key *ds.Key, err error) error {
-			return cb(mutable[idx], err)
+		return r.RawInterface.AllocateIDs(mutableKeys, func(idx int, key *ds.Key, err error) {
+			cb(mutable[idx], err)
 		})
 	}
-	return r.run(keys, impl, func(idx int, err error) error {
-		return cb(idx, keys[idx], err)
+	return r.run(keys, impl, func(idx int, err error) {
+		cb(idx, keys[idx], err)
 	})
 }
 
@@ -95,8 +93,8 @@ func (r *readOnlyDatastore) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) err
 		for i, idx := range mutable {
 			mutableKeys[i] = keys[idx]
 		}
-		return r.RawInterface.DeleteMulti(mutableKeys, func(idx int, err error) error {
-			return cb(mutable[idx], err)
+		return r.RawInterface.DeleteMulti(mutableKeys, func(idx int, err error) {
+			cb(mutable[idx], err)
 		})
 	}
 	return r.run(keys, impl, perKeyCB(cb))
@@ -110,12 +108,12 @@ func (r *readOnlyDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb d
 			mutableKeys[i] = keys[idx]
 			mutableVals[i] = vals[idx]
 		}
-		return r.RawInterface.PutMulti(mutableKeys, mutableVals, func(idx int, key *ds.Key, err error) error {
-			return cb(mutable[idx], err)
+		return r.RawInterface.PutMulti(mutableKeys, mutableVals, func(idx int, key *ds.Key, err error) {
+			cb(mutable[idx], err)
 		})
 	}
-	return r.run(keys, impl, func(idx int, err error) error {
-		return cb(idx, keys[idx], err)
+	return r.run(keys, impl, func(idx int, err error) {
+		cb(idx, keys[idx], err)
 	})
 }
 

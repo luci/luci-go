@@ -169,22 +169,20 @@ func AllocateIDs(c context.Context, ent ...interface{}) error {
 	}
 
 	et := newErrorTracker(mma)
-	err = filterStop(Raw(c).AllocateIDs(keys, func(idx int, key *Key, err error) error {
+	err = Raw(c).AllocateIDs(keys, func(idx int, key *Key, err error) {
 		index := mma.index(idx)
 
 		if err != nil {
 			et.trackError(index, err)
-			return nil
+			return
 		}
 
 		mat, v := mma.get(index)
 		if !mat.setKey(v, key) {
 			et.trackError(index, MakeErrInvalidKey("failed to export key [%s]", key).Err())
-			return nil
+			return
 		}
-
-		return nil
-	}))
+	})
 	if err == nil {
 		err = et.error()
 	}
@@ -512,10 +510,9 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 	}
 
 	bt := newBoolTracker(mma)
-	err = filterStop(Raw(c).GetMulti(keys, nil, func(idx int, _ PropertyMap, err error) error {
+	err = Raw(c).GetMulti(keys, nil, func(idx int, _ PropertyMap, err error) {
 		bt.trackExistsResult(mma.index(idx), err)
-		return nil
-	}))
+	})
 	if err == nil {
 		err = bt.error()
 	}
@@ -566,22 +563,20 @@ func Get(c context.Context, dst ...interface{}) error {
 
 	et := newErrorTracker(mma)
 	meta := NewMultiMetaGetter(pms)
-	err = filterStop(Raw(c).GetMulti(keys, meta, func(idx int, pm PropertyMap, err error) error {
+	err = Raw(c).GetMulti(keys, meta, func(idx int, pm PropertyMap, err error) {
 		index := mma.index(idx)
 
 		if err != nil {
 			et.trackError(index, err)
-			return nil
+			return
 		}
 
 		mat, v := mma.get(index)
 		if err := mat.setPM(v, pm); err != nil {
 			et.trackError(index, err)
-			return nil
+			return
 		}
-
-		return nil
-	}))
+	})
 
 	if err == nil {
 		err = et.error()
@@ -641,21 +636,19 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 	}
 
 	et := newErrorTracker(mma)
-	err = filterStop(raw.PutMulti(keys, vals, func(idx int, key *Key, err error) error {
+	err = raw.PutMulti(keys, vals, func(idx int, key *Key, err error) {
 		index := mma.index(idx)
 
 		if err != nil {
 			et.trackError(index, err)
-			return nil
+			return
 		}
 
 		if !key.Equal(keys[idx]) {
 			mat, v := mma.get(index)
 			mat.setKey(v, key)
 		}
-
-		return nil
-	}))
+	})
 
 	if err == nil {
 		err = et.error()
@@ -703,13 +696,12 @@ func Delete(c context.Context, ent ...interface{}) error {
 	}
 
 	et := newErrorTracker(mma)
-	err = filterStop(Raw(c).DeleteMulti(keys, func(idx int, err error) error {
+	err = Raw(c).DeleteMulti(keys, func(idx int, err error) {
 		if err != nil {
 			index := mma.index(idx)
 			et.trackError(index, err)
 		}
-		return nil
-	}))
+	})
 	if err == nil {
 		err = et.error()
 	}

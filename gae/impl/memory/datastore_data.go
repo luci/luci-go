@@ -163,9 +163,9 @@ func (d *dataStoreData) stripSpecialPropsGetCB(cb ds.GetMultiCB) ds.GetMultiCB {
 		return cb
 	}
 
-	return func(idx int, val ds.PropertyMap, err error) error {
+	return func(idx int, val ds.PropertyMap, err error) {
 		stripSpecialProps(val)
-		return cb(idx, val, err)
+		cb(idx, val, err)
 	}
 }
 
@@ -411,9 +411,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 			return
 		}()
 		if cb != nil {
-			if err := cb(i, k, err); err != nil {
-				return err
-			}
+			cb(i, k, err)
 		}
 	}
 	return nil
@@ -481,16 +479,12 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB, lockedAlre
 				return nil
 			}()
 			if cb != nil {
-				if err := cb(i, err); err != nil {
-					return err
-				}
+				cb(i, err)
 			}
 		}
 	} else if cb != nil {
 		for i := range keys {
-			if err := cb(i, nil); err != nil {
-				return err
-			}
+			cb(i, nil)
 		}
 	}
 	return nil
@@ -544,10 +538,10 @@ func (d *dataStoreData) beginCommit(c context.Context, obj memContextObj) txnCom
 				for _, m := range muts {
 					if m.data == nil {
 						impossible(d.delMulti([]*ds.Key{m.key},
-							func(_ int, e error) error { return e }, true))
+							func(_ int, err error) { impossible(err) }, true))
 					} else {
 						impossible(d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
-							func(_ int, _ *ds.Key, e error) error { return e }, true))
+							func(_ int, _ *ds.Key, err error) { impossible(err) }, true))
 					}
 				}
 			}

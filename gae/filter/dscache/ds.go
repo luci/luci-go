@@ -69,7 +69,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		// to save stuff back to memcache.
 
 		toCas := []mc.Item{}
-		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(j int, pm ds.PropertyMap, err error) error {
+		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(j int, pm ds.PropertyMap, err error) {
 			i := p.idxMap[j]
 			toSave := p.toSave[j]
 
@@ -92,7 +92,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 			} else {
 				p.lme.Assign(i, err)
 				if err != ds.ErrNoSuchEntity {
-					return nil // aka continue to the next entry
+					return
 				}
 			}
 
@@ -112,7 +112,6 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 				}
 				toCas = append(toCas, toSave)
 			}
-			return nil
 		})
 		if err != nil {
 			return err
@@ -129,9 +128,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 	// finally, run the callback for all of the decoded items and the errors,
 	// if any.
 	for i, dec := range p.decoded {
-		if err := cb(i, dec, p.lme.GetOne(i)); err != nil {
-			return err
-		}
+		cb(i, dec, p.lme.GetOne(i))
 	}
 
 	return nil

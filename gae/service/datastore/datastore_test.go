@@ -1067,10 +1067,9 @@ func TestGet(t *testing.T) {
 				Convey("Raw access too", func() {
 					rds := Raw(c)
 					keys := []*Key{MakeKey(c, "Kind", 1)}
-					So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) error {
+					So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
 						So(err, ShouldBeNil)
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, 1)
-						return nil
 					}), ShouldBeNil)
 				})
 

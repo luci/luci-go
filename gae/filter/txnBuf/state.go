@@ -268,10 +268,9 @@ func (t *txnBufState) getMulti(keys []*datastore.Key, metas datastore.MultiMetaG
 		}
 
 		if len(toGetKeys) > 0 {
-			t.bufDS.GetMulti(toGetKeys, nil, func(j int, pm datastore.PropertyMap, err error) error {
+			t.bufDS.GetMulti(toGetKeys, nil, func(j int, pm datastore.PropertyMap, err error) {
 				impossible(err)
 				data[idxMap[j]].data = pm
-				return nil
 			})
 		}
 
@@ -288,14 +287,13 @@ func (t *txnBufState) getMulti(keys []*datastore.Key, metas datastore.MultiMetaG
 		}
 
 		if len(idxMap) > 0 {
-			err := t.parentDS.GetMulti(getKeys, getMetas, func(j int, pm datastore.PropertyMap, err error) error {
+			err := t.parentDS.GetMulti(getKeys, getMetas, func(j int, pm datastore.PropertyMap, err error) {
 				if err != datastore.ErrNoSuchEntity {
 					i := idxMap[j]
 					if !lme.Assign(i, err) {
 						data[i].data = pm
 					}
 				}
-				return nil
 			})
 			if err != nil {
 				return err
@@ -309,16 +307,12 @@ func (t *txnBufState) getMulti(keys []*datastore.Key, metas datastore.MultiMetaG
 
 	for i, itm := range data {
 		err := lme.GetOne(i)
-		var cbErr error
 		if err != nil {
-			cbErr = cb(i, nil, err)
+			cb(i, nil, err)
 		} else if itm.data == nil {
-			cbErr = cb(i, nil, datastore.ErrNoSuchEntity)
+			cb(i, nil, datastore.ErrNoSuchEntity)
 		} else {
-			cbErr = cb(i, itm.data, nil)
-		}
-		if cbErr != nil {
-			return cbErr
+			cb(i, itm.data, nil)
 		}
 	}
 	return nil
@@ -337,10 +331,9 @@ func (t *txnBufState) deleteMulti(keys []*datastore.Key, cb datastore.DeleteMult
 			return err
 		}
 
-		err := t.bufDS.DeleteMulti(keys, func(i int, err error) error {
+		err := t.bufDS.DeleteMulti(keys, func(i int, err error) {
 			impossible(err)
 			t.entState.set(encKeys[i], 0)
-			return nil
 		})
 		impossible(err)
 		return nil
@@ -350,9 +343,7 @@ func (t *txnBufState) deleteMulti(keys []*datastore.Key, cb datastore.DeleteMult
 	}
 
 	for i := range keys {
-		if err := cb(i, nil); err != nil {
-			return err
-		}
+		cb(i, nil)
 	}
 
 	return nil
@@ -389,7 +380,7 @@ func (t *txnBufState) fixKeys(keys []*datastore.Key) ([]*datastore.Key, error) {
 
 	// Intentionally call AllocateIDs without lock.
 	outerErr := errors.NewLazyMultiError(len(keys))
-	err := t.parentDS.AllocateIDs(incompleteKeys, func(i int, key *datastore.Key, err error) error {
+	err := t.parentDS.AllocateIDs(incompleteKeys, func(i int, key *datastore.Key, err error) {
 		outerIdx := incompleteMap[i]
 
 		if err != nil {
@@ -397,7 +388,6 @@ func (t *txnBufState) fixKeys(keys []*datastore.Key) ([]*datastore.Key, error) {
 		} else {
 			keys[outerIdx] = key
 		}
-		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -409,9 +399,7 @@ func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyM
 	keys, err := t.fixKeys(keys)
 	if err != nil {
 		for i, e := range err.(errors.MultiError) {
-			if err := cb(i, nil, e); err != nil {
-				return err
-			}
+			cb(i, nil, e)
 		}
 		return nil
 	}
@@ -428,10 +416,9 @@ func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyM
 			return err
 		}
 
-		err := t.bufDS.PutMulti(keys, vals, func(i int, k *datastore.Key, err error) error {
+		err := t.bufDS.PutMulti(keys, vals, func(i int, k *datastore.Key, err error) {
 			impossible(err)
 			t.entState.set(encKeys[i], vals[i].EstimateSize())
-			return nil
 		})
 		impossible(err)
 		return nil
@@ -441,9 +428,7 @@ func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyM
 	}
 
 	for i, k := range keys {
-		if err := cb(i, k, nil); err != nil {
-			return err
-		}
+		cb(i, k, nil)
 	}
 	return nil
 }
@@ -455,9 +440,8 @@ func commitToReal(s *txnBufState) error {
 		if len(toPut) > 0 {
 			ch <- func() error {
 				mErr := errors.NewLazyMultiError(len(toPut))
-				err := s.parentDS.PutMulti(toPutKeys, toPut, func(i int, _ *datastore.Key, err error) error {
+				err := s.parentDS.PutMulti(toPutKeys, toPut, func(i int, _ *datastore.Key, err error) {
 					mErr.Assign(i, err)
-					return nil
 				})
 				if err == nil {
 					err = mErr.Get()
@@ -468,9 +452,8 @@ func commitToReal(s *txnBufState) error {
 		if len(toDel) > 0 {
 			ch <- func() error {
 				mErr := errors.NewLazyMultiError(len(toDel))
-				err := s.parentDS.DeleteMulti(toDel, func(i int, err error) error {
+				err := s.parentDS.DeleteMulti(toDel, func(i int, err error) {
 					mErr.Assign(i, err)
-					return nil
 				})
 				if err == nil {
 					err = mErr.Get()
@@ -540,11 +523,12 @@ func (t *txnBufState) commitLocked(s *txnBufState) {
 
 	if len(toPut) > 0 {
 		impossible(t.putMulti(toPutKeys, toPut,
-			func(_ int, _ *datastore.Key, err error) error { return err }, true))
+			func(_ int, _ *datastore.Key, err error) { impossible(err) }, true))
 	}
 
 	if len(toDel) > 0 {
-		impossible(t.deleteMulti(toDel, func(_ int, err error) error { return err }, true))
+		impossible(t.deleteMulti(toDel,
+			func(_ int, err error) { impossible(err) }, true))
 	}
 }
 

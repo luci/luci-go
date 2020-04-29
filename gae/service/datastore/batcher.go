@@ -45,24 +45,24 @@ type batchFilter struct {
 
 func (bf *batchFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
 	return bf.batchParallel(len(keys), bf.constraints.MaxGetSize, func(offset, count int) error {
-		return bf.RawInterface.GetMulti(keys[offset:offset+count], meta, func(idx int, val PropertyMap, err error) error {
-			return cb(offset+idx, val, err)
+		return bf.RawInterface.GetMulti(keys[offset:offset+count], meta, func(idx int, val PropertyMap, err error) {
+			cb(offset+idx, val, err)
 		})
 	})
 }
 
 func (bf *batchFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
 	return bf.batchParallel(len(vals), bf.constraints.MaxPutSize, func(offset, count int) error {
-		return bf.RawInterface.PutMulti(keys[offset:offset+count], vals[offset:offset+count], func(idx int, key *Key, err error) error {
-			return cb(offset+idx, key, err)
+		return bf.RawInterface.PutMulti(keys[offset:offset+count], vals[offset:offset+count], func(idx int, key *Key, err error) {
+			cb(offset+idx, key, err)
 		})
 	})
 }
 
 func (bf *batchFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	return bf.batchParallel(len(keys), bf.constraints.MaxDeleteSize, func(offset, count int) error {
-		return bf.RawInterface.DeleteMulti(keys[offset:offset+count], func(idx int, err error) error {
-			return cb(offset+idx, err)
+		return bf.RawInterface.DeleteMulti(keys[offset:offset+count], func(idx int, err error) {
+			cb(offset+idx, err)
 		})
 	})
 }
