@@ -81,6 +81,24 @@
       "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "933a4729_5de7dda4",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-29T00:17:54Z",
+      "side": 1,
+      "message": "doesn\u0027t that mean that onSelectedTabChanged does not get called when \"selected tab changed\"?\n\ndoesn\u0027t this mean that as a user of this class, i need to setup to code paths\n1) when the user changes the tab, my logic in the callback runs\n2) when I changed the tab, i have to call my logic myself",
+      "parentUuid": "6a174fb9_84b2d014",
+      "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
