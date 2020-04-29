@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9376d6a3_263ada03",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-29T21:50:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0bfc655_3fa0d7ae",
+      "range": {
+        "startLine": 237,
+        "startChar": 5,
+        "endLine": 237,
+        "endChar": 8
+      },
+      "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6e031d0_363017a6",
         "filename": "server/auth/auth.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4abd4014_f3ae2368",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-29T21:50:18Z",
+      "side": 1,
+      "message": "In checkClientIDWhitelist...",
+      "parentUuid": "c6e031d0_363017a6",
+      "range": {
+        "startLine": 269,
+        "startChar": 47,
+        "endLine": 269,
+        "endChar": 58
+      },
+      "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ff6732a_04abe9f2",
         "filename": "server/auth/auth.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf6134e2_bd7984f8",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-04-29T21:50:18Z",
+      "side": 1,
+      "message": "It won\u0027t help in any way. Existing luci-go deployments just ignore X-Luci-Project header, so I\u0027m preserving this behavior. The proper handling will be added in the next CL.",
+      "parentUuid": "4ff6732a_04abe9f2",
+      "range": {
+        "startLine": 292,
+        "startChar": 5,
+        "endLine": 292,
+        "endChar": 9
+      },
+      "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
