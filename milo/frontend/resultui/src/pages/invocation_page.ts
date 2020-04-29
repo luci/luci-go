@@ -29,8 +29,7 @@ import '../components/test-entry';
 import '../components/test_filter';
 import { TestFilter } from '../components/test_filter';
 import '../components/test_nav_tree';
-import { contextConsumer } from '../context';
-import { AppState } from '../context/app_state';
+import { AppState, consumeAppState } from '../context/app_state_provider';
 import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
 import { ReadonlyTest, TestNode } from '../models/test_node';
 import { Expectancy, Invocation, InvocationState } from '../services/resultdb';
@@ -315,7 +314,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 }
 
 customElement('tr-invocation-page')(
-  contextConsumer('appState')(
+  consumeAppState(
     InvocationPageElement,
   ),
 );
