@@ -78,6 +78,30 @@
     },
     {
       "key": {
+        "uuid": "9d5af56a_6317cfcc",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T01:19:27Z",
+      "side": 1,
+      "message": "That\u0027s my failed attempt to be consistent. Reverted most of the whitespace changes (apart from the one above for fixing imports). Maybe in a future CL, I\u0027ll add a tslint rule fix the inconsistent whitespace issues.",
+      "parentUuid": "306ea017_a1a6e750",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 0
+      },
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9bbe279_0a12bbdd",
         "filename": "milo/frontend/resultui/src/libs/context.ts",
         "patchSetId": 4
@@ -145,6 +169,24 @@
       "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02418064_648638fa",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-29T01:19:27Z",
+      "side": 1,
+      "message": "You are right. It still cause a compilation error but in slightly different condition.\nUpdated the comments.",
+      "parentUuid": "064a4961_2c92e239",
+      "revId": "d839d623b1e0f751186759194bb028e7a07ec7b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
