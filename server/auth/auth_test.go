@@ -225,8 +225,8 @@ func TestMiddleware(t *testing.T) {
 		rr := call(&Authenticator{
 			Methods: []Method{fakeAuthMethod{clientID: "another_client_id"}},
 		})
-		So(rr.Code, ShouldEqual, 401)
-		So(rr.Body.String(), ShouldEqual, "Authentication error\n")
+		So(rr.Code, ShouldEqual, 403)
+		So(rr.Body.String(), ShouldEqual, "Forbidden\n")
 	})
 
 	Convey("Transient error", t, func() {
