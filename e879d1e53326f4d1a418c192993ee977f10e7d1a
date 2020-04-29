@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0bfc655_3fa0d7ae",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-29T21:33:55Z",
+      "side": 1,
+      "message": "could inline s.user, err assignment",
+      "range": {
+        "startLine": 237,
+        "startChar": 5,
+        "endLine": 237,
+        "endChar": 8
+      },
+      "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6e031d0_363017a6",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-29T21:33:55Z",
+      "side": 1,
+      "message": "when is audience checked?",
+      "range": {
+        "startLine": 269,
+        "startChar": 47,
+        "endLine": 269,
+        "endChar": 58
+      },
+      "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ff6732a_04abe9f2",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-29T21:33:55Z",
+      "side": 1,
+      "message": "panic?",
+      "range": {
+        "startLine": 292,
+        "startChar": 5,
+        "endLine": 292,
+        "endChar": 9
+      },
+      "revId": "e879d1e53326f4d1a418c192993ee977f10e7d1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

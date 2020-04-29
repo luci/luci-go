@@ -22,6 +22,30 @@
       "revId": "5a138e047d5b5c54ab5bdb7dc9f2dc6263bf4089",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5d727abb_38a866ee",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-29T21:33:55Z",
+      "side": 0,
+      "message": "ACK",
+      "parentUuid": "605df7b1_6d1a6b76",
+      "range": {
+        "startLine": 241,
+        "startChar": 0,
+        "endLine": 242,
+        "endChar": 30
+      },
+      "revId": "5a138e047d5b5c54ab5bdb7dc9f2dc6263bf4089",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
