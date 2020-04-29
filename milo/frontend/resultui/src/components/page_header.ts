@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import '@chopsui/chops-signin';
-
 import { css, customElement, html, LitElement, property, PropertyValues } from 'lit-element';
-import { contextConsumer } from '../context';
+
+import { consumeClientId } from '../context/config_provider';
 
 /**
  * Renders page header, including a sign-in widget, at the top of the child
@@ -90,7 +90,7 @@ export class PageHeaderElement extends LitElement {
 }
 
 customElement('tr-page-header')(
-  contextConsumer('clientId')(
+  consumeClientId(
     PageHeaderElement,
   ),
 );

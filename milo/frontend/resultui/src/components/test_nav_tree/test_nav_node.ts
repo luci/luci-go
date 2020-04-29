@@ -21,7 +21,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import { TestNode } from '../../models/test_node';
-import { contextConsumer, TestNavTreeState } from './context';
+import { consumeTreeState, TestNavTreeState } from './context';
 
 
 /**
@@ -155,7 +155,7 @@ export class TestNavNodeElement extends MobxLitElement {
 }
 
 customElement('tr-test-nav-node')(
-  contextConsumer('treeState')(
+  consumeTreeState(
     TestNavNodeElement,
   ),
 );

@@ -18,31 +18,15 @@
  * The design is heavily inspired by
  * [React Context](https://reactjs.org/docs/context.html)
  *
- * # Example
- * ```
- * // Declare interface for Context, usually shared cross the entire app.
- * interface Context {
- *   contextKey1: string;
- *   contextKey2: number;
- * }
- *
- * // Initialize context provider and consumer mixin with Context, usually
- * // shared across the entire app.
- * const provideContext = contextProviderMixinBuilder<Context>();
- * const consumeContext = contextConsumerMixinBuilder<Context>();
- * ```
- *
  * ## Decorator Example
  * ```
  * @customElement('context-provider')
- * // Specify which context keys to provide. Parameters are type checked.
- * // Passing 'contextKey3' will cause compilation error.
- * @provideContext('contextKey1', 'contextKey2')
+ * // Specify which context keys to consume, if the corresponding properties
+ * // don't exist in the class, a compilation error will be thrown.
+ * @provideContext('contextKey1')
+ * @provideContext('contextKey2')
  * class ContextProvider extends LitElement {
- *   // contextKey1 is type checked, it must be of type string.
  *   @property() contextKey1 = 'value';
- *
- *   // contextKey2 is type checked, it must be of type number.
  *   @property() contextKey2 = 1;
  *
  *   protected render() {
@@ -53,19 +37,14 @@
  * }
  *
  * @customElement('context-consumer')
- * // Specify which context keys to consume. Parameters are type checked.
- * // Passing 'contextKey3' will cause compilation error.
- * @consumeContext('contextKey')
+ * // Specify which context keys to consume, if the corresponding properties
+ * // don't exist in the class, a compilation error will be thrown.
+ * @consumeContext('contextKey1')
  * class ContextConsumer extends LitElement {
- *   // contextKey1 is type checked, it must be of type string.
  *   @property() contextKey1 = '';
  *
- *   // contextKey2 is NOT type checked,
- *   // because this element is not consuming contextKey2.
- *   @property() contextKey2 = '';
- *
  *   protected render() {
- *     html`${this.contextValue}`;
+ *     html`${this.contextKey1}`;
  *   }
  * }
  *
@@ -74,7 +53,7 @@
  *   // renders 'page-value' on screen.
  *   protected render() {
  *     return html`
- *       <context-provider .contextKey=${'page-value'}>
+ *       <context-provider .contextKey1=${'page-value'}>
  *         <context-consumer>
  *         </context-consumer>
  *       </context-provider>
@@ -86,10 +65,7 @@
  * ## Non-decorator example:
  * ```
  * class ContextProvider extends LitElement {
- *   // contextKey1 is type checked, it must be of type string.
  *   @property() contextKey1 = 'value';
- *
- *   // contextKey2 is type checked, it must be of type number.
  *   @property() contextKey2 = 1;
  *
  *   protected render() {
@@ -100,27 +76,26 @@
  * }
  *
  * customElement('context-provider')(
- *   // Specify which context keys to provide. Parameters are type checked.
- *   // Passing 'contextKey3' will cause compilation error.
- *   provideContext('contextKey1', 'contextKey2')(ContextProvider)
+ *   // Specify which context keys to consume, if the corresponding properties
+ *   // don't exist in the class, a compilation error will be thrown.
+ *   provideContext('contextKey1')(
+ *     provideContext('contextKey2')(
+ *       ContextProvider
+ *     ),
+ *   ),
  * );
  *
  * class ContextConsumer extends LitElement {
- *   // contextKey1 is type checked, it must be of type string.
  *   @property() contextKey1 = '';
  *
- *   // contextKey2 is NOT type checked,
- *   // because this element is not consuming contextKey2.
- *   @property() contextKey2 = '';
- *
  *   protected render() {
- *     html`${this.contextValue}`;
+ *     html`${this.contextKey1}`;
  *   }
  * }
  *
  * customElement('context-consumer')(
- *   // Specify which context keys to consume. Parameters are type checked.
- *   // Passing 'contextKey3' will cause compilation error.
+ *   // Specify which context keys to consume, if the corresponding properties
+ *   // don't exist in the class, a compilation error will be thrown.
  *   consumeContext('contextKey1')(ContextConsumer)
  * );
  *
@@ -128,7 +103,7 @@
  *   // renders 'page-value' on screen.
  *   protected render() {
  *     return html`
- *       <context-provider .contextKey=${'page-value'}>
+ *       <context-provider .contextKey1=${'page-value'}>
  *         <context-consumer>
  *         </context-consumer>
  *       </context-provider>
@@ -138,6 +113,56 @@
  *
  * customElement('page')(Page)
  * ```
+ *
+ * ## Type-checked Property Example
+ * ```
+ * // Create typed decorators to be shared across your app.
+ * const provideKey1 = provideContext<'contextKey1', string>('contextKey1');
+ * const consumeKey1 = consumeContext<'contextKey1', string>('contextKey1');
+ * const provideKey2 = provideContext<'contextKey2', number>('contextKey2');
+ * const consumeKey2 = consumeContext<'contextKey2', number>('contextKey2');
+ *
+ * @customElement('context-provider')
+ * @provideKey1
+ * @provideKey2
+ * class ContextProvider extends LitElement {
+ *   // Properties are type checked.
+ *   @property() contextKey1 = 'value';
+ *   @property() contextKey2 = 1;
+ *
+ *   protected render() {
+ *     html`
+ *       <slot></slot>
+ *     `;
+ *   }
+ * }
+ *
+ * @customElement('context-consumer')
+ * @consumeKey1
+ * @consumeKey2
+ * class ContextConsumer extends LitElement {
+ *   // Properties are type checked.
+ *   @property() contextKey1 = '';
+ *   @property() contextKey2 = 1;
+ *
+ *   protected render() {
+ *     html`${this.contextKey1}`;
+ *   }
+ * }
+ *
+ * @customElement('page')
+ * class Page extends LitElement {
+ *   // renders 'page-value' on screen.
+ *   protected render() {
+ *     return html`
+ *       <context-provider .contextKey1=${'page-value'}>
+ *         <context-consumer>
+ *         </context-consumer>
+ *       </context-provider>
+ *     `;
+ *   }
+ * }
+ * ```
  */
 
 import { LitElement } from 'lit-element';
@@ -146,6 +171,12 @@ interface ContextEventDetail<Ctx, T extends LitElement & Ctx = LitElement & Ctx>
   element: T;
 }
 type ContextEvent<Ctx, T extends LitElement & Ctx = LitElement & Ctx> = CustomEvent<ContextEventDetail<Ctx, T>>;
+
+interface ProviderProperties<T> {
+  consumers: Set<T>;
+  onSubscribeContext?: EventListener;
+  onUnsubscribeContext?: EventListener;
+}
 
 /**
  * Builds a contextProviderMixin, which is a mixin function that takes a
@@ -165,87 +196,90 @@ type ContextEvent<Ctx, T extends LitElement & Ctx = LitElement & Ctx> = CustomEv
  * When disconnected from DOM:
  *  * Stops providing or overriding the context.
  */
-export function contextProviderMixinBuilder<Ctx>() {
-  return function provideKeys<K extends keyof Ctx>(...providedContextKeys: K[]) {
-    // The mixin target class (cls) needs to implement Pick<Ctx, K>.
-    // i.e for each property name in observedContextKeys, the property in T
-    // must be assignable to the property of the same name in Ctx.
-    return function providerMixin<T extends LitElement & Pick<Ctx, K>>(cls: Constructor<T>) {
-      // TypeScript doesn't allow type parameter in extends or implements
-      // position. Cast to Constructor<LitElement> to stop tsc complaining.
-      class Provider extends (cls as Constructor<LitElement>) {
-        private readonly contextConsumers = new Map<K, Set<T>>(providedContextKeys.map((key) => [key, new Set()]));
+export function provideContext<K extends string, Ctx>(contextKey: K) {
+  // The mixin target class (cls) needs to implement Record<K, Ctx>.
+  // i.e Ctx must be assignable to the T[K].
+  return function providerMixin<T extends LitElement & Record<K, Ctx>, C extends Constructor<T>>(cls: C) {
+    // Use a weak Map to store private properties, so overriding those
+    // properties won't break the class.
+    // This can happen when applying the decorator multiple times.
+    const providerPropsWeakMap = new WeakMap<Provider, ProviderProperties<T>>();
 
-        protected updated(changedProperties: Map<K, Ctx[K]>) {
-          super.updated(changedProperties);
+    /**
+     * Updates a consumer of the given context key with the new context
+     * value.
+     */
+    function updateConsumer(consumer: T, newValue: T[K]) {
+      const oldValue = consumer[contextKey];
+      if (newValue === oldValue) {
+        return;
+      }
+      consumer[contextKey] = newValue;
+    }
 
-          for (const key of changedProperties.keys()) {
-            const consumers = this.contextConsumers.get(key);
-            if (!consumers) {
-              continue;
-            }
-            const newValue = (this as LitElement as T)[key];
-            for (const consumer of consumers) {
-              this.updateConsumer(consumer, key, newValue);
-            }
-          }
+    // TypeScript doesn't allow type parameter in extends or implements
+    // position. Cast to Constructor<LitElement> to stop tsc complaining.
+    class Provider extends (cls as Constructor<LitElement>) {
+      constructor() {
+        super();
+        providerPropsWeakMap.set(this, {consumers: new Set()});
+      }
+
+      protected updated(changedProperties: Map<K, Ctx>) {
+        super.updated(changedProperties);
+        if (!changedProperties.has(contextKey)) {
+          return;
         }
 
-        /**
-         * Updates a consumer of the given context key with the new context
-         * value.
-         */
-        private updateConsumer(consumer: T, key: K, newValue: T[K]) {
-          const oldValue = consumer[key];
-          if (newValue === oldValue) {
-            return;
-          }
-          consumer[key] = newValue;
+        const consumers = providerPropsWeakMap.get(this)!.consumers;
+        const newValue = (this as LitElement as T)[contextKey];
+        for (const consumer of consumers) {
+          updateConsumer(consumer, newValue);
         }
+      }
 
-        connectedCallback() {
-          super.connectedCallback();
-          for (const key of providedContextKeys) {
-            this.addEventListener(`tr-subscribe-context-${key}`, this.onSubscribeContext as EventListener);
-            this.addEventListener(`tr-unsubscribe-context-${key}`, this.onUnsubscribeContext as EventListener);
-          }
-        }
-        disconnectedCallback() {
-          super.disconnectedCallback();
-          for (const key of providedContextKeys) {
-            this.removeEventListener(`tr-subscribe-context-${key}`, this.onSubscribeContext as EventListener);
-            this.removeEventListener(`tr-unsubscribe-context-${key}`, this.onUnsubscribeContext as EventListener);
-          }
-        }
+      connectedCallback() {
+        super.connectedCallback();
+        const props = providerPropsWeakMap.get(this)!;
 
         /**
          * Adds the context consumer to the observer list and updates the
          * consumer with the current context immediately.
          */
-        private onSubscribeContext = (event: ContextEvent<Pick<Ctx, K>, T>) => {
-          const key = event.type.match(/tr-subscribe-context-(.*)/)![1] as K;
-          const consumers = this.contextConsumers.get(key)!;
+        props.onSubscribeContext = ((event: ContextEvent<Record<K, Ctx>, T>) => {
+          const consumers = props.consumers;
           const consumer = event.detail.element;
-          const newValue = (this as LitElement as T)[key];
           consumers.add(consumer);
-          this.updateConsumer(consumer, key, newValue);
+          const newValue = (this as LitElement as T)[contextKey];
+          consumers.add(consumer);
+          updateConsumer(consumer, newValue);
           event.stopImmediatePropagation();
-        }
+        }) as EventListener;
 
         /**
          * Removes the context consumer from the observer list.
          */
-        private onUnsubscribeContext = (event: ContextEvent<Pick<Ctx, K>, T>) => {
-          const key = event.type.match(/tr-unsubscribe-context-(.*)/)![1] as K;
-          const consumers = this.contextConsumers.get(key)!;
+        props.onUnsubscribeContext = ((event: ContextEvent<Record<K, Ctx>, T>) => {
+          const consumers = props.consumers;
           consumers.delete(event.detail.element);
           event.stopImmediatePropagation();
-        }
+        }) as EventListener;
+
+        this.addEventListener(`tr-subscribe-context-${contextKey}`, props.onSubscribeContext);
+        this.addEventListener(`tr-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext);
       }
 
-      // Recover the type information that was lost in the down-casting above.
-      return Provider as Constructor<LitElement> as Constructor<T>;
-    };
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        const props = providerPropsWeakMap.get(this)!;
+        this.removeEventListener(`tr-subscribe-context-${contextKey}`, props.onSubscribeContext!);
+        this.removeEventListener(`tr-unsubscribe-context-${contextKey}`, props.onUnsubscribeContext!);
+      }
+
+    }
+
+    // Recover the type information that was lost in the down-casting above.
+    return Provider as Constructor<LitElement> as C;
   };
 }
 
@@ -266,38 +300,36 @@ export function contextProviderMixinBuilder<Ctx>() {
  * When disconnected from DOM:
  *  * Unsubscribes from all the contextProviders.
  */
-export function contextConsumerMixinBuilder<Ctx>() {
-  return function consumeKeys<K extends keyof Ctx>(...observedContextKeys: K[]) {
-    // The mixin target class (cls) needs to implement Pick<Ctx, K>.
-    // i.e for each property name in observedContextKeys, the property in T
-    // must be assignable to the property of the same name in Ctx.
-    return function consumerMixin<T extends LitElement & Pick<Ctx, K>>(cls: Constructor<T>) {
-      // TypeScript doesn't allow type parameter in extends or implements
-      // position. Cast to Constructor<LitElement> to stop tsc complaining.
-      class Consumer extends (cls as Constructor<LitElement>) {
-        connectedCallback() {
-          super.connectedCallback();
-          this.emitEvents('subscribe');
-        }
+export function consumeContext<K extends string, Ctx>(contextKey: K) {
+  /**
+   * Emits subscribe or unsubscribe events for the observed context keys.
+   */
+  function emitEvents<T extends LitElement & Record<K, Ctx>>(element: T, type: 'subscribe' | 'unsubscribe') {
+    element.dispatchEvent(new CustomEvent(`tr-${type}-context-${contextKey}`, {
+      detail: {element},
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    }) as ContextEvent<Record<K, Ctx>, T>);
+  }
 
-        disconnectedCallback() {
-          super.disconnectedCallback();
-          this.emitEvents('unsubscribe');
-        }
-
-        private emitEvents(type: 'subscribe' | 'unsubscribe') {
-          for (const key of observedContextKeys) {
-            this.dispatchEvent(new CustomEvent(`tr-${type}-context-${key}`, {
-              detail: {element: this as LitElement as T},
-              bubbles: true,
-              cancelable: true,
-              composed: true,
-            }) as ContextEvent<Pick<Ctx, K>, T>);
-          }
-        }
+  // The mixin target class (cls) needs to implement Record<K, Ctx>.
+  // i.e Ctx must be assignable to the T[K].
+  return function consumerMixin<T extends LitElement & Record<K, Ctx>, C extends Constructor<T>>(cls: C) {
+    // TypeScript doesn't allow type parameter in extends or implements
+    // position. Cast to Constructor<LitElement> to stop tsc complaining.
+    class Consumer extends (cls as Constructor<LitElement>) {
+      connectedCallback() {
+        super.connectedCallback();
+        emitEvents(this as LitElement as T, 'subscribe');
       }
-      // Recover the type information that lost in the down-casting above.
-      return Consumer as Constructor<LitElement> as Constructor<T>;
-    };
+
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        emitEvents(this as LitElement as T, 'unsubscribe');
+      }
+    }
+    // Recover the type information that lost in the down-casting above.
+    return Consumer as Constructor<LitElement> as C;
   };
 }
