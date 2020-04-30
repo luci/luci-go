@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c7e1e257_84fad1c7",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-30T22:59:27Z",
+      "side": 1,
+      "message": "That looks much cleaner. Done.\n\n\u003e\u003e also, btw this code does not return test program\u0027s exit code like it should\nAt 103 in the left-side pannel, it returns testExitCode. Could you elaborate more?",
+      "parentUuid": "e79cd8a6_f32dda05",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e21c46b7_ea423d13",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "da7215b3_4e52a1d5",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-30T22:59:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e21c46b7_ea423d13",
+      "range": {
+        "startLine": 217,
+        "startChar": 16,
+        "endLine": 217,
+        "endChar": 20
+      },
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f56d84a1_ccfd3780",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "92932e86_d4712daf",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-30T22:59:27Z",
+      "side": 1,
+      "message": "removed \"maybe\"",
+      "parentUuid": "f56d84a1_ccfd3780",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6bb5de53_7a3423f3",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7
@@ -73,6 +133,24 @@
       "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67bd8c7c_ac0b2de0",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-30T22:59:27Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "6bb5de53_7a3423f3",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
