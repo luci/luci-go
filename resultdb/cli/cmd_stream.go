@@ -16,19 +16,40 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"os/user"
+	"regexp"
+	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
+	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	"go.chromium.org/luci/resultdb/sink"
+)
+
+const (
+	// ExitCodeStreamError indicates that rdb-stream was not able to execute
+	// the test command.
+	ExitCodeStreamError = 1001
+)
+
+var (
+	matchSpaces                   = regexp.MustCompile(`\s`)
+	matchInvalidInvocationIDChars = regexp.MustCompile(`[^a-z0-9_\-:.]`)
 )
 
 func cmdStream(p Params) *subcommands.Command {
@@ -69,9 +90,10 @@ type streamRun struct {
 	invocation lucictx.Invocation
 }
 
-func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) (ret int) {
+	// TODO(ddoman): tag the error with an exit code, and r.done() returns the exit code,
+	// if tagged.
 	ctx := cli.GetContext(a, r, env)
-
 	// init client
 	if err := r.initClients(ctx); err != nil {
 		return r.done(err)
@@ -80,8 +102,11 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
 	if r.isNew {
-		// TODO(ddoman): create an invocation
-		return r.done(errors.Reason("Not implemented").Err())
+		ninv, err := r.createInvocation(ctx)
+		if err != nil {
+			return r.done(err)
+		}
+		r.invocation = ninv
 	} else {
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -89,18 +114,26 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		r.invocation = r.resultdbCtx.CurrentInvocation
 	}
 
-	// run the command
+	interrupted := true
+	defer func() {
+		if r.isNew || interrupted {
+			if err := r.finalizeInvocation(ctx, interrupted); err != nil {
+				logging.Errorf(ctx, "failed to finalize the invocation: %s", err)
+				ret = r.done(err)
+			}
+		}
+	}()
 	cmd, err := r.makeTestCmd(ctx, args)
 	if err != nil {
 		return r.done(err)
 	}
-	testExitCode, err := r.runTestCmd(ctx, cmd)
-
-	// TODO(ddoman): finalize the invocation
+	exitCode, err := r.runTestCmd(ctx, cmd)
 	if err != nil {
 		return r.done(err)
 	}
-	return testExitCode
+	// TODO(ddoman): handle complete-invocation-exit-codes
+	interrupted = false
+	return exitCode
 }
 
 func (r *streamRun) makeTestCmd(ctx context.Context, args []string) (*exec2.Cmd, error) {
@@ -124,7 +157,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	})
 	exported, err := lucictx.Export(ctx)
 	if err != nil {
-		return 1, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
+		return ExitCodeStreamError, errors.Annotate(err, "failed to export LUCICTX").Err()
 	}
 	defer exported.Close()
 	exported.SetInCmd(cmd.Cmd)
@@ -137,6 +170,15 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 		UpdateToken: r.invocation.UpdateToken,
 	}
 	err = sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
+		// install the lucicontext into cmd again so that all the lucictx added inside
+		// sinlucitx.ResultSink becomes visible to the test process.
+		exported, err := lucictx.Export(ctx)
+		if err != nil {
+			return err
+		}
+		defer exported.Close()
+		exported.SetInCmd(cmd.Cmd)
+
 		logging.Debugf(ctx, "Starting: %q", cmd.Args)
 		if err := cmd.Start(); err != nil {
 			return errors.Annotate(err, "cmd.start").Err()
@@ -145,8 +187,65 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) (int, error)
 	})
 	ec, ok := exitcode.Get(err)
 	if !ok {
-		return 1, err
+		return ExitCodeStreamError, err
 	}
 	logging.Infof(ctx, "Child process terminated with %d", ec)
 	return ec, nil
+}
+
+func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocation, err error) {
+	invID, err := genInvID(ctx)
+	if err != nil {
+		return
+	}
+
+	md := metadata.MD{}
+	resp, err := r.recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
+		InvocationId: invID,
+	}, prpc.Header(&md))
+	if err != nil {
+		err = errors.Annotate(err, "failed to create an invocation").Err()
+		return
+	}
+	tks := md.Get(recorder.UpdateTokenMetadataKey)
+	if len(tks) == 0 {
+		err = errors.Reason("Missing header: update-token").Err()
+		return
+	}
+
+	ret = lucictx.Invocation{resp.Name, tks[0]}
+	fmt.Fprintf(os.Stderr, "%q created\n", ret.Name)
+	return
+}
+
+// finalizeInvocation finalizes the invocation.
+func (r *streamRun) finalizeInvocation(ctx context.Context, interrupted bool) error {
+	ctx = metadata.AppendToOutgoingContext(
+		ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
+	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
+		Name:        r.invocation.Name,
+		Interrupted: interrupted,
+	})
+	return err
+}
+
+// genInvID generates an invocation ID, made of the username, the current timestamp
+// in a human-friendly format, and a random suffix.
+//
+// This can be used to generate a random invocation ID, but the creator and creation time
+// can be easily found.
+func genInvID(ctx context.Context) (string, error) {
+	whoami, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	username := matchInvalidInvocationIDChars.ReplaceAllString(
+		matchSpaces.ReplaceAllString(strings.ToLower(whoami.Username), ""), "_")
+	suffix := fmt.Sprintf(
+		"%s:%.10d", strings.ToLower(time.Now().UTC().Format(time.RFC3339)),
+		mathrand.Int31(ctx))
+
+	// An invocation ID can contain up to 100 ascii characters that conform to the regex,
+	return fmt.Sprintf("u:%.*s:%s", 100-len(suffix), username, suffix), nil
 }
