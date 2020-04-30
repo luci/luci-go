@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -685,4 +686,76 @@ func TestButler(t *testing.T) {
 			})
 		})
 	})
+}
+
+// Result of running `go test -cpu 1,4,8  -benchmem -benchtime 5s -bench .`
+// BenchmarkButler/10-streams      26991      223591 ns/op     71074 B/op     1077 allocs/op
+// BenchmarkButler/10-streams-4     7104      962387 ns/op    102146 B/op     1653 allocs/op
+// BenchmarkButler/10-streams-8     5599     1053311 ns/op    104747 B/op     1690 allocs/op
+// BenchmarkButler/100-streams      1575     3704459 ns/op   1147307 B/op    19032 allocs/op
+// BenchmarkButler/100-streams-4     486    12633191 ns/op   1714891 B/op    27574 allocs/op
+// BenchmarkButler/100-streams-8     448    13293517 ns/op   1762187 B/op    28092 allocs/op
+// BenchmarkButler/500-streams        96    59003737 ns/op   1932912 B/op   336447 allocs/op
+// BenchmarkButler/500-streams-4      34   166041286 ns/op   9512818 B/op   445303 allocs/op
+// BenchmarkButler/500-streams-8      32   172964215 ns/op   9907360 B/op   451898 allocs/op
+func BenchmarkButler(b *testing.B) {
+	numOfStreams := []int{10, 100, 500}
+	testText := []string{
+		"This is line one\n",
+		"This is another two\n",
+		"This is final line",
+	}
+
+	for _, n := range numOfStreams {
+		b.Run(fmt.Sprintf("%d-streams", n), func(b *testing.B) {
+			for i := 0; i <= b.N; i++ {
+				if err := runButlerBenchmark(testText, n); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// runButlerBenchmark creates a new butler instance and given number of
+// streams, then write the supplied text to each stream and wait for
+// the butler instance to complete.
+func runButlerBenchmark(testText []string, numOfStream int) error {
+	conf := Config{
+		Output:     &null.Output{},
+		BufferLogs: false,
+	}
+	tb := mkb(context.Background(), conf)
+	tss := newTestStreamServer()
+	tb.AddStreamServer(tss)
+
+	testStreams := make([]*testStream, numOfStream)
+
+	for i := range testStreams {
+		testStreams[i] = &testStream{
+			inC:     make(chan *testStreamData, 16),
+			closedC: make(chan struct{}),
+			desc: &logpb.LogStreamDescriptor{
+				Name:        fmt.Sprintf("stream-%d", i),
+				StreamType:  logpb.StreamType_TEXT,
+				ContentType: string(types.ContentTypeText),
+			},
+		}
+		tss.enqueue(testStreams[i])
+	}
+
+	for _, ts := range testStreams {
+		go func(s *testStream) {
+			for _, line := range testText {
+				s.data([]byte(line), nil)
+			}
+			s.err(io.EOF)
+		}(ts)
+	}
+
+	tb.Activate()
+	if err := tb.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
