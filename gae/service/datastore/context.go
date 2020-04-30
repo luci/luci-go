@@ -48,18 +48,12 @@ func rawUnfiltered(c context.Context) RawInterface {
 
 // rawWithFilters gets the datastore (transactional or not), and applies all of
 // the currently installed filters to it.
-//
-// The supplied filters will be applied in order in between the check filter
-// (first) and Context filters.
-func rawWithFilters(c context.Context, filter ...RawFilter) RawInterface {
+func rawWithFilters(c context.Context) RawInterface {
 	ret := rawUnfiltered(c)
 	if ret == nil {
 		return nil
 	}
 	for _, f := range getCurFilters(c) {
-		ret = f(c, ret)
-	}
-	for _, f := range filter {
 		ret = f(c, ret)
 	}
 
