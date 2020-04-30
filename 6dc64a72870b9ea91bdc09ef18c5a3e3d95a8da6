@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "a3b4a98f_f1e37ae2",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "but that\u0027s the left side which is the old version, right? my concern is about the new version. The code in PS7 does not return the exit code. i must be missing something very simple.\n\nbut I see it was fixed in PS8",
+      "parentUuid": "c7e1e257_84fad1c7",
+      "revId": "6dc64a72870b9ea91bdc09ef18c5a3e3d95a8da6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e21c46b7_ea423d13",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 7

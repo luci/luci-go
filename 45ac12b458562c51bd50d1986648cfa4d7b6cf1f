@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "47821360_cb6144ba",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "this is used only when returning a non-nil error in runTestCmd.\nWhen runTestCmd returns a non-nil error, the exitCode is ignored.\n\u003d\u003e ExitCodeStreamError is not needed. runTestCmd can return 0 when returning a non-nil error.",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 20
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "549deeea_767586f7",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "this might get out of sync. Why not reuse code from pbutil package?\n\nTo keep inter-package API simple, consider adding a function to pbutil\n\n  func CoerceToInvocationID(s string) string\n\nwhich does this kind of cleaning",
+      "range": {
+        "startLine": 52,
+        "startChar": 52,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5746f8a5_b4abc0f3",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "r.done should return something exotic, e.g, 1001, so that the caller can distinguish testCmd\u0027s and our exit codes. If you don\u0027t want to do in this CL, a TODO would suffice.",
+      "range": {
+        "startLine": 122,
+        "startChar": 12,
+        "endLine": 122,
+        "endChar": 16
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c841521_2fa50934",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "exitCode !\u003d 0\n\nsorry, my code was wrong",
+      "range": {
+        "startLine": 135,
+        "startChar": 15,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca9eb678_b5acafdd",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "LUCI_CONTEXT",
+      "range": {
+        "startLine": 160,
+        "startChar": 69,
+        "endLine": 160,
+        "endChar": 76
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0194a638_7be8248c",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "typo?",
+      "range": {
+        "startLine": 174,
+        "startChar": 5,
+        "endLine": 174,
+        "endChar": 14
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0e3e098_aa3b6593",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "nit: would be more readable\n\n  username :\u003d strings.ToLower(whoami.Username)\n  username \u003d matchSpaces.ReplaceAllString(username, \"\")\n  username \u003d matchInvalidInvocationIDChars.ReplaceAllString(username, \"_\")",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 244,
+        "endChar": 74
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcb5baad_a6ca1913",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "nit: base64 would be shorter for the same number of combinations",
+      "range": {
+        "startLine": 247,
+        "startChar": 11,
+        "endLine": 247,
+        "endChar": 16
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10760fae_6defefbd",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:27:06Z",
+      "side": 1,
+      "message": "this might get out of sync too. it is hard to reuse code here, but it would be better if the [two pieces of code mirror each other] are close to each other, e.g. in one file.",
+      "range": {
+        "startLine": 250,
+        "startChar": 33,
+        "endLine": 250,
+        "endChar": 36
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
