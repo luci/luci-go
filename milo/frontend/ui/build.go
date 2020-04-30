@@ -99,6 +99,10 @@ func (b *Build) CommitLinkHTML() template.HTML {
 	return NewLink(label, protoutil.GitilesCommitURL(c), "commit "+label).HTML()
 }
 
+func (b *Build) ShouldShowCanaryWarning() bool {
+	return b.Canary && (b.Status == buildbucketpb.Status_FAILURE || b.Status == buildbucketpb.Status_INFRA_FAILURE)
+}
+
 // BuildPage represents a build page on Milo.
 // The core of the build page is the underlying build proto, but can contain
 // extra information depending on the context, for example a blamelist,
