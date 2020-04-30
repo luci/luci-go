@@ -43,10 +43,14 @@ func TestState(t *testing.T) {
 
 	Convey("Check non-empty ctx", t, func() {
 		s := state{
-			db:        &fakeDB{},
+			db: &fakeDB{
+				groups: map[string][]identity.Identity{
+					"group": {"user:abc@example.com"},
+				},
+			},
 			user:      &User{Identity: "user:abc@example.com"},
 			peerIdent: "user:abc@example.com",
-			peerIP: net.IP{1, 2, 3, 4},
+			peerIP:    net.IP{1, 2, 3, 4},
 		}
 		ctx := context.WithValue(context.Background(), stateContextKey(0), &s)
 		So(GetState(ctx), ShouldNotBeNil)
@@ -58,7 +62,7 @@ func TestState(t *testing.T) {
 
 		res, err := IsMember(ctx, "group")
 		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue) // fakeDB always returns true
+		So(res, ShouldBeTrue)
 
 		res, err = IsInWhitelist(ctx, "bots")
 		So(err, ShouldBeNil)

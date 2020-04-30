@@ -190,6 +190,45 @@ func TestAuthenticate(t *testing.T) {
 			So(CurrentIdentity(c), ShouldEqual, identity.Identity("user:def@example.com"))
 		})
 	})
+
+	Convey("X-Luci-Project works", t, func() {
+		c := injectTestDB(context.Background(), &fakeDB{
+			groups: map[string][]identity.Identity{
+				InternalServicesGroup: {"user:allowed@example.com"},
+			},
+		})
+
+		Convey("Allowed", func() {
+			auth := Authenticator{
+				Methods: []Method{fakeAuthMethod{email: "allowed@example.com"}},
+			}
+			req := makeRequest()
+			req.Header.Set(XLUCIProjectHeader, "test-proj")
+			c, err := auth.Authenticate(c, req)
+			So(err, ShouldBeNil)
+			So(CurrentIdentity(c), ShouldEqual, identity.Identity("project:test-proj"))
+		})
+
+		Convey("Forbidden", func() {
+			auth := Authenticator{
+				Methods: []Method{fakeAuthMethod{email: "unknown@example.com"}},
+			}
+			req := makeRequest()
+			req.Header.Set(XLUCIProjectHeader, "test-proj")
+			_, err := auth.Authenticate(c, req)
+			So(err, ShouldEqual, ErrProjectHeaderForbidden)
+		})
+
+		Convey("Bad project ID", func() {
+			auth := Authenticator{
+				Methods: []Method{fakeAuthMethod{email: "allowed@example.com"}},
+			}
+			req := makeRequest()
+			req.Header.Set(XLUCIProjectHeader, "?????")
+			_, err := auth.Authenticate(c, req)
+			So(err, ShouldErrLike, "bad value")
+		})
+	})
 }
 
 func TestMiddleware(t *testing.T) {
@@ -311,6 +350,7 @@ type fakeDB struct {
 	internalService string
 	authServiceURL  string
 	tokenServiceURL string
+	groups          map[string][]identity.Identity
 }
 
 func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
@@ -322,11 +362,18 @@ func (db *fakeDB) IsInternalService(c context.Context, hostname string) (bool, e
 }
 
 func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
-	return len(groups) != 0, nil
+	for _, g := range groups {
+		for _, member := range db.groups[g] {
+			if id == member {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func (db *fakeDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
-	return groups, nil
+	panic("not implemented")
 }
 
 func (db *fakeDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
