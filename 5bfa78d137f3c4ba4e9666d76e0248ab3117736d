@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1b318114_9405c689",
+        "filename": "logdog/client/butler/butler_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 692,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-30T23:36:29Z",
+      "side": 1,
+      "message": "I would move this to the commit message instead, since it\u0027s probably going to be very dependent on your machine, and these numbers will change over time.",
+      "range": {
+        "startLine": 692,
+        "startChar": 2,
+        "endLine": 692,
+        "endChar": 3
+      },
+      "revId": "5bfa78d137f3c4ba4e9666d76e0248ab3117736d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
