@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -685,4 +686,64 @@ func TestButler(t *testing.T) {
 			})
 		})
 	})
+}
+
+func BenchmarkButler(b *testing.B) {
+	numOfStreams := []int{10, 100, 500}
+	testText := []string{
+		"This is line one\n",
+		"This is line two\n",
+		"This is final line\n",
+	}
+
+	for _, numOfStream := range numOfStreams {
+		b.Run(fmt.Sprintf("%d streams", numOfStream), func(b *testing.B) {
+			for i := 0; i <= b.N; i++ {
+				if err := runButlerBenchmark(testText, numOfStream); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// runButlerBenchmark creates a new butler instance and given number of
+// streams, then write the supplied text to each stream and wait for
+// the butler instance to complete.
+func runButlerBenchmark(testText []string, numOfStream int) error {
+	conf := Config{
+		Output:     &null.Output{},
+		BufferLogs: false,
+	}
+	tb := mkb(context.Background(), conf)
+	tss := newTestStreamServer()
+	tb.AddStreamServer(tss)
+
+	streams := make([]*testStream, numOfStream)
+
+	for i := range streams {
+		streams[i] = &testStream{
+			inC:     make(chan *testStreamData, 16),
+			closedC: make(chan struct{}),
+			desc: &logpb.LogStreamDescriptor{
+				Name:        fmt.Sprintf("stream%d", i),
+				StreamType:  logpb.StreamType_TEXT,
+				ContentType: string(types.ContentTypeText),
+			},
+		}
+		tss.enqueue(streams[i])
+	}
+
+	for _, s := range streams {
+		for _, line := range testText {
+			s.data([]byte(line), nil)
+		}
+		s.err(io.EOF)
+	}
+
+	tb.Activate()
+	if err := tb.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
