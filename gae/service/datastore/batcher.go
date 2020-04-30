@@ -24,23 +24,22 @@ import (
 )
 
 func applyBatchFilter(c context.Context, rds RawInterface) RawInterface {
-	batchingEnabled, batchingSpecified := getBatching(c)
+	if !getBatchingEnabled(c) {
+		return rds
+	}
+
 	return &batchFilter{
-		RawInterface:      rds,
-		ic:                c,
-		constraints:       rds.Constraints(),
-		batchingSpecified: batchingSpecified,
-		batchingEnabled:   batchingEnabled,
+		RawInterface: rds,
+		ic:           c,
+		constraints:  rds.Constraints(),
 	}
 }
 
 type batchFilter struct {
 	RawInterface
 
-	ic                context.Context
-	constraints       Constraints
-	batchingSpecified bool
-	batchingEnabled   bool
+	ic          context.Context
+	constraints Constraints
 }
 
 func (bf *batchFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
@@ -74,8 +73,7 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 		return cb(0, count)
 	}
 
-	// We batch by default unless the user specifies otherwise.
-	batching := (bf.batchingEnabled || !bf.batchingSpecified) && batch > 0
+	batching := batch > 0
 
 	// If batching is disabled, we will skip goroutines and do everything in a
 	// single batch.

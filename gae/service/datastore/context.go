@@ -133,7 +133,10 @@ func WithBatching(c context.Context, enabled bool) context.Context {
 	return context.WithValue(c, rawDatastoreBatchKey, enabled)
 }
 
-func getBatching(c context.Context) (is, ok bool) {
-	is, ok = c.Value(rawDatastoreBatchKey).(bool)
-	return
+func getBatchingEnabled(c context.Context) bool {
+	val, ok := c.Value(rawDatastoreBatchKey).(bool)
+	if !ok {
+		return true // defaults to true if the user hasn't specified anything.
+	}
+	return val
 }
