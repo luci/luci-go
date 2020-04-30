@@ -262,6 +262,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				CreateTime:   inv.CreateTime,
 				FinalizeTime: inv.FinalizeTime,
 				Deadline:     inv.Deadline,
+				Tags:         inv.Tags,
 			}
 			muts = append(muts, span.InsertOrUpdateMap(
 				"Invocations", s.rowOfInvocation(ctx, batchInv, "")),
