@@ -101,6 +101,14 @@
 
     </h1>
 
+    {{ if .BuildPage.Build.ShouldShowCanaryWarning }}
+      <div class="canary-warning">
+        WARNING: This build ran on a canary version of LUCI. If you suspect it
+        failed due to infra, retry the build. Next time it may use the
+        non-canary version.
+      </div>
+    {{ end }}
+
     <div id="tabs" style="display: none">
       <ul>
         <li><a href="#overview-tab">Overview</a></li>
