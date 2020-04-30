@@ -398,35 +398,31 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 	// Also, populate data structures for second pass.
 	names := stringset.Set{}
 	equi := stringset.Set{} // equivalent_to builder names.
-	// Subset of builders w/o any extra features that can be triggered directly
+	// Subset of builders that can be triggered directly
 	// and which can be relied upon to trigger other builders.
 	canStartTriggeringTree := make([]string, 0, len(v.Builders))
 	triggersMap := map[string][]string{} // who triggers whom.
 
 	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
-		specialities := make([]string, 0, 1)
-		uniqueSpecials := make([]string, 0, 1)
 		if b.TriggeredBy != "" {
-			specialities = append(specialities, "triggered_by")
-			uniqueSpecials = append(uniqueSpecials, "triggered_by")
 			// Don't validate TriggeredBy as builder name, it should just match
 			// another main builder name, which will be validated anyway.
 			triggersMap[b.TriggeredBy] = append(triggersMap[b.TriggeredBy], b.Name)
 			if b.ExperimentPercentage != 0 {
 				ctx.Errorf("experiment_percentage is not combinable with triggered_by")
 			}
+			if b.EquivalentTo != nil {
+				ctx.Errorf("equivalent_to is not combinable with triggered_by")
+			}
 		}
 		if b.EquivalentTo != nil {
-			specialities = append(specialities, "equivalent_to")
-			uniqueSpecials = append(uniqueSpecials, "equivalent_to")
 			validateEquivalentBuilder(ctx, b.EquivalentTo, equi)
 			if b.ExperimentPercentage != 0 {
 				ctx.Errorf("experiment_percentage is not combinable with equivalent_to")
 			}
 		}
 		if b.ExperimentPercentage != 0 {
-			specialities = append(specialities, "experiment_percentage")
 			if b.ExperimentPercentage < 0.0 || b.ExperimentPercentage > 100.0 {
 				ctx.Errorf("experiment_percentage must between 0 and 100 (%f given)", b.ExperimentPercentage)
 			}
@@ -435,8 +431,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			}
 		}
 		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
-			specialities = append(specialities, "location_regexp[_exclude]")
-			uniqueSpecials = append(uniqueSpecials, "location_regexp[_exclude]")
 			validateLocationRegexp(ctx, "location_regexp", b.LocationRegexp)
 			validateLocationRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
 			if b.IncludableOnly {
@@ -444,11 +438,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			}
 		}
 		if len(b.OwnerWhitelistGroup) > 0 {
-			specialities = append(specialities, "owner_whitelist_group")
-			uniqueSpecials = append(uniqueSpecials, "owner_whitelist_group")
-			if b.ExperimentPercentage != 0 {
-				ctx.Errorf("experiment_percentage is not combinable with owner_whitelist_group")
-			}
 			for i, g := range b.OwnerWhitelistGroup {
 				if g == "" {
 					ctx.Enter("owner_whitelist_group #%d", i+1)
@@ -457,28 +446,13 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 				}
 			}
 		}
-
-		switch len(specialities) {
-		case 1:
-			// Relying on a builder with special feature to trigger child builders is
-			// tricky to handle correctly from UX PoV given many combinations.
-			// For example, if non-experimental builder is triggered_by experimental.
-			// So, it's easier to just prohibit this and keep implementation simpler until
-			// there is a strong use-case.
-			break
-		case 0:
+		if b.ExperimentPercentage == 0 && b.TriggeredBy == "" && b.EquivalentTo == nil {
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
-		default:
-			if len(uniqueSpecials) > 1 {
-				ctx.Errorf("combining %s features not yet allowed", uniqueSpecials)
-			}
 		}
 	})
 
 	// Between passes, do a depth-first search into triggers-whom DAG starting
-	// with only those builders which can be triggered directly by CQ and
-	// without any extra features, expanding the set to all indirectly
-	// triggerable builders.
+	// with only those builders which can be triggered directly by CQ.
 	q := canStartTriggeringTree
 	canBeTriggered := stringset.NewFromSlice(q...)
 	for len(q) > 0 {
