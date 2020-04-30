@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 )
@@ -70,6 +71,13 @@ func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, e
 }
 
 func verifyAccess(ctx context.Context) error {
+	curID := auth.CurrentIdentity(ctx)
+	if curID.Kind() == identity.Project {
+		// Only trusted LUCI systems can act on behalf of a project.
+		// We trust LUCI.
+		return nil
+	}
+
 	// TODO(crbug.com/1013316): use realms.
 
 	// WARNING: removing this restriction requires removing AsSelf HTTP client
