@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"net"
 	"net/http"
+	"sync"
 	"sync/atomic"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -95,7 +96,7 @@ func (c *ServerConfig) Validate() error {
 // gather test results to send to its Recorder.
 type Server struct {
 	cfg     ServerConfig
-	errC    chan error
+	doneC   chan struct{}
 	httpSrv http.Server
 
 	// 1 indicates that the server is starting or has started. 0, otherwise.
@@ -103,6 +104,9 @@ type Server struct {
 
 	// Listener for tests
 	testListener net.Listener
+
+	mu  sync.Mutex // protects err
+	err error
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -125,10 +129,16 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	}
 
 	s := &Server{
-		cfg:  cfg,
-		errC: make(chan error, 1),
+		cfg:   cfg,
+		doneC: make(chan struct{}),
 	}
 	return s, nil
+}
+
+// Done returns a channel that is closed when the server terminated and finished processing
+// all the ongoing requests.
+func (s *Server) Done() <-chan struct{} {
+	return s.doneC
 }
 
 // Config retrieves the ServerConfig of a previously created Server.
@@ -139,47 +149,50 @@ func (s *Server) Config() ServerConfig {
 	return s.cfg
 }
 
-// ErrC returns a channel that transmits a server error.
+// Err returns a server error, explaining the reason of the sink server closed.
 //
-// Receiving an error on this channel implies that the server has either
-// stopped running or is in the process of stopping.
-func (s *Server) ErrC() <-chan error {
-	return s.errC
+// If Done is not yet closed, Err returns nil.
+// If Done is closed, Err returns a non-nil error explaining why.
+func (s *Server) Err() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.err
 }
 
 // Run invokes callback in a context where the server is running.
 //
-// The context passed to callback will be cancelled if the server encounters
-// an error. The context also has the server's information exported into it.
-// If callback finishes running, Run will return the error it returned.
-func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	// TODO(sajjadm): Add Export here when implemented and explain it in the function comment.
+// The context passed to callback will be cancelled if the server has stopped due to
+// critical errors or Close being invoked. The context also has the server's information
+// exported into it. If callback finishes, Run will return the error callback returned.
+func (s *Server) Run(ctx context.Context, callback func(context.Context) error) (err error) {
+	// TODO(ddoman): make Run as a global function under package sink
 	if err := s.Start(ctx); err != nil {
 		return err
 	}
-	defer s.Close()
-
-	done := make(chan error)
-	go func() {
-		done <- callback(ctx)
+	defer func() {
+		// Run returns nil IFF both of the callback and Shutdown returned nil.
+		sErr := s.Shutdown(ctx)
+		if err == nil {
+			err = sErr
+		}
 	}()
 
-	select {
-	case err := <-s.errC:
-		cancel()
-		<-done
-		return err
-	case err := <-done:
-		return err
-	}
+	ctx, cancel := context.WithCancel(s.Export(ctx))
+	defer cancel()
+	go func() {
+		select {
+		case <-s.Done():
+			// cancel the context if the server terminates before callback finishes.
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return callback(ctx)
 }
 
 // Start runs the server.
 //
-// On success, Start will return nil, and a subsequent error will be sent on
-// the server's ErrC channel.
+// On success, Start will return nil, and a subsequent error can be obtained from Err.
 func (s *Server) Start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
 		return errors.Reason("cannot call Start twice").Err()
@@ -200,32 +213,67 @@ func (s *Server) Start(ctx context.Context) error {
 	prpc.InstallHandlers(routes, router.MiddlewareChain{})
 	sinkpb.RegisterSinkServer(prpc, ss)
 
-	ctx, cancel := context.WithCancel(ctx)
 	go func() {
-		var err error
 		defer func() {
-			// close SinkServer to complete all the outgoing requests
-			// before sending a signal to s.errC.
+			// close SinkServer to complete all the outgoing requests before closing doneC
+			// to send a signal.
 			closeSinkServer(ctx, ss)
-			s.errC <- err
-			cancel()
+			close(s.doneC)
 		}()
+
+		var err error
 		if s.testListener == nil {
+			// err will be written to s.err after the channel fully drained.
 			err = s.httpSrv.ListenAndServe()
 		} else {
 			// In test mode, the the listener MUST be prepared already.
 			err = s.httpSrv.Serve(s.testListener)
 		}
-	}()
-	go func() {
-		<-ctx.Done()
-		// TODO(ddoman): handle errors from s.httpSrv.Close()
-		s.httpSrv.Close()
+
+		// if the reason of the server stopped was due to s.Close or s.Shutdown invoked,
+		// then s.Err should return nil instead.
+		if err == http.ErrServerClosed {
+			err = nil
+		}
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		s.err = err
 	}()
 	return nil
 }
 
-// Close immediately stops the servers and cancels the requests that are being processed.
+// Shutdown gracefully shuts down the server without interrupting any ongoing requests.
+//
+// Shutdown works by first closing the listener for incoming requests, and then waiting for
+// all the ongoing requests to be processed and pending results to be uploaded. If
+// the provided context expires before the shutdown is complete, Shutdown returns
+// the context's error.
+func (s *Server) Shutdown(ctx context.Context) error {
+	if atomic.LoadInt32(&s.started) == 0 {
+		// hasn't been started
+		return ErrCloseBeforeStart
+	}
+	if err := s.httpSrv.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	select {
+	case <-s.Done():
+		// Shutdown always returns nil as long as the server was closed and drained.
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Close stops the server.
+//
+// Server processes sinkRequests asynchronously, and Close doesn't guarantee completion
+// of all the ongoing requests. After Close returns, wait for Done to be closed to ensure
+// that all the pending results have been uploaded.
+//
+// It's recommended to use Shutdown() instead of Close with Done.
 func (s *Server) Close() error {
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started

@@ -16,14 +16,13 @@ package sink
 
 import (
 	"context"
-	"net/http"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -84,44 +83,44 @@ func TestServer(t *testing.T) {
 			})
 
 			Convey("after being closed", func() {
-				// close the server
-				err := srv.Close()
-				So(err, ShouldBeNil)
-				So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
-
-				// start after close should fail
+				So(srv.Close(), ShouldBeNil)
 				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
 			})
 		})
 
 		Convey("Close closes the HTTP server", func() {
 			So(srv.Start(ctx), ShouldBeNil)
+			So(srv.Close(), ShouldBeNil)
 
-			// check that the server is up.
 			_, err := reportTestResults(ctx, addr, "secret", req)
-			So(err, ShouldBeNil)
-
-			// close the server
-			err = srv.Close()
-			So(err, ShouldBeNil)
-			So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
+			// OSes may return different messages for connection errors, but seem to return
+			// with "connection" always.
+			// : e.g., "No connection could be made", "connection refused"
+			So(err, ShouldErrLike, "connection")
 		})
 
 		Convey("Close fails before Start being called", func() {
 			So(srv.Close(), ShouldErrLike, ErrCloseBeforeStart)
 		})
 
-		Convey("Closing the context closes the HTTP server", func() {
-			ctx, cancel := context.WithCancel(ctx)
+		Convey("Shutdown closes Done", func() {
+			isClosed := func() bool {
+				select {
+				case <-srv.Done():
+					return true
+				default:
+					return false
+				}
+			}
 			So(srv.Start(ctx), ShouldBeNil)
 
 			// check that the server is up.
 			_, err := reportTestResults(ctx, addr, "secret", req)
 			So(err, ShouldBeNil)
 
-			// close the context, and check the server is down.
-			cancel()
-			So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
+			So(isClosed(), ShouldBeFalse)
+			So(srv.Shutdown(ctx), ShouldBeNil)
+			So(isClosed(), ShouldBeTrue)
 		})
 
 		Convey("Run", func() {
@@ -141,9 +140,9 @@ func TestServer(t *testing.T) {
 				_, err := reportTestResults(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
-				// finish the callback and verify that the server stopped running
+				// finish the callback and verify that srv.Run returned what the callback
+				// returned.
 				handlerErr <- expected
-				So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
 				So(<-runErr, ShouldEqual, expected)
 			})
 
@@ -160,9 +159,10 @@ func TestServer(t *testing.T) {
 				_, err := reportTestResults(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
-				// close the server to emit a server error.
+				// close the server to emit a server error. Then, the callback context
+				// should be cancelled, and srv.Run() should return the error.
 				srv.httpSrv.Close()
-				So(<-runErr, ShouldEqual, http.ErrServerClosed)
+				So(<-runErr, ShouldEqual, context.Canceled)
 			})
 		})
 
