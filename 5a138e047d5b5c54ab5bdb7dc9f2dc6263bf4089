@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "168995bf_d92bef98",
+        "filename": "milo/frontend/resultui/out/static/styles/style.css",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 0,
+      "message": "Some style change to make the scrollbar in the main test result list and left panel working.\nStill don\u0027t quite understand how height: 100% and overflow-y: hidden work exactly.\nBut anyway, the scroll bars seem to be working.",
+      "revId": "5a138e047d5b5c54ab5bdb7dc9f2dc6263bf4089",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35009007_d5b062b3",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 0,
+      "message": "Moved to pages/invocation_page/invocation_details_tab.\nAlso\n1. Removed expanded/collapse related code.\n2. Changed how invocation is passed into this component since it\u0027s rendered by the router now.",
+      "revId": "5a138e047d5b5c54ab5bdb7dc9f2dc6263bf4089",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53e42f34_ffe53331",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 0,
+      "message": "Split into 3 files.\n1. pages/invocation_page/index.ts (the rendering of the invocation page minus the test list)\n2. pages/invocation_page/context.ts (the state of the page that need to be shared with tabs)\n3. pages/invocation_page/test_results_tab.ts (the test list, including the left panel)",
+      "revId": "5a138e047d5b5c54ab5bdb7dc9f2dc6263bf4089",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

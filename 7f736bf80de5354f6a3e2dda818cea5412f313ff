@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ce6c669_85a89c4e",
+        "filename": "milo/frontend/resultui/src/libs/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 1,
+      "message": "changed the placement of super.connectedCallback().\nSo the context binded property can be access in the connectedCallback of the class being decorated.",
+      "revId": "7f736bf80de5354f6a3e2dda818cea5412f313ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6846beaa_2cd5cb47",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 1,
+      "message": "Added selectedTabId.\nOther properties are from the original invocation_page.ts.",
+      "revId": "7f736bf80de5354f6a3e2dda818cea5412f313ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82d85b55_a6bd3c5b",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 1,
+      "message": "Added tab bar.\nAdjusted style.\nOthers are from invocation_page.ts.",
+      "revId": "7f736bf80de5354f6a3e2dda818cea5412f313ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3028525c_6fab970f",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/invocation_details_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 1,
+      "message": "From components/invocation_details.ts.\nMinus the code for expanding/collapsing the element.",
+      "revId": "7f736bf80de5354f6a3e2dda818cea5412f313ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "831330a2_6f9e3f01",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/invocation_details_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 1,
+      "message": "Notify the parent element that this tab is selected.\nThis is only needed when user is visiting this tab through a URL.",
+      "revId": "7f736bf80de5354f6a3e2dda818cea5412f313ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8e8a297_7a66e241",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T01:02:08Z",
+      "side": 1,
+      "message": "From the original invocation_page.ts.",
+      "revId": "7f736bf80de5354f6a3e2dda818cea5412f313ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
