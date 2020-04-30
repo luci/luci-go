@@ -82,7 +82,7 @@ export class TestEntryElement extends MobxLitElement {
               class=${classMap({unexpected: this.hasUnexpected})}
             >${this.hasUnexpected ?  'error': 'check'}</mwc-icon>
             <div id="test-identifier">
-              <span class="light">${this.commonTestIdPrefix.slice(this.rootName.length)}</span>${this.test!.id.slice(this.commonTestIdPrefix.length)}
+              <span id="root-name" class="light"><span>${this.rootName}</span></span><span class="light">${this.commonTestIdPrefix.slice(this.rootName.length)}</span>${this.test!.id.slice(this.commonTestIdPrefix.length)}
               <tr-copy-to-clipboard
                 .textToCopy=${this.test!.id}
                 @click=${(e: Event) => e.stopPropagation()}
@@ -165,6 +165,14 @@ export class TestEntryElement extends MobxLitElement {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    #root-name:not(:hover)>span {
+      display: none;
+    }
+
+    #root-name:not(:hover):after {
+      content: "...";
     }
   `;
 }
