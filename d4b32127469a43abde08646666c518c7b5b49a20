@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca7eec13_bea03d1c",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-30T19:39:10Z",
+      "side": 1,
+      "message": "not",
+      "range": {
+        "startLine": 64,
+        "startChar": 61,
+        "endLine": 64,
+        "endChar": 64
+      },
+      "revId": "d4b32127469a43abde08646666c518c7b5b49a20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c403e223_9db3af4a",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-04-30T19:39:10Z",
+      "side": 1,
+      "message": "probably need to copypasta this to https://chrome-infra-auth.appspot.com/auth/groups/auth-luci-services",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 12
+      },
+      "revId": "d4b32127469a43abde08646666c518c7b5b49a20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
