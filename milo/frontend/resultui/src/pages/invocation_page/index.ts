@@ -131,9 +131,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         .components=${[{color: '#007bff', weight: 1}]}
         .loading=${this.pageState.invocationReq.state === 'pending'}
       ></tr-status-bar>
-      ${!this.pageState.invocation ? null : html`
-      <tr-invocation-details .invocation=${this.pageState.invocation}></tr-invocation-details>
-      `}
       <tr-tab-bar
         .tabs=${this.tabDefs}
         .selectedTabId=${this.pageState.selectedTabId}
@@ -146,7 +143,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     :host {
       height: calc(100vh - var(--header-height));
       display: grid;
-      grid-template-rows: repeat(4, auto) 1fr;
+      grid-template-rows: repeat(3, auto) 1fr;
     }
 
     #test-invocation-summary {
