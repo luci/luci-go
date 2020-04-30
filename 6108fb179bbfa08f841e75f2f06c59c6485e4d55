@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43353233_b01fd342",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-04-30T12:18:36Z",
+      "side": 1,
+      "message": "Just curious, are we suppose to update the copyright disclaimer when we update an existing file?",
+      "revId": "6108fb179bbfa08f841e75f2f06c59c6485e4d55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
