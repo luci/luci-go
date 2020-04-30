@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d060aa4f_dd38b910",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-30T09:42:23Z",
+      "side": 0,
+      "message": "This was causing a bug.\n(1) At L174, s.Shutdown() is invoked with ctx.\n(2) L180 sets the address of a new context object into var `ctx`. As a result, s.Shutdown() at L174 will be invoked with the new context created.\n(3) At L181, the new context is cancelled when the callback returns.\n(4) When s.Shutdown() is invoked in L174, the context has already been cancelled, and, therefore, s.Shutdown() always returns immediately without waiting for the channels to be drained.\n\nI named them with srvCtx and cbCtx to make them distinguishable and the intentions clearer.",
+      "range": {
+        "startLine": 180,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 4
+      },
+      "revId": "58d67e2823a0d987b01a9d17165edd4e1e65cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
