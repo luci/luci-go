@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "541341b4_2bb6e7b2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T07:15:40Z",
+      "side": 1,
+      "message": "\u003e Currently, if rdb_channel fails to upload test results due to non-transient errors, then the results are simply dropped.\n\u003e \n\u003e IIUC, sink should terminate the server immediately in a failure of result/artifact uploads, and s.Err() should return the error.\n\u003e \n\u003e Is this correct? then, I will add a TODO and make the change in a separate CL.\n\nyes, separate CL SGTM.",
+      "parentUuid": "cb26b8a2_229e3eec",
+      "range": {
+        "startLine": 152,
+        "startChar": 29,
+        "endLine": 152,
+        "endChar": 79
+      },
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ec030d4f_53524be9",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
@@ -78,6 +102,24 @@
       "side": 1,
       "message": "Yes, and I was going to make the change in a separate CL, and that\u0027s what the below TODO at L168 was added.\n\nI added the change in this CL. PTAL",
       "parentUuid": "ec030d4f_53524be9",
+      "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c963d826_ebe5f14d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T07:15:40Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "6700442d_3ed98273",
       "revId": "823842aac32c7ef73cbec4366b0e815d5bea7c50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false

@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f671a02b_8a8be985",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T07:15:40Z",
+      "side": 1,
+      "message": "period.",
+      "range": {
+        "startLine": 155,
+        "startChar": 61,
+        "endLine": 155,
+        "endChar": 64
+      },
+      "revId": "901fdf08ad06f8877ec4b914f3f80cb20c0c6e94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "172a3a7f_e0abaea9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T07:15:40Z",
+      "side": 1,
+      "message": "nit: this block is attached to the shutdown block and makes the reader think they are related. But actually, the reason we need this is the next block (the goroutine). I think the code should entail the intention. Consider either moving this all the way to the top, or making it adjacent to the goroutine below\n\nalso, if any thing, the defer block in L175 should be adjacent to Start() above, because together they manage server lifetime",
+      "range": {
+        "startLine": 173,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 15
+      },
+      "revId": "901fdf08ad06f8877ec4b914f3f80cb20c0c6e94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85eb062e_b116d533",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T07:15:40Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 250,
+        "startChar": 56,
+        "endLine": 250,
+        "endChar": 64
+      },
+      "revId": "901fdf08ad06f8877ec4b914f3f80cb20c0c6e94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
