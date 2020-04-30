@@ -57,6 +57,26 @@ var (
 	// ErrNoForwardableCreds is returned when attempting to forward credentials
 	// (via AsCredentialsForwarder) that are not forwardable.
 	ErrNoForwardableCreds = errors.New("auth: no forwardable credentials in the context")
+
+	// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
+	// tries to use X-Luci-Project header. Only a whitelisted set of callers
+	// are allowed to use this header, see InternalServicesGroup.
+	ErrProjectHeaderForbidden = errors.New("auth: the caller is not allowed to use X-Luci-Project")
+)
+
+const (
+	// InternalServicesGroup is a name of a group with service accounts of LUCI
+	// microservices of the current LUCI deployment (and only them!).
+	//
+	// Accounts in this group are allowed to use X-Luci-Project header to specify
+	// that RPCs are done in a context of some particular project. For such
+	// requests CurrentIdentity() == 'project:<X-Luci-Project value>'.
+	//
+	// This group should contain only **fully trusted** services, deployed and
+	// managed by the LUCI deployment administrators. Adding "random" services
+	// here is a security risk, since they will be able to impersonate any LUCI
+	// project.
+	InternalServicesGroup = "auth-luci-services"
 )
 
 // Method implements a particular kind of low-level authentication mechanism.
@@ -175,7 +195,7 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 			replyError(c.Context, c.Writer, 500, "Transient error during authentication", err)
 		case err == ErrNotConfigured:
 			replyError(c.Context, c.Writer, 500, "The authentication library is not configured", err)
-		case err == ErrBadClientID || err == ErrIPNotWhitelisted:
+		case err == ErrBadClientID || err == ErrIPNotWhitelisted || err == ErrProjectHeaderForbidden:
 			replyError(c.Context, c.Writer, 403, "Forbidden", err)
 		case err != nil:
 			replyError(c.Context, c.Writer, 401, "Authentication error", err)
@@ -212,6 +232,8 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 			report(err, "ERROR_BAD_REMOTE_ADDR")
 		case err == ErrIPNotWhitelisted:
 			report(err, "ERROR_FORBIDDEN_IP")
+		case err == ErrProjectHeaderForbidden:
+			report(err, "ERROR_PROJECT_HEADER_FORBIDDEN")
 		case transient.Tag.In(err):
 			report(err, "ERROR_TRANSIENT_IN_"+stage)
 		default:
@@ -287,8 +309,11 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 		if s.user, err = checkDelegationToken(tracedCtx, cfg, s.db, token, s.peerIdent); err != nil {
 			return nil, err
 		}
-	} else if projID := r.Header.Get(XLUCIProjectHeader); projID != "" {
-		// TODO(vadimsh): Implement.
+	} else if project := r.Header.Get(XLUCIProjectHeader); project != "" {
+		stage = "PROJECT_HEADER_CHECK"
+		if s.user, err = checkProjectHeader(tracedCtx, s.db, project, s.peerIdent); err != nil {
+			return nil, err
+		}
 	} else {
 		// If not using LUCI-specific protocols, grab the end user creds in case we
 		// want to forward them later in GetRPCTransport(AsCredentialsForwarder).
@@ -434,6 +459,33 @@ func checkDelegationToken(ctx context.Context, cfg *Config, db authdb.DB, token 
 	}.Debugf(ctx, "auth: Using delegation")
 
 	return &User{Identity: delegatedIdentity}, nil
+}
+
+// checkProjectHeader verifies the caller is allowed to use X-Luci-Project
+// mechanism and returns a *User (with project-scoped identity) to use for
+// the request.
+func checkProjectHeader(ctx context.Context, db authdb.DB, project string, peerID identity.Identity) (*User, error) {
+	// See comment for InternalServicesGroup.
+	switch yes, err := db.IsMember(ctx, peerID, []string{InternalServicesGroup}); {
+	case err != nil:
+		return nil, errors.Annotate(err, "error when checking if %q is in %q", peerID, InternalServicesGroup).Tag(transient.Tag).Err()
+	case !yes:
+		return nil, ErrProjectHeaderForbidden
+	}
+
+	// Verify the actual value passes the regexp check.
+	projIdent, err := identity.MakeIdentity("project:" + project)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad %s", XLUCIProjectHeader).Err()
+	}
+
+	// Log that peerID is using project-scoped identity.
+	logging.Fields{
+		"peerID":    peerID,
+		"projectID": projIdent,
+	}.Debugf(ctx, "auth: Using project identity")
+
+	return &User{Identity: projIdent}, nil
 }
 
 // getOwnServiceIdentity returns 'service:<appID>' identity of the current
