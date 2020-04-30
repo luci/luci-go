@@ -294,6 +294,11 @@ func (b *Build) HumanStatus() string {
 	}
 }
 
+// ShouldShowCanaryWarning returns true for failed canary builds.
+func (b *Build) ShouldShowCanaryWarning() bool {
+	return b.Canary && (b.Status == buildbucketpb.Status_FAILURE || b.Status == buildbucketpb.Status_INFRA_FAILURE)
+}
+
 type property struct {
 	// Name is the name of the property relative to a build.
 	// Note: We call this a "Name" not a "Key", since this was the term used in BuildBot.
