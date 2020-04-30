@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "928bbec1_8e5bf55d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:52:56Z",
+      "side": 1,
+      "message": "\u003e \u003e\u003e When runTestCmd returns a non-nil error, the exitCode is ignored.\n\u003e \n\u003e That\u0027s what the below TODO at L94 is for.\n\nLeft a comment there.\n\n\u003e ```\n\u003e // TODO(ddoman): tag the error with an exit code, and r.done() returns the exit code,\n\u003e // if tagged.\n\u003e ```\n\u003e \n\u003e We want rdb-stream to return the test programs\u0027 exit code, right? \n\nRight, and PS8 already does that.\n\n\u003e\nIt implies that the user of rdb-stream wants to parse and recognize certains exit codes. If not, then rdb-stream wouldn\u0027t have to return the test program\u0027s exit code, but 1 or 0, like any other rdb-sub commands return.\n\u003e \n\u003e I think it\u0027s still valid for rdb-stream to return a special code, 1001, to indicate that the exit was due to an internal error. WDYT?\n\nI agree with this. I think all we need to do to achieve is to return 1001 inside done() instead of 1.",
+      "parentUuid": "ae038c25_3c46c37e",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 20
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "549deeea_767586f7",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -65,6 +89,29 @@
         "startChar": 52,
         "endLine": 52,
         "endChar": 68
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8172cde7_2afdd94a",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-04-30T23:52:56Z",
+      "side": 1,
+      "message": "why though? what we have here works well and simple",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 14
       },
       "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
