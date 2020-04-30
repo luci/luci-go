@@ -18,8 +18,8 @@ import { assert } from 'chai';
 import { html } from 'lit-element';
 import sinon from 'sinon';
 
-import './invocation_page';
-import { InvocationPageElement } from './invocation_page';
+import '.';
+import { InvocationPageElement } from '.';
 
 
 describe('Invocation Test Page', () => {
@@ -28,7 +28,7 @@ describe('Invocation Test Page', () => {
     const location = {params: {'invocation_id': 'invocation_id'}} as Partial<RouterLocation> as RouterLocation;
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
-    assert.strictEqual(page.invocationId, location.params['invocation_id']);
+    assert.strictEqual(page.pageState.invocationId, location.params['invocation_id']);
   });
 
   it('should redirect to "/not-found" when invocation_id is not provided', async () => {
