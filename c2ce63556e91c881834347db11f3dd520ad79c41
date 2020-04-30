@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82f4cfb5_7419b0ae",
+        "filename": "grpc/appstatus/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-04-30T21:08:53Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 35,
+        "startChar": 34,
+        "endLine": 36,
+        "endChar": 42
+      },
+      "revId": "c2ce63556e91c881834347db11f3dd520ad79c41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
