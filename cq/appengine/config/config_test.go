@@ -570,22 +570,14 @@ func TestTryjobValidation(t *testing.T) {
 				"must not be empty string")
 		})
 
-		Convey("no combinations", func() {
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					experiment_percentage: 1
-					equivalent_to {name: "c/d/e"}}`),
-				ShouldErrLike,
-				"experiment_percentage is not combinable with equivalent_to")
+		Convey("allowed combinations", func() {
 			So(validate(`
 				builders {
 					name: "a/b/c"
 					experiment_percentage: 1
 					owner_whitelist_group: "owners"
 				}`),
-				ShouldErrLike,
-				"experiment_percentage is not combinable with owner_whitelist_group")
+				ShouldBeNil)
 			So(validate(`
 				builders {
 					name: "a/b/c"
@@ -593,8 +585,25 @@ func TestTryjobValidation(t *testing.T) {
 					triggered_by: "c/d/e"
 				}
 				builders { name: "c/d/e" } `),
+				ShouldBeNil)
+			So(validate(`
+				builders {name: "pa/re/nt"}
+				builders {
+					name: "a/b/c"
+					triggered_by: "pa/re/nt"
+					includable_only: true
+				}`),
+				ShouldBeNil)
+		})
+
+		Convey("disallowed combinations", func() {
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					experiment_percentage: 1
+					equivalent_to {name: "c/d/e"}}`),
 				ShouldErrLike,
-				"combining [triggered_by location_regexp[_exclude]] features not yet allowed")
+				"experiment_percentage is not combinable with equivalent_to")
 		})
 
 		Convey("includable_only", func() {
@@ -616,13 +625,6 @@ func TestTryjobValidation(t *testing.T) {
 				"includable_only is not combinable with location_regexp[_exclude]")
 
 			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
-			So(validate(`
-				builders {name: "pa/re/nt"}
-				builders {
-					name: "a/b/c"
-					triggered_by: "pa/re/nt"
-					includable_only: true
-				}`), ShouldBeNil)
 		})
 
 		Convey("triggered_by", func() {
