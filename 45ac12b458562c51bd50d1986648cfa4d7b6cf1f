@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ae038c25_3c46c37e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-04-30T23:46:55Z",
+      "side": 1,
+      "message": "\u003e\u003e When runTestCmd returns a non-nil error, the exitCode is ignored.\n\nThat\u0027s what the below TODO at L94 is for.\n```\n// TODO(ddoman): tag the error with an exit code, and r.done() returns the exit code,\n// if tagged.\n```\n\nWe want rdb-stream to return the test programs\u0027 exit code, right? It implies that the user of rdb-stream wants to parse and recognize certains exit codes. If not, then rdb-stream wouldn\u0027t have to return the test program\u0027s exit code, but 1 or 0, like any other rdb-sub commands return.\n\nI think it\u0027s still valid for rdb-stream to return a special code, 1001, to indicate that the exit was due to an internal error. WDYT?",
+      "parentUuid": "47821360_cb6144ba",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 20
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "549deeea_767586f7",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
