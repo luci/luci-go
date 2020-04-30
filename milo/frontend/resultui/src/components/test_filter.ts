@@ -13,9 +13,6 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import '@material/mwc-checkbox';
-import { Checkbox } from '@material/mwc-checkbox';
-import '@material/mwc-formfield';
 import { css, customElement, html } from 'lit-element';
 import { autorun, observable } from 'mobx';
 
@@ -50,35 +47,37 @@ export class TestFilterElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <mwc-formfield label="Unexpected">
-        <mwc-checkbox
-          checked
-          disabled
-        ></mwc-checkbox>
-      </mwc-formfield>
-      <mwc-formfield label="Expected">
-        <mwc-checkbox
-          ?checked=${this.showExpected}
-          @change=${(v: MouseEvent) => this.showExpected = (v.target as Checkbox).checked}
-        ></mwc-checkbox>
-      </mwc-formfield>
-      <mwc-formfield label="Exonerated">
-        <mwc-checkbox
-          ?checked=${this.showExonerated}
-          @change=${(v: MouseEvent) => this.showExonerated = (v.target as Checkbox).checked}
-        ></mwc-checkbox>
-      </mwc-formfield>
+      Show:
+      <div class="filter">
+        <input type="checkbox" id="unexpected" disabled checked>
+        <label for="unexpected" style="color: #d23f31;">Unexpected</label>
+      </div class="filter">
+      <div class="filter">
+        <input type="checkbox" id="expected" @change=${(v: MouseEvent) => this.showExpected = (v.target as HTMLInputElement).checked}>
+      <label for="expected" style="color: #33ac71;">Expected</label>
+      </div class="filter">
+      <div class="filter">
+        <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked}>
+        <label for="exonerated" style="color: #fa3;">Exonerated</label>
+      </div class="filter">
     `;
   }
 
   static styles = css`
     :host {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      padding: 5px 0;
+      display: inline-block;
+      padding: 0 10px;
+      margin: 5px;
     }
     mwc-formfield > mwc-checkbox {
       margin-right: -10px;
+    }
+    .filter {
+      display: inline-block;
+      padding: 0 5px;
+    }
+    #unexpected {
+      color: red;
     }
   `;
 }

@@ -14,6 +14,7 @@
 
 import { Route, Router } from '@vaadin/router';
 
+import './components/page_header';
 import './context/app_state_provider';
 import './context/config_provider';
 
@@ -25,45 +26,67 @@ const notFoundRoute: Route = {
   },
 };
 
-const router = new Router(document.getElementById('app-root'));
+export const router = new Router(document.getElementById('app-root'));
 router.setRoutes({
   path: '/',
-    component: 'tr-config-provider',
-    children: [
-      {
-        path: '/',
-        component: 'tr-page-header',
-        children: [
-          {
-            path: '/login',
-            action: async (_ctx, cmd) => {
-              await import(/* webpackChunkName: "login_page" */ './pages/login_page');
-              return cmd.component('tr-login-page');
-            },
+  component: 'tr-config-provider',
+  children: [
+    {
+      path: '/',
+      component: 'tr-page-header',
+      children: [
+        {
+          path: '/login',
+          action: async (_ctx, cmd) => {
+            await import(/* webpackChunkName: "login_page" */ './pages/login_page');
+            return cmd.component('tr-login-page');
           },
-          {
-            path: '/error',
-            action: async (_ctx, cmd) => {
-              await import(/* webpackChunkName: "error_page" */ './pages/error_page');
-              return cmd.component('tr-error-page');
-            },
+        },
+        {
+          path: '/error',
+          action: async (_ctx, cmd) => {
+            await import(/* webpackChunkName: "error_page" */ './pages/error_page');
+            return cmd.component('tr-error-page');
           },
-          {
-            path: '/',
-            component: 'tr-app-state-provider',
-            children: [
-              {
-                path: '/inv/:invocation_id',
-                action: async (_ctx, cmd) => {
-                  await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
-                  return cmd.component('tr-invocation-page');
-                },
+        },
+        {
+          path: '/',
+          component: 'tr-app-state-provider',
+          children: [
+            {
+              path: '/inv/:invocation_id',
+              action: async (_ctx, cmd) => {
+                await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+                return cmd.component('tr-invocation-page');
               },
-              notFoundRoute,
-            ],
-          },
-          notFoundRoute,
-        ],
-      },
-    ],
+              children: [
+                {
+                  path: '/',
+                  redirect: '/inv/:invocation_id/test-results',
+                },
+                {
+                  path: 'test-results',
+                  name: 'test-results',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "test_results_tab" */ './pages/invocation_page/test_results_tab');
+                    return cmd.component('tr-test-results-tab');
+                  },
+                },
+                {
+                  path: '/invocation-details',
+                  name: 'invocation-details',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "invocation_details_tab" */ './pages/invocation_page/invocation_details_tab');
+                    return cmd.component('tr-invocation-details-tab');
+                  },
+                },
+              ],
+            },
+            notFoundRoute,
+          ],
+        },
+        notFoundRoute,
+      ],
+    },
+  ],
 });
