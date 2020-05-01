@@ -147,10 +147,15 @@ func TestSplitTemplateFile(t *testing.T) {
 			So(err, ShouldErrLike, "empty")
 		})
 
+		Convey(`single line`, func() {
+			_, _, err := SplitTemplateFile("one line")
+			So(err, ShouldBeNil)
+		})
+
 		Convey(`less than three lines`, func() {
 			_, _, err := SplitTemplateFile(`subject
         body`)
-			So(err, ShouldErrLike, "less than three lines")
+			So(err, ShouldErrLike, "second line is not blank")
 		})
 
 		Convey(`no blank line`, func() {

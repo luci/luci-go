@@ -233,8 +233,8 @@ func SplitTemplateFile(content string) (subject, body string, err error) {
 
 	parts := strings.SplitN(content, "\n", 3)
 	switch {
-	case len(parts) < 3:
-		return "", "", fmt.Errorf("less than three lines")
+	case len(parts) == 1:
+		return strings.TrimSpace(parts[0]), "", nil
 
 	case len(strings.TrimSpace(parts[1])) > 0:
 		return "", "", fmt.Errorf("second line is not blank: %q", parts[1])
