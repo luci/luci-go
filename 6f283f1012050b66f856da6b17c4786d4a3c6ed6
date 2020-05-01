@@ -46,6 +46,30 @@
       "revId": "6f283f1012050b66f856da6b17c4786d4a3c6ed6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45caf14b_0be2d300",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T05:56:01Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "c300e2a2_22c2c5e4",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 238,
+        "endChar": 0
+      },
+      "revId": "6f283f1012050b66f856da6b17c4786d4a3c6ed6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
