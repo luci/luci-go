@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22ee6a6f_b375799e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T06:46:23Z",
+      "side": 1,
+      "message": "just occurred to me that \"\" would be better because it takes less space\nand we won\u0027t have repeated _",
+      "range": {
+        "startLine": 233,
+        "startChar": 70,
+        "endLine": 233,
+        "endChar": 71
+      },
+      "revId": "d0ad0874013c729ff7924750fd69476db12ddb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03e8dfe1_a9c84867",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T06:46:23Z",
+      "side": 1,
+      "message": "also shorter",
+      "revId": "d0ad0874013c729ff7924750fd69476db12ddb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

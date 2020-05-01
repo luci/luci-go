@@ -144,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "0262c341_e082b3db",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T06:46:23Z",
+      "side": 1,
+      "message": "ok, let\u0027s leave it as is",
+      "parentUuid": "683abef5_05081193",
+      "range": {
+        "startLine": 52,
+        "startChar": 52,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8172cde7_2afdd94a",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
