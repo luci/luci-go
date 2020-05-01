@@ -91,8 +91,7 @@ export class TestResultsTabElement extends MobxLitElement {
           ${repeat(state.selectedNode.allTests.slice(0, this.pageLength), (t) => t.id, (t, i) => html`
           <tr-test-entry
             .test=${t}
-            .rootName=${this.rootName}
-            .prevTestId=${(state.selectedNode.allTests[i-1]?.id || this.rootName)}
+            .prevTestId=${(state.selectedNode.allTests[i-1]?.id || '')}
             .expanded=${state.selectedNode.allTests.length === 1}
           ></tr-test-entry>
           `)}

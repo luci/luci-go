@@ -36,8 +36,7 @@ import './variant-entry';
  */
 @customElement('tr-test-entry')
 export class TestEntryElement extends MobxLitElement {
-  @observable.ref test?: ReadonlyTest;
-  @observable.ref rootName = '';
+  @observable.ref test!: ReadonlyTest;
   @observable.ref prevTestId = '';
 
   @observable.ref private _expanded = false;
@@ -55,7 +54,7 @@ export class TestEntryElement extends MobxLitElement {
 
   @computed
   private get hasUnexpected() {
-    return this.test!.variants.some((v) => v.results.some((r) => !r.expected));
+    return this.test.variants.some((v) => v.results.some((r) => !r.expected));
   }
 
   /**
@@ -64,7 +63,7 @@ export class TestEntryElement extends MobxLitElement {
   @computed
   private get commonTestIdPrefix() {
     const prevSegs = this.prevTestId.match(ID_SEG_REGEX)!;
-    const currentSegs = this.test!.id.match(ID_SEG_REGEX)!;
+    const currentSegs = this.test.id.match(ID_SEG_REGEX)!;
     return takeWhile(prevSegs, (seg, i) => currentSegs[i] === seg).join('');
   }
 
@@ -82,9 +81,9 @@ export class TestEntryElement extends MobxLitElement {
               class=${classMap({unexpected: this.hasUnexpected})}
             >${this.hasUnexpected ?  'error': 'check'}</mwc-icon>
             <div id="test-identifier">
-              <span class="light">${this.commonTestIdPrefix.slice(this.rootName.length)}</span>${this.test!.id.slice(this.commonTestIdPrefix.length)}
+              <span class="light">${this.commonTestIdPrefix}</span>${this.test.id.slice(this.commonTestIdPrefix.length)}
               <tr-copy-to-clipboard
-                .textToCopy=${this.test!.id}
+                .textToCopy=${this.test.id}
                 @click=${(e: Event) => e.stopPropagation()}
                 title="copy test ID to clipboard"
               ></tr-copy-to-clipboard>
@@ -94,8 +93,8 @@ export class TestEntryElement extends MobxLitElement {
         <div id="body">
           <div id="content-ruler"></div>
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
-            ${repeat(this.wasExpanded ? this.test!.variants : [], (_variant, i) => i, (v) => html`
-            <tr-variant-entry .variant=${v} .expanded=${this.test!.variants.length === 1}></tr-variant-entry>
+            ${repeat(this.wasExpanded ? this.test.variants : [], (_variant, i) => i, (v) => html`
+            <tr-variant-entry .variant=${v} .expanded=${this.test.variants.length === 1}></tr-variant-entry>
             `)}
           </div>
         </div>
