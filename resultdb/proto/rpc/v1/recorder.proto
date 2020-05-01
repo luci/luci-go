@@ -22,7 +22,7 @@ import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 
 // Service to record test results.
 //
