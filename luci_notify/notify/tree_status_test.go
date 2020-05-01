@@ -307,7 +307,7 @@ func TestUpdateTrees(t *testing.T) {
 			So(status.message, ShouldEqual, "Tree is closed (Automatic: Correct message)")
 		})
 
-		Convey("No action when build is older than last status update", func() {
+		Convey("Doesn't close when build is older than last status update", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium-status.appspot.com": treeStatus{
@@ -335,6 +335,46 @@ func TestUpdateTrees(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldEqual, "Opened, because I feel like it")
+		})
+
+		Convey("Doesn't open when build is older than last status update", func() {
+			// This test replicates the likely state just after we've
+			// automatically closed the tree: the tree is closed with
+			// our username, and there is some failing TreeCloser older
+			// than the status update.
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium-status.appspot.com": treeStatus{
+						username:  botUsername,
+						message:   "Tree is closed (Automatic: some builder failed)",
+						key:       -1,
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder1),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Open,
+				Timestamp:      evenEarlierTime,
+			}, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder2),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      evenEarlierTime,
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Closed)
+			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
 		})
 	})
 }
