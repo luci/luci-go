@@ -33,6 +33,10 @@ import (
 )
 
 func TestMultipleDeployProcesses(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Skipping, flaky on luci-go-continuous-win7-64: crbug.com/1077343")
+	}
+
 	const procs = 30
 
 	tempDir, err := ioutil.TempDir("", "cipd_test")
