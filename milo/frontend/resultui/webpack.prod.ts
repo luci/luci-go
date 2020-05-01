@@ -26,19 +26,9 @@ import common from './webpack.common';
 //    ./webpack.common
 // Related: https://github.com/TypeStrong/ts-loader/pull/1085
 
-// Use require since webpack-plugin-hash-output has no type declaration files.
-// tslint:disable-next-line: variable-name
-const HashOutputPlugin = require('webpack-plugin-hash-output');
-
-const config: webpack.Configuration = merge.strategy({plugins: 'prepend'})(common, {
-  output: {
-    filename: '[name].[chunkhash].bundle.js',
-    chunkFilename: '[name].[chunkhash].bundle.js',
-  },
+const config: webpack.Configuration = merge(common, {
+  devtool: 'source-map',
   mode: 'production',
-  plugins: [
-    new HashOutputPlugin(),
-  ],
 });
 
 // Default export is required by webpack.
