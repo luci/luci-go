@@ -35,6 +35,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// ExitCodeCommandFailure indicates that a given command failed due to internal errors
+// or invalid input parameters.
+const ExitCodeCommandFailure = 1001
+
 // baseCommandRun provides common command run functionality.
 // All rdb subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
@@ -140,7 +144,7 @@ func (r *baseCommandRun) validateCurrentInvocation() error {
 func (r *baseCommandRun) done(err error) int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 1
+		return ExitCodeCommandFailure
 	}
 	return 0
 }
