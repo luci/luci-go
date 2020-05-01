@@ -52,13 +52,18 @@ func TestTasks(t *testing.T) {
 		})
 
 		Convey(`Lease`, func() {
-			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedLeaseErr error) {
+			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectSuccess bool) {
 				testutil.MustApply(ctx,
 					Enqueue(BQExport, "task", "inv", []byte("payload"), processAfter),
 				)
 
 				invID, payload, err := Lease(ctx, BQExport, "task", time.Second)
-				So(err, ShouldEqual, expectedLeaseErr)
+				if !expectSuccess {
+					So(err, ShouldEqual, ErrConflict)
+					return
+				}
+
+				So(err, ShouldBeNil)
 				So(invID, ShouldEqual, span.InvocationID("inv"))
 				So(payload, ShouldResemble, []byte("payload"))
 
@@ -73,11 +78,11 @@ func TestTasks(t *testing.T) {
 			}
 
 			Convey(`succeeded`, func() {
-				test(start.Add(-time.Hour), start.Add(time.Second), nil)
+				test(start.Add(-time.Hour), start.Add(time.Second), true)
 			})
 
 			Convey(`skipped`, func() {
-				test(start.Add(time.Hour), start.Add(time.Hour), ErrConflict)
+				test(start.Add(time.Hour), start.Add(time.Hour), false)
 			})
 
 			Convey(`Non-existing task`, func() {
