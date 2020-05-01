@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/util"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
@@ -121,7 +122,8 @@ type TestResult struct {
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest, inv *pb.Invocation) ([]*TestResult, error) {
 	// Parse swarming tags.
-	baseVariant, testIDPrefix := parseSwarmingTags(task)
+	parsed := parseSwarmingTags(task)
+	inv.Tags = append(inv.Tags, parsed.tags...)
 
 	// Fetch outputs, converting if any.
 	var results []*TestResult
@@ -129,7 +131,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	ref := task.OutputsRef
 
 	if ref != nil && ref.Isolated != "" {
-		if results, err = processOutputs(ctx, ref, testIDPrefix, inv, req); err != nil {
+		if results, err = processOutputs(ctx, ref, parsed.testIDPrefix, inv, req); err != nil {
 			logging.Warningf(ctx, "isolated outputs at %q in %q, %q: %s",
 				ref.Isolated, ref.Isolatedserver, ref.Namespace, err)
 		}
@@ -140,7 +142,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	if err != nil {
 		// Either no output to process or we don't understand the output,
 		// fall back to convert the whole task as one result.
-		result, err := convertTaskToResult(testIDPrefix, task, req)
+		result, err := convertTaskToResult(parsed.testIDPrefix, task, req)
 		if err != nil {
 			return nil, attachInvalidTaskf(err, "failed to convert the task to a test result")
 		}
@@ -150,12 +152,12 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	// Apply the base variant.
 	for _, r := range results {
 		if len(r.Variant.GetDef()) == 0 {
-			r.Variant = baseVariant
+			r.Variant = parsed.baseVariant
 			continue
 		}
 
 		// Otherwise combine.
-		for k, v := range baseVariant.Def {
+		for k, v := range parsed.baseVariant.Def {
 			if _, ok := r.Variant.Def[k]; !ok {
 				r.Variant.Def[k] = v
 			}
@@ -165,27 +167,37 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	return results, nil
 }
 
-func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, testIDPrefix string) {
-	baseVariant = &typepb.Variant{Def: make(map[string]string, 3)}
+type parsedSwarmingTags struct {
+	baseVariant  *typepb.Variant
+	testIDPrefix string
+	tags         []*typepb.StringPair
+}
+
+func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingTags {
 	ninjaTarget := ""
+	ret := parsedSwarmingTags{
+		baseVariant: &typepb.Variant{Def: make(map[string]string, 3)},
+	}
 	for _, t := range task.Tags {
 		switch k, v := strpair.Parse(t); k {
 		case "bucket":
-			baseVariant.Def["bucket"] = v
+			ret.baseVariant.Def["bucket"] = v
 		case "buildername":
-			baseVariant.Def["builder"] = v
+			ret.baseVariant.Def["builder"] = v
 		case "test_suite":
-			baseVariant.Def["test_suite"] = v
+			ret.baseVariant.Def["test_suite"] = v
 		case "test_id_prefix":
-			testIDPrefix = v
+			ret.testIDPrefix = v
 		case "ninja_target":
 			ninjaTarget = v
+		case "stepname":
+			ret.tags = pbutil.StringPairs("step_name", v)
 		}
 	}
-	if testIDPrefix == "" && ninjaTarget != "" {
-		testIDPrefix = fmt.Sprintf("ninja:%s/", ninjaTarget)
+	if ret.testIDPrefix == "" && ninjaTarget != "" {
+		ret.testIDPrefix = fmt.Sprintf("ninja:%s/", ninjaTarget)
 	}
-	return
+	return ret
 }
 
 // GetSwarmSvc gets a swarming service for the given URL.
