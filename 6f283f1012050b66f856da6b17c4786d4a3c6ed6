@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "625dfaa1_7264c462",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T04:52:14Z",
+      "side": 1,
+      "message": "this silently ignores second line, which is not nice. e.g. user might write\n\n  foo\n  bar\n\nand bar would be silently dropped.\n\ni recommend doing L237 in `case len(parts) \u003d\u003d 1`",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 238,
+        "endChar": 0
+      },
+      "revId": "6f283f1012050b66f856da6b17c4786d4a3c6ed6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
