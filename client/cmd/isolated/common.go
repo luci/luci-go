@@ -16,12 +16,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolatedclient"
 )
@@ -59,5 +61,9 @@ func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error
 }
 
 func (c *commonFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
-	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent("isolated-go/"+version))
+	userAgent := "isolated-go/" + isolatedVersion
+	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
+		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+	}
+	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent(userAgent))
 }

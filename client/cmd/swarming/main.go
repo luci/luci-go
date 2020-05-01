@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -22,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
@@ -31,9 +33,18 @@ import (
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
 const (
-	version           = "0.3"
-	swarmingUserAgent = "swarming-go/" + version
+	swarmingVersion = "0.3"
 )
+
+var swarmingUserAgent = "swarming-go/" + swarmingVersion
+
+func init() {
+	ver, err := version.GetStartupVersion()
+	if err != nil || ver.InstanceID == "" {
+		return
+	}
+	swarmingUserAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+}
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
@@ -51,7 +62,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
-			versioncli.CmdVersion(version),
+			versioncli.CmdVersion(swarmingVersion),
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{

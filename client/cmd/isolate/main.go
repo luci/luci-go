@@ -28,9 +28,9 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-// version must be updated whenever functional change (behavior, arguments,
+// isolateVersion must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.5"
+const isolateVersion = "0.5"
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
@@ -47,7 +47,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
-			versioncli.CmdVersion(version),
+			versioncli.CmdVersion(isolateVersion),
 		},
 	}
 }
