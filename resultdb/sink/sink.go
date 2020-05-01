@@ -74,6 +74,9 @@ type ServerConfig struct {
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
+
+	// Listener for tests
+	testListener net.Listener
 }
 
 func (c *ServerConfig) Validate() error {
@@ -101,9 +104,6 @@ type Server struct {
 
 	// 1 indicates that the server is starting or has started. 0, otherwise.
 	started int32
-
-	// Listener for tests
-	testListener net.Listener
 
 	mu  sync.Mutex // protects err
 	err error
@@ -159,13 +159,17 @@ func (s *Server) Err() error {
 	return s.err
 }
 
-// Run invokes callback in a context where the server is running.
+// Run starts a server and runs callback in a context where the server is running.
 //
 // The context passed to callback will be cancelled if the server has stopped due to
 // critical errors or Close being invoked. The context also has the server's information
-// exported into it. If callback finishes, Run will return the error callback returned.
-func (s *Server) Run(ctx context.Context, callback func(context.Context) error) (err error) {
-	// TODO(ddoman): make Run as a global function under package sink
+// exported into it. If callback finishes, Run will stop the server and return the error
+// callback returned.
+func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, ServerConfig) error) (err error) {
+	s, err := NewServer(ctx, cfg)
+	if err != nil {
+		return err
+	}
 	if err := s.Start(ctx); err != nil {
 		return err
 	}
@@ -177,7 +181,10 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(s.Export(ctx))
+	// It's necessary to create a new context with a new variable. If param `ctx` was
+	// re-used, the new context would be passed to Shutdown in the deferred function after
+	// being cancelled.
+	cbCtx, cancel := context.WithCancel(s.Export(ctx))
 	defer cancel()
 	go func() {
 		select {
@@ -187,7 +194,7 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 		case <-ctx.Done():
 		}
 	}()
-	return callback(ctx)
+	return callback(cbCtx, cfg)
 }
 
 // Start runs the server.
@@ -222,12 +229,12 @@ func (s *Server) Start(ctx context.Context) error {
 		}()
 
 		var err error
-		if s.testListener == nil {
+		if s.cfg.testListener == nil {
 			// err will be written to s.err after the channel fully drained.
 			err = s.httpSrv.ListenAndServe()
 		} else {
 			// In test mode, the the listener MUST be prepared already.
-			err = s.httpSrv.Serve(s.testListener)
+			err = s.httpSrv.Serve(s.cfg.testListener)
 		}
 
 		// if the reason of the server stopped was due to s.Close or s.Shutdown invoked,
