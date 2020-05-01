@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbb130e4_b6565c50",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T10:27:25Z",
+      "side": 1,
+      "message": "I attempted to restructure theses constants such that they share constant values as much as possible with fmt.Sprintf(). However, it turned out that all the attempts seem to be over-engineering and introduce unnecessary complexities.\n\nI found that this is the best, and it\u0027s not a big concern that these constants have duplicate, hard-coded strings. Please let me know if you have better ideas.",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 31
+      },
+      "revId": "198084d498eb6746e503340a028f18fd57523c81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
