@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24b08c94_972f22e1",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "I\u0027m not sure if this is the best name. Please feel free propose a better name.",
+      "range": {
+        "startLine": 40,
+        "startChar": 6,
+        "endLine": 40,
+        "endChar": 28
+      },
+      "revId": "280f7021fa117151ee00468ae39fb640e61db4fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

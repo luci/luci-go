@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "399699bb_a8c4e980",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "928bbec1_8e5bf55d",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 20
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "549deeea_767586f7",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -84,6 +108,30 @@
       "writtenOn": "2020-04-30T23:27:06Z",
       "side": 1,
       "message": "this might get out of sync. Why not reuse code from pbutil package?\n\nTo keep inter-package API simple, consider adding a function to pbutil\n\n  func CoerceToInvocationID(s string) string\n\nwhich does this kind of cleaning",
+      "range": {
+        "startLine": 52,
+        "startChar": 52,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "683abef5_05081193",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "I\u0027m afraid that pbutil.CoereceToInvocationID() may look like a solution for general problems. I want the logic of cleaning the invocation ID to be used only for such an invocation ID generated for testing purposes.\n\nI cannot think of any real use cases that could utilize CoereceToInovcationID(). If a client somehow generated an invalid invocation ID, it should simply fail, and the code needs to be fixed to always generate a valid invocation ID.\n\nHow about moving cli.genInvID() into pbutil as following?\nIf it looks OK, then I will add it in a separate CL. It will require some unit tests to be added in pbutil.\n\n```\npackage pbutil\n\n// TestInvocationID creates and returns a test invocation ID is rare enough\n// to be unique globally.\n//\n// The ID is made of the current username and timestamp with random suffixes, so that it\u0027s\n// easy to find the creator and creation time for tracking purposes.\nfunc TestInvocationID():\n  .....\n```",
+      "parentUuid": "549deeea_767586f7",
       "range": {
         "startLine": 52,
         "startChar": 52,
@@ -119,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "ef48e63c_cee32ae7",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Removed, and r.done() returns 1001.",
+      "parentUuid": "8172cde7_2afdd94a",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 14
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5746f8a5_b4abc0f3",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -139,6 +211,30 @@
       "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4090f69b_56ec82c5",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Changes made to have done() returning 1001",
+      "parentUuid": "5746f8a5_b4abc0f3",
+      "range": {
+        "startLine": 122,
+        "startChar": 12,
+        "endLine": 122,
+        "endChar": 16
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -165,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "d13242e1_3be04e27",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Ah, I didn\u0027t catch it either. Fixed",
+      "parentUuid": "0c841521_2fa50934",
+      "range": {
+        "startLine": 135,
+        "startChar": 15,
+        "endLine": 135,
+        "endChar": 20
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca9eb678_b5acafdd",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -185,6 +305,30 @@
       "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0cb958e_99f79115",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca9eb678_b5acafdd",
+      "range": {
+        "startLine": 160,
+        "startChar": 69,
+        "endLine": 160,
+        "endChar": 76
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -211,6 +355,30 @@
     },
     {
       "key": {
+        "uuid": "27f794b0_9b102c6e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0194a638_7be8248c",
+      "range": {
+        "startLine": 174,
+        "startChar": 5,
+        "endLine": 174,
+        "endChar": 14
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0e3e098_aa3b6593",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -231,6 +399,30 @@
       "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca74614e_a0e2117e",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0e3e098_aa3b6593",
+      "range": {
+        "startLine": 243,
+        "startChar": 1,
+        "endLine": 244,
+        "endChar": 74
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -257,6 +449,30 @@
     },
     {
       "key": {
+        "uuid": "8fecc8ce_07cf54a9",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcb5baad_a6ca1913",
+      "range": {
+        "startLine": 247,
+        "startChar": 11,
+        "endLine": 247,
+        "endChar": 16
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10760fae_6defefbd",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -268,6 +484,54 @@
       "writtenOn": "2020-04-30T23:27:06Z",
       "side": 1,
       "message": "this might get out of sync too. it is hard to reuse code here, but it would be better if the [two pieces of code mirror each other] are close to each other, e.g. in one file.",
+      "range": {
+        "startLine": 250,
+        "startChar": 33,
+        "endLine": 250,
+        "endChar": 36
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9be2872_89433767",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "answered above.",
+      "parentUuid": "10760fae_6defefbd",
+      "range": {
+        "startLine": 250,
+        "startChar": 33,
+        "endLine": 250,
+        "endChar": 36
+      },
+      "revId": "45ac12b458562c51bd50d1986648cfa4d7b6cf1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "74b33446_df9dbd59",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T06:23:03Z",
+      "side": 1,
+      "message": "Agreed. As I commented above, I think moving this function into pbutil is a good solution. WDYT?",
+      "parentUuid": "10760fae_6defefbd",
       "range": {
         "startLine": 250,
         "startChar": 33,
