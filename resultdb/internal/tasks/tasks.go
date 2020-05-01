@@ -21,11 +21,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -100,30 +97,27 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		now := clock.Now(ctx).UTC()
-		var processAfter time.Time
-		err := span.ReadRow(ctx, txn, "InvocationTasks", typ.Key(id), map[string]interface{}{
-			"InvocationId": &invID,
-			"ProcessAfter": &processAfter,
-			"Payload":      &payload,
-		})
-		switch {
-		case grpc.Code(err) == codes.NotFound:
-			logging.Warningf(ctx, "task %s/%s not found: %s", typ, id, err)
+		st := spanner.NewStatement(`
+			SELECT InvocationId, Payload
+			FROM InvocationTasks
+			WHERE TaskType = @taskType AND TaskId = @taskID
+			  AND ProcessAfter < CURRENT_TIMESTAMP()
+		`)
+		st.Params["taskType"] = string(typ)
+		st.Params["taskId"] = id
+		switch err := span.QueryFirstRow(ctx, txn, st, &invID, &payload); {
+		case err == span.ErrNoResults:
 			return ErrConflict
 
 		case err != nil:
 			return err
-
-		case processAfter.After(now):
-			return ErrConflict
 
 		default:
 			return txn.BufferWrite([]*spanner.Mutation{
 				span.UpdateMap("InvocationTasks", map[string]interface{}{
 					"TaskType":     string(typ),
 					"TaskId":       id,
-					"ProcessAfter": now.Add(duration),
+					"ProcessAfter": clock.Now(ctx).UTC().Add(duration),
 				}),
 			})
 		}
