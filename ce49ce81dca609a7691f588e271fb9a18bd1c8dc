@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5301ab4_c1f257b3",
+        "filename": "client/cmd/swarming/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-05-01T09:41:58Z",
+      "side": 1,
+      "message": "I feel like the same code is repeated 3 times.\nCan we make it in common for other luci go commands?",
+      "revId": "ce49ce81dca609a7691f588e271fb9a18bd1c8dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
