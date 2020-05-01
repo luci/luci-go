@@ -110,10 +110,11 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 		return nil, errors.Reason("must use absolute path: %s", path).Err()
 	}
 	d := &disk{
-		policies: policies,
-		path:     path,
-		h:        isolated.GetHash(namespace),
-		lru:      makeLRUDict(namespace),
+		policies:              policies,
+		path:                  path,
+		h:                     isolated.GetHash(namespace),
+		lru:                   makeLRUDict(namespace),
+		digestHardlinkRecords: make(map[isolated.HexDigest]*hardlinkRecords),
 	}
 	p := d.statePath()
 
@@ -287,6 +288,11 @@ func (m *memory) GetUsed() []int64 {
 	return append([]int64{}, m.used...)
 }
 
+// TODO(1076468): Remove once 1076468 is fixed
+type hardlinkRecords struct {
+	destToCount map[string]int32
+}
+
 type disk struct {
 	// Immutable.
 	policies Policies
@@ -300,6 +306,8 @@ type disk struct {
 	// TODO(maruel): stateFile
 	added []int64
 	used  []int64
+	// TODO(1076468): Remove the map once 1076468 is fixed
+	digestHardlinkRecords map[isolated.HexDigest]*hardlinkRecords
 }
 
 func (d *disk) Close() error {
@@ -442,12 +450,22 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	if err := os.Link(src, dest); err != nil {
-		return fmt.Errorf("failed to call os.Link(%s, %s): %w", src, dest, err)
+		fi, _ := os.Stat(src)
+		return fmt.Errorf("failed to call os.Link(%s, %s): %w\nadditional info:\n  FileInfo=%v\n  digestHardlinkRecords=%v", src, dest, err, fi, d.digestHardlinkRecords)
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
 		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
+
+	record, ok := d.digestHardlinkRecords[digest]
+	if !ok {
+		record = &hardlinkRecords{
+			destToCount: make(map[string]int32),
+		}
+		d.digestHardlinkRecords[digest] = record
+	}
+	record.destToCount[dest]++
 	return nil
 }
 
