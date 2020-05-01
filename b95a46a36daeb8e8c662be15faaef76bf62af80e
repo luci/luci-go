@@ -70,6 +70,30 @@
       "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "821f4e34_37bdf2fc",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T09:34:00Z",
+      "side": 1,
+      "message": "You are absolutely right. I didn\u0027t think of it from the user\u0027s POV.\nI named it to ctx. PTAL",
+      "parentUuid": "93668d1b_f63b0cd2",
+      "range": {
+        "startLine": 168,
+        "startChar": 9,
+        "endLine": 168,
+        "endChar": 15
+      },
+      "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
