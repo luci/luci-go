@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0a77d63_603b3bfa",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T06:47:00Z",
+      "side": 1,
+      "message": "I think using int is fine?",
+      "range": {
+        "startLine": 293,
+        "startChar": 27,
+        "endLine": 293,
+        "endChar": 29
+      },
+      "revId": "f64c753cfedf102b7492ee91a4b211705d0b319f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47c8bd5f_4bedf40a",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T06:47:00Z",
+      "side": 1,
+      "message": "include stat and err for |dest| and dir of |dest|",
+      "revId": "f64c753cfedf102b7492ee91a4b211705d0b319f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
