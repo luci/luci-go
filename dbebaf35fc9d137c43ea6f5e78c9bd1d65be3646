@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5472167_27d09d0e",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T06:32:58Z",
+      "side": 1,
+      "message": "add \u0027crbug.com/\u0027 prefix",
+      "range": {
+        "startLine": 291,
+        "startChar": 8,
+        "endLine": 291,
+        "endChar": 15
+      },
+      "revId": "dbebaf35fc9d137c43ea6f5e78c9bd1d65be3646",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbd36edc_2671d1ae",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T06:32:58Z",
+      "side": 1,
+      "message": "include err in log too",
+      "range": {
+        "startLine": 453,
+        "startChar": 6,
+        "endLine": 453,
+        "endChar": 7
+      },
+      "revId": "dbebaf35fc9d137c43ea6f5e78c9bd1d65be3646",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af44dcd1_ba96bdbc",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 461,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T06:32:58Z",
+      "side": 1,
+      "message": "better to call this before os.Link ?",
+      "revId": "dbebaf35fc9d137c43ea6f5e78c9bd1d65be3646",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
