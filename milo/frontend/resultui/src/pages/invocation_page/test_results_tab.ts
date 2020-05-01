@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { autorun, computed, observable } from 'mobx';
+import { autorun, observable } from 'mobx';
 
 import '../../components/left_panel';
 import '../../components/test-entry';
@@ -35,10 +35,6 @@ export class TestResultsTabElement extends MobxLitElement {
 
   @observable.ref private pageLength = 100;
 
-  @computed
-  private get rootName(): string {
-    return this.pageState.testLoader.node.name;
-  }
   private disposers: Array<() => void> = [];
   connectedCallback() {
     super.connectedCallback();
