@@ -15,11 +15,16 @@
 package pbutil
 
 import (
+	"context"
+	"strings"
 	"testing"
+	"time"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -66,5 +71,44 @@ func TestInvocationUtils(t *testing.T) {
 			"k3", "v30",
 			"k3", "v31",
 		))
+	})
+
+	Convey("GenerateTestInvocationID", t, func() {
+		tClock := testclock.New(time.Unix(testclock.TestTimeUTC.Unix(), 0).UTC())
+		ctx := clock.Set(context.Background(), tClock)
+
+		Convey("works", func() {
+			ctx = setUsername(ctx, "test-user")
+			invID, err := GenerateTestInvocationID(ctx)
+			So(err, ShouldBeNil)
+			So(ValidateInvocationID(invID), ShouldBeNil)
+			So(invID, ShouldContainSubstring, strings.ToLower(
+				testclock.TestTimeUTC.Format(time.RFC3339)))
+		})
+
+		Convey("removes invalid characters", func() {
+			check := func(name string) string {
+				invID, err := GenerateTestInvocationID(setUsername(ctx, name))
+				So(err, ShouldBeNil)
+				So(ValidateInvocationID(invID), ShouldBeNil)
+				return invID
+			}
+
+			So(check("test user"), ShouldContainSubstring, "testuser")
+			So(check("test  user"), ShouldContainSubstring, "testuser")
+			So(check("test!!+user"), ShouldContainSubstring, "testuser")
+			So(check("@11@test-+user"), ShouldContainSubstring, "test-user")
+		})
+
+		Convey("returns an error if the username has no valid chars", func() {
+			check := func(name string) error {
+				_, err := GenerateTestInvocationID(setUsername(ctx, name))
+				return err
+			}
+
+			So(check(""), ShouldErrLike, "no valid characters")
+			So(check("    "), ShouldErrLike, "no valid characters")
+			So(check("+++"), ShouldErrLike, "no valid characters")
+		})
 	})
 }

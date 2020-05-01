@@ -15,13 +15,30 @@
 package pbutil
 
 import (
+	"context"
+	"encoding/base64"
+	"fmt"
+	"os/user"
+	"strings"
+	"time"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const invocationIDPattern = `[a-z][a-z0-9_\-:.]{0,99}`
+const (
+	invocationIDPattern      = `[a-z][a-z0-9_\-:.]{0,99}`
+	invalidInvocationIDChars = `[^a-z0-9_\-:.]`
+	maxInvocationIDLength    = 100
+)
 
-var invocationIDRe = regexpf("^%s$", invocationIDPattern)
-var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
+var (
+	invocationIDRe             = regexpf("^%s$", invocationIDPattern)
+	invalidInvocationIDCharsRE = regexpf(invalidInvocationIDChars)
+	invocationNameRe           = regexpf("^invocations/(%s)$", invocationIDPattern)
+)
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
@@ -56,4 +73,50 @@ func InvocationName(id string) string {
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)
+}
+
+type ctxKey string
+
+var usernameCtxKey = ctxKey("os/user.username")
+
+func setUsername(ctx context.Context, username string) context.Context {
+	return context.WithValue(ctx, usernameCtxKey, username)
+}
+
+// GenerateTestInvocationID generates a test invocation ID that is rare enough to be unique
+// globally.
+//
+// The ID is made of the current username, timestamp in a human-friendly format with
+// a random suffix so that it's easy to find the creator and creation time.
+func GenerateTestInvocationID(ctx context.Context) (string, error) {
+	var rawUsername string
+	if v, ok := ctx.Value(usernameCtxKey).(string); ok {
+		rawUsername = v
+	} else {
+		whoami, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+		rawUsername = whoami.Username
+	}
+
+	username := strings.ToLower(rawUsername)
+	username = invalidInvocationIDCharsRE.ReplaceAllString(username, "")
+	if username == "" {
+		return "", errors.Reason("%q has no valid characters for invocationID",
+			rawUsername).Err()
+	}
+
+	bytes := make([]byte, 8)
+	if _, err := mathrand.Read(ctx, bytes); err != nil {
+		return "", err
+	}
+
+	suffix := strings.ToLower(fmt.Sprintf(
+		"%s:%s", clock.Now(ctx).UTC().Format(time.RFC3339),
+		// Use unpadded encoding because the padding character,'=', is not a valid character
+		// for invocation IDs and also shorter.
+		base64.RawURLEncoding.EncodeToString(bytes)))
+
+	return fmt.Sprintf("u:%.*s:%s", maxInvocationIDLength-len(suffix), username, suffix), nil
 }
