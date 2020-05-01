@@ -34,6 +34,24 @@
       "revId": "ce49ce81dca609a7691f588e271fb9a18bd1c8dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0e34389_c4e05758",
+        "filename": "client/cmd/swarming/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-05-01T12:53:10Z",
+      "side": 1,
+      "message": "I thought it might be good for the consistency of the user agents.\nBut, yeah. maybe it\u0027s too much.",
+      "parentUuid": "9f3a4f08_79873cde",
+      "revId": "ce49ce81dca609a7691f588e271fb9a18bd1c8dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
