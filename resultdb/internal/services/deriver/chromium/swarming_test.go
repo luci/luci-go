@@ -94,6 +94,7 @@ func TestSwarming(t *testing.T) {
 					"builder:blder",
 					"test_suite:foo_unittests",
 					"test_id_prefix:ninja://chrome/tests:browser_tests/",
+					"stepname:foo_unittests on Mac",
 				},
 			}
 			hasCompletion := true
@@ -263,6 +264,7 @@ func TestSwarming(t *testing.T) {
 				So(res[0].TestId, ShouldEqual, "ninja://chrome/tests:browser_tests/")
 				So(res[0].Expected, ShouldBeTrue)
 				So(res[0].Status, ShouldEqual, pb.TestStatus_PASS)
+				So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("step_name", "foo_unittests on Mac")), ShouldBeTrue)
 			})
 
 			Convey(`and do but the hash cannot be fetched`, func() {
