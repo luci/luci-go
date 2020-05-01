@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bb942582_0113b8a7",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T08:10:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22ee6a6f_b375799e",
+      "range": {
+        "startLine": 233,
+        "startChar": 70,
+        "endLine": 233,
+        "endChar": 71
+      },
+      "revId": "d0ad0874013c729ff7924750fd69476db12ddb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03e8dfe1_a9c84867",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 11
@@ -36,6 +60,24 @@
       "writtenOn": "2020-05-01T06:46:23Z",
       "side": 1,
       "message": "also shorter",
+      "revId": "d0ad0874013c729ff7924750fd69476db12ddb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "083e494c_165295f4",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T08:10:30Z",
+      "side": 1,
+      "message": "added",
+      "parentUuid": "03e8dfe1_a9c84867",
       "revId": "d0ad0874013c729ff7924750fd69476db12ddb35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
