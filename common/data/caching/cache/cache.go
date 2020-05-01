@@ -110,10 +110,11 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 		return nil, errors.Reason("must use absolute path: %s", path).Err()
 	}
 	d := &disk{
-		policies: policies,
-		path:     path,
-		h:        isolated.GetHash(namespace),
-		lru:      makeLRUDict(namespace),
+		policies:              policies,
+		path:                  path,
+		h:                     isolated.GetHash(namespace),
+		lru:                   makeLRUDict(namespace),
+		digestHardlinkRecords: make(map[isolated.HexDigest]*hardlinkRecords),
 	}
 	p := d.statePath()
 
@@ -287,6 +288,11 @@ func (m *memory) GetUsed() []int64 {
 	return append([]int64{}, m.used...)
 }
 
+// TODO(crbug.com/1076468): Remove once crbug.com/1076468 is fixed
+type hardlinkRecords struct {
+	destToCount map[string]int
+}
+
 type disk struct {
 	// Immutable.
 	policies Policies
@@ -300,6 +306,8 @@ type disk struct {
 	// TODO(maruel): stateFile
 	added []int64
 	used  []int64
+	// TODO(crbug.com/1076468): Remove once crbug.com/1076468 is fixed
+	digestHardlinkRecords map[isolated.HexDigest]*hardlinkRecords
 }
 
 func (d *disk) Close() error {
@@ -441,8 +449,10 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//  In short, nobody ain't got time for that.
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
+	d.incHardlinkRecord(digest, dest)
 	if err := os.Link(src, dest); err != nil {
-		return fmt.Errorf("failed to call os.Link(%s, %s): %w", src, dest, err)
+		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d\ndigestHardlinkRecords: %s", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid(), d.hardlinkRecordsToStr())
+		return fmt.Errorf("failed to call os.Link(%s, %s): %w\n%s", src, dest, err, debugInfo)
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
@@ -488,4 +498,29 @@ func (d *disk) respectPolicies() error {
 		_ = os.Remove(d.itemPath(k))
 	}
 	return nil
+}
+
+func (d *disk) hardlinkRecordsToStr() string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return fmt.Sprintf("%+v", d.digestHardlinkRecords)
+}
+
+func (d *disk) incHardlinkRecord(digest isolated.HexDigest, dest string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	record, ok := d.digestHardlinkRecords[digest]
+	if !ok {
+		record = &hardlinkRecords{
+			destToCount: make(map[string]int),
+		}
+		d.digestHardlinkRecords[digest] = record
+	}
+	record.destToCount[dest]++
+}
+
+func statsStr(path string) string {
+	fi, err := os.Stat(path)
+	return fmt.Sprintf("path=%s FileInfo=%+v err=%v", path, fi, err)
 }
