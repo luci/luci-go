@@ -16,19 +16,14 @@ package cli
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"os"
-	"os/user"
 	"regexp"
-	"strings"
-	"time"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -38,6 +33,7 @@ import (
 	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	"go.chromium.org/luci/resultdb/sink"
 )
@@ -175,7 +171,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 }
 
 func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocation, err error) {
-	invID, err := genInvID(ctx)
+	invID, err := pbutil.GenerateTestInvocationID(ctx)
 	if err != nil {
 		return
 	}
@@ -208,32 +204,4 @@ func (r *streamRun) finalizeInvocation(ctx context.Context, interrupted bool) er
 		Interrupted: interrupted,
 	})
 	return err
-}
-
-// genInvID generates an invocation ID, made of the username, the current timestamp
-// in a human-friendly format, and a random suffix.
-//
-// This can be used to generate a random invocation ID, but the creator and creation time
-// can be easily found.
-func genInvID(ctx context.Context) (string, error) {
-	whoami, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	bytes := make([]byte, 8)
-	if _, err := mathrand.Read(ctx, bytes); err != nil {
-		return "", err
-	}
-
-	username := strings.ToLower(whoami.Username)
-	username = matchInvalidInvocationIDChars.ReplaceAllString(username, "")
-
-	suffix := strings.ToLower(fmt.Sprintf(
-		"%s:%s", time.Now().UTC().Format(time.RFC3339),
-		// Use unpadded encoding because the padding character,'=', is not a valid character
-		// for invocation IDs and also shorter.
-		base64.RawURLEncoding.EncodeToString(bytes)))
-
-	// An invocation ID can contain up to 100 ascii characters that conform to the regex,
-	return fmt.Sprintf("u:%.*s:%s", 100-len(suffix), username, suffix), nil
 }
