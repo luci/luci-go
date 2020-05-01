@@ -36,10 +36,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func installTestListener(srv *Server) (string, func() error) {
+func installTestListener(cfg *ServerConfig) (string, func() error) {
 	l, err := net.Listen("tcp", "localhost:0")
 	So(err, ShouldBeNil)
-	srv.testListener = l
+	cfg.testListener = l
 
 	// return the serving address
 	return fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port), l.Close

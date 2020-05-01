@@ -70,10 +70,11 @@ func TestServer(t *testing.T) {
 		ctx := authtest.MockAuthConfig(context.Background())
 
 		// a test server with a test listener
-		srv, err := NewServer(ctx, testServerConfig(ctl, "", "secret"))
-		So(err, ShouldBeNil)
-		addr, cleanup := installTestListener(srv)
+		srvCfg := testServerConfig(ctl, "", "secret")
+		addr, cleanup := installTestListener(&srvCfg)
 		defer cleanup()
+		srv, err := NewServer(ctx, srvCfg)
+		So(err, ShouldBeNil)
 
 		Convey("Start fails", func() {
 			So(srv.Start(ctx), ShouldBeNil)
@@ -131,7 +132,7 @@ func TestServer(t *testing.T) {
 			Convey("succeeds", func() {
 				// launch a go routine with Run
 				go func() {
-					runErr <- srv.Run(ctx, func(ctx context.Context) error {
+					runErr <- Run(ctx, srvCfg, func(ctx context.Context, cfg ServerConfig) error {
 						return <-handlerErr
 					})
 				}()
@@ -149,7 +150,7 @@ func TestServer(t *testing.T) {
 			Convey("aborts after server error", func() {
 				// launch a go routine with Run
 				go func() {
-					runErr <- srv.Run(ctx, func(ctx context.Context) error {
+					runErr <- Run(ctx, srvCfg, func(ctx context.Context, cfg ServerConfig) error {
 						<-ctx.Done()
 						return ctx.Err()
 					})
@@ -159,9 +160,8 @@ func TestServer(t *testing.T) {
 				_, err := reportTestResults(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
-				// close the server to emit a server error. Then, the callback context
-				// should be cancelled, and srv.Run() should return the error.
-				srv.httpSrv.Close()
+				// close the test listener so that the server terminates.
+				cleanup()
 				So(<-runErr, ShouldEqual, context.Canceled)
 			})
 		})
