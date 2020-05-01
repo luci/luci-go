@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -685,4 +686,67 @@ func TestButler(t *testing.T) {
 			})
 		})
 	})
+}
+
+// Command to run: `go test -cpu 1,4,8  -benchmem -benchtime 5s -bench .`
+func BenchmarkButler(b *testing.B) {
+	numOfStreams := []int{10, 100, 500}
+	testText := []string{
+		"This is line one\n",
+		"This is another two\n",
+		"This is final line",
+	}
+
+	for _, n := range numOfStreams {
+		b.Run(fmt.Sprintf("%d-streams", n), func(b *testing.B) {
+			for i := 0; i <= b.N; i++ {
+				if err := runButlerBenchmark(testText, n); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+// runButlerBenchmark creates a new butler instance and given number of
+// streams, then write the supplied text to each stream and wait for
+// the butler instance to complete.
+func runButlerBenchmark(testText []string, numOfStream int) error {
+	conf := Config{
+		Output:     &null.Output{},
+		BufferLogs: false,
+	}
+	tb := mkb(context.Background(), conf)
+	tss := newTestStreamServer()
+	tb.AddStreamServer(tss)
+
+	testStreams := make([]*testStream, numOfStream)
+
+	for i := range testStreams {
+		testStreams[i] = &testStream{
+			inC:     make(chan *testStreamData, 16),
+			closedC: make(chan struct{}),
+			desc: &logpb.LogStreamDescriptor{
+				Name:        fmt.Sprintf("stream-%d", i),
+				StreamType:  logpb.StreamType_TEXT,
+				ContentType: string(types.ContentTypeText),
+			},
+		}
+		tss.enqueue(testStreams[i])
+	}
+
+	for _, ts := range testStreams {
+		go func(s *testStream) {
+			for _, line := range testText {
+				s.data([]byte(line), nil)
+			}
+			s.err(io.EOF)
+		}(ts)
+	}
+
+	tb.Activate()
+	if err := tb.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
