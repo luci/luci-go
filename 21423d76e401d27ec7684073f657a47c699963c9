@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d62aa7c1_b6f776d2",
+        "filename": "milo/frontend/resultui/src/components/left_panel.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T00:37:57Z",
+      "side": 1,
+      "message": "nit: looks like the value of this is how much x decreased, although normally \"dx\" is the opposite. i.e. we have double negation in L45.\n\n  const dx \u003d event.x - this.startPos;\n\nhere and plus in L45",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 12
+      },
+      "revId": "21423d76e401d27ec7684073f657a47c699963c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "994d98ec_989f705b",
+        "filename": "milo/frontend/resultui/src/components/left_panel.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T00:37:57Z",
+      "side": 1,
+      "message": "we never remove this listener? looks like a memory leak",
+      "range": {
+        "startLine": 76,
+        "startChar": 23,
+        "endLine": 76,
+        "endChar": 39
+      },
+      "revId": "21423d76e401d27ec7684073f657a47c699963c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6daa626a_cabd11c6",
+        "filename": "milo/frontend/resultui/src/components/left_panel.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T00:37:57Z",
+      "side": 1,
+      "message": "why L76 isn\u0027t sufficient? please answer in the code comment.",
+      "revId": "21423d76e401d27ec7684073f657a47c699963c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
