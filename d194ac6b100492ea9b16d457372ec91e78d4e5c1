@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab291ace_fd5ef95e",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T07:18:04Z",
+      "side": 1,
+      "message": "could you include uid and gid of current user too?",
+      "revId": "d194ac6b100492ea9b16d457372ec91e78d4e5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2fbb0e82_278ace64",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 525,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T07:18:04Z",
+      "side": 1,
+      "message": "use \u0027%+v\u0027",
+      "range": {
+        "startLine": 525,
+        "startChar": 38,
+        "endLine": 525,
+        "endChar": 40
+      },
+      "revId": "d194ac6b100492ea9b16d457372ec91e78d4e5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
