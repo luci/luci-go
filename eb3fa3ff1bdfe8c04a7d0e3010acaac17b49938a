@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee657561_2d174b09",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-01T23:45:33Z",
+      "side": 1,
+      "message": "strictly speaking this should be whatever spanner used as CURRENT_TIMESTAMP(). Maybe make SELECT return it too?",
+      "range": {
+        "startLine": 120,
+        "startChar": 21,
+        "endLine": 120,
+        "endChar": 41
+      },
+      "revId": "eb3fa3ff1bdfe8c04a7d0e3010acaac17b49938a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
