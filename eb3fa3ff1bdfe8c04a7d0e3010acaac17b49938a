@@ -22,6 +22,30 @@
       "revId": "eb3fa3ff1bdfe8c04a7d0e3010acaac17b49938a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0e4ca2b_a9b73dfc",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T23:48:09Z",
+      "side": 1,
+      "message": "is it important? we increase it, so is already not \u003d\u003d. \ni actually intentionally moved now() call from before querying to after, to make it later.",
+      "parentUuid": "ee657561_2d174b09",
+      "range": {
+        "startLine": 120,
+        "startChar": 21,
+        "endLine": 120,
+        "endChar": 41
+      },
+      "revId": "eb3fa3ff1bdfe8c04a7d0e3010acaac17b49938a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
