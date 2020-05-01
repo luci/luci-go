@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/errors"
@@ -81,7 +82,11 @@ func (c *commonServerFlags) createAuthClient(ctx context.Context) (*http.Client,
 }
 
 func (c *commonServerFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
-	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent("isolate-go/"+version))
+	userAgent := "isolate-go/" + isolateVersion
+	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
+		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+	}
+	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent(userAgent))
 }
 
 type isolateFlags struct {
