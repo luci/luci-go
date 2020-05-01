@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94cdd2d7_503c6920",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 535,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T07:46:35Z",
+      "side": 1,
+      "message": "I think just returning or inlining this is fine.",
+      "range": {
+        "startLine": 535,
+        "startChar": 6,
+        "endLine": 535,
+        "endChar": 9
+      },
+      "revId": "67cb034915d909e55e48cadd1190c3d08876697e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
