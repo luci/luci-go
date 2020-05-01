@@ -22,6 +22,30 @@
       "revId": "6f283f1012050b66f856da6b17c4786d4a3c6ed6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c300e2a2_22c2c5e4",
+        "filename": "luci_notify/mailtmpl/bundle.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-01T05:04:04Z",
+      "side": 1,
+      "message": "Yeah, I considered this, but dropping the second line felt better to me.\n\nBecause, in this case, we\u0027d also need a check for len(parts) \u003d\u003d 2, to avoid potentially indexing out of bounds on L243. This would lead to the weird restriction that templates can have one line, or 3+ lines, but not 2. That felt strange enough when I was writing out the error message that I did this instead.\n\nI guess another option would be to rearrange the conditions such that:\n* One line is okay\n* Two lines with the second line blank is also okay, and the blank second line is dropped\n* Two lines with the second line not blank is not okay, and gives the existing \"second line is not blank\" error message\n\nThen all the two line cases are dealt with without needing a check specifically saying the template is bad due to having 2 lines.",
+      "parentUuid": "625dfaa1_7264c462",
+      "range": {
+        "startLine": 236,
+        "startChar": 0,
+        "endLine": 238,
+        "endChar": 0
+      },
+      "revId": "6f283f1012050b66f856da6b17c4786d4a3c6ed6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
