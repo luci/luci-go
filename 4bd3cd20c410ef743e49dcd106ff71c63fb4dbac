@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2eb3bcf6_c6133e2a",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 533,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T07:54:26Z",
+      "side": 1,
+      "message": "I meant to remove this.\nI think we can know the meaning of -1, but don\u0027t want to miss the case of only one of uid or gid becomes -1.",
+      "range": {
+        "startLine": 531,
+        "startChar": 0,
+        "endLine": 533,
+        "endChar": 2
+      },
+      "revId": "4bd3cd20c410ef743e49dcd106ff71c63fb4dbac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
