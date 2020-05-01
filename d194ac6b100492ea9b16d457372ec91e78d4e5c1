@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "2206f02f_eb4a29f9",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-01T07:40:32Z",
+      "side": 1,
+      "message": "I mean os.Getuid() and os.Getgid().",
+      "parentUuid": "99fd0fe1_265f6a00",
+      "revId": "d194ac6b100492ea9b16d457372ec91e78d4e5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2fbb0e82_278ace64",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 4
