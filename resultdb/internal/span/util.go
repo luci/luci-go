@@ -17,6 +17,7 @@ package span
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
@@ -150,7 +151,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 // to Go along the way.
 func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 	if len(ptrs) != row.Size() {
-		panic("len(ptrs) != row.Size()")
+		panic(fmt.Sprintf("len(ptrs) != row.Size(), %d != %d", len(ptrs), row.Size()))
 	}
 
 	for i, goPtr := range ptrs {
