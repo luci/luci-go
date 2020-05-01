@@ -173,6 +173,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		return nil
 	}
 
+	haveNewBuild := false
 	var oldestClosed *config.TreeCloser
 	for _, tc := range treeClosers {
 		// Only pay attention to builds from after the last update to the
@@ -181,9 +182,17 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		if tc.Timestamp.Before(treeStatus.timestamp) {
 			continue
 		}
+
+		haveNewBuild = true
 		if tc.Status == config.Closed && (oldestClosed == nil || tc.Timestamp.Before(oldestClosed.Timestamp)) {
 			oldestClosed = tc
 		}
+	}
+
+	if !haveNewBuild {
+		// Don't do anything if all the builds are older than the last
+		// update to the tree.
+		return nil
 	}
 
 	var overallStatus config.TreeCloserStatus
@@ -194,7 +203,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	}
 
 	if treeStatus.status == overallStatus {
-		// Nothing to do, status is already correct.
+		// Don't do anything if the status is already correct.
 		return nil
 	}
 
