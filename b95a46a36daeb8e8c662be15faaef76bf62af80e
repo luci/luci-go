@@ -22,6 +22,30 @@
       "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d63eb4fd_eaa289a4",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T08:59:22Z",
+      "side": 1,
+      "message": "The callback should be given a context derived from the server context because of the bug that I explained in another comment.\n\nI think it can still be called \"srvCtx\", because the function comment states that \"Run runs callback in a context where the server is running.\"",
+      "parentUuid": "b2e1b1e2_cd8f8d65",
+      "range": {
+        "startLine": 168,
+        "startChar": 9,
+        "endLine": 168,
+        "endChar": 15
+      },
+      "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

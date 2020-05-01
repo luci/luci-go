@@ -22,6 +22,30 @@
       "revId": "58d67e2823a0d987b01a9d17165edd4e1e65cc29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da90f667_38685c49",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-01T08:59:22Z",
+      "side": 0,
+      "message": "Bump up this comment, just in case if this was missed.",
+      "parentUuid": "d060aa4f_dd38b910",
+      "range": {
+        "startLine": 180,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 4
+      },
+      "revId": "58d67e2823a0d987b01a9d17165edd4e1e65cc29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
