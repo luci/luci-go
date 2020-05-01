@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab83fe91_32ebf50c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-01T17:52:10Z",
+      "side": 1,
+      "message": "with",
+      "range": {
+        "startLine": 11,
+        "startChar": 27,
+        "endLine": 11,
+        "endChar": 30
+      },
+      "revId": "e92a3f84ba206e583af70d023cf25580fe9e5f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "457a7c81_3511fdcc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-01T17:52:10Z",
+      "side": 1,
+      "message": "I guess because of the same reason `rdbpb` is also not a good choice?",
+      "range": {
+        "startLine": 13,
+        "startChar": 32,
+        "endLine": 13,
+        "endChar": 69
+      },
+      "revId": "e92a3f84ba206e583af70d023cf25580fe9e5f73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
