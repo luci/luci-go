@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { autorun, computed, observable } from 'mobx';
 
+import '../../components/left_panel';
 import '../../components/test-entry';
 import '../../components/test_filter';
 import { TestFilter } from '../../components/test_filter';
@@ -33,7 +33,6 @@ import { InvocationPageState } from './context';
 export class TestResultsTabElement extends MobxLitElement {
   @observable.ref pageState!: InvocationPageState;
 
-  @observable.ref private leftPanelExpanded = false;
   @observable.ref private pageLength = 100;
 
   @computed
@@ -64,30 +63,21 @@ export class TestResultsTabElement extends MobxLitElement {
   protected render() {
     const state = this.pageState;
     return html`
-      <div
-        id="left-panel"
-        style=${styleMap({display: this.leftPanelExpanded ? '' : 'none'})}
+      <tr-test-filter
+        .onFilterChanged=${(filter: TestFilter) => {
+          this.pageState.showExonerated = filter.showExonerated;
+          this.pageState.showExpected = filter.showExpected;
+        }}
       >
-        <tr-test-filter
-          .onFilterChanged=${(filter: TestFilter) => {
-            this.pageState.showExonerated = filter.showExonerated;
-            this.pageState.showExpected = filter.showExpected;
-          }}
-        >
-        </tr-test-filter>
-        <tr-test-nav-tree
-          .testLoader=${state.testLoader}
-          .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
-        ></tr-test-nav-tree>
-      </div>
-      <div id="test-result-view">
-        <div id="test-result-header">
-          <div id="menu-button" @click=${() => this.leftPanelExpanded = !this.leftPanelExpanded}>
-            <mwc-icon id="menu-icon">menu</mwc-icon>
-          </div>
-          <span id="root-name" title="common test ID prefix">${this.rootName}</span>
-        </div>
-        <div id="test-result-content">
+      </tr-test-filter>
+      <div id="main">
+        <tr-left-panel>
+          <tr-test-nav-tree
+            .testLoader=${state.testLoader}
+            .onSelectedNodeChanged=${(node: TestNode) => state.selectedNode = node}
+          ></tr-test-nav-tree>
+        </tr-left-panel>
+        <div id="test-result-view">
           ${repeat(state.selectedNode.allTests.slice(0, this.pageLength), (t) => t.id, (t, i) => html`
           <tr-test-entry
             .test=${t}
@@ -112,53 +102,26 @@ export class TestResultsTabElement extends MobxLitElement {
 
   static styles = css`
     :host {
-      display: flex;
-      border-top: 2px solid #DDDDDD;
+      display: grid;
+      grid-template-rows: auto 1fr;
       overflow-y: hidden;
     }
 
-    #left-panel {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      border-right: 2px solid #DDDDDD;
-      width: 400px;
-      resize: horizontal;
+    #main {
+      display: flex;
+      border-top: 1px solid #DDDDDD;
       overflow-y: hidden;
-    }
-    tr-test-nav-tree {
-      overflow: hidden;
     }
     #test-result-view {
       flex: 1;
       display: flex;
       flex-direction: column;
-      overflow-y: hidden;
-    }
-    #test-result-header {
-      width: 100%;
-      height: 32px;
-      background: #DDDDDD;
-    }
-    #menu-button {
-      display: inline-table;
-      height: 100%;
-      cursor: pointer;
-    }
-    #menu-icon {
-      display: table-cell;
-      vertical-align: middle;
+      overflow-y: auto;
+      padding-top: 5px;
     }
 
-    #test-result-content {
-      overflow-y: auto;
-    }
-    #root-name {
-      font-size: 16px;
-      letter-spacing: 0.15px;
-      vertical-align: middle;
-      display: inline-table;
-      height: 100%;
-      margin-left: 5px;
+    tr-test-nav-tree {
+      overflow: hidden;
     }
 
     #list-tail {
