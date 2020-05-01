@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cf644c56_a204c2a1",
+        "filename": "luci_notify/notify/tree_status_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T04:55:19Z",
+      "side": 1,
+      "message": "note: Put accepts variadic args, so these two puts can be combined",
+      "range": {
+        "startLine": 357,
+        "startChar": 16,
+        "endLine": 357,
+        "endChar": 19
+      },
+      "revId": "6de678b808d4509d563205b521c51316f3f7773d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
