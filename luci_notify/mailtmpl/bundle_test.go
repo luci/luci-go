@@ -136,10 +136,13 @@ func TestSplitTemplateFile(t *testing.T) {
 	t.Parallel()
 	Convey(`SplitTemplateFile`, t, func() {
 		Convey(`valid template`, func() {
-			_, _, err := SplitTemplateFile(`subject
+			s, b, err := SplitTemplateFile(`subject
 
         body`)
+
 			So(err, ShouldBeNil)
+			So(s, ShouldEqual, "subject")
+			So(b, ShouldEqual, "body")
 		})
 
 		Convey(`empty`, func() {
@@ -147,10 +150,28 @@ func TestSplitTemplateFile(t *testing.T) {
 			So(err, ShouldErrLike, "empty")
 		})
 
-		Convey(`less than three lines`, func() {
+		Convey(`single line`, func() {
+			s, b, err := SplitTemplateFile("one line")
+
+			So(err, ShouldBeNil)
+			So(s, ShouldEqual, "one line")
+			So(b, ShouldEqual, "")
+		})
+
+		Convey(`blank second line`, func() {
+			s, b, err := SplitTemplateFile(`subject
+`)
+
+			So(err, ShouldBeNil)
+			So(s, ShouldEqual, "subject")
+			So(b, ShouldEqual, "")
+		})
+
+		Convey(`non-blank second line`, func() {
 			_, _, err := SplitTemplateFile(`subject
         body`)
-			So(err, ShouldErrLike, "less than three lines")
+
+			So(err, ShouldErrLike, "second line is not blank")
 		})
 
 		Convey(`no blank line`, func() {
