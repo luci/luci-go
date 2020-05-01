@@ -19,7 +19,7 @@ package luci.resultdb.rpc.v1;
 import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 
 // Represents a function TestResult -> bool.
 // Empty message matches all test results.

@@ -21,7 +21,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto";
 import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 
 // A conceptual container of results. Immutable once finalized.
 // It represents all results of some computation; examples: swarming task,
