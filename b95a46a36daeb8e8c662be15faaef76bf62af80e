@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2e1b1e2_cd8f8d65",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T08:20:06Z",
+      "side": 1,
+      "message": "why not just ctx\n\nthere is no other ctx, so why do we need to qualify this one as srv. also note that it gets passed to the callback, so it is used not only for server",
+      "range": {
+        "startLine": 168,
+        "startChar": 9,
+        "endLine": 168,
+        "endChar": 15
+      },
+      "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
