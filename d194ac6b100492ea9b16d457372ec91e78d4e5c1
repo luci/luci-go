@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "99fd0fe1_265f6a00",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-01T07:36:40Z",
+      "side": 1,
+      "message": "It\u0027s already included in the FileInfo. For example: `\u0026{name:cache203128071 size:4096 mode:2147484096 modTime:{wall:503878384 ext:63723915345 loc:0xd95e80} sys:{Dev:65025 Ino:11723743 Nlin\nk:2 Mode:16832 Uid:460935 Gid:89939 X__pad0:0 Rdev:0 Size:4096 Blksize:4096 Blocks:8 Atim:{Sec:1588318545 Nsec:503878384} Mtim:{Sec:1588318545 Nsec:503878384} Ctim:{Sec:1588318545 Nsec:503878384} X__unused:[0 0 0]}}`\n\nSee also https://stackoverflow.com/a/58179864/12003165",
+      "parentUuid": "ab291ace_fd5ef95e",
+      "revId": "d194ac6b100492ea9b16d457372ec91e78d4e5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2fbb0e82_278ace64",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "d194ac6b100492ea9b16d457372ec91e78d4e5c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc5e035a_781fc71b",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 525,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-01T07:36:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fbb0e82_278ace64",
+      "range": {
+        "startLine": 525,
+        "startChar": 38,
+        "endLine": 525,
+        "endChar": 40
+      },
+      "revId": "d194ac6b100492ea9b16d457372ec91e78d4e5c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
