@@ -46,6 +46,30 @@
       "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93668d1b_f63b0cd2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-01T09:11:25Z",
+      "side": 1,
+      "message": "i think the bug, server and other arguments are specific to the impl of this function. As a user of this package, i call sink.Run() and I don\u0027t think about servers. I have my context, e.g. that I received from by caller, and pass it down here. From my perspective, the context that I have is not necessarily a \"server context\", but just context, like in any other function.",
+      "parentUuid": "d63eb4fd_eaa289a4",
+      "range": {
+        "startLine": 168,
+        "startChar": 9,
+        "endLine": 168,
+        "endChar": 15
+      },
+      "revId": "b95a46a36daeb8e8c662be15faaef76bf62af80e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
