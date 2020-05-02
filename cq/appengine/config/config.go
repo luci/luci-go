@@ -375,6 +375,11 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		validateTryjobRetry(ctx, v.RetryConfig)
 		ctx.Exit()
 	}
+
+	if v.CancelStaleTryjobs == v2.Toggle_NO {
+		ctx.Warningf("`cancel_stale_tryjobs: NO` is deprecated; please use per-builder `cancel_stale` instead")
+	}
+
 	if len(v.Builders) == 0 {
 		ctx.Errorf("at least 1 builder required")
 		return
