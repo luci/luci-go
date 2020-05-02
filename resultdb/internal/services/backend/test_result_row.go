@@ -204,6 +204,8 @@ func (b *bqExporter) generateBQRow(exported, parent *pb.Invocation, tr *pb.TestR
 		// Use SHA512 which is exactly 128 bytes in hex.
 		hash := sha512.Sum512([]byte(tr.Name))
 		ret.InsertID = hex.EncodeToString(hash[:])
+	} else {
+		ret.InsertID = bigquery.NoDedupeID
 	}
 
 	return ret
