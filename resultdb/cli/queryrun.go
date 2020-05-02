@@ -26,6 +26,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -128,12 +129,8 @@ func (r *queryRunBase) queryAndPrint(ctx context.Context, invIDs []string) error
 		errC <- err
 	}()
 
-	if r.json {
-		r.printJSON(resultC)
-		return <-errC
-	}
-
-	return errors.Reason("-json required; human output is not implemented yet").Err()
+	r.printProto(resultC, r.json)
+	return <-errC
 }
 
 // fetchInvocation fetches an invocation.
@@ -211,12 +208,17 @@ func (r *queryRunBase) fetchItems(ctx context.Context, invIDs []string, resultIt
 	return eg.Wait()
 }
 
-// printJSON prints results in JSON format to stdout.
+// printProto prints results in JSON or TextProto format to stdout.
 // Each result takes exactly one line and is followed by newline.
-// This format supports streaming, and is easy to parse by languages (Python)
+//
+// The printed JSON supports streaming, and is easy to parse by languages (Python)
 // that cannot parse an arbitrary sequence of JSON values.
-func (r *queryRunBase) printJSON(resultC <-chan resultItem) {
+func (r *queryRunBase) printProto(resultC <-chan resultItem, printJSON bool) {
 	enc := json.NewEncoder(os.Stdout)
+	ind := &indented.Writer{
+		Writer:    os.Stdout,
+		UseSpaces: true,
+	}
 	for res := range resultC {
 		var key string
 		switch res.result.(type) {
@@ -230,13 +232,21 @@ func (r *queryRunBase) printJSON(resultC <-chan resultItem) {
 			panic(fmt.Sprintf("unexpected result type %T", res.result))
 		}
 
-		obj := map[string]interface{}{
-			key: json.RawMessage(msgToJSON(res.result)),
+		if printJSON {
+			obj := map[string]interface{}{
+				key: json.RawMessage(msgToJSON(res.result)),
+			}
+			if !r.merge {
+				obj["invocationId"] = res.invocationID
+			}
+			enc.Encode(obj) // prints \n in the end
+		} else {
+			fmt.Fprintf(ind, "%s:\n", key)
+			ind.Level++
+			proto.MarshalText(ind, res.result)
+			ind.Level--
+			fmt.Fprintln(ind)
 		}
-		if !r.merge {
-			obj["invocationId"] = res.invocationID
-		}
-		enc.Encode(obj) // prints \n in the end
 	}
 }
 
