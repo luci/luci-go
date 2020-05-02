@@ -62,6 +62,7 @@ type table interface {
 type bqExporter struct {
 	maxBatchRowCount int
 	maxBatchSize     int
+	useInsertIDs     bool
 
 	// putLimiter limits the rate of bigquery.Inserter.Put calls.
 	putLimiter *rate.Limiter
@@ -259,7 +260,7 @@ func (b *bqExporter) queryTestResults(
 	err = q.Run(ctx, txn, func(tr span.TestResultQueryItem) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := span.MustParseTestResultName(tr.Name)
-		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
+		rows = append(rows, b.generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
 		batchSize += proto.Size(tr)
 		if len(rows) >= b.maxBatchRowCount || batchSize >= b.maxBatchSize {
 			select {

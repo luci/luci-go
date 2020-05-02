@@ -54,6 +54,8 @@ type Options struct {
 
 	// TaskWorkers is the number of goroutines that process invocation tasks.
 	TaskWorkers int
+
+	UseInsertIDs bool
 }
 
 // InitServer initializes a backend server.
@@ -61,6 +63,8 @@ func InitServer(srv *server.Server, opts Options) {
 	b := &backend{
 		Options: &opts,
 		bqExporter: bqExporter{
+			useInsertIDs: opts.UseInsertIDs,
+
 			// TODO(nodir): move all these constants to Options and bind them to flags.
 
 			maxBatchRowCount: 500,
