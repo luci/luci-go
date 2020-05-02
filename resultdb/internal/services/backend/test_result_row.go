@@ -15,8 +15,6 @@
 package backend
 
 import (
-	"crypto/sha512"
-	"encoding/hex"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -196,12 +194,8 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 		trr.SummaryHTML = "[Trimmed] " + trr.SummaryHTML[:maxSummaryLength]
 	}
 
-	// InsertID cannot exceed 128 bytes.
-	// https://cloud.google.com/bigquery/quotas#streaming_inserts
-	// Use SHA512 which is exactly 128 bytes in hex.
-	insertID := sha512.Sum512([]byte(tr.Name))
+	// We cannot afford using InsertID because InsertID imposes only 100k/s.
 	return &bigquery.StructSaver{
-		InsertID: hex.EncodeToString(insertID[:]),
-		Struct:   trr,
+		Struct: trr,
 	}
 }
