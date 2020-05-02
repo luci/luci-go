@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 
-	"go.chromium.org/luci/resultdb/internal/services/backend"
+	"go.chromium.org/luci/resultdb/internal/services/finalizer"
 	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/internal/services/resultdb"
@@ -161,16 +161,18 @@ func (t *testApp) initServers(ctx context.Context) error {
 		ExpectedResultsExpiration: time.Hour,
 	})
 
-	// Init backend server.
-	backendServer, _, err := t.serverClientPair(ctx, 8020, 8021)
+	// Init finalizer server.
+	finalizerServer, _, err := t.serverClientPair(ctx, 8020, 8021)
 	if err != nil {
 		return err
 	}
-	backend.InitServer(backendServer, backend.Options{
+	finalizer.InitServer(backendServer, finalizer.Options{
 		TaskWorkers:        1,
 		ForceCronInterval:  100 * time.Millisecond,
 		ForceLeaseDuration: 100 * time.Millisecond,
 	})
+
+	// bqexporter is not needed.
 
 	// Init purger server.
 	purgerServer, _, err := t.serverClientPair(ctx, 8030, 8031)

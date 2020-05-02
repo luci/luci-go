@@ -17,21 +17,27 @@ package main
 import (
 	"flag"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/services/backend"
+	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 )
 
 func main() {
-	var opts backend.Options
-	flag.IntVar(&opts.TaskWorkers, "task-workers", 100,
-		"Number of goroutines that process invocation tasks")
-	flag.BoolVar(&opts.UseInsertIDs, "insert-ids", false,
+	opts := bqexporter.DefaultOptions()
+	flag.BoolVar(&opts.UseInsertIDs, "insert-ids", opts.UseInsertIDs,
 		"Use InsertIDs when inserting data to BigQuery")
+	flag.IntVar(&opts.MaxBatchSizeBytesApprox, "max-batch-size-bytes-approx", opts.MaxBatchSizeBytesApprox,
+		"Maximum size of a batch in bytes, approximate")
+	rateLimit := int(opts.RateLimit)
+	flag.IntVar(&rateLimit, "rate-limit", rateLimit,
+		"Maximum BigQuery request rate")
 
 	internal.Main(func(srv *server.Server) error {
-		backend.InitServer(srv, opts)
+		opts.RateLimit = rate.Limit(rateLimit)
+		bqexporter.InitServer(srv, opts)
 		return nil
 	})
 }
