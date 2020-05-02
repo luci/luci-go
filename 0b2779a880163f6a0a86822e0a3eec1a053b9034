@@ -22,6 +22,30 @@
       "revId": "0b2779a880163f6a0a86822e0a3eec1a053b9034",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e502ddf_262b5314",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-02T04:42:06Z",
+      "side": 1,
+      "message": "not sure I understand. This function is not retried when L120 returns ErrConflict. It is retried when we\u0027ve proceeded to L126, but then, we Spanner tries to commit the transaction, it discovers that another client (pod) also tried to commit a transactoin that leases the same task. Then this function is retried again.",
+      "parentUuid": "6a787b91_d897cc62",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 21
+      },
+      "revId": "0b2779a880163f6a0a86822e0a3eec1a053b9034",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
