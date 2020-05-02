@@ -376,8 +376,14 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		ctx.Exit()
 	}
 
-	if v.CancelStaleTryjobs == v2.Toggle_NO {
-		ctx.Warningf("`cancel_stale_tryjobs: NO` is deprecated; please use per-builder `cancel_stale` instead")
+	switch v.CancelStaleTryjobs {
+	case v2.Toggle_YES:
+		// TODO(crbug/987411): enable error from May 20th.
+		ctx.Warningf("`cancel_stale_tryjobs: YES` matches default CQ behavior now; please remove")
+	case v2.Toggle_NO:
+		ctx.Errorf("`cancel_stale_tryjobs: NO` is no longer supported, use per-builder `cancel_stale` instead")
+	case v2.Toggle_UNSET:
+		// OK
 	}
 
 	if len(v.Builders) == 0 {
