@@ -96,7 +96,17 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // Lease leases an invocation task.
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
+	tried := false
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		if tried {
+			// This is the second time this function is called.
+			// It is very likely that the prev attempt collided with another
+			// transaction that successfully leased this task.
+			// Give up on this task. Worst case, it will be picked up later.
+			return ErrConflict
+		}
+		tried = true
+
 		st := spanner.NewStatement(`
 			SELECT InvocationId, Payload
 			FROM InvocationTasks
