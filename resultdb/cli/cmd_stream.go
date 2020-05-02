@@ -195,7 +195,7 @@ func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocatio
 	}
 
 	ret = lucictx.Invocation{resp.Name, tks[0]}
-	fmt.Fprintf(os.Stderr, "%q created\n", ret.Name)
+	fmt.Fprintf(os.Stderr, "created invocation: %s\n", invID)
 	return
 }
 
