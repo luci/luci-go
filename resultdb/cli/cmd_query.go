@@ -100,7 +100,7 @@ func readStdin() ([]string, error) {
 	go func() {
 		select {
 		case <-time.After(time.Second):
-			fmt.Fprintln(os.Stderr, "expecting invocation ids on stdin...")
+			fmt.Fprintln(os.Stderr, "expecting invocation ids on the command line or stdin...")
 		case <-ctx.Done():
 		}
 	}()
