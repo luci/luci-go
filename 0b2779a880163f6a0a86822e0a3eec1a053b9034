@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a787b91_d897cc62",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-02T04:37:58Z",
+      "side": 1,
+      "message": "How about adding a flag for conflicted, then when the task is leased, set conflicted to True then return nil?\n\nSo that only this case will not be retried.",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 21
+      },
+      "revId": "0b2779a880163f6a0a86822e0a3eec1a053b9034",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
