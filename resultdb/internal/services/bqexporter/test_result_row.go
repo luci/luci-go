@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package bqexporter
 
 import (
 	"crypto/sha512"
@@ -198,7 +198,7 @@ func (b *bqExporter) generateBQRow(exported, parent *pb.Invocation, tr *pb.TestR
 
 	ret := &bigquery.StructSaver{Struct: trr}
 
-	if b.useInsertIDs {
+	if b.UseInsertIDs {
 		// InsertID cannot exceed 128 bytes.
 		// https://cloud.google.com/bigquery/quotas#streaming_inserts
 		// Use SHA512 which is exactly 128 bytes in hex.

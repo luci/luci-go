@@ -4,8 +4,8 @@
 
 FROM gcr.io/distroless/static:latest
 
-COPY bin/backend ./backend
+COPY bin/bqexporter ./bqexporter
 
 USER nobody
 
-ENTRYPOINT ["./backend"]
+ENTRYPOINT ["./bqexporter"]
