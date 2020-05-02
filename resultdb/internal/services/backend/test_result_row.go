@@ -162,7 +162,7 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 }
 
 // generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool, variantHash string) *bigquery.StructSaver {
+func (b *bqExporter) generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool, variantHash string) *bigquery.StructSaver {
 	trr := &TestResultRow{
 		ExportedInvocation: invocationProtoToInvocation(exported),
 		ParentInvocation:   invocationProtoToInvocation(parent),
@@ -196,12 +196,15 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 		trr.SummaryHTML = "[Trimmed] " + trr.SummaryHTML[:maxSummaryLength]
 	}
 
-	// InsertID cannot exceed 128 bytes.
-	// https://cloud.google.com/bigquery/quotas#streaming_inserts
-	// Use SHA512 which is exactly 128 bytes in hex.
-	insertID := sha512.Sum512([]byte(tr.Name))
-	return &bigquery.StructSaver{
-		InsertID: hex.EncodeToString(insertID[:]),
-		Struct:   trr,
+	ret := &bigquery.StructSaver{Struct: trr}
+
+	if b.useInsertIDs {
+		// InsertID cannot exceed 128 bytes.
+		// https://cloud.google.com/bigquery/quotas#streaming_inserts
+		// Use SHA512 which is exactly 128 bytes in hex.
+		hash := sha512.Sum512([]byte(tr.Name))
+		ret.InsertID = hex.EncodeToString(hash[:])
 	}
+
+	return ret
 }

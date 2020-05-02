@@ -27,6 +27,8 @@ func main() {
 	var opts backend.Options
 	flag.IntVar(&opts.TaskWorkers, "task-workers", 100,
 		"Number of goroutines that process invocation tasks")
+	flag.BoolVar(&opts.UseInsertIDs, "insert-ids", false,
+		"Use InsertIDs when inserting data to BigQuery")
 
 	internal.Main(func(srv *server.Server) error {
 		backend.InitServer(srv, opts)
