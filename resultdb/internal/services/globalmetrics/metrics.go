@@ -113,6 +113,7 @@ func updateExpiredResultsMetrics(ctx context.Context) error {
 // expiredResultStats computes the creation time of the oldest invocation
 // pending to be purged in seconds.
 func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInvocationsCount int64, err error) {
+	var earliest spanner.NullTime
 	st := spanner.NewStatement(`
 		SELECT
 			MIN(ExpectedTestResultsExpirationTime) as EarliestExpiration,
@@ -127,6 +128,7 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 		WHERE ExpectedTestResultsExpirationTime IS NOT NULL
 			AND ExpectedTestResultsExpirationTime < CURRENT_TIMESTAMP()
 	`)
-	err = span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &oldestResult, &pendingInvocationsCount)
+	err = span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &earliest, &pendingInvocationsCount)
+	oldestResult = earliest.Time
 	return
 }
