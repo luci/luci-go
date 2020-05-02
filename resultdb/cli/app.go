@@ -52,8 +52,6 @@ func application(p Params) *cli.Application {
 			cmdRPC(p),
 			cmdContext(),
 			cmdQuery(p),
-			// TODO(crbug.com/1021849): Remove this in favor of cmdCall.
-			cmdUpdateInclusions(p),
 			cmdStream(p),
 
 			{}, // a separator
