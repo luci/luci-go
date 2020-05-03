@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cb08e884_a19f137a",
+        "filename": "resultdb/cmd/bqexporter/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-03T00:42:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5aef21a6_68fbb737",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd0b0801_61daef48",
         "filename": "resultdb/cmd/finalizer/main.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "faff4ea7_5bb37d58",
+        "filename": "resultdb/cmd/finalizer/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-03T00:42:43Z",
+      "side": 1,
+      "message": "yeah, basically. I am trying not to write useless code.",
+      "parentUuid": "dd0b0801_61daef48",
+      "range": {
+        "startLine": 26,
+        "startChar": 28,
+        "endLine": 26,
+        "endChar": 54
+      },
+      "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4606e029_84b78520",
         "filename": "resultdb/internal/tasks/dispatcher.go",
         "patchSetId": 3
@@ -59,6 +107,30 @@
       "writtenOn": "2020-05-03T00:25:29Z",
       "side": 1,
       "message": "Change it to \"For how long a task is leased\"?",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 32
+      },
+      "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "810e4f3f_a8ae57c9",
+        "filename": "resultdb/internal/tasks/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-03T00:42:43Z",
+      "side": 1,
+      "message": "This makes it inconsistent with 2 other fields, and also bqexporter.Options and finalizer.Options?",
+      "parentUuid": "4606e029_84b78520",
       "range": {
         "startLine": 83,
         "startChar": 4,
