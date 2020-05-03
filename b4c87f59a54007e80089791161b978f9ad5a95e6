@@ -188,6 +188,30 @@
       "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f5d84bb5_ba1b379f",
+        "filename": "resultdb/internal/tasks/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-03T00:59:03Z",
+      "side": 1,
+      "message": "Yes it\u0027s much better.",
+      "parentUuid": "ca1d253c_9e85b6e6",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 32
+      },
+      "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
