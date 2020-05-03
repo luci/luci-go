@@ -29,14 +29,14 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 )
 
-const callUsage = `call [flags] SERVICE METHOD`
+const rpcUsage = `rpc [flags] SERVICE METHOD`
 
-func cmdCall(p Params) *subcommands.Command {
+func cmdRPC(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: callUsage,
-		ShortDesc: "call a ResultDB RPC",
+		UsageLine: rpcUsage,
+		ShortDesc: "Make a ResultDB RPC",
 		LongDesc: text.Doc(`
-			Call a ResultDB RPC.
+			Make a ResultDB RPC.
 
 			SERVICE must be the full name of a service, e.g. "luci.resultdb.rpc.v1.ResultDB"".
 			METHOD is the name of the method, e.g. "GetInvocation"
@@ -46,7 +46,7 @@ func cmdCall(p Params) *subcommands.Command {
 		`),
 		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
-			r := &callRun{}
+			r := &rpcRun{}
 			r.RegisterGlobalFlags(p)
 			r.Flags.BoolVar(&r.includeUpdateToken, "include-update-token", false, "send the request with the current invocation's update token in LUCI_CONTEXT")
 			return r
@@ -54,16 +54,16 @@ func cmdCall(p Params) *subcommands.Command {
 	}
 }
 
-type callRun struct {
+type rpcRun struct {
 	baseCommandRun
 	service            string
 	method             string
 	includeUpdateToken bool
 }
 
-func (r *callRun) parseArgs(args []string) error {
+func (r *rpcRun) parseArgs(args []string) error {
 	if len(args) != 2 {
-		return errors.Reason("usage: %s", callUsage).Err()
+		return errors.Reason("usage: %s", rpcUsage).Err()
 	}
 
 	r.service = args[0]
@@ -72,7 +72,7 @@ func (r *callRun) parseArgs(args []string) error {
 	return nil
 }
 
-func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (r *rpcRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
 	if err := r.parseArgs(args); err != nil {
@@ -83,14 +83,14 @@ func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.
 		return r.done(err)
 	}
 
-	if err := r.call(ctx); err != nil {
+	if err := r.rpc(ctx); err != nil {
 		return r.done(err)
 	}
 
 	return 0
 }
 
-func (r *callRun) call(ctx context.Context) error {
+func (r *rpcRun) rpc(ctx context.Context) error {
 	// Prepare arguments.
 	in, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
