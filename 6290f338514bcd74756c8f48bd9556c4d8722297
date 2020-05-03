@@ -16,6 +16,24 @@
       "revId": "6290f338514bcd74756c8f48bd9556c4d8722297",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d8a8d50_a709a9f8",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-03T01:04:06Z",
+      "side": 1,
+      "message": "Agreed. How about https://crrev.com/c/2177287",
+      "parentUuid": "544f753e_d17874d0",
+      "revId": "6290f338514bcd74756c8f48bd9556c4d8722297",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
