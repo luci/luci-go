@@ -16,6 +16,24 @@
       "revId": "6108fb179bbfa08f841e75f2f06c59c6485e4d55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "196b7a29_db17a1a7",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-03T23:53:41Z",
+      "side": 1,
+      "message": "No. I only updated the format of this one because the presubmit was complaining, and so I just updated the year at the same time.",
+      "parentUuid": "43353233_b01fd342",
+      "revId": "6108fb179bbfa08f841e75f2f06c59c6485e4d55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
