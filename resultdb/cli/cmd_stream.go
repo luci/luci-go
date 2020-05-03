@@ -105,6 +105,12 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 			return r.done(err)
 		}
 		r.invocation = ninv
+
+		// Update lucictx with the new invocation.
+		ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
+			Hostname:          r.host,
+			CurrentInvocation: r.invocation,
+		})
 	} else {
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -136,19 +142,6 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
-	// reset and install a lucictx with r.host and r.invocation just in case they were not
-	// derived from the current lucictx.
-	ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
-		Hostname:          r.host,
-		CurrentInvocation: r.invocation,
-	})
-	exported, err := lucictx.Export(ctx)
-	if err != nil {
-		return errors.Annotate(err, "failed to export LUCI_CONTEXT").Err()
-	}
-	defer exported.Close()
-	exported.SetInCmd(cmd.Cmd)
-
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 	// TODO(ddoman): handle interrupts with luci/common/system/signals.
 	cfg := sink.ServerConfig{
@@ -157,8 +150,6 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
 		UpdateToken: r.invocation.UpdateToken,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
-		// install the lucicontext into cmd again so that all the lucictx added inside
-		// the server becomes visible to the test process.
 		exported, err := lucictx.Export(ctx)
 		if err != nil {
 			return err
