@@ -49,7 +49,7 @@ func application(p Params) *cli.Application {
 		},
 		Commands: []*subcommands.Command{
 			cmdDerive(p),
-			cmdCall(p),
+			cmdRPC(p),
 			cmdQuery(p),
 			// TODO(crbug.com/1021849): Remove this in favor of cmdCall.
 			cmdUpdateInclusions(p),
