@@ -140,6 +140,30 @@
       "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bf85c17_e7af9af5",
+        "filename": "resultdb/internal/tasks/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-03T00:51:03Z",
+      "side": 1,
+      "message": "I think it\u0027s OK too. I just feel it\u0027s a little confusing (it sounds like how long to do the lease action, instead of how long the worker has the task after leasing). But maybe it\u0027s just me.",
+      "parentUuid": "810e4f3f_a8ae57c9",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 32
+      },
+      "revId": "b4c87f59a54007e80089791161b978f9ad5a95e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
