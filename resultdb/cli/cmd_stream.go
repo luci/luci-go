@@ -88,6 +88,13 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err := r.initClients(ctx); err != nil {
 		return r.done(err)
 	}
+	if len(args) == 0 {
+		return r.done(errors.Reason("missing a test command to run").Err())
+	}
+	cmd := exec2.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
@@ -116,7 +123,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		}
 	}()
 
-	err := r.runTestCmd(ctx, args)
+	err := r.runTestCmd(ctx, cmd)
 	ec, ok := exitcode.Get(err)
 	if !ok {
 		return r.done(err)
@@ -127,15 +134,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	return ec
 }
 
-func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
-	if len(args) == 0 {
-		return errors.Reason("missing a test command to run").Err()
-	}
-	cmd := exec2.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
+func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
 	// reset and install a lucictx with r.host and r.invocation just in case they were not
 	// derived from the current lucictx.
 	ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
