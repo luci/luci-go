@@ -97,6 +97,12 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 			return r.done(err)
 		}
 		r.invocation = ninv
+
+		// Update lucictx with the new invocation.
+		ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
+			Hostname:          r.host,
+			CurrentInvocation: r.invocation,
+		})
 	} else {
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -135,19 +141,6 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	// reset and install a lucictx with r.host and r.invocation just in case they were not
-	// derived from the current lucictx.
-	ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
-		Hostname:          r.host,
-		CurrentInvocation: r.invocation,
-	})
-	exported, err := lucictx.Export(ctx)
-	if err != nil {
-		return errors.Annotate(err, "failed to export LUCI_CONTEXT").Err()
-	}
-	defer exported.Close()
-	exported.SetInCmd(cmd.Cmd)
 
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 	// TODO(ddoman): handle interrupts with luci/common/system/signals.
