@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 
-	"go.chromium.org/luci/resultdb/internal/services/backend"
+	"go.chromium.org/luci/resultdb/internal/services/finalizer"
 	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/internal/services/resultdb"
@@ -161,16 +161,18 @@ func (t *testApp) initServers(ctx context.Context) error {
 		ExpectedResultsExpiration: time.Hour,
 	})
 
-	// Init backend server.
-	backendServer, _, err := t.serverClientPair(ctx, 8020, 8021)
+	// Init finalizer server.
+	finalizerServer, _, err := t.serverClientPair(ctx, 8020, 8021)
 	if err != nil {
 		return err
 	}
-	backend.InitServer(backendServer, backend.Options{
-		TaskWorkers:        1,
-		ForceCronInterval:  100 * time.Millisecond,
-		ForceLeaseDuration: 100 * time.Millisecond,
+	finalizer.InitServer(finalizerServer, finalizer.Options{
+		TaskWorkers:       1,
+		TaskQueryInterval: 100 * time.Millisecond,
+		TaskLeaseDuration: 100 * time.Millisecond,
 	})
+
+	// bqexporter is not needed.
 
 	// Init purger server.
 	purgerServer, _, err := t.serverClientPair(ctx, 8030, 8031)
@@ -183,7 +185,7 @@ func (t *testApp) initServers(ctx context.Context) error {
 
 	t.ResultDB = pb.NewResultDBPRPCClient(resultdbPRPCClient)
 	t.Recorder = pb.NewRecorderPRPCClient(recorderPRPCClient)
-	t.servers = []*server.Server{resultdbServer, recorderServer, backendServer, purgerServer}
+	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer}
 	return nil
 }
 

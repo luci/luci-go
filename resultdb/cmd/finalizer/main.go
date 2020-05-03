@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package main
 
 import (
-	"testing"
+	"go.chromium.org/luci/server"
 
-	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/services/finalizer"
 )
 
-func TestMain(m *testing.M) {
-	testutil.SpannerTestMain(m)
+func main() {
+	internal.Main(func(srv *server.Server) error {
+		finalizer.InitServer(srv, finalizer.DefaultOptions())
+		return nil
+	})
 }

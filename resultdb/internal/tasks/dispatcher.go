@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package tasks
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"time"
-
-	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -29,7 +28,8 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 
-	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/cron"
+	"go.chromium.org/luci/resultdb/internal/span"
 )
 
 // Statuses of invocation tasks.
@@ -47,44 +47,50 @@ const (
 	permanentFailure = "PERMANENT_FAILURE"
 )
 
-var taskSamplingLimit = rate.Every(8 * time.Second)
-
 var (
-	taskAttemptMetric = metric.NewCounter(
+	attemptMetric = metric.NewCounter(
 		"resultdb/task/attempts",
 		"Counts of invocation task attempts.",
 		nil,
-		field.String("type"),   // tasks.Type
+		field.String("type"),   // see `Type`
 		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
 
-	taskDurationMetric = metric.NewCumulativeDistribution(
+	durationMetric = metric.NewCumulativeDistribution(
 		"resultdb/task/duration",
 		"Distribution of an attempt’s execution duration.",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
-		field.String("type"),   // tasks.Type
+		field.String("type"),   // see `Type`
 		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
 )
 
-// permanentInvocationTaskErrTag set in an error indicates that the err is not
-// resolvable by retry.
-var permanentInvocationTaskErrTag = errors.BoolTag{
+// PermanentFailure set in an error indicates that the err is not resolvable by
+// a retry. Such task is doomed.
+var PermanentFailure = errors.BoolTag{
 	Key: errors.NewTagKey("permanent failure to process invocation task"),
 }
 
-// runTask leases, runs and deletes a task.
-// May return tasks.ErrConflict.
-// Updates taskAttemptMetric and taskDurationMetric.
-func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (err error) {
-	leaseDuration := 10 * time.Minute
-	switch taskType {
-	case tasks.TryFinalizeInvocation:
-		leaseDuration = time.Minute
-	}
-	if b.ForceLeaseDuration > 0 {
-		leaseDuration = b.ForceLeaseDuration
-	}
+// TaskFunc can execute a task.
+// If the returned error is tagged with PermanentFailure, then the failed task
+// is deleted.
+type TaskFunc func(ctx context.Context, invID span.InvocationID, payload []byte) error
 
+// Dispatcher queries for available tasks and dispatches them to goroutines.
+type Dispatcher struct {
+	// How often to query for tasks. Defaults to 1m.
+	QueryInterval time.Duration
+
+	// How long to lease a task for. Defaults to 1m.
+	LeaseDuration time.Duration
+
+	// Number of tasks to process concurrently. Defaults to GOMAXPROCS.
+	Workers int
+}
+
+// runOne leases, runs and deletes one task.
+// May return ErrConflict.
+// Updates taskAttemptMetric and taskDurationMetric.
+func (d *Dispatcher) runOne(ctx context.Context, taskType Type, id string, f TaskFunc) (err error) {
 	// Update metrics.
 	startTime := clock.Now(ctx)
 	taskStatus := transientFailure
@@ -93,38 +99,34 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 		typeStr := string(taskType)
 
 		duration := float64(time.Since(startTime).Milliseconds())
-		taskDurationMetric.Add(ctx, duration, typeStr, taskStatus)
+		durationMetric.Add(ctx, duration, typeStr, taskStatus)
 
-		taskAttemptMetric.Add(ctx, 1, typeStr, taskStatus)
+		attemptMetric.Add(ctx, 1, typeStr, taskStatus)
 	}()
 
-	invID, payload, err := tasks.Lease(ctx, taskType, id, leaseDuration)
+	dur := d.LeaseDuration
+	if dur <= 0 {
+		dur = time.Minute
+	}
+	invID, payload, err := Lease(ctx, taskType, id, dur)
 	if err != nil {
-		if err == tasks.ErrConflict {
+		if err == ErrConflict {
 			taskStatus = skipped
 		}
 		return err
 	}
 
-	switch taskType {
-	case tasks.BQExport:
-		err = b.exportResultsToBigQuery(ctx, invID, payload)
-	case tasks.TryFinalizeInvocation:
-		err = tryFinalizeInvocation(ctx, invID)
-	default:
-		err = errors.Reason("unexpected task type %q", taskType).Err()
-	}
-	if err != nil {
-		if permanentInvocationTaskErrTag.In(err) {
+	if err = f(ctx, invID, payload); err != nil {
+		if PermanentFailure.In(err) {
 			taskStatus = permanentFailure
 			logging.Errorf(ctx, "permanent failure to process the task: %s", err)
-			return tasks.Delete(ctx, taskType, id)
+			return Delete(ctx, taskType, id)
 		}
 		return err
 	}
 
 	// Invocation task is done, delete the row from spanner.
-	if err := tasks.Delete(ctx, taskType, id); err != nil {
+	if err := Delete(ctx, taskType, id); err != nil {
 		return err
 	}
 
@@ -132,8 +134,9 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 	return nil
 }
 
-// runInvocationTasks queries invocation tasks and dispatches them to workers.
-func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
+// Run queries tasks and dispatches them to goroutines until ctx is canceled.
+// Logs errors.
+func (d *Dispatcher) Run(ctx context.Context, taskType Type, fn TaskFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -146,9 +149,9 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	}()
 
 	// Prepare workers to process the queue.
-	workers := b.TaskWorkers
+	workers := d.Workers
 	if workers == 0 {
-		workers = 1
+		workers = runtime.GOMAXPROCS(0)
 	}
 	wg.Add(workers)
 	for i := 0; i < workers; i++ {
@@ -156,15 +159,15 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 			defer wg.Done()
 			for id := range queue {
 				ctx := logging.SetField(ctx, "task_id", id)
-				switch err := b.runTask(ctx, taskType, id); {
-				case err == tasks.ErrConflict:
+				switch err := d.runOne(ctx, taskType, id, fn); {
+				case err == ErrConflict:
 					// It's possible another worker has leased the task, and it's fine, skip.
 					logging.Warningf(ctx, "Conflict while trying to lease the task")
 
 				case err != nil:
 					// Do not bail on other task ids, otherwise we sample tasks too often
 					// which is expensive. Just log the error and move on to the next task.
-					if permanentInvocationTaskErrTag.In(err) {
+					if PermanentFailure.In(err) {
 						logging.Errorf(ctx, "Task failed permanently: %s", err)
 					} else {
 						logging.Warningf(ctx, "Task failed transiently: %s", err)
@@ -178,8 +181,12 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	}
 
 	// Stream available tasks in a loop and dispatch to workers.
-	b.cron(ctx, 5*time.Second, func(ctx context.Context) error {
-		return tasks.Peek(ctx, taskType, func(id string) error {
+	minInterval := d.QueryInterval
+	if minInterval <= 0 {
+		minInterval = time.Minute
+	}
+	cron.Run(ctx, minInterval, func(ctx context.Context) error {
+		return Peek(ctx, taskType, func(id string) error {
 			queue <- id
 			return nil
 		})
