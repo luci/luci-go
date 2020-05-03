@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd671537_4abea379",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-03T01:12:23Z",
+      "side": 1,
+      "message": "Perhaps, we may not even bother to fix the username here. Instead, simply check it with pbutil.ValidateInvocationID(), and then return an error with suggesting to use flag.username.\n\nThen, rdb-stream no longer have to keep a copy of the regex. WDYT",
+      "range": {
+        "startLine": 239,
+        "startChar": 1,
+        "endLine": 240,
+        "endChar": 72
+      },
+      "revId": "7d7704d964e75dd5e5a24604b2cba2d3cacbb263",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
