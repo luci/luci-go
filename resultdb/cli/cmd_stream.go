@@ -62,6 +62,11 @@ func cmdStream(p Params) *subcommands.Command {
 				If true, create and use a new invocation for the test command.
 				If false, use the current invocation, set in LUCI_CONTEXT.
 			`))
+			r.Flags.StringVar(&r.username, "username", "", text.Doc(`
+				If -new and -username are specified, a new invocation ID is created with
+				the given username instead of the current username.
+			`))
+
 			return r
 		},
 	}
@@ -71,7 +76,9 @@ type streamRun struct {
 	baseCommandRun
 
 	// flags
-	isNew bool
+	isNew    bool
+	username string
+
 	// TODO(ddoman): add flags
 	// - testPathPrefix
 	// - tag (invocation-tag)
@@ -175,7 +182,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
 }
 
 func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocation, err error) {
-	invID, err := genInvID(ctx)
+	invID, err := r.genInvID(ctx)
 	if err != nil {
 		return
 	}
@@ -215,19 +222,22 @@ func (r *streamRun) finalizeInvocation(ctx context.Context, interrupted bool) er
 //
 // This can be used to generate a random invocation ID, but the creator and creation time
 // can be easily found.
-func genInvID(ctx context.Context) (string, error) {
-	whoami, err := user.Current()
-	if err != nil {
-		return "", err
-	}
+func (r *streamRun) genInvID(ctx context.Context) (string, error) {
 	bytes := make([]byte, 8)
 	if _, err := mathrand.Read(ctx, bytes); err != nil {
 		return "", err
 	}
 
-	username := strings.ToLower(whoami.Username)
+	username := r.username
+	if username == "" {
+		whoami, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+		username = whoami.Username
+	}
+	username = strings.ToLower(username)
 	username = matchInvalidInvocationIDChars.ReplaceAllString(username, "")
-
 	suffix := strings.ToLower(fmt.Sprintf(
 		"%s:%s", time.Now().UTC().Format(time.RFC3339),
 		// Use unpadded encoding because the padding character,'=', is not a valid character
