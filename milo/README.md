@@ -1,31 +1,24 @@
-# Milo - The interface into luci.
+# Milo - The UI for LUCI.
 
-# Layout
-* frontend/appengine/
-  * main.go - Main router and entry point into app.
-  * static/ - CSS and JS assets.  All assets go under a named subfolder.
-  * templates/ - HTML assets for use with go templates.
-* common/miloerror - Error subclass used to pass HTTP statuses.
-* client/cmd/backfill - Git data backfiller.
+Milo is the user interface for LUCI. It displays information from Buildbucket
+and ResultDB about builders, builds, and test results, and can be configured to
+display custom consoles.
 
-# Subdirectory layout
-To retain convention, each data source (e.g. swarming, DM) should have the following files:
-* html.go - All routable HTML endpoints of type handler.
+## Releasing
 
-# Themes and Templates
-Milo supports the switching of themes (template bundles) based on user
-preference.  Themes must follow these layouts:
-* Go Templates go under appengine/frontend/templates/[[Theme Name]]
-** Base templates go under appengine/frontend/templates/[[Theme Name]]/includes
-** Actual templates go under appengine/frontend/templates/[[Theme Name]]/pages
-* Static resources (css, javascript, images, etc) go under
-  /frontend/static/[[Theme Name]].  This boundary isn't enforced, this is just
-  by convention, so one theme is allowed to use resources in other themes (but
-  it is not recommended)
-* Add the Theme Name into the map in appengine/settings/theme.go:THEMES
+Releases are automatically pushed to luci-milo-dev on commit by the
+[gae-deploy](https://ci.chromium.org/p/infradata-gae/builders/ci/gae-deploy)
+builder.
 
-# Seeding data for local development
-* After starting the dev_appserver, run go run client/cmd/backfill/main.go buildbot
-  -master="chromium.win" -remote-url="localhost:8080" -dryrun=false
-  -buildbot-fallback=true (replace the port number with your dev_appserver port
-  number)
+To push to prod, the steps are:
+
+1. Get an `infra_internal` checkout
+1. `cd data/gae`
+1. `vim apps/luci-milo/channels.json`
+1. Modify the "stable" version in
+   [channels.json](https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/master/apps/luci-milo/channels.json)
+   (e.g. by reusing the current staging version).
+1. `./main.star`
+1. Mail and land the CL.
+
+TODO: Describe how to collect Milo release notes.
