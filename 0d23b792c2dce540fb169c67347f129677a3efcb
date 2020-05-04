@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "944fafa0_9c9de902",
+        "filename": "luci_notify/config/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-04T21:35:47Z",
+      "side": 1,
+      "message": "replace with tab",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 12
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cd03e91_5b3a01e9",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-04T21:35:47Z",
+      "side": 1,
+      "message": "nit: typical name for mutexes in Go is \"mu\"",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 4
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe4e54c0_ec74bfa3",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-04T21:35:47Z",
+      "side": 1,
+      "message": "nit: https://godoc.org/go.chromium.org/luci/common/data/stringset",
+      "range": {
+        "startLine": 171,
+        "startChar": 29,
+        "endLine": 171,
+        "endChar": 46
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c0fec7c_e93e1afa",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-04T21:35:47Z",
+      "side": 1,
+      "message": "nit: strictly speaking, nothing prevents us from doing these two fetches concurrently",
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eefb9eb0_43db2a7e",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-04T21:35:47Z",
+      "side": 1,
+      "message": "why pass a map by pointer? map is already a reference type",
+      "range": {
+        "startLine": 228,
+        "startChar": 128,
+        "endLine": 228,
+        "endChar": 129
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3ff2730_152bcc69",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-04T21:35:47Z",
+      "side": 1,
+      "message": "nit: no need to continue the loop once we\u0027ve detected it",
+      "range": {
+        "startLine": 241,
+        "startChar": 26,
+        "endLine": 241,
+        "endChar": 28
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
