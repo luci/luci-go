@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package finalizer
 
 import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
@@ -26,11 +27,47 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+// Options is finalizer server configuration.
+type Options struct {
+	// How often to query for tasks.
+	TaskQueryInterval time.Duration
+
+	// How long to lease a task for.
+	TaskLeaseDuration time.Duration
+
+	// Number of tasks to process concurrently.
+	TaskWorkers int
+}
+
+// DefaultOptions returns Options with default values.
+func DefaultOptions() Options {
+	return Options{
+		TaskQueryInterval: 5 * time.Second,
+		TaskLeaseDuration: time.Minute,
+		TaskWorkers:       10,
+	}
+}
+
+// InitServer initializes a finalizer server.
+func InitServer(srv *server.Server, opts Options) {
+	d := tasks.Dispatcher{
+		QueryInterval: opts.TaskQueryInterval,
+		LeaseDuration: opts.TaskLeaseDuration,
+		Workers:       opts.TaskWorkers,
+	}
+	srv.RunInBackground("finalize", func(ctx context.Context) {
+		d.Run(ctx, tasks.TryFinalizeInvocation, func(ctx context.Context, invID span.InvocationID, payload []byte) error {
+			return tryFinalizeInvocation(ctx, invID)
+		})
+	})
+}
 
 // Invocation finalization is asynchronous. First, an invocation transitions
 // from ACTIVE to FINALIZING state and transactionally an invocation task is

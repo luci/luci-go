@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package bqexporter
 
 import (
 	"context"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -33,11 +34,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -48,21 +51,55 @@ const (
 
 var bqTableCache = caching.RegisterLRUCache(50)
 
-// inserter is implemented by bigquery.Inserter.
-type inserter interface {
-	// Put uploads one or more rows to the BigQuery service.
-	Put(ctx context.Context, src interface{}) error
+// Options is bqexpoerter configuration.
+type Options struct {
+	// How often to query for tasks.
+	TaskQueryInterval time.Duration
+
+	// How long to lease a task for.
+	TaskLeaseDuration time.Duration
+
+	// Whether to use InsertIDs in BigQuery Streaming Inserts.
+	UseInsertIDs bool
+
+	// Maximum number of rows in a batch.
+	MaxBatchRowCount int
+
+	// Maximum size of a batch in bytes, approximate.
+	MaxBatchSizeApprox int
+
+	// Maximum size of all batches held in memory, approximate.
+	MaxBatchTotalSizeApprox int
+
+	// Maximum rate for BigQuery Streaming Inserts.
+	RateLimit rate.Limit
 }
 
-type table interface {
-	// Metadata fetches the metadata for the table.
-	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
+// DefaultOptions returns Options with default values.
+func DefaultOptions() Options {
+	return Options{
+		// 500 is recommended
+		// https://cloud.google.com/bigquery/quotas#streaming_inserts
+		MaxBatchRowCount: 500,
+
+		// HTTP request size limit is 10 MiB according to
+		// https://cloud.google.com/bigquery/quotas#streaming_inserts
+		// Use a smaller size as the limit since we are only using the size of
+		// test results to estimate the whole payload size.
+		MaxBatchSizeApprox: 6 * 1024 * 1024, // 6 MiB
+
+		MaxBatchTotalSizeApprox: 2 * 1024 * 1024 * 1024, // 2 GiB
+
+		RateLimit: 100,
+
+		TaskLeaseDuration: 10 * time.Minute,
+
+		TaskQueryInterval: 5 * time.Second,
+	}
 }
 
 type bqExporter struct {
-	maxBatchRowCount int
-	maxBatchSize     int
-	useInsertIDs     bool
+	*Options
 
 	// putLimiter limits the rate of bigquery.Inserter.Put calls.
 	putLimiter *rate.Limiter
@@ -73,6 +110,41 @@ type bqExporter struct {
 	// The exact number is batchSemWeight + taskWorkers*2,
 	// but this is good enough.
 	batchSem *semaphore.Weighted
+}
+
+// InitServer initializes a bqexporter server.
+func InitServer(srv *server.Server, opts Options) {
+	b := &bqExporter{
+		Options:    &opts,
+		putLimiter: rate.NewLimiter(opts.RateLimit, 1),
+		batchSem:   semaphore.NewWeighted(int64(opts.MaxBatchSizeApprox / opts.MaxBatchTotalSizeApprox)),
+	}
+
+	d := tasks.Dispatcher{
+		// This is the number of invocations we process concurrently.
+		// Each invocation has thousands of test results.
+		// If this number is too large, we'd be processing a lot of large
+		// invocations at the same time and risk not finishing any of them.
+		// It is better to process fewer invocations and finish them sooner.
+		// Do NOT accept this value from the user.
+		Workers:       runtime.GOMAXPROCS(0),
+		LeaseDuration: opts.TaskLeaseDuration,
+		QueryInterval: opts.TaskQueryInterval,
+	}
+	srv.RunInBackground("bqexport", func(ctx context.Context) {
+		d.Run(ctx, tasks.BQExport, b.exportResultsToBigQuery)
+	})
+}
+
+// inserter is implemented by bigquery.Inserter.
+type inserter interface {
+	// Put uploads one or more rows to the BigQuery service.
+	Put(ctx context.Context, src interface{}) error
+}
+
+type table interface {
+	// Metadata fetches the metadata for the table.
+	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
 }
 
 // bqInserter is an implementation of inserter.
@@ -149,7 +221,7 @@ func checkBqTable(ctx context.Context, bqExport *pb.BigQueryExport, t table) (bo
 			return nil, 0, err
 		case ok && apiErr.Code == http.StatusForbidden:
 			// No read table permission.
-			return permanentInvocationTaskErrTag.Apply(err), time.Minute, nil
+			return tasks.PermanentFailure.Apply(err), time.Minute, nil
 		case err != nil:
 			// The err is not a special case above, no need to cache this.
 			return nil, 0, err
@@ -205,7 +277,7 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 		return nil
 	case ok && apiErr.Code == http.StatusForbidden:
 		// No create table permission.
-		return permanentInvocationTaskErrTag.Apply(err)
+		return tasks.PermanentFailure.Apply(err)
 	default:
 		return err
 	}
@@ -255,20 +327,20 @@ func (b *bqExporter) queryTestResults(
 		return err
 	}
 
-	rows := make([]*bigquery.StructSaver, 0, b.maxBatchRowCount)
+	rows := make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	err = q.Run(ctx, txn, func(tr span.TestResultQueryItem) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := span.MustParseTestResultName(tr.Name)
 		rows = append(rows, b.generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
 		batchSize += proto.Size(tr)
-		if len(rows) >= b.maxBatchRowCount || batchSize >= b.maxBatchSize {
+		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case batchC <- rows:
 			}
-			rows = make([]*bigquery.StructSaver, 0, b.maxBatchRowCount)
+			rows = make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
 			batchSize = 0
 		}
 		return nil
@@ -312,7 +384,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 			defer b.batchSem.Release(1)
 			err := b.insertRowsWithRetries(ctx, ins, rows)
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "accessDenied") {
-				err = permanentInvocationTaskErrTag.Apply(err)
+				err = tasks.PermanentFailure.Apply(err)
 			}
 			return err
 		})
@@ -368,7 +440,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	invIDs, err := span.ReadReachableInvocations(ctx, txn, maxInvocationGraphSize, span.NewInvocationIDSet(invID))
 	if err != nil {
 		if span.TooManyInvocationsTag.In(err) {
-			err = permanentInvocationTaskErrTag.Apply(err)
+			err = tasks.PermanentFailure.Apply(err)
 		}
 		return err
 	}
