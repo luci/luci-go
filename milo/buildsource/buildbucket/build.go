@@ -342,6 +342,7 @@ var (
 			"infra",
 			"tags",
 			"summary_markdown",
+			"canary",
 		},
 	}
 	tagsAndGitilesMask = &field_mask.FieldMask{
