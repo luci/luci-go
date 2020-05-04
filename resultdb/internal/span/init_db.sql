@@ -191,21 +191,6 @@ CREATE TABLE Artifacts (
 ) PRIMARY KEY (InvocationId, ParentId, ArtifactId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
--- RBE-CAS digests that have been seen from a given Realm before.
--- Used for control access to blobs against realms.
-CREATE TABLE RBECASBlobs (
-  -- Realm name, e.g. "chromium:ci"
-  Realm STRING(MAX) NOT NULL,
-
-  -- Content hash in the same format as Artifacts.RBECASHash.
-  ContentHash STRING(MAX) NOT NULL,
-
-  -- Content size.
-  -- It is a part of the PK because it is a part of PK in RBE-CAS
-  -- https://github.com/bazelbuild/remote-apis/blob/67e8026c2118c1e1506e6efeb3a6d0e2609a7d61/build/bazel/remote/execution/v2/remote_execution.proto#L228
-  Size INT64 NOT NULL,
-) PRIMARY KEY (Realm, ContentHash, Size);
-
 -- Unexpected test results for each invocation.
 -- It is significantly smaller (<2%) than TestResult table and should be used
 -- for most queries.
