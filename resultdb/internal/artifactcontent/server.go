@@ -47,13 +47,20 @@ var artifactNameTokenKind = tokens.TokenKind{
 	Version:    1,
 }
 
+// HostnameProvider returns a hostname to use in generated signed URLs.
+//
+// As input it accepts `host` metadata value of the GetArtifacts etc. requests.
+// It may be an empty string. HostnameProvider must return some host name in
+// this case too.
+type HostnameProvider func(requestHost string) string
+
 // Server can serve artifact content, and generate signed URLs to the content.
 type Server struct {
 	// Use http:// (not https://) for generated URLs.
 	InsecureURLs bool
 
-	// Included in generated signed URLs and required in content requests.
-	Hostname string
+	// Returns a hostname to use in generated signed URLs.
+	HostnameProvider HostnameProvider
 
 	// used for isolate client
 	anonClient, authClient *http.Client
@@ -63,7 +70,7 @@ type Server struct {
 }
 
 // NewServer creates a Server.
-func NewServer(ctx context.Context, insecureURLs bool, hostname string) (*Server, error) {
+func NewServer(ctx context.Context, insecureURLs bool, hostnameProvider HostnameProvider) (*Server, error) {
 	anonTransport, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
 		return nil, err
@@ -74,14 +81,17 @@ func NewServer(ctx context.Context, insecureURLs bool, hostname string) (*Server
 	}
 
 	return &Server{
-		InsecureURLs: insecureURLs,
-		Hostname:     hostname,
-		anonClient:   &http.Client{Transport: anonTransport},
-		authClient:   &http.Client{Transport: selfTransport},
+		InsecureURLs:     insecureURLs,
+		HostnameProvider: hostnameProvider,
+		anonClient:       &http.Client{Transport: anonTransport},
+		authClient:       &http.Client{Transport: selfTransport},
 	}, nil
 }
 
 // InstallHandlers installs handlers to serve artifact content.
+//
+// May be called multiple times to install the handler into multiple virtual
+// hosts.
 func (s *Server) InstallHandlers(r *router.Router) {
 	// TODO(nodir): use OAuth2.0 middleware to allow OAuth credentials.
 
@@ -207,7 +217,7 @@ func (r *contentRequest) writeContentHeaders() {
 
 // GenerateSignedURL generates a signed HTTPS URL back to this server.
 // The returned token works only with the same artifact name.
-func (s *Server) GenerateSignedURL(ctx context.Context, artifactName string) (url string, expiration time.Time, err error) {
+func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error) {
 	now := clock.Now(ctx).UTC()
 
 	tok, err := artifactNameTokenKind.Generate(ctx, []byte(artifactName), nil, artifactNameTokenKind.Expiration)
@@ -219,8 +229,17 @@ func (s *Server) GenerateSignedURL(ctx context.Context, artifactName string) (ur
 	if s.InsecureURLs {
 		scheme = "http"
 	}
+
+	// Derive the hostname for generated URL from the request host. This is used
+	// to make sure GetArtifacts requests that hit "canary.*" API host also get
+	// "canary.*" artifact links.
+	hostname := s.HostnameProvider(requestHost)
+	if hostname == "" {
+		return "", time.Time{}, errors.Reason("empty content hostname").Err()
+	}
+
 	// Using url.URL here is hard because it escapes artifact name which we don't want.
-	url = fmt.Sprintf("%s://%s/%s?token=%s", scheme, s.Hostname, artifactName, tok)
+	url = fmt.Sprintf("%s://%s/%s?token=%s", scheme, hostname, artifactName, tok)
 	expiration = now.Add(artifactNameTokenKind.Expiration)
 	return
 }

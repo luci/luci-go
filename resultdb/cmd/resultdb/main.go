@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -29,18 +30,29 @@ func main() {
 		false,
 		"Use http:// (not https://) for URLs pointing back to ResultDB",
 	)
+
+	contentHostnameMap := stringmapflag.Value{}
+	flag.Var(
+		&contentHostnameMap,
+		"user-content-host-map",
+		"Key=value map where key is a ResultDB API hostname and value is a "+
+			"hostname to use for user-content URLs produced there. "+
+			"Key '*' indicates a fallback.")
+
+	// TODO(vadimsh): Remove this once -user-content-host-map is rolled out.
 	contentHostname := flag.String(
 		"user-content-host",
-		// TODO(crbug.com/1042261): remove the default and make it required.
-		// Without the default staging will start crashing.
 		"results.usercontent.cr.dev",
 		"Use this host for all user-content URLs",
 	)
 
 	internal.Main(func(srv *server.Server) error {
+		if contentHostnameMap["*"] == "" && *contentHostname != "" {
+			contentHostnameMap["*"] = *contentHostname
+		}
 		return resultdb.InitServer(srv, resultdb.Options{
-			InsecureSelfURLs: *insecureSelfURLs,
-			ContentHostname:  *contentHostname,
+			InsecureSelfURLs:   *insecureSelfURLs,
+			ContentHostnameMap: map[string]string(contentHostnameMap),
 		})
 	})
 }

@@ -145,8 +145,8 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	err = resultdb.InitServer(resultdbServer, resultdb.Options{
-		InsecureSelfURLs: true,
-		ContentHostname:  "localhost",
+		InsecureSelfURLs:   true,
+		ContentHostnameMap: map[string]string{"*": "localhost"},
 	})
 	if err != nil {
 		return err
