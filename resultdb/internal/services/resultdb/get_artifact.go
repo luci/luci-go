@@ -17,6 +17,8 @@ package resultdb
 import (
 	"context"
 
+	"google.golang.org/grpc/metadata"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
@@ -56,9 +58,19 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 
 // populateFetchURLs populates FetchUrl and FetchUrlExpiration fields
 // of the artifacts.
+//
+// Must be called from within some gRPC request handler.
 func (s *resultDBServer) populateFetchURLs(ctx context.Context, artifacts ...*pb.Artifact) error {
+	// Extract Host header (may be empty) from the request to use it as a basis
+	// for generating artifact URLs.
+	requestHost := ""
+	md, _ := metadata.FromIncomingContext(ctx)
+	if val := md.Get("host"); len(val) > 0 {
+		requestHost = val[0]
+	}
+
 	for _, a := range artifacts {
-		url, exp, err := s.generateArtifactURL(ctx, a.Name)
+		url, exp, err := s.generateArtifactURL(ctx, requestHost, a.Name)
 		if err != nil {
 			return err
 		}

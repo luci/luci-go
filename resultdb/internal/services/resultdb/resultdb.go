@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"google.golang.org/grpc/codes"
@@ -33,25 +34,42 @@ import (
 // It does not return gRPC-native errors; use DecoratedResultDB with
 // internal.CommonPostlude.
 type resultDBServer struct {
-	generateArtifactURL func(ctx context.Context, artifactName string) (url string, expiration time.Time, err error)
+	generateArtifactURL func(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error)
 }
 
 // Options is resultdb server configuration.
 type Options struct {
-	// Use http:// (not https://) for URLs pointing back to ResultDB
+	// InsecureSelfURLs is set to true to use http:// (not https://) for URLs
+	// pointing back to ResultDB.
 	InsecureSelfURLs bool
-	// Host name for all user-content URLs.
-	ContentHostname string
+
+	// ContentHostnameMap maps a Host header of GetArtifact request to a host name
+	// to use for all user-content URLs.
+	//
+	// Special key "*" indicates a fallback.
+	ContentHostnameMap map[string]string
 }
 
 // InitServer initializes a resultdb server.
 func InitServer(srv *server.Server, opts Options) error {
-	contentServer, err := artifactcontent.NewServer(srv.Context, opts.InsecureSelfURLs, opts.ContentHostname)
+	contentServer, err := artifactcontent.NewServer(srv.Context, opts.InsecureSelfURLs, func(requestHost string) string {
+		if host, ok := opts.ContentHostnameMap[requestHost]; ok {
+			return host
+		}
+		return opts.ContentHostnameMap["*"]
+	})
 	if err != nil {
 		return err
 	}
 
-	contentServer.InstallHandlers(srv.VirtualHost(opts.ContentHostname))
+	// Serve all possible content hostnames.
+	hosts := stringset.New(len(opts.ContentHostnameMap))
+	for _, v := range opts.ContentHostnameMap {
+		hosts.Add(v)
+	}
+	for _, host := range hosts.ToSortedSlice() {
+		contentServer.InstallHandlers(srv.VirtualHost(host))
+	}
 
 	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
 		Service: &resultDBServer{

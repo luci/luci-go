@@ -49,18 +49,20 @@ func TestGenerateSignedURL(t *testing.T) {
 		})
 		ctx = authtest.MockAuthConfig(ctx)
 
-		s, err := NewServer(ctx, false, "results.usercontent.example.com")
+		s, err := NewServer(ctx, false, func(string) string {
+			return "results.usercontent.example.com"
+		})
 		So(err, ShouldBeNil)
 
 		Convey(`Basic case`, func() {
-			url, exp, err := s.GenerateSignedURL(ctx, "invocations/inv/artifacts/a")
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a")
 			So(err, ShouldBeNil)
 			So(url, ShouldStartWith, "https://results.usercontent.example.com/invocations/inv/artifacts/a?token=")
 			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
 		})
 
 		Convey(`Escaped test id`, func() {
-			url, exp, err := s.GenerateSignedURL(ctx, "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
 			So(err, ShouldBeNil)
 			So(url, ShouldStartWith, "https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token=")
 			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
@@ -80,7 +82,9 @@ func TestServeContent(t *testing.T) {
 		ctx = authtest.MockAuthConfig(ctx)
 		ctx = testsecrets.Use(ctx)
 
-		s, err := NewServer(ctx, false, "example.com")
+		s, err := NewServer(ctx, false, func(string) string {
+			return "example.com"
+		})
 		So(err, ShouldBeNil)
 		s.testFetchIsolate = func(ctx context.Context, isolateURL string, w io.Writer) error {
 			return fmt.Errorf("unexpected")
@@ -140,7 +144,7 @@ func TestServeContent(t *testing.T) {
 		})
 
 		Convey(`Escaped test id`, func() {
-			u, _, err := s.GenerateSignedURL(ctx, "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
 			So(err, ShouldBeNil)
 			res, actualContents := fetch(u)
 			So(res.StatusCode, ShouldEqual, http.StatusOK)
@@ -148,7 +152,7 @@ func TestServeContent(t *testing.T) {
 		})
 
 		Convey(`E2E`, func() {
-			u, _, err := s.GenerateSignedURL(ctx, "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
 			So(err, ShouldBeNil)
 			res, actualContents := fetch(u)
 			So(res.StatusCode, ShouldEqual, http.StatusOK)
