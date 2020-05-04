@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
@@ -83,14 +84,21 @@ func TestUpdateTrees(t *testing.T) {
 		c := gaetesting.TestingContextWithAppID("luci-notify-test")
 		datastore.GetTestable(c).Consistent(true)
 		c = memlogger.Use(c)
+		log := logging.Get(c).(*memlogger.MemLogger)
 
-		project := &config.Project{Name: "chromium"}
-		projectKey := datastore.KeyForObj(c, project)
-		builder1 := &config.Builder{ProjectKey: projectKey, ID: "ci/builder1"}
-		builder2 := &config.Builder{ProjectKey: projectKey, ID: "ci/builder2"}
-		builder3 := &config.Builder{ProjectKey: projectKey, ID: "ci/builder3"}
-		builder4 := &config.Builder{ProjectKey: projectKey, ID: "ci/builder4"}
-		So(datastore.Put(c, project, builder1, builder2, builder3, builder4), ShouldBeNil)
+		project1 := &config.Project{Name: "chromium", TreeClosingEnabled: true}
+		project1Key := datastore.KeyForObj(c, project1)
+		builder1 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder1"}
+		builder2 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder2"}
+		builder3 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder3"}
+		builder4 := &config.Builder{ProjectKey: project1Key, ID: "ci/builder4"}
+
+		project2 := &config.Project{Name: "infra", TreeClosingEnabled: false}
+		project2Key := datastore.KeyForObj(c, project2)
+		builder5 := &config.Builder{ProjectKey: project2Key, ID: "ci/builder5"}
+		builder6 := &config.Builder{ProjectKey: project2Key, ID: "ci/builder6"}
+
+		So(datastore.Put(c, project1, builder1, builder2, builder3, builder4, project2, builder5, builder6), ShouldBeNil)
 
 		earlierTime := time.Now().AddDate(-1, 0, 0).UTC()
 		evenEarlierTime := time.Now().AddDate(-2, 0, 0).UTC()
@@ -375,6 +383,122 @@ func TestUpdateTrees(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Closed)
 			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
+		})
+
+		// New tests:
+		// Multiple projects, one with tree closing enabled, one without
+		//   Edge case (overlap in hosts) (maybe multiple tests?)
+		Convey("Multiple projects", func() {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium-status.appspot.com": treeStatus{
+						username:  botUsername,
+						message:   "Tree is closed (Automatic: some builder failed)",
+						key:       -1,
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+					"infra-status.appspot.com": treeStatus{
+						username:  botUsername,
+						message:   "Tree is open (Automatic: Yes!)",
+						key:       -1,
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder1),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Open,
+				Timestamp:      time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder5),
+				TreeStatusHost: "infra-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      time.Now().UTC(),
+				Message:        "Close it up!",
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Tree is open (Automatic: Yes!)")
+
+			status, err = ts.getStatus(c, "infra-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Tree is open (Automatic: Yes!)")
+
+			So(log.Messages(), ShouldHaveLength, 1)
+			So(log.Messages()[0].Level, ShouldEqual, logging.Info)
+			So(log.Messages()[0].Msg, ShouldEqual, `Would update status for infra-status.appspot.com to "Tree is closed (Automatic: Close it up!)"`)
+		})
+
+		Convey("Multiple projects, overlapping tree status hosts", func() {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium-status.appspot.com": treeStatus{
+						username:  botUsername,
+						message:   "Tree is open (Flake)",
+						key:       -1,
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+					"infra-status.appspot.com": treeStatus{
+						username:  botUsername,
+						message:   "Tree is closed (Automatic: Some builder failed)",
+						key:       -1,
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder1),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Open,
+				Timestamp:      time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder5),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder2),
+				TreeStatusHost: "infra-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Open,
+				Timestamp:      time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder6),
+				TreeStatusHost: "infra-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      time.Now().UTC(),
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Tree is open (Flake)")
+
+			status, err = ts.getStatus(c, "infra-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Tree is open (Automatic: Yes!)")
 		})
 	})
 }
