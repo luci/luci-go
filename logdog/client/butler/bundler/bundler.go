@@ -233,9 +233,9 @@ func (b *Bundler) makeBundles() {
 				return true
 			})
 
-			if b.flushing && len(state.streams) == 0 {
-				// We're flushing, and there are no more streams, so we're completely
-				// finished.
+			if b.flushing && len(b.streams) == 0 {
+				// We're flushing, and there are no more registered streams, so we're
+				// completely finished.
 				//
 				// If we have any content in our builder, it will be exported via defer.
 				return
@@ -356,16 +356,20 @@ func (b *Bundler) bundleRoundLocked(bb *builder, state *streamState) bool {
 		}
 
 		// Pull bundles from this stream.
-		modified := s.nextBundleEntry(bb, true)
-		if modified {
+		if modified := s.nextBundleEntry(bb, true); modified {
 			state.streamUpdated(s.name())
 
 			// We have at least one time-sensitive bundle, so send this round.
 			sendNow = true
+		} else {
+			// Remove the stream from current stream snapshot, the stream will be
+			// skipped in this round to allow more data coming in.
+			state.removeStream(s.name())
 		}
 
-		if s.isDrained() || !modified {
+		if s.isDrained() {
 			state.removeStream(s.name())
+			b.unregisterStreamLocked(s)
 		}
 	}
 
