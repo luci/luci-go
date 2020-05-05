@@ -17,7 +17,6 @@ package bqexporter
 import (
 	"context"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
 
@@ -73,6 +72,13 @@ type Options struct {
 
 	// Maximum rate for BigQuery Streaming Inserts.
 	RateLimit rate.Limit
+
+	// Number of invocations to export concurrently.
+	// This number should be small (e.g. 10) if this ResultDB instance mostly
+	// exports huge invocations (10k-100k results per invocation), and it should
+	// be large (e.g. 100) if exports small invocations (1000 results per
+	// invocation).
+	TaskWorkers int
 }
 
 // DefaultOptions returns Options with default values.
@@ -81,20 +87,16 @@ func DefaultOptions() Options {
 		// 500 is recommended
 		// https://cloud.google.com/bigquery/quotas#streaming_inserts
 		MaxBatchRowCount: 500,
-
 		// HTTP request size limit is 10 MiB according to
 		// https://cloud.google.com/bigquery/quotas#streaming_inserts
 		// Use a smaller size as the limit since we are only using the size of
 		// test results to estimate the whole payload size.
-		MaxBatchSizeApprox: 6 * 1024 * 1024, // 6 MiB
-
+		MaxBatchSizeApprox:      6 * 1024 * 1024,        // 6 MiB
 		MaxBatchTotalSizeApprox: 2 * 1024 * 1024 * 1024, // 2 GiB
-
-		RateLimit: 100,
-
-		TaskLeaseDuration: 10 * time.Minute,
-
-		TaskQueryInterval: 5 * time.Second,
+		RateLimit:               100,
+		TaskLeaseDuration:       10 * time.Minute,
+		TaskQueryInterval:       5 * time.Second,
+		TaskWorkers:             10,
 	}
 }
 
@@ -121,13 +123,7 @@ func InitServer(srv *server.Server, opts Options) {
 	}
 
 	d := tasks.Dispatcher{
-		// This is the number of invocations we process concurrently.
-		// Each invocation has thousands of test results.
-		// If this number is too large, we'd be processing a lot of large
-		// invocations at the same time and risk not finishing any of them.
-		// It is better to process fewer invocations and finish them sooner.
-		// Do NOT accept this value from the user.
-		Workers:       runtime.GOMAXPROCS(0),
+		Workers:       opts.TaskWorkers,
 		LeaseDuration: opts.TaskLeaseDuration,
 		QueryInterval: opts.TaskQueryInterval,
 	}
