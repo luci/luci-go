@@ -175,26 +175,26 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 
 			swarmingAPIEndpoint := "_ah/api/swarming/v1/"
 			switch r.URL.Path {
-			case fmt.Sprintf("/%stask/completed-task/result", swarmingAPIEndpoint):
-				resp.TaskId = "completed-task"
-				resp.RunId = "completed-task"
+			case fmt.Sprintf("/%stask/completed-task0/result", swarmingAPIEndpoint):
+				resp.TaskId = "completed-task0"
+				resp.RunId = "completed-task1"
 				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
 					Isolatedserver: isoServer.URL,
 					Namespace:      "ns",
 					Isolated:       string(outputsDigest),
 				}
-			case fmt.Sprintf("/%stask/origin/result", swarmingAPIEndpoint):
-				resp.TaskId = "origin"
-				resp.RunId = "origin"
+			case fmt.Sprintf("/%stask/origin0/result", swarmingAPIEndpoint):
+				resp.TaskId = "origin0"
+				resp.RunId = "origin1"
 				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
 					Isolatedserver: isoServer.URL,
 					Namespace:      "ns",
 					Isolated:       string(outputsDigest),
 				}
-			case fmt.Sprintf("/%stask/deduped/result", swarmingAPIEndpoint):
-				resp.TaskId = "deduped"
-				resp.RunId = "deduped"
-				resp.DedupedFrom = "origin"
+			case fmt.Sprintf("/%stask/deduped0/result", swarmingAPIEndpoint):
+				resp.TaskId = "deduped0"
+				resp.RunId = "deduped1"
+				resp.DedupedFrom = "origin1"
 			}
 			err := json.NewEncoder(w).Encode(resp)
 			c.So(err, ShouldBeNil)
@@ -218,7 +218,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		}
 
 		Convey(`inserts a new invocation`, func() {
-			req.SwarmingTask.Id = "completed-task"
+			req.SwarmingTask.Id = "completed-task0"
 			inv, err := deriver.DeriveChromiumInvocation(ctx, req)
 			So(err, ShouldBeNil)
 
@@ -230,7 +230,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				IncludedInvocations: []string{inv.Name + "::batch::0"},
-				ProducerResource:    fmt.Sprintf("//%s/tasks/completed-task", swarmingHostname),
+				ProducerResource:    fmt.Sprintf("//%s/tasks/completed-task0", swarmingHostname),
 			})
 
 			// Assert we wrote correct test results.
@@ -273,11 +273,11 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		})
 
 		Convey(`inserts a deduped invocation`, func() {
-			req.SwarmingTask.Id = "deduped"
+			req.SwarmingTask.Id = "deduped0"
 			inv, err := deriver.DeriveChromiumInvocation(ctx, req)
 			So(err, ShouldBeNil)
 			So(len(inv.IncludedInvocations), ShouldEqual, 1)
-			So(inv.IncludedInvocations[0], ShouldContainSubstring, "origin")
+			So(inv.IncludedInvocations[0], ShouldContainSubstring, "origin1")
 
 			// Assert we wrote correct test results.
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -308,7 +308,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/c2/t3.html")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
-			// Read InvocationTask to confirm it's added for origin task.
+			// Read InvocationTask to confirm it's added for origin1 task.
 			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.IncludedInvocations[0]).RowID()))
 			var payload []byte
 			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
