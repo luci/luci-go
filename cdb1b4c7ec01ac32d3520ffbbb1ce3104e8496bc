@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4452ab1_a9c989ae",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:36:56Z",
+      "side": 1,
+      "message": "alternatively https://pkg.go.dev/go.chromium.org/luci@v0.0.0-20200505054424-f603d71f8a6a/common/flag/stringmapflag?tab\u003ddoc",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d5a0e3c_09d1ae3f",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:36:56Z",
+      "side": 1,
+      "message": "this is not allowed by the API. I understand the TODO, but let\u0027s not advertise the bug",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d896e9d_4d025e38",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:36:56Z",
+      "side": 1,
+      "message": "this has nothing to do with validation?",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 26
+      },
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22039b28_1571ef79",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:36:56Z",
+      "side": 1,
+      "message": "we must combine the two, not ignore the user-supplied variant.\nalso tr.Variant must win if keys overlap",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62696056_f345fd9e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:36:56Z",
+      "side": 1,
+      "message": "BaseVariant would be a better name, see also another comment about merging",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 8
+      },
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40c68295_84762d22",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:36:56Z",
+      "side": 1,
+      "message": "cfg.Variant \u003d pbutil.Variant(\"bucket\", \"try\", \"builder\", \"linux-rel\")",
+      "range": {
+        "startLine": 89,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 24
+      },
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
