@@ -32,47 +32,68 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func check(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expected *pb.TestResult) {
+	sink, err := newSinkServer(ctx, cfg)
+	So(err, ShouldBeNil)
+
+	req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+	_, err = sink.ReportTestResults(ctx, req)
+	So(err, ShouldBeNil)
+
+	cfg.Recorder.(*pb.MockRecorderClient).EXPECT().BatchCreateTestResults(
+		gomock.Any(), matchBatchCreateTestResultsRequest(cfg.Invocation, expected))
+
+	// close and drain the server to enforce all the requests processed.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	closeSinkServer(ctx, sink)
+}
+
 func TestReportTestResults(t *testing.T) {
 	t.Parallel()
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
+
+	ctx := metadata.NewIncomingContext(
+		authtest.MockAuthConfig(context.Background()),
+		metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
 
 	Convey("ReportTestResults", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+
+		cfg := testServerConfig(ctl, "", "secret")
 		tr, cleanup := validTestResult()
-		req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 		defer cleanup()
 
-		// setup a test server
-		ctx := metadata.NewIncomingContext(
-			authtest.MockAuthConfig(context.Background()),
-			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
-		cfg := testServerConfig(ctl, "", "secret")
-		cfg.Invocation = "inv1"
-		sink, err := newSinkServer(ctx, cfg)
-		So(err, ShouldBeNil)
+		expected := &pb.TestResult{
+			TestId:      tr.TestId,
+			ResultId:    tr.ResultId,
+			Expected:    tr.Expected,
+			Variant:     tr.Variant,
+			SummaryHtml: tr.SummaryHtml,
+			StartTime:   tr.StartTime,
+			Duration:    tr.Duration,
+			Tags:        tr.Tags,
+		}
 
-		defer func() {
-			// close the server to drain the channel and process the queued items.
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			closeSinkServer(ctx, sink)
-		}()
+		Convey("works", func() {
+			Convey("with ServerConfig.TestIDPrefix", func() {
+				cfg.TestIDPrefix = "ninja://foo/bar/"
+				tr.TestId = "HelloWorld.TestA"
+				expected.TestId = "ninja://foo/bar/HelloWorld.TestA"
 
-		// mock
-		recorder := cfg.Recorder.(*pb.MockRecorderClient)
-
-		Convey("creates TestResult", func() {
-			_, err := sink.ReportTestResults(ctx, req)
-			So(err, ShouldBeNil)
-
-			// rdb_channel should invoke recorder.BatchCreateTestResults()
-			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
+				check(ctx, cfg, tr, expected)
+			})
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
-			req.TestResults[0].Artifacts["art2"] = &sinkpb.Artifact{}
-			_, err := sink.ReportTestResults(ctx, req)
+			sink, err := newSinkServer(ctx, cfg)
+			So(err, ShouldBeNil)
+
+			tr.Artifacts["art2"] = &sinkpb.Artifact{}
+			_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{
+				TestResults: []*sinkpb.TestResult{tr}})
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			closeSinkServer(ctx, sink)
 		})
 	})
 }
