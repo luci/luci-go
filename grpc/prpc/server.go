@@ -261,7 +261,7 @@ func (s *Server) call(c *router.Context, serviceName, methodName string) (r resp
 		return
 	}
 
-	methodCtx, err := parseHeader(c.Context, c.Request.Header)
+	methodCtx, err := parseHeader(c.Context, c.Request.Header, c.Request.Host)
 	if err != nil {
 		r.err = withStatus(err, http.StatusBadRequest)
 		return

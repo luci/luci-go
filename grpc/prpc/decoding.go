@@ -70,13 +70,14 @@ func readMessage(r *http.Request, msg proto.Message) *protocolError {
 // parseHeader parses HTTP headers and derives a new context.
 // Supports HeaderTimeout.
 // Ignores "Accept" and "Content-Type" headers.
+// If host is not empty, adds "host" metadata.
 //
 // If there are unrecognized HTTP headers, with or without headerSuffixBinary,
 // they are added to a metadata.MD and a new context is derived.
 // If c already has metadata, the latter is copied.
 //
 // In case of an error, returns c unmodified.
-func parseHeader(c context.Context, header http.Header) (context.Context, error) {
+func parseHeader(c context.Context, header http.Header, host string) (context.Context, error) {
 	origC := c
 
 	md, ok := metadata.FromIncomingContext(c)
@@ -118,6 +119,12 @@ func parseHeader(c context.Context, header http.Header) (context.Context, error)
 			}
 		}
 	}
+
+	if host != "" {
+		md.Append("host", host)
+		addedMeta = true
+	}
+
 	if addedMeta {
 		c = metadata.NewIncomingContext(c, md)
 	}
