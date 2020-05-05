@@ -62,6 +62,10 @@ func cmdStream(p Params) *subcommands.Command {
 				If true, create and use a new invocation for the test command.
 				If false, use the current invocation, set in LUCI_CONTEXT.
 			`))
+			r.Flags.StringVar(&r.testIDPrefix, "test-id-prefix", "", text.Doc(`
+				Prefix to prepend to the test ID of every test result.
+			`))
+
 			return r
 		},
 	}
@@ -71,9 +75,9 @@ type streamRun struct {
 	baseCommandRun
 
 	// flags
-	isNew bool
+	isNew        bool
+	testIDPrefix string
 	// TODO(ddoman): add flags
-	// - testPathPrefix
 	// - tag (invocation-tag)
 	// - var (base-test-variant)
 	// - complete-invocation-exit-codes
@@ -145,9 +149,10 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 	// TODO(ddoman): handle interrupts with luci/common/system/signals.
 	cfg := sink.ServerConfig{
-		Recorder:    r.recorder,
-		Invocation:  r.invocation.Name,
-		UpdateToken: r.invocation.UpdateToken,
+		Recorder:     r.recorder,
+		Invocation:   r.invocation.Name,
+		UpdateToken:  r.invocation.UpdateToken,
+		TestIDPrefix: r.testIDPrefix,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)

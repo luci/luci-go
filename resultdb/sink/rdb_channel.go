@@ -52,7 +52,7 @@ func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
 
 	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
-		req := prepareReportTestResultsRequest(ctx, cfg.Invocation, b)
+		req := prepareReportTestResultsRequest(ctx, &cfg, b)
 		_, err := cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
@@ -73,13 +73,13 @@ func (rdbc *rdbChannel) reportTestResults(trs []*sinkpb.TestResult) {
 	}
 }
 
-func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func prepareReportTestResultsRequest(ctx context.Context, cfg *ServerConfig, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
 	// retried batch?
 	if b.Meta != nil {
 		return b.Meta.(*pb.BatchCreateTestResultsRequest)
 	}
 	req := &pb.BatchCreateTestResultsRequest{
-		Invocation: inv,
+		Invocation: cfg.Invocation,
 		// a random UUID
 		RequestId: uuid.New().String(),
 	}
@@ -87,7 +87,7 @@ func prepareReportTestResultsRequest(ctx context.Context, inv string, b *buffer.
 		tr := d.(*sinkpb.TestResult)
 		req.Requests = append(req.Requests, &pb.CreateTestResultRequest{
 			TestResult: &pb.TestResult{
-				TestId:      tr.GetTestId(),
+				TestId:      cfg.TestIDPrefix + tr.GetTestId(),
 				ResultId:    tr.GetResultId(),
 				Variant:     tr.GetVariant(),
 				Expected:    tr.GetExpected(),
