@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0d03be48_bd1a7a11",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:31:16Z",
+      "side": 1,
+      "message": "prepend to",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 30
+      },
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d37876ee_9b796275",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:31:16Z",
+      "side": 1,
+      "message": "this got inserted in the middle of the comment. please move it one line up",
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "977e4bc5_6be16508",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:31:16Z",
+      "side": 1,
+      "message": "no need to copy it each time: *ServerConfig",
+      "range": {
+        "startLine": 76,
+        "startChar": 62,
+        "endLine": 76,
+        "endChar": 74
+      },
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47e226d0_4c1dfb95",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:31:16Z",
+      "side": 1,
+      "message": "cfg.TestIDPrefix + tr.GetTestId()\n\nwould be simpler and probably faster",
+      "range": {
+        "startLine": 90,
+        "startChar": 17,
+        "endLine": 90,
+        "endChar": 62
+      },
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f35b620_15d9e310",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T17:31:16Z",
+      "side": 1,
+      "message": "fmt.Fprintf(ret, ...\n\nsame below",
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
