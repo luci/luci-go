@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "08e62a4c_1244a54b",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-05T19:54:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d03be48_bd1a7a11",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 30
+      },
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d37876ee_9b796275",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 9
@@ -39,6 +63,24 @@
       "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed952569_db41c3ac",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-05T19:54:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d37876ee_9b796275",
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "4ab975b0_00297cec",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-05T19:54:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "977e4bc5_6be16508",
+      "range": {
+        "startLine": 76,
+        "startChar": 62,
+        "endLine": 76,
+        "endChar": 74
+      },
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47e226d0_4c1dfb95",
         "filename": "resultdb/sink/rdb_channel.go",
         "patchSetId": 9
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "2eb3936d_0d04ac88",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-05T19:54:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47e226d0_4c1dfb95",
+      "range": {
+        "startLine": 90,
+        "startChar": 17,
+        "endLine": 90,
+        "endChar": 62
+      },
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f35b620_15d9e310",
         "filename": "resultdb/sink/testutil_test.go",
         "patchSetId": 9
@@ -102,6 +192,24 @@
       "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3fdeb88_40323084",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-05T19:54:22Z",
+      "side": 1,
+      "message": "Ah, good to know that strings.Builder implements io.Writer interface. thanks",
+      "parentUuid": "7f35b620_15d9e310",
+      "revId": "fd97a9d7705355da3f1ca0e3780c4d2ceeffebc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
