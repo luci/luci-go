@@ -121,10 +121,19 @@ func TestDecoding(t *testing.T) {
 	Convey("parseHeader", t, func() {
 		c := context.Background()
 
+		Convey("host", func() {
+			c, err := parseHeader(c, http.Header{}, "example.com")
+			So(err, ShouldBeNil)
+			md, ok := metadata.FromIncomingContext(c)
+			So(ok, ShouldBeTrue)
+			So(md.Get("host"), ShouldResemble, []string{"example.com"})
+		})
+
 		header := func(name, value string) http.Header {
-			return http.Header{
-				name: []string{value},
-			}
+			return http.Header{name: []string{value}}
+		}
+		parse := func(c context.Context, name, value string) (context.Context, error) {
+			return parseHeader(c, header(name, value), "")
 		}
 
 		Convey(HeaderTimeout, func() {
@@ -133,7 +142,7 @@ func TestDecoding(t *testing.T) {
 				c, _ = testclock.UseTime(c, now)
 
 				var err error
-				c, err = parseHeader(c, header(HeaderTimeout, "1M"))
+				c, err = parse(c, HeaderTimeout, "1M")
 				So(err, ShouldBeNil)
 
 				deadline, ok := c.Deadline()
@@ -142,21 +151,21 @@ func TestDecoding(t *testing.T) {
 			})
 
 			Convey("Fails", func() {
-				c, err := parseHeader(c, header(HeaderTimeout, "blah"))
+				c, err := parse(c, HeaderTimeout, "blah")
 				So(c, ShouldEqual, c)
 				So(err, ShouldErrLike, HeaderTimeout+` header: unit is not recognized: "blah"`)
 			})
 		})
 
 		Convey("Content-Type", func() {
-			c, err := parseHeader(c, header("Content-Type", "blah"))
+			c, err := parse(c, "Content-Type", "blah")
 			So(err, ShouldBeNil)
 			_, ok := metadata.FromIncomingContext(c)
 			So(ok, ShouldBeFalse)
 		})
 
 		Convey("Accept", func() {
-			c, err := parseHeader(c, header("Accept", "blah"))
+			c, err := parse(c, "Accept", "blah")
 			So(err, ShouldBeNil)
 			_, ok := metadata.FromIncomingContext(c)
 			So(ok, ShouldBeFalse)
@@ -164,7 +173,7 @@ func TestDecoding(t *testing.T) {
 
 		Convey("Unrecognized headers", func() {
 			test := func(c context.Context, header http.Header, expectedMetadata metadata.MD) {
-				c, err := parseHeader(c, header)
+				c, err := parseHeader(c, header, "")
 				So(err, ShouldBeNil)
 				md, ok := metadata.FromIncomingContext(c)
 				So(ok, ShouldBeTrue)
@@ -204,7 +213,7 @@ func TestDecoding(t *testing.T) {
 					})
 				})
 				Convey("Fails", func() {
-					c, err := parseHeader(c, header("Name-Bin", "zzz"))
+					c, err := parse(c, "Name-Bin", "zzz")
 					So(c, ShouldEqual, c)
 					So(err, ShouldErrLike, "Name-Bin header: illegal base64 data at input byte 0")
 				})
