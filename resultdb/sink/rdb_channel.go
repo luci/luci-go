@@ -89,7 +89,7 @@ func prepareReportTestResultsRequest(ctx context.Context, cfg ServerConfig, b *b
 			TestResult: &pb.TestResult{
 				TestId:      fmt.Sprint(cfg.TestIDPrefix, tr.GetTestId()),
 				ResultId:    tr.GetResultId(),
-				Variant:     tr.GetVariant(),
+				Variant:     cfg.Variant,
 				Expected:    tr.GetExpected(),
 				SummaryHtml: tr.GetSummaryHtml(),
 				StartTime:   tr.GetStartTime(),
