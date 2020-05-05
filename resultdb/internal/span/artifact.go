@@ -116,6 +116,7 @@ func ReadArtifact(ctx context.Context, txn Txn, name string) (*pb.Artifact, erro
 // ArtifactQuery specifies artifacts to fetch.
 type ArtifactQuery struct {
 	InvocationIDs       InvocationIDSet
+	ParentIDRegexp      string
 	FollowEdges         *pb.QueryArtifactsRequest_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
 	PageSize            int // must be positive
@@ -228,6 +229,15 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 // parentIDRegexp returns a regular expression for ParentId column.
 // Uses q.FollowEdges and q.TestResultPredicate.TestIdRegexp to compute it.
 func (q *ArtifactQuery) parentIDRegexp() string {
+	// If it is explicitly specified, use it.
+	if q.ParentIDRegexp != "" {
+		if q.TestResultPredicate != nil || q.FollowEdges != nil {
+			// Do not ignore our bugs.
+			panic("explicit ParentIDRegexp is mutually exclusive with TestResultPredicate and FollowEdges")
+		}
+		return q.ParentIDRegexp
+	}
+
 	testIDRE := q.TestResultPredicate.GetTestIdRegexp()
 	hasTestIDRE := testIDRE != "" && testIDRE != ".*"
 
