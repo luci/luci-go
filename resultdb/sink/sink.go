@@ -89,6 +89,11 @@ func (c *ServerConfig) Validate() error {
 	if c.UpdateToken == "" {
 		return errors.Reason("UpdateToken: unspecified").Err()
 	}
+	if c.TestIDPrefix != "" {
+		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
+			return errors.Annotate(err, "TestIDPrefix").Err()
+		}
+	}
 
 	return nil
 }
