@@ -213,6 +213,13 @@ func GetSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, err
 
 // GetSwarmingTask fetches the task from swarming, annotating errors with gRPC codes as needed.
 func GetSwarmingTask(ctx context.Context, taskID string, swarmSvc *swarmingAPI.Service) (*swarmingAPI.SwarmingRpcsTaskResult, error) {
+	if !strings.HasSuffix(taskID, "0") {
+		// taskID is a run id since it doesn't end with "0".
+		// Convert it to the task id by replacing the last char with "0" to ensure
+		// task has tags.
+		taskID = taskID[:len(taskID)-1] + "0"
+	}
+
 	task, err := swarmSvc.Task.Result(taskID).Context(ctx).Do()
 	if err, ok := err.(*googleapi.Error); ok {
 		switch {

@@ -342,7 +342,7 @@ func TestSwarming(t *testing.T) {
 	Convey(`handles Swarming errors`, t, func() {
 		swarmingFake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
-			case fmt.Sprintf("/%stask/200-task/result", swarmingAPIEndpoint):
+			case fmt.Sprintf("/%stask/200-task0/result", swarmingAPIEndpoint):
 				w.WriteHeader(http.StatusOK)
 				io.WriteString(w, `{"outputs_ref": {}}`)
 			case fmt.Sprintf("/%stask/5xx-task/result", swarmingAPIEndpoint):
@@ -358,12 +358,12 @@ func TestSwarming(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey(`does not error for 200`, func() {
-			_, err := GetSwarmingTask(ctx, "200-task", swarmSvc)
+			_, err := GetSwarmingTask(ctx, "200-task0", swarmSvc)
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`tags with gRPC NotFound for 404`, func() {
-			_, err := GetSwarmingTask(ctx, "404-task", swarmSvc)
+			_, err := GetSwarmingTask(ctx, "404-task0", swarmSvc)
 			So(err, ShouldHaveAppStatus, codes.NotFound)
 		})
 	})
@@ -372,10 +372,10 @@ func TestSwarming(t *testing.T) {
 		swarmingFake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var resp string
 			switch r.URL.Path {
-			case fmt.Sprintf("/%stask/deduped-task/result", swarmingAPIEndpoint):
-				resp = `{"task_id": "deduped-task", "deduped_from" : "first-task", "run_id": "123410"}`
-			case fmt.Sprintf("/%stask/first-task/result", swarmingAPIEndpoint):
-				resp = `{"task_id": "first-task", "run_id": "abcd12"}`
+			case fmt.Sprintf("/%stask/deduped-task0/result", swarmingAPIEndpoint):
+				resp = `{"task_id": "deduped-task0", "deduped_from" : "first-task1", "run_id": "first-task1"}`
+			case fmt.Sprintf("/%stask/first-task0/result", swarmingAPIEndpoint):
+				resp = `{"task_id": "first-task0", "run_id": "first-task1"}`
 			default:
 				resp = `{}`
 			}
@@ -388,23 +388,23 @@ func TestSwarming(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey(`for non-deduped task`, func() {
-			task, err := swarmSvc.Task.Result("first-task").Context(ctx).Do()
+			task, err := swarmSvc.Task.Result("first-task0").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
 			task, err = GetOriginTask(ctx, task, swarmSvc)
 			So(err, ShouldBeNil)
-			So(task.RunId, ShouldEqual, "abcd12")
-			So(task.TaskId, ShouldEqual, "first-task")
+			So(task.RunId, ShouldEqual, "first-task1")
+			So(task.TaskId, ShouldEqual, "first-task0")
 		})
 
 		Convey(`for deduped task`, func() {
-			task, err := swarmSvc.Task.Result("deduped-task").Context(ctx).Do()
+			task, err := swarmSvc.Task.Result("deduped-task0").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
 			task, err = GetOriginTask(ctx, task, swarmSvc)
 			So(err, ShouldBeNil)
-			So(task.RunId, ShouldEqual, "abcd12")
-			So(task.TaskId, ShouldEqual, "first-task")
+			So(task.RunId, ShouldEqual, "first-task1")
+			So(task.TaskId, ShouldEqual, "first-task0")
 		})
 	})
 
