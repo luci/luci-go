@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1f99726f_a8b7ee32",
+        "filename": "luci_notify/config/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-05T02:39:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "944fafa0_9c9de902",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 12
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3cd03e91_5b3a01e9",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adaa2a44_43fc1ddc",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-05T02:39:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cd03e91_5b3a01e9",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 4
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f5535edd_6499562d",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-05T02:39:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe4e54c0_ec74bfa3",
+      "range": {
+        "startLine": 171,
+        "startChar": 29,
+        "endLine": 171,
+        "endChar": 46
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c0fec7c_e93e1afa",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 1
@@ -85,6 +157,24 @@
       "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a91c2d3b_b38009c2",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-05T02:39:02Z",
+      "side": 1,
+      "message": "True, but it\u0027s a bit of a pain to do so, and I\u0027m less confident that the resulting logic is correct. I think I\u0027ll keep it as two fetches in serial, since this code is temporary.",
+      "parentUuid": "7c0fec7c_e93e1afa",
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "652da8ba_67d64451",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-05T02:39:02Z",
+      "side": 1,
+      "message": "C++ instincts kicking in :)\nObsolete now anyway, since it\u0027s now a stringset.",
+      "parentUuid": "eefb9eb0_43db2a7e",
+      "range": {
+        "startLine": 228,
+        "startChar": 128,
+        "endLine": 228,
+        "endChar": 129
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3ff2730_152bcc69",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 1
@@ -131,6 +245,30 @@
       "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1a37ee2_ecae01b8",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-05T02:39:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3ff2730_152bcc69",
+      "range": {
+        "startLine": 241,
+        "startChar": 26,
+        "endLine": 241,
+        "endChar": 28
+      },
+      "revId": "0d23b792c2dce540fb169c67347f129677a3efcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
