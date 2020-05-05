@@ -27,6 +27,8 @@ import (
 
 func main() {
 	opts := bqexporter.DefaultOptions()
+	flag.IntVar(&opts.TaskWorkers, "task-workers", opts.TaskWorkers,
+		"Number of invocations to export concurrently")
 	flag.BoolVar(&opts.UseInsertIDs, "insert-ids", opts.UseInsertIDs,
 		"Use InsertIDs when inserting data to BigQuery")
 	flag.IntVar(&opts.MaxBatchSizeApprox, "max-batch-size-approx", opts.MaxBatchSizeApprox,
