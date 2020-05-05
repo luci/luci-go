@@ -37,36 +37,48 @@ func TestReportTestResults(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
+	// basic setup for the server
+	ctx := metadata.NewIncomingContext(
+		authtest.MockAuthConfig(context.Background()),
+		metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
+	cfg := testServerConfig(ctl, "", "secret")
+	recorder := cfg.Recorder.(*pb.MockRecorderClient)
+
 	Convey("ReportTestResults", t, func() {
 		tr, cleanup := validTestResult()
-		req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 		defer cleanup()
-
-		// setup a test server
-		ctx := metadata.NewIncomingContext(
-			authtest.MockAuthConfig(context.Background()),
-			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
-		cfg := testServerConfig(ctl, "", "secret")
+		req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+		cfg.TestIDPrefix = "ninja://foo/bar/"
 		cfg.Invocation = "inv1"
+
 		sink, err := newSinkServer(ctx, cfg)
 		So(err, ShouldBeNil)
-
+		// This blocks the unit test until the server is fully drained.
 		defer func() {
-			// close the server to drain the channel and process the queued items.
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 			closeSinkServer(ctx, sink)
 		}()
 
-		// mock
-		recorder := cfg.Recorder.(*pb.MockRecorderClient)
-
-		Convey("creates TestResult", func() {
+		Convey("works", func() {
+			req.TestResults[0].TestId = "TestA"
 			_, err := sink.ReportTestResults(ctx, req)
 			So(err, ShouldBeNil)
 
-			// rdb_channel should invoke recorder.BatchCreateTestResults()
-			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
+			recorder.EXPECT().BatchCreateTestResults(
+				gomock.Any(), matchBatchCreateTestResultsRequest(
+					"inv1", &pb.TestResult{
+						TestId:      "ninja://foo/bar/TestA",
+						ResultId:    tr.ResultId,
+						Expected:    tr.Expected,
+						Variant:     tr.Variant,
+						SummaryHtml: tr.SummaryHtml,
+						StartTime:   tr.StartTime,
+						Duration:    tr.Duration,
+						Tags:        tr.Tags,
+					},
+				),
+			)
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
