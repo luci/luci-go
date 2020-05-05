@@ -68,6 +68,7 @@ func TestConfigIngestion(t *testing.T) {
 			},
 			"projects/v8": {
 				"luci-notify.cfg": `
+					tree_closing_enabled: true
 					notifiers {
 						name: "v8-notifier"
 						notifications {
@@ -100,7 +101,9 @@ func TestConfigIngestion(t *testing.T) {
 		So(datastore.GetAll(c, datastore.NewQuery("Project"), &projects), ShouldBeNil)
 		So(len(projects), ShouldEqual, 2)
 		So(projects[0].Name, ShouldEqual, "chromium")
+		So(projects[0].TreeClosingEnabled, ShouldBeFalse)
 		So(projects[1].Name, ShouldEqual, "v8")
+		So(projects[1].TreeClosingEnabled, ShouldBeTrue)
 
 		var builders []*Builder
 		So(datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), ShouldBeNil)

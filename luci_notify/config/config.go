@@ -50,9 +50,10 @@ type parsedProjectConfigSet struct {
 func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		project := &Project{
-			Name:     cs.ProjectID,
-			Revision: cs.Revision,
-			URL:      cs.ViewURL,
+			Name:               cs.ProjectID,
+			Revision:           cs.Revision,
+			URL:                cs.ViewURL,
+			TreeClosingEnabled: cs.ProjectConfig.TreeClosingEnabled,
 		}
 		parentKey := datastore.KeyForObj(c, project)
 

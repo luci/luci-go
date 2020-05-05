@@ -26,4 +26,9 @@ type Project struct {
 
 	// URL is the luci-config URL to this project's luci-notify configuration.
 	URL string
+
+	// TreeClosingEnabled determines whether we actually act on TreeClosers
+	// for this project, and close/reopen the relevant tree. If false, we
+	// still monitor builders, but just log what action we would have taken.
+	TreeClosingEnabled bool
 }

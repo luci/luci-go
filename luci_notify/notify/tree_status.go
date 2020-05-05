@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/server/auth"
@@ -141,15 +144,73 @@ func UpdateTreeStatus(c *router.Context) {
 // updateTrees fetches all TreeClosers from datastore, uses this to determine if
 // any trees should be opened or closed, and makes the necessary updates.
 func updateTrees(c context.Context, ts treeStatusClient) error {
+	// The goal here is, for every project, to atomically fetch the config
+	// for that project along with all TreeClosers within it. So if the
+	// project config and the set of TreeClosers are updated at the same
+	// time, we should always see either both updates, or neither. Also, we
+	// want to do it without XG transactions.
+	//
+	// First we fetch keys for all the projects. Second, for every project,
+	// we fetch the full config and all TreeClosers in a transaction. Since
+	// these two steps aren't within a transaction, it's possible that
+	// changes have occurred in between. But all cases are dealt with:
+	//
+	// * Updates to project config or TreeClosers aren't a problem since we
+	//   only fetch them in the second step anyway.
+	// * Deletions of projects are fine, since if we don't find them in the
+	//   second fetch we just ignore that project and carry on.
+	// * New projects are ignored, and picked up the next time we run.
+	q := datastore.NewQuery("Project").KeysOnly(true)
+	var projects []*config.Project
+	if err := datastore.GetAll(c, q, &projects); err != nil {
+		return errors.Annotate(err, "failed to get project keys").Err()
+	}
+
+	// Guards access to both treeClosers and closingEnabledProjects.
+	mu := sync.Mutex{}
 	var treeClosers []*config.TreeCloser
-	if err := datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers); err != nil {
+	closingEnabledProjects := stringset.New(0)
+
+	err := parallel.WorkPool(32, func(ch chan<- func() error) {
+		for _, project := range projects {
+			project := project
+			ch <- func() error {
+				return datastore.RunInTransaction(c, func(c context.Context) error {
+					switch err := datastore.Get(c, project); {
+					// The project was deleted since the previous time we fetched it just above.
+					// In this case, just move on, since the project is no more.
+					case err == datastore.ErrNoSuchEntity:
+						return nil
+					case err != nil:
+						return errors.Annotate(err, "failed to get project").Tag(transient.Tag).Err()
+					}
+
+					q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, project))
+					var treeClosersForProject []*config.TreeCloser
+					if err := datastore.GetAll(c, q, &treeClosersForProject); err != nil {
+						return errors.Annotate(err, "failed to get tree closers").Tag(transient.Tag).Err()
+					}
+
+					mu.Lock()
+					defer mu.Unlock()
+					treeClosers = append(treeClosers, treeClosersForProject...)
+					if project.TreeClosingEnabled {
+						closingEnabledProjects.Add(project.Name)
+					}
+
+					return nil
+				}, nil)
+			}
+		}
+	})
+	if err != nil {
 		return err
 	}
 
 	return parallel.WorkPool(32, func(ch chan<- func() error) {
 		for host, treeClosers := range groupTreeClosers(treeClosers) {
 			host, treeClosers := host, treeClosers
-			ch <- func() error { return updateHost(c, ts, host, treeClosers) }
+			ch <- func() error { return updateHost(c, ts, host, treeClosers, closingEnabledProjects) }
 		}
 	})
 }
@@ -163,7 +224,11 @@ func groupTreeClosers(treeClosers []*config.TreeCloser) map[string][]*config.Tre
 	return byHost
 }
 
-func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser) error {
+func tcProject(tc *config.TreeCloser) string {
+	return tc.BuilderKey.Parent().StringID()
+}
+
+func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set) error {
 	treeStatus, err := ts.getStatus(c, host)
 	switch {
 	case err != nil:
@@ -173,6 +238,14 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		return nil
 	}
 
+	anyEnabled := false
+	for _, tc := range treeClosers {
+		if closingEnabledProjects.Has(tcProject(tc)) {
+			anyEnabled = true
+			break
+		}
+	}
+
 	haveNewBuild := false
 	var oldestClosed *config.TreeCloser
 	for _, tc := range treeClosers {
@@ -180,6 +253,15 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		// tree. Otherwise we'll automatically close the tree every minute
 		// when people try to manually re-open.
 		if tc.Timestamp.Before(treeStatus.timestamp) {
+			continue
+		}
+
+		// If any TreeClosers are from projects with tree closing
+		// enabled, ignore any TreeClosers *not* from such projects. In
+		// general we don't expect different projects to close the same
+		// tree, so we're okay with not seeing dry run logging for
+		// these TreeClosers in this rare case.
+		if anyEnabled && !closingEnabledProjects.Has(tcProject(tc)) {
 			continue
 		}
 
@@ -214,7 +296,11 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		message = fmt.Sprintf("Tree is closed (Automatic: %s)", oldestClosed.Message)
 	}
 
-	return ts.putStatus(c, host, message, treeStatus.key)
+	if anyEnabled {
+		return ts.putStatus(c, host, message, treeStatus.key)
+	}
+	logging.Infof(c, "Would update status for %s to %q", host, message)
+	return nil
 }
 
 func randomEmoji() string {
