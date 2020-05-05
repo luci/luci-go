@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -112,19 +113,44 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 	}, cleanup
 }
 
-type invMatcher string
-
-func invEq(inv string) gomock.Matcher {
-	return invMatcher(inv)
+type BatchCreateTestResultsRequestMatcher struct {
+	invocation string
+	trs        []*pb.TestResult
 }
-func (m invMatcher) Matches(x interface{}) bool {
+
+func matchBatchCreateTestResultsRequest(inv string, trs ...*pb.TestResult) gomock.Matcher {
+	return BatchCreateTestResultsRequestMatcher{inv, trs}
+}
+
+func (m BatchCreateTestResultsRequestMatcher) Matches(x interface{}) bool {
 	req, ok := x.(*pb.BatchCreateTestResultsRequest)
 	if !ok {
 		return false
 	}
-	return req.Invocation == string(m)
+	if req.Invocation != m.invocation {
+		return false
+	}
+
+	for i, r := range req.Requests {
+		if gomock.Eq(m.trs[i]).Matches(r.TestResult) == false {
+			return false
+		}
+	}
+
+	return true
 }
 
-func (m invMatcher) String() string {
-	return fmt.Sprint("has Invocation ", string(m))
+func (m BatchCreateTestResultsRequestMatcher) String() string {
+	var ret strings.Builder
+	ret.WriteString(fmt.Sprintf("has invocation:%q ", m.invocation))
+	ret.WriteString(" requests:<")
+
+	for i, tr := range m.trs {
+		if i > 0 {
+			ret.WriteString(", ")
+		}
+		ret.WriteString(fmt.Sprintf("[%d]: %s", i, tr.String()))
+	}
+	ret.WriteString(">")
+	return ret.String()
 }
