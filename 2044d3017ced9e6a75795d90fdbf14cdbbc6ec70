@@ -22,6 +22,30 @@
       "revId": "2044d3017ced9e6a75795d90fdbf14cdbbc6ec70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c9cf1e8_12ada356",
+        "filename": "resultdb/cmd/bqexporter/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-05T00:46:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5da07f2_ab1808d5",
+      "range": {
+        "startLine": 35,
+        "startChar": 11,
+        "endLine": 35,
+        "endChar": 32
+      },
+      "revId": "2044d3017ced9e6a75795d90fdbf14cdbbc6ec70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
