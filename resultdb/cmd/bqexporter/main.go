@@ -29,10 +29,10 @@ func main() {
 	opts := bqexporter.DefaultOptions()
 	flag.BoolVar(&opts.UseInsertIDs, "insert-ids", opts.UseInsertIDs,
 		"Use InsertIDs when inserting data to BigQuery")
-	flag.IntVar(&opts.MaxBatchSizeApprox, "max-batch-size-bytes-approx", opts.MaxBatchSizeApprox,
+	flag.IntVar(&opts.MaxBatchSizeApprox, "max-batch-size-approx", opts.MaxBatchSizeApprox,
 		"Maximum size of a batch in bytes, approximate")
-	flag.IntVar(&opts.MaxBatchSizeApprox, "batch-buffer-size", opts.MaxBatchTotalSizeApprox,
-		"Maximum cumulative size of batches, approximate")
+	flag.IntVar(&opts.MaxBatchTotalSizeApprox, "batch-total-size-approx", opts.MaxBatchTotalSizeApprox,
+		"Maximum total size of batches in bytes, approximate")
 	rateLimit := int(opts.RateLimit)
 	flag.IntVar(&rateLimit, "rate-limit", rateLimit,
 		"Maximum BigQuery request rate")
