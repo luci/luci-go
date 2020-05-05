@@ -117,7 +117,7 @@ func InitServer(srv *server.Server, opts Options) {
 	b := &bqExporter{
 		Options:    &opts,
 		putLimiter: rate.NewLimiter(opts.RateLimit, 1),
-		batchSem:   semaphore.NewWeighted(int64(opts.MaxBatchSizeApprox / opts.MaxBatchTotalSizeApprox)),
+		batchSem:   semaphore.NewWeighted(int64(opts.MaxBatchTotalSizeApprox / opts.MaxBatchSizeApprox)),
 	}
 
 	d := tasks.Dispatcher{
