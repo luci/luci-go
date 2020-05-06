@@ -366,22 +366,26 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		panic("UpdateTreeClosers must be run within a transaction")
 	}
 
+	// Don't update the status at all unless we have a definite
+	// success or failure - infra failures, for example, shouldn't
+	// cause us to close or re-open the tree.
+	if build.Status != buildbucketpb.Status_SUCCESS && build.Status != buildbucketpb.Status_FAILURE {
+		return nil
+	}
+
 	project := &config.Project{Name: build.Builder.Project}
 	parentBuilder := &config.Builder{
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         getBuilderID(&build.Build),
 	}
 	q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, parentBuilder))
+	var toUpdate []*config.TreeCloser
 
-	toUpdate := []*config.TreeCloser{}
-	err := datastore.Run(c, q, func(tc *config.TreeCloser) error {
-		// Don't update the status at all unless we have a definite
-		// success or failure - infra failures, for example, shouldn't
-		// cause us to close or re-open the tree.
-		if build.Status != buildbucketpb.Status_SUCCESS && build.Status != buildbucketpb.Status_FAILURE {
-			return nil
-		}
+	if err := datastore.GetAll(c, q, &toUpdate); err != nil {
+		return err
+	}
 
+	for i, tc := range toUpdate {
 		newStatus := config.Open
 		var steps []*buildbucketpb.Step
 		if build.Status == buildbucketpb.Status_FAILURE {
@@ -392,31 +396,26 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 			}
 		}
 
-		if tc.Status != newStatus {
-			tc.Status = newStatus
-			tc.Timestamp = time.Now().UTC()
+		tc.Status = newStatus
+		tc.Timestamp = time.Now().UTC()
 
-			if newStatus == config.Closed {
-				bundle, err := getBundle(c, project.Name)
-				if err != nil {
-					return err
-				}
-				tc.Message = bundle.GenerateStatusMessage(c, tc.TreeCloser.Template,
-					&notifypb.TemplateInput{
-						BuildbucketHostname: build.BuildbucketHostname,
-						Build:               &build.Build,
-						OldStatus:           oldStatus,
-						MatchingFailedSteps: steps,
-					})
+		if newStatus == config.Closed {
+			bundle, err := getBundle(c, project.Name)
+			if err != nil {
+				return err
 			}
-
-			toUpdate = append(toUpdate, tc)
+			tc.Message = bundle.GenerateStatusMessage(c, tc.TreeCloser.Template,
+				&notifypb.TemplateInput{
+					BuildbucketHostname: build.BuildbucketHostname,
+					Build:               &build.Build,
+					OldStatus:           oldStatus,
+					MatchingFailedSteps: steps,
+				})
 		}
 
-		return nil
-	})
-	if err != nil {
-		return err
+		// Update the TreeCloser regardless of whether the status is the same,
+		// as we always want to at least update the timestamp.
+		toUpdate[i] = tc
 	}
 
 	return datastore.Put(c, toUpdate)
