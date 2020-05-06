@@ -57,7 +57,8 @@ func (r *queryRunBase) registerFlags(p Params) {
 	`))
 
 	r.Flags.IntVar(&r.limit, "n", 0, text.Doc(`
-		Print up to n results of each result type. If 0, then unlimited.
+		Print up to n results. If 0, then unlimited.
+		Invocations do not count as results.
 	`))
 
 	r.Flags.BoolVar(&r.unexpected, "u", false, text.Doc(`
@@ -172,13 +173,24 @@ func (r *queryRunBase) fetchItems(ctx context.Context, invIDs []string, resultIt
 	// Query for results.
 	msgC := make(chan proto.Message)
 	errC := make(chan error, 1)
+	queryCtx, cancelQuery := context.WithCancel(ctx)
+	defer cancelQuery()
 	go func() {
 		defer close(msgC)
-		errC <- pbutil.Query(ctx, msgC, r.resultdb, trReq, teReq)
+		errC <- pbutil.Query(queryCtx, msgC, r.resultdb, trReq, teReq)
 	}()
 
 	// Send findings to the destination channel.
+	count := 0
+	reachedLimit := false
 	for m := range msgC {
+		if r.limit > 0 && count > r.limit {
+			reachedLimit = true
+			cancelQuery()
+			break
+		}
+		count++
+
 		item := resultItemTemplate
 		item.result = m
 		select {
@@ -187,7 +199,13 @@ func (r *queryRunBase) fetchItems(ctx context.Context, invIDs []string, resultIt
 			return ctx.Err()
 		}
 	}
-	return <-errC
+
+	// Return the query error.
+	err := <-errC
+	if reachedLimit && err == context.Canceled {
+		err = nil
+	}
+	return err
 }
 
 // printProto prints results in JSON or TextProto format to stdout.
