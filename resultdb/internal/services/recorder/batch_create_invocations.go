@@ -88,7 +88,7 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 
 // createInvocations is a shared implementation for CreateInvocation and BatchCreateInvocations RPCs.
 func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.CreateInvocationRequest, requestID string, now time.Time, idSet span.InvocationIDSet) ([]*pb.Invocation, []string, error) {
-	muts := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID)
+	ms := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID)
 
 	var err error
 	deduped := false
@@ -98,7 +98,7 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 			return err
 		}
 		if !deduped {
-			return txn.BufferWrite(muts)
+			return txn.BufferWrite(ms)
 		}
 		return nil
 	})
@@ -116,7 +116,7 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 // inserting a row for each invocation creation requested.
 func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) []*spanner.Mutation {
 
-	muts := make([]*spanner.Mutation, len(reqs))
+	ms := make([]*spanner.Mutation, len(reqs))
 	// Compute mutations
 	for i, req := range reqs {
 
@@ -138,9 +138,9 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		pbutil.NormalizeInvocation(inv)
 		// Create a mutation to create the invocation.
-		muts[i] = span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
+		ms[i] = span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
 	}
-	return muts
+	return ms
 }
 
 // getCreatedInvocationsAndUpdateTokens reads the full details of the

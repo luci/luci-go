@@ -253,7 +253,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 		includedInvs.Add(batchID)
 
 		eg.Go(func() error {
-			muts := make([]*spanner.Mutation, 0, len(batch)+1)
+			ms := make([]*spanner.Mutation, 0, len(batch)+1)
 
 			// Convert the container Invocation in the batch.
 			batchInv := &pb.Invocation{
@@ -264,20 +264,20 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				Deadline:     inv.Deadline,
 				Tags:         inv.Tags,
 			}
-			muts = append(muts, span.InsertOrUpdateMap(
+			ms = append(ms, span.InsertOrUpdateMap(
 				"Invocations", s.rowOfInvocation(ctx, batchInv, "")),
 			)
 
 			// Convert the TestResults in the batch.
 			for k, tr := range batch {
 				tr.ResultId = strconv.Itoa(k)
-				muts = append(muts, insertOrUpdateTestResult(batchID, tr.TestResult))
+				ms = append(ms, insertOrUpdateTestResult(batchID, tr.TestResult))
 				for _, a := range tr.Artifacts {
-					muts = append(muts, insertOrUpdateArtifact(batchID, tr.TestResult, a))
+					ms = append(ms, insertOrUpdateArtifact(batchID, tr.TestResult, a))
 				}
 			}
 
-			if _, err := client.Apply(ctx, muts); err != nil {
+			if _, err := client.Apply(ctx, ms); err != nil {
 				return err
 			}
 
