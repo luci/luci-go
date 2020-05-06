@@ -45,6 +45,76 @@
       "revId": "327cfaf4e693cf971dfc22df0c7e6fa4035e0d78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f25e833e_47007018",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 553,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-05-06T16:27:21Z",
+      "side": 1,
+      "message": "NewFromSlice should work with empty slice, right? So it should be OK to not check length.",
+      "parentUuid": "4e1d9510_e41599f9",
+      "range": {
+        "startLine": 553,
+        "startChar": 1,
+        "endLine": 553,
+        "endChar": 35
+      },
+      "revId": "327cfaf4e693cf971dfc22df0c7e6fa4035e0d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad925b2b_43722a18",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 563,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-05-06T16:27:21Z",
+      "side": 1,
+      "message": "Hypothetically if the conditional above is removed, then it would also be removed here.",
+      "range": {
+        "startLine": 563,
+        "startChar": 15,
+        "endLine": 563,
+        "endChar": 36
+      },
+      "revId": "327cfaf4e693cf971dfc22df0c7e6fa4035e0d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0d3fa3c_71a6cffa",
+        "filename": "cq/appengine/config/config_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 691,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-05-06T16:27:21Z",
+      "side": 1,
+      "message": "For consistency, no need to include these tabs, here and below",
+      "range": {
+        "startLine": 691,
+        "startChar": 22,
+        "endLine": 691,
+        "endChar": 27
+      },
+      "revId": "327cfaf4e693cf971dfc22df0c7e6fa4035e0d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
