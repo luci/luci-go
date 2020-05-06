@@ -15,11 +15,13 @@
 package main
 
 import (
+	"html/template"
 	"net/http"
 
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -31,6 +33,44 @@ func main() {
 	//   2. GAE modules can't have static files only, they need some Go code.
 	r := router.New()
 	standard.InstallHandlers(r)
+
+	baseMW := standard.Base()
+	r.GET("/settings.js", baseMW, handleError(settingsHandler))
 	http.DefaultServeMux.Handle("/", r)
 	appengine.Main()
+}
+
+type settings struct {
+	ResultDB resultDBSettings
+}
+
+type resultDBSettings struct {
+	Host string
+}
+
+func settingsHandler(c *router.Context) error {
+	template, err := template.ParseFiles("settings.template.js")
+	if err != nil {
+		return err
+	}
+	c.Writer.Header().Set("content-type", "application/javascript")
+	// TODO(weiweilin): read the host name from luci-config.
+	err = template.Execute(c.Writer, settings{resultDBSettings{"staging.results.api.cr.dev"}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleError is a wrapper for a handler so that the handler can return an
+// error.
+// If the wrapped handler returns an error, log the error and respond 500.
+func handleError(handler func(c *router.Context) error) func(c *router.Context) {
+	return func(c *router.Context) {
+		if err := handler(c); err != nil {
+			errors.Log(c.Context, err)
+			c.Writer.WriteHeader(500)
+			return
+		}
+	}
 }
