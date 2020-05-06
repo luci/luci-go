@@ -122,12 +122,10 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		r.invocation = r.resultdbCtx.CurrentInvocation
 	}
 
-	interrupted := true
 	defer func() {
-		// finalize the invocation if it was created by -new or the test command execution
-		// was interrupted.
-		if r.isNew || interrupted {
-			if err := r.finalizeInvocation(ctx, interrupted); err != nil {
+		// Finalize the invocation if it was created by -new.
+		if r.isNew {
+			if err := r.finalizeInvocation(ctx); err != nil {
 				logging.Errorf(ctx, "failed to finalize the invocation: %s", err)
 				ret = r.done(err)
 			}
@@ -139,8 +137,6 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if !ok {
 		return r.done(err)
 	}
-	// TODO(ddoman): handle complete-invocation-exit-codes
-	interrupted = ec != 0
 	logging.Infof(ctx, "Child process terminated with %d", ec)
 	return ec
 }
@@ -196,12 +192,11 @@ func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocatio
 }
 
 // finalizeInvocation finalizes the invocation.
-func (r *streamRun) finalizeInvocation(ctx context.Context, interrupted bool) error {
+func (r *streamRun) finalizeInvocation(ctx context.Context) error {
 	ctx = metadata.AppendToOutgoingContext(
 		ctx, recorder.UpdateTokenMetadataKey, r.invocation.UpdateToken)
 	_, err := r.recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
-		Name:        r.invocation.Name,
-		Interrupted: interrupted,
+		Name: r.invocation.Name,
 	})
 	return err
 }
