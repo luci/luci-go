@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa59c9fd_81f7fe1f",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-06T04:15:18Z",
+      "side": 1,
+      "message": "why \"false\" and not \"true\"?\n\nI find true more readable:\n\nif override(...) {\n  return\n}\n# else proceed normally",
+      "range": {
+        "startLine": 68,
+        "startChar": 42,
+        "endLine": 68,
+        "endChar": 47
+      },
+      "revId": "c304a9a6e8140047b39bc72aa7d6adb06baa8103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bfd4caf_be194818",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-06T04:15:18Z",
+      "side": 1,
+      "message": "^ the piecemeal locking here is confusing to me.",
+      "range": {
+        "startLine": 357,
+        "startChar": 0,
+        "endLine": 360,
+        "endChar": 20
+      },
+      "revId": "c304a9a6e8140047b39bc72aa7d6adb06baa8103",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
