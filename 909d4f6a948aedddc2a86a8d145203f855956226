@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63179275_f1dfe869",
+        "filename": "common/testing/mock/gomock.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-06T19:00:05Z",
+      "side": 1,
+      "message": "2020?",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "909d4f6a948aedddc2a86a8d145203f855956226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f418895_cb068bd8",
+        "filename": "resultdb/pbutil/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-06T19:00:05Z",
+      "side": 1,
+      "message": "nit; I think this could have been moved to 109 to avoid an empty batch queued to the channel.",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 118,
+        "endChar": 3
+      },
+      "revId": "909d4f6a948aedddc2a86a8d145203f855956226",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
