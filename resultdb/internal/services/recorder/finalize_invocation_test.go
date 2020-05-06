@@ -17,7 +17,6 @@ package recorder
 import (
 	"testing"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -55,16 +54,6 @@ func TestFinalizeInvocation(t *testing.T) {
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
-
-		Convey(`finalized failed`, func() {
-			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
-					"Interrupted": true,
-				}),
-			)
-			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `has already been finalized with different interrupted flag`)
-		})
 
 		Convey(`Idempotent`, func() {
 			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))

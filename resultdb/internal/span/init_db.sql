@@ -53,7 +53,7 @@ CREATE TABLE Invocations (
   -- When the invocation was finalized.
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
-  -- When to force invocation finalization with state INTERRUPTED.
+  -- When to force invocation finalization.
   Deadline TIMESTAMP NOT NULL,
 
   -- List of colon-separated key-value tags.
@@ -63,10 +63,6 @@ CREATE TABLE Invocations (
   -- Value of CreateInvocationRequest.request_id.
   -- Used to dedup invocation creation requests.
   CreateRequestId STRING(MAX),
-
-  -- Flag for if the invocation is interrupted.
-  -- Corresponds to Invocation.interrupted in invocation.proto.
-  Interrupted BOOL,
 
   -- Requests to export the invocation to BigQuery, see also
   -- Invocation.bigquery_exports in invocation.proto.

@@ -215,7 +215,6 @@ func TestJSONConversions(t *testing.T) {
 		inv := &pb.Invocation{}
 		testResults, err := results.ToProtos(ctx, "ninja://tests/", inv, availableArtifacts)
 		So(err, ShouldBeNil)
-		So(inv.Interrupted, ShouldEqual, true)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
 			"json_format_tag", "desktop",
 			"json_format_tag", "linux",

@@ -147,8 +147,6 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv
 
 	// The code below does not return errors, so it is safe to make in-place
 	// modifications of inv.
-	inv.Interrupted = r.Interrupted
-
 	inv.Tags = append(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatJTR))
 	for _, tag := range tags {
 		inv.Tags = append(inv.Tags, pbutil.StringPair("json_format_tag", tag))
