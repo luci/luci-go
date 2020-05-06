@@ -581,10 +581,13 @@ func TestTryjobValidation(t *testing.T) {
 			So(validate(`
 				builders {
 					name: "a/b/c"
-					location_regexp: ".+"
+					location_regexp: ".+\\.cpp"
 					triggered_by: "c/d/e"
 				}
-				builders { name: "c/d/e" } `),
+				builders {
+					name: "c/d/e"
+					location_regexp: ".+\\.cpp"
+				} `),
 				ShouldBeNil)
 			So(validate(`
 				builders {name: "pa/re/nt"}
@@ -654,6 +657,48 @@ func TestTryjobValidation(t *testing.T) {
 					builders {name: "l/oo/p1" triggered_by: "l/oo/p2"}
 					builders {name: "l/oo/p2" triggered_by: "l/oo/p1"}
 				`), ShouldErrLike, `triggered_by must refer to an existing builder without`)
+			})
+
+			Convey("avoids less restrictive location_regexp[_exclude] in children", func() {
+				So(validate(`
+					builders {
+						name: "a/a/parent"
+						location_regexp: ".+/dog/.+"
+						location_regexp: ".+/snake/.+"
+					}
+					builders {
+						name: "a/a/child" triggered_by: "a/a/parent"
+						location_regexp: ".+/dog/.+"
+						location_regexp: ".+/cat/.+"
+					}
+				`), ShouldErrLike, `but these are not in parent: .+/cat/.+`)
+
+				So(validate(`
+					builders {
+						name: "a/a/parent"
+						location_regexp_exclude: ".+/dog/poodle"
+						location_regexp_exclude: ".+/dog/corgi"
+					}
+					builders {
+						name: "a/a/child" triggered_by: "a/a/parent"
+						location_regexp_exclude: ".+/dog/corgi"
+					}
+				`), ShouldErrLike, `these are only in parent: .+/dog/poodle`)
+
+				So(validate(`
+					builders {
+						name: "a/a/parent"
+						location_regexp:         ".+/dog/.+"
+						location_regexp_exclude: ".+/dog/poodle"
+						location_regexp:          ".+/cat/.+"
+					}
+					builders {
+						name: "a/a/child" triggered_by: "a/a/parent"
+						location_regexp_exclude: ".+/dog/poodle"  # necessary to comply with checks, only.
+						location_regexp:         ".+/cat/.+"
+						location_regexp_exclude: ".+/cat/siamese"
+					}
+				`), ShouldBeNil)
 			})
 		})
 	})
