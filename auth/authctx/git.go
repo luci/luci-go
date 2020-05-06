@@ -52,6 +52,9 @@ var gitConfigTempl = template.Must(template.New(".gitconfig").Parse(`# Autogener
 
 [http]
   version = HTTP/1.1
+  # Request the GFE return debug headers as an encrypted blob in
+  # X-Encrypted-Debug-Headers.
+  extraheader = X-Return-Encrypted-Headers: all
 {{if .IsWindows}}
   # This is path inside mingw64 installation, bundled with Git For Windows.
   sslCAinfo = /ssl/certs/ca-bundle.crt
