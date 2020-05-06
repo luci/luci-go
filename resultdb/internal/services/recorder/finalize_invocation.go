@@ -63,24 +63,14 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		}
 		ret = inv
 
-		switch {
-		case ret.State != pb.Invocation_ACTIVE && ret.Interrupted == in.Interrupted:
+		if ret.State != pb.Invocation_ACTIVE {
 			// Idempotent.
 			return nil
-
-		case ret.State != pb.Invocation_ACTIVE && ret.Interrupted != in.Interrupted:
-			return appstatus.Errorf(
-				codes.FailedPrecondition,
-				"%s is already finalizing / has already been finalized with different interrupted flag",
-				invID.Name(),
-			)
-
-		default:
-			// Finalize as requested.
-			ret.State = pb.Invocation_FINALIZING
-			ret.Interrupted = in.Interrupted
-			return tasks.StartInvocationFinalization(ctx, txn, invID, in.Interrupted)
 		}
+
+		// Finalize as requested.
+		ret.State = pb.Invocation_FINALIZING
+		return tasks.StartInvocationFinalization(ctx, txn, invID)
 	})
 
 	if err != nil {

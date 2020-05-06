@@ -47,10 +47,6 @@ type Invocation struct {
 	// ID is the ID of the invocation.
 	ID string `bigquery:"id"`
 
-	// Interrupted is a flag indicating whether the invocation is interrupted or not.
-	// For more details, refer to pb.Invocation.Interrupted.
-	Interrupted bool `bigquery:"interrupted"`
-
 	// Tags represents Invocation-level string key-value pairs.
 	// A key can be repeated.
 	Tags []StringPair `bigquery:"tags"`
@@ -155,9 +151,8 @@ func variantToStringPairs(vr *typepb.Variant) []StringPair {
 
 func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 	return Invocation{
-		ID:          string(span.MustParseInvocationName(inv.Name)),
-		Interrupted: inv.Interrupted,
-		Tags:        stringPairProtosToStringPairs(inv.Tags),
+		ID:   string(span.MustParseInvocationName(inv.Name)),
+		Tags: stringPairProtosToStringPairs(inv.Tags),
 	}
 }
 

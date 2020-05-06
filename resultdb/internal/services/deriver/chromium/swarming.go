@@ -95,20 +95,7 @@ func DeriveChromiumInvocation(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.
 		return nil, invalidTaskf("invalid task completion time %q: %s", task.CreatedTs, err)
 	}
 	inv.Deadline = inv.FinalizeTime
-
-	// Decide how to continue based on task state.
-	switch task.State {
-	// Tasks that got interrupted for which we expect no output just need to set the correct
-	// Invocation state and are done.
-	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE", "KILLED", "TIMED_OUT":
-		inv.Interrupted = true
-		return inv, nil
-	// For COMPLETED state, we expect normal completion.
-	case "COMPLETED":
-		return inv, nil
-	default:
-		return nil, invalidTaskf("unknown state %q", task.State)
-	}
+	return inv, nil
 }
 
 // TestResult combines test result with the associated artifacts.

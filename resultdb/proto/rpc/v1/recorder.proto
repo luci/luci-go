@@ -145,10 +145,6 @@ message UpdateInvocationRequest {
 message FinalizeInvocationRequest {
   // Name of the invocation to finalize.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
-
-  // Flag to indicate if the invocation is interrupted.
-  // If true, Invocation.interrupted will be set to true; otherwise false.
-  bool interrupted = 2;
 }
 
 // A request message for UpdateIncludedInvocations RPC.

@@ -33,12 +33,11 @@ import (
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
 // new package as the code base grows.
-func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool) error {
+func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID) error {
 	return txn.BufferWrite([]*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
 			"State":        pb.Invocation_FINALIZING,
-			"Interrupted":  interrupted,
 		}),
 		Enqueue(TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx).UTC()),
 	})

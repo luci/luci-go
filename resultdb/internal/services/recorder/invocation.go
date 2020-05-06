@@ -40,7 +40,7 @@ const (
 	// Delete Invocations row after this duration since invocation creation.
 	invocationExpirationDuration = 2 * 365 * day // 2 y
 
-	// By default, interrupt the invocation 1h after creation if it is still
+	// By default, finalize the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
 
@@ -134,7 +134,6 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"InvocationId": span.MustParseInvocationName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
-		"Interrupted":  inv.Interrupted,
 		"Realm":        realms.Join("chromium", "public"), // TODO(crbug.com/1013316): accept realm in the proto
 		"CreatedBy":    inv.CreatedBy,
 

@@ -46,7 +46,6 @@ func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation,
 		"InvocationId": span.MustParseInvocationName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
-		"Interrupted":  inv.Interrupted,
 		"Realm":        realms.Join("chromium", "public"),
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
