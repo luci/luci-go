@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "6a3452ab_10cd7881",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T16:15:26Z",
+      "side": 1,
+      "message": "this func seems to return response, not request",
+      "range": {
+        "startLine": 58,
+        "startChar": 23,
+        "endLine": 58,
+        "endChar": 26
+      },
+      "revId": "8076227e53221b2012385e63f169a07c240308a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df804c2d_7b95a9ce",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T16:15:26Z",
+      "side": 1,
+      "message": "in the demo, space above the first item and under the last item seems too large",
+      "revId": "8076227e53221b2012385e63f169a07c240308a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e3456cff_c2a90dc0",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
         "patchSetId": 1
@@ -13,6 +53,24 @@
       "writtenOn": "2020-05-06T14:05:03Z",
       "side": 1,
       "message": "it turns out chrome automatically convert %2E to .\nSo we need to double encode . to prevent that.",
+      "revId": "8076227e53221b2012385e63f169a07c240308a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3080a917_121b609d",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T16:15:26Z",
+      "side": 1,
+      "message": "seems unrelated to artifacts",
+      "parentUuid": "e3456cff_c2a90dc0",
       "revId": "8076227e53221b2012385e63f169a07c240308a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
