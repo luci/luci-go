@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22e7dfc4_5eaf8e7b",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-06T23:14:36Z",
+      "side": 1,
+      "message": "Should this be art.ParentId? Same for bellow ArtifactId",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 182,
+        "endChar": 11
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1706d6e1_2b83beaa",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-06T23:14:36Z",
+      "side": 1,
+      "message": "Same here",
+      "range": {
+        "startLine": 188,
+        "startChar": 9,
+        "endLine": 188,
+        "endChar": 43
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24f2965c_f4c067ba",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-06T23:14:36Z",
+      "side": 1,
+      "message": "I prefer UnexpectedTestResults, as it\u0027s more descriptive.",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 203,
+        "endChar": 24
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c93efd3b_59559460",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-06T23:14:36Z",
+      "side": 1,
+      "message": "If the client set explicitly q.FollowEdges.IncludedInvocations to False, can we exclude the invocation-level artifacts?",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 53
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
