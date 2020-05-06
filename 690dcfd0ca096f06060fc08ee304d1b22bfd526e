@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa311dfd_b8ed948b",
+        "filename": "config/validation/validation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-06T18:40:18Z",
+      "side": 1,
+      "message": "nit: add a doc comment",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 13
+      },
+      "revId": "690dcfd0ca096f06060fc08ee304d1b22bfd526e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60d21d3d_358a9023",
+        "filename": "config/validation/validation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-06T18:40:18Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 88,
+        "startChar": 4,
+        "endLine": 88,
+        "endChar": 15
+      },
+      "revId": "690dcfd0ca096f06060fc08ee304d1b22bfd526e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
