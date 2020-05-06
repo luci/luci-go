@@ -402,9 +402,12 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 	// and which can be relied upon to trigger other builders.
 	canStartTriggeringTree := make([]string, 0, len(v.Builders))
 	triggersMap := map[string][]string{} // who triggers whom.
+	// Find config by name.
+	cfgByName := make(map[string]*v2.Verifiers_Tryjob_Builder, len(v.Builders))
 
 	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
+		cfgByName[b.Name] = b
 		if b.TriggeredBy != "" {
 			// Don't validate TriggeredBy as builder name, it should just match
 			// another main builder name, which will be validated anyway.
@@ -485,6 +488,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 				" equivalent_to, location_regexp, or experiment_percentage options. "+
 				"triggered_by relationships must also not form a loop (given: %q)",
 				b.TriggeredBy)
+		case b.TriggeredBy != "":
+			// Reaching here means parent exists in config.
+			parent, _ := cfgByName[b.TriggeredBy]
+			validateParentLocationRegexp(ctx, b, parent)
 		}
 	})
 }
@@ -535,6 +542,29 @@ func validateLocationRegexp(ctx *validation.Context, field string, values []stri
 		} else if !valid.Add(v) {
 			ctx.Errorf("duplicate %s: %q", field, v)
 		}
+	}
+}
+
+func validateParentLocationRegexp(ctx *validation.Context, child, parent *v2.Verifiers_Tryjob_Builder) {
+	// Child's regexps shouldn't be less restrictive than parent.
+	// While general check is not possible, in known so far use-cases, ensuring
+	// the regexps are exact same expressions suffices and will prevent
+	// accidentally incorrect configs.
+	c := stringset.NewFromSlice(child.LocationRegexp...)
+	p := stringset.NewFromSlice(parent.LocationRegexp...)
+	if !p.Contains(c) {
+		// This func is called in the context of a child.
+		ctx.Errorf("location_regexp of a triggered builder must be a subset of its parent %q,"+
+			" but these are not in parent: %s",
+			parent.Name, strings.Join(c.Difference(p).ToSortedSlice(), ", "))
+	}
+	c = stringset.NewFromSlice(child.LocationRegexpExclude...)
+	p = stringset.NewFromSlice(parent.LocationRegexpExclude...)
+	if !c.Contains(p) {
+		// This func is called in the context of a child.
+		ctx.Errorf("location_regexp_exclude of a triggered builder must contain all those of its parent %q,"+
+			" but these are only in parent: %s",
+			parent.Name, strings.Join(p.Difference(c).ToSortedSlice(), ", "))
 	}
 }
 
