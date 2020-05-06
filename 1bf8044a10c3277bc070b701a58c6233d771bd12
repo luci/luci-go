@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "84934a0f_8bd12180",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T23:41:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22e7dfc4_5eaf8e7b",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 182,
+        "endChar": 11
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1706d6e1_2b83beaa",
         "filename": "resultdb/internal/span/artifact.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "040c86a8_c0cb96ad",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T23:41:24Z",
+      "side": 1,
+      "message": "ORDER BY clause accepts names of columns in SELECT, not columns from sources.",
+      "parentUuid": "1706d6e1_2b83beaa",
+      "range": {
+        "startLine": 188,
+        "startChar": 9,
+        "endLine": 188,
+        "endChar": 43
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ea1a2e40_bbcd8077",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T23:41:24Z",
+      "side": 1,
+      "message": "it is, but also it is incorrect.\nThe descriptive correct name would be \"test results of variants with unexpected results\", but it is a bit long. Should we define a new concise term? Expectancy.VARIANTS_WITH_UNEXPECTED_RESULTS is very long too.",
+      "parentUuid": "24f2965c_f4c067ba",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 203,
+        "endChar": 24
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c93efd3b_59559460",
         "filename": "resultdb/internal/span/artifact.go",
         "patchSetId": 4
@@ -82,6 +154,30 @@
       "writtenOn": "2020-05-06T23:14:36Z",
       "side": 1,
       "message": "If the client set explicitly q.FollowEdges.IncludedInvocations to False, can we exclude the invocation-level artifacts?",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 53
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e3e0bd5_e8e2d496",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T23:41:24Z",
+      "side": 1,
+      "message": "yes. we do that in L296?",
+      "parentUuid": "c93efd3b_59559460",
       "range": {
         "startLine": 207,
         "startChar": 1,
