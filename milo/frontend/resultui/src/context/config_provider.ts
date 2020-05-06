@@ -20,17 +20,28 @@ const CLIENT_ID_KEY = 'client-id';
 
 export const consumeClientId = consumeContext<'clientId', string>('clientId');
 export const provideClientId = provideContext<'clientId', string>('clientId');
+export const consumeResultDbHost = consumeContext<'resultDbHost', string>('resultDbHost');
+export const provideResultDbHost = provideContext<'resultDbHost', string>('resultDbHost');
 
+declare const CONFIGS: {
+  resultDb: {
+    host: string;
+  },
+};
+
+// TODO(weiweilin): update description after clientId is moved to settings.js.
 /**
  * Provides app configs to be shared across the app.
  * Loads the configs from local storage first and refreshes them later to avoid
  * blocking the rest of the page from rendering.
  */
-export class ConfigProviderElement extends LitElement implements BeforeEnterObserver {
-  @property() clientId!: string;
+export class AppConfigProviderElement extends LitElement implements BeforeEnterObserver {
+  @property() clientId = '';
+  @property() resultDbHost = '';
 
   async onBeforeEnter() {
     const cachedClientId = window.localStorage.getItem(CLIENT_ID_KEY);
+    this.resultDbHost = CONFIGS.resultDb.host;
     if (cachedClientId === null) {
       await this.refreshClientId();
     } else {
@@ -55,6 +66,10 @@ export class ConfigProviderElement extends LitElement implements BeforeEnterObse
   }
 }
 
-customElement('tr-config-provider')(
-  provideClientId(ConfigProviderElement),
+customElement('tr-app-config-provider')(
+  provideClientId(
+    provideResultDbHost(
+      AppConfigProviderElement,
+    ),
+  ),
 );
