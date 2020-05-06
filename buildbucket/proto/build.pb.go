@@ -126,7 +126,7 @@ type Build struct {
 	Infra *BuildInfra `protobuf:"bytes,18,opt,name=infra,proto3" json:"infra,omitempty"`
 	// Arbitrary annotations for the build.
 	// One key may have multiple values, which is why this is not a map<string,string>.
-	// Indexed by the server, see also BuildFilter.tags.
+	// Indexed by the server, see also BuildPredicate.tags.
 	Tags []*StringPair `protobuf:"bytes,19,rep,name=tags,proto3" json:"tags,omitempty"`
 	// What to run when the build is ready to start.
 	Exe *Executable `protobuf:"bytes,24,opt,name=exe,proto3" json:"exe,omitempty"`
