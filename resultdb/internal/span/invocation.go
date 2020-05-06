@@ -171,7 +171,6 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 		 i.FinalizeTime,
 		 i.Deadline,
 		 i.Tags,
-		 i.Interrupted,
 		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
 		 i.ProducerResource,
@@ -197,7 +196,6 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(i
 			&inv.FinalizeTime,
 			&inv.Deadline,
 			&inv.Tags,
-			&inv.Interrupted,
 			&bqExports,
 			&included,
 			&producerResource)

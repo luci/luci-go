@@ -218,7 +218,6 @@ func TestSwarming(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
-			So(inv.Interrupted, ShouldEqual, true)
 		})
 
 		Convey(`that are finalized and may or may not contain isolated outputs`, func() {
@@ -230,7 +229,6 @@ func TestSwarming(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(inv, ShouldNotBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
-				So(inv.Interrupted, ShouldEqual, true)
 			})
 
 			Convey(`and do`, func() {

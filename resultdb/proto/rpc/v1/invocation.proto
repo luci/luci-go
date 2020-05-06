@@ -30,6 +30,8 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 //
 // Next id: 12.
 message Invocation {
+  reserved 3; // bool interrupted, crbug.com/1078696.
+
   // Can be used to refer to this invocation, e.g. in ResultDB.GetInvocation
   // RPC.
   // Format: invocations/{INVOCATION_ID}
@@ -58,20 +60,6 @@ message Invocation {
 
   // Current state of the invocation.
   State state = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
-
-  // True if the invocation is inactive and does NOT contain all the results
-  // that the associated computation was expected to compute.
-  //  * The computation was interrupted prematurely.
-  //  * Such invocation should be discarded.
-  //  * Often the associated computation is retried.
-  //
-  // False could mean 2 things:
-  // * the invocation is still ACTIVE;
-  // * the invocation is inactive and contains all the results that the
-  //   associated computation was expected to compute.
-  //
-  // Use this field with state above.
-  bool interrupted = 3 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // When the invocation was created.
   google.protobuf.Timestamp create_time = 4 [

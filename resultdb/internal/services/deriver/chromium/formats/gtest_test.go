@@ -458,19 +458,5 @@ func TestGTestConversions(t *testing.T) {
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag1")), ShouldBeTrue)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag2")), ShouldBeTrue)
 		})
-
-		Convey("Interrupted", func() {
-			results := &GTestResults{
-				PerIterationData: []map[string][]*GTestRunResult{
-					{
-						"BazTest.DoesQux": {{Status: "NOTRUN"}},
-					},
-				},
-			}
-
-			_, err := results.ToProtos(ctx, "ninja://tests/", inv)
-			So(err, ShouldBeNil)
-			So(inv.Interrupted, ShouldEqual, true)
-		})
 	})
 }
