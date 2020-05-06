@@ -150,62 +150,44 @@ func (r *queryRunBase) fetchItems(ctx context.Context, invIDs []string, resultIt
 		invNames[i] = pbutil.InvocationName(id)
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	// Prepare a test result request.
+	trReq := &pb.QueryTestResultsRequest{
+		Invocations: invNames,
+		Predicate:   &pb.TestResultPredicate{TestIdRegexp: r.testID},
+		PageSize:    int32(r.limit),
+	}
+	if r.unexpected {
+		trReq.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
+	}
 
-	// Fetch test results.
-	eg.Go(func() error {
-		req := &pb.QueryTestResultsRequest{
-			Invocations: invNames,
-			Predicate:   &pb.TestResultPredicate{TestIdRegexp: r.testID},
-			PageSize:    int32(r.limit),
-		}
-		if r.unexpected {
-			req.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
-		}
-		// TODO(crbug.com/1021849): implement paging.
-		res, err := r.resultdb.QueryTestResults(ctx, req)
-		if err != nil {
-			return err
-		}
-		for _, tr := range res.TestResults {
-			item := resultItemTemplate
-			item.result = tr
-			select {
-			case dest <- item:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		return nil
-	})
+	// Prepare a test exoneration request.
+	teReq := &pb.QueryTestExonerationsRequest{
+		Invocations: invNames,
+		Predicate: &pb.TestExonerationPredicate{
+			TestIdRegexp: r.testID,
+		},
+		PageSize: int32(r.limit),
+	}
 
-	// Fetch test exonerations.
-	eg.Go(func() error {
-		req := &pb.QueryTestExonerationsRequest{
-			Invocations: invNames,
-			Predicate: &pb.TestExonerationPredicate{
-				TestIdRegexp: r.testID,
-			},
-			PageSize: int32(r.limit),
-		}
-		// TODO(crbug.com/1021849): implement paging.
-		res, err := r.resultdb.QueryTestExonerations(ctx, req)
-		if err != nil {
-			return err
-		}
-		for _, te := range res.TestExonerations {
-			item := resultItemTemplate
-			item.result = te
-			select {
-			case dest <- item:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		return nil
-	})
+	// Query for results.
+	msgC := make(chan proto.Message)
+	errC := make(chan error, 1)
+	go func() {
+		defer close(msgC)
+		errC <- pbutil.Query(ctx, msgC, r.resultdb, trReq, teReq)
+	}()
 
-	return eg.Wait()
+	// Send findings to the destination channel.
+	for m := range msgC {
+		item := resultItemTemplate
+		item.result = m
+		select {
+		case dest <- item:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return <-errC
 }
 
 // printProto prints results in JSON or TextProto format to stdout.
