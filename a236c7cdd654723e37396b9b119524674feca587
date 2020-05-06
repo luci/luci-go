@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c52c4ff3_2c55503f",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T07:28:18Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ac9205c_cf4bde5b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T07:28:18Z",
+      "side": 1,
+      "message": "should this be build end time? if our pubsub is clogged, this code would use now() for an old build",
+      "range": {
+        "startLine": 400,
+        "startChar": 17,
+        "endLine": 400,
+        "endChar": 33
+      },
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c30ec320_354f8502",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 402,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T07:28:18Z",
+      "side": 1,
+      "message": "if it is Open, then we leave tc.Message intact. Most likely it talks about failure of the previous build, so it would be inconsistent with tc.Status. We should either reset it, or put a happy message there.",
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1a434bf_0721b127",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T07:28:18Z",
+      "side": 1,
+      "message": "this is a noop",
+      "range": {
+        "startLine": 416,
+        "startChar": 2,
+        "endLine": 418,
+        "endChar": 18
+      },
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
