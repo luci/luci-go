@@ -147,10 +147,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 		logging.Infof(ctx, "Got %d GTest iterations", len(r.PerIterationData))
 	}
 
-	// Assume the invocation was not interrupted; if any results are NOTRUN,
-	// we'll mark as otherwise.
-	inv.Interrupted = false
-
 	var ret []*TestResult
 	var testNames []string
 	buf := &strings.Builder{}
@@ -189,10 +185,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final
 				// results indicates the task was incomplete.
 				// TODO(jchinlee): Check how unexpected SKIPPED tests should be handled.
-				if result.Status == "NOTRUN" {
-					inv.Interrupted = true
-				}
-
 				ret = append(ret, &TestResult{TestResult: rpb})
 			}
 		}
