@@ -129,9 +129,8 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 		// table.
 		from = `
 			VariantsWithUnexpectedResults vur
-			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
-				ON vur.TestId = tr.TestId AND vur.VariantHash = tr.VariantHash
-		`
+			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+			`
 	}
 
 	limit := ""
@@ -188,18 +187,7 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 	st.Params["TestIdRegexp"] = fmt.Sprintf("^%s$", testIDRegexp)
 
 	// Filter by variant.
-	st.Params["variantHashEquals"] = spanner.NullString{}
-	st.Params["variantContains"] = []string(nil)
-	switch p := q.Predicate.GetVariant().GetPredicate().(type) {
-	case *pb.VariantPredicate_Equals:
-		st.Params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
-	case *pb.VariantPredicate_Contains:
-		st.Params["variantContains"] = pbutil.VariantToStrings(p.Contains)
-	case nil:
-		// No filter.
-	default:
-		panic(errors.Reason("unexpected variant predicate %q", q.Predicate.GetVariant()).Err())
-	}
+	populateVariantParams(&st, q.Predicate.GetVariant())
 
 	// Apply page token.
 	st.Params["afterInvocationId"],
@@ -342,4 +330,21 @@ func parseTestObjectPageToken(pageToken string) (inv InvocationID, testID, objID
 // The returned error is anontated with INVALID_ARUGMENT code.
 func pageTokenError(err error) error {
 	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page_token")
+}
+
+// populateVariantParams populates variantHashEquals and variantContains
+// parameters based on the predicate.
+func populateVariantParams(st *spanner.Statement, variantPredicate *pb.VariantPredicate) {
+	st.Params["variantHashEquals"] = spanner.NullString{}
+	st.Params["variantContains"] = []string(nil)
+	switch p := variantPredicate.GetPredicate().(type) {
+	case *pb.VariantPredicate_Equals:
+		st.Params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
+	case *pb.VariantPredicate_Contains:
+		st.Params["variantContains"] = pbutil.VariantToStrings(p.Contains)
+	case nil:
+		// No filter.
+	default:
+		panic(errors.Reason("unexpected variant predicate %q", variantPredicate).Err())
+	}
 }
