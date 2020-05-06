@@ -64,6 +64,17 @@ func AllowOriginAll(c context.Context, origin string) bool {
 	return true
 }
 
+// Override is a pRPC method-specific override which may optionally handle the
+// entire pRPC method call. If it returns true, the override is assumed to
+// have fully handled the pRPC method call and processing of the request does
+// not continue. In this case it's the override's responsibility to adhere to
+// all pRPC semantics. However if it returns false, processing continues as
+// normal, allowing the override to act as a preprocessor. In this case it's
+// the override's responsibility to ensure it hasn't done anything that will
+// be incompatible with pRPC semantics (such as writing garbage to the response
+// writer in the router context).
+type Override func(*router.Context) bool
+
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
@@ -91,8 +102,9 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	mu       sync.Mutex
-	services map[string]*service
+	mu        sync.Mutex
+	services  map[string]*service
+	overrides map[string]map[string]Override
 }
 
 type service struct {
@@ -126,6 +138,26 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	}
 
 	s.services[desc.ServiceName] = serv
+}
+
+// RegisterOverride registers an overriding function.
+//
+// Panics if an override for the given service method is already registered.
+func (s *Server) RegisterOverride(serviceName, methodName string, fn Override) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.overrides == nil {
+		s.overrides = map[string]map[string]Override{}
+	}
+	if _, ok := s.overrides[serviceName]; !ok {
+		s.overrides[serviceName] = map[string]Override{}
+	}
+	if _, ok := s.overrides[serviceName][methodName]; ok {
+		panic(fmt.Errorf("method %q of service %q is already overridden", methodName, serviceName))
+	}
+
+	s.overrides[serviceName][methodName] = fn
 }
 
 // authenticate forces authentication set by RegisterDefaultAuth.
@@ -184,6 +216,15 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 func (s *Server) handlePOST(c *router.Context) {
 	serviceName := c.Params.ByName("service")
 	methodName := c.Params.ByName("method")
+
+	if methods, ok := s.overrides[serviceName]; ok {
+		if handler, ok := methods[methodName]; ok {
+			if handler(c) {
+				return
+			}
+		}
+	}
+
 	s.setAccessControlHeaders(c, false)
 	res := s.call(c, serviceName, methodName)
 
