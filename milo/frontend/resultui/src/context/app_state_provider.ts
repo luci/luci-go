@@ -19,12 +19,14 @@ import { action, computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../libs/context';
 import { ResultDb } from '../services/resultdb';
+import { consumeResultDbHost } from './config_provider';
 
 /**
  * Records the app-level state.
  */
 export class AppState {
   @observable.ref accessToken = '';
+  @observable.ref resultDbHost = '';
 
   @computed
   get resultDb(): ResultDb | null {
@@ -32,7 +34,7 @@ export class AppState {
       return null;
     }
     // TODO(weiweilin): set the host dynamically (from a config file?).
-    return new ResultDb('staging.results.api.cr.dev', this.accessToken);
+    return new ResultDb(this.resultDbHost, this.accessToken);
   }
 }
 
@@ -45,12 +47,14 @@ export const provideAppState = provideContext<'appState', AppState>('appState');
  */
 export class AppStateProviderElement extends LitElement implements BeforeEnterObserver {
   appState = new AppState();
+  resultDbHost = '';
 
   onBeforeEnter() {
     this.refreshAccessToken();
   }
   connectedCallback() {
     super.connectedCallback();
+    this.appState.resultDbHost = this.resultDbHost;
     window.addEventListener('user-update', this.refreshAccessToken);
     this.refreshAccessToken();
   }
@@ -89,5 +93,9 @@ export class AppStateProviderElement extends LitElement implements BeforeEnterOb
 }
 
 customElement('tr-app-state-provider')(
-  provideAppState(AppStateProviderElement),
+  provideAppState(
+    consumeResultDbHost(
+      AppStateProviderElement,
+    ),
+  ),
 );
