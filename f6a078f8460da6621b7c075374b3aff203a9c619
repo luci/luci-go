@@ -46,6 +46,30 @@
       "revId": "f6a078f8460da6621b7c075374b3aff203a9c619",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46ed4c54_65c9e073",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-06T23:54:51Z",
+      "side": 1,
+      "message": "It was directly copied from above. Fixed the typo.",
+      "parentUuid": "3f708bb0_d2ec37bd",
+      "range": {
+        "startLine": 93,
+        "startChar": 70,
+        "endLine": 93,
+        "endChar": 84
+      },
+      "revId": "f6a078f8460da6621b7c075374b3aff203a9c619",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
