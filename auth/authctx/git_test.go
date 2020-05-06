@@ -61,6 +61,9 @@ func TestGitConfig(t *testing.T) {
 
 [http]
   version = HTTP/1.1
+  # Request the GFE return debug headers as an encrypted blob in
+  # X-Encrypted-Debug-Headers.
+  extraheader = X-Return-Encrypted-Headers: all
 
 [gc]
   autodetach = false
@@ -99,6 +102,9 @@ func TestGitConfig(t *testing.T) {
 
 [http]
   version = HTTP/1.1
+  # Request the GFE return debug headers as an encrypted blob in
+  # X-Encrypted-Debug-Headers.
+  extraheader = X-Return-Encrypted-Headers: all
 
   # This is path inside mingw64 installation, bundled with Git For Windows.
   sslCAinfo = /ssl/certs/ca-bundle.crt
