@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e3456cff_c2a90dc0",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-06T14:05:03Z",
+      "side": 1,
+      "message": "it turns out chrome automatically convert %2E to .\nSo we need to double encode . to prevent that.",
+      "revId": "8076227e53221b2012385e63f169a07c240308a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
