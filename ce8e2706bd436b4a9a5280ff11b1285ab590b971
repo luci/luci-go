@@ -25,6 +25,75 @@
     },
     {
       "key": {
+        "uuid": "ce0680c3_86e8dae5",
+        "filename": "milo/frontend/resultui/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T06:40:07Z",
+      "side": 1,
+      "message": "return\n\nthis is equivalent to code below",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 6
+      },
+      "revId": "ce8e2706bd436b4a9a5280ff11b1285ab590b971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54065b75_a47c0fb5",
+        "filename": "milo/frontend/resultui/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T06:40:07Z",
+      "side": 1,
+      "message": "http.Error",
+      "range": {
+        "startLine": 72,
+        "startChar": 3,
+        "endLine": 72,
+        "endChar": 28
+      },
+      "revId": "ce8e2706bd436b4a9a5280ff11b1285ab590b971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a947ff63_a6c9ecfc",
+        "filename": "milo/frontend/resultui/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-06T06:40:07Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 73,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 9
+      },
+      "revId": "ce8e2706bd436b4a9a5280ff11b1285ab590b971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "099ffdbc_8cfde652",
         "filename": "milo/frontend/resultui/service-resultui.yaml",
         "patchSetId": 3
