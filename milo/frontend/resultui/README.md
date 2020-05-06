@@ -6,7 +6,10 @@ Before you start, you need to create a configuration file, local-dev-config.json
 It should have the following content.
 ```json
 {
-    "client-id": "<OAuth2 Client ID>"
+    "client_id": "<OAuth2 Client ID>",
+    "result_db": {
+        "host": "<ResultDB Host Name>"
+    }
 }
 ```
 Replace `<OAuth2 Client ID>` with the client ID you get from the luci-milo-dev GCP console.

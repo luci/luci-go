@@ -19,6 +19,8 @@ import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
 
+import { readFileSync } from 'fs';
+
 const config: webpack.Configuration = {
   entry: {
     index: './src/index.ts',
@@ -79,6 +81,12 @@ const config: webpack.Configuration = {
       const config = require('./local-dev-config.json');
       app.get('/auth/api/v1/server/client_id', (_req, res) => {
         res.json({client_id: config.client_id});
+      });
+      app.get('/configs.js', async (_req, res) => {
+        const config = require('./local-dev-config.json');
+        res.set('context-type', 'application/javascript');
+        const configsTemplate = readFileSync('./configs.template.js', 'utf8');
+        res.send(configsTemplate.replace('{{.ResultDB.Host}}', config.result_db.host));
       });
     },
   },
