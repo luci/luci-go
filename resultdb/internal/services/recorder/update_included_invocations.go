@@ -73,8 +73,8 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 		for rInv := range remove {
 			ks = spanner.KeySets(span.InclusionKey(including, rInv), ks)
 		}
-		muts := make([]*spanner.Mutation, 1, 1+len(add))
-		muts[0] = spanner.Delete("IncludedInvocations", ks)
+		ms := make([]*spanner.Mutation, 1, 1+len(add))
+		ms[0] = spanner.Delete("IncludedInvocations", ks)
 
 		switch states, err := span.ReadInvocationStates(ctx, txn, add); {
 		case err != nil:
@@ -84,12 +84,12 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 			return appstatus.Errorf(codes.NotFound, "at least one of the included invocations does not exist")
 		}
 		for aInv := range add {
-			muts = append(muts, span.InsertOrUpdateMap("IncludedInvocations", map[string]interface{}{
+			ms = append(ms, span.InsertOrUpdateMap("IncludedInvocations", map[string]interface{}{
 				"InvocationId":         including,
 				"IncludedInvocationId": aInv,
 			}))
 		}
-		return txn.BufferWrite(muts)
+		return txn.BufferWrite(ms)
 	})
 
 	return &empty.Empty{}, err

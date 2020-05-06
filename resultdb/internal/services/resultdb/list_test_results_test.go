@@ -94,7 +94,7 @@ func TestListTestResults(t *testing.T) {
 // A result is expected IFF it is PASS.
 func insertTestResults(ctx context.Context, invID span.InvocationID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
-	muts := make([]*spanner.Mutation, len(statuses))
+	ms := make([]*spanner.Mutation, len(statuses))
 
 	for i, status := range statuses {
 		testID := "ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
@@ -124,9 +124,9 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 			mutMap["IsUnexpected"] = true
 		}
 
-		muts[i] = span.InsertMap("TestResults", mutMap)
+		ms[i] = span.InsertMap("TestResults", mutMap)
 	}
 
-	testutil.MustApply(ctx, muts...)
+	testutil.MustApply(ctx, ms...)
 	return trs
 }
