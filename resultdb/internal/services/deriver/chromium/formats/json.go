@@ -51,6 +51,12 @@ var (
 		"artifacts",
 		"layout-test-results",
 	}
+
+	// These artifacts contain HTML code that expects to be rendered on the test
+	// result server. This is an XSS vulnerability and assumes server
+	// implementation details. Milo should implement their functionality itself.
+	// Context: crbug.com/1078883
+	artifactBlacklist = stringset.NewFromSlice("pretty_image_diff", "pretty_text_diff")
 )
 
 // JSONTestResults represents the structure in
@@ -221,6 +227,9 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 // TODO(crbug/1034021): Support only map[string][]string and remove (unmarshal directly).
 func (f *TestFields) convertArtifacts() error {
 	for name, arts := range f.ArtifactsRaw {
+		if artifactBlacklist.Has(name) {
+			continue
+		}
 		var asPathsErr, asStringErr error
 
 		// Try interpreting the artifacts as both formats in turn.
