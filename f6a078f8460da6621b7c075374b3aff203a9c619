@@ -22,6 +22,30 @@
       "revId": "f6a078f8460da6621b7c075374b3aff203a9c619",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f708bb0_d2ec37bd",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-06T23:23:24Z",
+      "side": 1,
+      "message": "I guess you mean \"scheme\" rather than \"schema\", right? Meaning it doesn\u0027t include the \"http(s)://\" prefix.\n\nMaybe the best solution to convey that is just to have an example of what the field contains.",
+      "parentUuid": "673c4ba8_3acb92ea",
+      "range": {
+        "startLine": 93,
+        "startChar": 70,
+        "endLine": 93,
+        "endChar": 84
+      },
+      "revId": "f6a078f8460da6621b7c075374b3aff203a9c619",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
