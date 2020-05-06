@@ -219,7 +219,7 @@ message Build {
 
   // Arbitrary annotations for the build.
   // One key may have multiple values, which is why this is not a map<string,string>.
-  // Indexed by the server, see also BuildFilter.tags.
+  // Indexed by the server, see also BuildPredicate.tags.
   repeated StringPair tags = 19;
 
   // What to run when the build is ready to start.
