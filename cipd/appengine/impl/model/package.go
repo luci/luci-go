@@ -145,7 +145,7 @@ func CheckPackageExists(c context.Context, pkg string) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to check the package presence").Err()
 	case len(res) == 0:
-		return errors.Reason("no such package").Tag(grpcutil.NotFoundTag).Err()
+		return errors.Reason("no such package: %s", pkg).Tag(grpcutil.NotFoundTag).Err()
 	default:
 		return nil
 	}
