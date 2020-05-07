@@ -93,5 +93,5 @@ message Settings {
     // host is the hostname of the ResultDB instance we're pointing to (sans scheme).
     string host = 1;
   }
-  ResultDB resultDB = 5;
+  ResultDB resultdb = 5;
 }
