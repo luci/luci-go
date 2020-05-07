@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7ad32dcc_2c204e11",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-07T00:37:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c52c4ff3_2c55503f",
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ac9205c_cf4bde5b",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "f845294e_5888fe40",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-07T00:37:20Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "1ac9205c_cf4bde5b",
+      "range": {
+        "startLine": 400,
+        "startChar": 17,
+        "endLine": 400,
+        "endChar": 33
+      },
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c30ec320_354f8502",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -56,6 +98,24 @@
       "revId": "a236c7cdd654723e37396b9b119524674feca587",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5b1b4f6_27b5fa19",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 402,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-07T00:37:20Z",
+      "side": 1,
+      "message": "Fair point. The message won\u0027t be read in this case, but it is cleaner to reset it. Done.",
+      "parentUuid": "c30ec320_354f8502",
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -79,6 +139,30 @@
       "revId": "a236c7cdd654723e37396b9b119524674feca587",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a1c191d_f8ba17be",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-07T00:37:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1a434bf_0721b127",
+      "range": {
+        "startLine": 416,
+        "startChar": 2,
+        "endLine": 418,
+        "endChar": 18
+      },
+      "revId": "a236c7cdd654723e37396b9b119524674feca587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
