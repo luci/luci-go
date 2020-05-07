@@ -102,7 +102,7 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	mu        sync.Mutex
+	mu        sync.RWMutex
 	services  map[string]*service
 	overrides map[string]map[string]Override
 }
@@ -217,17 +217,28 @@ func (s *Server) handlePOST(c *router.Context) {
 	serviceName := c.Params.ByName("service")
 	methodName := c.Params.ByName("method")
 
-	if methods, ok := s.overrides[serviceName]; ok {
-		if handler, ok := methods[methodName]; ok {
-			if handler(c) {
-				return
-			}
-		}
+	override, service, method, methodFound := s.lookup(serviceName, methodName)
+	// Override takes precedence over notImplementedErr.
+	if override != nil && override(c) {
+		return
 	}
 
 	s.setAccessControlHeaders(c, false)
-	res := s.call(c, serviceName, methodName)
-
+	res := response{}
+	switch {
+	case service == nil:
+		res.err = status.Errorf(
+			codes.Unimplemented,
+			"service %q is not implemented",
+			serviceName)
+	case !methodFound:
+		res.err = status.Errorf(
+			codes.Unimplemented,
+			"method %q in service %q is not implemented",
+			methodName, serviceName)
+	default:
+		s.call(c, service, method, &res)
+	}
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if res.err != nil {
@@ -276,25 +287,21 @@ type response struct {
 	err error
 }
 
-func (s *Server) call(c *router.Context, serviceName, methodName string) (r response) {
-	service := s.services[serviceName]
+func (s *Server) lookup(serviceName, methodName string) (override Override, service *service, method grpc.MethodDesc, methodFound bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if methods, ok := s.overrides[serviceName]; ok {
+		override = methods[methodName]
+	}
+	service = s.services[serviceName]
 	if service == nil {
-		r.err = status.Errorf(
-			codes.Unimplemented,
-			"service %q is not implemented",
-			serviceName)
 		return
 	}
+	method, methodFound = service.methods[methodName]
+	return
+}
 
-	method, ok := service.methods[methodName]
-	if !ok {
-		r.err = status.Errorf(
-			codes.Unimplemented,
-			"method %q in service %q is not implemented",
-			methodName, serviceName)
-		return
-	}
-
+func (s *Server) call(c *router.Context, service *service, method grpc.MethodDesc, r *response) {
 	var perr *protocolError
 	r.fmt, perr = responseFormat(c.Request.Header.Get(headerAccept))
 	if perr != nil {
@@ -356,8 +363,8 @@ func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 
 // ServiceNames returns a sorted list of full names of all registered services.
 func (s *Server) ServiceNames() []string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	names := make([]string, 0, len(s.services))
 	for name := range s.services {
