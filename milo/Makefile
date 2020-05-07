@@ -8,9 +8,6 @@ projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 dev:
 	gae.py devserver --app-dir $(projdir)/frontend -A luci-milo-dev -- --host 0.0.0.0 --port 8082 --admin_port 7999 --log_level debug
 
-up-resultui: build-resultui
-	gae.py upload -A luci-milo --app-dir $(projdir)/frontend resultui
-
 up-dev:
 	gcloud app deploy ./frontend/appengine/app.yaml ./frontend/appengine/service-pubsub.yaml --project luci-milo-dev --no-promote -v $$USER
 
