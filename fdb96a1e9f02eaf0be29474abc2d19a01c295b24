@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73876c30_85455645",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T07:34:53Z",
+      "side": 1,
+      "message": "FWIW https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/rpc/v1/resultdb.proto;l\u003d29?q\u003dresultdb.proto uses ResultDB with capital B, so maybe keep this consistent.",
+      "range": {
+        "startLine": 92,
+        "startChar": 10,
+        "endLine": 92,
+        "endChar": 18
+      },
+      "revId": "fdb96a1e9f02eaf0be29474abc2d19a01c295b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "219b17c4_a2af7f14",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T07:34:53Z",
+      "side": 1,
+      "message": "\"resultdb\" consistent with https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d418?q\u003dresultdb%20f:buildbucket%20lang:proto\u0026sq\u003d and many other places, e.g. all go links are go/resutldb-foobar, not go/result-db-foobar",
+      "range": {
+        "startLine": 96,
+        "startChar": 11,
+        "endLine": 96,
+        "endChar": 20
+      },
+      "revId": "fdb96a1e9f02eaf0be29474abc2d19a01c295b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
