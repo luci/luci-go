@@ -108,10 +108,21 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 		} else {
 			var errorBuffer bytes.Buffer
 			for _, error := range errors {
-				// validation.Context currently only supports ERROR severity
+				// validation.Context supports just 2 severities now,
+				// but defensively default to ERROR level in unexpected cases.
+				msgSeverity := config.ValidationResponseMessage_ERROR
+				switch severity, ok := validation.SeverityTag.In(error); {
+				case !ok:
+					logging.Errorf(c, "unset validation.Severity in %s", error)
+				case severity == validation.Warning:
+					msgSeverity = config.ValidationResponseMessage_WARNING
+				case severity != validation.Blocking:
+					logging.Errorf(c, "unrecognized validation.Severity %d in %s", severity, error)
+				}
+
 				err := error.Error()
 				msgList = append(msgList, &config.ValidationResponseMessage_Message{
-					Severity: config.ValidationResponseMessage_ERROR,
+					Severity: msgSeverity,
 					Text:     err,
 				})
 				errorBuffer.WriteString("\n  " + err)

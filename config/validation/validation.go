@@ -23,15 +23,15 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Error is an error with details of failed validation.
+// Error is an error with details of validation issues.
 //
 // Returned by Context.Finalize().
 type Error struct {
 	// Errors is a list of individual validation errors.
 	//
-	// Each one is annotated with "file" string and a logical path pointing to
-	// the element that contains the error. It is provided as a slice of strings
-	// in "element" annotation.
+	// Each one is annotated with "file" string, logical path pointing to
+	// the element that contains the error, and its severity. It is provided as a
+	// slice of strings in "element" annotation.
 	Errors errors.MultiError
 }
 
@@ -49,7 +49,7 @@ func (v *Error) Error() string {
 type Context struct {
 	Context context.Context
 
-	errors  errors.MultiError // all accumulated errors
+	errors  errors.MultiError // all accumulated errors, including those with Warning severity.
 	file    string            // the currently validated file
 	element []string          // logical path of a sub-element we validate, see Enter
 }
@@ -80,16 +80,62 @@ func (e elementTagType) In(err error) (v []string, ok bool) {
 	return
 }
 
+// Severity of the validation message.
+//
+// Only Blocking and Warning severities are supported.
+type Severity int
+
+const (
+	// Blocking severity blocks config from being accepted.
+	//
+	// Corresponds to ValidationResponseMessage_Severity:ERROR.
+	Blocking Severity = 0
+	// Warning severity doesn't block config from being accepted.
+	//
+	// Corresponds to ValidationResponseMessage_Severity:WARNING.
+	Warning Severity = 1
+)
+
+type severityTagType struct{ Key errors.TagKey }
+
+func (s severityTagType) With(severity Severity) errors.TagValue {
+	return errors.TagValue{Key: s.Key, Value: severity}
+}
+func (s severityTagType) In(err error) (v Severity, ok bool) {
+	d, ok := errors.TagValueIn(s.Key, err)
+	if ok {
+		v = d.(Severity)
+	}
+	return
+}
+
 var fileTag = fileTagType{errors.NewTagKey("holds the file name for tests")}
 var elementTag = elementTagType{errors.NewTagKey("holds the elements for tests")}
 
-// Errorf records the given format string and args as a validation error.
+// SeverityTag holds the severity of the given validation error.
+var SeverityTag = severityTagType{errors.NewTagKey("holds the severity")}
+
+// Errorf records the given format string and args as a blocking validation error.
 func (v *Context) Errorf(format string, args ...interface{}) {
-	v.Error(errors.Reason(format, args...).Err())
+	v.record(Blocking, errors.Reason(format, args...).Err())
 }
 
-// Error records the given error as a validation error.
+// Error records the given error as a blocking validation error.
 func (v *Context) Error(err error) {
+	v.record(Blocking, err)
+}
+
+// Warningf records the given format string and args as a validation warning.
+func (v *Context) Warningf(format string, args ...interface{}) {
+	v.record(Warning, errors.Reason(format, args...).Err())
+}
+
+// Warning records the given error as a validation warning.
+func (v *Context) Warning(err error) {
+	v.record(Warning, err)
+}
+
+func (v *Context) record(severity Severity, err error) {
 	ctx := ""
 	if v.file != "" {
 		ctx = fmt.Sprintf("in %q", v.file)
@@ -100,8 +146,8 @@ func (v *Context) Error(err error) {
 		ctx += " (" + strings.Join(v.element, " / ") + ")"
 	}
 	// Make the file and the logical path also usable through error inspection.
-	err = errors.Annotate(err, "%s", ctx).Tag(fileTag.With(v.file), elementTag.With(v.element)).Err()
-	v.errors = append(v.errors, err)
+	v.errors = append(v.errors, errors.Annotate(err, "%s", ctx).Tag(
+		fileTag.With(v.file), elementTag.With(v.element), SeverityTag.With(severity)).Err())
 }
 
 // SetFile records that what follows is errors for this particular file.

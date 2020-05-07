@@ -53,6 +53,23 @@ func TestValidation(t *testing.T) {
 		elts, ok := elementTag.In(singleErr)
 		So(ok, ShouldBeTrue)
 		So(elts, ShouldResemble, []string{"ctx 123"})
+
+		severity, ok := SeverityTag.In(singleErr)
+		So(ok, ShouldBeTrue)
+		So(severity, ShouldEqual, Blocking)
+	})
+
+	Convey("One simple warning", t, func() {
+		c := Context{Context: context.Background()}
+		c.Warningf("option %q is a noop, please remove", "xyz: true")
+		err := c.Finalize()
+		So(err, ShouldNotBeNil)
+		singleErr := err.(*Error).Errors[0]
+		So(singleErr.Error(), ShouldContainSubstring, `option "xyz: true" is a noop, please remove`)
+
+		severity, ok := SeverityTag.In(singleErr)
+		So(ok, ShouldBeTrue)
+		So(severity, ShouldEqual, Warning)
 	})
 
 	Convey("Regular usage", t, func() {
@@ -72,7 +89,7 @@ func TestValidation(t *testing.T) {
 		c.Errorf("zzz 2")
 		c.Exit()
 
-		c.Errorf("zzz 3")
+		c.Warningf("zzz 3")
 
 		c.SetFile("file_2.cfg")
 		c.Errorf("zzz 4")

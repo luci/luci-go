@@ -101,16 +101,23 @@ func TestInstallHandlers(t *testing.T) {
 		Convey("Basic validationHandler call", func() {
 			rules.Add("dead", "beef", func(ctx *validation.Context, configSet, path string, content []byte) error {
 				So(string(content), ShouldEqual, "content")
-				ctx.Errorf("deadbeef")
+				ctx.Errorf("blocking error")
+				ctx.Warningf("diagnostic warning")
 				return nil
 			})
 			valResp := valCall("dead", "beef", "content")
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(valResp, ShouldResemble, &config.ValidationResponseMessage{
-				Messages: []*config.ValidationResponseMessage_Message{{
-					Text:     "in \"beef\": deadbeef",
-					Severity: config.ValidationResponseMessage_ERROR,
-				}},
+				Messages: []*config.ValidationResponseMessage_Message{
+					{
+						Text:     "in \"beef\": blocking error",
+						Severity: config.ValidationResponseMessage_ERROR,
+					},
+					{
+						Text:     "in \"beef\": diagnostic warning",
+						Severity: config.ValidationResponseMessage_WARNING,
+					},
+				},
 			})
 		})
 
