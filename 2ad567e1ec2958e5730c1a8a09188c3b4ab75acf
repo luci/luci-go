@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2133268f_e55e6ba3",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T21:03:03Z",
+      "side": 1,
+      "message": "more specific: strings.HasSuffix(req.Host, \"-dev\")",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 41
+      },
+      "revId": "2ad567e1ec2958e5730c1a8a09188c3b4ab75acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab5aa174_c1de60ca",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T21:03:03Z",
+      "side": 1,
+      "message": "i find this not very intuitive. Consider \n\n  percentage :\u003d 10\n  if isDev(ctx.Request) {\n    percentage \u003d 50\n  }\n  if mathrand.Intn(ctx.Context, 100 / percentage) \u003d\u003d 0 {\n\nor\n\n  if mathrand.Int(ctx) % 100 \u003c percentage {",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 88,
+        "endChar": 35
+      },
+      "revId": "2ad567e1ec2958e5730c1a8a09188c3b4ab75acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
