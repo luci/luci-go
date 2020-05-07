@@ -105,7 +105,7 @@ func TestFullFlow(t *testing.T) {
 		}
 		So(settings.Set(ctx, SettingsKey, &cfg, "who", "why"), ShouldBeNil)
 
-		method := AuthMethod{
+		method := CookieAuthMethod{
 			SessionStore:        &authtest.MemorySessionStore{},
 			Insecure:            true,
 			IncompatibleCookies: []string{"wrong_cookie"},
@@ -214,7 +214,7 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
 		ctx = testsecrets.Use(ctx)
 
-		method := AuthMethod{SessionStore: &authtest.MemorySessionStore{}}
+		method := CookieAuthMethod{SessionStore: &authtest.MemorySessionStore{}}
 
 		call := func(query map[string]string) *httptest.ResponseRecorder {
 			q := url.Values{}
@@ -279,7 +279,7 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 func TestNotConfigured(t *testing.T) {
 	Convey("Returns ErrNotConfigured is on SessionStore", t, func() {
 		ctx := context.Background()
-		method := AuthMethod{}
+		method := CookieAuthMethod{}
 
 		_, err := method.LoginURL(ctx, "/")
 		So(err, ShouldEqual, ErrNotConfigured)
@@ -339,7 +339,7 @@ func TestNormalizeURL(t *testing.T) {
 func TestBadDestinationURLs(t *testing.T) {
 	Convey("Rejects bad destination URLs", t, func() {
 		ctx := context.Background()
-		method := AuthMethod{SessionStore: &authtest.MemorySessionStore{}}
+		method := CookieAuthMethod{SessionStore: &authtest.MemorySessionStore{}}
 
 		_, err := method.LoginURL(ctx, "http://somesite")
 		So(err, ShouldErrLike, "openid: dest URL in LoginURL or LogoutURL must be relative")
