@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d940b9cb_0f37fea0",
+        "filename": "server/auth/openid/id_token.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-07T23:28:21Z",
+      "side": 0,
+      "message": "Audience check will be more elaborate, so I moved it outside.",
+      "range": {
+        "startLine": 51,
+        "startChar": 81,
+        "endLine": 51,
+        "endChar": 89
+      },
+      "revId": "b466476f1b1b9ca09eedeb2b2e89129f84d38611",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

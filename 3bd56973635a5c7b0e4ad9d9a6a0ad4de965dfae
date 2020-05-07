@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c69e111b_dfebfde9",
+        "filename": "server/auth/openid/discovery_doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-07T23:28:21Z",
+      "side": 1,
+      "message": "No new code here, just moved from protocol.go.",
+      "revId": "3bd56973635a5c7b0e4ad9d9a6a0ad4de965dfae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "be54cc08_b7991365",
+        "filename": "server/auth/openid/user.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-07T23:28:21Z",
+      "side": 1,
+      "message": "mostly moved from protocol.go, changed only very slightly (returns IDToken instead of tok.Sub)",
+      "revId": "3bd56973635a5c7b0e4ad9d9a6a0ad4de965dfae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
