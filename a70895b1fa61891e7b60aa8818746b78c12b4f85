@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "876f0fcb_00bd6efb",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-07T06:14:49Z",
+      "side": 1,
+      "message": "pointer deref is CPU stall, wasting from a few to 10s of cycles. To be fair, it\u0027s not as bad as locking/unlocking which is at ~100ns.",
+      "parentUuid": "ebb59352_785d9964",
+      "range": {
+        "startLine": 220,
+        "startChar": 27,
+        "endLine": 220,
+        "endChar": 39
+      },
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c76f90d0_b9c3e96d",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
@@ -60,6 +84,24 @@
       "writtenOn": "2020-05-07T05:58:48Z",
       "side": 1,
       "message": "Note that we don\u0027t have to allow this, but I intentionally did so you can provide a custom handler for an otherwise unregistered method.",
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43d409df_d6e764b2",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-07T06:14:49Z",
+      "side": 1,
+      "message": "i see. Well, it won\u0027t simplify code by removing this.",
+      "parentUuid": "c76f90d0_b9c3e96d",
       "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -94,6 +136,24 @@
       "writtenOn": "2020-05-07T05:58:48Z",
       "side": 1,
       "message": "This method\u0027s only used in one place. In general I see the value in having helpers for discrete subsections of the code, but inlining this in handlePOST would avoid IMO convoluted four-arg return (less convoluted if you switch to *grpc.MethodDesc).",
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d12ecfb_3ca8da31",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-07T06:14:49Z",
+      "side": 1,
+      "message": "I still need separate func to reliable unlocking. are you proposing anonymous function inside handlePOST()?",
+      "parentUuid": "2a583315_a0373c40",
       "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
