@@ -50,18 +50,20 @@ func main() {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	basemw := standard.Base().Extend(auth.Authenticate(authServer.CookieAuth), withRemoteConfigService)
+	basemw := standard.Base().Extend(withRemoteConfigService)
+	// TODO(crbug.com/1079092): Remove remaining uses of CookieAuth.
+	cookieAuthMw := basemw.Extend(auth.Authenticate(authServer.CookieAuth))
 
 	taskDispatcher := tq.Dispatcher{BaseURL: "/internal/tasks/"}
 	notify.InitDispatcher(&taskDispatcher)
-	taskDispatcher.InstallRoutes(r, basemw)
+	taskDispatcher.InstallRoutes(r, cookieAuthMw)
 
 	// Cron endpoints.
 	r.GET("/internal/cron/update-config", basemw.Extend(gaemiddleware.RequireCron), config.UpdateHandler)
 	r.GET("/internal/cron/update-tree-status", basemw.Extend(gaemiddleware.RequireCron), notify.UpdateTreeStatus)
 
 	// Pub/Sub endpoint.
-	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
+	r.POST("/_ah/push-handlers/buildbucket", cookieAuthMw, func(c *router.Context) {
 		ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
 		defer cancel()
 		c.Context = ctx
