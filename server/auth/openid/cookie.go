@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/server/tokens"
 )
 
+// Note: this file is a part of deprecated CookieAuthMethod implementation.
+
 // sessionCookieName is actual cookie name to set.
 const sessionCookieName = "oid_session"
 

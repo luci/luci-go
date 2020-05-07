@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// Note: this file is a part of deprecated CookieAuthMethod implementation.
+
 // These are installed into a HTTP router by CookieAuthMethod.InstallHandlers.
 const (
 	loginURL    = "/auth/openid/login"

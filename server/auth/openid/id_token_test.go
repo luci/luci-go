@@ -37,7 +37,6 @@ func TestVerifyIDToken(t *testing.T) {
 	// Prepare the the signing keys.
 	const issuer = "https://issuer.example.com"
 	const signingKeyID = "signing-key"
-	const audience = "client_id"
 
 	signer := signingtest.NewSigner(nil)
 	jwks, _ := NewJSONWebKeySet(jwksForTest(signingKeyID, &signer.KeyForTest().PublicKey))
@@ -50,7 +49,7 @@ func TestVerifyIDToken(t *testing.T) {
 			Email:         "user@example.com",
 			Name:          "Some Dude",
 			Picture:       "https://picture/url/s64/photo.jpg",
-			Aud:           audience,
+			Aud:           "client_id",
 			Iat:           clock.Now(ctx).Unix(),
 			Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
 		}
@@ -59,7 +58,7 @@ func TestVerifyIDToken(t *testing.T) {
 		return idTokenForTest(ctx, t, signingKeyID, signer)
 	}
 	verifyToken := func(token string) (*IDToken, error) {
-		return VerifyIDToken(ctx, token, jwks, issuer, audience)
+		return VerifyIDToken(ctx, token, jwks, issuer)
 	}
 
 	Convey("Happy path", t, func() {
@@ -92,18 +91,18 @@ func TestVerifyIDToken(t *testing.T) {
 		So(err, ShouldErrLike, "expecting issuer")
 	})
 
-	Convey("Bad audience", t, func() {
-		tok := newToken()
-		tok.Aud = "something else"
-		_, err := verifyToken(signToken(tok))
-		So(err, ShouldErrLike, "expecting audience")
-	})
-
 	Convey("Unverified email", t, func() {
 		tok := newToken()
 		tok.EmailVerified = false
 		_, err := verifyToken(signToken(tok))
 		So(err, ShouldErrLike, "is not verified")
+	})
+
+	Convey("No audience", t, func() {
+		tok := newToken()
+		tok.Aud = ""
+		_, err := verifyToken(signToken(tok))
+		So(err, ShouldErrLike, "the audience is missing")
 	})
 
 	Convey("No subject", t, func() {

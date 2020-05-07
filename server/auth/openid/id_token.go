@@ -17,10 +17,10 @@ package openid
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 )
 
 // IDToken is verified deserialized ID token.
@@ -47,8 +47,14 @@ const allowedClockSkew = 30 * time.Second
 
 // VerifyIDToken deserializes and verifies the ID token.
 //
+// It checks the signature, expiration time and verifies fields `iss` and
+// `email_verified`.
+//
+// It checks `aud` and `sub` are present, but does NOT verify them any further.
+// It is the caller's responsibility to do so.
+//
 // This is a fast local operation.
-func VerifyIDToken(c context.Context, token string, keys *JSONWebKeySet, issuer, audience string) (*IDToken, error) {
+func VerifyIDToken(ctx context.Context, token string, keys *JSONWebKeySet, issuer string) (*IDToken, error) {
 	// See https://developers.google.com/identity/protocols/OpenIDConnect#validatinganidtoken
 
 	body, err := keys.VerifyJWT(token)
@@ -57,23 +63,23 @@ func VerifyIDToken(c context.Context, token string, keys *JSONWebKeySet, issuer,
 	}
 	tok := &IDToken{}
 	if err := json.Unmarshal(body, tok); err != nil {
-		return nil, fmt.Errorf("bad ID token - not JSON - %s", err)
+		return nil, errors.Annotate(err, "bad ID token - not JSON").Err()
 	}
 
 	exp := time.Unix(tok.Exp, 0)
-	now := clock.Now(c)
+	now := clock.Now(ctx)
 
 	switch {
 	case tok.Iss != issuer && "https://"+tok.Iss != issuer:
-		return nil, fmt.Errorf("bad ID token - expecting issuer %q, got %q", issuer, tok.Iss)
-	case tok.Aud != audience:
-		return nil, fmt.Errorf("bad ID token - expecting audience %q, got %q", audience, tok.Aud)
-	case !tok.EmailVerified:
-		return nil, fmt.Errorf("bad ID token - the email %q is not verified", tok.Email)
-	case tok.Sub == "":
-		return nil, fmt.Errorf("bad ID token - the subject is missing")
+		return nil, errors.Reason("bad ID token - expecting issuer %q, got %q", issuer, tok.Iss).Err()
 	case exp.Add(allowedClockSkew).Before(now):
-		return nil, fmt.Errorf("bad ID token - expired %s ago", now.Sub(exp))
+		return nil, errors.Reason("bad ID token - expired %s ago", now.Sub(exp)).Err()
+	case !tok.EmailVerified:
+		return nil, errors.Reason("bad ID token - the email %q is not verified", tok.Email).Err()
+	case tok.Aud == "":
+		return nil, errors.Reason("bad ID token - the audience is missing").Err()
+	case tok.Sub == "":
+		return nil, errors.Reason("bad ID token - the subject is missing").Err()
 	}
 
 	return tok, nil

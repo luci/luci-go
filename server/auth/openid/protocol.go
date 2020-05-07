@@ -17,21 +17,16 @@ package openid
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/internal"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tokens"
 )
 
-var (
-	discoveryDocCache = caching.RegisterLRUCache(8) // URL string => *discoveryDoc
-	signingKeysCache  = caching.RegisterLRUCache(8) // URL string => *JSONWebKeySet
-)
+// Note: this file is a part of deprecated CookieAuthMethod implementation.
 
 // openIDStateToken is used to generate `state` parameter used in OpenID flow to
 // pass state between our app and authentication backend.
@@ -40,75 +35,6 @@ var openIDStateToken = tokens.TokenKind{
 	Expiration: 30 * time.Minute,
 	SecretKey:  "openid_state_token",
 	Version:    1,
-}
-
-// discoveryDoc describes subset of OpenID Discovery JSON document.
-// See https://developers.google.com/identity/protocols/OpenIDConnect#discovery.
-type discoveryDoc struct {
-	Issuer                string `json:"issuer"`
-	AuthorizationEndpoint string `json:"authorization_endpoint"`
-	TokenEndpoint         string `json:"token_endpoint"`
-	JwksURI               string `json:"jwks_uri"`
-}
-
-// signingKeys returns a JSON Web Key set fetched from the location specified
-// in the discovery document.
-//
-// It fetches them on the first use and then keeps them cached in the process
-// cache for 6h.
-//
-// May return both fatal and transient errors.
-func (d *discoveryDoc) signingKeys(c context.Context) (*JSONWebKeySet, error) {
-	fetcher := func() (interface{}, time.Duration, error) {
-		raw := &JSONWebKeySetStruct{}
-		req := internal.Request{
-			Method: "GET",
-			URL:    d.JwksURI,
-			Out:    raw,
-		}
-		if err := req.Do(c); err != nil {
-			return nil, 0, err
-		}
-		keys, err := NewJSONWebKeySet(raw)
-		if err != nil {
-			return nil, 0, err
-		}
-		return keys, time.Hour * 6, nil
-	}
-
-	cached, err := signingKeysCache.LRU(c).GetOrCreate(c, d.JwksURI, fetcher)
-	if err != nil {
-		return nil, err
-	}
-	return cached.(*JSONWebKeySet), nil
-}
-
-// fetchDiscoveryDoc fetches discovery document from given URL. It is cached in
-// the process cache for 24 hours.
-func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
-	if url == "" {
-		return nil, ErrNotConfigured
-	}
-
-	fetcher := func() (interface{}, time.Duration, error) {
-		doc := &discoveryDoc{}
-		req := internal.Request{
-			Method: "GET",
-			URL:    url,
-			Out:    doc,
-		}
-		if err := req.Do(c); err != nil {
-			return nil, 0, err
-		}
-		return doc, time.Hour * 24, nil
-	}
-
-	// Cache the document in the process cache.
-	cached, err := discoveryDocCache.LRU(c).GetOrCreate(c, url, fetcher)
-	if err != nil {
-		return nil, err
-	}
-	return cached.(*discoveryDoc), nil
 }
 
 // authenticationURI returns an URI to redirect a user to in order to
@@ -198,49 +124,13 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 	}
 
 	// Unpack the ID token to grab the user information from it.
-	return userFromIDToken(c, token.IDToken, cfg, discovery)
-}
-
-// userFromIDToken validates the ID token and extracts user information from it.
-func userFromIDToken(c context.Context, token string, cfg *Settings, discovery *discoveryDoc) (uid string, u *auth.User, err error) {
-	// Validate the discovery doc has necessary fields to proceed.
-	switch {
-	case discovery.Issuer == "":
-		return "", nil, errors.New("openid: bad discovery doc, empty issuer")
-	case discovery.JwksURI == "":
-		return "", nil, errors.New("openid: bad discovery doc, empty jwks_uri")
-	}
-
-	// Grab the signing keys needed to verify the token. This is almost always
-	// hitting the local process cache and thus must be fast.
-	signingKeys, err := discovery.signingKeys(c)
+	tok, user, err := userFromIDToken(c, token.IDToken, discovery)
 	if err != nil {
 		return "", nil, err
 	}
-
-	// Unpack the ID token to grab the user information from it.
-	verifiedToken, err := VerifyIDToken(c, token, signingKeys, discovery.Issuer, cfg.ClientID)
-	if err != nil {
-		return "", nil, err
+	// Make sure the token was created via the expected OAuth client.
+	if tok.Aud != cfg.ClientID {
+		return "", nil, fmt.Errorf("bad ID token - expecting audience %q, got %q", cfg.ClientID, tok.Aud)
 	}
-
-	// Ignore non https:// URLs for pictures. We serve all pages over HTTPS and
-	// don't want to break this rule just for a pretty picture.
-	picture := verifiedToken.Picture
-	if picture != "" && !strings.HasPrefix(picture, "https://") {
-		picture = ""
-	}
-
-	// Build the identity string from the email. This essentially validates it.
-	id, err := identity.MakeIdentity("user:" + verifiedToken.Email)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return verifiedToken.Sub, &auth.User{
-		Identity: id,
-		Email:    verifiedToken.Email,
-		Name:     verifiedToken.Name,
-		Picture:  picture,
-	}, nil
+	return tok.Sub, user, nil
 }
