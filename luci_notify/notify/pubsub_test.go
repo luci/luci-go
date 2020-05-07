@@ -86,6 +86,7 @@ func dummyBuildWithFailingSteps(status buildbucketpb.Status, failingSteps []stri
 					Id:      "deadbeef",
 				},
 			},
+			EndTime: ptypes.TimestampNow(),
 		},
 	}
 
@@ -566,28 +567,28 @@ func TestHandleBuild(t *testing.T) {
 		//   * Is the resulting status the same as the old status?
 		// All possibilities are explored in the tests below.
 
-		Convey(`Build passed, Closed -> Open, adjusts timestamp`, func() {
+		Convey(`Build passed, Closed -> Open`, func() {
 			testStatus(buildbucketpb.Status_SUCCESS, config.Closed, config.Open, true, []string{})
 		})
 
-		Convey(`Build passed, Open -> Open, doesn't adjust timestamp`, func() {
-			testStatus(buildbucketpb.Status_SUCCESS, config.Open, config.Open, false, []string{})
+		Convey(`Build passed, Open -> Open`, func() {
+			testStatus(buildbucketpb.Status_SUCCESS, config.Open, config.Open, true, []string{})
 		})
 
-		Convey(`Build failed, filters don't match, Closed -> Open, adjusts timestamp`, func() {
+		Convey(`Build failed, filters don't match, Closed -> Open`, func() {
 			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Open, true, []string{"exclude"})
 		})
 
-		Convey(`Build failed, filters don't match, Open -> Open, doesn't adjust timestamp`, func() {
-			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Open, false, []string{"exclude"})
+		Convey(`Build failed, filters don't match, Open -> Open`, func() {
+			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Open, true, []string{"exclude"})
 		})
 
-		Convey(`Build failed, filters match, Open -> Closed, adjusts timestamp`, func() {
+		Convey(`Build failed, filters match, Open -> Closed`, func() {
 			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Closed, true, []string{"include"})
 		})
 
-		Convey(`Build failed, filters match, Closed -> Closed, doesn't adjust timestamp`, func() {
-			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Closed, false, []string{"include"})
+		Convey(`Build failed, filters match, Closed -> Closed`, func() {
+			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Closed, true, []string{"include"})
 		})
 
 		// In addition, we want to test that statuses other than SUCCESS and FAILURE don't
