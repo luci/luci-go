@@ -224,6 +224,8 @@ func (s *Server) handlePOST(c *router.Context) {
 	}
 
 	s.setAccessControlHeaders(c, false)
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+
 	res := response{}
 	switch {
 	case service == nil:
@@ -239,7 +241,6 @@ func (s *Server) handlePOST(c *router.Context) {
 	default:
 		s.call(c, service, method, &res)
 	}
-	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if res.err != nil {
 		writeError(c.Context, c.Writer, res.err, res.fmt)
