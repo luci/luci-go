@@ -22,6 +22,30 @@
       "revId": "75071b81f17c3245fe1d9cbaac8433cd128e85b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "121d2e3e_b529d706",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T07:06:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e866968_99a55305",
+      "range": {
+        "startLine": 187,
+        "startChar": 21,
+        "endLine": 187,
+        "endChar": 29
+      },
+      "revId": "75071b81f17c3245fe1d9cbaac8433cd128e85b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

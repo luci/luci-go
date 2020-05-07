@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "f6f2ae7c_012a6393",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T07:06:33Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cc1ad540_58dfcd4b",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 203,
+        "endChar": 24
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c93efd3b_59559460",
         "filename": "resultdb/internal/span/artifact.go",
         "patchSetId": 4
