@@ -22,6 +22,30 @@
       "revId": "788353faf9b08025e6a0d601116dab37da3c29a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8cde8de_4d121b36",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-05-07T04:20:38Z",
+      "side": 1,
+      "message": "My thought was to do cron and task queues separately.",
+      "parentUuid": "d9f0fa5d_31b8f9ff",
+      "range": {
+        "startLine": 59,
+        "startChar": 33,
+        "endLine": 59,
+        "endChar": 45
+      },
+      "revId": "788353faf9b08025e6a0d601116dab37da3c29a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
