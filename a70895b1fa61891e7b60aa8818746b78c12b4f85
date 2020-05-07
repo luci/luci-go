@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "d57d7f42_da7354ca",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-07T09:28:48Z",
+      "side": 1,
+      "message": "well, spending extra hours to optimize -- no.\nBut here it\u0027s easy at no cost to interface complexity/readability, so I prefer to keep as is.",
+      "parentUuid": "c7286155_314e2a4d",
+      "range": {
+        "startLine": 220,
+        "startChar": 27,
+        "endLine": 220,
+        "endChar": 39
+      },
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c76f90d0_b9c3e96d",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
@@ -132,6 +156,24 @@
     },
     {
       "key": {
+        "uuid": "4a63b3b6_06de183b",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-07T09:28:48Z",
+      "side": 1,
+      "message": "keeping as is.",
+      "parentUuid": "43d409df_d6e764b2",
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7cf87efc_5e0325b1",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
@@ -143,6 +185,24 @@
       "writtenOn": "2020-05-07T05:02:58Z",
       "side": 1,
       "message": "is there a reason this must happen after actual call?\nIf not, I think moving this to right after L226 is more readable.",
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af0549d0_2d0ca372",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-07T09:28:48Z",
+      "side": 1,
+      "message": "Nodir, can you chime in for this one?",
+      "parentUuid": "7cf87efc_5e0325b1",
       "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
