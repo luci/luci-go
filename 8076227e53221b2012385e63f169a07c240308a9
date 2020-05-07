@@ -134,6 +134,24 @@
       "revId": "8076227e53221b2012385e63f169a07c240308a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9fe184b_e6f753d3",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-07T01:23:56Z",
+      "side": 1,
+      "message": "just so you know, Gerrit CLs can be stacked, e.g. first CL fixes this bug, and another CL about artifact on top.",
+      "parentUuid": "d181c1c5_33d43a93",
+      "revId": "8076227e53221b2012385e63f169a07c240308a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
