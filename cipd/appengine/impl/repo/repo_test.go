@@ -2834,7 +2834,7 @@ func TestLegacyHandlers(t *testing.T) {
 				code, body := callInstance("a/z/z", strings.Repeat("a", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual, `{
-  "error_message": "no such package",
+  "error_message": "no such package: a/z/z",
   "status": "INSTANCE_NOT_FOUND"
 }`)
 			})
@@ -2873,7 +2873,7 @@ func TestLegacyHandlers(t *testing.T) {
 				code, body := callResolve("a/z/z", strings.Repeat("a", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual, `{
-  "error_message": "no such package",
+  "error_message": "no such package: a/z/z",
   "status": "INSTANCE_NOT_FOUND"
 }`)
 			})
