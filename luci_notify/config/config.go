@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -78,15 +79,16 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 					ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
 				}
 				builders = append(builders, builder)
-				liveBuilders.Add(builder.ID)
+				liveBuilders.Add(datastore.KeyForObj(c, builder).String())
 
 				builderKey := datastore.KeyForObj(c, builder)
 				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
-					treeClosers = append(treeClosers, &TreeCloser{
+					tc := &TreeCloser{
 						BuilderKey:     builderKey,
 						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
-					})
-					liveTreeClosers.Add(fmt.Sprintf("%s:%s", builder.ID, cfgTreeCloser.TreeStatusHost))
+					}
+					treeClosers = append(treeClosers, tc)
+					liveTreeClosers.Add(datastore.KeyForObj(c, tc).String())
 				}
 			}
 		}
@@ -139,7 +141,10 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 				return removeDescendants(c, "TreeCloser", parentKey, liveTreeClosers.Has)
 			}
 			work <- func() error {
-				return removeDescendants(c, "EmailTemplate", parentKey, func(name string) bool {
+				return removeDescendants(c, "EmailTemplate", parentKey, func(id string) bool {
+					parts := strings.Split(id, ",")
+					name := strings.Trim(parts[len(parts)-1], `"`)
+
 					_, ok := cs.EmailTemplates[name]
 					return ok
 				})
@@ -312,7 +317,7 @@ func removeDescendants(c context.Context, kind string, ancestor *datastore.Key, 
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery(kind).Ancestor(ancestor).KeysOnly(true)
 	err := datastore.Run(c, q, func(key *datastore.Key) error {
-		id := key.StringID()
+		id := key.String()
 		if preserve != nil && preserve(id) {
 			return nil
 		}
