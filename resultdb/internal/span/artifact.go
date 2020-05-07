@@ -15,9 +15,11 @@
 package span
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -144,6 +146,50 @@ func parseArtifactPageToken(pageToken string) (parentID string, inv InvocationID
 	return
 }
 
+// tmplQueryArtifacts is a template for the SQL expression that queries
+// artifacts. See also ArtifactQuery.
+var tmplQueryArtifacts = template.Must(template.New("artifactQuery").Parse(`
+@{USE_ADDITIONAL_PARALLELISM=TRUE}
+WITH VariantsWithUnexpectedResults AS (
+	SELECT DISTINCT TestId, VariantHash
+	FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+	WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+),
+FilteredTestResults AS (
+	SELECT InvocationId, FORMAT("tr/%s/%s", TestId, ResultId) as ParentId
+	FROM
+	{{ if .InterestingTestResults }}
+		VariantsWithUnexpectedResults vur
+		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
+			USING (TestId, VariantHash)
+	{{ else }}
+		TestResults tr
+	{{ end }}
+	WHERE InvocationId IN UNNEST(@invIDs)
+		AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
+		AND (@variantContains IS NULL OR (
+			SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
+			FROM UNNEST(@variantContains) kv
+	))
+)
+SELECT InvocationId, ParentId, ArtifactId, ContentType, Size
+FROM Artifacts art
+{{ if .JoinWithTestResults }}
+LEFT JOIN FilteredTestResults tr USING (InvocationId, ParentId)
+{{ end }}
+WHERE art.InvocationId IN UNNEST(@invIDs)
+	# Skip artifacts after the one specified in the page token.
+	AND (
+		(art.ParentId > @afterParentId) OR
+		(art.ParentId = @afterParentId AND art.InvocationId > @afterInvocationId) OR
+		(art.ParentId = @afterParentId AND art.InvocationId = @afterInvocationId AND art.ArtifactId > @afterArtifactId)
+	)
+	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
+	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
+ORDER BY ParentId, InvocationId, ArtifactId
+LIMIT @limit
+`))
+
 // Fetch returns a page of artifacts matching q.
 //
 // Returned artifacts are ordered by level (invocation or test result).
@@ -153,21 +199,26 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 		panic("PageSize <= 0")
 	}
 
-	st := spanner.NewStatement(`
-		SELECT InvocationId, ParentId, ArtifactId, ContentType, Size
-		FROM Artifacts
-		WHERE InvocationId IN UNNEST(@invIDs)
-			# Skip artifacts after the one specified in the page token.
-			AND (
-				(ParentId > @afterParentId) OR
-				(ParentId = @afterParentId AND InvocationId > @afterInvocationId) OR
-				(ParentId = @afterParentId AND InvocationId = @afterInvocationId AND ArtifactId > @afterArtifactId)
-			)
-			AND REGEXP_CONTAINS(ParentId, @ParentIdRegexp)
-		ORDER BY ParentId, InvocationId, ArtifactId
-		LIMIT @limit
-	`)
+	var input struct {
+		JoinWithTestResults    bool
+		InterestingTestResults bool
+	}
+	// If we need to filter artifacts by attributes of test results, then
+	// join with test results table.
+	if q.FollowEdges == nil || q.FollowEdges.TestResults {
+		input.JoinWithTestResults = q.TestResultPredicate.GetVariant() != nil
+		if q.TestResultPredicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
+			input.JoinWithTestResults = true
+			input.InterestingTestResults = true
+		}
+	}
 
+	sql := &bytes.Buffer{}
+	if err = tmplQueryArtifacts.Execute(sql, input); err != nil {
+		return
+	}
+
+	st := spanner.NewStatement(sql.String())
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["afterParentId"],
@@ -179,9 +230,7 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 	}
 
 	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
-
-	// TODO(nodir): add support for q.TestResultPredicate.Variant
-	// TODO(nodir): add support for q.TestResultPredicate.Expectancy
+	populateVariantParams(&st, q.TestResultPredicate.GetVariant())
 
 	var b Buffer
 	err = Query(ctx, txn, st, func(row *spanner.Row) error {
