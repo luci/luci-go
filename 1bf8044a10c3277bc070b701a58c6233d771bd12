@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "cc1ad540_58dfcd4b",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-07T00:23:42Z",
+      "side": 1,
+      "message": "Yeah... You are right.\n\nI cannot think of any correct but short names... Until we have one, lets use InterestingTestResults for now.",
+      "parentUuid": "ea1a2e40_bbcd8077",
+      "range": {
+        "startLine": 203,
+        "startChar": 2,
+        "endLine": 203,
+        "endChar": 24
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c93efd3b_59559460",
         "filename": "resultdb/internal/span/artifact.go",
         "patchSetId": 4
@@ -187,6 +211,30 @@
       "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8b0547d_c6023969",
+        "filename": "resultdb/internal/span/artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-07T00:23:42Z",
+      "side": 1,
+      "message": "Ah, right.",
+      "parentUuid": "5e3e0bd5_e8e2d496",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 53
+      },
+      "revId": "1bf8044a10c3277bc070b701a58c6233d771bd12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
