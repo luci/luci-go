@@ -31,7 +31,7 @@ import (
 //
 // By default on the dev server it is based on dev server cookies (implemented
 // by UsersAPIAuthMethod), in prod it is based on OpenID (implemented by
-// *openid.AuthMethod).
+// *openid.CookieAuthMethod).
 //
 // Works only if appropriate handlers have been installed into the router. See
 // InstallHandlers.
@@ -67,7 +67,7 @@ func init() {
 	if appengine.IsDevAppServer() && !useOIDOnDevServer {
 		CookieAuth = UsersAPIAuthMethod{}
 	} else {
-		CookieAuth = &openid.AuthMethod{
+		CookieAuth = &openid.CookieAuthMethod{
 			SessionStore:        &SessionStore{Prefix: "openid"},
 			IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
 			Insecure:            appengine.IsDevAppServer(), // for http:// cookie
