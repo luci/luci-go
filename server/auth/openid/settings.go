@@ -17,7 +17,6 @@ package openid
 import (
 	"context"
 	"errors"
-	"html/template"
 
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
@@ -71,16 +70,7 @@ type settingsPage struct {
 }
 
 func (settingsPage) Title(c context.Context) (string, error) {
-	return "OpenID authentication settings", nil
-}
-
-func (settingsPage) Overview(c context.Context) (template.HTML, error) {
-	return `<p>OpenID Connect is the primary authentication protocol used by
-luci services to authenticate web users. It is triggered whenever incoming HTTP
-request doesn't have a session cookie set or the session has expired.</p>
-
-<p>It needs to be configured with details of what OpenID provider to use and how
-to authenticate calls to it.</p>`, nil
+	return "OpenID authentication settings (deprecated)", nil
 }
 
 func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {

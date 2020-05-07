@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// These are installed into a HTTP router by AuthMethod.InstallHandlers(...).
+// These are installed into a HTTP router by CookieAuthMethod.InstallHandlers.
 const (
 	loginURL    = "/auth/openid/login"
 	logoutURL   = "/auth/openid/logout"
@@ -41,15 +41,17 @@ const (
 // errBadDestinationURL is returned by normalizeURL on errors.
 var errBadDestinationURL = errors.New("openid: dest URL in LoginURL or LogoutURL must be relative")
 
-// AuthMethod implements auth.Method and auth.UsersAPI and can be used as
+// CookieAuthMethod implements auth.Method and auth.UsersAPI and can be used as
 // one of authentication method in auth.Authenticator. It is using OpenID for
 // login flow, stores session ID in cookies, and session itself in supplied
 // SessionStore.
 //
 // It requires some routes to be added to the router. Use exact same instance
-// of AuthMethod in auth.Authenticator and when adding routes via
+// of CookieAuthMethod in auth.Authenticator and when adding routes via
 // InstallHandlers.
-type AuthMethod struct {
+//
+// DEPRECATED. Do not use.
+type CookieAuthMethod struct {
 	// SessionStore keeps user sessions in some permanent storage. Must be set,
 	// otherwise all methods return ErrNotConfigured.
 	SessionStore auth.SessionStore
@@ -70,13 +72,13 @@ var _ interface {
 	auth.UsersAPI
 	auth.Warmable
 	auth.HasHandlers
-} = (*AuthMethod)(nil)
+} = (*CookieAuthMethod)(nil)
 
 // InstallHandlers installs HTTP handlers used in OpenID protocol. Must be
 // installed in server HTTP router for OpenID authentication flow to work.
 //
 // Implements auth.HasHandlers.
-func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+func (m *CookieAuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET(loginURL, base, m.loginHandler)
 	r.GET(logoutURL, base, m.logoutHandler)
 	r.GET(callbackURL, base, m.callbackHandler)
@@ -85,7 +87,7 @@ func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareCha
 // Warmup prepares local caches. It's optional.
 //
 // Implements auth.Warmable.
-func (m *AuthMethod) Warmup(c context.Context) (err error) {
+func (m *CookieAuthMethod) Warmup(c context.Context) (err error) {
 	cfg, err := fetchCachedSettings(c)
 	if err != nil {
 		return
@@ -100,7 +102,7 @@ func (m *AuthMethod) Warmup(c context.Context) (err error) {
 
 // Authenticate extracts peer's identity from the incoming request. It is part
 // of auth.Method interface.
-func (m *AuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
+func (m *CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
 	if m.SessionStore == nil {
 		return nil, ErrNotConfigured
 	}
@@ -133,7 +135,7 @@ func (m *AuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.Use
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest. It is part of
 // auth.UsersAPI interface.
-func (m *AuthMethod) LoginURL(c context.Context, dest string) (string, error) {
+func (m *CookieAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
 	if m.SessionStore == nil {
 		return "", ErrNotConfigured
 	}
@@ -143,7 +145,7 @@ func (m *AuthMethod) LoginURL(c context.Context, dest string) (string, error) {
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest. It is part of
 // auth.UsersAPI interface.
-func (m *AuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
+func (m *CookieAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 	if m.SessionStore == nil {
 		return "", ErrNotConfigured
 	}
@@ -153,7 +155,7 @@ func (m *AuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 ////
 
 // loginHandler initiates login flow by redirecting user to OpenID login page.
-func (m *AuthMethod) loginHandler(ctx *router.Context) {
+func (m *CookieAuthMethod) loginHandler(ctx *router.Context) {
 	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
 
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
@@ -183,7 +185,7 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 }
 
 // logoutHandler nukes active session and redirect back to destination URL.
-func (m *AuthMethod) logoutHandler(ctx *router.Context) {
+func (m *CookieAuthMethod) logoutHandler(ctx *router.Context) {
 	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
 
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
@@ -217,7 +219,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 
 // callbackHandler handles redirect from OpenID backend. Parameters contain
 // authorization code that can be exchanged for user profile.
-func (m *AuthMethod) callbackHandler(ctx *router.Context) {
+func (m *CookieAuthMethod) callbackHandler(ctx *router.Context) {
 	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
 
 	// This code path is hit when user clicks "Deny" on consent page.
@@ -327,7 +329,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 }
 
 // removeIncompatibleCookies removes cookies specified by m.IncompatibleCookies.
-func (m *AuthMethod) removeIncompatibleCookies(rw http.ResponseWriter, r *http.Request) {
+func (m *CookieAuthMethod) removeIncompatibleCookies(rw http.ResponseWriter, r *http.Request) {
 	for _, cookie := range m.IncompatibleCookies {
 		removeCookie(rw, r, cookie)
 	}
