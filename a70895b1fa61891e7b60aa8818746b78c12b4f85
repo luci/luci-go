@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "c7286155_314e2a4d",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-07T06:24:06Z",
+      "side": 1,
+      "message": "Of course but I don\u0027t think we need to be optimizing for nano- or even microseconds on GAE/GKE...",
+      "parentUuid": "876f0fcb_00bd6efb",
+      "range": {
+        "startLine": 220,
+        "startChar": 27,
+        "endLine": 220,
+        "endChar": 39
+      },
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c76f90d0_b9c3e96d",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
@@ -157,6 +181,24 @@
       "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "231e22e7_61715520",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-07T06:24:06Z",
+      "side": 1,
+      "message": "No. I forgot that RUnlock while the lock isn\u0027t held is erroneous and not a no-op.",
+      "parentUuid": "6d12ecfb_3ca8da31",
+      "revId": "a70895b1fa61891e7b60aa8818746b78c12b4f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
