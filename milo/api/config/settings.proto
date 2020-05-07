@@ -89,9 +89,9 @@ message Settings {
   // one record.
   repeated SourceAcls source_acls = 4;
 
-  message ResultDB {
-    // host is the hostname of the ResultDB instance we're pointing to (sans scheme).
+  message ResultDb {
+    // host is the hostname of the ResultDb instance we're pointing to (sans scheme).
     string host = 1;
   }
-  ResultDB resultDB = 5;
+  ResultDb result_db = 5;
 }
