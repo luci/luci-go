@@ -405,7 +405,6 @@ luci.cq_group(
     allow_owner_if_submittable = cq.ACTION_COMMIT,
     tree_status_host = 'tree-status.example.com',
 
-    cancel_stale_tryjobs = True,
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = 'linux try builder',
@@ -551,7 +550,6 @@ lucicfg.emit(
 #         transient_failure_weight: 1
 #         timeout_weight: 100
 #       >
-#       cancel_stale_tryjobs: YES
 #     >
 #   >
 # >

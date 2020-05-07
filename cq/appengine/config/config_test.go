@@ -444,7 +444,32 @@ func TestTryjobValidation(t *testing.T) {
 			return vctx.Finalize()
 		}
 
+		must := func(err error, severity validation.Severity) error {
+			So(err, ShouldNotBeNil)
+			for _, e := range err.(*validation.Error).Errors {
+				s, ok := validation.SeverityTag.In(e)
+				So(ok, ShouldBeTrue)
+				So(s, ShouldEqual, severity)
+			}
+			return err
+		}
+
+		mustWarn := func(textPB string) error {
+			return must(validate(textPB), validation.Warning)
+		}
+
+		mustError := func(textPB string) error {
+			return must(validate(textPB), validation.Blocking)
+		}
+
 		So(validate(``), ShouldErrLike, "at least 1 builder required")
+		// cancel_stale_tryjobs: YES is still allowed.
+		So(mustWarn(`
+			cancel_stale_tryjobs: YES
+			builders {name: "a/b/c"}`), ShouldErrLike, "please remove")
+		So(mustError(`
+			cancel_stale_tryjobs: NO
+			builders {name: "a/b/c"}`), ShouldErrLike, "use per-builder `cancel_stale` instead")
 
 		Convey("builder name", func() {
 			So(validate(`builders {}`), ShouldErrLike, "name is required")
