@@ -58,8 +58,6 @@ export interface TestResult {
   readonly startTime: string;
   readonly duration: string;
   readonly tags: Tag[];
-  readonly inputArtifacts?: Artifact[];
-  readonly outputArtifacts?: Artifact[];
 }
 
 export interface TestExoneration {
@@ -72,10 +70,11 @@ export interface TestExoneration {
 
 export interface Artifact {
   readonly name: string;
+  readonly artifactId: string;
   readonly fetchUrl?: string;
   readonly fetchUrlExpiration?: string;
   readonly contentType: string;
-  readonly size: number;
+  readonly sizeBytes: number;
 }
 
 export interface Variant {
@@ -101,6 +100,12 @@ export interface QueryTestResultRequest {
 export interface QueryTestExonerationsRequest {
   readonly invocations: string[];
   readonly predicate?: TestExonerationPredicate;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface ListArtifactsRequest {
+  readonly parent: string;
   readonly pageSize?: number;
   readonly pageToken?: string;
 }
@@ -133,6 +138,11 @@ export interface QueryTestExonerationsResponse {
   readonly nextPageToken?: string;
 }
 
+export interface ListArtifactsResponse {
+  readonly artifacts?: Artifact[];
+  readonly nextPageToken?: string;
+}
+
 const SERVICE = 'luci.resultdb.rpc.v1.ResultDB';
 
 export class ResultDb {
@@ -161,6 +171,13 @@ export class ResultDb {
         'QueryTestExonerations',
         req,
     ) as QueryTestExonerationsResponse;
+  }
+
+  async listArtifacts(req: ListArtifactsRequest) {
+    return await this.call(
+      'ListArtifacts',
+      req,
+    ) as ListArtifactsResponse;
   }
 
   private call(method: string, message: object) {

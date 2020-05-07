@@ -16,10 +16,12 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
+import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
+import { AppState, consumeAppState } from '../../context/app_state_provider';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { TestResult, TestStatus } from '../../services/resultdb';
+import { ListArtifactsResponse, TestResult, TestStatus } from '../../services/resultdb';
 
 const STATUS_DISPLAY_MAP = {
   [TestStatus.Unspecified]: 'unspecified',
@@ -34,30 +36,53 @@ const STATUS_DISPLAY_MAP = {
 /**
  * Renders an expandable entry of the given test result.
  */
-@customElement('tr-result-entry')
 export class ResultEntryElement extends MobxLitElement {
   @observable.ref id = '';
-  @observable.ref testResult?: TestResult;
-  @observable.ref expanded = false;
+  @observable.ref testResult!: TestResult;
+  @observable.ref appState!: AppState;
 
-  @observable.ref private outputArtifactsExpanded = true;
-  @observable.ref private inputArtifactsExpanded = false;
+  @observable.ref private wasExpanded = false;
+  @observable.ref private _expanded = false;
+  @computed get expanded() {
+    return this._expanded;
+  }
+  set expanded(newVal: boolean) {
+    this._expanded = newVal;
+    this.wasExpanded = this.wasExpanded || newVal;
+  }
+
+  @observable.ref private outputArtifactsExpanded = false;
   @observable.ref private tagExpanded = false;
 
+  @computed
+  private get artifactsRes(): IPromiseBasedObservable<ListArtifactsResponse> {
+    if (!this.wasExpanded || !this.appState.resultDb) {
+      // Returns a promise that never resolves when
+      //  - resultDb isn't ready.
+      //  - or the entry was never expanded.
+      return fromPromise(new Promise(() => {}));
+    }
+    // TODO(weiweilin): handle pagination.
+    return fromPromise(this.appState.resultDb.listArtifacts({parent: this.testResult.name}));
+  }
+
+  @computed
+  private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
+
   private renderSummaryHtml() {
-    if (!this.testResult!.summaryHtml) {
+    if (!this.testResult.summaryHtml) {
       return html``;
     }
 
     return html`
       <div id="summary-html">
-        ${sanitizeHTML(this.testResult!.summaryHtml)}
+        ${sanitizeHTML(this.testResult.summaryHtml)}
       </div>
     `;
   }
 
   private renderTags() {
-    if (this.testResult!.tags.length === 0) {
+    if (this.testResult.tags.length === 0) {
       return html``;
     }
 
@@ -70,7 +95,7 @@ export class ResultEntryElement extends MobxLitElement {
         <span class="one-line-content">
           Tags:
           <span class="light" style=${styleMap({display: this.tagExpanded ? 'none': ''})}>
-            ${this.testResult!.tags.map((tag) => html`
+            ${this.testResult.tags.map((tag) => html`
             <span class="kv-key">${tag.key}</span>
             <span class="kv-value">${tag.value}</span>
             `)}
@@ -78,7 +103,7 @@ export class ResultEntryElement extends MobxLitElement {
         </span>
       </div>
       <table id="tag-table" border="0" style=${styleMap({display: this.tagExpanded ? '': 'none'})}>
-        ${this.testResult!.tags.map((tag) => html`
+        ${this.testResult.tags.map((tag) => html`
         <tr>
           <td>${tag.key}:</td>
           <td>${tag.value}</td>
@@ -88,11 +113,7 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
-  private renderOutputArtifacts() {
-    if (!this.testResult!.outputArtifacts?.length) {
-      return html``;
-    }
-
+  private renderArtifacts() {
     return html`
       <div
         class="expandable-header"
@@ -100,39 +121,14 @@ export class ResultEntryElement extends MobxLitElement {
       >
         <mwc-icon class="expand-toggle">${this.outputArtifactsExpanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <div class="one-line-content">
-          Output Artifacts:
-          <span class="light">${this.testResult!.outputArtifacts?.length || 0} artifact(s)</span>
+          Artifacts:
+          <span class="light">${this.artifactsRes.state === 'fulfilled' ? `${this.artifacts.length} artifact(s)` : 'loading...'}</span>
         </div>
       </div>
-      <ul style=${styleMap({display: this.outputArtifactsExpanded ? '' : 'none'})}>
-        ${this.testResult!.outputArtifacts?.map((artifact) => html`
+      <ul id="artifact-list" style=${styleMap({display: this.outputArtifactsExpanded ? '' : 'none'})}>
+        ${this.artifacts.map((artifact) => html`
         <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-        <li><a href=${artifact.fetchUrl}>${artifact.name}</a></li>
-        `)}
-      </ul>
-    `;
-  }
-
-  private renderInputArtifacts() {
-    if (!this.testResult?.inputArtifacts?.length) {
-      return html``;
-    }
-
-    return html`
-      <div
-        class="expandable-header"
-        @click=${() => this.inputArtifactsExpanded = !this.inputArtifactsExpanded}
-      >
-        <mwc-icon class="expand-toggle">${this.inputArtifactsExpanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <div class="one-line-content">
-          Input Artifacts:
-          <span class="light">${this.testResult!.inputArtifacts?.length || 0} artifact(s)</span>
-        </div>
-      </div>
-      <ul style=${styleMap({display: this.inputArtifactsExpanded ? '' : 'none'})}>
-        ${this.testResult!.inputArtifacts?.map((artifact) => html`
-        <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-        <li><a href=${artifact.fetchUrl}>${artifact.name}</a></li>
+        <li><a href=${artifact.fetchUrl}>${artifact.artifactId}</a></li>
         `)}
       </ul>
     `;
@@ -149,10 +145,10 @@ export class ResultEntryElement extends MobxLitElement {
           <mwc-icon class="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
           <span class="one-line-content">
             run #${this.id}
-            <span class="${this.testResult!.expected ? 'expected' : 'unexpected'}-result">
-              ${this.testResult!.expected ? '' : html`unexpectedly`}
-              ${STATUS_DISPLAY_MAP[this.testResult!.status]}
-            </span> after ${this.testResult!.duration || '-s'}
+            <span class="${this.testResult.expected ? 'expected' : 'unexpected'}-result">
+              ${this.testResult.expected ? '' : html`unexpectedly`}
+              ${STATUS_DISPLAY_MAP[this.testResult.status]}
+            </span> after ${this.testResult.duration || '-s'}
           </span>
         </div>
         <div id="body">
@@ -160,8 +156,7 @@ export class ResultEntryElement extends MobxLitElement {
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
             ${this.renderSummaryHtml()}
             ${this.renderTags()}
-            ${this.renderOutputArtifacts()}
-            ${this.renderInputArtifacts()}
+            ${this.renderArtifacts()}
           </div>
         </div>
       </div>
@@ -219,10 +214,6 @@ export class ResultEntryElement extends MobxLitElement {
       margin: 0;
       font-size: 12px;
     }
-    #summary-html ul {
-      margin: 3px 0;
-      padding-inline-start: 28px;
-    }
 
     .kv-key::after {
       content: ':';
@@ -240,5 +231,14 @@ export class ResultEntryElement extends MobxLitElement {
     #tag-table {
       margin-left: 29px;
     }
+
+    ul {
+      margin: 3px 0;
+      padding-inline-start: 28px;
+    }
     `;
 }
+
+customElement('tr-result-entry')(
+  consumeAppState(ResultEntryElement),
+);
