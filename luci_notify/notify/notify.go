@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
@@ -366,22 +367,25 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		panic("UpdateTreeClosers must be run within a transaction")
 	}
 
+	// Don't update the status at all unless we have a definite
+	// success or failure - infra failures, for example, shouldn't
+	// cause us to close or re-open the tree.
+	if build.Status != buildbucketpb.Status_SUCCESS && build.Status != buildbucketpb.Status_FAILURE {
+		return nil
+	}
+
 	project := &config.Project{Name: build.Builder.Project}
 	parentBuilder := &config.Builder{
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         getBuilderID(&build.Build),
 	}
 	q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, parentBuilder))
+	var toUpdate []*config.TreeCloser
+	if err := datastore.GetAll(c, q, &toUpdate); err != nil {
+		return err
+	}
 
-	toUpdate := []*config.TreeCloser{}
-	err := datastore.Run(c, q, func(tc *config.TreeCloser) error {
-		// Don't update the status at all unless we have a definite
-		// success or failure - infra failures, for example, shouldn't
-		// cause us to close or re-open the tree.
-		if build.Status != buildbucketpb.Status_SUCCESS && build.Status != buildbucketpb.Status_FAILURE {
-			return nil
-		}
-
+	for _, tc := range toUpdate {
 		newStatus := config.Open
 		var steps []*buildbucketpb.Step
 		if build.Status == buildbucketpb.Status_FAILURE {
@@ -392,31 +396,31 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 			}
 		}
 
-		if tc.Status != newStatus {
-			tc.Status = newStatus
+		tc.Status = newStatus
+		var err error
+		if tc.Timestamp, err = ptypes.Timestamp(build.EndTime); err != nil {
+			logging.Warningf(c, "Build EndTime is invalid (%s), defaulting to time.Now()", err)
 			tc.Timestamp = time.Now().UTC()
-
-			if newStatus == config.Closed {
-				bundle, err := getBundle(c, project.Name)
-				if err != nil {
-					return err
-				}
-				tc.Message = bundle.GenerateStatusMessage(c, tc.TreeCloser.Template,
-					&notifypb.TemplateInput{
-						BuildbucketHostname: build.BuildbucketHostname,
-						Build:               &build.Build,
-						OldStatus:           oldStatus,
-						MatchingFailedSteps: steps,
-					})
-			}
-
-			toUpdate = append(toUpdate, tc)
 		}
 
-		return nil
-	})
-	if err != nil {
-		return err
+		if newStatus == config.Closed {
+			bundle, err := getBundle(c, project.Name)
+			if err != nil {
+				return err
+			}
+			tc.Message = bundle.GenerateStatusMessage(c, tc.TreeCloser.Template,
+				&notifypb.TemplateInput{
+					BuildbucketHostname: build.BuildbucketHostname,
+					Build:               &build.Build,
+					OldStatus:           oldStatus,
+					MatchingFailedSteps: steps,
+				})
+		} else {
+			// Not strictly necessary, as Message is only used when status is
+			// 'Closed'. But it could be confusing when debugging to have a
+			// stale message in the entity.
+			tc.Message = ""
+		}
 	}
 
 	return datastore.Put(c, toUpdate)
