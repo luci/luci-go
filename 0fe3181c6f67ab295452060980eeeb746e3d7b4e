@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ae3738ab_05829709",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-08T03:18:23Z",
+      "side": 1,
+      "message": "sure. I was thinking it\u0027s a build so I keep it. But now I think the other argument is called build. So.. \n\n\nRemoved!",
+      "parentUuid": "131443d5_33ce2051",
+      "range": {
+        "startLine": 113,
+        "startChar": 68,
+        "endLine": 113,
+        "endChar": 73
+      },
+      "revId": "0fe3181c6f67ab295452060980eeeb746e3d7b4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8bb9dc1_bc090c76",
         "filename": "luciexe/host/buildmerge/build.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "0fe3181c6f67ab295452060980eeeb746e3d7b4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eef73bed_cdf40c15",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-08T03:18:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8bb9dc1_bc090c76",
+      "range": {
+        "startLine": 115,
+        "startChar": 60,
+        "endLine": 115,
+        "endChar": 65
+      },
+      "revId": "0fe3181c6f67ab295452060980eeeb746e3d7b4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
