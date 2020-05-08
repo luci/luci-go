@@ -203,6 +203,7 @@ message QueryTestResultsRequest {
 // A response message for QueryTestResults RPC.
 message QueryTestResultsResponse {
   // Matched test results.
+  // Ordered by parent invocation ID, test ID and result ID.
   repeated TestResult test_results = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
@@ -250,9 +251,7 @@ message QueryTestExonerationsRequest {
 // A response message for QueryTestExonerations RPC.
 message QueryTestExonerationsResponse {
   // The test exonerations matching the predicate.
-  //
-  // The order is not defined, but test exonerations from the same invocation
-  // are contiguous.
+  // Ordered by parent invocation ID, test ID and exoneration ID.
   repeated TestExoneration test_exonerations = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
@@ -360,7 +359,7 @@ message QueryArtifactsRequest {
 message QueryArtifactsResponse {
   // Matched artifacts.
   // First invocation-level artifacts, then test-result-level artifacts
-  // ordered by test id.
+  // ordered by parent invocation ID, test ID and artifact ID.
   repeated Artifact artifacts = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.

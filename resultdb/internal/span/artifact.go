@@ -147,7 +147,8 @@ func parseArtifactPageToken(pageToken string) (parentID string, inv InvocationID
 // Fetch returns a page of artifacts matching q.
 //
 // Returned artifacts are ordered by level (invocation or test result).
-// Test result artifacts are sorted by test id.
+// Test result artifacts are sorted by parent invocation ID, test ID and
+// artifact ID.
 func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
@@ -159,19 +160,19 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip artifacts after the one specified in the page token.
 			AND (
-				(ParentId > @afterParentId) OR
-				(ParentId = @afterParentId AND InvocationId > @afterInvocationId) OR
-				(ParentId = @afterParentId AND InvocationId = @afterInvocationId AND ArtifactId > @afterArtifactId)
+				(InvocationId > @afterInvocationId) OR
+				(InvocationId = @afterInvocationId AND ParentId > @afterParentId) OR
+				(InvocationId = @afterInvocationId AND ParentId = @afterParentId AND ArtifactId > @afterArtifactId)
 			)
 			AND REGEXP_CONTAINS(ParentId, @ParentIdRegexp)
-		ORDER BY ParentId, InvocationId, ArtifactId
+		ORDER BY InvocationId, ParentId, ArtifactId
 		LIMIT @limit
 	`)
 
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	st.Params["afterParentId"],
-		st.Params["afterInvocationId"],
+	st.Params["afterInvocationId"],
+		st.Params["afterParentId"],
 		st.Params["afterArtifactId"],
 		err = parseArtifactPageToken(q.PageToken)
 	if err != nil {
@@ -221,7 +222,7 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 		last := arts[q.PageSize-1]
 		invID, testID, resultID, artifactID := MustParseArtifactName(last.Name)
 		parentID := ArtifactParentID(testID, resultID)
-		nextPageToken = pagination.Token(parentID, string(invID), artifactID)
+		nextPageToken = pagination.Token(string(invID), parentID, artifactID)
 	}
 	return
 }
