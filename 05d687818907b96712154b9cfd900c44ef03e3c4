@@ -16,6 +16,24 @@
       "revId": "05d687818907b96712154b9cfd900c44ef03e3c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66f6d4e2_4bcddd92",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-08T22:34:23Z",
+      "side": 1,
+      "message": "It installs a global tracing backend for OpenCensus library (it stores its configuration in global variables). There can be only one such backend. When many instances of server.Server are created by its tests, shit blows up. Generally server.Server is not expected to be used in tests, it is too heavy and high-level for that (you\u0027d need to mock a lot of stuff to make server.Server start).",
+      "parentUuid": "1b96fd42_be296dcd",
+      "revId": "05d687818907b96712154b9cfd900c44ef03e3c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
