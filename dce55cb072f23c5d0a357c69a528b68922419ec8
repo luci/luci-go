@@ -199,6 +199,30 @@
       "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02742c3f_f7672a3b",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T14:56:49Z",
+      "side": 1,
+      "message": "4. I don\u0027t want to confirm how go\u0027s regexp behaves for regexp like \u0027^(^|/)dir(/|$)$\u0027",
+      "parentUuid": "25d1660e_89169395",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
