@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2b51247_0f36f645",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "we should explain the merging aspect.",
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96e79463_83ba94f6",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "still has nothing to do with validation",
+      "range": {
+        "startLine": 108,
+        "startChar": 1,
+        "endLine": 108,
+        "endChar": 26
+      },
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c84101fe_c8350f1a",
+        "filename": "resultdb/pbutil/variant.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "it is more customary to make changes in-place. If the the caller really needs a new instance, they can always clone.\n\nso I recommend\n\n  func MergeVariants(dest, src *typepb.Variant) {",
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb895a80_fe597988",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "duplicate keys",
+      "range": {
+        "startLine": 79,
+        "startChar": 78,
+        "endLine": 79,
+        "endChar": 88
+      },
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0919aa3_61637ff8",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "why was this changed?",
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b72c34f5_9ae58346",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "expected.Variant \u003d cfg.Variant",
+      "range": {
+        "startLine": 93,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 24
+      },
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

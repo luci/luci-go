@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "72e5d04e_ba032a1d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T01:25:52Z",
+      "side": 1,
+      "message": "why would it need to be compatible with VariantFromStrings? we just need to do \n\n\u0026pb.Variant{Def: r.variants}",
+      "parentUuid": "84e63879_1e24f043",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7d5a0e3c_09d1ae3f",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 2
