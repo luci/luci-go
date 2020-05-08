@@ -58,7 +58,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
       >Included Invocations:
         <ul>
         ${invocation.includedInvocations.map(invocationName => html`
-          <li><a href="/inv/${encodeURIComponent(stripInvocationPrefix(invocationName))}"
+          <li><a href="/inv/${stripInvocationPrefix(invocationName)}"
                 >${stripInvocationPrefix(invocationName)}</a></li>
         `)}
         </ul>
