@@ -502,9 +502,12 @@ func getOwnServiceIdentity(ctx context.Context, signer signing.Signer) (identity
 	if signer == nil {
 		return "", ErrNotConfigured
 	}
-	serviceInfo, err := signer.ServiceInfo(ctx)
-	if err != nil {
+	switch serviceInfo, err := signer.ServiceInfo(ctx); {
+	case err != nil:
 		return "", err
+	case serviceInfo.AppID == "":
+		return "", errors.Reason("auth: don't known our own app ID to check the delegation token is for us").Err()
+	default:
+		return identity.MakeIdentity("service:" + serviceInfo.AppID)
 	}
-	return identity.MakeIdentity("service:" + serviceInfo.AppID)
 }

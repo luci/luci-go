@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -47,6 +48,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,6 +62,12 @@ var fakeUser = &auth.User{
 var fakeAuthDB = authtest.FakeDB{
 	"user:a@example.com": {"group 1", "group 2"},
 }
+
+const (
+	testServerAccountEmail = "fake-email@example.com"
+	testCloudProjectID     = "cloud-project-id"
+	testImageVersion       = "v123"
+)
 
 func TestServer(t *testing.T) {
 	t.Parallel()
@@ -303,7 +311,28 @@ func TestServer(t *testing.T) {
 			default:
 			}
 			So(req, ShouldNotBeNil)
-			So(req.UserAgent(), ShouldEqual, "LUCI-Server (service: service-name; job: namespace/job; ver: latest); zzz")
+			So(req.UserAgent(), ShouldEqual,
+				fmt.Sprintf("LUCI-Server (service: service-name; job: namespace/job; ver: %s); zzz", testImageVersion))
+		})
+
+		Convey("/auth/api/v1/server/* handlers", func(c C) {
+			srv.ServeInBackground()
+
+			resp, err := srv.GetMain("/auth/api/v1/server/info", nil)
+			So(err, ShouldBeNil)
+
+			info := signing.ServiceInfo{}
+			So(json.Unmarshal([]byte(resp), &info), ShouldBeNil)
+			So(info, ShouldResemble, signing.ServiceInfo{
+				AppID:              testCloudProjectID,
+				AppRuntime:         "go",
+				AppRuntimeVersion:  runtime.Version(),
+				AppVersion:         testImageVersion,
+				ServiceAccountName: testServerAccountEmail,
+			})
+
+			// TODO(vadimsh): Add a test for /.../certificates once implemented.
+			// TODO(vadimsh): Add a test for /.../client_id once implemented.
 		})
 	})
 }
@@ -448,6 +477,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	srv = &testServer{
 		serveErr: errorEvent{signal: make(chan struct{})},
 		tokens: clientauthtest.FakeTokenGenerator{
+			Email:      testServerAccountEmail,
 			KeepRecord: true,
 		},
 	}
@@ -476,17 +506,18 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.HTTPAddr = "main_addr"
 	opts.AdminAddr = "admin_addr"
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
+	opts.CloudProject = testCloudProjectID
 	opts.TsMonServiceName = "service-name"
 	opts.TsMonJobName = "namespace/job"
-	opts.ContainerImageID = "registry/image:latest"
+	opts.ContainerImageID = "registry/image:" + testImageVersion
 
 	opts.testSeed = 1
 	opts.testStdout = &srv.stdout
 	opts.testStderr = &srv.stderr
-
 	if opts.AuthDBPath == "" {
 		opts.testAuthDB = fakeAuthDB
 	}
+	opts.testDisableTracing = true
 
 	// Bind to auto-assigned ports.
 	opts.testListeners = map[string]net.Listener{
