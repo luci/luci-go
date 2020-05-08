@@ -51,41 +51,41 @@ func main() {
 	standard.InstallHandlers(r)
 
 	basemw := standard.Base().Extend(withRemoteConfigService)
-	// TODO(crbug.com/1079092): Remove remaining uses of CookieAuth.
-	cookieAuthMw := basemw.Extend(auth.Authenticate(authServer.CookieAuth))
 
 	taskDispatcher := tq.Dispatcher{BaseURL: "/internal/tasks/"}
 	notify.InitDispatcher(&taskDispatcher)
-	taskDispatcher.InstallRoutes(r, cookieAuthMw)
+	taskDispatcher.InstallRoutes(r, basemw)
 
 	// Cron endpoints.
 	r.GET("/internal/cron/update-config", basemw.Extend(gaemiddleware.RequireCron), config.UpdateHandler)
 	r.GET("/internal/cron/update-tree-status", basemw.Extend(gaemiddleware.RequireCron), notify.UpdateTreeStatus)
 
 	// Pub/Sub endpoint.
-	r.POST("/_ah/push-handlers/buildbucket", cookieAuthMw, func(c *router.Context) {
-		ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
-		defer cancel()
-		c.Context = ctx
+	// TODO(crbug.com/1079092): Remove remaining uses of CookieAuth.
+	r.POST("/_ah/push-handlers/buildbucket",
+		basemw.Extend(auth.Authenticate(authServer.CookieAuth)), func(c *router.Context) {
+			ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
+			defer cancel()
+			c.Context = ctx
 
-		status := ""
-		switch err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); {
-		case transient.Tag.In(err) || appengine.IsTimeoutError(errors.Unwrap(err)):
-			status = "transient-failure"
-			logging.Errorf(ctx, "transient failure: %s", err)
-			// Retry the message.
-			c.Writer.WriteHeader(http.StatusInternalServerError)
+			status := ""
+			switch err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); {
+			case transient.Tag.In(err) || appengine.IsTimeoutError(errors.Unwrap(err)):
+				status = "transient-failure"
+				logging.Errorf(ctx, "transient failure: %s", err)
+				// Retry the message.
+				c.Writer.WriteHeader(http.StatusInternalServerError)
 
-		case err != nil:
-			status = "permanent-failure"
-			logging.Errorf(ctx, "permanent failure: %s", err)
+			case err != nil:
+				status = "permanent-failure"
+				logging.Errorf(ctx, "permanent failure: %s", err)
 
-		default:
-			status = "success"
-		}
+			default:
+				status = "success"
+			}
 
-		buildbucketPubSub.Add(ctx, 1, status)
-	})
+			buildbucketPubSub.Add(ctx, 1, status)
+		})
 
 	http.Handle("/", r)
 	appengine.Main()
