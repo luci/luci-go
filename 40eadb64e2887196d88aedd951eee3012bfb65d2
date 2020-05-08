@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a46acdcf_ce92f558",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T07:02:13Z",
+      "side": 1,
+      "message": "include err?",
+      "range": {
+        "startLine": 68,
+        "startChar": 32,
+        "endLine": 68,
+        "endChar": 38
+      },
+      "revId": "40eadb64e2887196d88aedd951eee3012bfb65d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
