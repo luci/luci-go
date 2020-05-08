@@ -50,7 +50,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     if (typeof invocationId !== 'string') {
       return cmd.redirect('/not-found');
     }
-    this.pageState.invocationId = decodeURIComponent(invocationId);
+    this.pageState.invocationId = invocationId;
     return;
   }
 

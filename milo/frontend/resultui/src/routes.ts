@@ -55,6 +55,7 @@ router.setRoutes({
           children: [
             {
               path: '/inv/:invocation_id',
+              name: 'invocation',
               action: async (_ctx, cmd) => {
                 await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
                 return cmd.component('tr-invocation-page');
