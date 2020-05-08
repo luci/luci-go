@@ -127,7 +127,7 @@ type ArtifactQuery struct {
 
 // parseArtifactPageToken parses the page token into invocation ID, parentID
 // and artifactId.
-func parseArtifactPageToken(pageToken string) (parentID string, inv InvocationID, artifactID string, err error) {
+func parseArtifactPageToken(pageToken string) (inv InvocationID, parentID string, artifactID string, err error) {
 	switch pos, tokErr := pagination.ParseToken(pageToken); {
 	case tokErr != nil:
 		err = pageTokenError(tokErr)
@@ -138,8 +138,8 @@ func parseArtifactPageToken(pageToken string) (parentID string, inv InvocationID
 		err = pageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
 
 	default:
-		parentID = pos[0]
-		inv = InvocationID(pos[1])
+		inv = InvocationID(pos[0])
+		parentID = pos[1]
 		artifactID = pos[2]
 	}
 
@@ -180,20 +180,21 @@ LEFT JOIN FilteredTestResults tr USING (InvocationId, ParentId)
 WHERE art.InvocationId IN UNNEST(@invIDs)
 	# Skip artifacts after the one specified in the page token.
 	AND (
-		(art.ParentId > @afterParentId) OR
-		(art.ParentId = @afterParentId AND art.InvocationId > @afterInvocationId) OR
-		(art.ParentId = @afterParentId AND art.InvocationId = @afterInvocationId AND art.ArtifactId > @afterArtifactId)
+		(art.InvocationId > @afterInvocationId) OR
+		(art.InvocationId = @afterInvocationId AND art.ParentId > @afterParentId) OR
+		(art.InvocationId = @afterInvocationId AND art.ParentId = @afterParentId AND art.ArtifactId > @afterArtifactId)
 	)
 	AND REGEXP_CONTAINS(art.ParentId, @ParentIdRegexp)
 	{{ if .JoinWithTestResults }} AND (art.ParentId = "" OR tr.ParentId IS NOT NULL) {{ end }}
-ORDER BY ParentId, InvocationId, ArtifactId
+ORDER BY InvocationId, ParentId, ArtifactId
 LIMIT @limit
 `))
 
 // Fetch returns a page of artifacts matching q.
 //
 // Returned artifacts are ordered by level (invocation or test result).
-// Test result artifacts are sorted by test id.
+// Test result artifacts are sorted by parent invocation ID, test ID and
+// artifact ID.
 func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
@@ -221,8 +222,8 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 	st := spanner.NewStatement(sql.String())
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	st.Params["afterParentId"],
-		st.Params["afterInvocationId"],
+	st.Params["afterInvocationId"],
+		st.Params["afterParentId"],
 		st.Params["afterArtifactId"],
 		err = parseArtifactPageToken(q.PageToken)
 	if err != nil {
@@ -270,7 +271,7 @@ func (q *ArtifactQuery) Fetch(ctx context.Context, txn Txn) (arts []*pb.Artifact
 		last := arts[q.PageSize-1]
 		invID, testID, resultID, artifactID := MustParseArtifactName(last.Name)
 		parentID := ArtifactParentID(testID, resultID)
-		nextPageToken = pagination.Token(parentID, string(invID), artifactID)
+		nextPageToken = pagination.Token(string(invID), parentID, artifactID)
 	}
 	return
 }
