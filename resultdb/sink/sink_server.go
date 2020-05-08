@@ -86,7 +86,20 @@ func authTokenPrelude(authToken string) func(context.Context, string, proto.Mess
 // ReportTestResults implement sinkpb.SinkServer.
 func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
+
 	for _, tr := range in.TestResults {
+		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
+
+		// merge the test variants with base variants.
+		def := make(map[string]string, len(s.cfg.BaseVariant.GetDef())+len(tr.Variant.GetDef()))
+		for k, v := range s.cfg.BaseVariant.GetDef() {
+			def[k] = v
+		}
+		for k, v := range tr.Variant.GetDef() {
+			def[k] = v
+		}
+		tr.Variant.Def = def
+
 		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}

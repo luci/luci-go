@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
@@ -38,7 +39,9 @@ import (
 	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 	"go.chromium.org/luci/resultdb/sink"
 )
 
@@ -56,7 +59,7 @@ func cmdStream(p Params) *subcommands.Command {
 				rdb stream ./out/chrome/test/browser_tests
 		`),
 		CommandRun: func() subcommands.CommandRun {
-			r := &streamRun{}
+			r := &streamRun{vars: make(stringmapflag.Value)}
 			r.baseCommandRun.RegisterGlobalFlags(p)
 			r.Flags.BoolVar(&r.isNew, "new", false, text.Doc(`
 				If true, create and use a new invocation for the test command.
@@ -64,6 +67,11 @@ func cmdStream(p Params) *subcommands.Command {
 			`))
 			r.Flags.StringVar(&r.testIDPrefix, "test-id-prefix", "", text.Doc(`
 				Prefix to prepend to the test ID of every test result.
+			`))
+			r.Flags.Var(&r.vars, "var", text.Doc(`
+				Variant to add to every test result in "key=value" format.
+				If the test command adds a variant with the same key, the value given by
+				this flag will get overridden.
 			`))
 
 			return r
@@ -77,26 +85,32 @@ type streamRun struct {
 	// flags
 	isNew        bool
 	testIDPrefix string
+	vars         stringmapflag.Value
+
 	// TODO(ddoman): add flags
 	// - tag (invocation-tag)
-	// - var (base-test-variant)
 	// - complete-invocation-exit-codes
 	// - log-file
 
 	invocation lucictx.Invocation
 }
 
+func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
+	if len(args) == 0 {
+		return errors.Reason("missing a test command to run").Err()
+	}
+	if err := pbutil.ValidateVariant(&typepb.Variant{Def: r.vars}); err != nil {
+		return errors.Annotate(err, "invalid variant").Err()
+	}
+	return nil
+}
+
 func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) (ret int) {
 	ctx := cli.GetContext(a, r, env)
-	if len(args) == 0 {
-		return r.done(errors.Reason("missing a test command to run").Err())
-	}
-	cmd := exec2.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	// init client
+	if err := r.validate(ctx, args); err != nil {
+		return r.done(err)
+	}
 	if err := r.initClients(ctx); err != nil {
 		return r.done(err)
 	}
@@ -132,7 +146,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		}
 	}()
 
-	err := r.runTestCmd(ctx, cmd)
+	err := r.runTestCmd(ctx, args)
 	ec, ok := exitcode.Get(err)
 	if !ok {
 		return r.done(err)
@@ -141,7 +155,12 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	return ec
 }
 
-func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
+func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
+	cmd := exec2.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 	// TODO(ddoman): handle interrupts with luci/common/system/signals.
 	cfg := sink.ServerConfig{
@@ -149,6 +168,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, cmd *exec2.Cmd) error {
 		Invocation:   r.invocation.Name,
 		UpdateToken:  r.invocation.UpdateToken,
 		TestIDPrefix: r.testIDPrefix,
+		BaseVariant:  &typepb.Variant{Def: r.vars},
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
