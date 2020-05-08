@@ -118,6 +118,30 @@
       "revId": "f5f8ad4c249ad4727785da979f6f0360f9ae31be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e913bdb7_e7900d23",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-08T01:06:51Z",
+      "side": 1,
+      "message": "Good points. I did try passing the *datastore.Key instead, but gave up on that when it couldn\u0027t be used as the key for a map. But just changing preserve to take the Key while keeping the stringset keyed on .String() solves this problem.",
+      "parentUuid": "63cab84d_12b71646",
+      "range": {
+        "startLine": 146,
+        "startChar": 47,
+        "endLine": 146,
+        "endChar": 51
+      },
+      "revId": "f5f8ad4c249ad4727785da979f6f0360f9ae31be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
