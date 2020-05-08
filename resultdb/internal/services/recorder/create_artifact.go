@@ -16,14 +16,21 @@ package recorder
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"cloud.google.com/go/spanner"
+	"github.com/google/uuid"
+	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -44,20 +51,7 @@ const (
 
 var artifactContentHashRe = regexp.MustCompile("^sha256:[0-9a-f]{64}$")
 
-// artifactCreator implements an artifact creation HTTP handler.
-type artifactCreator struct {
-	artifactName  string
-	invID         span.InvocationID
-	testID        string
-	resultID      string
-	artifactID    string
-	localParentID string
-
-	hash string
-	size int64
-}
-
-// handleArtifactCreation is an http.Handler that creates an artifact.
+// artifactCreationHandler can handle artifact creation requests.
 //
 // Request:
 //  - Router parameter "artifact" MUST be a valid artifact name.
@@ -69,8 +63,17 @@ type artifactCreator struct {
 //    where {hash} is a lower-case hex-encoded SHA256 hash of the artifact
 //    contents.
 //  - The request SHOULD have a Content-Type header.
-func handleArtifactCreation(c *router.Context) {
-	var ac artifactCreator
+type artifactCreationHandler struct {
+	// RBEInstance is the full name of the RBE instance used for artifact storage.
+	// Format: projects/{project}/instances/{instance}.
+	RBEInstance  string
+	NewCASWriter func(context.Context) (bytestream.ByteStream_WriteClient, error)
+	bufSize      int
+}
+
+// Handle implements router.Handler.
+func (h *artifactCreationHandler) Handle(c *router.Context) {
+	ac := &artifactCreator{artifactCreationHandler: h}
 	err := ac.handle(c)
 	st, ok := appstatus.Get(err)
 	switch {
@@ -83,6 +86,21 @@ func handleArtifactCreation(c *router.Context) {
 	default:
 		c.Writer.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// artifactCreator handles one artifact creation request.
+type artifactCreator struct {
+	*artifactCreationHandler
+
+	artifactName  string
+	invID         span.InvocationID
+	testID        string
+	resultID      string
+	artifactID    string
+	localParentID string
+
+	hash string
+	size int64
 }
 
 func (ac *artifactCreator) handle(c *router.Context) error {
@@ -101,8 +119,104 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 		return nil
 	}
 
-	// TODO(crbug.com/1071258): implement the rest.
+	// TODO(crbug.com/1071258): verify digest ourselves.
+
+	// Forward the request body to RBE-CAS.
+	if err := ac.writeToCAS(ctx, c.Request.Body); err != nil {
+		return errors.Annotate(err, "failed to write to CAS").Err()
+	}
+
+	// TODO(crbug.com/1071258): write to Spanner.
 	return nil
+}
+
+// writeToCAS writes contents in r to RBE-CAS.
+// ac.hash and ac.size must match the contents.
+func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) error {
+	// Protocol:
+	// https://github.com/bazelbuild/remote-apis/blob/7802003e00901b4e740fe0ebec1243c221e02ae2/build/bazel/remote/execution/v2/remote_execution.proto#L193-L205
+
+	w, err := ac.NewCASWriter(ctx)
+	if err != nil {
+		return errors.Annotate(err, "failed to create a CAS writer").Err()
+	}
+	defer w.CloseSend()
+
+	bufSize := ac.bufSize
+	if bufSize == 0 {
+		// Use the same buffer size as io.Copy
+		// https://github.com/golang/go/blob/641918ee09cb44d282a30ee8b66f99a0b63eaef9/src/io/io.go#L398
+		bufSize = 32 * 1024
+	}
+	buf := make([]byte, bufSize)
+
+	// Copy data from r to w using buffer buf.
+	// Include the resource only in the first request.
+	first := true
+	bytesSent := 0
+	for {
+		n, err := r.Read(buf)
+		if err != nil && err != io.EOF {
+			return errors.Annotate(err, "failed to read artifact contents").Err()
+		}
+		last := err == io.EOF
+
+		// Prepare the request.
+		req := &bytestream.WriteRequest{
+			Data:        buf[:n],
+			FinishWrite: last,
+			WriteOffset: int64(bytesSent),
+		}
+
+		// Include the resource name only in the first request.
+		if first {
+			first = false
+			req.ResourceName, err = ac.genWriteResourceName(ctx)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Send the request.
+		if err := w.Send(req); err != nil && err != io.EOF {
+			return err
+		}
+		bytesSent += n
+		if last || err == io.EOF {
+			// Either this was the last chunk, or server closed the stream.
+			break
+		}
+	}
+
+	// Read and interpret the response.
+	res, err := w.CloseAndRecv()
+	st, ok := status.FromError(err)
+	switch {
+	case ok && st.Code() == codes.InvalidArgument:
+		logging.Warningf(ctx, "RBE-CAS responded with %s", err)
+		return appstatus.Errorf(codes.InvalidArgument, "Content-Hash and/or Content-Length do not match the request body")
+	case err != nil:
+		return err
+	case res.CommittedSize == ac.size:
+		return nil
+	default:
+		return errors.Reason("unexpected blob commit size %d, expected %d", res.CommittedSize, ac.size).Err()
+	}
+}
+
+// genWriteResourceName generates a random resource name that can be used
+// to write the blob to RBE-CAS.
+func (ac *artifactCreator) genWriteResourceName(ctx context.Context) (string, error) {
+	uuidBytes := make([]byte, 16)
+	if _, err := mathrand.Read(ctx, uuidBytes[:]); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(
+		"%s/uploads/%s/blobs/%s/%d",
+		ac.RBEInstance,
+		uuid.Must(uuid.FromBytes(uuidBytes)),
+		strings.TrimPrefix(ac.hash, "sha256:"),
+		ac.size), nil
 }
 
 // parseRequest populates ac fields based on the HTTP request.

@@ -157,9 +157,12 @@ func (t *testApp) initServers(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	recorder.InitServer(recorderServer, recorder.Options{
+	err = recorder.InitServer(recorderServer, recorder.Options{
 		ExpectedResultsExpiration: time.Hour,
 	})
+	if err != nil {
+		return err
+	}
 
 	// Init finalizer server.
 	finalizerServer, _, err := t.serverClientPair(ctx, 8020, 8021)
