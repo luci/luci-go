@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5713e431_f9aca90b",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T05:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28e53a81_f4c0d253",
+      "range": {
+        "startLine": 72,
+        "startChar": 47,
+        "endLine": 72,
+        "endChar": 48
+      },
+      "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9732a960_8c37adae",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 8
@@ -39,6 +63,24 @@
       "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "353d0144_c5101942",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T05:22:39Z",
+      "side": 1,
+      "message": "Ah, you are right. streamRun.validate() no longer converts the input strings into Variant with VariantFromStrings(). Thus, it\u0027s not necessary to cache the validated Variant object.",
+      "parentUuid": "9732a960_8c37adae",
+      "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78f3bb9a_f83f8eae",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T05:22:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee0d6177_2b5dce3d",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 104,
+        "endChar": 41
+      },
+      "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
