@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/milo/common"
 )
 
 func main() {
@@ -47,13 +49,13 @@ type resultDBConfigs struct {
 }
 
 func configsHandler(c *router.Context) error {
+	settings := common.GetSettings(c.Context)
 	template, err := template.ParseFiles("configs.template.js")
 	if err != nil {
 		return err
 	}
 	c.Writer.Header().Set("content-type", "application/javascript")
-	// TODO(weiweilin): read the host name from luci-config.
-	return template.Execute(c.Writer, configs{resultDBConfigs{"staging.results.api.cr.dev"}})
+	return template.Execute(c.Writer, configs{resultDBConfigs{Host: settings.Resultdb.Host}})
 }
 
 // handleError is a wrapper for a handler so that the handler can return an
