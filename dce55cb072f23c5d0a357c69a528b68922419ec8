@@ -62,6 +62,30 @@
       "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f184142e_c8f018e3",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-08T06:57:13Z",
+      "side": 1,
+      "message": "At a minimum I\u0027d suggest to keep \"^\", otherwise it\u0027s cumbersome to write \"^x.*\", which is the main usage scenario. In the rare case where users want to match some path in the middle, they still have the option to write \u0027.*foo.*\"",
+      "parentUuid": "4df7c785_a5308a38",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
