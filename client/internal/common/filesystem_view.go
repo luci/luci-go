@@ -18,13 +18,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // FilesystemView provides a filtered "view" of a filesystem.
 // It translates absolute paths to relative paths based on its configured root path.
 // It also hides any paths which match a blacklist entry.
 type FilesystemView struct {
-	root      string
+	root           string
+	ignoredPathsRe []*regexp.Regexp
+	// TODO(crbug/1080471): Deprecate blacklist
 	blacklist []string
 	// The path prefix representing the relative path in another view which has this one
 	// obtained through a sequence of symlinked nodes.
@@ -38,13 +44,34 @@ type FilesystemView struct {
 //
 // blacklist is a list of globs of files to ignore. See RelativePath for more
 // information.
-func NewFilesystemView(root string, blacklist []string) (FilesystemView, error) {
+//
+// ignoredPathsRe is a list of regular expressions. Compared to blacklist, it's
+// not limited by how filepath.Match() works
+// (https://godoc.org/path/filepath#Match), hence offers more flexibility. For
+// example, instead of writing blacklist=["foo/*", "foo/a/*", "foo/a/b/*", ...]
+// to completely skip "foo/", you can just use ignoredPathsRe=["foo/.*"]
+func NewFilesystemView(root string, blacklist []string, ignoredPathsRe []string) (FilesystemView, error) {
 	for _, b := range blacklist {
 		if _, err := filepath.Match(b, b); err != nil {
 			return FilesystemView{}, fmt.Errorf("bad blacklist pattern \"%s\"", b)
 		}
 	}
-	return FilesystemView{root: root, blacklist: blacklist}, nil
+	var compiledRe []*regexp.Regexp
+	for _, r := range ignoredPathsRe {
+		// Matches the whole string
+		if !strings.HasPrefix(r, "^") {
+			r = "^" + r
+		}
+		if !strings.HasSuffix(r, "$") {
+			r += "$"
+		}
+		cr, err := regexp.Compile(r)
+		if err != nil {
+			return FilesystemView{}, errors.Annotate(err, "bad ignoredPathsRe regexp \"%s\"", r).Err()
+		}
+		compiledRe = append(compiledRe, cr)
+	}
+	return FilesystemView{root: root, blacklist: blacklist, ignoredPathsRe: compiledRe}, nil
 }
 
 // RelativePath returns a version of path which is relative to the FilesystemView root,
@@ -76,6 +103,12 @@ func (ff FilesystemView) skipRelPath(relPath string) bool {
 
 	for _, glob := range ff.blacklist {
 		if match(glob, relPath) || match(glob, filepath.Base(relPath)) {
+			return true
+		}
+	}
+
+	for _, re := range ff.ignoredPathsRe {
+		if re.MatchString(relPath) {
 			return true
 		}
 	}

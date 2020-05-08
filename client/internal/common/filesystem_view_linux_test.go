@@ -63,7 +63,7 @@ func TestValidatesBlacklist(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			_, err := NewFilesystemView("/root", tc.blacklist)
+			_, err := NewFilesystemView("/root", tc.blacklist, nil)
 			if tc.wantErr {
 				So(err, ShouldNotBeNil)
 			} else {
@@ -124,7 +124,7 @@ func TestCalculatesRelativePaths(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			fsView, err := NewFilesystemView(tc.root, nil)
+			fsView, err := NewFilesystemView(tc.root, nil, nil)
 
 			So(err, ShouldBeNil)
 
@@ -141,11 +141,12 @@ func TestCalculatesRelativePaths(t *testing.T) {
 
 func TestAppliesBlacklist(t *testing.T) {
 	type testCase struct {
-		desc        string
-		root        string
-		blacklist   []string
-		absPath     string
-		wantRelPath string
+		desc           string
+		root           string
+		ignoredPathsRe []string
+		blacklist      []string
+		absPath        string
+		wantRelPath    string
 	}
 
 	testCases := []testCase{
@@ -205,12 +206,40 @@ func TestAppliesBlacklist(t *testing.T) {
 			absPath:     "/a/x/z",
 			wantRelPath: "",
 		},
+		{
+			desc:           "ignoredPathsRe matches relative path",
+			root:           "/a",
+			ignoredPathsRe: []string{"x.*"},
+			absPath:        "/a/x/y/z",
+			wantRelPath:    "",
+		},
+		{
+			desc:           "ignoredPathsRe does not match substring",
+			root:           "/a",
+			ignoredPathsRe: []string{"z"},
+			absPath:        "/a/x/z",
+			wantRelPath:    "x/z",
+		},
+		{
+			desc:           "root never matches ignoredPathsRe",
+			root:           "/a",
+			ignoredPathsRe: []string{".*"},
+			absPath:        "/a",
+			wantRelPath:    ".",
+		},
+		{
+			desc:           "only one ignoredPathsRe needs to match path",
+			root:           "/a",
+			ignoredPathsRe: []string{".*z", "abc"},
+			absPath:        "/a/x/z",
+			wantRelPath:    "",
+		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			fsView, err := NewFilesystemView(tc.root, tc.blacklist)
+			fsView, err := NewFilesystemView(tc.root, tc.blacklist, tc.ignoredPathsRe)
 
 			// These test cases contain only valid blacklists.
 			// Invalid blacklists are tested in TestValidatesBlacklist.

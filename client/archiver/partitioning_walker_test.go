@@ -80,7 +80,7 @@ var errBang = errors.New("bang")
 
 // fsView constructs a FilesystemView with no blacklist.
 func fsView(root string) common.FilesystemView {
-	fsView, err := common.NewFilesystemView("/rootDir", nil)
+	fsView, err := common.NewFilesystemView("/rootDir", nil, nil)
 	if err != nil {
 		// NewFilesystemView only fails due to bad blacklists. So this should never occur.
 		panic("unexpected failure to construct FilesytemView")
