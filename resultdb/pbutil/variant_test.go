@@ -76,4 +76,34 @@ func TestVariantUtils(t *testing.T) {
 		)
 		So(SortedVariantKeys(vr), ShouldResemble, []string{"k1", "k2", "k3"})
 	})
+
+	Convey("Merge two variants", t, func() {
+		Convey("with unique keys", func() {
+			lv := Variant("k1", "v1", "k2", "v2")
+			rv := Variant("k3", "v3", "k4", "v4")
+			So(VariantToStrings(MergeVariants(lv, rv)), ShouldResemble, []string{
+				"k1:v1", "k2:v2", "k3:v3", "k4:v4",
+			})
+		})
+
+		Convey("with duplicate keys", func() {
+			lv := Variant("k1", "v1", "k2", "v2")
+			rv := Variant("k2", "v2+1", "k3", "v3")
+			So(VariantToStrings(MergeVariants(lv, rv)), ShouldResemble, []string{
+				"k1:v1", "k2:v2+1", "k3:v3",
+			})
+		})
+
+		Convey("with empty variants", func() {
+			v := Variant("k1", "v1", "k2", "v2")
+			ev := Variant()
+			So(VariantToStrings(MergeVariants(ev, v)), ShouldResemble, []string{
+				"k1:v1", "k2:v2",
+			})
+			So(VariantToStrings(MergeVariants(v, ev)), ShouldResemble, []string{
+				"k1:v1", "k2:v2",
+			})
+			So(VariantToStrings(MergeVariants(ev, ev)), ShouldResemble, []string{})
+		})
+	})
 }

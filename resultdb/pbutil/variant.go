@@ -109,3 +109,17 @@ func VariantHash(vr *typepb.Variant) string {
 	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
 }
+
+// MergeVariants merges lv and rv into one variant and return the result.
+//
+// If there are duplicate keys between lv and rv, the value in rv is taken always.
+func MergeVariants(lv, rv *typepb.Variant) *typepb.Variant {
+	def := make(map[string]string, len(lv.GetDef())+len(rv.GetDef()))
+	for k, v := range lv.GetDef() {
+		def[k] = v
+	}
+	for k, v := range rv.GetDef() {
+		def[k] = v
+	}
+	return &typepb.Variant{Def: def}
+}
