@@ -118,6 +118,30 @@
       "revId": "d77ae3e11255310b718570d72721d139fe25d49f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35cecbb5_37ab653d",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-08T10:28:05Z",
+      "side": 1,
+      "message": "But I saw your comment in the bug now, created https://crrev.com/c/2189547",
+      "parentUuid": "9f416e8f_1e62f925",
+      "range": {
+        "startLine": 310,
+        "startChar": 46,
+        "endLine": 310,
+        "endChar": 47
+      },
+      "revId": "d77ae3e11255310b718570d72721d139fe25d49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
