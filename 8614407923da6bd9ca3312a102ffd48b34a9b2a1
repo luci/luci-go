@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e409f49_1a23f367",
+        "filename": "server/auth/openid/id_token_method.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-08T21:13:44Z",
+      "side": 1,
+      "message": "qq: just to be general, or do you have specific use-case where this may return an error?",
+      "range": {
+        "startLine": 53,
+        "startChar": 87,
+        "endLine": 53,
+        "endChar": 92
+      },
+      "revId": "8614407923da6bd9ca3312a102ffd48b34a9b2a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6378eac_868a21dc",
+        "filename": "server/auth/openid/id_token_method_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-08T21:13:44Z",
+      "side": 1,
+      "message": "nit: ?\n\nmaybe \"match via enumeration\"",
+      "range": {
+        "startLine": 136,
+        "startChar": 41,
+        "endLine": 136,
+        "endChar": 48
+      },
+      "revId": "8614407923da6bd9ca3312a102ffd48b34a9b2a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f061a222_c9eb8f70",
+        "filename": "server/auth/openid/id_token_method_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-08T21:13:44Z",
+      "side": 1,
+      "message": "match via callback",
+      "range": {
+        "startLine": 153,
+        "startChar": 41,
+        "endLine": 153,
+        "endChar": 48
+      },
+      "revId": "8614407923da6bd9ca3312a102ffd48b34a9b2a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
