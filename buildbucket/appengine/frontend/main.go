@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"strings"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/server"
@@ -35,6 +36,10 @@ import (
 
 func isBeefy(req *http.Request) bool {
 	return strings.Contains(req.Host, "beefy")
+}
+
+func isDev(req *http.Request) bool {
+	return strings.HasSuffix(req.Host, "-dev.appspot.com")
 }
 
 func main() {
@@ -74,13 +79,21 @@ func main() {
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
 		buildbucketpb.RegisterBuildsServer(srv.PRPC, rpc.New())
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "GetBuild", func(ctx *router.Context) bool {
+			// Allow some requests to hit this service, proxy the rest back to Python.
+			pct := 10
+			if isDev(ctx.Request) {
+				// Dev has a lower volume of traffic and is less critical.
+				pct = 50
+			}
+			if mathrand.Intn(ctx.Context, 100) < pct {
+				return false
+			}
 			target := pythonURL
 			if isBeefy(ctx.Request) {
 				target = beefyURL
 			}
 			logging.Debugf(ctx.Context, "proxying request to %s", target)
 			prx.ServeHTTP(ctx.Writer, ctx.Request)
-			// TODO(crbug/1042991): Split some portion of traffic to the Go service.
 			return true
 		})
 		return nil
