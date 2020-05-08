@@ -22,6 +22,30 @@
       "revId": "409bc07c81d5267ed36fe4733cc7baf363e29a8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9c59c44_96d42230",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-08T03:09:43Z",
+      "side": 1,
+      "message": "uh.. I actually mean scalar field. Not sure why I\u0027ve typed singular field. Anyhow, I think your version is significantly better. Especially covering the read aspect. I\u0027ve also s/build/base build to make it clear the restriction only applies to argument `base`.",
+      "parentUuid": "2338c608_c573258f",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 7
+      },
+      "revId": "409bc07c81d5267ed36fe4733cc7baf363e29a8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
