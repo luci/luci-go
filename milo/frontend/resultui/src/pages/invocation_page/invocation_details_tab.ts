@@ -19,6 +19,7 @@ import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed } from 'mobx';
 
+import { router } from '../../routes';
 import { consumePageState, InvocationPageState } from './context';
 
 
@@ -58,8 +59,10 @@ export class InvocationDetailsTabElement extends MobxLitElement {
       >Included Invocations:
         <ul>
         ${invocation.includedInvocations.map(invocationName => html`
-          <li><a href="/inv/${encodeURIComponent(stripInvocationPrefix(invocationName))}"
-                >${stripInvocationPrefix(invocationName)}</a></li>
+          <li><a href=${router.urlForName(
+            'invocation',
+            {'invocation_id': this.pageState.invocationId},
+          )}>${stripInvocationPrefix(invocationName)}</a></li>
         `)}
         </ul>
       </div>

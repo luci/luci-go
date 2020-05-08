@@ -22,7 +22,6 @@ import '../../components/status_bar';
 import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state_provider';
-import { router } from '../../routes';
 import { InvocationState } from '../../services/resultdb';
 import { InvocationPageState, providePageState } from './context';
 import './invocation_details_tab';
@@ -50,7 +49,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     if (typeof invocationId !== 'string') {
       return cmd.redirect('/not-found');
     }
-    this.pageState.invocationId = decodeURIComponent(invocationId);
+    this.pageState.invocationId = invocationId;
     return;
   }
 
@@ -94,22 +93,18 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   }
 
   @computed get tabDefs(): TabDef[] {
+    // TODO(weiweilin): migrate to router.UrlForName() once it supports custom
+    // param encoding function.
     return [
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName(
-          'test-results',
-          {'invocation_id': this.pageState.invocationId},
-        ),
+        href: `/inv/${this.pageState.invocationId}/test-results`,
       },
       {
         id: 'invocation-details',
         label: 'Invocation Details',
-        href: router.urlForName(
-          'invocation-details',
-          {'invocation_id': this.pageState.invocationId},
-        ),
+        href: `/inv/${this.pageState.invocationId}/invocation-details`,
       },
     ];
   }
