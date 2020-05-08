@@ -194,6 +194,34 @@ func TestConfigIngestion(t *testing.T) {
 			},
 		})
 
+		// Regression test for a bug where we would incorrectly delete entities
+		// that are still live in the config.
+		Convey("Entities remain after no-op update", func() {
+			// Add a space - this won't change the contents of the config, but
+			// it will update the hash, hence forcing a reingestion of the same
+			// config, which should be a no-op.
+			cfg["projects/chromium"]["luci-notify.cfg"] += " "
+			cfg["projects/v8"]["luci-notify.cfg"] += " "
+			c := WithConfigService(c, memory.New(cfg))
+
+			err := updateProjects(c)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(c).CatchupIndexes()
+
+			var builders []*Builder
+			So(datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), ShouldBeNil)
+			So(builders, ShouldHaveLength, 2)
+
+			var emailTemplates []*EmailTemplate
+			So(datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), ShouldBeNil)
+			So(emailTemplates, ShouldHaveLength, 4)
+
+			var treeClosers []*TreeCloser
+			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), ShouldBeNil)
+			So(treeClosers, ShouldHaveLength, 1)
+		})
+
 		Convey("preserve updated fields", func() {
 			// Update the Chromium builder in the datastore, simulating that some request was handled.
 			chromiumBuilder := builders[0]

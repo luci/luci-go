@@ -78,15 +78,16 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 					ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
 				}
 				builders = append(builders, builder)
-				liveBuilders.Add(builder.ID)
+				liveBuilders.Add(datastore.KeyForObj(c, builder).String())
 
 				builderKey := datastore.KeyForObj(c, builder)
 				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
-					treeClosers = append(treeClosers, &TreeCloser{
+					tc := &TreeCloser{
 						BuilderKey:     builderKey,
 						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
-					})
-					liveTreeClosers.Add(fmt.Sprintf("%s:%s", builder.ID, cfgTreeCloser.TreeStatusHost))
+					}
+					treeClosers = append(treeClosers, tc)
+					liveTreeClosers.Add(datastore.KeyForObj(c, tc).String())
 				}
 			}
 		}
@@ -133,14 +134,18 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 				return datastore.Put(c, toSave)
 			}
 			work <- func() error {
-				return removeDescendants(c, "Builder", parentKey, liveBuilders.Has)
+				return removeDescendants(c, "Builder", parentKey, func(key *datastore.Key) bool {
+					return liveBuilders.Has(key.String())
+				})
 			}
 			work <- func() error {
-				return removeDescendants(c, "TreeCloser", parentKey, liveTreeClosers.Has)
+				return removeDescendants(c, "TreeCloser", parentKey, func(key *datastore.Key) bool {
+					return liveTreeClosers.Has(key.String())
+				})
 			}
 			work <- func() error {
-				return removeDescendants(c, "EmailTemplate", parentKey, func(name string) bool {
-					_, ok := cs.EmailTemplates[name]
+				return removeDescendants(c, "EmailTemplate", parentKey, func(key *datastore.Key) bool {
+					_, ok := cs.EmailTemplates[key.StringID()]
 					return ok
 				})
 			}
@@ -308,12 +313,11 @@ func UpdateHandler(c *router.Context) {
 // removeDescedants deletes all entities of a given kind under the ancestor.
 // If preserve is not nil and it returns true for a string id, the entity
 // is not deleted.
-func removeDescendants(c context.Context, kind string, ancestor *datastore.Key, preserve func(string) bool) error {
+func removeDescendants(c context.Context, kind string, ancestor *datastore.Key, preserve func(*datastore.Key) bool) error {
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery(kind).Ancestor(ancestor).KeysOnly(true)
 	err := datastore.Run(c, q, func(key *datastore.Key) error {
-		id := key.StringID()
-		if preserve != nil && preserve(id) {
+		if preserve != nil && preserve(key) {
 			return nil
 		}
 		logging.Infof(c, "deleting entity %s", key.String())
