@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -106,8 +107,11 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 
 // parseRequest populates ac fields based on the HTTP request.
 func (ac *artifactCreator) parseRequest(c *router.Context) error {
+	// Read the artifact name.
+	// We must use EscapedPath(), not Path, to preserve test ID's own encoding.
+	ac.artifactName = strings.TrimPrefix(c.Request.URL.EscapedPath(), "/")
+
 	// Parse and validate the artifact name.
-	ac.artifactName = c.Params.ByName("artifact")
 	var invIDString string
 	var err error
 	invIDString, ac.testID, ac.resultID, ac.artifactID, err = pbutil.ParseArtifactName(ac.artifactName)

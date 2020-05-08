@@ -17,11 +17,10 @@ package recorder
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"testing"
 	"time"
-
-	"github.com/julienschmidt/httprouter"
 
 	"go.chromium.org/luci/server/router"
 
@@ -38,11 +37,20 @@ func TestCreateArtifact(t *testing.T) {
 
 		send := func(artifact, hash string, size int64, updateToken string) *httptest.ResponseRecorder {
 			rec := httptest.NewRecorder()
+
+			// Create a URL whose EscapePath() returns `artifact`.
+			u := &url.URL{RawPath: "/" + artifact}
+			var err error
+			u.Path, err = url.PathUnescape(artifact)
+			So(err, ShouldBeNil)
+
 			c := &router.Context{
 				Context: ctx,
-				Params:  httprouter.Params{{Key: "artifact", Value: artifact}},
-				Request: &http.Request{Header: http.Header{}},
-				Writer:  rec,
+				Request: &http.Request{
+					Header: http.Header{},
+					URL:    u,
+				},
+				Writer: rec,
 			}
 			if hash != "" {
 				c.Request.Header.Set(artifactContentHashHeaderKey, hash)
