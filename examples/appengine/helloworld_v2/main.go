@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -86,6 +88,21 @@ func main() {
 				return
 			}
 			fmt.Fprintf(c.Writer, "%d", n)
+		})
+
+		// OpenID token checks (e.g. for PubSub authenticated push subscription).
+		openIDCheck := auth.Authenticator{
+			Methods: []auth.Method{
+				&openid.GoogleIDTokenAuthMethod{
+					AudienceCheck: openid.AudienceMatchesHost,
+				},
+			},
+		}
+		mw := router.NewMiddlewareChain(openIDCheck.GetMiddleware())
+		srv.Routes.POST("/push", mw, func(c *router.Context) {
+			logging.Infof(c.Context, "Authenticated as %s", auth.CurrentIdentity(c.Context))
+			// TODO: check auth.CurrentIdentity(...) against a whitelist of allowed
+			// callers, etc.
 		})
 
 		return nil

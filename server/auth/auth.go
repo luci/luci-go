@@ -46,6 +46,9 @@ var (
 	// non-whitelisted OAuth2 client. More info is in the log.
 	ErrBadClientID = errors.New("auth: OAuth client_id is not whitelisted")
 
+	// ErrBadAudience is returned by Authenticate if token's audience is unknown.
+	ErrBadAudience = errors.New("auth: bad token audience")
+
 	// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
 	// be parsed.
 	ErrBadRemoteAddr = errors.New("auth: bad remote addr")
@@ -195,7 +198,10 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 			replyError(c.Context, c.Writer, 500, "Transient error during authentication", err)
 		case err == ErrNotConfigured:
 			replyError(c.Context, c.Writer, 500, "The authentication library is not configured", err)
-		case err == ErrBadClientID || err == ErrIPNotWhitelisted || err == ErrProjectHeaderForbidden:
+		case err == ErrBadClientID ||
+			err == ErrBadAudience ||
+			err == ErrIPNotWhitelisted ||
+			err == ErrProjectHeaderForbidden:
 			replyError(c.Context, c.Writer, 403, "Forbidden", err)
 		case err != nil:
 			replyError(c.Context, c.Writer, 401, "Authentication error", err)
@@ -228,6 +234,8 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 			report(err, "ERROR_NOT_CONFIGURED")
 		case err == ErrBadClientID:
 			report(err, "ERROR_FORBIDDEN_OAUTH_CLIENT")
+		case err == ErrBadAudience:
+			report(err, "ERROR_FORBIDDEN_AUDIENCE")
 		case err == ErrBadRemoteAddr:
 			report(err, "ERROR_BAD_REMOTE_ADDR")
 		case err == ErrIPNotWhitelisted:
