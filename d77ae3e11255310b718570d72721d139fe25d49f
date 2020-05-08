@@ -22,6 +22,30 @@
       "revId": "d77ae3e11255310b718570d72721d139fe25d49f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a42143a1_91d8eb4c",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-08T09:38:51Z",
+      "side": 1,
+      "message": "I see. Is it because the map is a reference-ish type, so not using a pointer is fine, as there is little overhead?",
+      "parentUuid": "6939bf2a_00eef93d",
+      "range": {
+        "startLine": 310,
+        "startChar": 46,
+        "endLine": 310,
+        "endChar": 47
+      },
+      "revId": "d77ae3e11255310b718570d72721d139fe25d49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
