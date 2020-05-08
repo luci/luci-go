@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1b96fd42_be296dcd",
+        "filename": "server/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-08T22:29:07Z",
+      "side": 1,
+      "message": "bcz it interferes with tests here somehow but not elswewhere?",
+      "revId": "05d687818907b96712154b9cfd900c44ef03e3c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
