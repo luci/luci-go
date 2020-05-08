@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "84e63879_1e24f043",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T00:53:01Z",
+      "side": 1,
+      "message": "TODO kept.\n--------------\nstrmapflag looks great, except that it uses a different delimiter, \"\u003d\".\nIt\u0027s not compatible with strpair utils defined in pbutils.\n\nAlso, I\u0027d like to use the same input format for flags.var and flags.tag but SwarmingTag already uses strpairs, which uses \":\" delimiter.\n: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/deriver/chromium/swarming.go;l\u003d169;drc\u003da73d3acdef68107278f7d1e5cc3c77e0d87a5e6f",
+      "parentUuid": "c4452ab1_a9c989ae",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d5a0e3c_09d1ae3f",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d27afc7_d736c456",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T00:53:01Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "7d5a0e3c_09d1ae3f",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "b17183e0_79dd9169",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T00:53:01Z",
+      "side": 1,
+      "message": "Moved to where it is used.",
+      "parentUuid": "6d896e9d_4d025e38",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 26
+      },
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22039b28_1571ef79",
         "filename": "resultdb/sink/rdb_channel.go",
         "patchSetId": 2
@@ -73,6 +133,24 @@
       "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5d08f43_f4eaf013",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T00:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22039b28_1571ef79",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "491ab48b_bdef4727",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T00:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62696056_f345fd9e",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 8
+      },
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40c68295_84762d22",
         "filename": "resultdb/sink/sink_server_test.go",
         "patchSetId": 2
@@ -119,6 +221,30 @@
       "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7737f22_d30dbca5",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T00:53:01Z",
+      "side": 1,
+      "message": "++1",
+      "parentUuid": "40c68295_84762d22",
+      "range": {
+        "startLine": 89,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 24
+      },
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
