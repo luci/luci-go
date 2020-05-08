@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b365864_2e755b9b",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-08T00:08:34Z",
+      "side": 1,
+      "message": "Nit: so \"tr.\" should be removed?",
+      "range": {
+        "startLine": 177,
+        "startChar": 11,
+        "endLine": 177,
+        "endChar": 50
+      },
+      "revId": "cedc3449f83ee37677eee11a3acee285731d4656",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
