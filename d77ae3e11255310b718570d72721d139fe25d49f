@@ -94,6 +94,30 @@
       "revId": "d77ae3e11255310b718570d72721d139fe25d49f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c1cb537_af7076cd",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T10:22:21Z",
+      "side": 1,
+      "message": "see https://go.godbolt.org/z/vP_sKV\nruntime.newobject is called in function g, but not for f.",
+      "parentUuid": "9f416e8f_1e62f925",
+      "range": {
+        "startLine": 310,
+        "startChar": 46,
+        "endLine": 310,
+        "endChar": 47
+      },
+      "revId": "d77ae3e11255310b718570d72721d139fe25d49f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
