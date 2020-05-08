@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2338c608_c573258f",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-08T02:30:57Z",
+      "side": 1,
+      "message": "I\u0027m not sure about the term \u0027singular fields\u0027. I would phrase this as:\n\n  This function assumes exclusive read/write access of `build` only (not its subfields),\n  and assumes read access to subfields. This function must therefore only write to the\n  immediate subfields of `build`; It may READ some fields deeply (such as `.Output`), \n  but will not modify any subfields therein. \n\nWDYT?",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 7
+      },
+      "revId": "409bc07c81d5267ed36fe4733cc7baf363e29a8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
