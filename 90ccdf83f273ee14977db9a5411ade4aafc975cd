@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "195c5651_594c7c12",
+        "filename": "milo/frontend/resultui/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T05:44:17Z",
+      "side": 1,
+      "message": "nit: suggest to separate imports of [code of the same app] and [other code], i.e. blank line before this.",
+      "revId": "90ccdf83f273ee14977db9a5411ade4aafc975cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
