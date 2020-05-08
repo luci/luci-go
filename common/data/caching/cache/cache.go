@@ -114,7 +114,7 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 		path:                  path,
 		h:                     isolated.GetHash(namespace),
 		lru:                   makeLRUDict(namespace),
-		digestHardlinkRecords: make(map[isolated.HexDigest]*hardlinkRecords),
+		digestHardlinkRecords: make(map[isolated.HexDigest]hardlinkRecords),
 	}
 	p := d.statePath()
 
@@ -307,7 +307,7 @@ type disk struct {
 	added []int64
 	used  []int64
 	// TODO(crbug.com/1076468): Remove once crbug.com/1076468 is fixed
-	digestHardlinkRecords map[isolated.HexDigest]*hardlinkRecords
+	digestHardlinkRecords map[isolated.HexDigest]hardlinkRecords
 }
 
 func (d *disk) Close() error {
@@ -512,7 +512,7 @@ func (d *disk) incHardlinkRecord(digest isolated.HexDigest, dest string) {
 
 	record, ok := d.digestHardlinkRecords[digest]
 	if !ok {
-		record = &hardlinkRecords{
+		record = hardlinkRecords{
 			destToCount: make(map[string]int),
 		}
 		d.digestHardlinkRecords[digest] = record
