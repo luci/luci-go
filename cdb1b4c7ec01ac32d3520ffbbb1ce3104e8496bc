@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "4110a00e_503e89d4",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:56:02Z",
+      "side": 1,
+      "message": "ah right. stringmapflag.Value and Variant.Def both are map[string]string.\nPTAL",
+      "parentUuid": "72e5d04e_ba032a1d",
+      "revId": "cdb1b4c7ec01ac32d3520ffbbb1ce3104e8496bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d5a0e3c_09d1ae3f",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 2
