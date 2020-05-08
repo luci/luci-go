@@ -78,7 +78,7 @@ func handleArtifactCreation(c *router.Context) {
 		http.Error(c.Writer, st.Message(), grpcutil.CodeStatus(st.Code()))
 	case err != nil:
 		logging.Errorf(c.Context, "Internal server error: %s", err)
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+		http.Error(c.Writer, "Internal server error", http.StatusInternalServerError)
 	default:
 		c.Writer.WriteHeader(http.StatusNoContent)
 	}
