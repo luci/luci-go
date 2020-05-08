@@ -43,6 +43,7 @@ func logDetails(ctx context.Context, methodName string, req proto.Message) (cont
 func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	err = appstatus.GRPCifyAndLog(ctx, err)
 	if methodName == "GetBuild" {
+		logging.Debugf(ctx, "%q is returning %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
