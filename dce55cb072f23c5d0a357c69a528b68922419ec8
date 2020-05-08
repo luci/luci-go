@@ -84,6 +84,29 @@
     },
     {
       "key": {
+        "uuid": "92172b2f_e9c989d2",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T14:53:34Z",
+      "side": 1,
+      "message": "I think it is better to pass string instead of []string here.\nI think passing multiple regexp filters in flag is not so common in CLI tools.",
+      "range": {
+        "startLine": 51,
+        "startChar": 71,
+        "endLine": 51,
+        "endChar": 79
+      },
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4df7c785_a5308a38",
         "filename": "client/internal/common/filesystem_view.go",
         "patchSetId": 1
@@ -152,6 +175,30 @@
       "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25d1660e_89169395",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T14:53:34Z",
+      "side": 1,
+      "message": "After some more thought, I yet think it is better to drop this.\n1. I doubt that \"^x.*\" is main usage scenario.\n2. If we want to filter files with some extention, we need to write \u0027.*\\.pyc\u0027 instead of \u0027\\.pyc$\u0027 which is bit longer and appearence is not so explicit.\n3. Also we want to exclude \u0027.git\u0027 directory by default, and \u0027/\\.git/\u0027 is shorter than \u0027.*/\\.git/.*\u0027.\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/client/isolate/isolate.go?l\u003d93\u0026rcl\u003d4d2a6af1f9bbd97375d92a5985311a7cc50b6f06",
+      "parentUuid": "47ada360_cdd32655",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
