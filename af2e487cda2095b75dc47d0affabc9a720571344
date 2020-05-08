@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c3b1616a_197871bd",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:45:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2b51247_0f36f645",
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "96e79463_83ba94f6",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 5
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "f4b4a548_de050dde",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:45:59Z",
+      "side": 1,
+      "message": "Moved out.",
+      "parentUuid": "96e79463_83ba94f6",
+      "range": {
+        "startLine": 108,
+        "startChar": 1,
+        "endLine": 108,
+        "endChar": 26
+      },
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c84101fe_c8350f1a",
         "filename": "resultdb/pbutil/variant.go",
         "patchSetId": 5
@@ -56,6 +98,24 @@
       "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea02c72b_e269ba3a",
+        "filename": "resultdb/pbutil/variant.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:45:59Z",
+      "side": 1,
+      "message": "Removed MergeVariants().\n\nIn the use case of MergeVariants in sink, cfg.BaseVariant always needs to be cloned first to honour the variants given by the test command, and I found that MergeVariants() don\u0027t really save an enough number of lines.\n\nPTAL.",
+      "parentUuid": "c84101fe_c8350f1a",
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "82586a96_257936a9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:45:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb895a80_fe597988",
+      "range": {
+        "startLine": 79,
+        "startChar": 78,
+        "endLine": 79,
+        "endChar": 88
+      },
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0919aa3_61637ff8",
         "filename": "resultdb/sink/sink_server_test.go",
         "patchSetId": 5
@@ -96,6 +180,24 @@
       "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce8917aa_cb2b4b00",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:45:59Z",
+      "side": 1,
+      "message": "It was originally because the previous patchset overrides the existing variant, which was wrong. Its\u0027 now fixed. PTAL",
+      "parentUuid": "d0919aa3_61637ff8",
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -119,6 +221,30 @@
       "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8845e86f_b98d5c3a",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-08T03:45:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b72c34f5_9ae58346",
+      "range": {
+        "startLine": 93,
+        "startChar": 4,
+        "endLine": 94,
+        "endChar": 24
+      },
+      "revId": "af2e487cda2095b75dc47d0affabc9a720571344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
