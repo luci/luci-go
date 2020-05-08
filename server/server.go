@@ -65,6 +65,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -108,6 +109,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authdb/dump"
+	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/middleware"
@@ -200,11 +202,12 @@ type Options struct {
 
 	ContainerImageID string // ID of the container image with this binary, for logs (optional)
 
-	testSeed      int64                   // used to seed rng in tests
-	testStdout    sdlogger.LogEntryWriter // mocks stdout in tests
-	testStderr    sdlogger.LogEntryWriter // mocks stderr in tests
-	testListeners map[string]net.Listener // addr => net.Listener, for tests
-	testAuthDB    authdb.DB               // AuthDB to use in tests
+	testSeed           int64                   // used to seed rng in tests
+	testStdout         sdlogger.LogEntryWriter // mocks stdout in tests
+	testStderr         sdlogger.LogEntryWriter // mocks stderr in tests
+	testListeners      map[string]net.Listener // addr => net.Listener, for tests
+	testAuthDB         authdb.DB               // AuthDB to use in tests
+	testDisableTracing bool                    // don't install a tracing backend
 }
 
 // Register registers the command line flags.
@@ -381,7 +384,7 @@ func (o *Options) shouldEnableTracing() bool {
 	case !o.Prod && o.TraceSampling == "":
 		return false // in dev mode don't upload samples by default
 	default:
-		return true
+		return !o.testDisableTracing
 	}
 }
 
@@ -461,6 +464,8 @@ type Server struct {
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
 	authDB       atomic.Value          // last known good authdb.DB instance
+
+	runningAs string // email of an account the server runs as
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -1195,7 +1200,7 @@ func (s *Server) initAuth() error {
 			db, _ := s.authDB.Load().(authdb.DB) // refreshed asynchronously in refreshAuthDB
 			return db, nil
 		},
-		Signer:              nil, // TODO(vadimsh): Implement.
+		Signer:              signerImpl{srv: s},
 		AccessTokenProvider: s.getAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
 		FrontendClientID:    nil, // TODO(vadimsh): Implement.
@@ -1238,6 +1243,7 @@ func (s *Server) initAuth() error {
 	switch email, err := au.authen.GetEmail(); {
 	case err == nil:
 		logging.Infof(s.Context, "Running as %s", email)
+		s.runningAs = email
 	case err == clientauth.ErrNoEmail:
 		logging.Warningf(s.Context, "Running as <unknown>, cautiously proceeding...")
 	case err != nil:
@@ -1628,6 +1634,9 @@ func (s *Server) initMainPort() error {
 	})
 	s.Routes = s.mainPort.Routes
 
+	// Install auth info handlers (under "/auth/api/v1/server/").
+	auth.InstallHandlers(s.Routes, router.MiddlewareChain{})
+
 	// Expose public pRPC endpoints (see also ListenAndServe where we put the
 	// final interceptors).
 	s.PRPC = &prpc.Server{
@@ -1741,6 +1750,32 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 	)
 
 	return ctx, span
+}
+
+// signerImpl implements signing.Signer on top of *Server.
+type signerImpl struct {
+	srv *Server
+}
+
+// SignBytes signs the blob with some active private key.
+func (s signerImpl) SignBytes(ctx context.Context, blob []byte) (keyName string, signature []byte, err error) {
+	return "", nil, errors.Reason("server.Server: SignBytes is not implemented").Err()
+}
+
+// Certificates returns a bundle with public certificates for all active keys.
+func (s signerImpl) Certificates(ctx context.Context) (*signing.PublicCertificates, error) {
+	return nil, errors.Reason("server.Server: Certificates is not implemented").Err()
+}
+
+// ServiceInfo returns information about the current service.
+func (s signerImpl) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
+	return &signing.ServiceInfo{
+		AppID:              s.srv.Options.CloudProject,
+		AppRuntime:         "go",
+		AppRuntimeVersion:  runtime.Version(),
+		AppVersion:         s.srv.Options.imageVersion(),
+		ServiceAccountName: s.srv.runningAs,
+	}, nil
 }
 
 // getRemoteIP extracts end-user IP address from X-Forwarded-For header.
