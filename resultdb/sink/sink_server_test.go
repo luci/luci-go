@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
@@ -80,7 +81,14 @@ func TestReportTestResults(t *testing.T) {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
 				tr.TestId = "HelloWorld.TestA"
 				expected.TestId = "ninja://foo/bar/HelloWorld.TestA"
+				check(ctx, cfg, tr, expected)
+			})
 
+			Convey("with ServerConfig.Variant", func() {
+				tr.Variant = pbutil.Variant("test_suite", "browser_tests")
+				cfg.BaseVariant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
+				expected.Variant = pbutil.Variant(
+					"test_suite", "browser_tests", "bucket", "try", "builder", "linux-rel")
 				check(ctx, cfg, tr, expected)
 			})
 		})

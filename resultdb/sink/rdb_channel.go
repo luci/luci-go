@@ -87,7 +87,7 @@ func prepareReportTestResultsRequest(ctx context.Context, cfg *ServerConfig, b *
 		tr := d.(*sinkpb.TestResult)
 		req.Requests = append(req.Requests, &pb.CreateTestResultRequest{
 			TestResult: &pb.TestResult{
-				TestId:      cfg.TestIDPrefix + tr.GetTestId(),
+				TestId:      tr.GetTestId(),
 				ResultId:    tr.GetResultId(),
 				Variant:     tr.GetVariant(),
 				Expected:    tr.GetExpected(),
