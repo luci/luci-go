@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 // FilesystemView provides a filtered "view" of a filesystem.
@@ -26,6 +28,8 @@ import (
 type FilesystemView struct {
 	root      string
 	blacklist []string
+	// TODO(crbug/1080471): Deprecate blacklist
+	ignoredPathsRe []*regexp.Regexp
 	// The path prefix representing the relative path in another view which has this one
 	// obtained through a sequence of symlinked nodes.
 	sourcePrefix string
@@ -38,13 +42,34 @@ type FilesystemView struct {
 //
 // blacklist is a list of globs of files to ignore. See RelativePath for more
 // information.
-func NewFilesystemView(root string, blacklist []string) (FilesystemView, error) {
+//
+// ignoredPathFilterRe is a list of regular expressions. Compared to blacklist
+// it's not limited by how filepath.Match() works
+// (https://godoc.org/path/filepath#Match), hence offers more flexibility. For
+// example, instead of writing blacklist=["foo/*", "foo/a/*", "foo/a/b/*", ...]
+// to completely skip "foo/", you can just use ignoredPathsRe=["foo/.*"]
+func NewFilesystemView(root string, blacklist []string, ignoredPathsRe []string) (FilesystemView, error) {
 	for _, b := range blacklist {
 		if _, err := filepath.Match(b, b); err != nil {
 			return FilesystemView{}, fmt.Errorf("bad blacklist pattern \"%s\"", b)
 		}
 	}
-	return FilesystemView{root: root, blacklist: blacklist}, nil
+	var compiledRe []*regexp.Regexp
+	for _, r := range ignoredPathsRe {
+		// Matches the whole string
+		if !strings.HasPrefix(r, "^") {
+			r = "^" + r
+		}
+		if !strings.HasSuffix(r, "$") {
+			r += "$"
+		}
+		cr, err := regexp.Compile(r)
+		if err != nil {
+			return FilesystemView{}, fmt.Errorf("bad ignoredPathsRe regexp \"%s\"", r)
+		}
+		compiledRe = append(compiledRe, cr)
+	}
+	return FilesystemView{root: root, blacklist: blacklist, ignoredPathsRe: compiledRe}, nil
 }
 
 // RelativePath returns a version of path which is relative to the FilesystemView root,
@@ -76,6 +101,12 @@ func (ff FilesystemView) skipRelPath(relPath string) bool {
 
 	for _, glob := range ff.blacklist {
 		if match(glob, relPath) || match(glob, filepath.Base(relPath)) {
+			return true
+		}
+	}
+
+	for _, re := range ff.ignoredPathsRe {
+		if re.MatchString(relPath) {
 			return true
 		}
 	}
