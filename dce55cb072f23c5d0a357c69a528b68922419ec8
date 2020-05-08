@@ -128,6 +128,30 @@
       "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47ada360_cdd32655",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T07:00:12Z",
+      "side": 1,
+      "message": "I see, then it is fine to keep as-is.",
+      "parentUuid": "f184142e_c8f018e3",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
