@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -75,6 +76,10 @@ type ServerConfig struct {
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
 
+	// BaseVariant will be added to the variant of each TestResult. If there are duplicate
+	// keys, the variant value given by the test command always wins.
+	BaseVariant *typepb.Variant
+
 	// Listener for tests
 	testListener net.Listener
 }
@@ -93,6 +98,9 @@ func (c *ServerConfig) Validate() error {
 		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
 			return errors.Annotate(err, "TestIDPrefix").Err()
 		}
+	}
+	if err := pbutil.ValidateVariant(c.BaseVariant); err != nil {
+		return errors.Annotate(err, "BaseVariant").Err()
 	}
 
 	return nil
