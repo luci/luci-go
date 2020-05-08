@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f365d018_c925b558",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-08T09:23:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2133268f_e55e6ba3",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 41
+      },
+      "revId": "2ad567e1ec2958e5730c1a8a09188c3b4ab75acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab5aa174_c1de60ca",
         "filename": "buildbucket/appengine/frontend/main.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "2ad567e1ec2958e5730c1a8a09188c3b4ab75acf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf1dd0a4_c9b8ad76",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-08T09:23:54Z",
+      "side": 1,
+      "message": "I\u0027ve revised it. I don\u0027t think the latter is uniformly distributed. Int seems to call Int63 and (2^63 - 1) % 10 is only 7. It\u0027s merely extremely close to 10%. Though I don\u0027t know if Intn is uniformly distributed.",
+      "parentUuid": "ab5aa174_c1de60ca",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 88,
+        "endChar": 35
+      },
+      "revId": "2ad567e1ec2958e5730c1a8a09188c3b4ab75acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
