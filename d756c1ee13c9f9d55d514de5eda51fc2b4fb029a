@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56fab1da_d6daeb6c",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-08T09:20:55Z",
+      "side": 1,
+      "message": "why not just pass this to Archive?",
+      "revId": "d756c1ee13c9f9d55d514de5eda51fc2b4fb029a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
