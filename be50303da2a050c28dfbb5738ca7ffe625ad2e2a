@@ -22,6 +22,30 @@
       "revId": "be50303da2a050c28dfbb5738ca7ffe625ad2e2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8fbf2daf_2fcf1c2e",
+        "filename": "server/auth/openid/id_token_method.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-08T03:00:40Z",
+      "side": 1,
+      "message": "i think this is fine. We could extend it later to be more general if necessary.",
+      "parentUuid": "2f0087a2_6e36bd20",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 11
+      },
+      "revId": "be50303da2a050c28dfbb5738ca7ffe625ad2e2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
