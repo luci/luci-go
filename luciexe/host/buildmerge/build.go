@@ -109,6 +109,10 @@ func updateStepFromBuild(step *bbpb.Step, build *bbpb.Build) {
 // would be the outputs from the running luciexe.
 //
 // As a special case, Output is proto.Merge'd.
+//
+// NOTE: in-place modification is NOT allowed for non-singular fields of base
+// build(e.g. proto.Merge(base.Output, build.Output) or append(base.Tags, tag)).
+// Create a new value instance and assign to field instead.
 func updateBaseFromUserBuild(base, build *bbpb.Build) {
 	if build == nil {
 		return
@@ -121,9 +125,13 @@ func updateBaseFromUserBuild(base, build *bbpb.Build) {
 	base.Tags = build.Tags
 
 	if build.Output != nil {
-		if base.Output == nil {
-			base.Output = &bbpb.Build_Output{}
+		var output *bbpb.Build_Output
+		if base.Output != nil {
+			output = proto.Clone(base.Output).(*bbpb.Build_Output)
+		} else {
+			output = &bbpb.Build_Output{}
 		}
-		proto.Merge(base.Output, build.GetOutput())
+		proto.Merge(output, build.GetOutput())
+		base.Output = output
 	}
 }
