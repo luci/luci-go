@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28e53a81_f4c0d253",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T05:10:37Z",
+      "side": 1,
+      "message": "\u003d",
+      "range": {
+        "startLine": 72,
+        "startChar": 47,
+        "endLine": 72,
+        "endChar": 48
+      },
+      "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9732a960_8c37adae",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T05:10:37Z",
+      "side": 1,
+      "message": "why do we need *store* this in addition to vars? we can always create \u0026pb.Variant{Def: r.vars}",
+      "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee0d6177_2b5dce3d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-08T05:10:37Z",
+      "side": 1,
+      "message": "we should annotate this error with something that explains that the problem is with variant",
+      "range": {
+        "startLine": 103,
+        "startChar": 1,
+        "endLine": 104,
+        "endChar": 41
+      },
+      "revId": "1c6a83843ee8b5ed8a4cefbaa9023639cc6394e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
