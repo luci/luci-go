@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
@@ -89,7 +90,7 @@ func prepareReportTestResultsRequest(ctx context.Context, cfg *ServerConfig, b *
 			TestResult: &pb.TestResult{
 				TestId:      cfg.TestIDPrefix + tr.GetTestId(),
 				ResultId:    tr.GetResultId(),
-				Variant:     tr.GetVariant(),
+				Variant:     pbutil.MergeVariants(cfg.BaseVariant, tr.GetVariant()),
 				Expected:    tr.GetExpected(),
 				SummaryHtml: tr.GetSummaryHtml(),
 				StartTime:   tr.GetStartTime(),
