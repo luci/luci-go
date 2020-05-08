@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5885577d_d96730db",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-08T06:58:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b908425_1c85a525",
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d332819a_fe91b014",
         "filename": "client/internal/common/filesystem_view.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9653b6f9_5f8ffd4b",
+        "filename": "client/internal/common/filesystem_view.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-08T06:58:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d332819a_fe91b014",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 22
+      },
+      "revId": "dce55cb072f23c5d0a357c69a528b68922419ec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
