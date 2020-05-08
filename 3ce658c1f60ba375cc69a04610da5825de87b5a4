@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dbc959c7_bf494ece",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-08T03:12:19Z",
+      "side": 1,
+      "message": "looks like both of them showed up?",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 7
+      },
+      "revId": "3ce658c1f60ba375cc69a04610da5825de87b5a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
