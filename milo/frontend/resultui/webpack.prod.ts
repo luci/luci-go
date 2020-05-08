@@ -17,15 +17,6 @@ import merge from 'webpack-merge';
 
 import common from './webpack.common';
 
-// TODO(weiweilin): once ts-loader is able to produce hash independent of
-// the project's absolute path
-//  * remove HashOutputPlugin
-//  * replace [chunkhash] with [contenthash]
-//  * enable source-map
-//  * simplify prod config because it should share more commonalities with
-//    ./webpack.common
-// Related: https://github.com/TypeStrong/ts-loader/pull/1085
-
 const config: webpack.Configuration = merge(common, {
   devtool: 'source-map',
   mode: 'production',
