@@ -162,7 +162,7 @@ func isolateDirectory(ctx context.Context, isoClient *isolatedclient.Client, dir
 	uploader := archiver.NewUploader(ctx, isoClient, 8)
 	arc := archiver.NewTarringArchiver(checker, uploader)
 
-	summary, err := arc.Archive([]string{dir}, dir, nil, "", isolated.New(isoClient.Hash()))
+	summary, err := arc.Archive(archiver.NewTarringArchiverArgsBuilder([]string{dir}, dir, "", isolated.New(isoClient.Hash())).Build())
 	if err != nil {
 		return "", errors.Annotate(err, "isolating directory").Err()
 	}
