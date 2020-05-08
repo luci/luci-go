@@ -19,6 +19,9 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
+
+	remoteexecution "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -52,8 +55,7 @@ type artifactCreator struct {
 	artifactID    string
 	localParentID string
 
-	hash string
-	size int64
+	digest *remoteexecution.Digest
 }
 
 // handleArtifactCreation is an http.Handler that creates an artifact.
@@ -117,12 +119,16 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	ac.invID = span.InvocationID(invIDString)
 	ac.localParentID = span.ArtifactParentID(ac.testID, ac.resultID)
 
+	ac.digest = &remoteexecution.Digest{}
+
 	// Parse and validate the hash.
-	switch ac.hash = c.Request.Header.Get(artifactContentHashHeaderKey); {
-	case ac.hash == "":
+	switch hash := c.Request.Header.Get(artifactContentHashHeaderKey); {
+	case hash == "":
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactContentHashHeaderKey)
-	case !artifactContentHashRe.MatchString(ac.hash):
+	case !artifactContentHashRe.MatchString(hash):
 		return appstatus.Errorf(codes.InvalidArgument, "%s header value does not match %s", artifactContentHashHeaderKey, artifactContentHashRe)
+	default:
+		ac.digest.Hash = strings.TrimPrefix(hash, "sha256:")
 	}
 
 	// Parse and validate the size.
@@ -130,11 +136,13 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	if sizeHeader == "" {
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactContentSizeHeaderKey)
 	}
-	switch ac.size, err = strconv.ParseInt(sizeHeader, 10, 64); {
+	switch sz, err := strconv.ParseInt(sizeHeader, 10, 64); {
 	case err != nil:
 		return appstatus.Errorf(codes.InvalidArgument, "%s header is malformed: %s", artifactContentSizeHeaderKey, err)
-	case ac.size < 0 || ac.size > maxArtifactContentSize:
+	case sz < 0 || sz > maxArtifactContentSize:
 		return appstatus.Errorf(codes.InvalidArgument, "%s header must be a value between 0 and %d", artifactContentSizeHeaderKey, maxArtifactContentSize)
+	default:
+		ac.digest.SizeBytes = int64(sz)
 	}
 
 	// Parse and validate the update token.
@@ -197,7 +205,7 @@ func (ac *artifactCreator) verifyState(ctx context.Context, txn span.Txn) (sameA
 	case invState != pb.Invocation_ACTIVE:
 		return false, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", ac.invID.Name())
 
-	case hash.Valid && hash.StringVal == ac.hash && size.Valid && size.Int64 == ac.size:
+	case hash.Valid && hash.StringVal == ac.digest.Hash && size.Valid && size.Int64 == ac.digest.SizeBytes:
 		// The same artifact already exists.
 		return true, nil
 
