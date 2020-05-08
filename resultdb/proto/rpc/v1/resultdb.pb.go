@@ -488,6 +488,7 @@ func (m *QueryTestResultsRequest) GetPageToken() string {
 // A response message for QueryTestResults RPC.
 type QueryTestResultsResponse struct {
 	// Matched test results.
+	// Ordered by parent invocation ID, test ID and result ID.
 	TestResults []*TestResult `protobuf:"bytes,1,rep,name=test_results,json=testResults,proto3" json:"test_results,omitempty"`
 	// A token, which can be sent as `page_token` to retrieve the next page.
 	// If this field is omitted, there were no subsequent pages at the time of
@@ -634,9 +635,7 @@ func (m *QueryTestExonerationsRequest) GetPageToken() string {
 // A response message for QueryTestExonerations RPC.
 type QueryTestExonerationsResponse struct {
 	// The test exonerations matching the predicate.
-	//
-	// The order is not defined, but test exonerations from the same invocation
-	// are contiguous.
+	// Ordered by parent invocation ID, test ID and exoneration ID.
 	TestExonerations []*TestExoneration `protobuf:"bytes,1,rep,name=test_exonerations,json=testExonerations,proto3" json:"test_exonerations,omitempty"`
 	// A token, which can be sent as `page_token` to retrieve the next page.
 	// If this field is omitted, there were no subsequent pages at the time of
@@ -1015,7 +1014,7 @@ func (m *QueryArtifactsRequest_EdgeTypeSet) GetTestResults() bool {
 type QueryArtifactsResponse struct {
 	// Matched artifacts.
 	// First invocation-level artifacts, then test-result-level artifacts
-	// ordered by test id.
+	// ordered by parent invocation ID, test ID and artifact ID.
 	Artifacts []*Artifact `protobuf:"bytes,1,rep,name=artifacts,proto3" json:"artifacts,omitempty"`
 	// A token, which can be sent as `page_token` to retrieve the next page.
 	// If this field is omitted, there were no subsequent pages at the time of
