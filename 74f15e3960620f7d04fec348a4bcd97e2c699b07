@@ -16,6 +16,24 @@
       "revId": "74f15e3960620f7d04fec348a4bcd97e2c699b07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cb325b6_d69735b7",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T02:58:09Z",
+      "side": 1,
+      "message": "Here\u0027s my thoughts:\n\n1. It offers us a unified entry point to control what needs to be done during construction. (E.g, do some logging, for whatever reason it might be)\n2. This is also consistent with how one would typically construct an object in Go?",
+      "parentUuid": "5499d887_eb5de7d5",
+      "revId": "74f15e3960620f7d04fec348a4bcd97e2c699b07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
