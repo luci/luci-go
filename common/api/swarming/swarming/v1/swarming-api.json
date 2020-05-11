@@ -1438,6 +1438,10 @@
         "request_uuid": {
           "type": "string"
         },
+        "resultdb": {
+          "$ref": "SwarmingRpcsResultDBCfg",
+          "description": "Swarming:ResultDB integration configuration for a task. See NewTaskRequest.resultdb for more details."
+        },
         "service_account": {
           "type": "string"
         },
@@ -1514,6 +1518,29 @@
         },
         "isolated_upload": {
           "$ref": "SwarmingRpcsOperationStats"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingRpcsResultDBCfg": {
+      "description": "Swarming:ResultDB integration configuration for a task. See NewTaskRequest.resultdb for more details.",
+      "id": "SwarmingRpcsResultDBCfg",
+      "properties": {
+        "enable": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingRpcsResultDBInfo": {
+      "description": "ResultDB related properties.",
+      "id": "SwarmingRpcsResultDBInfo",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "invocation": {
+          "type": "string"
         }
       },
       "type": "object"
@@ -1766,7 +1793,7 @@
       "type": "object"
     },
     "SwarmingRpcsTaskRequest": {
-      "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewtaskRequest for more details.",
+      "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewTaskRequest for more details.",
       "id": "SwarmingRpcsTaskRequest",
       "properties": {
         "authenticated": {
@@ -1835,7 +1862,7 @@
       "properties": {
         "request": {
           "$ref": "SwarmingRpcsTaskRequest",
-          "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewtaskRequest for more details."
+          "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewTaskRequest for more details."
         },
         "task_id": {
           "type": "string"
@@ -1855,7 +1882,7 @@
           "type": "string"
         },
         "items": {
-          "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewtaskRequest for more details.",
+          "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewTaskRequest for more details.",
           "items": {
             "$ref": "SwarmingRpcsTaskRequest"
           },
@@ -1952,6 +1979,10 @@
         },
         "performance_stats": {
           "$ref": "SwarmingRpcsPerformanceStats"
+        },
+        "resultdb_info": {
+          "$ref": "SwarmingRpcsResultDBInfo",
+          "description": "ResultDB related properties."
         },
         "run_id": {
           "type": "string"
