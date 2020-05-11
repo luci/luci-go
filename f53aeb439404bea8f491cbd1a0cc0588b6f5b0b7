@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5499471_ed78056b",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T08:20:50Z",
+      "side": 1,
+      "message": "better to set only when both blaclist and ignored-path-filter-re are not set?",
+      "revId": "f53aeb439404bea8f491cbd1a0cc0588b6f5b0b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73024a56_6dfdcf19",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T08:20:50Z",
+      "side": 1,
+      "message": "drop \u0027^\u0027, we have repositories under root repository.",
+      "range": {
+        "startLine": 100,
+        "startChar": 47,
+        "endLine": 100,
+        "endChar": 75
+      },
+      "revId": "f53aeb439404bea8f491cbd1a0cc0588b6f5b0b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
