@@ -61,6 +61,7 @@ type Tree struct {
 type ArchiveOptions struct {
 	Isolate                    string              `json:"isolate"`
 	Isolated                   string              `json:"isolated"`
+	IgnoredPathFilterRe        string              `json:"ignored_path_filter_re"`
 	Blacklist                  stringlistflag.Flag `json:"blacklist"`
 	PathVariables              stringmapflag.Value `json:"path_variables"`
 	ConfigVariables            stringmapflag.Value `json:"config_variables"`
@@ -94,6 +95,9 @@ func (a *ArchiveOptions) PostProcess(cwd string) {
 			".hg",
 			".svn",
 		}
+	}
+	if a.IgnoredPathFilterRe == "" {
+		a.IgnoredPathFilterRe = "((\\.pyc)|(\\.swp)|(\\.git$)|(\\.hg)|(\\.svn))$"
 	}
 	if !filepath.IsAbs(a.Isolate) {
 		a.Isolate = filepath.Join(cwd, a.Isolate)
