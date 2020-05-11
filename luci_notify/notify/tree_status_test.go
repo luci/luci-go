@@ -52,14 +52,14 @@ func (ts *fakeTreeStatusClient) getStatus(c context.Context, host string) (*tree
 	return nil, errors.New(fmt.Sprintf("No status for host %s", host))
 }
 
-func (ts *fakeTreeStatusClient) putStatus(c context.Context, host, message string, prevKey int64) error {
+func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message string, prevKey int64) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
 	currStatus, exists := ts.statusForHosts[host]
 	if exists && currStatus.key != prevKey {
 		return errors.New(fmt.Sprintf(
-			"prevKey %q passed to putStatus doesn't match previously stored key %q",
+			"prevKey %q passed to postStatus doesn't match previously stored key %q",
 			prevKey, currStatus.key))
 	}
 
@@ -500,8 +500,8 @@ func TestUpdateTrees(t *testing.T) {
 	})
 }
 
-func TestReadOnlyTreeStatusClient(t *testing.T) {
-	Convey("Test environment for readOnlyTreeStatusClient", t, func() {
+func TestHttpTreeStatusClient(t *testing.T) {
+	Convey("Test environment for httpTreeStatusClient", t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-notify-test")
 
 		// Real responses, with usernames redacted and readable formatting applied.
@@ -524,16 +524,23 @@ func TestReadOnlyTreeStatusClient(t *testing.T) {
 			}`,
 		}
 
-		fetch := func(_ context.Context, url string) ([]byte, error) {
+		get := func(_ context.Context, url string) ([]byte, error) {
 			if s, e := responses[url]; e {
 				return []byte(s), nil
 			} else {
 				return nil, fmt.Errorf("Key not present: %q", url)
 			}
 		}
-		ts := readOnlyTreeStatusClient{fetch}
 
-		Convey("Open tree", func() {
+		var postUrls []string
+		post := func(_ context.Context, url string) error {
+			postUrls = append(postUrls, url)
+			return nil
+		}
+
+		ts := httpTreeStatusClient{get, post}
+
+		Convey("getStatus, open tree", func() {
 			status, err := ts.getStatus(c, "chromium-status.appspot.com")
 			So(err, ShouldBeNil)
 
@@ -547,7 +554,7 @@ func TestReadOnlyTreeStatusClient(t *testing.T) {
 			})
 		})
 
-		Convey("Closed tree", func() {
+		Convey("getStatus, closed tree", func() {
 			status, err := ts.getStatus(c, "v8-status.appspot.com")
 			So(err, ShouldBeNil)
 
@@ -559,6 +566,14 @@ func TestReadOnlyTreeStatusClient(t *testing.T) {
 				status:    config.Open,
 				timestamp: expectedTime,
 			})
+		})
+
+		Convey("postStatus", func() {
+			err := ts.postStatus(c, "dart-status.appspot.com", "open for business", 1234)
+			So(err, ShouldBeNil)
+
+			So(postUrls, ShouldHaveLength, 1)
+			So(postUrls[0], ShouldEqual, "https://dart-status.appspot.com/?last_status_key=1234&message=open+for+business")
 		})
 	})
 }
