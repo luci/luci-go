@@ -130,6 +130,9 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 			CurrentInvocation: r.invocation,
 		})
 	} else {
+		if r.resultdbCtx == nil {
+			return r.done(errors.Reason("the environment does not have an existing invocation; use -new to create a new one").Err())
+		}
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
 		}
