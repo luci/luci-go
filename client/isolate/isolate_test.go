@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -62,6 +63,40 @@ func TestReplaceVars(t *testing.T) {
 		// Replacement of missing variable.
 		r, err = ReplaceVariables("hello <(MISSING) world", opts)
 		So(err.Error(), ShouldResemble, "no value for variable 'MISSING'")
+	})
+}
+
+func TestIgnoredPathsRegexp(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Ignored file extensions`, t, func() {
+		regexStr := genExtensionsRegex("pyc", "swp")
+		re, err := regexp.Compile(regexStr)
+		So(err, ShouldBeNil)
+		So(re.MatchString("a.pyc"), ShouldBeTrue)
+		So(re.MatchString("foo/a.pyc"), ShouldBeTrue)
+		So(re.MatchString("/b.swp"), ShouldBeTrue)
+		So(re.MatchString(`foo\b.swp`), ShouldBeTrue)
+
+		So(re.MatchString("a.py"), ShouldBeFalse)
+		So(re.MatchString("b.swppp"), ShouldBeFalse)
+	})
+
+	Convey(`Ignored directories`, t, func() {
+		regexStr := genDirectoriesRegex("\\.git", "\\.hg", "\\.svn")
+		re, err := regexp.Compile(regexStr)
+		So(err, ShouldBeNil)
+		So(re.MatchString(".git"), ShouldBeTrue)
+		So(re.MatchString(".git/"), ShouldBeTrue)
+		So(re.MatchString("/.git/"), ShouldBeTrue)
+		So(re.MatchString("/.hg"), ShouldBeTrue)
+		So(re.MatchString("foo/.svn"), ShouldBeTrue)
+		So(re.MatchString(`.hg\`), ShouldBeTrue)
+		So(re.MatchString(`foo\.svn`), ShouldBeTrue)
+
+		So(re.MatchString(".get"), ShouldBeFalse)
+		So(re.MatchString("foo.git"), ShouldBeFalse)
+		So(re.MatchString(".svnnnn"), ShouldBeFalse)
 	})
 }
 

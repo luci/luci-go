@@ -61,6 +61,7 @@ type Tree struct {
 type ArchiveOptions struct {
 	Isolate                    string              `json:"isolate"`
 	Isolated                   string              `json:"isolated"`
+	IgnoredPathFilterRe        string              `json:"ignored_path_filter_re"`
 	Blacklist                  stringlistflag.Flag `json:"blacklist"`
 	PathVariables              stringmapflag.Value `json:"path_variables"`
 	ConfigVariables            stringmapflag.Value `json:"config_variables"`
@@ -79,21 +80,35 @@ func (a *ArchiveOptions) Init() {
 	a.ConfigVariables = map[string]string{}
 }
 
+func genExtensionsRegex(exts ...string) string {
+	if len(exts) == 0 {
+		return ""
+	}
+	var res []string
+	for _, e := range exts {
+		res = append(res, `(\.`+e+`)`)
+	}
+	return "((" + strings.Join(res, "|") + ")$)"
+}
+
+func genDirectoriesRegex(dirs ...string) string {
+	if len(dirs) == 0 {
+		return ""
+	}
+	var res []string
+	for _, d := range dirs {
+		res = append(res, "("+d+")")
+	}
+	// #Backslashes: https://stackoverflow.com/a/4025505/12003165
+	return `((^|[\\/])(` + strings.Join(res, "|") + `)([\\/]|$))`
+}
+
 // PostProcess post-processes the flags to fix any compatibility issue.
 func (a *ArchiveOptions) PostProcess(cwd string) {
-	// Set default blacklist only if none is set.
-	if len(a.Blacklist) == 0 {
-		// This cannot be generalized as ".*" as there is known use that require
-		// a ".pki" directory to be mapped.
-		a.Blacklist = stringlistflag.Flag{
-			// Temporary python files.
-			"*.pyc",
-			// Temporary vim files.
-			"*.swp",
-			".git",
-			".hg",
-			".svn",
-		}
+	if a.IgnoredPathFilterRe == "" && len(a.Blacklist) == 0 {
+		// Set default ignored paths regexp
+		// .swp are vim files
+		a.IgnoredPathFilterRe = genExtensionsRegex("pyc", "swp") + "|" + genDirectoriesRegex(`\.git`, `\.hg`, `\.svn`)
 	}
 	if !filepath.IsAbs(a.Isolate) {
 		a.Isolate = filepath.Join(cwd, a.Isolate)
