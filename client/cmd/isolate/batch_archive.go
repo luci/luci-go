@@ -192,7 +192,12 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		if len(blacklistStrings) > 0 {
 			opts.Blacklist = blacklistStrings
 		}
-		isolSummary, err := a.Archive(deps, rootDir, opts.Blacklist, opts.Isolated, isol)
+		isolSummary, err := a.Archive(&archiver.TarringArgs{
+			Deps:      deps,
+			RootDir:   rootDir,
+			Blacklist: opts.Blacklist,
+			Isolated:  opts.Isolated,
+			Isol:      isol})
 		if err != nil && errArchive == nil {
 			errArchive = fmt.Errorf("isolate %s: %v", opts.Isolate, err)
 		} else {

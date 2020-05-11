@@ -52,10 +52,19 @@ var prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated, fileHa
 	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol, fileHashCache)
 }
 
+// TarringArgs wraps all the args for TarringArchiver.Archive().
+type TarringArgs struct {
+	Deps      []string
+	RootDir   string
+	Blacklist []string
+	Isolated  string
+	Isol      *isolated.Isolated
+}
+
 // Archive uploads a single isolate.
-func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []string, isolated string, isol *isolated.Isolated) (IsolatedSummary, error) {
-	prepareToArchive(ta, isol, &ta.fileHashCache)
-	parts, err := ta.partitionDeps(deps, rootDir, blacklist)
+func (ta *TarringArchiver) Archive(args *TarringArgs) (IsolatedSummary, error) {
+	prepareToArchive(ta, args.Isol, &ta.fileHashCache)
+	parts, err := ta.partitionDeps(args.Deps, args.RootDir, args.Blacklist)
 	if err != nil {
 		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
 	}
@@ -64,7 +73,7 @@ func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []st
 	if err := ta.tracker.UploadDeps(parts); err != nil {
 		return IsolatedSummary{}, err
 	}
-	result, err := ta.tracker.Finalize(isolated)
+	result, err := ta.tracker.Finalize(args.Isolated)
 	ta.tracker = nil
 	return result, err
 }
