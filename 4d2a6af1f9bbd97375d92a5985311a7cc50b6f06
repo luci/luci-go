@@ -16,6 +16,24 @@
       "revId": "4d2a6af1f9bbd97375d92a5985311a7cc50b6f06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7d707c0_25f0644a",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T03:34:23Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "d801e9da_6719c851",
+      "revId": "4d2a6af1f9bbd97375d92a5985311a7cc50b6f06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
