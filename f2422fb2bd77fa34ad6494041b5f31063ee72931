@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0490c445_1be25d4e",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T08:40:45Z",
+      "side": 1,
+      "message": "I think we need to sandwich with \u0027(^|[\\\\/])\u0027 and \u0027([\\\\/]|$)\u0027 for .git/.hg/.svn",
+      "range": {
+        "startLine": 100,
+        "startChar": 53,
+        "endLine": 100,
+        "endChar": 54
+      },
+      "revId": "f2422fb2bd77fa34ad6494041b5f31063ee72931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
