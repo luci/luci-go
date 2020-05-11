@@ -52,10 +52,30 @@ var prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated, fileHa
 	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol, fileHashCache)
 }
 
+// TarringArchiverArgs wraps all the args for TarringArchiver.Archive().
+type TarringArchiverArgs struct {
+	Deps      []string
+	RootDir   string
+	Blacklist []string
+	Isolated  string
+	Isol      *isolated.Isolated
+}
+
+// NewTarringArchiverArgs returns a new TarringArchiverArgs instance
+func NewTarringArchiverArgs(deps []string, rootDir string, isolated string, isol *isolated.Isolated) *TarringArchiverArgs {
+	return &TarringArchiverArgs{
+		Deps:      deps,
+		RootDir:   rootDir,
+		Blacklist: nil,
+		Isolated:  isolated,
+		Isol:      isol,
+	}
+}
+
 // Archive uploads a single isolate.
-func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []string, isolated string, isol *isolated.Isolated) (IsolatedSummary, error) {
-	prepareToArchive(ta, isol, &ta.fileHashCache)
-	parts, err := ta.partitionDeps(deps, rootDir, blacklist)
+func (ta *TarringArchiver) Archive(args *TarringArchiverArgs) (IsolatedSummary, error) {
+	prepareToArchive(ta, args.Isol, &ta.fileHashCache)
+	parts, err := ta.partitionDeps(args)
 	if err != nil {
 		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
 	}
@@ -64,7 +84,7 @@ func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []st
 	if err := ta.tracker.UploadDeps(parts); err != nil {
 		return IsolatedSummary{}, err
 	}
-	result, err := ta.tracker.Finalize(isolated)
+	result, err := ta.tracker.Finalize(args.Isolated)
 	ta.tracker = nil
 	return result, err
 }
@@ -162,14 +182,14 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 
 // partitionDeps walks each of the deps, partitioning the results into symlinks
 // and files categorized by size.
-func (ta *TarringArchiver) partitionDeps(deps []string, rootDir string, blacklist []string) (partitionedDeps, error) {
-	fsView, err := common.NewFilesystemView(rootDir, blacklist, nil)
+func (ta *TarringArchiver) partitionDeps(args *TarringArchiverArgs) (partitionedDeps, error) {
+	fsView, err := common.NewFilesystemView(args.RootDir, args.Blacklist, nil)
 	if err != nil {
 		return partitionedDeps{}, err
 	}
 
 	walker := partitioningWalker{fsView: fsView, seen: stringset.New(1024)}
-	for _, dep := range deps {
+	for _, dep := range args.Deps {
 		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
 		if err := ta.filePathWalk(filepath.Clean(dep), walker.walkFn); err != nil {
 			return partitionedDeps{}, err
