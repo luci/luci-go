@@ -16,6 +16,24 @@
       "revId": "d756c1ee13c9f9d55d514de5eda51fc2b4fb029a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8ff09b6_61290ff9",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T02:23:51Z",
+      "side": 1,
+      "message": "You mean to use the value instead of pointer, or to not use builder?",
+      "parentUuid": "56fab1da_d6daeb6c",
+      "revId": "d756c1ee13c9f9d55d514de5eda51fc2b4fb029a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
