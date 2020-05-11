@@ -102,7 +102,7 @@ message ConfigGroup {
 
   // The human- and machine-readable name (unique within this project) of this
   // config group. This is used in messages posted to users and in monitoring
-  // data.
+  // data. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]*$".
   string name = 6;
 
   // Enumerates repositories on a Gerrit instance for which CQ should work.
