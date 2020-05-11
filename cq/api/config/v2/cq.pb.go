@@ -269,7 +269,7 @@ func (m *SubmitOptions) GetBurstDelay() *duration.Duration {
 type ConfigGroup struct {
 	// The human- and machine-readable name (unique within this project) of this
 	// config group. This is used in messages posted to users and in monitoring
-	// data.
+	// data. Must match regex '^[a-z0-9_]+$'
 	Name string `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
 	// At least 1 Gerrit instance with repositories to work with is required.
 	Gerrit []*ConfigGroup_Gerrit `protobuf:"bytes,1,rep,name=gerrit,proto3" json:"gerrit,omitempty"`
@@ -879,6 +879,9 @@ type Verifiers_Tryjob_Builder struct {
 	// If true, this builder will only be used if specified via
 	// `CQ-Include-Trybots:` on CL description.
 	//
+	// If false, the builder may still be included via `CQ-Include-Trybots:`
+	// on CL description.
+	//
 	// This is useful if you want individual CLs to opt-in to this builder,
 	// e.g.:
 	//  builder {name: "win-release"}                      # required for all.
@@ -983,8 +986,8 @@ type Verifiers_Tryjob_Builder struct {
 	// The comparison is a full match; the pattern is implicitly anchored with
 	// "^" and "$", so there is no need add them.
 	//
-	// CQ uses Google's re2 syntax for regexp, documented
-	// here https://github.com/google/re2/wiki/Syntax.
+	// CQ uses Google's re2 syntax for regexp, documented here:
+	// https://github.com/google/re2/wiki/Syntax.
 	//
 	// Touching a file means either adding, modifying or removing it.
 	//

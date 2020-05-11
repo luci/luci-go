@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -154,6 +155,7 @@ func TestValidation(t *testing.T) {
 					// Add new regexps sequence with constant valid gerrit url and project and
 					// the same valid verifers.
 					cfg.ConfigGroups = append(cfg.ConfigGroups, &v2.ConfigGroup{
+						Name: fmt.Sprintf("group-%d", len(cfg.ConfigGroups)),
 						Gerrit: []*v2.ConfigGroup_Gerrit{
 							{
 								Url: orig.Gerrit[0].Url,
@@ -233,14 +235,13 @@ func TestValidation(t *testing.T) {
 			Convey("with no Name", func() {
 				cfg.ConfigGroups[0].Name = ""
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldBeNil)
+				So(mustWarn(vctx.Finalize()), ShouldErrLike, "please, specify `name`")
 			})
-			// See TODO in validateConfigGroup.
-			/*Convey("with valid Name", func() {
+			Convey("with valid Name", func() {
 				cfg.ConfigGroups[0].Name = "!invalid!"
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "config group names must match '^[a-zA-Z][a-zA-Z0-9 _.-]*$'")
-			})*/
+				So(mustWarn(vctx.Finalize()), ShouldErrLike, "`name` must match")
+			})
 			Convey("with Gerrit", func() {
 				cfg.ConfigGroups[0].Gerrit = nil
 				validateProjectConfig(vctx, &cfg)
@@ -444,32 +445,14 @@ func TestTryjobValidation(t *testing.T) {
 			return vctx.Finalize()
 		}
 
-		must := func(err error, severity validation.Severity) error {
-			So(err, ShouldNotBeNil)
-			for _, e := range err.(*validation.Error).Errors {
-				s, ok := validation.SeverityTag.In(e)
-				So(ok, ShouldBeTrue)
-				So(s, ShouldEqual, severity)
-			}
-			return err
-		}
-
-		mustWarn := func(textPB string) error {
-			return must(validate(textPB), validation.Warning)
-		}
-
-		mustError := func(textPB string) error {
-			return must(validate(textPB), validation.Blocking)
-		}
-
 		So(validate(``), ShouldErrLike, "at least 1 builder required")
 		// cancel_stale_tryjobs: YES is still allowed.
-		So(mustWarn(`
+		So(mustWarn(validate(`
 			cancel_stale_tryjobs: YES
-			builders {name: "a/b/c"}`), ShouldErrLike, "please remove")
-		So(mustError(`
+			builders {name: "a/b/c"}`)), ShouldErrLike, "please remove")
+		So(mustError(validate(`
 			cancel_stale_tryjobs: NO
-			builders {name: "a/b/c"}`), ShouldErrLike, "use per-builder `cancel_stale` instead")
+			builders {name: "a/b/c"}`)), ShouldErrLike, "use per-builder `cancel_stale` instead")
 
 		Convey("builder name", func() {
 			So(validate(`builders {}`), ShouldErrLike, "name is required")
@@ -727,4 +710,22 @@ func TestTryjobValidation(t *testing.T) {
 			})
 		})
 	})
+}
+
+func mustHaveOnlySeverity(err error, severity validation.Severity) error {
+	So(err, ShouldNotBeNil)
+	for _, e := range err.(*validation.Error).Errors {
+		s, ok := validation.SeverityTag.In(e)
+		So(ok, ShouldBeTrue)
+		So(s, ShouldEqual, severity)
+	}
+	return err
+}
+
+func mustWarn(err error) error {
+	return mustHaveOnlySeverity(err, validation.Warning)
+}
+
+func mustError(err error) error {
+	return mustHaveOnlySeverity(err, validation.Blocking)
 }
