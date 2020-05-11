@@ -172,7 +172,7 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 // partitionDeps walks each of the deps, partitioning the results into symlinks
 // and files categorized by size.
 func (ta *TarringArchiver) partitionDeps(deps []string, rootDir string, blacklist []string) (partitionedDeps, error) {
-	fsView, err := common.NewFilesystemView(rootDir, blacklist, nil)
+	fsView, err := common.NewFilesystemView(rootDir, blacklist, "")
 	if err != nil {
 		return partitionedDeps{}, err
 	}

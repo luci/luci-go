@@ -63,7 +63,7 @@ func TestValidatesBlacklist(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			_, err := NewFilesystemView("/root", tc.blacklist, nil)
+			_, err := NewFilesystemView("/root", tc.blacklist, "")
 			if tc.wantErr {
 				So(err, ShouldNotBeNil)
 			} else {
@@ -124,7 +124,7 @@ func TestCalculatesRelativePaths(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			fsView, err := NewFilesystemView(tc.root, nil, nil)
+			fsView, err := NewFilesystemView(tc.root, nil, "")
 
 			So(err, ShouldBeNil)
 
@@ -141,12 +141,12 @@ func TestCalculatesRelativePaths(t *testing.T) {
 
 func TestAppliesBlacklist(t *testing.T) {
 	type testCase struct {
-		desc           string
-		root           string
-		ignoredPathsRe []string
-		blacklist      []string
-		absPath        string
-		wantRelPath    string
+		desc          string
+		root          string
+		ignoredPathRe string
+		blacklist     []string
+		absPath       string
+		wantRelPath   string
 	}
 
 	testCases := []testCase{
@@ -207,60 +207,60 @@ func TestAppliesBlacklist(t *testing.T) {
 			wantRelPath: "",
 		},
 		{
-			desc:           "ignoredPathsRe matches relative path",
-			root:           "/a",
-			ignoredPathsRe: []string{"x.*"},
-			absPath:        "/a/x/y/z",
-			wantRelPath:    "",
+			desc:          "ignoredPathsRe matches relative path",
+			root:          "/a",
+			ignoredPathRe: "x.*",
+			absPath:       "/a/x/y/z",
+			wantRelPath:   "",
 		},
 		{
-			desc:           "ignoredPathsRe matches substring",
-			root:           "/a",
-			ignoredPathsRe: []string{"y/"},
-			absPath:        "/a/x/y/z",
-			wantRelPath:    "",
+			desc:          "ignoredPathsRe matches substring",
+			root:          "/a",
+			ignoredPathRe: "y/",
+			absPath:       "/a/x/y/z",
+			wantRelPath:   "",
 		},
 		{
-			desc:           "ignoredPathsRe matches the beginning",
-			root:           "/a",
-			ignoredPathsRe: []string{"^x/"},
-			absPath:        "/a/x/y/z",
-			wantRelPath:    "",
+			desc:          "ignoredPathsRe matches the beginning",
+			root:          "/a",
+			ignoredPathRe: "^x/",
+			absPath:       "/a/x/y/z",
+			wantRelPath:   "",
 		},
 		{
-			desc:           "ignoredPathsRe does not match the beginning",
-			root:           "/a",
-			ignoredPathsRe: []string{"^y/"},
-			absPath:        "/a/x/y/z",
-			wantRelPath:    "x/y/z",
+			desc:          "ignoredPathsRe does not match the beginning",
+			root:          "/a",
+			ignoredPathRe: "^y/",
+			absPath:       "/a/x/y/z",
+			wantRelPath:   "x/y/z",
 		},
 		{
-			desc:           "ignoredPathsRe matches the ending",
-			root:           "/a",
-			ignoredPathsRe: []string{"\\.pyc$"},
-			absPath:        "/a/x/y.pyc",
-			wantRelPath:    "",
+			desc:          "ignoredPathsRe matches the ending",
+			root:          "/a",
+			ignoredPathRe: "\\.pyc$",
+			absPath:       "/a/x/y.pyc",
+			wantRelPath:   "",
 		},
 		{
-			desc:           "root never matches ignoredPathsRe",
-			root:           "/a",
-			ignoredPathsRe: []string{".*"},
-			absPath:        "/a",
-			wantRelPath:    ".",
+			desc:          "root never matches ignoredPathsRe",
+			root:          "/a",
+			ignoredPathRe: ".*",
+			absPath:       "/a",
+			wantRelPath:   ".",
 		},
 		{
-			desc:           "only one ignoredPathsRe needs to match path",
-			root:           "/a",
-			ignoredPathsRe: []string{".*z", "abc"},
-			absPath:        "/a/x/z",
-			wantRelPath:    "",
+			desc:          "only one ignoredPathsRe needs to match path",
+			root:          "/a",
+			ignoredPathRe: "(.*z)|(abc)",
+			absPath:       "/a/x/z",
+			wantRelPath:   "",
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			fsView, err := NewFilesystemView(tc.root, tc.blacklist, tc.ignoredPathsRe)
+			fsView, err := NewFilesystemView(tc.root, tc.blacklist, tc.ignoredPathRe)
 
 			// These test cases contain only valid blacklists.
 			// Invalid blacklists are tested in TestValidatesBlacklist.
