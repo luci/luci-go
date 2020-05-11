@@ -19,7 +19,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -49,7 +48,10 @@ type FilesystemView struct {
 // not limited by how filepath.Match() works
 // (https://godoc.org/path/filepath#Match), hence offers more flexibility. For
 // example, instead of writing blacklist=["foo/*", "foo/a/*", "foo/a/b/*", ...]
-// to completely skip "foo/", you can just use ignoredPathsRe=["foo/.*"]
+// to completely skip "foo/", you can just use ignoredPathsRe=["^foo/.*"]. Note
+// that this is NOT a full string match, so "foo/.*" may match "bar/foo/xyz".
+// Prepend ^ explicityly if you need to match a path that starts with the
+// pattern. Similarly, append $ if necessary.
 func NewFilesystemView(root string, blacklist []string, ignoredPathsRe []string) (FilesystemView, error) {
 	for _, b := range blacklist {
 		if _, err := filepath.Match(b, b); err != nil {
@@ -58,13 +60,6 @@ func NewFilesystemView(root string, blacklist []string, ignoredPathsRe []string)
 	}
 	var compiledRe []*regexp.Regexp
 	for _, r := range ignoredPathsRe {
-		// Matches the whole string
-		if !strings.HasPrefix(r, "^") {
-			r = "^" + r
-		}
-		if !strings.HasSuffix(r, "$") {
-			r += "$"
-		}
 		cr, err := regexp.Compile(r)
 		if err != nil {
 			return FilesystemView{}, errors.Annotate(err, "bad ignoredPathsRe regexp \"%s\"", r).Err()
