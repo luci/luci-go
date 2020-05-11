@@ -45,6 +45,54 @@
       "revId": "0acadb5e60c9ab8b259205fc209f97eba28a3cd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f03e38c_818aeaed",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T10:38:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dba56b1c_fae64639",
+      "range": {
+        "startLine": 103,
+        "startChar": 55,
+        "endLine": 103,
+        "endChar": 66
+      },
+      "revId": "0acadb5e60c9ab8b259205fc209f97eba28a3cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f443cfe3_5e88854f",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T10:38:29Z",
+      "side": 1,
+      "message": "Ah i thought caret ^ is a special character and cannot be ORed. Done.",
+      "parentUuid": "f8e0a50b_2da11f0a",
+      "range": {
+        "startLine": 103,
+        "startChar": 10,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "0acadb5e60c9ab8b259205fc209f97eba28a3cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
