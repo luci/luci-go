@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed98cf4c_240b6a1b",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T10:14:11Z",
+      "side": 1,
+      "message": "could you use `` for strings having backslash ?",
+      "revId": "518e1d2b1c041af5e4fcc8cc6afa55f3679dc1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58b7d388_8ca9b3ba",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T10:14:11Z",
+      "side": 1,
+      "message": "follow https://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices",
+      "revId": "518e1d2b1c041af5e4fcc8cc6afa55f3679dc1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4311da26_379b6e75",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T10:14:11Z",
+      "side": 1,
+      "message": "follow https://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices",
+      "revId": "518e1d2b1c041af5e4fcc8cc6afa55f3679dc1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
