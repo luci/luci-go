@@ -22,6 +22,30 @@
       "revId": "f2422fb2bd77fa34ad6494041b5f31063ee72931",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9917910_d566fb6a",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T08:48:07Z",
+      "side": 1,
+      "message": "If the current blacklist works as intended, then filepath.Match(\".git\", \".git/\") is false, meaning that if the path to be matched is a directory, it won\u0027t contain \"/\".\n\nIs [\\\\/] because on Windows, the path sep is \\?",
+      "parentUuid": "0490c445_1be25d4e",
+      "range": {
+        "startLine": 100,
+        "startChar": 53,
+        "endLine": 100,
+        "endChar": 54
+      },
+      "revId": "f2422fb2bd77fa34ad6494041b5f31063ee72931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
