@@ -433,6 +433,21 @@ func (c *collectRun) pollForTasks(
 
 	if c.eager {
 		go func() {
+			// TODO(fxbug.dev/50776): Stop printing this debug info after the
+			// cause of hangs has been discovered.
+			ticker := time.NewTicker(5 * time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+
+		go func() {
 			<-taskFinished
 			// After the first task finishes, block any new tasks from starting
 			// to download outputs, but let any in-progress downloads complete.
