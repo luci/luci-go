@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a0e945d6_f9572f2e",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T08:32:37Z",
+      "side": 1,
+      "message": "\u003e when both blaclist and ignored-path-filter-re are not set\n\nBut blacklist is always set?",
+      "parentUuid": "a5499471_ed78056b",
+      "revId": "f53aeb439404bea8f491cbd1a0cc0588b6f5b0b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "73024a56_6dfdcf19",
         "filename": "client/isolate/isolate.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "f53aeb439404bea8f491cbd1a0cc0588b6f5b0b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95ef9d80_636efb25",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-11T08:32:37Z",
+      "side": 1,
+      "message": "Done, but I think we need $ for all of them? O.W. \"\\\\.git\" might match \".gitfoo\" as well.",
+      "parentUuid": "73024a56_6dfdcf19",
+      "range": {
+        "startLine": 100,
+        "startChar": 47,
+        "endLine": 100,
+        "endChar": 75
+      },
+      "revId": "f53aeb439404bea8f491cbd1a0cc0588b6f5b0b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
