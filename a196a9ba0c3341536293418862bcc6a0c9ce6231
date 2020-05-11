@@ -22,6 +22,30 @@
       "revId": "a196a9ba0c3341536293418862bcc6a0c9ce6231",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "985a687d_219d1816",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-05-11T04:00:48Z",
+      "side": 1,
+      "message": "Interesting, thanks for the background. Still, I\u0027d prefer to remove it from the pubsub handlers in a separate change.",
+      "parentUuid": "281b3773_9d1b4e02",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 56
+      },
+      "revId": "a196a9ba0c3341536293418862bcc6a0c9ce6231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
