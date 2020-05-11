@@ -88,9 +88,15 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 				return origDoHashFileImpl(ut, path)
 			}
 		}
-
-		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate1", isol)
-		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate2", isol)
+		args := &TarringArgs{
+			Deps:     []string{largeFilePath},
+			RootDir:  "/",
+			Isolated: "isolate1",
+			Isol:     isol,
+		}
+		ta.Archive(args)
+		args.Isolated = "isolate2"
+		ta.Archive(args)
 
 		So(numHashCalls, ShouldEqual, 1)
 	})
