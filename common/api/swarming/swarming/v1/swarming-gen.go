@@ -60,6 +60,7 @@ import (
 	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
+	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
 )
 
@@ -76,6 +77,7 @@ var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
+var _ = internaloption.WithDefaultEndpoint
 
 const apiId = "swarming:v1"
 const apiName = "swarming"
@@ -95,6 +97,7 @@ func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, err
 	)
 	// NOTE: prepend, so we don't override user-specified scopes.
 	opts = append([]option.ClientOption{scopesOption}, opts...)
+	opts = append(opts, internaloption.WithDefaultEndpoint(basePath))
 	client, endpoint, err := htransport.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -933,6 +936,10 @@ type SwarmingRpcsNewTaskRequest struct {
 
 	RequestUuid string `json:"request_uuid,omitempty"`
 
+	// Resultdb: Swarming:ResultDB integration configuration for a task. See
+	// NewTaskRequest.resultdb for more details.
+	Resultdb *SwarmingRpcsResultDBCfg `json:"resultdb,omitempty"`
+
 	ServiceAccount string `json:"service_account,omitempty"`
 
 	Tags []string `json:"tags,omitempty"`
@@ -1067,6 +1074,63 @@ func (s *SwarmingRpcsPerformanceStats) UnmarshalJSON(data []byte) error {
 	}
 	s.BotOverhead = float64(s1.BotOverhead)
 	return nil
+}
+
+// SwarmingRpcsResultDBCfg: Swarming:ResultDB integration configuration
+// for a task. See NewTaskRequest.resultdb for more details.
+type SwarmingRpcsResultDBCfg struct {
+	Enable bool `json:"enable,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Enable") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Enable") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsResultDBCfg) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsResultDBCfg
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// SwarmingRpcsResultDBInfo: ResultDB related properties.
+type SwarmingRpcsResultDBInfo struct {
+	Hostname string `json:"hostname,omitempty"`
+
+	Invocation string `json:"invocation,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Hostname") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Hostname") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsResultDBInfo) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsResultDBInfo
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 // SwarmingRpcsServerDetails: Reports details about the server.
@@ -1420,7 +1484,7 @@ func (s *SwarmingRpcsTaskQueueList) MarshalJSON() ([]byte, error) {
 
 // SwarmingRpcsTaskRequest: Description of a task request as registered
 // by the server. This message is used when retrieving information about
-// an existing task. See NewtaskRequest for more details.
+// an existing task. See NewTaskRequest for more details.
 type SwarmingRpcsTaskRequest struct {
 	Authenticated string `json:"authenticated,omitempty"`
 
@@ -1488,7 +1552,7 @@ func (s *SwarmingRpcsTaskRequest) MarshalJSON() ([]byte, error) {
 type SwarmingRpcsTaskRequestMetadata struct {
 	// Request: Description of a task request as registered by the server.
 	// This message is used when retrieving information about an existing
-	// task. See NewtaskRequest for more details.
+	// task. See NewTaskRequest for more details.
 	Request *SwarmingRpcsTaskRequest `json:"request,omitempty"`
 
 	TaskId string `json:"task_id,omitempty"`
@@ -1530,7 +1594,7 @@ type SwarmingRpcsTaskRequests struct {
 
 	// Items: Description of a task request as registered by the server.
 	// This message is used when retrieving information about an existing
-	// task. See NewtaskRequest for more details.
+	// task. See NewTaskRequest for more details.
 	Items []*SwarmingRpcsTaskRequest `json:"items,omitempty"`
 
 	Now string `json:"now,omitempty"`
@@ -1613,6 +1677,9 @@ type SwarmingRpcsTaskResult struct {
 	OutputsRef *SwarmingRpcsFilesRef `json:"outputs_ref,omitempty"`
 
 	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
+
+	// ResultdbInfo: ResultDB related properties.
+	ResultdbInfo *SwarmingRpcsResultDBInfo `json:"resultdb_info,omitempty"`
 
 	RunId string `json:"run_id,omitempty"`
 
@@ -1982,7 +2049,7 @@ func (c *BotDeleteCall) Header() http.Header {
 
 func (c *BotDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2144,7 +2211,7 @@ func (c *BotEventsCall) Header() http.Header {
 
 func (c *BotEventsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2306,7 +2373,7 @@ func (c *BotGetCall) Header() http.Header {
 
 func (c *BotGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2517,7 +2584,7 @@ func (c *BotTasksCall) Header() http.Header {
 
 func (c *BotTasksCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2734,7 +2801,7 @@ func (c *BotTerminateCall) Header() http.Header {
 
 func (c *BotTerminateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2876,7 +2943,7 @@ func (c *BotsCountCall) Header() http.Header {
 
 func (c *BotsCountCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3010,7 +3077,7 @@ func (c *BotsDimensionsCall) Header() http.Header {
 
 func (c *BotsDimensionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3209,7 +3276,7 @@ func (c *BotsListCall) Header() http.Header {
 
 func (c *BotsListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3439,7 +3506,7 @@ func (c *QueuesListCall) Header() http.Header {
 
 func (c *QueuesListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3576,7 +3643,7 @@ func (c *ServerDetailsCall) Header() http.Header {
 
 func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3702,7 +3769,7 @@ func (c *ServerGetBootstrapCall) Header() http.Header {
 
 func (c *ServerGetBootstrapCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3828,7 +3895,7 @@ func (c *ServerGetBotConfigCall) Header() http.Header {
 
 func (c *ServerGetBotConfigCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3954,7 +4021,7 @@ func (c *ServerPermissionsCall) Header() http.Header {
 
 func (c *ServerPermissionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4072,7 +4139,7 @@ func (c *ServerTokenCall) Header() http.Header {
 
 func (c *ServerTokenCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4189,7 +4256,7 @@ func (c *TaskCancelCall) Header() http.Header {
 
 func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4336,7 +4403,7 @@ func (c *TaskRequestCall) Header() http.Header {
 
 func (c *TaskRequestCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4488,7 +4555,7 @@ func (c *TaskResultCall) Header() http.Header {
 
 func (c *TaskResultCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4645,7 +4712,7 @@ func (c *TaskStdoutCall) Header() http.Header {
 
 func (c *TaskStdoutCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4787,7 +4854,7 @@ func (c *TasksCancelCall) Header() http.Header {
 
 func (c *TasksCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4959,7 +5026,7 @@ func (c *TasksCountCall) Header() http.Header {
 
 func (c *TasksCountCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5145,7 +5212,7 @@ func (c *TasksGetStatesCall) Header() http.Header {
 
 func (c *TasksGetStatesCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5352,7 +5419,7 @@ func (c *TasksListCall) Header() http.Header {
 
 func (c *TasksListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5558,7 +5625,7 @@ func (c *TasksNewCall) Header() http.Header {
 
 func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5763,7 +5830,7 @@ func (c *TasksRequestsCall) Header() http.Header {
 
 func (c *TasksRequestsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5976,7 +6043,7 @@ func (c *TasksTagsCall) Header() http.Header {
 
 func (c *TasksTagsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.7 gdcl/20200128")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200501")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
