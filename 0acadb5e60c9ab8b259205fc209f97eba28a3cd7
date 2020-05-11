@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dba56b1c_fae64639",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T10:31:15Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 103,
+        "startChar": 55,
+        "endLine": 103,
+        "endChar": 66
+      },
+      "revId": "0acadb5e60c9ab8b259205fc209f97eba28a3cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8e0a50b_2da11f0a",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-11T10:31:15Z",
+      "side": 1,
+      "message": "why not \u0027(^|\\\\|/)\u0027?",
+      "range": {
+        "startLine": 103,
+        "startChar": 10,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "0acadb5e60c9ab8b259205fc209f97eba28a3cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
