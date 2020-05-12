@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c369956e_37e938d8",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 955,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-12T04:40:27Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be a cmd flag specified in our YAMLs?",
+      "range": {
+        "startLine": 955,
+        "startChar": 30,
+        "endLine": 955,
+        "endChar": 45
+      },
+      "revId": "648244bde8e5b238c890121d37235ae3ec310315",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
