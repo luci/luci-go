@@ -558,6 +558,11 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	// Logging is needed to report any errors during the early initialization.
 	srv.initLogging()
 
+	logging.Infof(srv.Context, "Server starting...")
+	if srv.Options.ContainerImageID != "" {
+		logging.Infof(srv.Context, "Container image is %s", srv.Options.ContainerImageID)
+	}
+
 	// Need the hostname (e.g. pod name on k8s) for logs and metrics.
 	if srv.Options.Hostname == "" {
 		srv.Options.Hostname, err = os.Hostname()
@@ -565,9 +570,12 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 			return srv, errors.Annotate(err, "failed to get own hostname").Err()
 		}
 	}
-	logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
-	if srv.Options.ContainerImageID != "" {
-		logging.Infof(srv.Context, "Container image is %s", srv.Options.ContainerImageID)
+
+	// On k8s log pod IPs too, this is useful when debugging k8s routing.
+	if !srv.Options.GAE {
+		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
+	} else {
+		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
 	}
 
 	// Configure base server subsystems by injecting them into the root context
@@ -1776,6 +1784,27 @@ func (s signerImpl) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, erro
 		AppVersion:         s.srv.Options.imageVersion(),
 		ServiceAccountName: s.srv.runningAs,
 	}, nil
+}
+
+// networkAddrsForLog returns a string with IPv4 addresses of local network
+// interfaces, if possible.
+func networkAddrsForLog() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return fmt.Sprintf("failed to enumerate network interfaces: %s", err)
+	}
+	var ips []string
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipv4 := ipnet.IP.To4(); ipv4 != nil {
+				ips = append(ips, ipv4.String())
+			}
+		}
+	}
+	if len(ips) == 0 {
+		return "<no IPv4 interfaces>"
+	}
+	return strings.Join(ips, ", ")
 }
 
 // getRemoteIP extracts end-user IP address from X-Forwarded-For header.
