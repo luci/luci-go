@@ -945,15 +945,15 @@ func (s *Server) serveLoop(srv *http.Server) error {
 // updates. We want to keep the listening socket open as long as there are
 // incoming requests (but no longer than 1 min).
 //
-// Effective only for servers that serve >0.2 QPS in a steady state.
+// Effective only for servers that serve >0.1 QPS in a steady state.
 func (s *Server) waitUntilNotServing() {
 	logging.Infof(s.Context, "Received SIGTERM, waiting for the traffic to stop...")
 	deadline := clock.Now(s.Context).Add(time.Minute)
 	for {
 		now := clock.Now(s.Context)
 		lastReq, ok := s.lastReqTime.Load().(time.Time)
-		if !ok || now.Sub(lastReq) > 5*time.Second {
-			logging.Infof(s.Context, "No requests in last 5 sec, proceeding with the shutdown...")
+		if !ok || now.Sub(lastReq) > 15*time.Second {
+			logging.Infof(s.Context, "No requests in the last 15 sec, proceeding with the shutdown...")
 			break
 		}
 		if now.After(deadline) {
