@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "deb31fd5_fc0c0529",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-12T20:59:29Z",
+      "side": 1,
+      "message": "nit: resource name.",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 24
+      },
+      "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2201f2ff_61aaeac8",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-12T20:59:29Z",
+      "side": 1,
+      "message": "Seems worth linking https://godoc.org/google.golang.org/genproto/googleapis/bytestream#WriteRequest",
+      "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eacb757c_c76f4899",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-12T20:59:29Z",
+      "side": 1,
+      "message": "rbeInstance is not used.",
+      "range": {
+        "startLine": 91,
+        "startChar": 37,
+        "endLine": 91,
+        "endChar": 48
+      },
+      "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
