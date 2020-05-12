@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -47,15 +49,16 @@ type treeStatus struct {
 
 type treeStatusClient interface {
 	getStatus(c context.Context, host string) (*treeStatus, error)
-	putStatus(c context.Context, host, message string, prevKey int64) error
+	postStatus(c context.Context, host, message string, prevKey int64) error
 }
 
-type readOnlyTreeStatusClient struct {
-	fetchFunc func(context.Context, string) ([]byte, error)
+type httpTreeStatusClient struct {
+	getFunc  func(context.Context, string) ([]byte, error)
+	postFunc func(context.Context, string) error
 }
 
-func (ts *readOnlyTreeStatusClient) getStatus(c context.Context, host string) (*treeStatus, error) {
-	respJSON, err := ts.fetchFunc(c, fmt.Sprintf("https://%s/current?format=json", host))
+func (ts *httpTreeStatusClient) getStatus(c context.Context, host string) (*treeStatus, error) {
+	respJSON, err := ts.getFunc(c, fmt.Sprintf("https://%s/current?format=json", host))
 	if err != nil {
 		return nil, err
 	}
@@ -93,28 +96,26 @@ func (ts *readOnlyTreeStatusClient) getStatus(c context.Context, host string) (*
 	}, nil
 }
 
-// TODO: Make this actually update the tree status, once we're confident it's
-// doing the right thing.
-func (ts *readOnlyTreeStatusClient) putStatus(c context.Context, host, message string, prevKey int64) error {
-	logging.Infof(c, "Updating status for %s: %s", host, message)
-	return nil
+func (ts *httpTreeStatusClient) postStatus(c context.Context, host, message string, prevKey int64) error {
+	logging.Infof(c, "Updating status for %s: %q", host, message)
+
+	q := url.Values{}
+	q.Add("message", message)
+	q.Add("last_status_key", strconv.FormatInt(prevKey, 10))
+	u := url.URL{
+		Host:     host,
+		Scheme:   "https",
+		Path:     "/",
+		RawQuery: q.Encode(),
+	}
+
+	return ts.postFunc(c, u.String())
 }
 
-func fetchHttp(c context.Context, url string) ([]byte, error) {
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
+func getHttp(c context.Context, url string) ([]byte, error) {
+	response, err := makeHttpRequest(c, url, "GET")
 	if err != nil {
 		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(c)
-
-	response, err := (&http.Client{Transport: transport}).Do(req)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get data from %q", url).Err()
 	}
 
 	defer response.Body.Close()
@@ -126,6 +127,44 @@ func fetchHttp(c context.Context, url string) ([]byte, error) {
 	return bytes, nil
 }
 
+func postHttp(c context.Context, url string) error {
+	response, err := makeHttpRequest(c, url, "POST")
+	if err != nil {
+		return err
+	}
+
+	response.Body.Close()
+
+	// If the operation succeeded, the status app will apply the update, and
+	// then redirect back to the main page. Let's also check for a 200, as this
+	// is a reasonable response and we don't want to depend too heavily on
+	// particular implementation details.
+	if response.StatusCode == http.StatusFound || response.StatusCode == http.StatusOK {
+		return nil
+	}
+	return fmt.Errorf("POST to %q returned unexpected status code %d", url, response.StatusCode)
+}
+
+func makeHttpRequest(c context.Context, url, method string) (*http.Response, error) {
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(c)
+
+	response, err := (&http.Client{Transport: transport}).Do(req)
+	if err != nil {
+		return nil, errors.Annotate(err, "%s request to %q failed", method, url).Err()
+	}
+
+	return response, nil
+}
+
 // UpdateTreeStatus is the HTTP handler triggered by cron when it's time to
 // check tree closers and update tree status if necessary.
 func UpdateTreeStatus(c *router.Context) {
@@ -133,7 +172,7 @@ func UpdateTreeStatus(c *router.Context) {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	if err := updateTrees(ctx, &readOnlyTreeStatusClient{fetchHttp}); err != nil {
+	if err := updateTrees(ctx, &httpTreeStatusClient{getHttp, postHttp}); err != nil {
 		logging.WithError(err).Errorf(ctx, "error while updating tree status")
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -297,7 +336,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	}
 
 	if anyEnabled {
-		return ts.putStatus(c, host, message, treeStatus.key)
+		return ts.postStatus(c, host, message, treeStatus.key)
 	}
 	logging.Infof(c, "Would update status for %s to %q", host, message)
 	return nil
