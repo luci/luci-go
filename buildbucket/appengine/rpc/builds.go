@@ -72,11 +72,6 @@ func (*Builds) Batch(ctx context.Context, req *buildbucketpb.BatchRequest) (*bui
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// CancelBuild handles a request to cancel a build. Implements buildbucketpb.BuildsServer.
-func (*Builds) CancelBuild(ctx context.Context, req *buildbucketpb.CancelBuildRequest) (*buildbucketpb.Build, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
 // SearchBuilds handles a request to search for builds. Implements buildbucketpb.BuildsServer.
 func (*Builds) SearchBuilds(ctx context.Context, req *buildbucketpb.SearchBuildsRequest) (*buildbucketpb.SearchBuildsResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")

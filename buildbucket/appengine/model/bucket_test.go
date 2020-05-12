@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -38,14 +38,14 @@ func TestBucket(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("CanView", func() {
+		Convey("GetRole", func() {
 			Convey("empty", func() {
 				b := &Bucket{
-					Proto: pb.Bucket{},
+					Proto: buildbucketpb.Bucket{},
 				}
-				can, err := b.CanView(ctx)
+				r, err := b.GetRole(ctx)
 				So(err, ShouldBeNil)
-				So(can, ShouldBeFalse)
+				So(r, ShouldBeNil)
 			})
 
 			Convey("project", func() {
@@ -53,104 +53,113 @@ func TestBucket(t *testing.T) {
 					Parent: datastore.KeyForObj(ctx, &Project{
 						ID: "project",
 					}),
-					Proto: pb.Bucket{},
+					Proto: buildbucketpb.Bucket{},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.Identity = identity.Identity("project:project")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldNotBeNil)
+					So(*r, ShouldEqual, buildbucketpb.Acl_WRITER)
 				})
 
-				Convey("cannot", func() {
+				Convey("mismatch", func() {
 					s.Identity = identity.Identity("project:other")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldBeNil)
 				})
 			})
 
 			Convey("email", func() {
 				b := &Bucket{
-					Proto: pb.Bucket{
-						Acls: []*pb.Acl{
+					Proto: buildbucketpb.Bucket{
+						Acls: []*buildbucketpb.Acl{
 							{
 								Identity: "email1",
+								Role:     buildbucketpb.Acl_READER,
 							},
 							{
 								Identity: "email2",
+								Role:     buildbucketpb.Acl_SCHEDULER,
 							},
 						},
 					},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.Identity = identity.Identity("user:email1")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldNotBeNil)
+					So(*r, ShouldEqual, buildbucketpb.Acl_READER)
 				})
 
-				Convey("cannot", func() {
+				Convey("mismatch", func() {
 					s.Identity = identity.Identity("user:email3")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldBeNil)
 				})
 			})
 
 			Convey("user", func() {
 				b := &Bucket{
-					Proto: pb.Bucket{
-						Acls: []*pb.Acl{
+					Proto: buildbucketpb.Bucket{
+						Acls: []*buildbucketpb.Acl{
 							{
 								Identity: "user:user1",
+								Role:     buildbucketpb.Acl_SCHEDULER,
 							},
 							{
 								Identity: "user:user2",
+								Role:     buildbucketpb.Acl_WRITER,
 							},
 						},
 					},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.Identity = identity.Identity("user:user2")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldNotBeNil)
+					So(*r, ShouldEqual, buildbucketpb.Acl_WRITER)
 				})
 
-				Convey("cannot", func() {
+				Convey("mismatch", func() {
 					s.Identity = identity.Identity("user:user3")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldBeNil)
 				})
 			})
 
 			Convey("group", func() {
 				b := &Bucket{
-					Proto: pb.Bucket{
-						Acls: []*pb.Acl{
+					Proto: buildbucketpb.Bucket{
+						Acls: []*buildbucketpb.Acl{
 							{
 								Group: "group:group",
+								Role:  buildbucketpb.Acl_READER,
 							},
 						},
 					},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.IdentityGroups = []string{"group:group"}
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldNotBeNil)
+					So(*r, ShouldEqual, buildbucketpb.Acl_READER)
 				})
 
-				Convey("cannot", func() {
-					can, err := b.CanView(ctx)
+				Convey("mismatch", func() {
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldBeNil)
 				})
 			})
 		})
