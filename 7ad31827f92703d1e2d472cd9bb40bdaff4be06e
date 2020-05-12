@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c37aaf7e_a9542407",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-12T00:24:48Z",
+      "side": 1,
+      "message": "nit: \n  u :\u003d url.URL{\n    Host \u003d host,\n    Scheme \u003d \"https\",\n    Path \u003d \"/\",\n    RawQuery: q.Encode(),\n  }",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 13
+      },
+      "revId": "7ad31827f92703d1e2d472cd9bb40bdaff4be06e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7efad031_82b321d3",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-12T00:24:48Z",
+      "side": 1,
+      "message": "we still need to close the response body.\n\n  defer response.Body.Close()\n\nbut stepping back, there is a bit of copy-pasta from above. Anyway to reuse code?\nI think L142-156 are identical except for GET/POST that can be passed as a param",
+      "revId": "7ad31827f92703d1e2d472cd9bb40bdaff4be06e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38f18673_f017d70b",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-12T00:24:48Z",
+      "side": 1,
+      "message": "http.StatusFound\n\nwould be nice to check for http.StatusOK too",
+      "range": {
+        "startLine": 160,
+        "startChar": 27,
+        "endLine": 160,
+        "endChar": 30
+      },
+      "revId": "7ad31827f92703d1e2d472cd9bb40bdaff4be06e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
