@@ -143,6 +143,12 @@ const (
 // RPCs done via AsProject authority.
 const XLUCIProjectHeader = "X-Luci-Project"
 
+var (
+	// ErrNoForwardableCreds is returned by GetRPCTransport when attempting to
+	// forward credentials (via AsCredentialsForwarder) that are not forwardable.
+	ErrNoForwardableCreds = errors.New("auth: no forwardable credentials in the context")
+)
+
 // RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
 type RPCOption interface {
 	apply(opts *rpcOptions)

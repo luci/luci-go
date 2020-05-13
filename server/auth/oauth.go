@@ -31,13 +31,14 @@ import (
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
 // ErrBadOAuthToken is returned by GoogleOAuth2Method if the access token it
 // checks is bad.
-var ErrBadOAuthToken = errors.New("oauth: bad access token")
+var ErrBadOAuthToken = errors.New("oauth: bad access token", grpcutil.UnauthenticatedTag)
 
 // SHA256(access token) => JSON-marshalled User or "" if the token is invalid.
 var oauthChecksCache = layered.Cache{
@@ -214,17 +215,22 @@ func (m *GoogleOAuth2Method) authenticateAgainstGoogle(c context.Context, cfg *C
 		return nil, 0, fmt.Errorf("oauth: email %s is not verified", tokenInfo.Email)
 	}
 	if tokenInfo.ExpiresIn <= 0 {
-		return nil, 0, fmt.Errorf("oauth: 'expires_in' field is not a positive integer")
+		return nil, 0, fmt.Errorf(
+			"oauth: in a token from %s 'expires_in' %d is not a positive integer",
+			tokenInfo.Email, tokenInfo.ExpiresIn)
 	}
 
 	// Verify `scopes` is subset of tokenInfo.Scope.
+	//
+	// TODO(vadimsh): Move this to Authenticate(...). Multiple GoogleOAuth2Method
+	// share the same oauthChecksCache, but may have different list of m.Scopes.
 	tokenScopes := map[string]bool{}
 	for _, s := range strings.Split(tokenInfo.Scope, " ") {
 		tokenScopes[s] = true
 	}
 	for _, s := range m.Scopes {
 		if !tokenScopes[s] {
-			return nil, 0, fmt.Errorf("oauth: token doesn't have scope %q", s)
+			return nil, 0, fmt.Errorf("oauth: a token from %s doesn't have scope %q", tokenInfo.Email, s)
 		}
 	}
 
