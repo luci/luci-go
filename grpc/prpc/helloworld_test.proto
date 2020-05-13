@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package prpc;
 
+import "google/protobuf/field_mask.proto";
+
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
@@ -15,6 +17,7 @@ service Greeter {
 // The request message containing the user's name.
 message HelloRequest {
   string name = 1;
+  google.protobuf.FieldMask fields = 2;
 }
 
 // The response message containing the greetings
