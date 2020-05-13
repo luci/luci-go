@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -152,7 +153,13 @@ func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
 		opt = *options
 	}
 	if opt.MaxConcurrentJobs == 0 {
-		opt.MaxConcurrentJobs = 8
+		if runtime.GOARCH == "386" {
+			// set lower value to prevent memory exceeded error.
+			opt.MaxConcurrentJobs = 4
+		} else {
+			opt.MaxConcurrentJobs = 8
+		}
+
 	}
 	if opt.MaxFileStatsInterval == 0 {
 		opt.MaxFileStatsInterval = time.Second * 5
