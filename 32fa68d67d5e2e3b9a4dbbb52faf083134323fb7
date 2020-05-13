@@ -22,6 +22,30 @@
       "revId": "32fa68d67d5e2e3b9a4dbbb52faf083134323fb7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c411f495_1f743ba4",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 970,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-13T21:11:18Z",
+      "side": 1,
+      "message": "No, the whole situation of the server shutting down when it is not yet removed from Endpoints list.",
+      "parentUuid": "fb69bfec_768a5048",
+      "range": {
+        "startLine": 970,
+        "startChar": 7,
+        "endLine": 970,
+        "endChar": 18
+      },
+      "revId": "32fa68d67d5e2e3b9a4dbbb52faf083134323fb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
