@@ -31,13 +31,14 @@ import (
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
 // ErrBadOAuthToken is returned by GoogleOAuth2Method if the access token it
 // checks is bad.
-var ErrBadOAuthToken = errors.New("oauth: bad access token")
+var ErrBadOAuthToken = errors.New("oauth: bad access token", grpcutil.UnauthenticatedTag)
 
 // SHA256(access token) => JSON-marshalled User or "" if the token is invalid.
 var oauthChecksCache = layered.Cache{

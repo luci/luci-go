@@ -265,7 +265,7 @@ func TestMiddleware(t *testing.T) {
 			Methods: []Method{fakeAuthMethod{clientID: "another_client_id"}},
 		})
 		So(rr.Code, ShouldEqual, 403)
-		So(rr.Body.String(), ShouldEqual, "Forbidden\n")
+		So(rr.Body.String(), ShouldEqual, ErrBadClientID.Error()+"\n")
 	})
 
 	Convey("Transient error", t, func() {
@@ -273,7 +273,7 @@ func TestMiddleware(t *testing.T) {
 			Methods: []Method{fakeAuthMethod{err: errors.New("boo", transient.Tag)}},
 		})
 		So(rr.Code, ShouldEqual, 500)
-		So(rr.Body.String(), ShouldEqual, "Transient error during authentication\n")
+		So(rr.Body.String(), ShouldEqual, "Internal Server Error\n")
 	})
 }
 
