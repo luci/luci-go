@@ -38,14 +38,14 @@ func TestBucket(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("CanView", func() {
+		Convey("GetRole", func() {
 			Convey("empty", func() {
 				b := &Bucket{
 					Proto: pb.Bucket{},
 				}
-				can, err := b.CanView(ctx)
+				r, err := b.GetRole(ctx)
 				So(err, ShouldBeNil)
-				So(can, ShouldBeFalse)
+				So(r, ShouldEqual, NoRole)
 			})
 
 			Convey("project", func() {
@@ -56,18 +56,18 @@ func TestBucket(t *testing.T) {
 					Proto: pb.Bucket{},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.Identity = identity.Identity("project:project")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldEqual, pb.Acl_WRITER)
 				})
 
-				Convey("cannot", func() {
+				Convey("mismatch", func() {
 					s.Identity = identity.Identity("project:other")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldEqual, NoRole)
 				})
 			})
 
@@ -77,26 +77,28 @@ func TestBucket(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "email1",
+								Role:     pb.Acl_READER,
 							},
 							{
 								Identity: "email2",
+								Role:     pb.Acl_SCHEDULER,
 							},
 						},
 					},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.Identity = identity.Identity("user:email1")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldEqual, pb.Acl_READER)
 				})
 
-				Convey("cannot", func() {
+				Convey("mismatch", func() {
 					s.Identity = identity.Identity("user:email3")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldEqual, NoRole)
 				})
 			})
 
@@ -106,26 +108,28 @@ func TestBucket(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user1",
+								Role:     pb.Acl_SCHEDULER,
 							},
 							{
 								Identity: "user:user2",
+								Role:     pb.Acl_WRITER,
 							},
 						},
 					},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.Identity = identity.Identity("user:user2")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldEqual, pb.Acl_WRITER)
 				})
 
-				Convey("cannot", func() {
+				Convey("mismatch", func() {
 					s.Identity = identity.Identity("user:user3")
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldEqual, NoRole)
 				})
 			})
 
@@ -135,22 +139,23 @@ func TestBucket(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Group: "group:group",
+								Role:  pb.Acl_READER,
 							},
 						},
 					},
 				}
 
-				Convey("can", func() {
+				Convey("match", func() {
 					s.IdentityGroups = []string{"group:group"}
-					can, err := b.CanView(ctx)
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeTrue)
+					So(r, ShouldEqual, pb.Acl_READER)
 				})
 
-				Convey("cannot", func() {
-					can, err := b.CanView(ctx)
+				Convey("mismatch", func() {
+					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
-					So(can, ShouldBeFalse)
+					So(r, ShouldEqual, NoRole)
 				})
 			})
 		})

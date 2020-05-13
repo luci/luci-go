@@ -119,29 +119,17 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 			return nil, errors.Reason("unexpected number of results for build address %q: %d", addr, len(ents)).Err()
 		}
 	}
-	bld := &model.Build{
-		ID: req.Id,
-	}
-	switch err := datastore.Get(ctx, bld); {
+	bld, bck, err := model.GetBuildAndBucket(ctx, req.Id)
+	switch {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, notFound(ctx)
-	case err != nil:
-		return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
-	}
-	bck := &model.Bucket{
-		ID:     bld.Proto.Builder.Bucket,
-		Parent: datastore.KeyForObj(ctx, &model.Project{ID: bld.Proto.Builder.Project}),
-	}
-	switch err := datastore.Get(ctx, bck); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, notFound(ctx)
-	case err != nil:
-		return nil, errors.Annotate(err, "error fetching bucket %q", bld.BucketID).Err()
-	}
-	switch can, err := bck.CanView(ctx); {
 	case err != nil:
 		return nil, err
-	case !can:
+	}
+	switch r, err := bck.GetRole(ctx); {
+	case err != nil:
+		return nil, err
+	case r < pb.Acl_READER:
 		return nil, notFound(ctx)
 	}
 	return bld.ToProto(ctx, m)

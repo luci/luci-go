@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // logDetails logs debug information about the request.
@@ -60,41 +60,36 @@ func notFound(ctx context.Context) error {
 	return appstatus.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", auth.CurrentIdentity(ctx))
 }
 
-// Builds implements buildbucketpb.BuildsServer.
+// Builds implements pb.BuildsServer.
 type Builds struct {
 }
 
 // Ensure Builds implements projects.ProjectsServer.
-var _ buildbucketpb.BuildsServer = &Builds{}
+var _ pb.BuildsServer = &Builds{}
 
-// Batch handles a batch request. Implements buildbucketpb.BuildsServer.
-func (*Builds) Batch(ctx context.Context, req *buildbucketpb.BatchRequest) (*buildbucketpb.BatchResponse, error) {
+// Batch handles a batch request. Implements pb.BuildsServer.
+func (*Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// CancelBuild handles a request to cancel a build. Implements buildbucketpb.BuildsServer.
-func (*Builds) CancelBuild(ctx context.Context, req *buildbucketpb.CancelBuildRequest) (*buildbucketpb.Build, error) {
+// SearchBuilds handles a request to search for builds. Implements pb.BuildsServer.
+func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// SearchBuilds handles a request to search for builds. Implements buildbucketpb.BuildsServer.
-func (*Builds) SearchBuilds(ctx context.Context, req *buildbucketpb.SearchBuildsRequest) (*buildbucketpb.SearchBuildsResponse, error) {
+// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
+func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// ScheduleBuild handles a request to schedule a build. Implements buildbucketpb.BuildsServer.
-func (*Builds) ScheduleBuild(ctx context.Context, req *buildbucketpb.ScheduleBuildRequest) (*buildbucketpb.Build, error) {
+// UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
+func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// UpdateBuild handles a request to update a build. Implements buildbucketpb.UpdateBuild.
-func (*Builds) UpdateBuild(ctx context.Context, req *buildbucketpb.UpdateBuildRequest) (*buildbucketpb.Build, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
-// New returns a new buildbucketpb.BuildsServer.
-func New() buildbucketpb.BuildsServer {
-	return &buildbucketpb.DecoratedBuilds{
+// New returns a new pb.BuildsServer.
+func New() pb.BuildsServer {
+	return &pb.DecoratedBuilds{
 		Prelude:  logDetails,
 		Service:  &Builds{},
 		Postlude: logAndReturnUnimplemented,

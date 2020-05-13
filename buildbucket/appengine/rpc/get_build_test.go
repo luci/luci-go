@@ -192,6 +192,7 @@ func TestGetBuild(t *testing.T) {
 						Acls: []*pb.Acl{
 							{
 								Identity: "user:user",
+								Role:     pb.Acl_READER,
 							},
 						},
 					},
