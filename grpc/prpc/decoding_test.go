@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"google.golang.org/grpc/metadata"
 
@@ -44,17 +45,31 @@ func TestDecoding(t *testing.T) {
 				Header: http.Header{},
 			}
 			req.Header.Set("Content-Type", contentType)
-			return readMessage(req, &msg)
+			return readMessage(req, &msg, true)
 		}
 
 		testLucy := func(contentType string, body []byte) {
 			err := read(contentType, body)
 			So(err, ShouldBeNil)
-			So(msg.Name, ShouldEqual, "Lucy")
+			So(&msg, ShouldResembleProto, &HelloRequest{
+				Name: "Lucy",
+				Fields: &field_mask.FieldMask{
+					Paths: []string{
+						"name",
+					},
+				},
+			})
 		}
 
 		Convey("binary", func() {
-			testMsg := &HelloRequest{Name: "Lucy"}
+			testMsg := &HelloRequest{
+				Name: "Lucy",
+				Fields: &field_mask.FieldMask{
+					Paths: []string{
+						"name",
+					},
+				},
+			}
 			body, err := proto.Marshal(testMsg)
 			So(err, ShouldBeNil)
 
@@ -76,7 +91,7 @@ func TestDecoding(t *testing.T) {
 		})
 
 		Convey("json", func() {
-			body := []byte(`{"name": "Lucy"}`)
+			body := []byte(`{"name": "Lucy", "fields": "name"}`)
 			Convey(ContentTypeJSON, func() {
 				testLucy(ContentTypeJSON, body)
 			})
@@ -97,7 +112,7 @@ func TestDecoding(t *testing.T) {
 
 		Convey("text", func() {
 			Convey(mtPRPCText, func() {
-				body := []byte(`name: "Lucy"`)
+				body := []byte(`name: "Lucy" fields < paths: "name" >`)
 				testLucy(mtPRPCText, body)
 			})
 			Convey("malformed body", func() {
