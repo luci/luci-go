@@ -146,6 +146,30 @@
       "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e433ccee_1df10a94",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-13T22:09:38Z",
+      "side": 1,
+      "message": "Yes, here this lock doesn\u0027t matter. It would have mattered more if FixFieldMasks(\u003cvalue\u003e) was called often in a background goroutine. Generally without the lock (or atomics) other goroutines could read stale value cached in their local CPU caches. Sometimes it leads to bugs, e.g. when a goroutine makes writes A and B, and assumes if other goroutines see effects of B, they also see effects of A. Without atomic or locks this may be violated.",
+      "parentUuid": "5d9e2cce_ba59fed5",
+      "range": {
+        "startLine": 339,
+        "startChar": 13,
+        "endLine": 339,
+        "endChar": 24
+      },
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
