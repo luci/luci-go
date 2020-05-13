@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40e98a0a_1130e3d4",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-13T20:20:03Z",
+      "side": 1,
+      "message": "Are there any types that implement proto.Message with non pointer receiver methods?",
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
