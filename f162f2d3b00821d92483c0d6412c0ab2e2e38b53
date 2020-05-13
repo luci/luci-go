@@ -16,6 +16,47 @@
       "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1bbcf90_c6144b65",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-13T20:34:52Z",
+      "side": 1,
+      "message": "No, I think protoc generates only ones that are pointers.",
+      "parentUuid": "40e98a0a_1130e3d4",
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bea06ee_e0899404",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-13T20:34:52Z",
+      "side": 1,
+      "message": "readMessage can be slow since it does network IO, better to release the mutex before calling it:\n\n  s.mu.RLock()\n  fixFieldMasksForJSON :\u003d s.fixFieldMasksForJSON\n  s.mu.RUnlock()",
+      "range": {
+        "startLine": 339,
+        "startChar": 13,
+        "endLine": 339,
+        "endChar": 24
+      },
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
