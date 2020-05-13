@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f7e931b5_e91a7665",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T00:40:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "deb31fd5_fc0c0529",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 24
+      },
+      "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2201f2ff_61aaeac8",
         "filename": "resultdb/internal/services/recorder/create_artifact.go",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d318935_80878ff9",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T00:40:24Z",
+      "side": 1,
+      "message": "Done, except I included the link to the proto. \nThe godoc link is more or less obvious because you can type \"godoc.org/\u003cpackage path\u003e\" where the package path is among the imports above",
+      "parentUuid": "2201f2ff_61aaeac8",
+      "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cb5c5a1_ad8a3a58",
+        "filename": "resultdb/internal/services/recorder/recorder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T00:40:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eacb757c_c76f4899",
+      "range": {
+        "startLine": 91,
+        "startChar": 37,
+        "endLine": 91,
+        "endChar": 48
+      },
+      "revId": "c31b904c3924ce8980c7550a6fd9358f4884813a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
