@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a20cfd7f_9de3310b",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T05:48:38Z",
+      "side": 1,
+      "message": "if syntheticTestRe.MatchString(name) {",
+      "revId": "44f908ce7639113d9cf89f0ee03f377966e28185",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
