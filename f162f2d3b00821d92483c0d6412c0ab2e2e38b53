@@ -170,6 +170,30 @@
       "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "96656668_0ed598a3",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-13T22:39:40Z",
+      "side": 1,
+      "message": "Sure, I understand the purpose in general.",
+      "parentUuid": "e433ccee_1df10a94",
+      "range": {
+        "startLine": 339,
+        "startChar": 13,
+        "endLine": 339,
+        "endChar": 24
+      },
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
