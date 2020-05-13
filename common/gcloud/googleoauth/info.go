@@ -80,7 +80,6 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 	}
 
 	// Note: we must not log full URL of this call, it contains sensitive info.
-	logging.Debugf(c, "POST %s", params.Endpoint)
 	v := url.Values{}
 	if params.IDToken != "" {
 		v.Add("id_token", params.IDToken)
@@ -89,12 +88,10 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 	}
 	resp, err := ctxhttp.Get(c, params.Client, params.Endpoint+"?"+v.Encode())
 	if err != nil {
-		logging.WithError(err).Errorf(c, "POST %s failed", params.Endpoint)
 		return nil, transient.Tag.Apply(err)
 	}
 	defer googleapi.CloseBody(resp)
 	if err := googleapi.CheckResponse(resp); err != nil {
-		logging.WithError(err).Errorf(c, "POST %s failed", params.Endpoint)
 		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
 			return nil, ErrBadToken
 		}
