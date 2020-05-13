@@ -20,11 +20,13 @@ import (
 	"net/http"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -34,37 +36,41 @@ import (
 )
 
 var (
+	// Authenticate errors (must be grpc-tagged).
+
 	// ErrNotConfigured is returned by Authenticate and other functions if the
 	// context wasn't previously initialized via 'Initialize'.
-	ErrNotConfigured = errors.New("auth: the library is not properly configured")
+	ErrNotConfigured = errors.New("auth: the library is not properly configured", grpcutil.InternalTag)
+
+	// ErrBadClientID is returned by Authenticate if caller is using
+	// non-whitelisted OAuth2 client. More info is in the log.
+	ErrBadClientID = errors.New("auth: OAuth client_id is not whitelisted", grpcutil.PermissionDeniedTag)
+
+	// ErrBadAudience is returned by Authenticate if token's audience is unknown.
+	ErrBadAudience = errors.New("auth: bad token audience", grpcutil.PermissionDeniedTag)
+
+	// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
+	// be parsed.
+	ErrBadRemoteAddr = errors.New("auth: bad remote addr", grpcutil.InternalTag)
+
+	// ErrIPNotWhitelisted is returned when an account is restricted by an IP
+	// whitelist and request's remote_addr is not in it.
+	ErrIPNotWhitelisted = errors.New("auth: IP is not whitelisted", grpcutil.PermissionDeniedTag)
+
+	// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
+	// tries to use X-Luci-Project header. Only a whitelisted set of callers
+	// are allowed to use this header, see InternalServicesGroup.
+	ErrProjectHeaderForbidden = errors.New("auth: the caller is not allowed to use X-Luci-Project", grpcutil.PermissionDeniedTag)
+
+	// Other errors.
 
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
 	// the authentication methods support UsersAPI.
 	ErrNoUsersAPI = errors.New("auth: methods do not support login or logout URL")
 
-	// ErrBadClientID is returned by Authenticate if caller is using
-	// non-whitelisted OAuth2 client. More info is in the log.
-	ErrBadClientID = errors.New("auth: OAuth client_id is not whitelisted")
-
-	// ErrBadAudience is returned by Authenticate if token's audience is unknown.
-	ErrBadAudience = errors.New("auth: bad token audience")
-
-	// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
-	// be parsed.
-	ErrBadRemoteAddr = errors.New("auth: bad remote addr")
-
-	// ErrIPNotWhitelisted is returned when an account is restricted by an IP
-	// whitelist and request's remote_addr is not in it.
-	ErrIPNotWhitelisted = errors.New("auth: IP is not whitelisted")
-
-	// ErrNoForwardableCreds is returned when attempting to forward credentials
-	// (via AsCredentialsForwarder) that are not forwardable.
+	// ErrNoForwardableCreds is returned by GetRPCTransport when attempting to
+	// forward credentials (via AsCredentialsForwarder) that are not forwardable.
 	ErrNoForwardableCreds = errors.New("auth: no forwardable credentials in the context")
-
-	// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
-	// tries to use X-Luci-Project header. Only a whitelisted set of callers
-	// are allowed to use this header, see InternalServicesGroup.
-	ErrProjectHeaderForbidden = errors.New("auth: the caller is not allowed to use X-Luci-Project")
 )
 
 const (
@@ -98,6 +104,11 @@ type Method interface {
 	//   * (*User, nil) on success.
 	//   * (nil, nil) if the method is not applicable.
 	//   * (nil, error) if the method is applicable, but credentials are invalid.
+	//
+	// The returned error may be tagged with an grpcutil error tag. Its code will
+	// be used to derive the response status code. Internal error messages (e.g.
+	// ones tagged with grpcutil.InternalTag or similar) are logged, but not sent
+	// to clients. All other errors are sent to clients as is.
 	Authenticate(context.Context, *http.Request) (*User, error)
 }
 
@@ -193,19 +204,17 @@ type Authenticator struct {
 func (a *Authenticator) GetMiddleware() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		ctx, err := a.Authenticate(c.Context, c.Request)
-		switch {
-		case transient.Tag.In(err):
-			replyError(c.Context, c.Writer, 500, "Transient error during authentication", err)
-		case err == ErrNotConfigured:
-			replyError(c.Context, c.Writer, 500, "The authentication library is not configured", err)
-		case err == ErrBadClientID ||
-			err == ErrBadAudience ||
-			err == ErrIPNotWhitelisted ||
-			err == ErrProjectHeaderForbidden:
-			replyError(c.Context, c.Writer, 403, "Forbidden", err)
-		case err != nil:
-			replyError(c.Context, c.Writer, 401, "Authentication error", err)
-		default:
+		if err != nil {
+			code, ok := grpcutil.Tag.In(err)
+			if !ok {
+				if transient.Tag.In(err) {
+					code = codes.Internal
+				} else {
+					code = codes.Unauthenticated
+				}
+			}
+			replyError(c.Context, c.Writer, grpcutil.CodeStatus(code), err)
+		} else {
 			c.Context = ctx
 			next(c)
 		}
@@ -217,6 +226,11 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 // Returns an error if credentials are provided, but invalid. If no credentials
 // are provided (i.e. the request is anonymous), finishes successfully, but in
 // that case CurrentIdentity() returns AnonymousIdentity.
+//
+// The returned error may be tagged with an grpcutil error tag. Its code should
+// be used to derive the response status code. Internal error messages (e.g.
+// ones tagged with grpcutil.InternalTag or similar) should be logged, but not
+// sent to clients. All other errors should be sent to clients as is.
 func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ context.Context, err error) {
 	tracedCtx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.Authenticate")
 	report := durationReporter(tracedCtx, authenticateDuration)
@@ -372,10 +386,19 @@ func (a *Authenticator) LogoutURL(ctx context.Context, dest string) (string, err
 
 ////
 
-// replyError logs the error and writes 'msg' to ResponseWriter.
-func replyError(ctx context.Context, rw http.ResponseWriter, code int, msg string, err error) {
-	logging.WithError(err).Errorf(ctx, "HTTP %d: %s", code, msg)
-	http.Error(rw, msg, code)
+// replyError logs the error and writes a response to ResponseWriter.
+//
+// For codes < 500, the error is logged at Warning level and written to the
+// response as is. For codes >= 500 the error is logged at Error level and
+// the generic error message is written instead.
+func replyError(ctx context.Context, rw http.ResponseWriter, code int, err error) {
+	if code < 500 {
+		logging.Warningf(ctx, "HTTP %d: %s", code, err)
+		http.Error(rw, err.Error(), code)
+	} else {
+		logging.Errorf(ctx, "HTTP %d: %s", code, err)
+		http.Error(rw, http.StatusText(code), code)
+	}
 }
 
 // checkClientIDWhitelist returns nil if the clientID is allowed, ErrBadClientID

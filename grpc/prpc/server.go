@@ -172,7 +172,6 @@ func (s *Server) authenticate() router.Middleware {
 	}
 
 	return func(c *router.Context, next router.Handler) {
-
 		ctx, err := a.Authenticate(c.Context, c.Request)
 		if err == nil {
 			c.Context = ctx
@@ -181,14 +180,21 @@ func (s *Server) authenticate() router.Middleware {
 		}
 
 		format, perr := responseFormat(c.Request.Header.Get(headerAccept))
-		switch {
-		case perr != nil:
+		if perr != nil {
 			writeError(c.Context, c.Writer, perr, FormatBinary)
-		case transient.Tag.In(err):
-			writeError(c.Context, c.Writer, withCode(err, codes.Internal), format)
-		default:
-			writeError(c.Context, c.Writer, withCode(err, codes.Unauthenticated), format)
+			return
 		}
+
+		// Authenticate is allowed to return gRPC-tagger errors, recognize them.
+		code, ok := grpcutil.Tag.In(err)
+		if !ok {
+			if transient.Tag.In(err) {
+				code = codes.Internal
+			} else {
+				code = codes.Unauthenticated
+			}
+		}
+		writeError(c.Context, c.Writer, withCode(err, code), format)
 	}
 }
 
