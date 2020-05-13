@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "439d6aaf_c16234e3",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T23:23:12Z",
+      "side": 1,
+      "message": "tagged",
+      "range": {
+        "startLine": 188,
+        "startChar": 44,
+        "endLine": 188,
+        "endChar": 50
+      },
+      "revId": "3a3667a929f93bcf521ce1161c644784bdbe57a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
