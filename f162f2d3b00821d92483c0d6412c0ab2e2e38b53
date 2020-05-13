@@ -37,6 +37,29 @@
     },
     {
       "key": {
+        "uuid": "6c68d95d_921ebb43",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T21:08:13Z",
+      "side": 1,
+      "message": "why this isn\u0027t just a field like Authenticator, AccessControl and UnaryServerInterceptor?\n\nnit: could choose a more awkward name to ensure nobody uses this, e.g prefix with \"Hack\" or something",
+      "range": {
+        "startLine": 120,
+        "startChar": 17,
+        "endLine": 120,
+        "endChar": 37
+      },
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1bea06ee_e0899404",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
