@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "6def4e50_05aa94ee",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-13T21:37:16Z",
+      "side": 1,
+      "message": "Still, I think nothing stops you from implementing such a struct so I\u0027ll keep it.",
+      "parentUuid": "a1bbcf90_c6144b65",
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c68d95d_921ebb43",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
@@ -60,6 +78,30 @@
     },
     {
       "key": {
+        "uuid": "023f08f4_df899d8c",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-13T21:37:16Z",
+      "side": 1,
+      "message": "That\u0027s a valid question... I don\u0027t think it needs to be because it\u0027s just one value. Multiple concurrent goroutines won\u0027t be trying to populate it while lazily initializing it like services and overrides. Done.",
+      "parentUuid": "6c68d95d_921ebb43",
+      "range": {
+        "startLine": 120,
+        "startChar": 17,
+        "endLine": 120,
+        "endChar": 37
+      },
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1bea06ee_e0899404",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 1
@@ -71,6 +113,30 @@
       "writtenOn": "2020-05-13T20:34:52Z",
       "side": 1,
       "message": "readMessage can be slow since it does network IO, better to release the mutex before calling it:\n\n  s.mu.RLock()\n  fixFieldMasksForJSON :\u003d s.fixFieldMasksForJSON\n  s.mu.RUnlock()",
+      "range": {
+        "startLine": 339,
+        "startChar": 13,
+        "endLine": 339,
+        "endChar": 24
+      },
+      "revId": "f162f2d3b00821d92483c0d6412c0ab2e2e38b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d9e2cce_ba59fed5",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-13T21:37:16Z",
+      "side": 1,
+      "message": "If that\u0027s the case then the value may be stale by the time readMessage runs. In which case, do I need to acquire the lock at all? Let it be racy. Who cares if one readMessage call goes through with the wrong value of fixFieldMasksForJSON, in practice it\u0027s set before serving anyway. In fact I\u0027ve changed it to not require a lock since you can theoretically swap Authenticator, AccessControl, and UnaryServerInterceptor at any time without a lock (see comment thread above).",
+      "parentUuid": "1bea06ee_e0899404",
       "range": {
         "startLine": 339,
         "startChar": 13,
