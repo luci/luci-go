@@ -22,6 +22,30 @@
       "revId": "4444fd0f576d2926fbb9727a6be91a0296f59fc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "305b8781_5b630a2b",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/gtest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-13T22:05:03Z",
+      "side": 1,
+      "message": "also i just realized that we are assuming that instantiation/id cannot have \".\" or \"/\". We should verify this assumption.",
+      "parentUuid": "3a13f44b_edd2823c",
+      "range": {
+        "startLine": 230,
+        "startChar": 45,
+        "endLine": 230,
+        "endChar": 47
+      },
+      "revId": "4444fd0f576d2926fbb9727a6be91a0296f59fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
