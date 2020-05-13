@@ -102,14 +102,25 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	mu        sync.RWMutex
-	services  map[string]*service
-	overrides map[string]map[string]Override
+	mu                   sync.RWMutex
+	services             map[string]*service
+	overrides            map[string]map[string]Override
+	fixFieldMasksForJSON bool
 }
 
 type service struct {
 	methods map[string]grpc.MethodDesc
 	impl    interface{}
+}
+
+// FixFieldMasksForJSON indicates whether to attempt a workaround for
+// https://github.com/golang/protobuf/issues/745 when the request
+// has Content-Type: application/json.
+// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+func (s *Server) FixFieldMasksForJSON(should bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.fixFieldMasksForJSON = should
 }
 
 // RegisterService registers a service implementation.
@@ -322,8 +333,10 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 		if in == nil {
 			return grpcutil.Errf(codes.Internal, "input message is nil")
 		}
+		s.mu.RLock()
+		defer s.mu.RUnlock()
 		// Do not collapse it to one line. There is implicit err type conversion.
-		if perr := readMessage(c.Request, in.(proto.Message)); perr != nil {
+		if perr := readMessage(c.Request, in.(proto.Message), s.fixFieldMasksForJSON); perr != nil {
 			return perr
 		}
 		return nil
