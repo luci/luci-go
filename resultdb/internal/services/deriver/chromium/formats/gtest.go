@@ -17,7 +17,6 @@ package formats
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"regexp"
 	"sort"
@@ -32,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -76,9 +74,9 @@ var (
 	// This is a synthetic test created by test launcher, not a real test.
 	syntheticTestRE = regexp.MustCompile(`^GoogleTestVerification.Uninstantiated(?:Type)?ParamaterizedTestSuite<\w+>$`)
 
-	syntheticTestTag = errors.BoolTag{
-		Key: errors.NewTagKey("synthetic test"),
-	}
+	//syntheticTestTag = errors.BoolTag{
+	//	Key: errors.NewTagKey("synthetic test"),
+	//}
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -159,16 +157,11 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 		sort.Strings(testNames)
 
 		for _, name := range testNames {
-			baseName, params, err := extractGTestParameters(name)
-			switch {
-			case syntheticTestTag.In(err):
+			if match := syntheticTestRE.FindString(name); match != "" {
+				// A synthetic test, skip.
 				continue
-			case err != nil:
-				return nil, errors.Annotate(err,
-					"failed to extract test base name and parameters from %q", name).Err()
 			}
-
-			testID := testIDPrefix + baseName
+			testID := testIDPrefix + name
 
 			for i, result := range data[name] {
 				// Store the processed test result into the correct part of the overall map.
@@ -176,10 +169,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 				if err != nil {
 					return nil, errors.Annotate(err,
 						"iteration %d of test %s failed to convert run result", i, name).Err()
-				}
-
-				if len(params) > 0 {
-					rpb.Variant = &typepb.Variant{Def: params}
 				}
 
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final
@@ -232,59 +221,59 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 }
 
 // extractGTestParameters extracts parameters from a test id as a mapping with "param/" keys.
-func extractGTestParameters(testID string) (baseID string, params map[string]string, err error) {
-	var suite, name string
-
-	// If this is a JUnit tests, don't try to extract parameters.
-	// TODO: investigate handling parameters for JUnit tests.
-	if match := javaIDRe.FindStringSubmatch(testID); match != nil {
-		baseID = testID
-		return
-	}
-
-	// Tests can be only one of type- or value-parametrized, if parametrized at all.
-	params = map[string]string{}
-	if match := typeParamRE.FindStringSubmatch(testID); match != nil {
-		// Extract type parameter.
-		suite = match[3]
-		name = match[5]
-		params[testInstantiationKey] = match[2]
-		params[testParameterKey] = match[4]
-	} else if match := valueParamRE.FindStringSubmatch(testID); match != nil {
-		// Extract value parameter.
-		suite = match[3]
-		name = match[4]
-		params[testInstantiationKey] = match[2]
-		params[testParameterKey] = match[5]
-	} else if match := baseIDRE.FindStringSubmatch(testID); match != nil {
-		// Otherwise our test id should not be parametrized, so extract the suite
-		// and name.
-		suite = match[1]
-		name = match[2]
-	} else if match := syntheticTestRE.FindString(testID); match != "" {
-		// A synthetic test, skip.
-		err = errors.Reason("not a real test").Tag(syntheticTestTag).Err()
-	} else {
-		// Otherwise test id format is unrecognized.
-		err = errors.Reason("test id of unknown format").Err()
-		return
-	}
-
-	// Strip prefixes from test name if necessary.
-	for {
-		strippedName := name
-		for _, prefix := range prefixes {
-			strippedName = strings.TrimPrefix(strippedName, prefix)
-		}
-		if strippedName == name {
-			break
-		}
-		name = strippedName
-	}
-	baseID = fmt.Sprintf("%s.%s", suite, name)
-
-	return
-}
+//func extractGTestParameters(testID string) (baseID string, params map[string]string, err error) {
+//	var suite, name string
+//
+//	// If this is a JUnit tests, don't try to extract parameters.
+//	// TODO: investigate handling parameters for JUnit tests.
+//	if match := javaIDRe.FindStringSubmatch(testID); match != nil {
+//		baseID = testID
+//		return
+//	}
+//
+//	// Tests can be only one of type- or value-parametrized, if parametrized at all.
+//	params = map[string]string{}
+//	if match := typeParamRE.FindStringSubmatch(testID); match != nil {
+//		// Extract type parameter.
+//		suite = match[3]
+//		name = match[5]
+//		params[testInstantiationKey] = match[2]
+//		params[testParameterKey] = match[4]
+//	} else if match := valueParamRE.FindStringSubmatch(testID); match != nil {
+//		// Extract value parameter.
+//		suite = match[3]
+//		name = match[4]
+//		params[testInstantiationKey] = match[2]
+//		params[testParameterKey] = match[5]
+//	} else if match := baseIDRE.FindStringSubmatch(testID); match != nil {
+//		// Otherwise our test id should not be parametrized, so extract the suite
+//		// and name.
+//		suite = match[1]
+//		name = match[2]
+//	} else if match := syntheticTestRE.FindString(testID); match != "" {
+//		// A synthetic test, skip.
+//		err = errors.Reason("not a real test").Tag(syntheticTestTag).Err()
+//	} else {
+//		// Otherwise test id format is unrecognized.
+//		err = errors.Reason("test id of unknown format").Err()
+//		return
+//	}
+//
+//	// Strip prefixes from test name if necessary.
+//	for {
+//		strippedName := name
+//		for _, prefix := range prefixes {
+//			strippedName = strings.TrimPrefix(strippedName, prefix)
+//		}
+//		if strippedName == name {
+//			break
+//		}
+//		name = strippedName
+//	}
+//	baseID = fmt.Sprintf("%s.%s", suite, name)
+//
+//	return
+//}
 
 func (r *GTestResults) convertTestResult(ctx context.Context, testID, name string, result *GTestRunResult, buf *strings.Builder) (*pb.TestResult, error) {
 	status, err := fromGTestStatus(result.Status)
