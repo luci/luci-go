@@ -16,6 +16,24 @@
       "revId": "e85033f94dfe5bddc23318aee929a5ae254d1c08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "486ffd47_5838ff1f",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-13T23:15:59Z",
+      "side": 1,
+      "message": "It\u0027s already committed, sorry. I\u0027ll fix it with the next hack application.",
+      "parentUuid": "7a51104b_ab3c0786",
+      "revId": "e85033f94dfe5bddc23318aee929a5ae254d1c08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
