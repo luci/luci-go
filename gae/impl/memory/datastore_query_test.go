@@ -156,7 +156,14 @@ func TestQueries(t *testing.T) {
 			fq, err := nq().Finalize()
 			So(err, ShouldErrLike, nil)
 			_, err = reduce(fq, kc, true)
-			So(err, ShouldErrLike, "must include an Ancestor")
+			So(err, ShouldErrLike, "must include an Ancestor filter")
+		})
+
+		Convey("non-ancestor queries work in firestore mode in a transaction", func() {
+			fq, err := nq().FirestoreMode(true).EventualConsistency(true).Finalize()
+			So(err, ShouldErrLike, nil)
+			_, err = reduce(fq, kc, true)
+			So(err, ShouldErrLike, nil)
 		})
 
 		Convey("absurd numbers of filters are prohibited", func() {

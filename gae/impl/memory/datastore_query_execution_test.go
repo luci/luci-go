@@ -152,6 +152,7 @@ var queryExecutionTests = []qExTest{
 			putEnts: stage1Data,
 			expect: []qExpect{
 				{q: nq("Kind"), get: []ds.PropertyMap{}},
+				{q: nq("Child").FirestoreMode(true), inTxn: true},
 				{q: nq("Child").Ancestor(key("Kind", 3)), keys: []*ds.Key{
 					key("Kind", 3, "Child", "seven"),
 				}},

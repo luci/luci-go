@@ -61,6 +61,8 @@ type Query struct {
 type queryFields struct {
 	kind string
 
+	// Indicate if the query is executed to a firestore (with datastore API)
+	firestoreMode       bool
 	eventualConsistency bool
 	keysOnly            bool
 	distinct            bool
@@ -589,7 +591,7 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 		kind:     q.kind,
 
 		keysOnly:             q.keysOnly,
-		eventuallyConsistent: q.eventualConsistency || ancestor == nil,
+		eventuallyConsistent: q.getEventualConsistency(ancestor),
 		limit:                q.limit,
 		offset:               q.offset,
 		start:                q.start,
@@ -779,4 +781,30 @@ func (q *Query) String() string {
 	}
 
 	return ret.String()
+}
+
+// FirestoreMode set the firestore mode. It removes internal checks for
+// this Query which don't apply when using Firestore-in-Datastore mode.
+// All Datastore queries become strongly consistent if firestoreMode is set
+// as True. The eventualConsistency flag will be ignored.
+//
+// In particular, it allows non-ancestor queries within a transaction.
+func (q *Query) FirestoreMode(on bool) *Query {
+	return q.mod(func(q *Query) {
+		q.firestoreMode = on
+	})
+}
+
+// GetFirestoreMode returns the firestore mode.
+func (q *Query) GetFirestoreMode() bool {
+	return q.firestoreMode
+}
+
+func (q *Query) getEventualConsistency(ancestor *Key) bool {
+	if q.firestoreMode {
+		// eventualConsistency won't be true anyway in firestore mode.
+		// So user input of eventualConsistency will be ignored
+		return false
+	}
+	return q.eventualConsistency || ancestor == nil
 }
