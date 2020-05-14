@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94eeec0a_aeff4568",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-14T08:42:55Z",
+      "side": 1,
+      "message": "I should probably add nodir@ as reviewers...😂",
+      "range": {
+        "startLine": 443,
+        "startChar": 9,
+        "endLine": 443,
+        "endChar": 15
+      },
+      "revId": "ecc55f407798c24063f17b85ad560baafaa6a0a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
