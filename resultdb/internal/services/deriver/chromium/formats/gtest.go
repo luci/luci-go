@@ -32,7 +32,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -159,7 +158,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 		sort.Strings(testNames)
 
 		for _, name := range testNames {
-			baseName, params, err := extractGTestParameters(name)
+			baseName, err := extractGTestParameters(name)
 			switch {
 			case syntheticTestTag.In(err):
 				continue
@@ -176,10 +175,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 				if err != nil {
 					return nil, errors.Annotate(err,
 						"iteration %d of test %s failed to convert run result", i, name).Err()
-				}
-
-				if len(params) > 0 {
-					rpb.Variant = &typepb.Variant{Def: params}
 				}
 
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final
@@ -232,8 +227,8 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 }
 
 // extractGTestParameters extracts parameters from a test id as a mapping with "param/" keys.
-func extractGTestParameters(testID string) (baseID string, params map[string]string, err error) {
-	var suite, name string
+func extractGTestParameters(testID string) (baseID string, err error) {
+	var suite, name, instantiation, id string
 
 	// If this is a JUnit tests, don't try to extract parameters.
 	// TODO: investigate handling parameters for JUnit tests.
@@ -243,25 +238,24 @@ func extractGTestParameters(testID string) (baseID string, params map[string]str
 	}
 
 	// Tests can be only one of type- or value-parametrized, if parametrized at all.
-	params = map[string]string{}
 	if match := typeParamRE.FindStringSubmatch(testID); match != nil {
 		// Extract type parameter.
 		suite = match[3]
 		name = match[5]
-		params[testInstantiationKey] = match[2]
-		params[testParameterKey] = match[4]
+		instantiation = match[2]
+		id = match[4]
 	} else if match := valueParamRE.FindStringSubmatch(testID); match != nil {
 		// Extract value parameter.
 		suite = match[3]
 		name = match[4]
-		params[testInstantiationKey] = match[2]
-		params[testParameterKey] = match[5]
+		instantiation = match[2]
+		id = match[5]
 	} else if match := baseIDRE.FindStringSubmatch(testID); match != nil {
 		// Otherwise our test id should not be parametrized, so extract the suite
 		// and name.
 		suite = match[1]
 		name = match[2]
-	} else if match := syntheticTestRE.FindString(testID); match != "" {
+	} else if syntheticTestRE.MatchString(testID) {
 		// A synthetic test, skip.
 		err = errors.Reason("not a real test").Tag(syntheticTestTag).Err()
 	} else {
@@ -281,7 +275,15 @@ func extractGTestParameters(testID string) (baseID string, params map[string]str
 		}
 		name = strippedName
 	}
-	baseID = fmt.Sprintf("%s.%s", suite, name)
+
+	switch {
+	case id == "":
+		baseID = fmt.Sprintf("%s.%s", suite, name)
+	case instantiation == "":
+		baseID = fmt.Sprintf("%s.%s/%s", suite, name, id)
+	default:
+		baseID = fmt.Sprintf("%s.%s/%s.%s", suite, name, instantiation, id)
+	}
 
 	return
 }

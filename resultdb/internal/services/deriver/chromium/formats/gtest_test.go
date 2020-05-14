@@ -219,81 +219,64 @@ func TestGTestConversions(t *testing.T) {
 	Convey(`extractGTestParameters`, t, func() {
 		Convey(`type parametrized`, func() {
 			Convey(`with instantiation`, func() {
-				baseID, params, err := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
+				baseID, err := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
 				So(err, ShouldBeNil)
-				So(baseID, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, map[string]string{
-					"param/instantiation": "MyInstantiation",
-					"param/id":            "1",
-				})
+				So(baseID, ShouldEqual, "FooTest.DoesBar/MyInstantiation.1")
 			})
 
 			Convey(`without instantiation`, func() {
-				baseID, params, err := extractGTestParameters("FooTest/1.DoesBar")
+				baseID, err := extractGTestParameters("FooTest/1.DoesBar")
 				So(err, ShouldBeNil)
-				So(baseID, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, map[string]string{
-					"param/instantiation": "",
-					"param/id":            "1",
-				})
+				So(baseID, ShouldEqual, "FooTest.DoesBar/1")
 			})
 		})
 
 		Convey(`value parametrized`, func() {
 			Convey(`with instantiation`, func() {
-				baseID, params, err := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
+				baseID, err := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
 				So(err, ShouldBeNil)
-				So(baseID, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, map[string]string{
-					"param/instantiation": "MyInstantiation",
-					"param/id":            "1",
-				})
+				So(baseID, ShouldEqual, "FooTest.DoesBar/MyInstantiation.1")
 			})
 
 			Convey(`without instantiation`, func() {
-				baseID, params, err := extractGTestParameters("FooTest.DoesBar/1")
+				baseID, err := extractGTestParameters("FooTest.DoesBar/1")
 				So(err, ShouldBeNil)
-				So(baseID, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, map[string]string{
-					"param/instantiation": "",
-					"param/id":            "1",
-				})
+				So(baseID, ShouldEqual, "FooTest.DoesBar/1")
 			})
 		})
 
 		Convey(`not parametrized`, func() {
-			baseID, params, err := extractGTestParameters("FooTest.DoesBar")
+			baseID, err := extractGTestParameters("FooTest.DoesBar")
 			So(err, ShouldBeNil)
 			So(baseID, ShouldEqual, "FooTest.DoesBar")
-			So(params, ShouldResemble, map[string]string{})
 		})
 
 		Convey(`with magic prefixes`, func() {
-			baseID, _, err := extractGTestParameters("FooTest.PRE_PRE_MANUAL_DoesBar")
+			baseID, err := extractGTestParameters("FooTest.PRE_PRE_MANUAL_DoesBar")
 			So(err, ShouldBeNil)
 			So(baseID, ShouldEqual, "FooTest.DoesBar")
 		})
 
 		Convey(`with JUnit tests`, func() {
-			baseID, _, err := extractGTestParameters("org.chromium.tests#testFoo_sub__param=val")
+			baseID, err := extractGTestParameters("org.chromium.tests#testFoo_sub__param=val")
 			So(err, ShouldBeNil)
 			So(baseID, ShouldEqual, "org.chromium.tests#testFoo_sub__param=val")
 		})
 
 		Convey(`synthetic parameterized test`, func() {
-			_, _, err := extractGTestParameters("GoogleTestVerification.UninstantiatedParamaterizedTestSuite<Suite>")
+			_, err := extractGTestParameters("GoogleTestVerification.UninstantiatedParamaterizedTestSuite<Suite>")
 			So(err, ShouldErrLike, "not a real test")
 			So(syntheticTestTag.In(err), ShouldBeTrue)
 		})
 
 		Convey(`synthetic type parameterized test`, func() {
-			_, _, err := extractGTestParameters("GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<Suite>")
+			_, err := extractGTestParameters("GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<Suite>")
 			So(err, ShouldErrLike, "not a real test")
 			So(syntheticTestTag.In(err), ShouldBeTrue)
 		})
 
 		Convey(`with unrecognized format`, func() {
-			_, _, err := extractGTestParameters("not_gtest_test")
+			_, err := extractGTestParameters("not_gtest_test")
 			So(err, ShouldErrLike, "test id of unknown format")
 		})
 	})
