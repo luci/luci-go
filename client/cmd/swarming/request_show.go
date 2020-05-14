@@ -23,7 +23,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -45,7 +44,7 @@ type requestShowRun struct {
 	commonFlags
 }
 
-func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
+func (c *requestShowRun) Parse(_ subcommands.Application, args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
@@ -55,22 +54,16 @@ func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
+func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+
 	signals.HandleInterrupt(cancel)
-	client, err := c.createAuthClient(ctx)
+	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
 
-	s, err := swarming.New(client)
-	if err != nil {
-		return err
-	}
-	s.BasePath = c.commonFlags.serverURL + "/_ah/api/swarming/v1/"
-
-	call := s.Task.Request(taskid)
-	result, err := call.Do()
+	result, err := service.GetTaskRequest(ctx, taskID)
 
 	pretty.Println(result)
 
