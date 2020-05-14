@@ -213,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "6a9f16cd_0b8035d5",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:49:12Z",
+      "side": 1,
+      "message": "log.Printf is not normal printf.\nhttps://play.golang.org/p/MPnbYIDF1Vn\nhttps://cs.opensource.google/go/go/+/master:src/log/log.go;l\u003d179;drc\u003d5477623031a3f2d1384a74d0cf6b47eb9f8275ff",
+      "parentUuid": "40b85705_6997c7d0",
+      "range": {
+        "startLine": 209,
+        "startChar": 45,
+        "endLine": 209,
+        "endChar": 47
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c599aa30_20ff860f",
         "filename": "client/isolate/isolate_test.go",
         "patchSetId": 3
