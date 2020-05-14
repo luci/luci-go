@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba6d79a5_bd279321",
+        "filename": "lucicfg/starlark/stdlib/internal/validate.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-14T22:08:54Z",
+      "side": 1,
+      "message": "Please keep it in the same style as other functions here, this module is a candidate for becoming a part of public API and all functions here should look consistent. _regex_list:\n\n1. Should have the same signature as _list(...).\n2. Should have a doc string. Document that it accepts both strings and lists.\n3. Two new lines between functions.\n4. Add a unit test to testdata/misc/validators.star.\n\nAlso the implementation itself is not entirely correct. Each element should be checked to be a string before doing \u0027|\u0027.join(...). Also it is a bit worrisome that regexp_list([\u0027stuff(a\u0027, \u0027b)stuff\u0027]) produces a regexp that accepts \u0027stuffastuff\u0027 etc. Strictly speaking we should validate each individual element is a valid regexp and only then combine them. But I think this can be omitted if _regexp_list documents that is blindly joins strings without validation.",
+      "range": {
+        "startLine": 346,
+        "startChar": 0,
+        "endLine": 352,
+        "endChar": 65
+      },
+      "revId": "548bd89f321a9d8b8af6505dbcd408d86a6d77a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
