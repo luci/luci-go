@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64f32a00_9972f3f9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T21:10:48Z",
+      "side": 1,
+      "message": "Swarming",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 7
+      },
+      "revId": "ac16db62ac7f30653dc87577c15d0aa562829cef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
