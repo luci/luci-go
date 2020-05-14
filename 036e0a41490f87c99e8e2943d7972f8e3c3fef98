@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b8d780f_8f3f0d6b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-05-14T19:14:56Z",
+      "side": 1,
+      "message": "same about bug",
+      "revId": "036e0a41490f87c99e8e2943d7972f8e3c3fef98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
