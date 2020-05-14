@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
@@ -426,5 +427,46 @@ func TestProcessIsolateFile(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(strings.HasSuffix(dep, osPathSeparator), ShouldEqual, isDir)
 		}
+	}))
+
+	Convey(`Ignore broken items`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+		baseDir := filepath.Join(tmpDir, "baseDir")
+		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(baseDir, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		isolate := `{
+			'variables': {
+				'files': [
+					'../baseDir/',
+					'../baseDir/foo',
+					'../nonExistenceDir/',
+					'../nonExistenceDir/nonExistenceFile',
+				],
+			},
+		}`
+
+		outDir := filepath.Join(tmpDir, "out")
+		So(os.Mkdir(outDir, 0700), ShouldBeNil)
+		isolatePath := filepath.Join(outDir, "my.isolate")
+		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+
+		opts := &ArchiveOptions{
+			Isolate:             isolatePath,
+			AllowMissingFileDir: false,
+		}
+
+		_, _, _, err := ProcessIsolate(opts)
+		So(err, ShouldNotBeNil)
+
+		opts = &ArchiveOptions{
+			Isolate:             isolatePath,
+			AllowMissingFileDir: true,
+		}
+
+		deps, _, _, err := ProcessIsolate(opts)
+		So(err, ShouldBeNil)
+		So(deps, ShouldHaveLength, 2)
+		sort.Strings(deps)
+		So(deps[0], ShouldEndWith, "baseDir/")
+		So(deps[1], ShouldEndWith, "baseDir/foo")
 	}))
 }
