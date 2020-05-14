@@ -26,7 +26,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
@@ -75,46 +74,22 @@ func (b *botsRun) Parse() error {
 	return nil
 }
 
-func (b *botsRun) main(a subcommands.Application) error {
+func (b *botsRun) main(_ subcommands.Application) error {
 	ctx, cancel := context.WithCancel(b.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
-	client, err := b.createAuthClient(ctx)
+	service, err := b.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
-	s, err := swarming.New(client)
-	if err != nil {
-		return err
-	}
-	s.BasePath = b.commonFlags.serverURL + "/_ah/api/swarming/v1/"
-	call := s.Bots.List()
 
 	var dims []string
 	for k, v := range b.dimensions {
 		dims = append(dims, k+":"+v)
 	}
-	call.Dimensions(dims...)
 
-	// If no fields are specified, all fields will be returned. If any fields are
-	// specified, ensure the cursor is specified so we can get subsequent pages.
-	if len(b.fields) > 0 {
-		b.fields = append(b.fields, "cursor")
-	}
-	call.Fields(b.fields...)
-	// Keep calling as long as there's a cursor indicating more bots to list.
-	// Create an empty array, so that if saved to b.outfile, it's an empty list,
-	// not null.
-	bots := []*swarming.SwarmingRpcsBotInfo{}
-	for {
-		result, err := call.Do()
-		if err != nil {
-			return err
-		}
-		bots = append(bots, result.Items...)
-		if result.Cursor == "" {
-			break
-		}
-		call.Cursor(result.Cursor)
+	bots, err := service.ListBots(ctx, dims, b.fields)
+	if err != nil {
+		return err
 	}
 	if !b.defaultFlags.Quiet {
 		j, err := json.MarshalIndent(bots, "", " ")
@@ -135,7 +110,7 @@ func (b *botsRun) main(a subcommands.Application) error {
 	return nil
 }
 
-func (b *botsRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (b *botsRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) int {
 	if err := b.Parse(); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
