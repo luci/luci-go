@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "710996ec_6df1e787",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T21:16:29Z",
+      "side": 1,
+      "message": "I think it is good to set timeout.\nBut for this specific issue, I think it is better to set timeout where RPC is called instead of set timeout globally.",
+      "parentUuid": "030bcad6_13a3bbd9",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 19
+      },
+      "revId": "2eb289a2f6b40651518f88d1a230f74eb87cfcb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e6ee8fbe_41efbf6a",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
