@@ -344,6 +344,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "SUCCESS",
 							"lossless_snippet", "false",
+							"gtest_name", "BazTest.DoesQux",
 						),
 					},
 				},
@@ -354,6 +355,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "FAILURE",
 							"lossless_snippet", "false",
+							"gtest_name", "BazTest.DoesQux",
 						),
 					},
 				},
@@ -364,6 +366,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "EXCESSIVE_OUTPUT",
 							"lossless_snippet", "false",
+							"gtest_name", "FooTest.DoesBar",
 						),
 					},
 				},
@@ -374,6 +377,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "FAILURE_ON_EXIT",
 							"lossless_snippet", "false",
+							"gtest_name", "FooTest.DoesBar",
 						),
 					},
 				},
@@ -387,6 +391,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "SUCCESS",
 							"lossless_snippet", "false",
+							"gtest_name", "BazTest.DoesQux",
 						),
 					},
 				},
@@ -398,6 +403,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "SUCCESS",
 							"lossless_snippet", "false",
+							"gtest_name", "BazTest.DoesQux",
 						),
 					},
 				},
@@ -408,6 +414,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "FAILURE",
 							"lossless_snippet", "false",
+							"gtest_name", "FooTest.DoesBar",
 						),
 					},
 				},
@@ -418,6 +425,7 @@ func TestGTestConversions(t *testing.T) {
 						Tags: pbutil.StringPairs(
 							"gtest_status", "FAILURE_ON_EXIT",
 							"lossless_snippet", "false",
+							"gtest_name", "FooTest.DoesBar",
 						),
 					},
 				},

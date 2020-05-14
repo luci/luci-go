@@ -303,6 +303,8 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 			"gtest_status", result.Status,
 			// Store the correct output snippet.
 			"lossless_snippet", strconv.FormatBool(result.LosslessSnippet),
+			// Store the original Gtest test name.
+			"gtest_name", name,
 		),
 	}
 
