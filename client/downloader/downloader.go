@@ -155,7 +155,7 @@ func New(ctx context.Context, c *isolatedclient.Client, hash isolated.HexDigest,
 	if opt.MaxConcurrentJobs == 0 {
 		if runtime.GOARCH == "386" {
 			// set lower value to prevent memory exceeded error.
-			opt.MaxConcurrentJobs = 4
+			opt.MaxConcurrentJobs = 2
 		} else {
 			opt.MaxConcurrentJobs = 8
 		}
