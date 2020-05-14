@@ -25,7 +25,7 @@ import (
 type testService struct {
 	newTask        func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	countTasks     func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTasksCount, error)
-	listTasks      func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTaskList, error)
+	listTasks      func(context.Context, int64, string, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
 	cancelTask     func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 	getTaskRequest func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
@@ -46,8 +46,8 @@ func (s testService) CountTasks(c context.Context, start float64, tags ...string
 	return s.countTasks(c, start, tags...)
 }
 
-func (s testService) ListTasks(c context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTaskList, error) {
-	return s.listTasks(c, start, tags...)
+func (s testService) ListTasks(c context.Context, limit int64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
+	return s.listTasks(c, limit, state, tags, fields)
 }
 
 func (s testService) CancelTask(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {

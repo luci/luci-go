@@ -26,7 +26,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/system/signals"
@@ -80,43 +79,14 @@ func (t *tasksRun) Parse() error {
 	return nil
 }
 
-func (t *tasksRun) main(a subcommands.Application) error {
+func (t *tasksRun) main(_ subcommands.Application) error {
 	ctx, cancel := context.WithCancel(t.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
-	client, err := t.createAuthClient(ctx)
+	service, err := t.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
-	s, err := swarming.New(client)
-	if err != nil {
-		return err
-	}
-	s.BasePath = t.commonFlags.serverURL + "/_ah/api/swarming/v1/"
-	call := s.Tasks.List().Limit(t.limit).State(t.state).Tags(t.tags...)
-	// If no fields are specified, all fields will be returned. If any fields are
-	// specified, ensure the cursor is specified so we can get subsequent pages.
-	if len(t.fields) > 0 {
-		t.fields = append(t.fields, "cursor")
-	}
-	call.Fields(t.fields...)
-	// Keep calling as long as there's a cursor indicating more tasks to list.
-	// Create an empty array, so that if saved to t.outfile, it's an empty list,
-	// not null.
-	var tasks []*swarming.SwarmingRpcsTaskResult
-	for {
-		result, err := call.Do()
-		if err != nil {
-			return err
-		}
-		tasks = append(tasks, result.Items...)
-		if result.Cursor == "" || int64(len(tasks)) >= t.limit || len(result.Items) == 0 {
-			break
-		}
-		call.Cursor(result.Cursor)
-	}
-	if int64(len(tasks)) > t.limit {
-		tasks = tasks[0:t.limit]
-	}
+	tasks, err := service.ListTasks(ctx, t.limit, t.state, t.tags, t.fields)
 	if !t.defaultFlags.Quiet {
 		j, err := json.MarshalIndent(tasks, "", " ")
 		if err != nil {
@@ -136,7 +106,7 @@ func (t *tasksRun) main(a subcommands.Application) error {
 	return nil
 }
 
-func (t *tasksRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (t *tasksRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) int {
 	if err := t.Parse(); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
