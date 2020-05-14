@@ -261,7 +261,7 @@ func TestGetBuild(t *testing.T) {
 					So(rsp, ShouldBeNil)
 				})
 
-				Convey("insufficient results", func() {
+				Convey("not found", func() {
 					req := &pb.GetBuildRequest{
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -271,7 +271,7 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 2,
 					}
 					rsp, err := srv.GetBuild(ctx, req)
-					So(err, ShouldErrLike, "unexpected number of results")
+					So(err, ShouldErrLike, "not found")
 					So(rsp, ShouldBeNil)
 				})
 
