@@ -50,6 +50,11 @@ type triggerResults struct {
 	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
 }
 
+// The swarming server has an internal 60-second deadline for responding to
+// requests, so 90 seconds shouldn't cause any requests to fail that would
+// otherwise succeed.
+var swarmingRPCRequestTimeout = 90 * time.Second
+
 var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
 // swarmingService is an interface intended to stub out the swarming API
@@ -65,7 +70,7 @@ type swarmingService interface {
 }
 
 type swarmingServiceImpl struct {
-	*http.Client
+	*http.Client // Create a separate client for isolate, since Swarming has much tighter deadlines than Isolate
 	*swarming.Service
 
 	worker int
@@ -259,7 +264,12 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	if err != nil {
 		return nil, err
 	}
-	s, err := swarming.New(client)
+	// Create a copy of the client so that the timeout only applies to Swarming
+	// RPC requests, not to Isolate requests made by this service. A shallow
+	// copy is ok because only the timeout needs to be different.
+	rpcClient := *client
+	rpcClient.Timeout = swarmingRPCRequestTimeout
+	s, err := swarming.New(&rpcClient)
 	if err != nil {
 		return nil, err
 	}
