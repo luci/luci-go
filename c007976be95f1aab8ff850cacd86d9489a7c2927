@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f63baf5_0d5a760f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "nit: I think you can use \u0027Fixed:\u0027 label here.\nhttps://chromium.googlesource.com/infra/infra/+/HEAD/appengine/monorail/doc/userguide/power-users.md#Commit_log-message-integration",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 3
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1af7b0f_1ebdd3dc",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "false",
+      "range": {
+        "startLine": 106,
+        "startChar": 61,
+        "endLine": 106,
+        "endChar": 65
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6788ae88_523ad25c",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "align with field name",
+      "range": {
+        "startLine": 69,
+        "startChar": 55,
+        "endLine": 69,
+        "endChar": 74
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60a8fb04_2bec9ffd",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "preallocate capacity with len(deps)?",
+      "range": {
+        "startLine": 201,
+        "startChar": 5,
+        "endLine": 201,
+        "endChar": 17
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abe40eeb_b8647cc5",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "not necessary?",
+      "range": {
+        "startLine": 209,
+        "startChar": 45,
+        "endLine": 209,
+        "endChar": 47
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c599aa30_20ff860f",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "better to use different directory, \u0027../baseDir/\u0027 includes this anyway.",
+      "range": {
+        "startLine": 440,
+        "startChar": 9,
+        "endLine": 440,
+        "endChar": 16
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bb992bb_5475ff0c",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 441,
+        "startChar": 5,
+        "endLine": 442,
+        "endChar": 25
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42fbad9f_37f50c55",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:30:09Z",
+      "side": 1,
+      "message": "I prefer to use ShouldResemble",
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
