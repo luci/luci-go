@@ -35,8 +35,8 @@ import (
 // TODO(crbug/1042991): Move to a common location.
 var (
 	projRegex    = regexp.MustCompile("^[a-z0-9\\-_]+$")
-	bucketRegex  = regexp.MustCompile("^[a-z0-9_\\-.]{1,100}$")
-	builderRegex = regexp.MustCompile("^[a-zA-Z0-9_\\-. ]{1,128}$")
+	bucketRegex  = regexp.MustCompile("^[a-z0-9\\-_.]{1,100}$")
+	builderRegex = regexp.MustCompile("^[a-zA-Z0-9\\-.\\(\\) ]{1,128}$")
 )
 
 // defMask is the default field mask to use for GetBuild requests.
