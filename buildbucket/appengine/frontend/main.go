@@ -34,10 +34,12 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// isBeefy returns whether the request was intended for the beefy service.
 func isBeefy(req *http.Request) bool {
 	return strings.Contains(req.Host, "beefy")
 }
 
+// isDev returns whether the request was intended for the dev instance.
 func isDev(req *http.Request) bool {
 	return strings.HasSuffix(req.Host, "-dev.appspot.com")
 }
@@ -86,6 +88,14 @@ func main() {
 			if isDev(ctx.Request) {
 				// Dev has a lower volume of traffic and is less critical.
 				pct = 50
+			}
+			switch val := ctx.Request.Header.Get("Should-Proxy"); val {
+			case "true":
+				pct = 0
+				logging.Debugf(ctx.Context, "request demanded to be proxied")
+			case "false":
+				pct = 100
+				logging.Debugf(ctx.Context, "request demanded not to be proxied")
 			}
 			if mathrand.Intn(ctx.Context, 100) < pct {
 				return false
