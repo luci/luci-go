@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c4a52e7_c1d2966d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-14T10:32:00Z",
+      "side": 1,
+      "message": "Windows",
+      "range": {
+        "startLine": 7,
+        "startChar": 57,
+        "endLine": 7,
+        "endChar": 65
+      },
+      "revId": "9530a8fa963f6c35f1b7cf05dfec59b8c03ed78b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
