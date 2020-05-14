@@ -70,6 +70,30 @@
       "revId": "0fed8e3bde2de46986e3ff01e96b95c41183629f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efcfa3c7_41a51f90",
+        "filename": "server/auth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-14T01:35:15Z",
+      "side": 1,
+      "message": "On GAE it is magically set by something GAE-specified. On GKE (in our environments) it is set by the GCLB (in the X-Forwarded-For header). When hitting server directly, it is set by Go http stack based on TCP socket address.",
+      "parentUuid": "e46635b8_d2132524",
+      "range": {
+        "startLine": 54,
+        "startChar": 65,
+        "endLine": 54,
+        "endChar": 76
+      },
+      "revId": "0fed8e3bde2de46986e3ff01e96b95c41183629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
