@@ -135,6 +135,24 @@
       "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bda0179f_da5571db",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-14T05:01:47Z",
+      "side": 1,
+      "message": "I see.\nI\u0027ll change the implementation in a separate CL.",
+      "parentUuid": "cacab606_66b68be9",
+      "revId": "d3995c6ae147dc3dd6b346dd449927387826f93c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
