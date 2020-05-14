@@ -135,8 +135,8 @@ def _notifier(
   on_status_change = validate.bool('on_status_change', on_status_change, required=False)
   on_success = validate.bool('on_success', on_success, required=False)
 
-  failed_step_regexp = validate.string('failed_step_regexp', failed_step_regexp, required=False)
-  failed_step_regexp_exclude = validate.string('failed_step_regexp_exclude', failed_step_regexp_exclude, required=False)
+  failed_step_regexp = validate.regex_list('failed_step_regexp', failed_step_regexp)
+  failed_step_regexp_exclude = validate.regex_list('failed_step_regexp_exclude', failed_step_regexp_exclude)
 
   if (failed_step_regexp or failed_step_regexp_exclude) and (on_new_status or on_new_failure or on_status_change):
     fail('failed step regexes cannot be used in combination with status change predicates')
