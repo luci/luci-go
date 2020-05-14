@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43f1c83f_88510d67",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-05-14T19:13:45Z",
+      "side": 1,
+      "message": "Please add the bug reference since it\u0027s the end goal;\n\nBug: fuchsia:50776",
+      "revId": "1a6246abc01fb204c6fd573c98c3e364fd83151f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
