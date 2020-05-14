@@ -27,6 +27,7 @@ type testService struct {
 	countTasks     func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTasksCount, error)
 	listTasks      func(context.Context, float64, ...string) (*swarming.SwarmingRpcsTaskList, error)
 	cancelTask     func(context.Context, string, *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
+	getTaskRequest func(context.Context, string) (*swarming.SwarmingRpcsTaskRequest, error)
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
 	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
 	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
@@ -51,6 +52,10 @@ func (s testService) ListTasks(c context.Context, start float64, tags ...string)
 
 func (s testService) CancelTask(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
 	return s.cancelTask(c, taskID, req)
+}
+
+func (s testService) GetTaskRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
+	return s.getTaskRequest(c, taskID)
 }
 
 func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
