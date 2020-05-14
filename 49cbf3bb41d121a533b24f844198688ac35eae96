@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc3961d8_b8a9c185",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-14T02:52:12Z",
+      "side": 1,
+      "message": "I think it\u0027d be useful to switch to Python, to see how well it is being proxied by Go, too.\nSo, maybe detect \"Force-Go-Percentage:%d\" and just assign it to `pct`?",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 101,
+        "endChar": 4
+      },
+      "revId": "49cbf3bb41d121a533b24f844198688ac35eae96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
