@@ -66,6 +66,7 @@ type ArchiveOptions struct {
 	PathVariables              stringmapflag.Value `json:"path_variables"`
 	ConfigVariables            stringmapflag.Value `json:"config_variables"`
 	AllowCommandAndRelativeCWD bool                `json:"allow_command_and_relative_cwd"`
+	AllowMissingFileDir        bool                `json:"allow_missing_file_dir"`
 }
 
 // Init initializes with non-nil values.
@@ -197,19 +198,25 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 
 	// Find the root directory of all the files (the root might be above isolateDir).
 	rootDir := isolateDir
-	for i, dep := range deps {
+	filteredDeps := make([]string, 0, len(deps))
+	for _, dep := range deps {
 		// Check if the dep is outside isolateDir.
 		info, err := os.Stat(dep)
 		if err != nil {
-			return nil, "", nil, err
+			if !opts.AllowMissingFileDir {
+				return nil, "", nil, err
+			}
+			log.Printf("Ignore missing dep: %s, err: %v", dep, err)
+			continue
 		}
 		base := filepath.Dir(dep)
 		if info.IsDir() {
 			base = dep
 			// Downstream expects the dependency of a directory to always end
 			// with '/', but filepath.Join() removes that, so we add it back.
-			deps[i] = dep + osPathSeparator
+			dep += osPathSeparator
 		}
+		filteredDeps = append(filteredDeps, dep)
 		for {
 			rel, err := filepath.Rel(rootDir, base)
 			if err != nil {
@@ -225,6 +232,7 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 			rootDir = newRootDir
 		}
 	}
+	deps = filteredDeps
 	if rootDir != isolateDir {
 		log.Printf("Root: %s", rootDir)
 	}

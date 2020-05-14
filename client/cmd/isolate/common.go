@@ -103,6 +103,7 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 	f.Var(&c.ConfigVariables, "config-variable", "Config variables are used to determine which conditions should be matched when loading a .isolate file, default: [].")
 	f.Var(&c.PathVariables, "path-variable", "Path variables are used to replace file paths when loading a .isolate file, default: {}")
 	f.BoolVar(&c.AllowCommandAndRelativeCWD, "allow-command-and-relative-cwd", true, "This flag specifies whether client allows to use command and relative_cwd filed in isolate file. If you use this flag, make sure you report that to crbug.com/1069704 or contact to LUCI team.")
+	f.BoolVar(&c.AllowMissingFileDir, "allow-missing-file-dir", false, "If this flag is true, invalid entries in the isolated file are only logged, but won't stop it from being processed.")
 }
 
 // RequiredIsolateFlags specifies which flags are required on the command line
