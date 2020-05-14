@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ba62005_717365d3",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:50:32Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "303b6a99_25f051b7",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 471,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:50:32Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 471,
+        "startChar": 9,
+        "endLine": 471,
+        "endChar": 12
+      },
+      "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "180ff157_a277811a",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 472,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:50:32Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
