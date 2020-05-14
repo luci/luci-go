@@ -22,6 +22,30 @@
       "revId": "49cbf3bb41d121a533b24f844198688ac35eae96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1abf7fde_0e7f76d7",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-14T13:38:02Z",
+      "side": 1,
+      "message": "Too flexible I think. Is there a use case for making it differently random? I will add both deterministic choices though.",
+      "parentUuid": "dc3961d8_b8a9c185",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 101,
+        "endChar": 4
+      },
+      "revId": "49cbf3bb41d121a533b24f844198688ac35eae96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
