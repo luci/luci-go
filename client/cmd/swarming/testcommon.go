@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"google.golang.org/api/googleapi"
 )
 
 type testService struct {
@@ -29,6 +30,7 @@ type testService struct {
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
 	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
 	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	listBots       func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
 func (s testService) Client() *http.Client {
@@ -61,4 +63,8 @@ func (s testService) GetTaskOutput(c context.Context, taskID string) (*swarming.
 
 func (s testService) GetTaskOutputs(c context.Context, taskID, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
 	return s.getTaskOutputs(c, taskID, output, ref)
+}
+
+func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
+	return s.listBots(ctx, dimensions, fields)
 }

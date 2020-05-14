@@ -62,6 +62,7 @@ type swarmingService interface {
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
 	GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
+	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 }
 
 type swarmingServiceImpl struct {
@@ -165,6 +166,36 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 	}
 	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(ref.Isolated), dir, opts)
 	return files, dl.Wait()
+}
+
+func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {
+	// Create an empty array so that if serialized to JSON it's an empty list,
+	// not null.
+	bots := []*swarming.SwarmingRpcsBotInfo{}
+	// If no fields are specified, all fields will be returned. If any fields are
+	// specified, ensure the cursor is specified so we can get subsequent pages.
+	if len(fields) > 0 {
+		fields = append(fields, "cursor")
+	}
+	call := s.Service.Bots.List().Context(ctx).Dimensions(dimensions...).Fields(fields...)
+	// Keep calling as long as there's a cursor indicating more bots to list.
+	for {
+		var res *swarming.SwarmingRpcsBotList
+		err := retryGoogleRPC(ctx, "ListBots", func() (ierr error) {
+			res, ierr = call.Do()
+			return
+		})
+		if err != nil {
+			return bots, err
+		}
+
+		bots = append(bots, res.Items...)
+		if res.Cursor == "" {
+			break
+		}
+		call.Cursor(res.Cursor)
+	}
+	return bots, nil
 }
 
 type taskState int32
