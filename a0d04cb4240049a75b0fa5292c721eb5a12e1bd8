@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d5faa8d6_13b0cbf4",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-14T16:45:22Z",
+      "side": 1,
+      "message": "No I made a mistake, I thought we wanted buildbucketpb everywhere but we want pb everywhere. We have instances of both and I forgot which one was correct.",
+      "parentUuid": "9e0aa690_f0102aad",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 14
+      },
+      "revId": "a0d04cb4240049a75b0fa5292c721eb5a12e1bd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f3fd678_1fac9ffd",
         "filename": "buildbucket/appengine/model/bucket.go",
         "patchSetId": 1
@@ -60,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "507fb30a_66c31235",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-14T16:45:22Z",
+      "side": 1,
+      "message": "Sure, it happens. I was just explaining rationale. And I wasn\u0027t sure if I should declare my own const of type Acl_Role outside the proto package. Anyway done.",
+      "parentUuid": "72ac5632_0f813505",
+      "revId": "a0d04cb4240049a75b0fa5292c721eb5a12e1bd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3fcd850f_42db2012",
         "filename": "buildbucket/appengine/model/bucket.go",
         "patchSetId": 1
@@ -74,6 +116,24 @@
       "revId": "a0d04cb4240049a75b0fa5292c721eb5a12e1bd8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "560b8a25_2444da3f",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-14T16:45:22Z",
+      "side": 1,
+      "message": "I didn\u0027t know \"is\" would be in scope in the last else block. I thought both \"is\" and \"err\" would only be in scope for that one branch. But I just tried it, so done.",
+      "parentUuid": "3fcd850f_42db2012",
+      "revId": "a0d04cb4240049a75b0fa5292c721eb5a12e1bd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -97,6 +157,30 @@
       "revId": "a0d04cb4240049a75b0fa5292c721eb5a12e1bd8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e970d850_5d80ca18",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-14T16:45:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7efcd6ab_18902096",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 2
+      },
+      "revId": "a0d04cb4240049a75b0fa5292c721eb5a12e1bd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
