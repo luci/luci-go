@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "9c61c4f6_70432f9e",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-14T08:52:44Z",
+      "side": 1,
+      "message": "Ah ok, done",
+      "parentUuid": "6a9f16cd_0b8035d5",
+      "range": {
+        "startLine": 209,
+        "startChar": 45,
+        "endLine": 209,
+        "endChar": 47
+      },
+      "revId": "c007976be95f1aab8ff850cacd86d9489a7c2927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c599aa30_20ff860f",
         "filename": "client/isolate/isolate_test.go",
         "patchSetId": 3

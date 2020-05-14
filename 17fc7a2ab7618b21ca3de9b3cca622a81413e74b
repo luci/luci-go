@@ -56,6 +56,24 @@
       "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83696a44_17a6d69d",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 472,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-14T08:52:44Z",
+      "side": 1,
+      "message": "remove what? how do you expect to compare this?",
+      "parentUuid": "180ff157_a277811a",
+      "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
