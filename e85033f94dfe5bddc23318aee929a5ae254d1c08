@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "2c518e59_8b4e3e6b",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-14T01:36:14Z",
+      "side": 1,
+      "message": "fwiw, this may have side effect of screw up the request if it contained free form proto structs. This is why I had to revert my original solution. It\u0027s possible to fix the FixFieldMasksBeforeUnmarshal, but it required subsatntially more work at the time.",
+      "revId": "e85033f94dfe5bddc23318aee929a5ae254d1c08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7a51104b_ab3c0786",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 4
