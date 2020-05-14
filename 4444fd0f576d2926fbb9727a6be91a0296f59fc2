@@ -46,6 +46,30 @@
       "revId": "4444fd0f576d2926fbb9727a6be91a0296f59fc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffcd1d42_5c927e3d",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/gtest_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-14T00:31:33Z",
+      "side": 1,
+      "message": "The regex (https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats/gtest.go;l\u003d62) suggested that it\u0027s not possible for instantiation/id to have \".\" or \"/\".\n\nUnless we also need to update the regex, otherwise we\u0027re fine.",
+      "parentUuid": "305b8781_5b630a2b",
+      "range": {
+        "startLine": 230,
+        "startChar": 45,
+        "endLine": 230,
+        "endChar": 47
+      },
+      "revId": "4444fd0f576d2926fbb9727a6be91a0296f59fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
