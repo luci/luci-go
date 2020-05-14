@@ -50,6 +50,11 @@ type triggerResults struct {
 	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
 }
 
+// The swarming server has an internal 60-second deadline for responding to
+// requests, so 90 seconds shouldn't cause any requests to fail that would
+// otherwise succeed.
+const swarmingRPCRequestTimeout = 90 * time.Second
+
 const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
 // swarmingService is an interface intended to stub out the swarming API
@@ -149,6 +154,12 @@ func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string, 
 
 func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
 	err = retryGoogleRPC(ctx, "GetTaskOutput", func() (ierr error) {
+		// We set a timeout only on this endpoint because this is the only one
+		// that has been observed to time out.
+		// TODO(fuchsia:50776): Evaluate whether the timeout should be enabled
+		// on other endpoints as well.
+		ctx, cancel := context.WithTimeout(ctx, swarmingRPCRequestTimeout)
+		defer cancel()
 		res, ierr = s.service.Task.Stdout(taskID).Context(ctx).Do()
 		return
 	})
