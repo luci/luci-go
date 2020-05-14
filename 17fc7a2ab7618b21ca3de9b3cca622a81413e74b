@@ -74,6 +74,24 @@
       "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a78bed1c_463608e0",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 472,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-14T08:53:55Z",
+      "side": 1,
+      "message": "write like\n```\nSo(deps, ShouldResemble, ...)\n```",
+      "parentUuid": "83696a44_17a6d69d",
+      "revId": "17fc7a2ab7618b21ca3de9b3cca622a81413e74b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
