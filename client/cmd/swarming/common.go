@@ -57,7 +57,7 @@ var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 type swarmingService interface {
 	NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	CountTasks(ctx context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTasksCount, error)
-	ListTasks(ctx context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTaskList, error)
+	ListTasks(ctx context.Context, limit int64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
 	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
 	GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
@@ -89,12 +89,39 @@ func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, tag
 	return
 }
 
-func (s *swarmingServiceImpl) ListTasks(ctx context.Context, start float64, tags ...string) (res *swarming.SwarmingRpcsTaskList, err error) {
-	err = retryGoogleRPC(ctx, "ListTasks", func() (ierr error) {
-		res, ierr = s.Service.Tasks.List().Context(ctx).Start(start).Tags(tags...).Do()
-		return
-	})
-	return
+func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
+	// Create an empty array so that if serialized to JSON it's an empty list,
+	// not null.
+	tasks := []*swarming.SwarmingRpcsTaskResult{}
+	// If no fields are specified, all fields will be returned. If any fields are
+	// specified, ensure the cursor is specified so we can get subsequent pages.
+	if len(fields) > 0 {
+		fields = append(fields, "cursor")
+	}
+	call := s.Service.Tasks.List().Context(ctx).Limit(limit).State(state).Tags(tags...).Fields(fields...)
+	// Keep calling as long as there's a cursor indicating more bots to list.
+	for {
+		var res *swarming.SwarmingRpcsTaskList
+		err := retryGoogleRPC(ctx, "ListTasks", func() (ierr error) {
+			res, ierr = call.Do()
+			return
+		})
+		if err != nil {
+			return tasks, err
+		}
+
+		tasks = append(tasks, res.Items...)
+		if res.Cursor == "" || int64(len(tasks)) >= limit || len(res.Items) == 0 {
+			break
+		}
+		call.Cursor(res.Cursor)
+	}
+
+	if int64(len(tasks)) > limit {
+		tasks = tasks[0:limit]
+	}
+
+	return tasks, nil
 }
 
 func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (res *swarming.SwarmingRpcsCancelResponse, err error) {
