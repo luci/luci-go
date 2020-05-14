@@ -112,6 +112,8 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 			return nil, errors.Reason("unexpected incomplete index for build address %q", addr).Err()
 		case err != nil:
 			return nil, err
+		case len(ents) == 0:
+			return nil, notFound(ctx)
 		case len(ents) == 1:
 			req.Id = ents[0].BuildID
 		default:
