@@ -38,3 +38,10 @@ bqschemaupdater \
   -message-dir "$THIS_DIR/api/bq" \
   -message "tokenserver.bq.ProjectToken" \
   -partitioning-expiration "8760h"  # 1y
+
+bqschemaupdater \
+  -table "$PROJECT_ID.tokens.service_account_tokens" \
+  -friendly-name "Issued service account tokens." \
+  -message-dir "$THIS_DIR/api/bq" \
+  -message "tokenserver.bq.ServiceAccountToken" \
+  -partitioning-expiration "8760h"  # 1y
