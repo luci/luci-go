@@ -59,6 +59,7 @@ type swarmingService interface {
 	CountTasks(ctx context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTasksCount, error)
 	ListTasks(ctx context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTaskList, error)
 	CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error)
+	GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
 	GetTaskOutputs(ctx context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
@@ -99,6 +100,14 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, start float64, tags
 func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (res *swarming.SwarmingRpcsCancelResponse, err error) {
 	err = retryGoogleRPC(ctx, "CancelTask", func() (ierr error) {
 		res, ierr = s.Service.Task.Cancel(taskID, req).Context(ctx).Do()
+		return
+	})
+	return
+}
+
+func (s *swarmingServiceImpl) GetTaskRequest(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskRequest, err error) {
+	err = retryGoogleRPC(ctx, "GetTaskResult", func() (ierr error) {
+		res, ierr = s.Service.Task.Request(taskID).Context(ctx).Do()
 		return
 	})
 	return
