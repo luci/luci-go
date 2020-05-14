@@ -343,6 +343,16 @@ def _relative_path(attr, val, *, allow_dots=False, base=None, required=True, def
     fail('bad %r: %s' % (attr, err))
   return clean
 
+def _regex_list(attr, val):
+  if type(val) == 'NoneType':
+    return val
+  if type(val) == 'string':
+    return val
+  if type(val) == 'list':
+    return '|'.join(val)
+
+  fail('bad %r: got %s, want string or list' % (attr, type(val)))
+
 
 def _var_with_validator(attr, validator, **kwargs):
   """Returns a lucicfg.var that validates the value via a validator callback.
@@ -385,6 +395,7 @@ validate = struct(
     type = _type,
     repo_url = _repo_url,
     relative_path = _relative_path,
+    regex_list = _regex_list,
 
     var_with_validator = _var_with_validator,
     vars_with_validators = _vars_with_validators,
