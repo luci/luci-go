@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
+	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccountsv2"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
 
@@ -40,6 +41,7 @@ type serverImpl struct {
 	serviceaccounts.MintOAuthTokenGrantRPC
 	serviceaccounts.MintOAuthTokenViaGrantRPC
 	projectscope.MintProjectTokenRPC
+	serviceaccountsv2.MintServiceAccountTokenRPC
 }
 
 // NewServer returns prod TokenMinterServer implementation.
@@ -74,5 +76,6 @@ func NewServer() minter.TokenMinterServer {
 			ProjectIdentities: projectidentity.ProjectIdentities,
 			LogToken:          projectscope.LogToken,
 		},
+		MintServiceAccountTokenRPC: serviceaccountsv2.MintServiceAccountTokenRPC{},
 	}
 }

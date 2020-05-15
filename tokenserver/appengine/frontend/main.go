@@ -70,6 +70,7 @@ func main() {
 	adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportServiceAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
 	adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)
+	adminSrv.ImportProjectOwnedAccountsConfigsRPC.SetupConfigValidation(&validation.Rules)
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
