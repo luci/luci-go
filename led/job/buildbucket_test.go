@@ -19,6 +19,8 @@ import (
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBBEnsureBasics(t *testing.T) {
@@ -44,7 +46,7 @@ func TestWriteProperties(t *testing.T) {
 		jd.GetBuildbucket().WriteProperties(map[string]interface{}{
 			"hello": "world",
 		})
-		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldResemble, &structpb.Struct{
+		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldResembleProto, &structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"hello": {Kind: &structpb.Value_StringValue{StringValue: "world"}},
 			},

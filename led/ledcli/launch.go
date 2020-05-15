@@ -17,6 +17,7 @@ package ledcli
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -99,8 +100,12 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 	swarmingHostname := inJob.Info().SwarmingHostname()
 	logging.Infof(ctx, "Launched swarming task: https://%s/task?id=%s",
 		swarmingHostname, meta.TaskId)
-	logging.Infof(ctx, "LUCI UI: https://ci.chromium.org/swarming/task/%s?server=%s",
-		meta.TaskId, swarmingHostname)
+	miloHost := "ci.chromium.org"
+	if strings.Contains(swarmingHostname, "-dev") {
+		miloHost = "luci-milo-dev.appspot.com"
+	}
+	logging.Infof(ctx, "LUCI UI: https://%s/swarming/task/%s?server=%s",
+		miloHost, meta.TaskId, swarmingHostname)
 
 	ret := &struct {
 		Swarming struct {

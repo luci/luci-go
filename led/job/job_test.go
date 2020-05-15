@@ -52,14 +52,14 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.Tags, ShouldResemble, []string{
 				"allow_milo:1",
-				"log_location:logdog://logs.chromium.org/infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898/+/build.proto",
+				"log_location:logdog://luci-logdog-dev.appspot.com/infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898/+/build.proto",
 			})
 
 			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
 
 			slice0 := sw.Task.TaskSlices[0]
-			So(slice0.Expiration, ShouldResemble, &durpb.Duration{Seconds: 240})
-			So(slice0.Properties.Dimensions, ShouldResemble, []*swarmingpb.StringListPair{
+			So(slice0.Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 240})
+			So(slice0.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringListPair{
 				{
 					Key: "caches", Values: []string{
 						"builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
@@ -101,8 +101,8 @@ func TestFlattenToSwarming(t *testing.T) {
 			})
 
 			slice1 := sw.Task.TaskSlices[1]
-			So(slice1.Expiration, ShouldResemble, &durpb.Duration{Seconds: 21360})
-			So(slice1.Properties.Dimensions, ShouldResemble, []*swarmingpb.StringListPair{
+			So(slice1.Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 21360})
+			So(slice1.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringListPair{
 				{Key: "cpu", Values: []string{"x86-64"}},
 				{Key: "os", Values: []string{"Ubuntu"}},
 				{Key: "pool", Values: []string{"Chrome"}},
@@ -127,8 +127,8 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
 
-			So(sw.Task.TaskSlices[0].Expiration, ShouldResemble, &durpb.Duration{Seconds: 240})
-			So(sw.Task.TaskSlices[1].Expiration, ShouldResemble, &durpb.Duration{Seconds: 40000 - 240})
+			So(sw.Task.TaskSlices[0].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 240})
+			So(sw.Task.TaskSlices[1].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 40000 - 240})
 		})
 
 		Convey(`no expiring dims`, func() {
@@ -146,7 +146,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(sw, ShouldNotBeNil)
 			So(sw.Task.TaskSlices, ShouldHaveLength, 1)
 
-			So(sw.Task.TaskSlices[0].Expiration, ShouldResemble, &durpb.Duration{Seconds: 21600})
+			So(sw.Task.TaskSlices[0].Expiration, ShouldResembleProto, &durpb.Duration{Seconds: 21600})
 		})
 
 		Convey(`UserPayload recipe`, func() {
