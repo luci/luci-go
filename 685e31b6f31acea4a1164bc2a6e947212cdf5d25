@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c6d6d2c_0f3389e2",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T22:58:47Z",
+      "side": 1,
+      "message": "this is indeed easier to review for correctness. Thanks!",
+      "range": {
+        "startLine": 320,
+        "startChar": 0,
+        "endLine": 321,
+        "endChar": 31
+      },
+      "revId": "685e31b6f31acea4a1164bc2a6e947212cdf5d25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

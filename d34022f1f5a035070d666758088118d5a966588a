@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "eab7808e_73e3151e",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T22:58:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "167e56b9_0d3b860f",
+      "range": {
+        "startLine": 316,
+        "startChar": 34,
+        "endLine": 316,
+        "endChar": 38
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "517dbe17_4bc3c1a0",
         "filename": "tokenserver/api/bq/bq.proto",
         "patchSetId": 1
