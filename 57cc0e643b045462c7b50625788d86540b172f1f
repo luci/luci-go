@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ad271ae_dc857614",
+        "filename": "tokenserver/appengine/impl/projectscope/config_validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-15T22:59:25Z",
+      "side": 1,
+      "message": "This would be more helpful if it said\n\n   // map of identity -\u003e projects that use it\n\nsomewhere :)",
+      "range": {
+        "startLine": 44,
+        "startChar": 4,
+        "endLine": 44,
+        "endChar": 46
+      },
+      "revId": "57cc0e643b045462c7b50625788d86540b172f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
