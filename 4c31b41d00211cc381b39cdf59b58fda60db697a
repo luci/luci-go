@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8009ae27_df5d5ff5",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 485,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-15T07:04:14Z",
+      "side": 1,
+      "message": "return here and remove else in L486?",
+      "range": {
+        "startLine": 485,
+        "startChar": 3,
+        "endLine": 485,
+        "endChar": 8
+      },
+      "revId": "4c31b41d00211cc381b39cdf59b58fda60db697a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
