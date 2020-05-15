@@ -22,6 +22,30 @@
       "revId": "685e31b6f31acea4a1164bc2a6e947212cdf5d25",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7dd184f_b9778c95",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T23:13:22Z",
+      "side": 1,
+      "message": "It is primarily a response to Chromium\u0027s desire to use a LUCI project per milestone. I don\u0027t want them to copy-paste large chunks of project_owned_accounts.cfg.",
+      "parentUuid": "1c6d6d2c_0f3389e2",
+      "range": {
+        "startLine": 320,
+        "startChar": 0,
+        "endLine": 321,
+        "endChar": 31
+      },
+      "revId": "685e31b6f31acea4a1164bc2a6e947212cdf5d25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
