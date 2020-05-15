@@ -50,7 +50,7 @@ type triggerResults struct {
 	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
 }
 
-var swarmingAPISuffix = "/_ah/api/swarming/v1/"
+const swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
 // swarmingService is an interface intended to stub out the swarming API
 // bindings for testing.
@@ -67,15 +67,14 @@ type swarmingService interface {
 }
 
 type swarmingServiceImpl struct {
-	*http.Client
-	*swarming.Service
-
-	worker int
+	client  *http.Client
+	service *swarming.Service
+	worker  int
 }
 
 func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
 	err = retryGoogleRPC(ctx, "NewTask", func() (ierr error) {
-		res, ierr = s.Service.Tasks.New(req).Context(ctx).Do()
+		res, ierr = s.service.Tasks.New(req).Context(ctx).Do()
 		return
 	})
 	return
@@ -83,7 +82,7 @@ func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarming.Swarmin
 
 func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, tags ...string) (res *swarming.SwarmingRpcsTasksCount, err error) {
 	err = retryGoogleRPC(ctx, "CountTasks", func() (ierr error) {
-		res, ierr = s.Service.Tasks.Count().Context(ctx).Start(start).Tags(tags...).Do()
+		res, ierr = s.service.Tasks.Count().Context(ctx).Start(start).Tags(tags...).Do()
 		return
 	})
 	return
@@ -98,7 +97,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, state 
 	if len(fields) > 0 {
 		fields = append(fields, "cursor")
 	}
-	call := s.Service.Tasks.List().Context(ctx).Limit(limit).State(state).Tags(tags...).Fields(fields...)
+	call := s.service.Tasks.List().Context(ctx).Limit(limit).State(state).Tags(tags...).Fields(fields...)
 	// Keep calling as long as there's a cursor indicating more bots to list.
 	for {
 		var res *swarming.SwarmingRpcsTaskList
@@ -126,7 +125,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int64, state 
 
 func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (res *swarming.SwarmingRpcsCancelResponse, err error) {
 	err = retryGoogleRPC(ctx, "CancelTask", func() (ierr error) {
-		res, ierr = s.Service.Task.Cancel(taskID, req).Context(ctx).Do()
+		res, ierr = s.service.Task.Cancel(taskID, req).Context(ctx).Do()
 		return
 	})
 	return
@@ -134,7 +133,7 @@ func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, req
 
 func (s *swarmingServiceImpl) GetTaskRequest(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskRequest, err error) {
 	err = retryGoogleRPC(ctx, "GetTaskResult", func() (ierr error) {
-		res, ierr = s.Service.Task.Request(taskID).Context(ctx).Do()
+		res, ierr = s.service.Task.Request(taskID).Context(ctx).Do()
 		return
 	})
 	return
@@ -142,7 +141,7 @@ func (s *swarmingServiceImpl) GetTaskRequest(ctx context.Context, taskID string)
 
 func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string, perf bool) (res *swarming.SwarmingRpcsTaskResult, err error) {
 	err = retryGoogleRPC(ctx, "GetTaskResult", func() (ierr error) {
-		res, ierr = s.Service.Task.Result(taskID).IncludePerformanceStats(perf).Context(ctx).Do()
+		res, ierr = s.service.Task.Result(taskID).IncludePerformanceStats(perf).Context(ctx).Do()
 		return
 	})
 	return
@@ -150,7 +149,7 @@ func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string, 
 
 func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
 	err = retryGoogleRPC(ctx, "GetTaskOutput", func() (ierr error) {
-		res, ierr = s.Service.Task.Stdout(taskID).Context(ctx).Do()
+		res, ierr = s.service.Task.Stdout(taskID).Context(ctx).Do()
 		return
 	})
 	return
@@ -180,7 +179,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 		return nil, nil
 	}
 
-	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.Client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent(swarmingUserAgent))
+	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent(swarmingUserAgent))
 
 	var filesMu sync.Mutex
 	var files []string
@@ -213,7 +212,7 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string,
 	if len(fields) > 0 {
 		fields = append(fields, "cursor")
 	}
-	call := s.Service.Bots.List().Context(ctx).Dimensions(dimensions...).Fields(fields...)
+	call := s.service.Bots.List().Context(ctx).Dimensions(dimensions...).Fields(fields...)
 	// Keep calling as long as there's a cursor indicating more bots to list.
 	for {
 		var res *swarming.SwarmingRpcsBotList
