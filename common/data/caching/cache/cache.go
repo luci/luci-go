@@ -16,6 +16,7 @@ package cache
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/json"
 	"fmt"
@@ -23,9 +24,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -450,7 +453,7 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	d.incHardlinkRecord(digest, dest)
-	if err := os.Link(src, dest); err != nil {
+	if err := runOsLink(src, dest); err != nil {
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d\ndigestHardlinkRecords: %s", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid(), d.hardlinkRecordsToStr())
 		return fmt.Errorf("failed to call os.Link(%s, %s): %w\n%s", src, dest, err, debugInfo)
 	}
@@ -459,6 +462,34 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
 	return nil
+}
+
+func runOsLink(src, dest string) error {
+	// TODO(crbug.com/1076468): For debugging on macOS, remove in the future.
+	if runtime.GOOS != "darwin" {
+		return os.Link(src, dest)
+	}
+	timer := clock.NewTimer(context.Background())
+	defer timer.Stop()
+
+	var err error
+	delay := time.Millisecond
+	for i := 0; i < 5; i++ {
+		e := os.Link(src, dest)
+		if e == nil {
+			// Even if the retry succeeded, we still return the accumulated
+			// error, so that we can capture the failed tasks.
+			if err != nil {
+				err = errors.Annotate(err, "retry succeeded").Err()
+			}
+			return err
+		}
+		err = errors.Annotate(err, "%d-th try failed, err=%v", (i + 1), e).Err()
+		timer.Reset(delay)
+		delay = 2 * delay
+		<-timer.GetC()
+	}
+	return err
 }
 
 func (d *disk) GetAdded() []int64 {
