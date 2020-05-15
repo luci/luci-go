@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3af31500_bf6ac6fe",
+        "filename": "tokenserver/appengine/backend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T23:41:40Z",
+      "side": 1,
+      "message": "have you considered using fancy https://godoc.org/golang.org/x/sync/errgroup (i saw this in ResultDB codebase)",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 37
+      },
+      "revId": "035d3ad0e18949f0e0d855b925c858220903a59a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
