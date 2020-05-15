@@ -27,6 +27,7 @@ import (
 
 // ImportProjectOwnedAccountsConfigsRPC implements the corresponding method.
 type ImportProjectOwnedAccountsConfigsRPC struct {
+	MappingCache *MappingCache // usually GlobalMappingCache, but replaced in tests
 }
 
 // ImportServiceAccountsConfigs fetches configs from luci-config right now.
@@ -37,5 +38,5 @@ func (r *ImportProjectOwnedAccountsConfigsRPC) ImportProjectOwnedAccountsConfigs
 
 // SetupConfigValidation registers the config validation rules.
 func (r *ImportProjectOwnedAccountsConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
-	// TODO
+	r.MappingCache.SetupConfigValidation(rules)
 }
