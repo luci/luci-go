@@ -143,6 +143,27 @@ def test_validate_relative_path():
       'must not start with "../"')
 
 
+def test_validate_regex_list():
+  call = validate.regex_list
+
+  assert.fails(lambda: call('a', 123), 'bad "a": got int, want string or list')
+  assert.fails(lambda: call('a', [123]), 'bad "a": got list element of type int, want string')
+  assert.fails(lambda: call('a', None, required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', '', required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', [], required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', '('), 'bad "a": error parsing regexp: missing closing \\): `\\(`')
+  assert.fails(lambda: call('a', ['(ab', 'bc)']), 'bad "a": error parsing regexp: missing closing \\): `\\(ab`')
+
+  assert.eq(call('a', ''), '')
+  assert.eq(call('a', []), '')
+  assert.eq(call('a', 'abc.*def'), 'abc.*def')
+  assert.eq(call('a', 'abcdef', required=True), 'abcdef')
+  assert.eq(call('a', ['xyz', 'abc']), 'xyz|abc')
+  assert.eq(call('a', ['xyz', 'abc'], required=True), 'xyz|abc')
+  assert.eq(call('a', ['x.*yz', 'defg', 'abc']), 'x.*yz|defg|abc')
+
+
+
 test_validate_string()
 test_validate_int()
 test_validate_float()
@@ -153,3 +174,4 @@ test_validate_str_dict()
 test_validate_struct()
 test_validate_type()
 test_validate_relative_path()
+test_validate_regex_list()
