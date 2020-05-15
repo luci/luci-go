@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "d620640d_98e167a0",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:13:32Z",
+      "side": 1,
+      "message": "There\u0027s no doc. Auth library logs fingreprints of various tokens in logs, but currently not OAuth2 tokens though.",
+      "parentUuid": "517dbe17_4bc3c1a0",
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35a9131d_3539984a",
         "filename": "tokenserver/api/bq/bq.proto",
         "patchSetId": 1
@@ -62,6 +80,30 @@
       "revId": "d34022f1f5a035070d666758088118d5a966588a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9da3ca7a_e78b7c03",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:13:32Z",
+      "side": 1,
+      "message": "Changed.",
+      "parentUuid": "35a9131d_3539984a",
+      "range": {
+        "startLine": 229,
+        "startChar": 17,
+        "endLine": 229,
+        "endChar": 23
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "5b9d93bd_8ec024bf",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a923944_66587b6d",
+      "range": {
+        "startLine": 161,
+        "startChar": 24,
+        "endLine": 161,
+        "endChar": 26
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2263e4d_67a41b39",
         "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_import_project_owned_accounts_config.go",
         "patchSetId": 1
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "84600d5e_dcc9e42b",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_import_project_owned_accounts_config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:13:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2263e4d_67a41b39",
+      "range": {
+        "startLine": 32,
+        "startChar": 48,
+        "endLine": 32,
+        "endChar": 52
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "560b405b_6fdd1dc5",
         "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token.go",
         "patchSetId": 1
@@ -131,6 +221,30 @@
       "revId": "d34022f1f5a035070d666758088118d5a966588a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72376deb_3bc75a0c",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:13:32Z",
+      "side": 1,
+      "message": "Added.",
+      "parentUuid": "560b405b_6fdd1dc5",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 25
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
