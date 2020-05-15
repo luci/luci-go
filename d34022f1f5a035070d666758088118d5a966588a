@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "167e56b9_0d3b860f",
+        "filename": "tokenserver/api/admin/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T00:22:36Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 316,
+        "startChar": 34,
+        "endLine": 316,
+        "endChar": 38
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "517dbe17_4bc3c1a0",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T00:22:36Z",
+      "side": 1,
+      "message": "is there a doc somewhere as how this can be used? is this something we also log in various places?",
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "35a9131d_3539984a",
+        "filename": "tokenserver/api/bq/bq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T00:22:36Z",
+      "side": 1,
+      "message": "with Realms here, is it still fair to call it \"groups\" database?",
+      "range": {
+        "startLine": 229,
+        "startChar": 17,
+        "endLine": 229,
+        "endChar": 23
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a923944_66587b6d",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T00:22:36Z",
+      "side": 1,
+      "message": "It is what makes the account ...\n\nor \nThis makes the account ...",
+      "range": {
+        "startLine": 161,
+        "startChar": 24,
+        "endLine": 161,
+        "endChar": 26
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2263e4d_67a41b39",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_import_project_owned_accounts_config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T00:22:36Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 32,
+        "startChar": 48,
+        "endLine": 32,
+        "endChar": 52
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "560b405b_6fdd1dc5",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T00:22:36Z",
+      "side": 1,
+      "message": "i guess godoc will be follow up CL?",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 25
+      },
+      "revId": "d34022f1f5a035070d666758088118d5a966588a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
