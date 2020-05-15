@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c7a5d4b9_0dde6a67",
+        "filename": "server/auth/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T03:33:26Z",
+      "side": 1,
+      "message": "worth creating enum? else I fear it\u0027ll get outdated",
+      "range": {
+        "startLine": 62,
+        "startChar": 27,
+        "endLine": 62,
+        "endChar": 60
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1fe275f_cf78c070",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T03:33:26Z",
+      "side": 1,
+      "message": "this var isn\u0027t necessary; if you meant it for doc purposes, then i\u0027d rather leave conventional // comment",
+      "range": {
+        "startLine": 172,
+        "startChar": 5,
+        "endLine": 172,
+        "endChar": 17
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e784c0d0_b12bea59",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T03:33:26Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 215,
+        "startChar": 16,
+        "endLine": 215,
+        "endChar": 17
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6607de3_644e7892",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-15T03:33:26Z",
+      "side": 1,
+      "message": "nit: maybe %q or is the reasonableness of email already verified?",
+      "range": {
+        "startLine": 244,
+        "startChar": 37,
+        "endLine": 244,
+        "endChar": 38
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
