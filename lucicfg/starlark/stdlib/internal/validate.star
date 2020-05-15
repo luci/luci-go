@@ -344,6 +344,46 @@ def _relative_path(attr, val, *, allow_dots=False, base=None, required=True, def
   return clean
 
 
+def _regex_list(attr, val, *, required=False):
+  """Validates that the value is a valid regex parameter.
+
+  Strings are valid, and are returned unchanged. Lists of strings are valid, and
+  are combined into a single regex that matches any of the regexes in the list.
+
+  None is treated as an empty string.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    required: if False, allow 'val' to be None or empty, return empty string in
+        this case.
+
+  Returns:
+    The validated regex.
+  """
+  if val == None:
+    val = ''
+
+  if required and not val:
+    fail('missing required field %r' % attr)
+
+  if type(val) == 'string':
+    valid, err = __native__.is_valid_regex(val)
+    if not valid:
+      fail('bad %r: %s' % (attr, err))
+    return val
+  if type(val) == 'list':
+    for s in val:
+      if type(s) != 'string':
+        fail('bad %r: got list element of type %s, want string' % (attr, type(s)))
+      valid, err = __native__.is_valid_regex(s)
+      if not valid:
+        fail('bad %r: %s' % (attr, err))
+    return '|'.join(val)
+
+  fail('bad %r: got %s, want string or list' % (attr, type(val)))
+
+
 def _var_with_validator(attr, validator, **kwargs):
   """Returns a lucicfg.var that validates the value via a validator callback.
 
@@ -385,6 +425,7 @@ validate = struct(
     type = _type,
     repo_url = _repo_url,
     relative_path = _relative_path,
+    regex_list = _regex_list,
 
     var_with_validator = _var_with_validator,
     vars_with_validators = _vars_with_validators,

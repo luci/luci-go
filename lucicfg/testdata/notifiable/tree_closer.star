@@ -31,7 +31,7 @@ luci.tree_closer(
     name = 'tree closer',
     tree_status_host = 'some-tree.example.com',
     failed_step_regexp = 'failed-step-regexp',
-    failed_step_regexp_exclude = 'failed-step-regexp-exclude',
+    failed_step_regexp_exclude = ['regex1', 'or maybe regex 2'],
     template = luci.notifier_template(
         name = 'tree_status',
         body = 'boom\n',
@@ -81,7 +81,7 @@ luci.tree_closer(
 #   tree_closers: <
 #     tree_status_host: "some-tree.example.com"
 #     failed_step_regexp: "failed-step-regexp"
-#     failed_step_regexp_exclude: "failed-step-regexp-exclude"
+#     failed_step_regexp_exclude: "regex1|or maybe regex 2"
 #     template: "tree_status"
 #   >
 # >
@@ -94,7 +94,7 @@ luci.tree_closer(
 #   tree_closers: <
 #     tree_status_host: "some-tree.example.com"
 #     failed_step_regexp: "failed-step-regexp"
-#     failed_step_regexp_exclude: "failed-step-regexp-exclude"
+#     failed_step_regexp_exclude: "regex1|or maybe regex 2"
 #     template: "tree_status"
 #   >
 # >
