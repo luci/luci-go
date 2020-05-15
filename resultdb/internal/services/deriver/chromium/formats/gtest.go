@@ -299,6 +299,8 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 		Expected: status == pb.TestStatus_PASS,
 		Status:   status,
 		Tags: pbutil.StringPairs(
+			// Store the original Gtest test name.
+			"gtest_name", name,
 			// Store the original GTest status.
 			"gtest_status", result.Status,
 			// Store the correct output snippet.
