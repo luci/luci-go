@@ -16,6 +16,24 @@
       "revId": "fc8c7b16688f442d874bf230ebb228b92970940c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "326c105e_b5855528",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 467,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-15T06:15:40Z",
+      "side": 1,
+      "message": "As I said in the desc, without the public API, the test becomes super slow due to the retry behavior. (0.0x sec -\u003e 100 sec)\n\nAlternatively, we can retry with a smaller limit, but still the test will be slower.\n\nTBH since this is just for debugging, if you don\u0027t care that much about code tidyness here, I\u0027d suggest we to not use retry package, and just write a simple `for i in range(3)`, wdyt?",
+      "parentUuid": "f3c20087_bb2e7c5c",
+      "revId": "fc8c7b16688f442d874bf230ebb228b92970940c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
