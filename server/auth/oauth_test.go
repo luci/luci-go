@@ -20,9 +20,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
@@ -48,7 +51,14 @@ func TestGoogleOAuth2Method(t *testing.T) {
 	Convey("with mock backend", t, func(c C) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-			oauthChecksCache.GlobalNamespace: &cachingtest.BlobCache{LRU: lru.New(0)},
+			oauthValidationCache.GlobalNamespace: &cachingtest.BlobCache{LRU: lru.New(0)},
+		})
+		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			if testclock.HasTags(t, "oauth-tokeninfo-retry") {
+				tc.Add(d)
+			}
 		})
 
 		goodUser := &User{
@@ -100,6 +110,7 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			u, err := call("Bearer access_token")
 			So(err, ShouldBeNil)
 			So(u, ShouldResemble, goodUser)
+			So(checks, ShouldEqual, 1)
 
 			// Hit the process cache.
 			u, err = call("Bearer access_token")
@@ -112,7 +123,26 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(u, ShouldResemble, goodUser)
 
-			So(checks, ShouldEqual, 1) // only 1 call to the token endpoint
+			// No new calls to the token endpoints.
+			So(checks, ShouldEqual, 1)
+
+			// Advance time until the token expires, but the validation outcome is
+			// still cached.
+			tc.Add(time.Hour + time.Second)
+			status = http.StatusBadRequest
+
+			// Correctly identified as expired, no new calls to the token endpoint.
+			_, err = call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+			So(checks, ShouldEqual, 1)
+
+			// Advance time a bit more until the token is evicted from the cache.
+			tc.Add(15 * time.Minute)
+
+			// Correctly identified as expired, via a call to the token endpoint.
+			_, err = call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+			So(checks, ShouldEqual, 2)
 		})
 
 		Convey("Bad tokens are cached", func() {
@@ -120,6 +150,7 @@ func TestGoogleOAuth2Method(t *testing.T) {
 
 			_, err := call("Bearer access_token")
 			So(err, ShouldEqual, ErrBadOAuthToken)
+			So(checks, ShouldEqual, 1)
 
 			// Hit the process cache.
 			_, err = call("Bearer access_token")
@@ -130,7 +161,17 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			_, err = call("Bearer access_token")
 			So(err, ShouldEqual, ErrBadOAuthToken)
 
-			So(checks, ShouldEqual, 1) // only 1 call to the token endpoint
+			// Advance time a little bit, the outcome is still cached.
+			tc.Add(5 * time.Minute)
+			_, err = call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+			So(checks, ShouldEqual, 1)
+
+			// Advance time until the cache entry expire, the token is rechecked.
+			tc.Add(15 * time.Minute)
+			_, err = call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+			So(checks, ShouldEqual, 2)
 		})
 
 		Convey("Bad header", func() {
@@ -175,14 +216,26 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
-		Convey("Missing scope", func() {
-			info.Scope = "some other scopes"
+		Convey("No audience", func() {
+			info.Audience = ""
+			_, err := call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+		})
+
+		Convey("No scope", func() {
+			info.Scope = ""
 			_, err := call("Bearer access_token")
 			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
 
 		Convey("Bad email", func() {
 			info.Email = "@@@@"
+			_, err := call("Bearer access_token")
+			So(err, ShouldEqual, ErrBadOAuthToken)
+		})
+
+		Convey("Missing required scope", func() {
+			info.Scope = "some other scopes"
 			_, err := call("Bearer access_token")
 			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
@@ -212,10 +265,10 @@ func TestGetUserCredentials(t *testing.T) {
 
 	Convey("Bad headers", t, func() {
 		_, err := call("")
-		So(err, ShouldEqual, errBadAuthHeader)
+		So(err, ShouldEqual, ErrBadAuthorizationHeader)
 		_, err = call("abc.def")
-		So(err, ShouldEqual, errBadAuthHeader)
+		So(err, ShouldEqual, ErrBadAuthorizationHeader)
 		_, err = call("Basic abc.def")
-		So(err, ShouldEqual, errBadAuthHeader)
+		So(err, ShouldEqual, ErrBadAuthorizationHeader)
 	})
 }
