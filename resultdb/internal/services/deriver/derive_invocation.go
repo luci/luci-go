@@ -296,7 +296,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 
 // batchInvocationID returns an InvocationID for the Invocation containing the referenced batch.
 func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID {
-	return span.InvocationID(fmt.Sprintf("%s::batch::%d", invID, batchInd))
+	return span.InvocationID(fmt.Sprintf("%s-batch-%d", invID, batchInd))
 }
 
 // batchTestResults batches the given TestResults given the maximum batch size.

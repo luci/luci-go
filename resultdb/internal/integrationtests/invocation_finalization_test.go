@@ -35,30 +35,30 @@ func TestInvocatoinFinalization(t *testing.T) {
 
 		// Create invocations A, B, C.
 		// A includes B. B includes C.
-		c.CreateInvocation(ctx, "u:a")
-		c.CreateInvocation(ctx, "u:b")
-		c.CreateInvocation(ctx, "u:c")
-		c.Include(ctx, "invocations/u:a", "invocations/u:b")
-		c.Include(ctx, "invocations/u:b", "invocations/u:c")
+		c.CreateInvocation(ctx, "u-a")
+		c.CreateInvocation(ctx, "u-b")
+		c.CreateInvocation(ctx, "u-c")
+		c.Include(ctx, "invocations/u-a", "invocations/u-b")
+		c.Include(ctx, "invocations/u-b", "invocations/u-c")
 
 		// Finalize A, B and C.
-		c.FinalizeInvocation(ctx, "invocations/u:a")
-		So(c.GetState(ctx, "invocations/u:a"), ShouldEqual, pb.Invocation_FINALIZING)
-		c.FinalizeInvocation(ctx, "invocations/u:b")
-		So(c.GetState(ctx, "invocations/u:b"), ShouldEqual, pb.Invocation_FINALIZING)
-		c.FinalizeInvocation(ctx, "invocations/u:c")
+		c.FinalizeInvocation(ctx, "invocations/u-a")
+		So(c.GetState(ctx, "invocations/u-a"), ShouldEqual, pb.Invocation_FINALIZING)
+		c.FinalizeInvocation(ctx, "invocations/u-b")
+		So(c.GetState(ctx, "invocations/u-b"), ShouldEqual, pb.Invocation_FINALIZING)
+		c.FinalizeInvocation(ctx, "invocations/u-c")
 
 		// Assert that all three invocations are finalized within 10 seconds.
 		ctx, _ = context.WithTimeout(ctx, 10*time.Second)
 		for {
 			time.Sleep(100 * time.Millisecond)
-			if c.GetState(ctx, "invocations/u:a") != pb.Invocation_FINALIZED {
+			if c.GetState(ctx, "invocations/u-a") != pb.Invocation_FINALIZED {
 				continue
 			}
-			if c.GetState(ctx, "invocations/u:b") != pb.Invocation_FINALIZED {
+			if c.GetState(ctx, "invocations/u-b") != pb.Invocation_FINALIZED {
 				continue
 			}
-			if c.GetState(ctx, "invocations/u:c") != pb.Invocation_FINALIZED {
+			if c.GetState(ctx, "invocations/u-c") != pb.Invocation_FINALIZED {
 				continue
 			}
 
