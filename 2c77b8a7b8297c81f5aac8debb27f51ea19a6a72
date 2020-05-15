@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a86cac3_63c8d5dd",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T00:14:45Z",
+      "side": 1,
+      "message": "nit: blank line before this one",
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b093cfa_de6f3c66",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T00:14:45Z",
+      "side": 1,
+      "message": "nit: blank line before this one",
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95f36d45_c85d6c52",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T00:14:45Z",
+      "side": 1,
+      "message": "nit: all this is validation which must happen before anything else (and it does), but a reader have read this code extra carefully because it is a part of CancelBuild so it might be intermixed with non-validation code. It would be more readable if validation was extracted in a separate function, e.g. \n\n  func validateCancelBuildRequest(req *pb.CancelBuildRequest) error\n\nbonus: don\u0027t have to write appstatus.Errorf 3 times - can use appstatus.BadRequest(...)\n\nsame applies to GetBuild - not sure how I missed that in a previous review.",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 2
+      },
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e283169e_f4d0ff58",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T00:14:45Z",
+      "side": 1,
+      "message": "this is not a part of GetBuildAndBucket\u0027s public contract. Consider documenting that in GetBuildAndBucket\n\nor possible better: the contract could be higher level: GetBuildAndBucket could return appstatus error with NotFound. Then CancelBuild and GetBuild would not have to interpret err.",
+      "range": {
+        "startLine": 47,
+        "startChar": 13,
+        "endLine": 47,
+        "endChar": 38
+      },
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
