@@ -337,9 +337,8 @@ func TestManageBot(t *testing.T) {
 				Convey("deleted", func() {
 					rt.Handler = func(_ interface{}) (int, interface{}) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
-							BotId:       "id",
-							Deleted:     true,
-							FirstSeenTs: "2019-03-13T00:12:29.882948",
+							BotId:   "id",
+							Deleted: true,
 						}
 					}
 					datastore.Put(c, &model.VM{
@@ -358,7 +357,6 @@ func TestManageBot(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("dead", func() {
@@ -385,7 +383,6 @@ func TestManageBot(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Connected, ShouldNotEqual, 0)
 				})
 
 				Convey("terminated", func() {
@@ -587,7 +584,7 @@ func TestTerminateBot(t *testing.T) {
 				c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 				rpcsToSwarming := 0
 				rt.Handler = func(req interface{}) (int, interface{}) {
-					rpcsToSwarming += 1
+					rpcsToSwarming++
 					return http.StatusOK, &swarming.SwarmingRpcsTerminateResponse{}
 				}
 				datastore.Put(c, &model.VM{
