@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5ca20414_0c477ae5",
+        "filename": "server/auth/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:04:25Z",
+      "side": 1,
+      "message": "I see no value in creating an enum. I highly doubt this set will change, and it\u0027s no like we can share an enum with Monarch queries.",
+      "parentUuid": "c7a5d4b9_0dde6a67",
+      "range": {
+        "startLine": 62,
+        "startChar": 27,
+        "endLine": 62,
+        "endChar": 60
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c1fe275f_cf78c070",
         "filename": "server/auth/oauth.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6ef11f4_73ebedd5",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:04:25Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "c1fe275f_cf78c070",
+      "range": {
+        "startLine": 172,
+        "startChar": 5,
+        "endLine": 172,
+        "endChar": 17
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "85c6b773_4226f54d",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:04:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e784c0d0_b12bea59",
+      "range": {
+        "startLine": 215,
+        "startChar": 16,
+        "endLine": 215,
+        "endChar": 17
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6607de3_644e7892",
         "filename": "server/auth/oauth.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c236f3a_6ed88824",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-15T22:04:25Z",
+      "side": 1,
+      "message": "Yes, this email should look structurally fine.",
+      "parentUuid": "f6607de3_644e7892",
+      "range": {
+        "startLine": 244,
+        "startChar": 37,
+        "endLine": 244,
+        "endChar": 38
+      },
+      "revId": "1e3e26336758037a3f09e6691a23af22319b63b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
