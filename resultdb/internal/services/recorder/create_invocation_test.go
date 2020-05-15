@@ -85,7 +85,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "build:8765432100",
 			}, now, false)
-			So(err, ShouldErrLike, `only invocations created by trusted systems may have id not starting with "u:"`)
+			So(err, ShouldErrLike, `only invocations created by trusted systems may have id not starting with "u-"`)
 		})
 
 		Convey(`reserved prefix, allowed`, func() {
@@ -97,7 +97,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`invalid request id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:a",
+				InvocationId: "u-a",
 				RequestId:    "😃",
 			}, now, false)
 			So(err, ShouldErrLike, "request_id: does not match")
@@ -105,7 +105,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`invalid tags`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:abc",
+				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Tags: pbutil.StringPairs("1", "a"),
 				},
@@ -116,7 +116,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`invalid deadline`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:abc",
+				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 				},
@@ -127,7 +127,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`invalid bigqueryExports`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:abc",
+				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
@@ -143,7 +143,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`producer_resource disallowed`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:0",
+				InvocationId: "u-0",
 				Invocation: &pb.Invocation{
 					ProducerResource: "//builds.example.com/builds/1",
 				},
@@ -153,7 +153,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`producer_resource allowed`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:0",
+				InvocationId: "u-0",
 				Invocation: &pb.Invocation{
 					ProducerResource: "//builds.example.com/builds/1",
 				},
@@ -164,7 +164,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:abc",
+				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
@@ -207,13 +207,13 @@ func TestCreateInvocation(t *testing.T) {
 		})
 
 		req := &pb.CreateInvocationRequest{
-			InvocationId: "u:inv",
+			InvocationId: "u-inv",
 			Invocation:   &pb.Invocation{},
 		}
 
 		Convey(`already exists`, func() {
 			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-				testutil.InsertInvocation("u:inv", 1, nil),
+				testutil.InsertInvocation("u-inv", 1, nil),
 			})
 			So(err, ShouldBeNil)
 
@@ -229,14 +229,14 @@ func TestCreateInvocation(t *testing.T) {
 		})
 
 		Convey(`no invocation in request`, func() {
-			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "u:inv"})
+			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "u-inv"})
 			So(err, ShouldBeNil)
-			So(inv.Name, ShouldEqual, "invocations/u:inv")
+			So(inv.Name, ShouldEqual, "invocations/u-inv")
 		})
 
 		Convey(`idempotent`, func() {
 			req := &pb.CreateInvocationRequest{
-				InvocationId: "u:inv",
+				InvocationId: "u-inv",
 				Invocation:   &pb.Invocation{},
 				RequestId:    "request id",
 			}
@@ -258,7 +258,7 @@ func TestCreateInvocation(t *testing.T) {
 				TestResults: &pb.BigQueryExport_TestResults{},
 			}
 			req := &pb.CreateInvocationRequest{
-				InvocationId: "u:inv",
+				InvocationId: "u-inv",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
@@ -273,7 +273,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
-				Name:      "invocations/u:inv",
+				Name:      "invocations/u-inv",
 				State:     pb.Invocation_ACTIVE,
 				CreatedBy: "anonymous:anonymous",
 
@@ -287,13 +287,13 @@ func TestCreateInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			inv, err = span.ReadInvocationFull(ctx, txn, "u:inv")
+			inv, err = span.ReadInvocationFull(ctx, txn, "u-inv")
 			So(err, ShouldBeNil)
 			So(inv, ShouldResembleProto, expected)
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
-			err = span.ReadInvocation(ctx, txn, "u:inv", map[string]interface{}{
+			err = span.ReadInvocation(ctx, txn, "u-inv", map[string]interface{}{
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})

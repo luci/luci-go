@@ -68,8 +68,8 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if !trustedCreator {
-		if !strings.HasPrefix(req.InvocationId, "u:") {
-			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u:"; please generate "u:{GUID}" or reach out to ResultDB owners`).Err()
+		if !strings.HasPrefix(req.InvocationId, "u-") {
+			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`).Err()
 		}
 		if req.GetInvocation().GetProducerResource() != "" {
 			return errors.Reason(`invocation: producer_resource: only trusted systems are allowed to set producer_resource field for now`).Err()

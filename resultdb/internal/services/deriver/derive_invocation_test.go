@@ -229,7 +229,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				Tags:                pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR),
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
-				IncludedInvocations: []string{inv.Name + "::batch::0"},
+				IncludedInvocations: []string{inv.Name + "-batch-0"},
 				ProducerResource:    fmt.Sprintf("//%s/tasks/completed-task0", swarmingHostname),
 			})
 
