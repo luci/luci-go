@@ -61,7 +61,7 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 
 	now := testclock.TestRecentTimeUTC
 	Convey("ValidateCreateTestResultRequest", t, func() {
-		req := validCreateTestResultRequest(now, "invocations/u:build-1", "test-id")
+		req := validCreateTestResultRequest(now, "invocations/u-build-1", "test-id")
 
 		Convey("suceeeds", func() {
 			So(validateCreateTestResultRequest(req, now), ShouldBeNil)
@@ -110,12 +110,12 @@ func TestCreateTestResult(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 		req := validCreateTestResultRequest(
-			clock.Now(ctx).UTC(), "invocations/u:build-1", "test-id",
+			clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id",
 		)
 
 		createTestResult := func(req *pb.CreateTestResultRequest) {
 			expected := proto.Clone(req.TestResult).(*pb.TestResult)
-			expected.Name = "invocations/u:build-1/tests/test-id/results/result-id-0"
+			expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
 			res, err := recorder.CreateTestResult(ctx, req)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, expected)
@@ -126,7 +126,7 @@ func TestCreateTestResult(t *testing.T) {
 			So(row, ShouldResembleProto, expected)
 
 			// variant hash
-			key := span.InvocationID("u:build-1").Key("test-id", "result-id-0")
+			key := span.InvocationID("u-build-1").Key("test-id", "result-id-0")
 			var variantHash string
 			testutil.MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 				"VariantHash": &variantHash,
@@ -135,10 +135,10 @@ func TestCreateTestResult(t *testing.T) {
 		}
 
 		// Insert a sample invocation
-		tok, err := generateInvocationToken(ctx, "u:build-1")
+		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := testutil.InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, nil)
+		mut := testutil.InsertInvocation(span.InvocationID("u-build-1"), pb.Invocation_ACTIVE, nil)
 		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {

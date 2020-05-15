@@ -44,7 +44,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 		Convey(`invalid request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
 				now,
-				[]*pb.CreateInvocationRequest{{InvocationId: "u:a"}},
+				[]*pb.CreateInvocationRequest{{InvocationId: "u-a"}},
 				"😃",
 				false,
 			)
@@ -53,7 +53,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 		Convey(`non-matching request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
 				now,
-				[]*pb.CreateInvocationRequest{{InvocationId: "u:a", RequestId: "valid, but different"}},
+				[]*pb.CreateInvocationRequest{{InvocationId: "u-a", RequestId: "valid, but different"}},
 				"valid",
 				false,
 			)
@@ -71,11 +71,11 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 		Convey(`valid`, func() {
 			ids, err := validateBatchCreateInvocationsRequest(now,
 				[]*pb.CreateInvocationRequest{{
-					InvocationId: "u:a",
+					InvocationId: "u-a",
 					RequestId:    "valid",
 				}}, "valid", false)
 			So(err, ShouldBeNil)
-			So(ids.Has("u:a"), ShouldBeTrue)
+			So(ids.Has("u-a"), ShouldBeTrue)
 			So(len(ids), ShouldEqual, 1)
 		})
 	})
@@ -111,11 +111,11 @@ func TestBatchCreateInvocations(t *testing.T) {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{
 					{
-						InvocationId: "u:batchinv",
+						InvocationId: "u-batchinv",
 						RequestId:    "request id",
 					},
 					{
-						InvocationId: "u:batchinv2",
+						InvocationId: "u-batchinv2",
 						RequestId:    "request id",
 					},
 				},
@@ -143,7 +143,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{
 					{
-						InvocationId: "u:batch-inv",
+						InvocationId: "u-batch-inv",
 						Invocation: &pb.Invocation{
 							Deadline: deadline,
 							Tags:     pbutil.StringPairs("a", "1", "b", "2"),
@@ -154,7 +154,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 						},
 					},
 					{
-						InvocationId: "u:batch-inv2",
+						InvocationId: "u-batch-inv2",
 						Invocation: &pb.Invocation{
 							Deadline: deadline,
 							Tags:     pbutil.StringPairs("a", "1", "b", "2"),
@@ -172,7 +172,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
-				Name:      "invocations/u:batch-inv",
+				Name:      "invocations/u-batch-inv",
 				State:     pb.Invocation_ACTIVE,
 				CreatedBy: "anonymous:anonymous",
 
@@ -181,7 +181,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			})
 			expected2 := proto.Clone(req.Requests[1].Invocation).(*pb.Invocation)
 			proto.Merge(expected2, &pb.Invocation{
-				Name:      "invocations/u:batch-inv2",
+				Name:      "invocations/u-batch-inv2",
 				State:     pb.Invocation_ACTIVE,
 				CreatedBy: "anonymous:anonymous",
 
@@ -195,17 +195,17 @@ func TestBatchCreateInvocations(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			inv, err := span.ReadInvocationFull(ctx, txn, "u:batch-inv")
+			inv, err := span.ReadInvocationFull(ctx, txn, "u-batch-inv")
 			So(err, ShouldBeNil)
 			So(inv, ShouldResembleProto, expected)
 
-			inv2, err := span.ReadInvocationFull(ctx, txn, "u:batch-inv2")
+			inv2, err := span.ReadInvocationFull(ctx, txn, "u-batch-inv2")
 			So(err, ShouldBeNil)
 			So(inv2, ShouldResembleProto, expected2)
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
-			err = span.ReadInvocation(ctx, txn, "u:batch-inv", map[string]interface{}{
+			err = span.ReadInvocation(ctx, txn, "u-batch-inv", map[string]interface{}{
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})

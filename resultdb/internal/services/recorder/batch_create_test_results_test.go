@@ -53,7 +53,7 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 
 	now := testclock.TestRecentTimeUTC
 	Convey("ValidateBatchCreateTestResultsRequest", t, func() {
-		req := validBatchCreateTestResultRequest(now, "invocations/u:build-1", "test-id")
+		req := validBatchCreateTestResultRequest(now, "invocations/u-build-1", "test-id")
 
 		Convey("suceeeds", func() {
 			So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
@@ -134,7 +134,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 		req := validBatchCreateTestResultRequest(
-			clock.Now(ctx).UTC(), "invocations/u:build-1", "test-id",
+			clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id",
 		)
 
 		createTestResults := func(req *pb.BatchCreateTestResultsRequest) {
@@ -144,7 +144,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 			for i, r := range req.Requests {
 				resultID := fmt.Sprintf("result-id-%d", i)
 				expected := proto.Clone(r.TestResult).(*pb.TestResult)
-				expected.Name = "invocations/u:build-1/tests/test-id/results/" + resultID
+				expected.Name = "invocations/u-build-1/tests/test-id/results/" + resultID
 				So(response.TestResults[i], ShouldResembleProto, expected)
 
 				// double-check it with the database
@@ -154,7 +154,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				So(row, ShouldResembleProto, expected)
 
 				// variant hash
-				key := span.InvocationID("u:build-1").Key("test-id", resultID)
+				key := span.InvocationID("u-build-1").Key("test-id", resultID)
 				var variantHash string
 				testutil.MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 					"VariantHash": &variantHash,
@@ -164,10 +164,10 @@ func TestBatchCreateTestResults(t *testing.T) {
 		}
 
 		// Insert a sample invocation
-		tok, err := generateInvocationToken(ctx, "u:build-1")
+		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := testutil.InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, nil)
+		mut := testutil.InsertInvocation(span.InvocationID("u-build-1"), pb.Invocation_ACTIVE, nil)
 		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
