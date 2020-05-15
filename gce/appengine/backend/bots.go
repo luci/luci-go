@@ -98,6 +98,17 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 
 // manageExistingBot manages an existing Swarming bot.
 func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
+	// A bot connected to Swarming may be executing workload.
+	// To destroy the instance, terminate the bot first to avoid interruptions.
+	// Termination can be skipped if the bot is deleted, dead, or already terminated.
+	switch {
+	case bot.Deleted:
+		logging.Debugf(c, "bot deleted")
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	case bot.IsDead:
+		logging.Debugf(c, "bot dead")
+		return destroyInstanceAsync(c, vm.ID, vm.URL)
+	}
 	// This value of vm.Connected may be several seconds old, because the VM was fetched
 	// prior to sending an RPC to Swarming. Still, check it here to save a costly operation
 	// in setConnected, since manageExistingBot may be called thousands of times per minute.
@@ -109,17 +120,6 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 		if err := setConnected(c, vm.ID, vm.Hostname, t); err != nil {
 			return err
 		}
-	}
-	// A bot connected to Swarming may be executing workload.
-	// To destroy the instance, terminate the bot first to avoid interruptions.
-	// Termination can be skipped if the bot is deleted, dead, or already terminated.
-	switch {
-	case bot.Deleted:
-		logging.Debugf(c, "bot deleted")
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
-	case bot.IsDead:
-		logging.Debugf(c, "bot dead")
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	}
 	srv := getSwarming(c, vm.Swarming).Bot
 	// bot_terminate occurs when the bot starts the termination task and is normally followed
