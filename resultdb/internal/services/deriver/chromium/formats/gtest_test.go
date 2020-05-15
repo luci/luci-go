@@ -342,6 +342,7 @@ func TestGTestConversions(t *testing.T) {
 						Expected: true,
 						Status:   pb.TestStatus_PASS,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "BazTest.DoesQux",
 							"gtest_status", "SUCCESS",
 							"lossless_snippet", "false",
 						),
@@ -352,6 +353,7 @@ func TestGTestConversions(t *testing.T) {
 						TestId: "ninja://tests/BazTest.DoesQux",
 						Status: pb.TestStatus_FAIL,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "BazTest.DoesQux",
 							"gtest_status", "FAILURE",
 							"lossless_snippet", "false",
 						),
@@ -362,6 +364,7 @@ func TestGTestConversions(t *testing.T) {
 						TestId: "ninja://tests/FooTest.DoesBar",
 						Status: pb.TestStatus_FAIL,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "FooTest.DoesBar",
 							"gtest_status", "EXCESSIVE_OUTPUT",
 							"lossless_snippet", "false",
 						),
@@ -372,6 +375,7 @@ func TestGTestConversions(t *testing.T) {
 						TestId: "ninja://tests/FooTest.DoesBar",
 						Status: pb.TestStatus_FAIL,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "FooTest.DoesBar",
 							"gtest_status", "FAILURE_ON_EXIT",
 							"lossless_snippet", "false",
 						),
@@ -385,6 +389,7 @@ func TestGTestConversions(t *testing.T) {
 						Expected: true,
 						Status:   pb.TestStatus_PASS,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "BazTest.DoesQux",
 							"gtest_status", "SUCCESS",
 							"lossless_snippet", "false",
 						),
@@ -396,6 +401,7 @@ func TestGTestConversions(t *testing.T) {
 						Expected: true,
 						Status:   pb.TestStatus_PASS,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "BazTest.DoesQux",
 							"gtest_status", "SUCCESS",
 							"lossless_snippet", "false",
 						),
@@ -406,6 +412,7 @@ func TestGTestConversions(t *testing.T) {
 						TestId: "ninja://tests/FooTest.DoesBar",
 						Status: pb.TestStatus_FAIL,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "FooTest.DoesBar",
 							"gtest_status", "FAILURE",
 							"lossless_snippet", "false",
 						),
@@ -416,6 +423,7 @@ func TestGTestConversions(t *testing.T) {
 						TestId: "ninja://tests/FooTest.DoesBar",
 						Status: pb.TestStatus_FAIL,
 						Tags: pbutil.StringPairs(
+							"gtest_name", "FooTest.DoesBar",
 							"gtest_status", "FAILURE_ON_EXIT",
 							"lossless_snippet", "false",
 						),
