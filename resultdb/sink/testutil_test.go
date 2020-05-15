@@ -63,7 +63,7 @@ func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 		Address:     addr,
 		AuthToken:   tk,
 		Recorder:    pb.NewMockRecorderClient(ctl),
-		Invocation:  "invocations/u:foo-1587421194_893166206",
+		Invocation:  "invocations/u-foo-1587421194_893166206",
 		UpdateToken: "UpdateToken-ABC",
 	}
 }
