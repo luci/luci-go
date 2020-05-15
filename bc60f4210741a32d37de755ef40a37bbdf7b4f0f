@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "275193b5_c7ff9b40",
+        "filename": "resultdb/cmd/recorder/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T22:50:55Z",
+      "side": 1,
+      "message": "arh, it is a result of rebasing",
+      "parentUuid": "806cc44c_72db492f",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 43,
+        "endChar": 21
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dae72c73_f669a837",
         "filename": "resultdb/internal/services/recorder/create_artifact.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "55e5b27e_47289f60",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T22:50:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dae72c73_f669a837",
+      "range": {
+        "startLine": 135,
+        "startChar": 27,
+        "endLine": 135,
+        "endChar": 37
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1658220_d7a80cc0",
         "filename": "resultdb/internal/services/recorder/create_artifact.go",
         "patchSetId": 6
@@ -59,6 +107,30 @@
       "writtenOn": "2020-05-13T00:54:02Z",
       "side": 1,
       "message": "It is optimized for local files. I think it would be better to use chunkier size (e.g. 1MB) to reduce overhead of RPCs.",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 21
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d65a4828_73560b31",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T22:50:55Z",
+      "side": 1,
+      "message": "done, but now I am concerned that we aren\u0027t reusing large buffers across requests. Should we care? maybe Go memory manager does it better than we could do",
+      "parentUuid": "f1658220_d7a80cc0",
       "range": {
         "startLine": 150,
         "startChar": 2,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "125c56a4_b3662bbe",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T22:50:55Z",
+      "side": 1,
+      "message": "fail how? \n\nmy first version did what you say. Send a request with resource name and with no data. Then send requests without a resource name and with data in the loop. I was hoping the first request will return io.EOF if the blob is already there. It did not: in practice duplication may happen after some data is already sent, so I\u0027d have error handling in both places.",
+      "parentUuid": "3065256b_a76610be",
+      "range": {
+        "startLine": 176,
+        "startChar": 3,
+        "endLine": 179,
+        "endChar": 4
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9cae620d_a247e4d0",
         "filename": "resultdb/internal/services/recorder/create_artifact.go",
         "patchSetId": 6
@@ -114,6 +210,30 @@
       "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d19d25df_10a1d6fa",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-15T22:50:55Z",
+      "side": 1,
+      "message": "done\n\nit is a gRPC error but we are protected from this kind of problems by appstatus ;)",
+      "parentUuid": "9cae620d_a247e4d0",
+      "range": {
+        "startLine": 184,
+        "startChar": 10,
+        "endLine": 184,
+        "endChar": 13
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
