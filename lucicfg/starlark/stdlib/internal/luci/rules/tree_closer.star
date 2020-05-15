@@ -63,11 +63,11 @@ def _tree_closer(
         this rule will use to open and close the tree. Tree status affects how
         CQ lands CLs. See `tree_status_host` in luci.cq_group(...). Required.
     failed_step_regexp: close the tree only on builds which had a failing step
-        matching this regular expression.
+        matching this regex, or list of regexes.
     failed_step_regexp_exclude: close the tree only on builds which don't have
-        a failing step matching this regular expression. May be combined with
-        `failed_step_regexp`, in which case it must also have a failed step
-        matching that regular expression.
+        a failing step matching this regex or list of regexes. May be combined
+        with `failed_step_regexp`, in which case it must also have a failed
+        step matching that regular expression.
     template: a luci.notifier_template(...) to use to format tree closure
         notifications. If not specified, and a template `default_tree_status` is
         defined in the project somewhere, it is used implicitly by the tree
@@ -88,15 +88,13 @@ def _tree_closer(
               tree_status_host,
               required=True,
           ),
-          'failed_step_regexp': validate.string(
+          'failed_step_regexp': validate.regex_list(
               'failed_step_regexp',
               failed_step_regexp,
-              required=False,
           ),
-          'failed_step_regexp_exclude': validate.string(
+          'failed_step_regexp_exclude': validate.regex_list(
               'failed_step_regexp_exclude',
               failed_step_regexp_exclude,
-              required=False,
           ),
       },
       template = template,

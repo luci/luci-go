@@ -1678,8 +1678,8 @@ the same name.
 * **on_new_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead.  If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
 * **on_status_change**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
 * **on_success**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build success. Default is False.
-* **failed_step_regexp**: an optional regex, which is matched against the names of failed steps. Only build failures containing failed steps matching this regex will cause a notification to be sent. Mutually exclusive with `on_new_status`.
-* **failed_step_regexp_exclude**: an optional regex, which has the same function as `failed_step_regexp`, but negated - this regex must *not* match any failed steps for a notification to be sent. Mutually exclusive with `on_new_status`.
+* **failed_step_regexp**: an optional regex or list of regexes, which is matched against the names of failed steps. Only build failures containing failed steps matching this regex will cause a notification to be sent. Mutually exclusive with `on_new_status`.
+* **failed_step_regexp_exclude**: an optional regex or list of regexes, which has the same function as `failed_step_regexp`, but negated - this regex must *not* match any failed steps for a notification to be sent. Mutually exclusive with `on_new_status`.
 * **notify_emails**: an optional list of emails to send notifications to.
 * **notify_rotang_rotations**: an optional list of Rota-NG rotations. For each rotation, an email will be sent to the currently active member of that rotation.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
@@ -1733,8 +1733,8 @@ the same name.
 
 * **name**: name of this tree closer to reference it from other rules. Required.
 * **tree_status_host**: a hostname of the project tree status app (if any) that this rule will use to open and close the tree. Tree status affects how CQ lands CLs. See `tree_status_host` in [luci.cq_group(...)](#luci.cq_group). Required.
-* **failed_step_regexp**: close the tree only on builds which had a failing step matching this regular expression.
-* **failed_step_regexp_exclude**: close the tree only on builds which don't have a failing step matching this regular expression. May be combined with `failed_step_regexp`, in which case it must also have a failed step matching that regular expression.
+* **failed_step_regexp**: close the tree only on builds which had a failing step matching this regex, or list of regexes.
+* **failed_step_regexp_exclude**: close the tree only on builds which don't have a failing step matching this regex or list of regexes. May be combined with `failed_step_regexp`, in which case it must also have a failed step matching that regular expression.
 * **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format tree closure notifications. If not specified, and a template `default_tree_status` is defined in the project somewhere, it is used implicitly by the tree closer.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 

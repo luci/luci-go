@@ -95,14 +95,14 @@ def _notifier(
     on_success: Deprecated. Please use `on_new_status` or `on_occurrence`
         instead. If True, notify on each build success. Default is False.
 
-    failed_step_regexp: an optional regex, which is matched against the names of
-        failed steps. Only build failures containing failed steps matching this
-        regex will cause a notification to be sent. Mutually exclusive with
-        `on_new_status`.
-    failed_step_regexp_exclude: an optional regex, which has the same function
-        as `failed_step_regexp`, but negated - this regex must *not* match any
-        failed steps for a notification to be sent. Mutually exclusive with
-        `on_new_status`.
+    failed_step_regexp: an optional regex or list of regexes, which is matched
+        against the names of failed steps. Only build failures containing
+        failed steps matching this regex will cause a notification to be sent.
+        Mutually exclusive with `on_new_status`.
+    failed_step_regexp_exclude: an optional regex or list of regexes, which has
+        the same function as `failed_step_regexp`, but negated - this regex
+        must *not* match any failed steps for a notification to be sent.
+        Mutually exclusive with `on_new_status`.
 
     notify_emails: an optional list of emails to send notifications to.
     notify_rotang_rotations: an optional list of Rota-NG rotations. For each
@@ -135,8 +135,8 @@ def _notifier(
   on_status_change = validate.bool('on_status_change', on_status_change, required=False)
   on_success = validate.bool('on_success', on_success, required=False)
 
-  failed_step_regexp = validate.string('failed_step_regexp', failed_step_regexp, required=False)
-  failed_step_regexp_exclude = validate.string('failed_step_regexp_exclude', failed_step_regexp_exclude, required=False)
+  failed_step_regexp = validate.regex_list('failed_step_regexp', failed_step_regexp)
+  failed_step_regexp_exclude = validate.regex_list('failed_step_regexp_exclude', failed_step_regexp_exclude)
 
   if (failed_step_regexp or failed_step_regexp_exclude) and (on_new_status or on_new_failure or on_status_change):
     fail('failed step regexes cannot be used in combination with status change predicates')
