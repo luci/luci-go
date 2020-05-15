@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1b3b8efd_9e2bcb57",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-15T06:50:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34aa703b_befb35ad",
+      "range": {
+        "startLine": 476,
+        "startChar": 10,
+        "endLine": 476,
+        "endChar": 11
+      },
+      "revId": "508eeb6ed103f09a7a467fa0ad9c74932551aa26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea5e071a_ffa4258c",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 4
@@ -36,6 +60,24 @@
       "writtenOn": "2020-05-15T06:44:52Z",
       "side": 1,
       "message": "not hide error even there is success in retry",
+      "revId": "508eeb6ed103f09a7a467fa0ad9c74932551aa26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b33bcc01_2a13069e",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-15T06:50:17Z",
+      "side": 1,
+      "message": "Do you mean we should still return error? Or just log it but return nil? (I think it\u0027s the later?)",
+      "parentUuid": "ea5e071a_ffa4258c",
       "revId": "508eeb6ed103f09a7a467fa0ad9c74932551aa26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
