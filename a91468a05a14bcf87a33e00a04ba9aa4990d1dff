@@ -22,6 +22,30 @@
       "revId": "a91468a05a14bcf87a33e00a04ba9aa4990d1dff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3e21484_eccb793e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-15T02:27:58Z",
+      "side": 1,
+      "message": "Done (and in tree_closer.star as well).",
+      "parentUuid": "6b48f2d5_9f8812e9",
+      "range": {
+        "startLine": 98,
+        "startChar": 4,
+        "endLine": 98,
+        "endChar": 22
+      },
+      "revId": "a91468a05a14bcf87a33e00a04ba9aa4990d1dff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
