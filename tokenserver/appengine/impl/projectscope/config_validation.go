@@ -15,7 +15,9 @@
 package projectscope
 
 import (
-	"go.chromium.org/luci/common/data/stringset"
+	"sort"
+	"strings"
+
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/validation"
 )
@@ -39,9 +41,8 @@ func validateSingleIdentityProjectAssignment(ctx *validation.Context, cfg *confi
 	ctx.Enter("identity configuration")
 	defer ctx.Exit()
 
-	// Used to validate that projects don't share identities.
-	identities := stringset.Set{}
-	entries := 0
+	// Service account email => list of project that use it.
+	idents := map[string][]string{}
 
 	for _, project := range cfg.Projects {
 		ctx.Enter("Validate project %s IdentityConfig", project.Id)
@@ -50,15 +51,23 @@ func validateSingleIdentityProjectAssignment(ctx *validation.Context, cfg *confi
 		//  project identities is completed by all customers.
 		if identcfg, valid := validateHasIdentityConfig(ctx, project); valid {
 			validateCanIssueTokenForIdentity(ctx, identcfg.ServiceAccountEmail)
-			identities.Add(identcfg.ServiceAccountEmail)
-			entries++
+			idents[identcfg.ServiceAccountEmail] = append(idents[identcfg.ServiceAccountEmail], project.Id)
 		}
 		ctx.Exit()
 	}
 
-	// Make sure projects don't share identities.
-	if identities.Len() < entries {
-		ctx.Errorf("at least two projects sharing the same identity")
+	// Warn when projects share identities.
+	var shared []string
+	for ident, projs := range idents {
+		if len(projs) > 1 {
+			shared = append(shared, ident)
+		}
+	}
+	sort.Strings(shared)
+	for _, ident := range shared {
+		ctx.Warningf(
+			"project-scoped account %s is used by multiple projects: %s",
+			ident, strings.Join(idents[ident], ", "))
 	}
 }
 

@@ -31,8 +31,8 @@ func TestValidation(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		Cfg    string
-		Errors []string
+		Cfg      string
+		Warnings []string
 	}{
 		{
 			// No errors, "normal looking" config.
@@ -50,7 +50,7 @@ func TestValidation(t *testing.T) {
 			`,
 		},
 		{
-			// Identity double assignment, broken config.
+			// Identity double assignment, produces a warning.
 			Cfg: `
 				projects {
 					id: "id1"
@@ -63,7 +63,7 @@ func TestValidation(t *testing.T) {
 					}
 				}
 				projects {
-					id: "id1"
+					id: "id2"
 					config_location {
 						url: "https://some/repo"
 						storage_type: GITILES
@@ -73,8 +73,8 @@ func TestValidation(t *testing.T) {
 					}
 				}
 			`,
-			Errors: []string{
-				`in "projects.cfg" (identity configuration): at least two projects sharing the same identity`,
+			Warnings: []string{
+				`project-scoped account foo@bar.com is used by multiple projects: id1, id2`,
 			},
 		},
 	}
@@ -92,13 +92,15 @@ func TestValidation(t *testing.T) {
 			validateSingleIdentityProjectAssignment(ctx, cfg)
 			verr := ctx.Finalize()
 
-			if len(cs.Errors) == 0 { // no errors expected
+			if len(cs.Warnings) == 0 {
 				So(verr, ShouldBeNil)
 			} else {
 				verr := verr.(*validation.Error)
-				So(len(verr.Errors), ShouldEqual, len(cs.Errors))
+				So(verr.Errors, ShouldHaveLength, len(cs.Warnings))
 				for i, err := range verr.Errors {
-					So(err, ShouldErrLike, cs.Errors[i])
+					sev, _ := validation.SeverityTag.In(err)
+					So(sev, ShouldEqual, validation.Warning)
+					So(err, ShouldErrLike, cs.Warnings[i])
 				}
 			}
 		}
