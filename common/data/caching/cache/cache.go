@@ -16,6 +16,7 @@ package cache
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/json"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
@@ -106,6 +108,16 @@ func NewMemory(policies Policies, namespace string) Cache {
 // It may return both a valid Cache and an error if it failed to load the
 // previous cache metadata. It is safe to ignore this error.
 func NewDisk(policies Policies, path, namespace string) (Cache, error) {
+	return newDisk(policies, path, namespace, retry.None)
+}
+
+// NewDiskWithRetry is similar to NewDisk, but it also retries on hardlink
+// failure. This is only for https://crbug.com/1076468.
+func NewDiskWithRetry(policies Policies, path, namespace string) (Cache, error) {
+	return newDisk(policies, path, namespace, retry.Default)
+}
+
+func newDisk(policies Policies, path, namespace string, linkRetryFactory retry.Factory) (Cache, error) {
 	if !filepath.IsAbs(path) {
 		return nil, errors.Reason("must use absolute path: %s", path).Err()
 	}
@@ -115,6 +127,7 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 		h:                     isolated.GetHash(namespace),
 		lru:                   makeLRUDict(namespace),
 		digestHardlinkRecords: make(map[isolated.HexDigest]hardlinkRecords),
+		linkRetryFactory:      linkRetryFactory,
 	}
 	p := d.statePath()
 
@@ -308,6 +321,7 @@ type disk struct {
 	used  []int64
 	// TODO(crbug.com/1076468): Remove once crbug.com/1076468 is fixed
 	digestHardlinkRecords map[isolated.HexDigest]hardlinkRecords
+	linkRetryFactory      retry.Factory
 }
 
 func (d *disk) Close() error {
@@ -450,7 +464,9 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	d.incHardlinkRecord(digest, dest)
-	if err := os.Link(src, dest); err != nil {
+	if err := retry.Retry(context.Background(), d.linkRetryFactory, func() error {
+		return os.Link(src, dest)
+	}, nil); err != nil {
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d\ndigestHardlinkRecords: %s", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid(), d.hardlinkRecordsToStr())
 		return fmt.Errorf("failed to call os.Link(%s, %s): %w\n%s", src, dest, err, debugInfo)
 	}
