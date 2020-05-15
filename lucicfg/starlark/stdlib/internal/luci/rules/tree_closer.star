@@ -88,15 +88,13 @@ def _tree_closer(
               tree_status_host,
               required=True,
           ),
-          'failed_step_regexp': validate.string(
+          'failed_step_regexp': validate.regex_list(
               'failed_step_regexp',
               failed_step_regexp,
-              required=False,
           ),
-          'failed_step_regexp_exclude': validate.string(
+          'failed_step_regexp_exclude': validate.regex_list(
               'failed_step_regexp_exclude',
               failed_step_regexp_exclude,
-              required=False,
           ),
       },
       template = template,
