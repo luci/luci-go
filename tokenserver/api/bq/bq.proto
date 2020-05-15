@@ -56,7 +56,7 @@ message DelegationToken {
   string service_version = 16;
   // ID of the GAE request that handled the call.
   string gae_request_id = 17;
-  // Revision of groups database used to authorize this call.
+  // Revision of the authorization database used to authorize this call.
   int64 auth_db_rev = 18;
 }
 
@@ -124,7 +124,7 @@ message OAuthTokenGrant {
   string service_version = 12;
   // ID of the GAE request that handled the call.
   string gae_request_id = 13;
-  // Revision of groups database used to authorize this call.
+  // Revision of the authorization database used to authorize this call.
   int64 auth_db_rev = 14;
 }
 
@@ -162,9 +162,10 @@ message OAuthToken {
   string service_version = 13;
   // ID of the GAE request that handled the call.
   string gae_request_id = 14;
-  // Revision of groups database used to authorize this call.
+  // Revision of the authorization database used to authorize this call.
   int64 auth_db_rev = 15;
 }
+
 
 // Issued Project tokens.
 message ProjectToken {
@@ -190,6 +191,41 @@ message ProjectToken {
   string service_version = 10;
   // ID of the GAE request that handled the call.
   string gae_request_id = 11;
-  // Revision of groups database used to authorize this call.
+  // Revision of the authorization database used to authorize this call.
   int64 auth_db_rev = 12;
+}
+
+
+// Issued service account tokens.
+message ServiceAccountToken {
+  // First 16 bytes of SHA256 of the token body, hex-encoded.
+  string fingerprint = 1;
+  // The kind of the token requested (OAuth2 access token or ID token).
+  tokenserver.minter.ServiceAccountTokenKind kind = 2;
+  // Service account email the luci service wants to act as.
+  string service_account = 3;
+  // LUCI realm used to authorize the call.
+  string realm = 4;
+  // Requested OAuth scopes when minting OAuth tokens.
+  repeated string oauth_scopes = 5;
+  // Requested audience when minting ID tokens.
+  string id_token_audience = 6;
+  // Identity used to authorize the call.
+  string request_identity = 7;
+  // Identity of a service that made the RPC.
+  string peer_identity = 8;
+  // When this request happened.
+  google.protobuf.Timestamp requested_at = 9;
+  // When the token expires.
+  google.protobuf.Timestamp expiration = 10;
+  // Arbitrary key:value pairs provided by the caller.
+  repeated string audit_tags = 11;
+  // IP address of the caller.
+  string peer_ip = 12;
+  // Identifier of the token server GAE app and version.
+  string service_version = 13;
+  // ID of the GAE request that handled the call.
+  string gae_request_id = 14;
+  // Revision of the authorization database used to authorize this call.
+  int64 auth_db_rev = 15;
 }

@@ -164,6 +164,8 @@ message DelegationRule {
 
 
 // ServiceAccountsPermissions is read from service_accounts.cfg in luci-config.
+//
+// Note: in the process of being replaced with ServiceAccountsProjectMapping.
 message ServiceAccountsPermissions {
   // Rules specify how MintOAuthTokenViaGrant can be used.
   //
@@ -200,6 +202,8 @@ message ServiceAccountsPermissions {
 //
 // Some proxies can be declared as "trusted", in which case they are allowed to
 // use any service account declared by the rule, regardless of an end user.
+//
+// Note: in the process of being replaced with ServiceAccountsProjectMapping.
 message ServiceAccountRule {
   // A descriptive name of this rule, for the audit log.
   string name = 1;
@@ -276,6 +280,8 @@ message ServiceAccountRule {
 
 // ServiceAccountRuleDefaults specifies some default values applied to all
 // service account rules, to reduce duplication.
+//
+// Note: in the process of being replaced with ServiceAccountsProjectMapping.
 message ServiceAccountRuleDefaults {
   // OAuth scopes we allow to be granted to all generated OAuth tokens.
   //
@@ -288,4 +294,29 @@ message ServiceAccountRuleDefaults {
   //
   // Default is 48 hours.
   int64 max_grant_validity_duration = 2;
+}
+
+
+// ServiceAccountsProjectMapping defines what service accounts belong to what
+// LUCI projects.
+//
+// Used by MintServiceAccountToken RPC as a final authorization step, after
+// checking that the usage of the service account is allowed by Realms ACLs.
+//
+// This is a stop gap solution until the Token Server learns to use
+// project-scoped accounts when calling Cloud IAM. Once this happens, we can
+// move information contained in ServiceAccountsProjectMapping into Cloud IAM
+// permissions.
+//
+// This message is stored as project_owned_accounts.cfg in luci-config.
+message ServiceAccountsProjectMapping {
+  message Mapping {
+    // Names of LUCI projects.
+    repeated string project = 1;
+    // Emails of service accounts allowed to be used by all these projects.
+    repeated string service_account = 2;
+  }
+
+  // Each entry maps a bunch of service accounts to one or more projects.
+  repeated Mapping mapping = 1;
 }

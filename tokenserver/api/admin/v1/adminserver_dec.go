@@ -93,6 +93,23 @@ func (s *DecoratedAdmin) ImportProjectIdentityConfigs(ctx context.Context, req *
 	return
 }
 
+func (s *DecoratedAdmin) ImportProjectOwnedAccountsConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ImportProjectOwnedAccountsConfigs", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ImportProjectOwnedAccountsConfigs(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ImportProjectOwnedAccountsConfigs", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedAdmin) InspectMachineToken(ctx context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
