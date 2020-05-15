@@ -47,6 +47,10 @@ type LaunchSwarmingOpts struct {
 	// dumped.
 	FinalBuildProto string
 
+	// If launched from within a swarming task, this will be the current swarming
+	// task's task id to be attached as the parent of the launched task.
+	ParentTaskId string
+
 	KitchenSupport job.KitchenSupport
 }
 
@@ -82,7 +86,7 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 
 	logging.Infof(ctx, "building swarming task")
 
-	st, err := jobexport.ToSwarmingNewTask(ctx, jd, opts.UserID, opts.KitchenSupport)
+	st, err := jobexport.ToSwarmingNewTask(ctx, jd, opts.UserID, opts.ParentTaskId, opts.KitchenSupport)
 	if err != nil {
 		return nil, nil, err
 	}

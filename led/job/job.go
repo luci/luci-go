@@ -281,7 +281,7 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 //
 // After flattening, HighLevelEdit functionality will no longer work on this
 // Definition.
-func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks KitchenSupport) error {
+func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, parentTaskId string, ks KitchenSupport) error {
 	if jd.GetSwarming() != nil {
 		return nil
 	}
@@ -302,6 +302,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks Kitc
 		Hostname: jd.Info().SwarmingHostname(),
 		Task: &swarmingpb.TaskRequest{
 			Name:           jd.Info().TaskName(),
+			ParentTaskId:   parentTaskId,
 			Priority:       jd.Info().Priority(),
 			ServiceAccount: bbi.GetSwarming().GetTaskServiceAccount(),
 			Tags:           jd.Info().Tags(),
