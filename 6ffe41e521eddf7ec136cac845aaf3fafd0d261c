@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "01f89e40_4c1411c3",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-15T15:55:43Z",
+      "side": 1,
+      "message": "This is the wrong place to add this. This module shouldn\u0027t be pulling any data from the environment.",
+      "range": {
+        "startLine": 19,
+        "startChar": 2,
+        "endLine": 19,
+        "endChar": 4
+      },
+      "revId": "6ffe41e521eddf7ec136cac845aaf3fafd0d261c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0c952d7_0d3e26fb",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-15T15:55:43Z",
+      "side": 1,
+      "message": "the parent task ID must be recorded somewhere within here",
+      "range": {
+        "startLine": 32,
+        "startChar": 52,
+        "endLine": 32,
+        "endChar": 62
+      },
+      "revId": "6ffe41e521eddf7ec136cac845aaf3fafd0d261c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
