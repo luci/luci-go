@@ -16,6 +16,7 @@ package jobexport
 
 import (
 	"context"
+	"os"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -38,6 +39,7 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
 		Name:                 task.Name,
 		User:                 uid,
+		ParentTaskId:         os.Getenv("SWARMING_TASK_ID"),
 		Priority:             int64(task.Priority),
 		ServiceAccount:       task.ServiceAccount,
 		Tags:                 task.Tags,

@@ -34,6 +34,27 @@ import (
 
 var train = flag.Bool("train", false, "If set, write testdata/*.swarm.json")
 
+func mockEnv(env map[string]string) func() {
+	unset := make([]string, 0, len(env))
+	fixup := make(map[string]string)
+	for k, v := range env {
+		if orig, ok := os.LookupEnv(k); ok {
+			fixup[k] = orig
+		} else {
+			unset = append(unset, k)
+		}
+		os.Setenv(k, v)
+	}
+	return func() {
+		for _, k := range unset {
+			os.Unsetenv(k)
+		}
+		for k, v := range fixup {
+			os.Setenv(k, v)
+		}
+	}
+}
+
 func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskRequest {
 	jobFile, err := os.Open(fmt.Sprintf("testdata/%s.job.json", fixtureBaseName))
 	So(err, ShouldBeNil)
@@ -45,6 +66,10 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 
 	ctx := cryptorand.MockForTest(context.Background(), 0)
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
+	defer mockEnv(map[string]string{
+		"USER":             "test",
+		"SWARMING_TASK_ID": "293109284abc",
+	})()
 	ret, err := ToSwarmingNewTask(ctx, jd, "testuser@example.com", job.NoKitchenSupport())
 	So(err, ShouldBeNil)
 
