@@ -16,7 +16,7 @@ package cli
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/user"
@@ -244,9 +244,9 @@ func genInvID(ctx context.Context) (string, error) {
 
 	suffix := strings.ToLower(fmt.Sprintf(
 		"%s-%s", time.Now().UTC().Format(time.RFC3339),
-		// Use unpadded encoding because the padding character,'=', is not a valid character
-		// for invocation IDs and also shorter.
-		base64.RawURLEncoding.EncodeToString(bytes)))
+		// Note: cannot use base64 because not all of its characters are allowed
+		// in invocation IDs.
+		hex.EncodeToString(bytes)))
 
 	// An invocation ID can contain up to 100 ascii characters that conform to the regex,
 	return fmt.Sprintf("u-%.*s-%s", 100-len(suffix), username, suffix), nil
