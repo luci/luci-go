@@ -58,29 +58,35 @@ type Bucket struct {
 	Schema int32 `gae:"entity_schema_version"`
 }
 
-// CanView returns whether the current identity can view the given bucket.
+// NoRole indicates the user has no defined role in a bucket.
+const NoRole pb.Acl_Role = -1
+
+// GetRole returns the role of current identity in this bucket. Roles are
+// numerically comparable and role n implies roles [0, n-1] as well. May return
+// NoRole if the current identity has no defined role in this bucket.
 // TODO(crbug/1042991): Move elsewhere as needed.
-func (b *Bucket) CanView(ctx context.Context) (bool, error) {
+func (b *Bucket) GetRole(ctx context.Context) (pb.Acl_Role, error) {
 	id := auth.CurrentIdentity(ctx)
-	// Projects can view their buckets regardless of ACLs.
+	// Projects can do anything regardless of ACLs.
 	if id.Kind() == identity.Project && id.Value() == b.Parent.StringID() {
-		return true, nil
+		return pb.Acl_WRITER, nil
 	}
-	grp := make([]string, len(b.Proto.Acls))
-	// The lowest level of access that can be declared is READER so it's not
-	// necessary to check roles. Any matching rule implies the user can view.
-	for i, rule := range b.Proto.Acls {
-		// Identity may be a plain email address (shorthand for user:email).
-		if rule.Identity == string(id) || id.Kind() == identity.User && rule.Identity == id.Email() {
-			return true, nil
+	role := NoRole
+	for _, rule := range b.Proto.Acls {
+		// Check this rule if it could potentially confer a higher role.
+		if rule.Role > role {
+			if rule.Identity == string(id) {
+				role = rule.Role
+			} else if id.Kind() == identity.User && rule.Identity == id.Email() {
+				role = rule.Role
+			} else if is, err := auth.IsMember(ctx, rule.Group); err != nil {
+				// Empty group membership checks always return false without
+				// any error so it doesn't matter if the group is unspecified.
+				return NoRole, errors.Annotate(err, "failed to check group membership in %q", rule.Group).Err()
+			} else if is {
+				role = rule.Role
+			}
 		}
-		// Empty group membership checks always return false
-		// so it doesn't matter if the group is unspecified.
-		grp[i] = rule.Group
 	}
-	is, err := auth.IsMember(ctx, grp...)
-	if err != nil {
-		return false, errors.Annotate(err, "failed to check group membership in one of %q", grp).Err()
-	}
-	return is, nil
+	return role, nil
 }

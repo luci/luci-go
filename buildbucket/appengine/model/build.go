@@ -159,3 +159,28 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	}
 	return p, nil
 }
+
+// GetBuildAndBucket returns the build with the given ID as well as the bucket
+// it belongs to. Returns datastore.ErrNoSuchEntity if either is not found.
+func GetBuildAndBucket(ctx context.Context, id int64) (*Build, *Bucket, error) {
+	bld := &Build{
+		ID: id,
+	}
+	switch err := datastore.Get(ctx, bld); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil, err
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "error fetching build with ID %d", id).Err()
+	}
+	bck := &Bucket{
+		ID:     bld.Proto.Builder.Bucket,
+		Parent: datastore.KeyForObj(ctx, &Project{ID: bld.Proto.Builder.Project}),
+	}
+	switch err := datastore.Get(ctx, bck); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil, err
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "error fetching bucket %q", bld.BucketID).Err()
+	}
+	return bld, bck, nil
+}
