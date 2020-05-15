@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "99561052_7d306c9c",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-15T17:29:14Z",
+      "side": 1,
+      "message": "It\u0027s inconsistent with everywhere else (e.g. ToProto above is even longer but doesn\u0027t have blank lines delineating logical blocks). For the time being I did not add the blank lines.",
+      "parentUuid": "9a86cac3_63c8d5dd",
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b093cfa_de6f3c66",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d05606f6_95a4148f",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-15T17:29:14Z",
+      "side": 1,
+      "message": "See above",
+      "parentUuid": "0b093cfa_de6f3c66",
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "8acf19fa_bf8d950a",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-15T17:29:14Z",
+      "side": 1,
+      "message": "For now I omitted getFieldMask from the validatation functions because I don\u0027t like that they\u0027d have to return (field mask, error).",
+      "parentUuid": "95f36d45_c85d6c52",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 2
+      },
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e283169e_f4d0ff58",
         "filename": "buildbucket/appengine/rpc/cancel_build.go",
         "patchSetId": 2
@@ -79,6 +139,30 @@
       "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73f8d28e_6e7d936b",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-15T17:29:14Z",
+      "side": 1,
+      "message": "I\u0027m not sure if it\u0027ll be reused in code that doesn\u0027t handle RPCs, so I don\u0027t know if we want to attach the appstatus error there, in the model package. And this code has to check something in order to attach user-friendly message by calling notFound (that it\u0027s not found or the user isn\u0027t authorized) I\u0027ll just document that it can return ErrNoSuchEntity for the time being.",
+      "parentUuid": "e283169e_f4d0ff58",
+      "range": {
+        "startLine": 47,
+        "startChar": 13,
+        "endLine": 47,
+        "endChar": 38
+      },
+      "revId": "2c77b8a7b8297c81f5aac8debb27f51ea19a6a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
