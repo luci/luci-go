@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -61,6 +62,15 @@ func main() {
 			c.Writer.Write([]byte("Hello, world"))
 
 			logging.WithError(fmt.Errorf("boom")).Errorf(c.Context, "Hello error world")
+		})
+
+		// Authentication example (using Google OAuth2 access tokens).
+		mw := router.NewMiddlewareChain(auth.Authenticate(&auth.GoogleOAuth2Method{
+			Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+		}))
+		srv.Routes.GET("/who", mw, func(c *router.Context) {
+			logging.Infof(c.Context, "Authenticated as %s", auth.CurrentIdentity(c.Context))
+			fmt.Fprintf(c.Writer, "Authenticated as %s\n", auth.CurrentIdentity(c.Context))
 		})
 
 		// Redis example.

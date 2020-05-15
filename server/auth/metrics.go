@@ -53,6 +53,13 @@ var (
 		&types.MetricMetadata{Units: types.Microseconds},
 		distribution.DefaultBucketer,
 		field.String("result"))
+
+	tokenInfoCallDuration = metric.NewCumulativeDistribution(
+		"luci/auth/rpcs/oauth_token_info",
+		"Distribution of duration of Google OAuth2 /tokeninfo RPCs.",
+		&types.MetricMetadata{Units: types.Microseconds},
+		distribution.DefaultBucketer,
+		field.String("outcome")) // OK, BAD_TOKEN, DEADLINE, ERROR
 )
 
 func durationReporter(c context.Context, m metric.CumulativeDistribution) func(error, string) {
