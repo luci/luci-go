@@ -25,6 +25,10 @@ import (
 
 // MintServiceAccountTokenRPC implements the corresponding method.
 type MintServiceAccountTokenRPC struct {
+	// Mapping returns project<->account mapping to use for the request.
+	//
+	// In prod it is GlobalMappingCache.Mapping.
+	Mapping func(context.Context) (*Mapping, error)
 }
 
 // MintOAuthTokenViaGrant produces new OAuth token given a grant.

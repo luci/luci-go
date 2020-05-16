@@ -62,7 +62,9 @@ func NewServer() *AdminServer {
 			Signer: signer,
 			Rules:  serviceaccounts.GlobalRulesCache.Rules,
 		},
-		ImportProjectIdentityConfigsRPC:      projectscope.ImportProjectIdentityConfigsRPC{},
-		ImportProjectOwnedAccountsConfigsRPC: serviceaccountsv2.ImportProjectOwnedAccountsConfigsRPC{},
+		ImportProjectIdentityConfigsRPC: projectscope.ImportProjectIdentityConfigsRPC{},
+		ImportProjectOwnedAccountsConfigsRPC: serviceaccountsv2.ImportProjectOwnedAccountsConfigsRPC{
+			MappingCache: serviceaccountsv2.GlobalMappingCache,
+		},
 	}
 }

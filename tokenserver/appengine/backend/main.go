@@ -19,9 +19,11 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -73,50 +75,37 @@ func readConfigCron(c *router.Context) {
 		return
 	}
 
+	// All config fetching callbacks to call in parallel.
+	fetchers := []struct {
+		name string
+		cb   func(context.Context, *empty.Empty) (*admin.ImportedConfigs, error)
+	}{
+		{"ImportCAConfigs", adminServer.ImportCAConfigs},
+		{"ImportDelegationConfigs", adminServer.ImportDelegationConfigs},
+		{"ImportServiceAccountsConfigs", adminServer.ImportServiceAccountsConfigs},
+		{"ImportProjectIdentityConfigs", adminServer.ImportProjectIdentityConfigs},
+		{"ImportProjectOwnedAccountsConfigs", adminServer.ImportProjectOwnedAccountsConfigs},
+	}
+
+	errs := make([]error, len(fetchers))
+
 	wg := sync.WaitGroup{}
-	var errs [4]error
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errs[0] = adminServer.ImportCAConfigs(c.Context, nil)
-		if errs[0] != nil {
-			logging.Errorf(c.Context, "ImportCAConfigs failed - %s", errs[0])
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errs[1] = adminServer.ImportDelegationConfigs(c.Context, nil)
-		if errs[1] != nil {
-			logging.Errorf(c.Context, "ImportDelegationConfigs failed - %s", errs[1])
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errs[2] = adminServer.ImportServiceAccountsConfigs(c.Context, nil)
-		if errs[2] != nil {
-			logging.Errorf(c.Context, "ImportServiceAccountsConfigs failed - %s", errs[2])
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, errs[3] = adminServer.ImportProjectIdentityConfigs(c.Context, nil)
-		if errs[3] != nil {
-			logging.Errorf(c.Context, "ImportProjectIdentityConfigs failed - %s", errs[3])
-		}
-	}()
-
+	wg.Add(len(fetchers))
+	for idx, fetcher := range fetchers {
+		idx := idx
+		fetcher := fetcher
+		go func() {
+			defer wg.Done()
+			if _, errs[idx] = fetcher.cb(c.Context, nil); errs[idx] != nil {
+				logging.Errorf(c.Context, "%s failed - %s", fetcher.name, errs[idx])
+			}
+		}()
+	}
 	wg.Wait()
 
 	// Retry cron job only on transient errors. On fatal errors let it rerun one
 	// minute later, as usual, to avoid spamming logs with errors.
-	c.Writer.WriteHeader(statusFromErrs(errs[:]))
+	c.Writer.WriteHeader(statusFromErrs(errs))
 }
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
