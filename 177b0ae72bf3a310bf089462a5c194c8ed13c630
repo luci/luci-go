@@ -22,6 +22,30 @@
       "revId": "177b0ae72bf3a310bf089462a5c194c8ed13c630",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e4037d2_9877581d",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-16T00:32:12Z",
+      "side": 1,
+      "message": "ignore in this CL. Let\u0027s discuss here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2204876/1/tokenserver/appengine/impl/serviceaccountsv2/config_validation_test.go#56",
+      "parentUuid": "06fc789e_4aed4413",
+      "range": {
+        "startLine": 56,
+        "startChar": 23,
+        "endLine": 56,
+        "endChar": 26
+      },
+      "revId": "177b0ae72bf3a310bf089462a5c194c8ed13c630",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
