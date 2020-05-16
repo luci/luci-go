@@ -4,7 +4,7 @@
   "service_account": "adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
   "tags": [
     "allow_milo:1",
-    "log_location:logdog://logs.chromium.org/infra/led/testuser_example.com/fa12f92afbe00f8508d0e83bab9cf8cebf42e25e8b14eafc81eae0d00f2cade4/+/build.proto"
+    "log_location:logdog://luci-logdog-dev.appspot.com/infra/led/testuser_example.com/fa12f92afbe00f8508d0e83bab9cf8cebf42e25e8b14eafc81eae0d00f2cade4/+/build.proto"
   ],
   "task_slices": [
     {

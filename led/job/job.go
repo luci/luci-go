@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"path"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -110,8 +111,13 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 		streamName = "annotations"
 	}
 
-	logdogTag := "log_location:logdog://logs.chromium.org/" + path.Join(
-		logdogProjectPrefix, "+", streamName)
+	logdogHost := "logs.chromium.org"
+	if strings.Contains(jd.Info().SwarmingHostname(), "-dev") {
+		logdogHost = "luci-logdog-dev.appspot.com"
+	}
+
+	logdogTag := "log_location:logdog://" + path.Join(
+		logdogHost, logdogProjectPrefix, "+", streamName)
 
 	return jd.Edit(func(je Editor) {
 		je.Tags([]string{logdogTag, "allow_milo:1"})
