@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b0748916_82669c85",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-16T01:30:08Z",
+      "side": 1,
+      "message": "Why should it be if it\u0027s not too hard to support this (and it is even less lines of code)?",
+      "parentUuid": "ebfbdd33_e62eba37",
+      "revId": "345b86bc08d409f3fbcac8dfe38c56517eb7a075",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d96e97b4_ccf0ae35",
         "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation_test.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "345b86bc08d409f3fbcac8dfe38c56517eb7a075",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98e4d4a5_7a25ec50",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-16T01:30:08Z",
+      "side": 1,
+      "message": "Two concerns:\n1. Chromium wants to share accounts between projects.\n2. In Cloud IAM it is possible to grant multiple projects access to the same account. These rules are supposed to approximate Cloud IAM.",
+      "parentUuid": "d96e97b4_ccf0ae35",
+      "revId": "345b86bc08d409f3fbcac8dfe38c56517eb7a075",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
