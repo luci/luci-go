@@ -55,7 +55,17 @@ func TestMapping(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(mapping, ShouldNotBeNil)
 
-		// TODO(vadimsh): Implement.
+		So(mapping.CanProjectUseAccount("proj1", "sa1@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj2", "sa1@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj3", "sa1@example.com"), ShouldBeTrue)
+
+		So(mapping.CanProjectUseAccount("proj1", "sa2@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj2", "sa2@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj3", "sa2@example.com"), ShouldBeFalse)
+
+		So(mapping.CanProjectUseAccount("proj1", "sa3@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj2", "sa3@example.com"), ShouldBeFalse)
+		So(mapping.CanProjectUseAccount("proj3", "sa3@example.com"), ShouldBeFalse)
 	})
 }
 

@@ -62,6 +62,54 @@ func TestValidation(t *testing.T) {
 		{
 			Cfg: ``,
 		},
+
+		// Empty list of accounts is OK.
+		{
+			Cfg: `
+				mapping {
+					project: "proj1"
+				}
+			`,
+		},
+
+		// Empty list of project is not OK.
+		{
+			Cfg: `
+				mapping {
+					service_account: "sa1@example.com"
+				}
+			`,
+			Errors: []string{"at least one project must be given"},
+		},
+
+		// Bad project names.
+		{
+			Cfg: `
+				mapping {
+					project: ""
+					project: "  "
+				}
+			`,
+			Errors: []string{
+				`bad project ""`,
+				`bad project "  "`,
+			},
+		},
+
+		// Bad service account names.
+		{
+			Cfg: `
+				mapping {
+					project: "proj"
+					service_account: ""
+					service_account: "not-email"
+				}
+			`,
+			Errors: []string{
+				`bad service_account ""`,
+				`bad service_account "not-email"`,
+			},
+		},
 	}
 
 	Convey("Validation works", t, func(c C) {
