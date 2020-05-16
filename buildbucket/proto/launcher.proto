@@ -37,8 +37,11 @@ message BuildSecrets {
 message BBAgentArgs {
   // Path to the user executable.
   //
-  // Required.
+  // Deprecated. Superceded by payload_path and `build.exe.cmd`.
   string executable_path = 1;
+
+  // Path to the base of the user executable package.
+  string payload_path = 5;
 
   // Path to a directory where each subdirectory is a cache dir.
   //
