@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -29,26 +30,25 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestMintAccessTokenForServiceAccount(t *testing.T) {
+func TestMintIDTokenForServiceAccount(t *testing.T) {
 	t.Parallel()
 
-	Convey("MintAccessTokenForServiceAccount works", t, func() {
+	Convey("MintIDTokenForServiceAccount works", t, func() {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		returnedToken := "token1"
-		generateTokenURL := fmt.Sprintf("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken?alt=json",
+		// Will be changed throughout the test.
+		var returnedToken *Token
+
+		generateTokenURL := fmt.Sprintf(
+			"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateIdToken?alt=json",
 			url.QueryEscape("abc@example.com"))
+
 		transport := &clientRPCTransportMock{
 			cb: func(r *http.Request, body string) string {
-				expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
-				if err != nil {
-					t.Fatalf("Unable to parse/format time: %v", err)
-				}
-
 				if r.URL.String() == generateTokenURL {
-					return fmt.Sprintf(`{"accessToken":"%s","expireTime":"%s"}`, returnedToken, expireTime.Format(time.RFC3339))
+					return fmt.Sprintf(`{"token":"%s"}`, returnedToken.Token)
 				}
 				t.Fatalf("Unexpected request to %s", r.URL.String())
 				return "unknown URL"
@@ -61,40 +61,46 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			return cfg
 		})
 
-		tok, err := MintAccessTokenForServiceAccount(ctx, MintAccessTokenParams{
+		token1 := genFakeIDToken(ctx, "token1", time.Hour)
+		token2 := genFakeIDToken(ctx, "token2", 2*time.Hour)
+
+		returnedToken = token1
+		tok, err := MintIDTokenForServiceAccount(ctx, MintIDTokenParams{
 			ServiceAccount: "abc@example.com",
-			Scopes:         []string{"scope_b", "scope_a"},
+			Audience:       "aud",
 		})
 		So(err, ShouldBeNil)
-
-		expectedExpireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
-		So(err, ShouldBeNil)
-
-		So(tok, ShouldResemble, &Token{
-			Token:  "token1",
-			Expiry: expectedExpireTime,
-		})
+		So(tok, ShouldResemble, token1)
 
 		// Cached now.
-		So(actorTokenCache.lc.ProcessLRUCache.LRU(ctx).Len(), ShouldEqual, 1)
+		So(actorIDTokenCache.lc.ProcessLRUCache.LRU(ctx).Len(), ShouldEqual, 1)
 
 		// On subsequence request the cached token is used.
-		returnedToken = "token2"
-		tok, err = MintAccessTokenForServiceAccount(ctx, MintAccessTokenParams{
+		returnedToken = token2
+		tok, err = MintIDTokenForServiceAccount(ctx, MintIDTokenParams{
 			ServiceAccount: "abc@example.com",
-			Scopes:         []string{"scope_b", "scope_a"},
+			Audience:       "aud",
 		})
 		So(err, ShouldBeNil)
-		So(tok.Token, ShouldEqual, "token1") // old one
+		So(tok, ShouldResemble, token1) // old one
 
 		// Unless it expires sooner than requested TTL.
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
-		tok, err = MintAccessTokenForServiceAccount(ctx, MintAccessTokenParams{
+		tok, err = MintIDTokenForServiceAccount(ctx, MintIDTokenParams{
 			ServiceAccount: "abc@example.com",
-			Scopes:         []string{"scope_b", "scope_a"},
+			Audience:       "aud",
 			MinTTL:         30 * time.Minute,
 		})
 		So(err, ShouldBeNil)
-		So(tok.Token, ShouldResemble, "token2") // new one
+		So(tok, ShouldResemble, token2)
 	})
+}
+
+func genFakeIDToken(ctx context.Context, name string, exp time.Duration) *Token {
+	expiry := clock.Now(ctx).Add(exp).Round(time.Second).UTC()
+	payload := fmt.Sprintf(`{"exp":%d}`, expiry.Unix())
+	return &Token{
+		Token:  fmt.Sprintf("%s.%s.zzz", name, base64.RawURLEncoding.EncodeToString([]byte(payload))),
+		Expiry: expiry,
+	}
 }
