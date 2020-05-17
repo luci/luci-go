@@ -17,6 +17,7 @@ package iam
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -24,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -158,9 +158,9 @@ func TestClient(t *testing.T) {
 	})
 
 	Convey("GenerateAccessToken works", t, func(c C) {
-		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
-		expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
-		So(err, ShouldBeNil)
+		expireTime := testclock.TestRecentTimeUTC.Round(time.Second)
+
+		var body map[string]interface{}
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
@@ -170,6 +170,11 @@ func TestClient(t *testing.T) {
 
 			switch r.URL.Path {
 			case "/v1/projects/-/serviceAccounts/abc@example.com:generateAccessToken":
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					c.Printf("Bad body: %s\n", err)
+					w.WriteHeader(500)
+					return
+				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(200)
 				resp := fmt.Sprintf(`{"accessToken":"%s","expireTime":"%s"}`, "token1", expireTime.Format(time.RFC3339))
@@ -187,9 +192,60 @@ func TestClient(t *testing.T) {
 			BasePath: ts.URL,
 		}
 
-		token, err := cl.GenerateAccessToken(context.Background(), "abc@example.com", []string{"a", "b"}, nil, 0)
+		token, err := cl.GenerateAccessToken(context.Background(),
+			"abc@example.com", []string{"a", "b"}, []string{"deleg"}, 30*time.Minute)
 		So(err, ShouldBeNil)
-		So(token.AccessToken, ShouldResemble, "token1")
+		So(token.AccessToken, ShouldEqual, "token1")
 		So(token.Expiry, ShouldResemble, expireTime)
+
+		So(body, ShouldResemble, map[string]interface{}{
+			"delegates": []interface{}{"deleg"},
+			"scope":     []interface{}{"a", "b"},
+			"lifetime":  "30m0s",
+		})
+	})
+
+	Convey("GenerateIDToken works", t, func(c C) {
+		var body map[string]interface{}
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "POST" {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+
+			switch r.URL.Path {
+			case "/v1/projects/-/serviceAccounts/abc@example.com:generateIdToken":
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+					c.Printf("Bad body: %s\n", err)
+					w.WriteHeader(500)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+				w.Write([]byte(`{"token":"fake_id_token"}`))
+
+			default:
+				c.Printf("Unknown URL: %q\n", r.URL.Path)
+				w.WriteHeader(404)
+			}
+		}))
+		defer ts.Close()
+
+		cl := Client{
+			Client:   http.DefaultClient,
+			BasePath: ts.URL,
+		}
+
+		token, err := cl.GenerateIDToken(context.Background(),
+			"abc@example.com", "aud", true, []string{"deleg"})
+		So(err, ShouldBeNil)
+		So(token, ShouldEqual, "fake_id_token")
+
+		So(body, ShouldResemble, map[string]interface{}{
+			"delegates":    []interface{}{"deleg"},
+			"audience":     "aud",
+			"includeEmail": true,
+		})
 	})
 }
