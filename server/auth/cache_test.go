@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/lru"
-	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/caching/layered"
@@ -53,11 +52,9 @@ func TestTokenCache(t *testing.T) {
 
 		makeTestToken := func(ctx context.Context, val string) *cachedToken {
 			return &cachedToken{
-				Created: jsontime.Time{clock.Now(ctx)},
-				Expiry:  jsontime.Time{clock.Now(ctx).Add(time.Hour)},
-				OAuth2Token: &cachedOAuth2Token{
-					AccessToken: val,
-				},
+				Created:     clock.Now(ctx),
+				Expiry:      clock.Now(ctx).Add(time.Hour),
+				OAuth2Token: val,
 			}
 		}
 
@@ -95,7 +92,7 @@ func TestTokenCache(t *testing.T) {
 			So(tok, ShouldEqual, tok2)
 		})
 
-		Convey("Marhsalling works", func() {
+		Convey("Marshalling works", func() {
 			// Generate initial token.
 			tok1 := makeTestToken(ctx, "token-1")
 			tok, err, label := call(tok1, nil, "")
@@ -110,9 +107,9 @@ func TestTokenCache(t *testing.T) {
 			tok, err, label = call(nil, errors.New("must not be called"), "")
 			So(err, ShouldBeNil)
 			So(label, ShouldEqual, "SUCCESS_CACHE_HIT")
-			So(tok.Created.Equal(tok1.Created.Time), ShouldBeTrue)
-			So(tok.Expiry.Equal(tok1.Expiry.Time), ShouldBeTrue)
-			So(tok.OAuth2Token.AccessToken, ShouldEqual, tok1.OAuth2Token.AccessToken)
+			So(tok.Created.Equal(tok1.Created), ShouldBeTrue)
+			So(tok.Expiry.Equal(tok1.Expiry), ShouldBeTrue)
+			So(tok.OAuth2Token, ShouldEqual, tok1.OAuth2Token)
 		})
 
 		Convey("Mint error", func() {
@@ -130,7 +127,7 @@ func TestTokenCache(t *testing.T) {
 
 		Convey("Small TTL", func() {
 			tok1 := makeTestToken(ctx, "token")
-			tok1.Expiry.Time = tok1.Created.Time.Add(time.Second)
+			tok1.Expiry = tok1.Created.Add(time.Second)
 
 			tok, err, label := call(tok1, nil, "")
 			So(tok, ShouldBeNil)

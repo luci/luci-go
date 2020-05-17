@@ -24,11 +24,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -75,10 +73,10 @@ type ProjectTokenParams struct {
 
 // scopedTokenCache is used to store project scoped tokens in the cache.
 //
-// The underlying token type is an OAuth2 token.
+// The token is stored in OAuth2Token field.
 var scopedTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "scoped",
-	Version:                      1,
+	Version:                      2,
 	ProcessLRUCache:              caching.RegisterLRUCache(8192),
 	ExpiryRandomizationThreshold: MaxScopedTokenTTL / 10, // 10%
 })
@@ -90,7 +88,7 @@ var scopedTokenCache = newTokenCache(tokenCacheConfig{
 // is targeted to some single specific LUCI project. The token is cached
 // internally. Same token may be returned by multiple calls, if its lifetime
 // allows.
-func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Token, err error) {
+func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *Token, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintProjectToken")
 	span.Attribute("cr.dev/project", p.LuciProject)
 	defer func() { span.End(err) }()
@@ -192,10 +190,10 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Toke
 				logging.Warningf(ctx, "Received NOT_FOUND from token-server, caching")
 				exp := now.Add(5 * time.Minute).UTC()
 				return &cachedToken{
-					Created:              jsontime.Time{now},
-					Expiry:               jsontime.Time{exp},
+					Created:              now,
+					Expiry:               exp,
 					ProjectScopeFallback: true,
-					OAuth2Token:          nil,
+					OAuth2Token:          "",
 				}, nil, "FALLBACK_PROJECT_NOT_FOUND"
 			}
 
@@ -207,7 +205,8 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Toke
 				return nil, err, "ERROR_MINTING"
 			}
 
-			// Sanity checks. A correctly working token server should not trigger them.
+			// Sanity checks. A correctly working token server should not trigger
+			// them.
 			good := false
 			switch {
 			case resp.AccessToken == "":
@@ -233,13 +232,9 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Toke
 			}.Debugf(ctx, "Minted new project scoped service account token")
 
 			return &cachedToken{
-				OAuth2Token: &cachedOAuth2Token{
-					AccessToken: resp.AccessToken,
-					TokenType:   "Bearer",
-					Expiry:      jsontime.Time{exp},
-				},
-				Created: jsontime.Time{now},
-				Expiry:  jsontime.Time{exp},
+				Created:     now,
+				Expiry:      exp,
+				OAuth2Token: resp.AccessToken,
 			}, nil, "SUCCESS_CACHE_MISS"
 		},
 	})
@@ -250,8 +245,11 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Toke
 	}
 	// TODO(fmatenaar): Remove this when scoped service accounts have been
 	// migrated.
-	if cached.OAuth2Token == nil {
+	if cached.OAuth2Token == "" {
 		return nil, nil
 	}
-	return cached.OAuth2Token.toToken(), nil
+	return &Token{
+		Token:  cached.OAuth2Token,
+		Expiry: cached.Expiry,
+	}, nil
 }
