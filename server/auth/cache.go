@@ -98,6 +98,8 @@ type cachedToken struct {
 	OAuth2Token string `json:"oauth2_token,omitempty"`
 	// DelegationToken is set when caching a delegation token, otherwise empty.
 	DelegationToken string `json:"delegation_token,omitempty"`
+	// IDToken is set when caching ID tokens, otherwise empty.
+	IDToken string `json:"id_token,omitempty"`
 }
 
 type fetchOrMintTokenOp struct {
@@ -174,10 +176,10 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 		return nil, err, label
 	case tok.Key != op.CacheKey:
 		// A paranoid check we've got the token we wanted. This is very-very-very
-		// unlikely to happen in practice, SHA1 collisions are rare. So it's fine to
-		// handle it sloppily and just return an error (still better than
+		// unlikely to happen in practice, SHA256 collisions are rare. So it's fine
+		// to handle it sloppily and just return an error (still better than
 		// accidentally using wrong token).
-		err = fmt.Errorf("SHA1 collision in the token cache: %q vs %q", tok.Key, op.CacheKey)
+		err = fmt.Errorf("SHA256 collision in the token cache: %q vs %q", tok.Key, op.CacheKey)
 		return nil, err, "ERROR_HASH_COLLISION"
 	default:
 		return tok, nil, label
