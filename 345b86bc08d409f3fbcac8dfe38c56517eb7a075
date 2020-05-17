@@ -69,6 +69,24 @@
       "revId": "345b86bc08d409f3fbcac8dfe38c56517eb7a075",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b0ab8bfd_4a8c82a1",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-17T01:02:23Z",
+      "side": 1,
+      "message": "Implemented your suggestion.",
+      "parentUuid": "98e4d4a5_7a25ec50",
+      "revId": "345b86bc08d409f3fbcac8dfe38c56517eb7a075",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
