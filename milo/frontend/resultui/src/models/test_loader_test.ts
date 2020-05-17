@@ -26,32 +26,34 @@ import { ReadonlyTest, TestNode, VariantStatus } from './test_node';
 chai.use(chaiRecursiveDeepInclude);
 
 describe('test_loader', () => {
-  const testResult1 = {testId: 'a', resultId: '1', variant: {def: {'key1': 'val1'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult1 = {name: 'invocations/123/tests/a/results/1', testId: 'a', resultId: '1', variant: {def: {'key1': 'val1'}}, expected: true} as Partial<TestResult> as TestResult;
   // Result with the same test ID and the same variant.
-  const testResult2 = {testId: 'a', resultId: '2', variant: {def: {'key1': 'val1'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult2 = {name: 'invocations/123/tests/a/results/2', testId: 'a', resultId: '2', variant: {def: {'key1': 'val1'}}, expected: true} as Partial<TestResult> as TestResult;
   // Result with the same test ID and a different variant.
-  const testResult3 = {testId: 'a', resultId: '3', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult3 = {name: 'invocations/123/tests/a/results/3', testId: 'a', resultId: '3', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
 
   // Result with a different test ID and the same variant.
-  const testResult4 = {testId: 'b', resultId: '1', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult4 = {name: 'invocations/112/tests/b/results/1', testId: 'b', resultId: '1', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
   // Result with multiple variant keys.
-  const testResult5 = {testId: 'c', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult5 = {name: 'invocations/123/tests/c/results/3', testId: 'c', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
   // Result with the same variant but variant keys are in different order.
-  const testResult6 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult6 = {name: 'invocations/221/tests/c/results/4', testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, expected: false} as Partial<TestResult> as TestResult;
   // Result with partially different variant.
-  const testResult7 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult7 = {name: 'invocations/332/tests/c/results/4', testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  // Result that has a testId out of order.
+  const testResult8 = {name: 'invocations/332/tests/b/results/2', testId: 'b', resultId: '2', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
 
   // Exoneration that shares the same ID and variant with a result.
   // TODO(weiweilin): is this possible?
-  const testExoneration1 = {testId: 'a', variant: {def: {'key1': 'val1'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration1 = {name: 'invocations/123/tests/a/exonerations/1', testId: 'a', exonerationId: '1', variant: {def: {'key1': 'val1'}}} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that shares the same ID but a different variant with a result.
-  const testExoneration2 = {testId: 'a', variant: {def: {'key1': 'val3'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration2 = {name: 'invocations/123/tests/a/exonerations/2', testId: 'a', exonerationId: '2', variant: {def: {'key1': 'val3'}}} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that has a different testId but shares the same variant with a result.
-  const testExoneration3 = {testId: 'd', variant: {def: {'key1': 'val1'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration3 = {name: 'invocations/321/tests/d/exonerations/1', testId: 'd', exonerationId: '1', variant: {def: {'key1': 'val1'}}} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that shares the same ID but a different variant with an exoneration.
-  const testExoneration4 = {testId: 'd', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration4 = {name: 'invocations/123/tests/d/exonerations/2', testId: 'd', exonerationId: '2', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that has a different ID but shared the same variant with an exoneration.
-  const testExoneration5 = {testId: 'e', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration5 = {name: 'invocations/123/tests/e/exonerations/1', testId: 'e', exonerationId: '1', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
 
   const test1 = {
     id: 'a',
@@ -83,7 +85,7 @@ describe('test_loader', () => {
       {
         variant: {'def': {'key1': 'val2'}},
         status: VariantStatus.Unexpected,
-        results: [testResult4],
+        results: [testResult4, testResult8],
         exonerations: [],
       },
     ],
@@ -138,13 +140,11 @@ describe('test_loader', () => {
 
   describe('TestLoader', () => {
     let addTestSpy = sinon.spy();
-    let finalizeLoadingSpy = sinon.spy();
     let testLoader: TestLoader;
     beforeEach(() => {
       addTestSpy = sinon.spy();
-      finalizeLoadingSpy = sinon.spy();
       testLoader = new TestLoader(
-        {addTest: addTestSpy, finalizeLoading: finalizeLoadingSpy} as Partial<TestNode> as TestNode,
+        {addTest: addTestSpy} as Partial<TestNode> as TestNode,
         (async function* () {
           yield test1;
           yield test2;
@@ -217,14 +217,6 @@ describe('test_loader', () => {
       assert.isFalse(testLoader.isLoading);
       assert.isTrue(testLoader.done);
     });
-
-    it('should signal loading is finalized after all tests are loaded', async () => {
-      assert.isTrue(finalizeLoadingSpy.notCalled);
-      await testLoader.loadMore(3);
-      assert.isTrue(finalizeLoadingSpy.notCalled);
-      await testLoader.loadMore(3);
-      assert.isTrue(finalizeLoadingSpy.calledOnce);
-    });
   });
 
   describe('streamTestResult', () => {
@@ -284,6 +276,7 @@ describe('test_loader', () => {
         yield testResult5;
         yield testResult6;
         yield testResult7;
+        yield testResult8;
       })();
       const exonerationIter = (async function*() {
         yield testExoneration1;
