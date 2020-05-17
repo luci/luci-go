@@ -95,17 +95,23 @@ type HighLevelEditor interface {
 	// with auto=false.
 	Properties(props map[string]string, auto bool)
 
-	// Sets the task executable payload.
+	// TaskPayloadSource sets the task payload to either use the provided CIPD
+	// package and version, or the UserPayload if they are empty.
 	//
-	// If cipdPkg and cipdVers are provided, they indicate that the task payload
-	// is obtained from this location; it will be installed to `dirInTask`.
+	// If cipdPkg is specified without cipdVers, cipdVers will be set to "latest".
+	TaskPayloadSource(cipdPkg, cipdVers string)
+
+	// TaskPayloadPath sets the location of where bbagent should locate the task
+	// payload data within the task.
+	TaskPayloadPath(path string)
+
+	// TaskPayloadCmd sets the arguments used to run the task payload.
 	//
-	// If cipdPkg and cipdVers are omitted, they indicate that the task payload is
-	// obtained from the UserPayload isolate source. The job will assume that the
-	// payload executable is `${dirInTask}/luciexe`.
+	// args[0] is the path, relative to the payload path, of the executable to
+	// run.
 	//
-	// TODO(iannucci): luciexe should be run_build
-	TaskPayload(cipdPkg, cipdVers string, dirInTask string)
+	// NOTE: Kitchen tasks ignore this value.
+	TaskPayloadCmd(args []string)
 
 	// ClearGerritChanges removes all GerritChanges from the job.
 	ClearGerritChanges()
