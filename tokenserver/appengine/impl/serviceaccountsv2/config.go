@@ -30,8 +30,20 @@ const configFileName = "project_owned_accounts.cfg"
 
 // Mapping is a queryable representation of project_owned_accounts.cfg.
 type Mapping struct {
-	revision string // config revision this policy is imported from
-	// TODO(vadimsh): add actual payload
+	revision string                          // config revision this policy is imported from
+	pairs    map[projectAccountPair]struct{} // allowed (project, account) pairs
+}
+
+type projectAccountPair struct {
+	project string // e.g. "chromium"
+	account string // e.g. "ci-builder@..."
+}
+
+// CanProjectUseAccount returns true if the given project is allowed to mint
+// tokens of the given service account.
+func (m *Mapping) CanProjectUseAccount(project, account string) bool {
+	_, yes := m.pairs[projectAccountPair{project, account}]
+	return yes
 }
 
 // ConfigRevision is part of policy.Queryable interface.
@@ -116,10 +128,17 @@ func prepareMapping(ctx context.Context, cfg policy.ConfigBundle, revision strin
 		return nil, fmt.Errorf("wrong type of %s - %T", configFileName, cfg[configFileName])
 	}
 
-	// TODO(vadimsh): Implement.
-	_ = parsed
+	pairs := map[projectAccountPair]struct{}{}
+	for _, m := range parsed.Mapping {
+		for _, project := range m.Project {
+			for _, account := range m.ServiceAccount {
+				pairs[projectAccountPair{project, account}] = struct{}{}
+			}
+		}
+	}
 
 	return &Mapping{
 		revision: revision,
+		pairs:    pairs,
 	}, nil
 }

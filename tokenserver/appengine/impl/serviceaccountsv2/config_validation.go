@@ -15,6 +15,8 @@
 package serviceaccountsv2
 
 import (
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -35,5 +37,34 @@ func validateConfigBundle(ctx *validation.Context, bundle policy.ConfigBundle) {
 
 // validateMappingCfg checks deserialized project_owned_accounts.cfg.
 func validateMappingCfg(ctx *validation.Context, cfg *admin.ServiceAccountsProjectMapping) {
-	// TODO(vadimsh): Implement.
+	seenProjects := stringset.New(0)
+	seenAccounts := stringset.New(0)
+
+	for i, m := range cfg.Mapping {
+		ctx.Enter("mapping #%d", i+1)
+
+		// A mapping{...} entry with no projects makes no sense.
+		if len(m.Project) == 0 {
+			ctx.Errorf("at least one project must be given")
+		}
+		for _, project := range m.Project {
+			if _, err := identity.MakeIdentity("project:" + project); err != nil {
+				ctx.Errorf("bad project %q: %s", project, err)
+			} else if !seenProjects.Add(project) {
+				ctx.Errorf("project %q appears in more that one mapping", project)
+			}
+		}
+
+		// A mapping{...} entry with an empty list of accounts is OK, it may be some
+		// yet-to-be-populated entry with a "// TODO" or something.
+		for _, account := range m.ServiceAccount {
+			if _, err := identity.MakeIdentity("user:" + account); err != nil {
+				ctx.Errorf("bad service_account %q: %s", account, err)
+			} else if !seenAccounts.Add(account) {
+				ctx.Errorf("service_account %q appears in more that one mapping", account)
+			}
+		}
+
+		ctx.Exit()
+	}
 }
