@@ -81,6 +81,7 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			w.WriteHeader(status)
 			c.So(json.NewEncoder(w).Encode(&info), ShouldBeNil)
 		}))
+		defer ts.Close()
 
 		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {

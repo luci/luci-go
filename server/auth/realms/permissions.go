@@ -53,6 +53,13 @@ func (p Permission) String() string {
 	return p.name
 }
 
+// clearPermissions removes all registered permissions (for tests).
+func clearPermissions() {
+	mu.Lock()
+	perms = stringset.New(0)
+	mu.Unlock()
+}
+
 // RegisterPermission adds a new permission with the given name to the process
 // registry or returns an existing one.
 //
