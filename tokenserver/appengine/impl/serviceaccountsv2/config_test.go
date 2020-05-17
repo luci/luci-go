@@ -35,13 +35,12 @@ mapping {
 }
 
 mapping {
-	project: "proj1"
+	project: "proj3"
 	service_account: "sa3@example.com"
 }
 
 mapping {
-	project: "proj3"
-	service_account: "sa1@example.com"
+	project: "proj4"
 }
 `
 
@@ -55,7 +54,20 @@ func TestMapping(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(mapping, ShouldNotBeNil)
 
-		// TODO(vadimsh): Implement.
+		So(mapping.CanProjectUseAccount("proj1", "sa1@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj2", "sa1@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj3", "sa1@example.com"), ShouldBeFalse)
+		So(mapping.CanProjectUseAccount("proj4", "sa1@example.com"), ShouldBeFalse)
+
+		So(mapping.CanProjectUseAccount("proj1", "sa2@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj2", "sa2@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj3", "sa2@example.com"), ShouldBeFalse)
+		So(mapping.CanProjectUseAccount("proj4", "sa2@example.com"), ShouldBeFalse)
+
+		So(mapping.CanProjectUseAccount("proj1", "sa3@example.com"), ShouldBeFalse)
+		So(mapping.CanProjectUseAccount("proj2", "sa3@example.com"), ShouldBeFalse)
+		So(mapping.CanProjectUseAccount("proj3", "sa3@example.com"), ShouldBeTrue)
+		So(mapping.CanProjectUseAccount("proj4", "sa3@example.com"), ShouldBeFalse)
 	})
 }
 
