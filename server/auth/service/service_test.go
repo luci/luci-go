@@ -166,6 +166,7 @@ func TestPubSubWorkflow(t *testing.T) {
 			}
 			counter++
 		}))
+		defer ts.Close()
 
 		// Register.
 		srv := AuthService{
@@ -218,6 +219,7 @@ func TestGetSnapshot(t *testing.T) {
 				"deflated_body": "%s"
 			}}`, digest, body)))
 		}))
+		defer ts.Close()
 
 		srv := AuthService{
 			URL: ts.URL,
