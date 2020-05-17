@@ -92,28 +92,29 @@ export class TestNode {
   // The path leads to this node, including the name of this node.
   // Can be used as an identifier of this node.
   private readonly unelidedPath: string;
-  @observable.shallow private readonly unelidedChildren: TestNode[] = [];
+  @observable.shallow private readonly unelidedChildren = new Map<string, TestNode>();
   private readonly unelidedTests: ReadonlyTest[] = [];
 
   // The properties belongs to the elided node
   // (descendants with no siblings are elided into this node).
   @computed get path() { return this.elidedNode.node.unelidedPath; }
   @computed get name() { return this.elidedNode.name; }
-  @computed get children(): readonly TestNode[] { return this.elidedNode.node.unelidedChildren; }
+  @computed get children(): readonly TestNode[] {
+    return [...this.elidedNode.node.unelidedChildren.values()].sort((v1, v2) => {
+      return v1.unelidedName.localeCompare(v2.unelidedName);
+    });
+  }
   @computed private get elidedNode() {
     let name = this.unelidedName;
 
     // If the node has a single child, elide it into its parent.
     let node: TestNode = this;
-    while (node.unelidedChildren.length === 1) {
-      node = node.unelidedChildren[0];
+    while (node.unelidedChildren.size === 1) {
+      node = node.unelidedChildren.values().next().value;
       name += node.unelidedName;
     }
     return {name, node};
   }
-
-  @computed get fullyLoaded() { return this._fullyLoaded; }
-  @observable.ref private _fullyLoaded = false;
 
   static newRoot() { return new TestNode('', ''); }
   private constructor(prefix: string, private readonly unelidedName: string) {
@@ -172,25 +173,11 @@ export class TestNode {
       this.unelidedTests.push(test);
       return;
     }
-    let child = this.unelidedChildren.last;
-    if (child?.unelidedName !== nextSeg) {
-      child?.finalizeLoading();
+    let child = this.unelidedChildren.get(nextSeg);
+    if (child === undefined) {
       child = new TestNode(this.unelidedPath, nextSeg);
-      this.unelidedChildren.push(child);
+      this.unelidedChildren.set(nextSeg, child);
     }
     child.addTestWithIdSegs(test, idSegStack);
-  }
-
-  /**
-   * Marks the nodes in the tree as fully loaded.
-   * This method should be called after the last test is added to the node.
-   */
-  finalizeLoading() {
-    if (this._fullyLoaded) {
-      return;
-    }
-    this._fullyLoaded = true;
-    const child = this.unelidedChildren.last;
-    child?.finalizeLoading();
   }
 }
