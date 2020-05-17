@@ -24,9 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -82,9 +80,9 @@ func TestMintDelegationToken(t *testing.T) {
 				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &delegation.Token{
+			So(tok, ShouldResemble, &Token{
 				Token:  "tok",
-				Expiry: jsontime.Time{testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL)},
+				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
 			})
 			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
@@ -131,9 +129,9 @@ func TestMintDelegationToken(t *testing.T) {
 				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &delegation.Token{
+			So(tok, ShouldResemble, &Token{
 				Token:  "tok",
-				Expiry: jsontime.Time{testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL)},
+				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
 			})
 			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
