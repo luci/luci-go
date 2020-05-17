@@ -18,9 +18,10 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
@@ -30,10 +31,14 @@ type ImportProjectOwnedAccountsConfigsRPC struct {
 	MappingCache *MappingCache // usually GlobalMappingCache, but replaced in tests
 }
 
-// ImportServiceAccountsConfigs fetches configs from luci-config right now.
-func (r *ImportProjectOwnedAccountsConfigsRPC) ImportProjectOwnedAccountsConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
-	// TODO
-	return nil, grpc.Errorf(codes.Unimplemented, "not implemented yet")
+// ImportProjectOwnedAccountsConfigs fetches configs from luci-config right now.
+func (r *ImportProjectOwnedAccountsConfigsRPC) ImportProjectOwnedAccountsConfigs(ctx context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
+	rev, err := r.MappingCache.ImportConfigs(ctx)
+	if err != nil {
+		logging.WithError(err).Errorf(ctx, "Failed to fetch service accounts configs")
+		return nil, status.Errorf(codes.Internal, "%s", err.Error())
+	}
+	return &admin.ImportedConfigs{Revision: rev}, nil
 }
 
 // SetupConfigValidation registers the config validation rules.
