@@ -16,19 +16,15 @@ package auth
 
 import (
 	"context"
-	"math/rand"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"golang.org/x/oauth2"
-	"google.golang.org/grpc"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/caching"
 
@@ -57,7 +53,6 @@ func TestMintServiceOAuthToken(t *testing.T) {
 	Convey("MintProjectToken works", t, func() {
 		ctx := context.Background()
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = Initialize(ctx, &Config{})
 
@@ -82,10 +77,9 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				OAuthScopes: defaultOAuthScopes,
 			})
 			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &oauth2.Token{
-				AccessToken: "tok",
-				TokenType:   "Bearer",
-				Expiry:      testclock.TestRecentTimeUTC.Add(MaxScopedTokenTTL).Truncate(time.Second),
+			So(tok, ShouldResemble, &Token{
+				Token:  "tok",
+				Expiry: testclock.TestRecentTimeUTC.Add(MaxScopedTokenTTL).Truncate(time.Second),
 			})
 			So(mockedClient.request, ShouldResemble, minter.MintProjectTokenRequest{
 				LuciProject:         "infra",
@@ -105,7 +99,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				OAuthScopes: defaultOAuthScopes,
 			})
 			So(err, ShouldBeNil)
-			So(tok.AccessToken, ShouldResemble, "tok") // old one
+			So(tok.Token, ShouldResemble, "tok") // old one
 
 			// Unless it expires sooner than requested TTL.
 			rollTimeForward := MaxDelegationTokenTTL - 30*time.Minute
@@ -119,7 +113,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				OAuthScopes: defaultOAuthScopes,
 			})
 			So(err, ShouldBeNil)
-			So(tok.AccessToken, ShouldResemble, "another token") // new one
+			So(tok.Token, ShouldResemble, "another token") // new one
 		})
 
 		Convey("Project scoped fallback works (including caching)", func(c C) {
@@ -179,8 +173,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				OAuthScopes: defaultOAuthScopes,
 			})
 			So(err, ShouldBeNil)
-			So(tok.AccessToken, ShouldResemble, "tok")
+			So(tok.Token, ShouldResemble, "tok")
 		})
-
 	})
 }
