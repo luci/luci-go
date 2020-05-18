@@ -22,6 +22,30 @@
       "revId": "ffb33f6621ddb8c847af19a6d1da4f06d7209ad9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "640c6a70_385fbf36",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-18T05:07:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c42f266c_7f7ae7e0",
+      "range": {
+        "startLine": 30,
+        "startChar": 30,
+        "endLine": 30,
+        "endChar": 42
+      },
+      "revId": "ffb33f6621ddb8c847af19a6d1da4f06d7209ad9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -22,6 +22,30 @@
       "revId": "a4f4b073be33d1e0427bc89f575cd75b50f6cd03",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af738fd5_8fc68e4f",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-18T05:07:25Z",
+      "side": 0,
+      "message": "Yes. We treat the tab as links. The router will set the new selected tab id in the parent element.\nCallback is not used. But I left it there since this is suppose to be a somewhat reusable component.",
+      "parentUuid": "7a9fa07d_d97e5f46",
+      "range": {
+        "startLine": 47,
+        "startChar": 14,
+        "endLine": 47,
+        "endChar": 42
+      },
+      "revId": "a4f4b073be33d1e0427bc89f575cd75b50f6cd03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
