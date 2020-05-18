@@ -45,8 +45,6 @@ const ORDERED_VARIANT_DEF_KEYS = [
   'bucket',
   'builder',
   'test_suite',
-  'param/instantiation',
-  'param/id',
 ];
 
 /**
