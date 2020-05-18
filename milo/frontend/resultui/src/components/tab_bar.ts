@@ -24,15 +24,17 @@ export interface TabDef {
 
 
 /**
- * A tab bar element. When a new tab is selected, it can notify the parent
- * element via callback, or navigate to the link provided in the tab config.
+ * A tab bar element. When a new tab is clicked, it can notify the parent
+ * element via a callback, or navigate to the link provided in the tab config.
+ * Note: this element itself doesn't modify its state. When the selected tab is
+ * changed, the parent element must set a new selectedTabId.
  */
 @customElement('tr-tab-bar')
 export class TabBarElement extends LitElement {
   @property() tabs: TabDef[] = [];
   @property() selectedTabId = '';
 
-  onSelectedTabChanged: (selectedTabId: string) => void = () => {};
+  onTabClicked: (clickedTabId: string) => void = () => {};
 
   protected render() {
     return html`
@@ -44,8 +46,7 @@ export class TabBarElement extends LitElement {
               if (this.selectedTabId === tab.id) {
                 return;
               }
-              this.selectedTabId = tab.id;
-              this.onSelectedTabChanged(this.selectedTabId);
+              this.onTabClicked(this.selectedTabId);
             }}
             href=${tab.href || ''}
           >${tab.label}</a>
