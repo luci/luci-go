@@ -98,6 +98,8 @@ type cachedToken struct {
 	OAuth2Token string `json:"oauth2_token,omitempty"`
 	// DelegationToken is set when caching a delegation token, otherwise empty.
 	DelegationToken string `json:"delegation_token,omitempty"`
+	// IDToken is set when caching ID tokens, otherwise empty.
+	IDToken string `json:"id_token,omitempty"`
 }
 
 type fetchOrMintTokenOp struct {
