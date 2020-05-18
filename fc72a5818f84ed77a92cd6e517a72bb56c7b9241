@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "72106425_8cc100f2",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-18T21:39:46Z",
+      "side": 1,
+      "message": "I\u0027ll clarify that all the incoming paths are \u0027/\u0027 delimited, regardless of platform.",
+      "parentUuid": "6af5be73_3e2aefd8",
+      "range": {
+        "startLine": 127,
+        "startChar": 21,
+        "endLine": 127,
+        "endChar": 53
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1554168c_5bc20309",
         "filename": "buildbucket/proto/launcher.proto",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "72b9fc2d_072d6da8",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-18T21:39:46Z",
+      "side": 1,
+      "message": "payload_path is controlled by buildbucket and/or led, e.g. layers of the stack that the end user really doesn\u0027t care about.\n\nClarified in the Executable message, hopefully.",
+      "parentUuid": "1554168c_5bc20309",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 26
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f900e059_29c14f11",
         "filename": "led/job/job.go",
         "patchSetId": 2
@@ -59,6 +107,24 @@
       "writtenOn": "2020-05-18T18:10:38Z",
       "side": 1,
       "message": "Curious, What\u0027s gonna happen if none of these matches?",
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5eeb1736_79f23360",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-18T21:39:46Z",
+      "side": 1,
+      "message": "Theoretically you could have a swarming task with the command\n\n   python -c \"print \u0027hi there\u0027\"\n\nWhich would run, but wouldn\u0027t require exe or user payload to be set. It would be weird, but you could do it.\n\nThis particular bit is trying to calculate input properties to pass to the led recipe module. Since \u0027exe\u0027 is 100% related to buildbucket, and UserPayload could have other non-recipe stuff in it, I\u0027ve opted to prefer the exe definition. Practically speaking if you stick to the `led` command line, you can\u0027t have both of these defined at the same time.",
+      "parentUuid": "f900e059_29c14f11",
       "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "230167ae_fc3977f2",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-18T21:39:46Z",
+      "side": 1,
+      "message": "oh, heh, this is a debug statement... #shamehat",
+      "parentUuid": "cad1e2c2_0647dc0f",
+      "range": {
+        "startLine": 279,
+        "startChar": 0,
+        "endLine": 281,
+        "endChar": 2
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed4e9db3_3cf7f2e4",
         "filename": "led/job/jobcreate/create.go",
         "patchSetId": 2
@@ -108,6 +198,30 @@
       "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef32c9bb_e22a0748",
+        "filename": "led/job/jobcreate/create.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-18T21:39:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ed4e9db3_3cf7f2e4",
+      "range": {
+        "startLine": 112,
+        "startChar": 19,
+        "endLine": 112,
+        "endChar": 38
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
