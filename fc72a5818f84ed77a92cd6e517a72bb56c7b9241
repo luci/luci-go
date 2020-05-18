@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6af5be73_3e2aefd8",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-18T18:10:38Z",
+      "side": 1,
+      "message": "Will this be compatible with windows path?",
+      "range": {
+        "startLine": 127,
+        "startChar": 21,
+        "endLine": 127,
+        "endChar": 53
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1554168c_5bc20309",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-18T18:10:38Z",
+      "side": 1,
+      "message": "IIUC, this is the base path for `cmd[0]`. However, the doc of `cmd` only says that it is relative to the cipd pkg root but doesn\u0027t mention about user payload. I\u0027m thinking should we move this field inside `Executable` message to make the cohesive fields stay together? Or are you intentionally placing them in different places to hide it from user as it is only needed in led?",
+      "range": {
+        "startLine": 44,
+        "startChar": 2,
+        "endLine": 44,
+        "endChar": 26
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f900e059_29c14f11",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-18T18:10:38Z",
+      "side": 1,
+      "message": "Curious, What\u0027s gonna happen if none of these matches?",
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cad1e2c2_0647dc0f",
+        "filename": "led/job/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-18T18:10:38Z",
+      "side": 1,
+      "message": "Isn\u0027t this theoretically possible? i.e. cipd pkg + version are populated",
+      "range": {
+        "startLine": 279,
+        "startChar": 0,
+        "endLine": 281,
+        "endChar": 2
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed4e9db3_3cf7f2e4",
+        "filename": "led/job/jobcreate/create.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-18T18:10:38Z",
+      "side": 1,
+      "message": "Same question here: Will this be compatible with windows?",
+      "range": {
+        "startLine": 112,
+        "startChar": 19,
+        "endLine": 112,
+        "endChar": 38
+      },
+      "revId": "fc72a5818f84ed77a92cd6e517a72bb56c7b9241",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
