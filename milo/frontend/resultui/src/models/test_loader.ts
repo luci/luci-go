@@ -19,6 +19,7 @@
 
 import { computed, observable } from 'mobx';
 
+import * as asyncIter from '../libs/async_iter_utils';
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
 import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExoneration, VariantStatus } from './test_node';
 
@@ -73,7 +74,6 @@ export class TestLoader {
       const {value, done} = await this.testIter.next();
       if (done) {
         this._done = true;
-        this.node.finalizeLoading();
         break;
       }
       this.node.addTest(value);
@@ -157,6 +157,15 @@ function keyForVariant(variant: Variant) {
 }
 
 /**
+ * Computes a string that can be used to sort test results and exonerations.
+ */
+function getOrderStr(v: TestResultOrExoneration) {
+  // Extract invocation ID from v.name to construct order string.
+  // We can't use v.name directly because v1.name.localeCompare(v2.name) !== v1.invocationId.localeCompare(v2.invocationId).
+  return `${v.name.match(/^invocations\/(?<invId>[a-z0-9_\-:.]{0,99})\//)!.groups!.invId} ${v.testId} ${isTestResult(v) ? '1' : '2'}`;
+}
+
+/**
  * Streams test results from resultDb.
  */
 export async function* streamTestResults(req: QueryTestResultRequest, resultDb: ResultDb) {
@@ -189,23 +198,25 @@ export async function* streamTestExonerations(req: QueryTestExonerationsRequest,
  * @param exonerations must be sorted by testId.
  */
 async function* streamTestResultOrExonerations(results: AsyncIterableIterator<TestResult>, exonerations: AsyncIterableIterator<TestExoneration>) {
-  let [resultNext, exonerationNext] = await Promise.all([results.next(), exonerations.next()]);
+  const resultsWithOrderStr = asyncIter.map(results, (r) => [r, getOrderStr(r)] as [TestResult, string]);
+  const exonerationsWithOrderStr = asyncIter.map(exonerations, (e) => [e, getOrderStr(e)] as [TestExoneration, string]);
+  let [resultNext, exonerationNext] = await Promise.all([resultsWithOrderStr.next(), exonerationsWithOrderStr.next()]);
 
   while (!resultNext.done && !exonerationNext.done) {
-    if (resultNext.value.testId.localeCompare(exonerationNext.value.testId) <= 0) {
-      yield resultNext.value;
-      resultNext = await results.next();
+    if (resultNext.value[1].localeCompare(exonerationNext.value[1]) <= 0) {
+      yield resultNext.value[0];
+      resultNext = await resultsWithOrderStr.next();
     } else {
-      yield exonerationNext.value;
-      exonerationNext = await exonerations.next();
+      yield exonerationNext.value[0];
+      exonerationNext = await exonerationsWithOrderStr.next();
     }
   }
   if (!resultNext.done) {
-    yield resultNext.value;
+    yield resultNext.value[0];
     yield* results;
   }
   if (!exonerationNext.done) {
-    yield exonerationNext.value;
+    yield exonerationNext.value[0];
     yield* exonerations;
   }
 }
@@ -217,19 +228,17 @@ async function* streamTestResultOrExonerations(results: AsyncIterableIterator<Te
  */
 export async function* streamTests(results: AsyncIterableIterator<TestResult>, exonerations: AsyncIterableIterator<TestExoneration>): AsyncIterableIterator<ReadonlyTest> {
   const testResultOrExonerations = streamTestResultOrExonerations(results, exonerations);
-  let test: Test | undefined;
+
+  const testMap = new Map<string, Test>();
   for await (const nextResultOrExoneration of testResultOrExonerations) {
-    if (nextResultOrExoneration.testId === test?.id) {
+    let test = testMap.get(nextResultOrExoneration.testId);
+    if (test) {
       test.addTestResultOrExoneration(nextResultOrExoneration);
-    } else {
-      if (test !== undefined) {
-        yield test;
-      }
-      test = new Test(nextResultOrExoneration.testId);
-      test.addTestResultOrExoneration(nextResultOrExoneration);
+      continue;
     }
-  }
-  if (test !== undefined) {
+    test = new Test(nextResultOrExoneration.testId);
+    testMap.set(nextResultOrExoneration.testId, test);
+    test.addTestResultOrExoneration(nextResultOrExoneration);
     yield test;
   }
 }
