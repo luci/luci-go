@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "57caf7f8_02948192",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1353760
+      },
+      "writtenOn": "2020-05-18T21:54:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "654cd25a_fdeddfd1",
+      "range": {
+        "startLine": 291,
+        "startChar": 12,
+        "endLine": 291,
+        "endChar": 15
+      },
+      "revId": "9213df90f047ed6ec89078849fdff2141af71bec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf84bbb7_3a080394",
         "filename": "led/ledcmd/launch.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "9213df90f047ed6ec89078849fdff2141af71bec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d054498_c76bde9f",
+        "filename": "led/ledcmd/launch.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1353760
+      },
+      "writtenOn": "2020-05-18T21:54:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf84bbb7_3a080394",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 13
+      },
+      "revId": "9213df90f047ed6ec89078849fdff2141af71bec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
