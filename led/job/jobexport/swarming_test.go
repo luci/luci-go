@@ -45,7 +45,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 
 	ctx := cryptorand.MockForTest(context.Background(), 0)
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
-	So(jd.FlattenToSwarming(ctx, "testuser@example.com", job.NoKitchenSupport()),
+	So(jd.FlattenToSwarming(ctx, "testuser@example.com", "293109284abc", job.NoKitchenSupport()),
 		ShouldBeNil)
 
 	ret, err := ToSwarmingNewTask(jd.GetSwarming(), jd.UserPayload)

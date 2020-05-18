@@ -89,6 +89,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, inJob 
 		UserID:          uid,
 		FinalBuildProto: "build.proto.json",
 		KitchenSupport:  c.kitchenSupport,
+		ParentTaskId:    os.Getenv("SWARMING_TASK_ID"),
 	})
 	if err != nil {
 		return nil, err

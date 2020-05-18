@@ -29,6 +29,7 @@ func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.
 		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
 		Name:                 task.Name,
 		User:                 task.User,
+		ParentTaskId:         task.ParentTaskId,
 		Priority:             int64(task.Priority),
 		ServiceAccount:       task.ServiceAccount,
 		Tags:                 task.Tags,

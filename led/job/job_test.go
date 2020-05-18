@@ -46,7 +46,7 @@ func TestFlattenToSwarming(t *testing.T) {
 		totalExpiration := bb.BbagentArgs.Build.SchedulingTimeout.Seconds
 
 		Convey(`bbagent`, func() {
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport()), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
@@ -113,7 +113,7 @@ func TestFlattenToSwarming(t *testing.T) {
 
 		Convey(`kitchen`, func() {
 			bb.LegacyKitchen = true
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldErrLike,
+			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport()), ShouldErrLike,
 				"kitchen job Definitions not supported")
 		})
 
@@ -121,7 +121,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			// set a dimension to expire after end of current task
 			editDims(bbJob, "final=value@40000")
 
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport()), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
@@ -140,7 +140,7 @@ func TestFlattenToSwarming(t *testing.T) {
 				cache.WaitForWarmCache = nil
 			}
 
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport()), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)
@@ -155,7 +155,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			})
 			bbJob.UserPayload.Digest = "beef"
 
-			So(bbJob.FlattenToSwarming(ctx, "username", NoKitchenSupport()), ShouldBeNil)
+			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport()), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()
 			So(sw, ShouldNotBeNil)

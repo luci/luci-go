@@ -1,6 +1,7 @@
 {
   "bot_ping_tolerance_secs": "1200",
   "name": "led: test_name",
+  "parent_task_id": "293109284abc",
   "priority": "40",
   "service_account": "none",
   "task_slices": [
