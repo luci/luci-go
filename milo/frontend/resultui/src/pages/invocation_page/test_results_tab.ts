@@ -43,7 +43,7 @@ export class TestResultsTabElement extends MobxLitElement {
     // Load more tests when there are more tests to be displayed but not loaded.
     this.disposers.push(autorun(() => {
       const state = this.pageState;
-      if (state.selectedNode.fullyLoaded || state.testLoader.isLoading || this.pageLength <= state.selectedNode.allTests.length) {
+      if (state.testLoader.done || state.testLoader.isLoading || this.pageLength <= state.selectedNode.allTests.length) {
         return;
       }
       state.testLoader.loadMore(this.pageLength - state.selectedNode.allTests.length);
@@ -82,10 +82,10 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-entry>
           `)}
           <div id="list-tail">
-            <span>Showing ${Math.min(state.selectedNode.allTests.length, this.pageLength)}/${state.selectedNode.allTests.length}${state.selectedNode.fullyLoaded ? '' : '+'} tests.</span>
+            <span>Showing ${Math.min(state.selectedNode.allTests.length, this.pageLength)}/${state.selectedNode.allTests.length}${state.testLoader.done ? '' : '+'} tests.</span>
             <span
               id="load-more"
-              style=${styleMap({'display': this.pageLength >= state.selectedNode.allTests.length && state.selectedNode.fullyLoaded ? 'none' : ''})}
+              style=${styleMap({'display': this.pageLength >= state.selectedNode.allTests.length && state.testLoader.done ? 'none' : ''})}
               @click=${() => this.pageLength += 100}
             >
               Load More
