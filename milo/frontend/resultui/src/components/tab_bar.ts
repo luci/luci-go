@@ -30,7 +30,16 @@ export interface TabDef {
 @customElement('tr-tab-bar')
 export class TabBarElement extends LitElement {
   @property() tabs: TabDef[] = [];
-  @property() selectedTabId = '';
+
+  @property({attribute: false}) private _selectedTabId = '';
+  get selectedTabId() { return this._selectedTabId; }
+  set selectedTabId(newVal: string) {
+    if (newVal === this._selectedTabId) {
+      return;
+    }
+    this._selectedTabId = newVal;
+    this.onSelectedTabChanged(this.selectedTabId);
+  }
 
   onSelectedTabChanged: (selectedTabId: string) => void = () => {};
 
@@ -40,13 +49,7 @@ export class TabBarElement extends LitElement {
         ${this.tabs.map((tab) => html`
           <a
             class=${classMap({'tab': true, 'selected': this.selectedTabId === tab.id})}
-            @click=${() => {
-              if (this.selectedTabId === tab.id) {
-                return;
-              }
-              this.selectedTabId = tab.id;
-              this.onSelectedTabChanged(this.selectedTabId);
-            }}
+            @click=${() => this.selectedTabId = tab.id}
             href=${tab.href || ''}
           >${tab.label}</a>
         `)}
