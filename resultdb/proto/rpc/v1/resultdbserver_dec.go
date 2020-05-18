@@ -142,6 +142,23 @@ func (s *DecoratedResultDB) QueryTestExonerations(ctx context.Context, req *Quer
 	return
 }
 
+func (s *DecoratedResultDB) QueryTestResultsStatistics(ctx context.Context, req *QueryTestResultsStatisticsRequest) (rsp *QueryTestResultsStatisticsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestResultsStatistics", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestResultsStatistics(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestResultsStatistics", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) GetArtifact(ctx context.Context, req *GetArtifactRequest) (rsp *Artifact, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
