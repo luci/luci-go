@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45a4fd89_b5ebf627",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-18T21:38:31Z",
+      "side": 1,
+      "message": "nit: supports",
+      "range": {
+        "startLine": 69,
+        "startChar": 15,
+        "endLine": 69,
+        "endChar": 22
+      },
+      "revId": "8997c1f268918bbd2d2b89eac57897e035c27798",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "852923ab_7fb79634",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-18T21:38:31Z",
+      "side": 1,
+      "message": "nit: QueryTestResultStatistics\nsame with messages",
+      "range": {
+        "startLine": 71,
+        "startChar": 6,
+        "endLine": 71,
+        "endChar": 32
+      },
+      "revId": "8997c1f268918bbd2d2b89eac57897e035c27798",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5df086c_7865f637",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-18T21:38:31Z",
+      "side": 1,
+      "message": "this seems to contradict L275-276 because we get a message per invocation. I am not sure we need it to be repeated.",
+      "range": {
+        "startLine": 299,
+        "startChar": 2,
+        "endLine": 299,
+        "endChar": 10
+      },
+      "revId": "8997c1f268918bbd2d2b89eac57897e035c27798",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
