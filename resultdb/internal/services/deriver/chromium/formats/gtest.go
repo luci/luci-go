@@ -34,11 +34,6 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const (
-	testInstantiationKey = "param/instantiation"
-	testParameterKey     = "param/id"
-)
-
 var (
 	// Prefixes that may be present in the test name and must be stripped before forming the base id.
 	prefixes = []string{"MANUAL_", "PRE_"}
