@@ -49,13 +49,13 @@ type MintAccessTokenParams struct {
 	MinTTL time.Duration
 }
 
-// actorTokenCache is used to store access tokens of a service accounts the
-// current service has "iam.serviceAccountActor" role in.
+// actorAccessTokenCache is used to store access tokens of service accounts
+// the current service has "iam.serviceAccountActor" role in.
 //
 // The token is stored in OAuth2Token field.
-var actorTokenCache = newTokenCache(tokenCacheConfig{
-	Kind:                         "as_actor_tokens",
-	Version:                      5,
+var actorAccessTokenCache = newTokenCache(tokenCacheConfig{
+	Kind:                         "as_actor_access_tok",
+	Version:                      1,
 	ProcessLRUCache:              caching.RegisterLRUCache(8192),
 	ExpiryRandomizationThreshold: 5 * time.Minute, // ~10% of regular 1h expiration
 })
@@ -95,8 +95,9 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	sortedScopes := append([]string(nil), params.Scopes...)
 	sort.Strings(sortedScopes)
 
-	// Construct the cache key. Note that it is hashed by 'actorTokenCache' and
-	// thus can be as long as necessary. Double check there's no malicious input.
+	// Construct the cache key. Note that it is hashed by 'actorAccessTokenCache'
+	// and thus can be as long as necessary. Double check there's no malicious
+	// input.
 	parts := append([]string{params.ServiceAccount}, sortedScopes...)
 	for _, p := range parts {
 		if strings.ContainsRune(p, '\n') {
@@ -112,7 +113,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		"scopes":  strings.Join(sortedScopes, " "),
 	})
 
-	cached, err, label := actorTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+	cached, err, label := actorAccessTokenCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
 		CacheKey:    strings.Join(parts, "\n"),
 		MinTTL:      params.MinTTL,
 		MintTimeout: cfg.adjustedTimeout(10 * time.Second),

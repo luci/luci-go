@@ -452,6 +452,7 @@ func tokenFingerprint(tok string) string {
 type rpcMocks struct {
 	MintDelegationToken              func(context.Context, DelegationTokenParams) (*Token, error)
 	MintAccessTokenForServiceAccount func(context.Context, MintAccessTokenParams) (*Token, error)
+	MintIDTokenForServiceAccount     func(context.Context, MintIDTokenParams) (*Token, error)
 	MintProjectToken                 func(context.Context, ProjectTokenParams) (*Token, error)
 }
 
