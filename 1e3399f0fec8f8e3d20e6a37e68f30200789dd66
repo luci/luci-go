@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "0298e3bd_41206a5b",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-18T12:50:36Z",
+      "side": 1,
+      "message": "Updated the comment. Personally, I prefer using an order string.",
+      "parentUuid": "2f88e7fc_f3405fb4",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 164,
+        "endChar": 1
+      },
+      "revId": "1e3399f0fec8f8e3d20e6a37e68f30200789dd66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c33f65e_76df06a8",
         "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
         "patchSetId": 2
@@ -132,6 +156,30 @@
       "writtenOn": "2020-05-18T07:12:50Z",
       "side": 1,
       "message": "It\u0027s probably worth having a test for the \u0027/\u0027 and \u0027-\u0027 edge case you mentioned, so that doesn\u0027t regress.",
+      "range": {
+        "startLine": 29,
+        "startChar": 30,
+        "endLine": 29,
+        "endChar": 46
+      },
+      "revId": "1e3399f0fec8f8e3d20e6a37e68f30200789dd66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e6ba406_cb1cfe3a",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-18T12:50:36Z",
+      "side": 1,
+      "message": "Maybe it\u0027s better to return invocation ID from resultDB. That seems pretty reasonable for me.\nIn that case, we don\u0027t need to deal with the edge case anymore. Let\u0027s wait for nodir\u0027s comments on that.",
+      "parentUuid": "4c33f65e_76df06a8",
       "range": {
         "startLine": 29,
         "startChar": 30,
