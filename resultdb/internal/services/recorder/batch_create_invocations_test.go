@@ -21,11 +21,14 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -86,10 +89,11 @@ func TestBatchCreateInvocations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		// Configure mock authentication to allow creation of custom invocation ids.
 		ctx = authtest.MockAuthConfig(ctx)
-		db := authtest.FakeDB{
-			"anonymous:anonymous": []string{trustedInvocationCreators},
+		authState := &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{trustedInvocationCreators},
 		}
-		ctx = db.Use(ctx)
+		ctx = auth.WithState(ctx, authState)
 
 		start := clock.Now(ctx).UTC()
 
@@ -110,14 +114,8 @@ func TestBatchCreateInvocations(t *testing.T) {
 		Convey(`idempotent`, func() {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{
-					{
-						InvocationId: "u-batchinv",
-						RequestId:    "request id",
-					},
-					{
-						InvocationId: "u-batchinv2",
-						RequestId:    "request id",
-					},
+					{InvocationId: "u-batchinv"},
+					{InvocationId: "u-batchinv2"},
 				},
 				RequestId: "request id",
 			}
@@ -130,6 +128,21 @@ func TestBatchCreateInvocations(t *testing.T) {
 			res2.UpdateTokens = res.UpdateTokens
 			// Otherwise, the responses must be identical.
 			So(res2, ShouldResembleProto, res)
+		})
+
+		Convey(`Same request ID, different identity`, func() {
+			req := &pb.BatchCreateInvocationsRequest{
+				Requests: []*pb.CreateInvocationRequest{
+					{InvocationId: "u-inv"},
+				},
+				RequestId: "request id",
+			}
+			_, err := recorder.BatchCreateInvocations(ctx, req)
+			So(err, ShouldBeNil)
+
+			authState.Identity = "user:someone-else@example.com"
+			_, err = recorder.BatchCreateInvocations(ctx, req)
+			So(status.Code(err), ShouldEqual, codes.AlreadyExists)
 		})
 
 		Convey(`end to end`, func() {
@@ -174,7 +187,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-batch-inv",
 				State:     pb.Invocation_ACTIVE,
-				CreatedBy: "anonymous:anonymous",
+				CreatedBy: "user:someone@example.com",
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[0].CreateTime,
@@ -183,7 +196,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			proto.Merge(expected2, &pb.Invocation{
 				Name:      "invocations/u-batch-inv2",
 				State:     pb.Invocation_ACTIVE,
-				CreatedBy: "anonymous:anonymous",
+				CreatedBy: "user:someone@example.com",
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[1].CreateTime,
