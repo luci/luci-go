@@ -46,6 +46,30 @@
       "revId": "7d5890efb4c377959ac1776e3cdd893bc9700c1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed64d784_0baad179",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1353760
+      },
+      "writtenOn": "2020-05-18T19:59:40Z",
+      "side": 1,
+      "message": "figured out why the unittests were failing",
+      "parentUuid": "1b1b2b59_9323044f",
+      "range": {
+        "startLine": 41,
+        "startChar": 24,
+        "endLine": 41,
+        "endChar": 36
+      },
+      "revId": "7d5890efb4c377959ac1776e3cdd893bc9700c1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
