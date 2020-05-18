@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7e12d7a8_b1bb1049",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-18T03:03:44Z",
+      "side": 1,
+      "message": "do IIUC that you are ensuring serialize/desiearlize is always UTC, hence no need for jsontime?",
+      "range": {
+        "startLine": 149,
+        "startChar": 27,
+        "endLine": 149,
+        "endChar": 34
+      },
+      "revId": "32b6d58c50fefc64dc7d4224793c1a500e368396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
