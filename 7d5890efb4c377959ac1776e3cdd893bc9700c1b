@@ -22,6 +22,30 @@
       "revId": "7d5890efb4c377959ac1776e3cdd893bc9700c1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b1b2b59_9323044f",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1353760
+      },
+      "writtenOn": "2020-05-18T18:48:30Z",
+      "side": 1,
+      "message": "Don\u0027t I need to pass it to ToSwarmingNewTask so that I can pass it to jd.FlattenToSwarming()? Otherwise, it won\u0027t get set in the task I think. I also tried setting this line to task.ParentTaskId, but for some reason (I haven\u0027t looked too deeply) it doesn\u0027t work with the unit tests. I assumed maybe that was why the above line uses uid instead of task.User, but I can try looking more into how to make it work.",
+      "parentUuid": "13a7b5a9_0fb07c48",
+      "range": {
+        "startLine": 41,
+        "startChar": 24,
+        "endLine": 41,
+        "endChar": 36
+      },
+      "revId": "7d5890efb4c377959ac1776e3cdd893bc9700c1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
