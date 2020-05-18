@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -58,11 +57,11 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		Rules: func(context.Context) (*Rules, error) {
 			return rules, nil
 		},
-		MintAccessToken: func(ctx context.Context, params auth.MintAccessTokenParams) (*oauth2.Token, error) {
+		MintAccessToken: func(ctx context.Context, params auth.MintAccessTokenParams) (*auth.Token, error) {
 			lastMintParams = params
-			return &oauth2.Token{
-				AccessToken: "access-token-for-" + params.ServiceAccount,
-				Expiry:      clock.Now(ctx).Add(time.Hour),
+			return &auth.Token{
+				Token:  "access-token-for-" + params.ServiceAccount,
+				Expiry: clock.Now(ctx).Add(time.Hour),
 			}, nil
 		},
 		LogOAuthToken: func(c context.Context, i *MintedOAuthTokenInfo) error {

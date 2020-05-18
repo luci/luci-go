@@ -41,12 +41,10 @@ var (
 	authorizedGroups = []string{projectActorsGroup}
 )
 
-func testMintAccessToken(ctx context.Context, params auth.MintAccessTokenParams) (*oauth2.Token, error) {
-	return &oauth2.Token{
-		AccessToken:  "",
-		TokenType:    "",
-		RefreshToken: "",
-		Expiry:       time.Now(),
+func testMintAccessToken(ctx context.Context, params auth.MintAccessTokenParams) (*auth.Token, error) {
+	return &auth.Token{
+		Token:  "",
+		Expiry: time.Now().UTC(),
 	}, nil
 }
 

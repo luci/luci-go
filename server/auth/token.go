@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package delegation contains low-level API for working with delegation tokens.
-//
-// Prefer the high-level API in server/auth package, in particular
-// `MintDelegationToken` and `auth.GetRPCTransport(ctx, auth.AsUser)`.
-package delegation
+package auth
 
-const (
-	// HTTPHeaderName is name of HTTP header that carries the token.
-	HTTPHeaderName = "X-Delegation-Token-V1"
+import (
+	"time"
 )
+
+// Token is some opaque token and its expiration time.
+//
+// Returned by various MintXToken calls.
+type Token struct {
+	Token  string    // an opaque base64-encoded token
+	Expiry time.Time // when it expires
+}

@@ -22,11 +22,9 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -54,40 +52,13 @@ type MintAccessTokenParams struct {
 // actorTokenCache is used to store access tokens of a service accounts the
 // current service has "iam.serviceAccountActor" role in.
 //
-// The underlying token type is cachedOAuth2Token.
+// The token is stored in OAuth2Token field.
 var actorTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "as_actor_tokens",
-	Version:                      4,
+	Version:                      5,
 	ProcessLRUCache:              caching.RegisterLRUCache(8192),
 	ExpiryRandomizationThreshold: 5 * time.Minute, // ~10% of regular 1h expiration
 })
-
-// cachedOAuth2Token is JSON-serializable representation of the oauth2.Token.
-//
-// It explicitly contains only stuff we want to be in the cache. Storing
-// oauth2.Token directly is dangerous because we don't control what oauth2 lib
-// has in the Token struct (it may be non-serializable).
-type cachedOAuth2Token struct {
-	AccessToken string        `json:"access_token,omitempty"`
-	TokenType   string        `json:"token_type,omitempty"`
-	Expiry      jsontime.Time `json:"expiry,omitempty"`
-}
-
-func makeCachedOAuth2Token(tok *oauth2.Token) *cachedOAuth2Token {
-	return &cachedOAuth2Token{
-		AccessToken: tok.AccessToken,
-		TokenType:   tok.TokenType,
-		Expiry:      jsontime.Time{tok.Expiry},
-	}
-}
-
-func (c *cachedOAuth2Token) toToken() *oauth2.Token {
-	return &oauth2.Token{
-		AccessToken: c.AccessToken,
-		TokenType:   c.TokenType,
-		Expiry:      c.Expiry.Time,
-	}
-}
 
 // MintAccessTokenForServiceAccount produces an access token for some service
 // account that the current service has "iam.serviceAccountActor" role in.
@@ -98,7 +69,7 @@ func (c *cachedOAuth2Token) toToken() *oauth2.Token {
 //
 // Recognizes transient errors and marks them, but does not automatically
 // retry. Has internal timeout of 10 sec.
-func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessTokenParams) (_ *oauth2.Token, err error) {
+func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessTokenParams) (_ *Token, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintAccessTokenForServiceAccount")
 	span.Attribute("cr.dev/account", params.ServiceAccount)
 	defer func() { span.End(err) }()
@@ -174,9 +145,9 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			}.Debugf(ctx, "Minted new actor OAuth token")
 
 			return &cachedToken{
-				OAuth2Token: makeCachedOAuth2Token(tok),
-				Created:     jsontime.Time{now},
-				Expiry:      jsontime.Time{tok.Expiry},
+				Created:     now,
+				Expiry:      tok.Expiry.UTC(),
+				OAuth2Token: tok.AccessToken,
 			}, nil, "SUCCESS_CACHE_MISS"
 		},
 	})
@@ -185,5 +156,8 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	if err != nil {
 		return nil, err
 	}
-	return cached.OAuth2Token.toToken(), nil
+	return &Token{
+		Token:  cached.OAuth2Token,
+		Expiry: cached.Expiry,
+	}, nil
 }

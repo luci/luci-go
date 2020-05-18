@@ -18,7 +18,6 @@ import (
 	"context"
 	"time"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -50,11 +49,11 @@ type MintProjectTokenRPC struct {
 	// MintAccessToken produces an OAuth token for a service account.
 	//
 	// In prod it is auth.MintAccessTokenForServiceAccount.
-	MintAccessToken func(context.Context, auth.MintAccessTokenParams) (*oauth2.Token, error)
+	MintAccessToken func(context.Context, auth.MintAccessTokenParams) (*auth.Token, error)
 
 	// ProjectIdentities manages project scoped identities.
 	//
-	// In  prod it is projectscope.persistentIdentityManager
+	// In prod it is projectidentity.ProjectIdentities.
 	ProjectIdentities func(context.Context) projectidentity.Storage
 
 	// LogToken is mocked in tests.
@@ -137,7 +136,7 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	// Create response object.
 	resp := &minter.MintProjectTokenResponse{
 		ServiceAccountEmail: projectIdentity.Email,
-		AccessToken:         accessTok.AccessToken,
+		AccessToken:         accessTok.Token,
 		Expiry:              google.NewTimestamp(accessTok.Expiry),
 		ServiceVersion:      serviceVer,
 	}

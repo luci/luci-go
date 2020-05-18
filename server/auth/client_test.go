@@ -27,7 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/server/auth/delegation"
+	"go.chromium.org/luci/common/clock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -84,13 +84,13 @@ func TestGetRPCTransport(t *testing.T) {
 			})
 
 			t, err := GetRPCTransport(ctx, AsUser, WithDelegationTags("a:b", "c:d"), &rpcMocks{
-				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*delegation.Token, error) {
+				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*Token, error) {
 					c.So(p, ShouldResemble, DelegationTokenParams{
 						TargetHost: "example.com",
 						Tags:       []string{"a:b", "c:d"},
 						MinTTL:     10 * time.Minute,
 					})
-					return &delegation.Token{Token: "deleg_tok"}, nil
+					return &Token{Token: "deleg_tok"}, nil
 				},
 			})
 			So(err, ShouldBeNil)
@@ -107,15 +107,15 @@ func TestGetRPCTransport(t *testing.T) {
 		Convey("in AsProject mode", func(c C) {
 			callExampleCom := func(ctx context.Context) {
 				t, err := GetRPCTransport(ctx, AsProject, WithProject("infra"), &rpcMocks{
-					MintProjectToken: func(ic context.Context, p ProjectTokenParams) (*oauth2.Token, error) {
+					MintProjectToken: func(ic context.Context, p ProjectTokenParams) (*Token, error) {
 						c.So(p, ShouldResemble, ProjectTokenParams{
 							MinTTL:      2 * time.Minute,
 							LuciProject: "infra",
 							OAuthScopes: defaultOAuthScopes,
 						})
-						return &oauth2.Token{
-							AccessToken: "scoped tok",
-							TokenType:   "Bearer",
+						return &Token{
+							Token:  "scoped tok",
+							Expiry: clock.Now(ctx).Add(time.Hour),
 						}, nil
 					},
 				})
@@ -150,7 +150,7 @@ func TestGetRPCTransport(t *testing.T) {
 			})
 
 			t, err := GetRPCTransport(ctx, AsUser, &rpcMocks{
-				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*delegation.Token, error) {
+				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*Token, error) {
 					panic("must not be called")
 				},
 			})
@@ -166,7 +166,7 @@ func TestGetRPCTransport(t *testing.T) {
 			})
 
 			t, err := GetRPCTransport(ctx, AsUser, WithDelegationToken("deleg_tok"), &rpcMocks{
-				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*delegation.Token, error) {
+				MintDelegationToken: func(ic context.Context, p DelegationTokenParams) (*Token, error) {
 					panic("must not be called")
 				},
 			})
@@ -244,15 +244,15 @@ func TestGetRPCTransport(t *testing.T) {
 
 		Convey("in AsActor mode with account", func(c C) {
 			mocks := &rpcMocks{
-				MintAccessTokenForServiceAccount: func(ic context.Context, p MintAccessTokenParams) (*oauth2.Token, error) {
+				MintAccessTokenForServiceAccount: func(ic context.Context, p MintAccessTokenParams) (*Token, error) {
 					So(p, ShouldResemble, MintAccessTokenParams{
 						ServiceAccount: "abc@example.com",
 						Scopes:         []string{auth.OAuthScopeEmail},
 						MinTTL:         2 * time.Minute,
 					})
-					return &oauth2.Token{
-						TokenType:   "Bearer",
-						AccessToken: "blah-blah",
+					return &Token{
+						Token:  "blah-blah",
+						Expiry: clock.Now(ic).Add(time.Hour),
 					}, nil
 				},
 			}
@@ -287,9 +287,12 @@ func TestGetRPCTransport(t *testing.T) {
 			// Use a mode which actually uses transport context to compute headers.
 			run := func(c C, reqCtx, transCtx context.Context) (usedCtx context.Context) {
 				mocks := &rpcMocks{
-					MintAccessTokenForServiceAccount: func(ic context.Context, _ MintAccessTokenParams) (*oauth2.Token, error) {
+					MintAccessTokenForServiceAccount: func(ic context.Context, _ MintAccessTokenParams) (*Token, error) {
 						usedCtx = ic
-						return &oauth2.Token{TokenType: "Bearer", AccessToken: "blah"}, nil
+						return &Token{
+							Token:  "blah",
+							Expiry: clock.Now(ic).Add(time.Hour),
+						}, nil
 					},
 				}
 				t, err := GetRPCTransport(transCtx, AsActor, WithServiceAccount("abc@example.com"), mocks)

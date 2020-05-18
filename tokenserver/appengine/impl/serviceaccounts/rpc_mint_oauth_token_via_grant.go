@@ -21,7 +21,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
-	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -57,7 +56,7 @@ type MintOAuthTokenViaGrantRPC struct {
 	// MintAccessToken produces an OAuth token for a service account.
 	//
 	// In prod it is auth.MintAccessTokenForServiceAccount.
-	MintAccessToken func(context.Context, auth.MintAccessTokenParams) (*oauth2.Token, error)
+	MintAccessToken func(context.Context, auth.MintAccessTokenParams) (*auth.Token, error)
 
 	// LogOAuthToken is mocked in tests.
 	//
@@ -119,7 +118,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 
 	// The RPC response.
 	resp := &minter.MintOAuthTokenViaGrantResponse{
-		AccessToken:    accessTok.AccessToken,
+		AccessToken:    accessTok.Token,
 		Expiry:         google.NewTimestamp(accessTok.Expiry),
 		ServiceVersion: serviceVer,
 	}
