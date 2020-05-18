@@ -47,6 +47,10 @@ type LaunchSwarmingOpts struct {
 	// dumped.
 	FinalBuildProto string
 
+	// If launched from within a swarming task, this will be the current swarming
+	// task's task id to be attached as the parent of the launched task.
+	ParentTaskId string
+
 	KitchenSupport job.KitchenSupport
 }
 
@@ -81,7 +85,7 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	}
 
 	logging.Infof(ctx, "building swarming task")
-	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.KitchenSupport); err != nil {
+	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskId, opts.KitchenSupport); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to flatten job definition to swarming").Err()
 	}
 
