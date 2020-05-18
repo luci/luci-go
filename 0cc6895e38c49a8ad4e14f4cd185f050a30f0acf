@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0738d2a6_7c9be87a",
+        "filename": "server/auth/realms/permissions.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-18T03:05:06Z",
+      "side": 1,
+      "message": "no idea how this is related to leaking sockets, but this is 👍, so LGTM.",
+      "revId": "0cc6895e38c49a8ad4e14f4cd185f050a30f0acf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
