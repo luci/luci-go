@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2111224a_9eac13c9",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-18T04:58:22Z",
+      "side": 1,
+      "message": "This seems slightly overcomplicated; wouldn\u0027t it be simpler to just implement a custom compare function?\n\ne.g. compare the names, and if they\u0027re the same then check if they\u0027re test results?\n\nI\u0027m also not sure what the regex extraction is for; can\u0027t you just sort by the name since they all have the same \"invocations/\" prefix?",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 164,
+        "endChar": 1
+      },
+      "revId": "1e3399f0fec8f8e3d20e6a37e68f30200789dd66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
