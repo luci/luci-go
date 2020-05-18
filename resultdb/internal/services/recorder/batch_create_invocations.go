@@ -88,12 +88,13 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 
 // createInvocations is a shared implementation for CreateInvocation and BatchCreateInvocations RPCs.
 func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.CreateInvocationRequest, requestID string, now time.Time, idSet span.InvocationIDSet) ([]*pb.Invocation, []string, error) {
-	ms := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID)
+	createdBy := string(auth.CurrentIdentity(ctx))
+	ms := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID, createdBy)
 
 	var err error
 	deduped := false
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		deduped, err = deduplicateCreateInvocations(ctx, txn, idSet, requestID)
+		deduped, err = deduplicateCreateInvocations(ctx, txn, idSet, requestID, createdBy)
 		if err != nil {
 			return err
 		}
@@ -114,7 +115,7 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 
 // createInvocationsRequestsToMutations computes a database mutation for
 // inserting a row for each invocation creation requested.
-func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) []*spanner.Mutation {
+func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Context, now time.Time, reqs []*pb.CreateInvocationRequest, requestID, createdBy string) []*spanner.Mutation {
 
 	ms := make([]*spanner.Mutation, len(reqs))
 	// Compute mutations
@@ -127,7 +128,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 			Deadline:         req.Invocation.GetDeadline(),
 			Tags:             req.Invocation.GetTags(),
 			BigqueryExports:  req.Invocation.GetBigqueryExports(),
-			CreatedBy:        string(auth.CurrentIdentity(ctx)),
+			CreatedBy:        createdBy,
 			ProducerResource: req.Invocation.GetProducerResource(),
 		}
 
@@ -169,20 +170,26 @@ func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet span.Invoca
 }
 
 // deduplicateCreateInvocations checks if the invocations have already been
-// created with the given requestID. Returns a true if they have.
-func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet span.InvocationIDSet, requestID string) (bool, error) {
+// created with the given requestID and current requester.
+// Returns a true if they have.
+func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet span.InvocationIDSet, requestID, createdBy string) (bool, error) {
 	invCount := 0
-	err := txn.Read(ctx, "Invocations", idSet.Keys(), []string{"InvocationId", "CreateRequestId"}).Do(func(r *spanner.Row) error {
+	columns := []string{"InvocationId", "CreateRequestId", "CreatedBy"}
+	err := txn.Read(ctx, "Invocations", idSet.Keys(), columns).Do(func(r *spanner.Row) error {
 		var invID span.InvocationID
 		var rowRequestID spanner.NullString
-		if err := span.FromSpanner(r, &invID, &rowRequestID); err != nil {
+		var rowCreatedBy spanner.NullString
+		switch err := span.FromSpanner(r, &invID, &rowRequestID, &rowCreatedBy); {
+		case err != nil:
 			return err
-		}
-		if rowRequestID.IsNull() || rowRequestID.String() != requestID {
+		case !rowRequestID.Valid || rowRequestID.StringVal != requestID:
 			return invocationAlreadyExists(invID)
+		case rowCreatedBy.StringVal != createdBy:
+			return invocationAlreadyExists(invID)
+		default:
+			invCount++
+			return nil
 		}
-		invCount++
-		return nil
 	})
 	switch {
 	case err != nil:
