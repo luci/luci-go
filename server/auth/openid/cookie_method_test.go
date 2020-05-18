@@ -96,6 +96,7 @@ func TestFullFlow(t *testing.T) {
 				http.Error(w, "Not found", http.StatusNotFound)
 			}
 		}))
+		defer ts.Close()
 
 		cfg := Settings{
 			DiscoveryURL: ts.URL + "/discovery",

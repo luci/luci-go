@@ -39,6 +39,9 @@ func TestValidatePermissionName(t *testing.T) {
 func TestRegister(t *testing.T) {
 	t.Parallel()
 
+	// Make sure the test succeeds when using `go test . -count=2`.
+	clearPermissions()
+
 	Convey("Works", t, func() {
 		p1 := RegisterPermission("luci.dev.testing1")
 		So(p1.Name(), ShouldEqual, "luci.dev.testing1")

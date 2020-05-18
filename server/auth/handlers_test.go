@@ -48,6 +48,7 @@ func TestCertificatesHandler(t *testing.T) {
 		r := router.New()
 		InstallHandlers(r, withSigner(s))
 		ts := httptest.NewServer(r)
+		defer ts.Close()
 		// Note: there are two contexts. One for outer /certificates call
 		// (this one), and another for /certificates request handler (it is setup
 		// in the middleware chain above).

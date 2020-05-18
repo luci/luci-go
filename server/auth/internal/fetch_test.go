@@ -38,6 +38,8 @@ func TestFetch(t *testing.T) {
 			w.WriteHeader(status)
 			w.Write([]byte(body))
 		}))
+		defer ts.Close()
+
 		ctx := context.Background()
 
 		Convey("fetch works", func() {
