@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a9fa07d_d97e5f46",
+        "filename": "milo/frontend/resultui/src/components/tab_bar.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-18T05:01:02Z",
+      "side": 0,
+      "message": "Is there already corresponding code in the parent that changes this.selectedTabId?",
+      "range": {
+        "startLine": 47,
+        "startChar": 14,
+        "endLine": 47,
+        "endChar": 42
+      },
+      "revId": "a4f4b073be33d1e0427bc89f575cd75b50f6cd03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
