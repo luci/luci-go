@@ -28,8 +28,8 @@ import (
 //
 // If you call this on something other than a swarming Definition, it will
 // panic.
-func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks job.KitchenSupport) (*swarming.SwarmingRpcsNewTaskRequest, error) {
-	if err := jd.FlattenToSwarming(ctx, uid, ks); err != nil {
+func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, parentTaskId string, ks job.KitchenSupport) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+	if err := jd.FlattenToSwarming(ctx, uid, parentTaskId, ks); err != nil {
 		return nil, errors.Annotate(err, "flattening to swarming Definition").Err()
 	}
 
@@ -38,6 +38,7 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
 		Name:                 task.Name,
 		User:                 uid,
+		ParentTaskId:         task.ParentTaskId,
 		Priority:             int64(task.Priority),
 		ServiceAccount:       task.ServiceAccount,
 		Tags:                 task.Tags,
