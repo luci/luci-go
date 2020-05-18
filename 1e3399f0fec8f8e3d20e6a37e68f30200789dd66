@@ -22,6 +22,30 @@
       "revId": "1e3399f0fec8f8e3d20e6a37e68f30200789dd66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "499005c8_9e84aead",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-18T06:25:16Z",
+      "side": 1,
+      "message": "Sorting by name is not viable because invocation IDs may contain \u0027-\u0027, \u0027/\u0027.localCompare(\u0027-\u0027) \u003d\u003d\u003d which means \u0027invocations/inv-id/...\u0027.localCompare(\u0027invocations/inv/...\u0027) !\u003d\u003d \u0027inv-id\u0027.localCompare(\u0027inv\u0027).\nI can change that to use a custom compare function though.",
+      "parentUuid": "2111224a_9eac13c9",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 164,
+        "endChar": 1
+      },
+      "revId": "1e3399f0fec8f8e3d20e6a37e68f30200789dd66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
