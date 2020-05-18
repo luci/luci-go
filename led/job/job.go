@@ -287,8 +287,13 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 //
 // After flattening, HighLevelEdit functionality will no longer work on this
 // Definition.
+//
+// If `uid` is specified, it will override the user field in the job definition.
 func (jd *Definition) FlattenToSwarming(ctx context.Context, uid string, ks KitchenSupport) error {
-	if jd.GetSwarming() != nil {
+	if sw := jd.GetSwarming(); sw != nil {
+		if uid != "" {
+			sw.Task.User = uid
+		}
 		return nil
 	}
 

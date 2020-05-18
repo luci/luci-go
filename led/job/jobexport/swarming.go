@@ -15,36 +15,27 @@
 package jobexport
 
 import (
-	"context"
-
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/swarming/proto/api"
 )
 
-// ToSwarmingNewTask renders a (swarming) Definition to
-// a SwarmingRpcsNewTaskRequest.
-//
-// If you call this on something other than a swarming Definition, it will
-// panic.
-func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks job.KitchenSupport) (*swarming.SwarmingRpcsNewTaskRequest, error) {
-	if err := jd.FlattenToSwarming(ctx, uid, ks); err != nil {
-		return nil, errors.Annotate(err, "flattening to swarming Definition").Err()
-	}
-
-	task := jd.GetSwarming().Task
+// ToSwarmingNewTask renders a swarming proto task to a
+// SwarmingRpcsNewTaskRequest.
+func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+	task := sw.Task
 	ret := &swarming.SwarmingRpcsNewTaskRequest{
 		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
 		Name:                 task.Name,
-		User:                 uid,
+		User:                 task.User,
 		Priority:             int64(task.Priority),
 		ServiceAccount:       task.ServiceAccount,
 		Tags:                 task.Tags,
 		TaskSlices:           make([]*swarming.SwarmingRpcsTaskSlice, 0, len(task.TaskSlices)),
 	}
 
-	upDigest := jd.GetUserPayload().GetDigest()
+	upDigest := userPayload.GetDigest()
 
 	for i, slice := range task.TaskSlices {
 		props := slice.Properties
@@ -102,7 +93,7 @@ func ToSwarmingNewTask(ctx context.Context, jd *job.Definition, uid string, ks j
 		// Isn't isolate so simple?
 		var isoToUse *apipb.CASTree
 		sliceIso := props.CasInputs
-		jobIso := jd.UserPayload
+		jobIso := userPayload
 		switch {
 		case sliceIso.GetDigest() != "":
 			isoToUse = sliceIso
