@@ -450,9 +450,9 @@ func tokenFingerprint(tok string) string {
 
 // rpcMocks are used exclusively in unit tests.
 type rpcMocks struct {
-	MintDelegationToken              func(context.Context, DelegationTokenParams) (*delegation.Token, error)
-	MintAccessTokenForServiceAccount func(context.Context, MintAccessTokenParams) (*oauth2.Token, error)
-	MintProjectToken                 func(context.Context, ProjectTokenParams) (*oauth2.Token, error)
+	MintDelegationToken              func(context.Context, DelegationTokenParams) (*Token, error)
+	MintAccessTokenForServiceAccount func(context.Context, MintAccessTokenParams) (*Token, error)
+	MintProjectToken                 func(context.Context, ProjectTokenParams) (*Token, error)
 }
 
 // apply implements RPCOption interface.
@@ -655,7 +655,7 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 	if opts.rpcMocks != nil && opts.rpcMocks.MintAccessTokenForServiceAccount != nil {
 		mintTokenCall = opts.rpcMocks.MintAccessTokenForServiceAccount
 	}
-	oauthTok, err := mintTokenCall(c, MintAccessTokenParams{
+	tok, err := mintTokenCall(c, MintAccessTokenParams{
 		ServiceAccount: opts.serviceAccount,
 		Scopes:         opts.scopes,
 		MinTTL:         2 * time.Minute,
@@ -663,7 +663,11 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to mint AsActor access token").Err()
 	}
-	return oauthTok, nil, nil
+	return &oauth2.Token{
+		AccessToken: tok.Token,
+		TokenType:   "Bearer",
+		Expiry:      tok.Expiry,
+	}, nil, nil
 }
 
 // asProjectHeaders returns a map of authentication headers to add to outbound
@@ -708,7 +712,11 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 		return asSelfHeaders(c, uri, opts)
 	}
 
-	return tok, nil, nil
+	return &oauth2.Token{
+		AccessToken: tok.Token,
+		TokenType:   "Bearer",
+		Expiry:      tok.Expiry,
+	}, nil, nil
 }
 
 // isInternalURI returns true if the URI points to a LUCI microservice belonging

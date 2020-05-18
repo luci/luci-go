@@ -17,17 +17,13 @@ package auth
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
-	"golang.org/x/oauth2"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,7 +35,6 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 	Convey("MintAccessTokenForServiceAccount works", t, func() {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		returnedToken := "token1"
@@ -75,10 +70,9 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		expectedExpireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
 		So(err, ShouldBeNil)
 
-		So(tok, ShouldResemble, &oauth2.Token{
-			AccessToken: "token1",
-			TokenType:   "Bearer",
-			Expiry:      expectedExpireTime,
+		So(tok, ShouldResemble, &Token{
+			Token:  "token1",
+			Expiry: expectedExpireTime,
 		})
 
 		// Cached now.
@@ -91,7 +85,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			Scopes:         []string{"scope_b", "scope_a"},
 		})
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "token1") // old one
+		So(tok.Token, ShouldEqual, "token1") // old one
 
 		// Unless it expires sooner than requested TTL.
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
@@ -101,6 +95,6 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			MinTTL:         30 * time.Minute,
 		})
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldResemble, "token2") // new one
+		So(tok.Token, ShouldResemble, "token2") // new one
 	})
 }

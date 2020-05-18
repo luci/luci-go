@@ -23,10 +23,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
@@ -87,19 +85,19 @@ func newTokenCache(cfg tokenCacheConfig) *tokenCache {
 type cachedToken struct {
 	// Key is cache key, must be unique (no other restrictions).
 	Key string `json:"key,omitempty"`
-	// Created is when the token was created, required, UTC.
-	Created jsontime.Time `json:"created,omitempty"`
-	// Expire is when the token expires, required, UTC.
-	Expiry jsontime.Time `json:"expiry,omitempty"`
+	// Created is when the token was created, required.
+	Created time.Time `json:"created,omitempty"`
+	// Expire is when the token expires, required.
+	Expiry time.Time `json:"expiry,omitempty"`
 
 	// TODO(fmatenaar): Remove this after migrating projects to scoped accounts.
 	// ProjectScopeFallback indicates a project scoped token migration fallback case.
 	ProjectScopeFallback bool `json:"fallback,omitempty"`
 
-	// OAuth2Token is set when caching an OAuth2 tokens, otherwise nil.
-	OAuth2Token *cachedOAuth2Token `json:"oauth2_token,omitempty"`
-	// DelegationToken is set when caching a delegation token, otherwise nil.
-	DelegationToken *delegation.Token `json:"delegation_token,omitempty"`
+	// OAuth2Token is set when caching an OAuth2 tokens, otherwise empty.
+	OAuth2Token string `json:"oauth2_token,omitempty"`
+	// DelegationToken is set when caching a delegation token, otherwise empty.
+	DelegationToken string `json:"delegation_token,omitempty"`
 }
 
 type fetchOrMintTokenOp struct {
@@ -162,7 +160,7 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 		tok.Key = op.CacheKey // the original key before hashing
 
 		label = "SUCCESS_CACHE_MISS"
-		return tok, clock.Until(ctx, tok.Expiry.Time), nil
+		return tok, clock.Until(ctx, tok.Expiry), nil
 	}, opts...)
 
 	switch tok, _ = fetched.(*cachedToken); {
@@ -176,10 +174,10 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 		return nil, err, label
 	case tok.Key != op.CacheKey:
 		// A paranoid check we've got the token we wanted. This is very-very-very
-		// unlikely to happen in practice, SHA1 collisions are rare. So it's fine to
-		// handle it sloppily and just return an error (still better than
+		// unlikely to happen in practice, SHA256 collisions are rare. So it's fine
+		// to handle it sloppily and just return an error (still better than
 		// accidentally using wrong token).
-		err = fmt.Errorf("SHA1 collision in the token cache: %q vs %q", tok.Key, op.CacheKey)
+		err = fmt.Errorf("SHA256 collision in the token cache: %q vs %q", tok.Key, op.CacheKey)
 		return nil, err, "ERROR_HASH_COLLISION"
 	default:
 		return tok, nil, label

@@ -26,14 +26,12 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
@@ -134,10 +132,10 @@ type delegationTokenMinterClient interface {
 
 // delegationTokenCache is used to store delegation tokens in the cache.
 //
-// The underlying token type is delegation.Token.
+// The token is stored in DelegationToken field.
 var delegationTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "delegation",
-	Version:                      6,
+	Version:                      7,
 	ProcessLRUCache:              caching.RegisterLRUCache(8192),
 	ExpiryRandomizationThreshold: MaxDelegationTokenTTL / 10, // 10%
 })
@@ -156,7 +154,7 @@ var delegationTokenCache = newTokenCache(tokenCacheConfig{
 //
 // The token is cached internally. Same token may be returned by multiple calls,
 // if its lifetime allows.
-func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (_ *delegation.Token, err error) {
+func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (_ *Token, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintDelegationToken")
 	span.Attribute("cr.dev/target", p.TargetHost)
 	defer func() { span.End(err) }()
@@ -314,12 +312,9 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (_ *deleg
 			now := clock.Now(ctx).UTC()
 			exp := now.Add(time.Duration(subtoken.ValidityDuration) * time.Second)
 			return &cachedToken{
-				DelegationToken: &delegation.Token{
-					Token:  resp.Token,
-					Expiry: jsontime.Time{exp},
-				},
-				Created: jsontime.Time{now},
-				Expiry:  jsontime.Time{exp},
+				Created:         now,
+				Expiry:          exp,
+				DelegationToken: resp.Token,
 			}, nil, "SUCCESS_CACHE_MISS"
 		},
 	})
@@ -328,5 +323,8 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (_ *deleg
 	if err != nil {
 		return nil, err
 	}
-	return cached.DelegationToken, nil
+	return &Token{
+		Token:  cached.DelegationToken,
+		Expiry: cached.Expiry,
+	}, nil
 }
