@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13a7b5a9_0fb07c48",
+        "filename": "led/job/jobexport/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-18T18:28:58Z",
+      "side": 1,
+      "message": "you should pull this from task.ParentTaskID; don\u0027t need to pass it to ToSwarmingNewTask",
+      "range": {
+        "startLine": 41,
+        "startChar": 24,
+        "endLine": 41,
+        "endChar": 36
+      },
+      "revId": "7d5890efb4c377959ac1776e3cdd893bc9700c1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
