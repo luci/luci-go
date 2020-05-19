@@ -150,11 +150,12 @@ type triggerRun struct {
 	relativeCwd               string
 
 	// Task request.
-	taskName   string
-	priority   int64
-	tags       common.Strings
-	user       string
-	expiration int
+	taskName       string
+	priority       int64
+	tags           common.Strings
+	user           string
+	expiration     int
+	enableResultDB bool
 
 	// Other.
 	rawCmd   bool
@@ -197,6 +198,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
 	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
 	c.Flags.IntVar(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
+	c.Flags.BoolVar(&c.enableResultDB, "enable-resultdb", false, "Enable ResultDB for this task.")
 
 	// Other.
 	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
@@ -391,5 +393,8 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Tags:           c.tags,
 		User:           c.user,
 		RequestUuid:    randomUUID.String(),
+		Resultdb: &swarming.SwarmingRpcsResultDBCfg{
+			Enable: c.enableResultDB,
+		},
 	}, nil
 }
