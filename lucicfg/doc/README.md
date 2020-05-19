@@ -979,7 +979,15 @@ Defines a bucket: a container for LUCI resources that share the same ACL.
 ### luci.executable {#luci.executable}
 
 ```python
-luci.executable(name, cipd_package = None, cipd_version = None)
+luci.executable(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    cipd_package = None,
+    cipd_version = None,
+    cmd = None,
+)
 ```
 
 
@@ -1005,6 +1013,7 @@ a builder and an executable needed for this builder.
 * **name**: name of this executable entity, to refer to it from builders. Required.
 * **cipd_package**: a cipd package name with the executable. Supports the module-scoped default.
 * **cipd_version**: a version of the executable package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
+* **cmd**: a list of strings which are the command line to use for this executable. If omitted, either `('recipes',)` or `('luciexe',)` will be used by Buildbucket, according to its global configuration. The special value of `('recipes',)` indicates that this executable should be run under the legacy kitchen runtime. All other values will be executed under the go.chromium.org/luci/luciexe protocol.
 
 
 
@@ -1020,6 +1029,7 @@ luci.recipe(
     cipd_package = None,
     cipd_version = None,
     recipe = None,
+    use_bbagent = None,
 )
 ```
 
@@ -1060,6 +1070,7 @@ a builder and a recipe needed for this builder.
 * **cipd_package**: a cipd package name with the recipe bundle. Supports the module-scoped default.
 * **cipd_version**: a version of the recipe bundle package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
 * **recipe**: name of a recipe inside the recipe bundle if it differs from `name`. Useful if recipe names clash between different recipe bundles. When this happens, `name` can be used as a non-ambiguous alias, and `recipe` can provide the actual recipe name. Defaults to `name`.
+* **use_bbagent**: a boolean to override Buildbucket's global configuration. If True, then builders with this recipe will always use bbagent. If False, then builders with this recipe will temporarially stop using bbagent (note that all builders are expected to use bbagent by ~2020Q3). Defaults to unspecified, which will cause Buildbucket to pick according to it's own global configuration. See [this bug](crbug.com/1015181) for the global bbagent rollout. Supports the module-scoped default.
 
 
 

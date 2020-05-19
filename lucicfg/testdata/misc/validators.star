@@ -163,6 +163,17 @@ def test_validate_regex_list():
   assert.eq(call('a', ['x.*yz', 'defg', 'abc']), 'x.*yz|defg|abc')
 
 
+def test_validate_str_list():
+  call = validate.str_list
+  assert.eq(call('a', ['a', 'b']), ['a', 'b'])
+  assert.eq(call('a', []), [])
+  assert.eq(call('a', None), [])
+  assert.fails(lambda: call('a', 0), 'bad "a": got int, want list')
+  assert.fails(lambda: call('a', {}), 'bad "a": got dict, want list')
+  assert.fails(lambda: call('a', [100]), 'bad "a": got list element of type int, want string')
+  assert.fails(lambda: call('a', None, required=True), 'missing required field "a"')
+  assert.fails(lambda: call('a', [], required=True), 'missing required field "a"')
+
 
 test_validate_string()
 test_validate_int()
@@ -175,3 +186,4 @@ test_validate_struct()
 test_validate_type()
 test_validate_relative_path()
 test_validate_regex_list()
+test_validate_str_list()
