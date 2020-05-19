@@ -44,15 +44,16 @@ func TestGenerateSignedURL(t *testing.T) {
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = testsecrets.Use(ctx)
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: identity.AnonymousIdentity,
-		})
 		ctx = authtest.MockAuthConfig(ctx)
 
 		s, err := NewServer(ctx, false, func(string) string {
 			return "results.usercontent.example.com"
 		})
 		So(err, ShouldBeNil)
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.AnonymousIdentity,
+		})
 
 		Convey(`Basic case`, func() {
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a")
@@ -75,12 +76,8 @@ func TestServeContent(t *testing.T) {
 		ctx := SpannerTestContext(t)
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: identity.AnonymousIdentity,
-		})
-		ctx = authtest.MockAuthConfig(ctx)
 		ctx = testsecrets.Use(ctx)
+		ctx = authtest.MockAuthConfig(ctx)
 
 		s, err := NewServer(ctx, false, func(string) string {
 			return "example.com"
@@ -92,6 +89,10 @@ func TestServeContent(t *testing.T) {
 
 		r := router.NewWithRootContext(ctx)
 		s.InstallHandlers(r)
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.AnonymousIdentity,
+		})
 
 		fetch := func(rawurl string) (res *http.Response, contents string) {
 			req, err := http.NewRequest("GET", rawurl, nil)

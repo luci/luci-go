@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -179,11 +180,10 @@ func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		// Configure mock authentication to allow creation of custom invocation ids.
-		ctx = authtest.MockAuthConfig(ctx)
-		db := authtest.FakeDB{
-			"anonymous:anonymous": []string{trustedInvocationCreators},
-		}
-		ctx = db.Use(ctx)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{trustedInvocationCreators},
+		})
 
 		start := clock.Now(ctx).UTC()
 
@@ -275,7 +275,7 @@ func TestCreateInvocation(t *testing.T) {
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-inv",
 				State:     pb.Invocation_ACTIVE,
-				CreatedBy: "anonymous:anonymous",
+				CreatedBy: "user:someone@example.com",
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: inv.CreateTime,

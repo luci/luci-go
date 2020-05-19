@@ -97,12 +97,12 @@ func TestFindMatchingRule(t *testing.T) {
 
 	ctx := auth.WithState(context.Background(), &authtest.FakeState{
 		Identity: "user:requestor@example.com",
-		FakeDB: authtest.FakeDB{
-			"user:requestor-group-member@example.com":  []string{"requestor-group"},
-			"user:delegators-group-member@example.com": []string{"delegators-group"},
-			"user:audience-group-member@example.com":   []string{"audience-group"},
-			"user:luci-service@example.com":            []string{"auth-luci-services"},
-		},
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockMembership("user:requestor-group-member@example.com", "requestor-group"),
+			authtest.MockMembership("user:delegators-group-member@example.com", "delegators-group"),
+			authtest.MockMembership("user:audience-group-member@example.com", "audience-group"),
+			authtest.MockMembership("user:luci-service@example.com", "auth-luci-services"),
+		),
 	})
 
 	Convey("with example config", t, func() {

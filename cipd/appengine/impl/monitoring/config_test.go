@@ -16,7 +16,6 @@ package monitoring
 
 import (
 	"context"
-	"net"
 	"testing"
 
 	gae "go.chromium.org/gae/impl/memory"
@@ -24,36 +23,11 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
-
-// ipWhitelistDB is an authdb.DB which contains a mapping of IP addresses to
-// names of whitelists the IP address should be considered a part of when
-// calling IsInWhitelist.
-type ipWhitelistDB struct {
-	authtest.FakeDB
-	IPs map[string][]string
-}
-
-var _ authdb.DB = ipWhitelistDB{}
-
-// IsInWhitelist implements authdb.DB.
-func (db ipWhitelistDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
-	whitelists, ok := db.IPs[ip.String()]
-	if !ok {
-		return false, nil
-	}
-	for _, wl := range whitelists {
-		if whitelist == wl {
-			return true, nil
-		}
-	}
-	return false, nil
-}
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
@@ -123,11 +97,7 @@ func TestConfig(t *testing.T) {
 
 		Convey("configured", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				FakeDB: ipWhitelistDB{
-					IPs: map[string][]string{
-						"127.0.0.1": {"bots"},
-					},
-				},
+				PeerIPWhitelists: []string{"bots"},
 			})
 			cfg, err := monitoringConfig(ctx)
 			So(err, ShouldBeNil)

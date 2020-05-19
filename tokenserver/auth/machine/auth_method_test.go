@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -195,10 +195,7 @@ func makeTestContext() context.Context {
 	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 	ctx = memlogger.Use(ctx)
 
-	db := authtest.FakeDB{
-		"user:valid-signer@example.com": []string{TokenServersGroup},
-	}
-	ctx = db.Use(ctx)
-
-	return ctx
+	return authtest.NewFakeDB(
+		authtest.MockMembership("user:valid-signer@example.com", TokenServersGroup),
+	).Use(ctx)
 }

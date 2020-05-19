@@ -32,17 +32,17 @@ func TestRoles(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		fakeDB := authtest.FakeDB{
-			"user:admin@example.com": {"admins"},
+		fakeDB := authtest.NewFakeDB(
+			authtest.MockMembership("user:admin@example.com", "admins"),
 
-			"user:top-owner@example.com":  {"top-owners"},
-			"user:top-writer@example.com": {"top-writers"},
-			"user:top-reader@example.com": {"top-readers"},
+			authtest.MockMembership("user:top-owner@example.com", "top-owners"),
+			authtest.MockMembership("user:top-writer@example.com", "top-writers"),
+			authtest.MockMembership("user:top-reader@example.com", "top-readers"),
 
-			"user:inner-owner@example.com":  {"inner-owners"},
-			"user:inner-writer@example.com": {"inner-writers"},
-			"user:inner-reader@example.com": {"inner-readers"},
-		}
+			authtest.MockMembership("user:inner-owner@example.com", "inner-owners"),
+			authtest.MockMembership("user:inner-writer@example.com", "inner-writers"),
+			authtest.MockMembership("user:inner-reader@example.com", "inner-readers"),
+		)
 
 		metas := []*api.PrefixMetadata{}
 		metas = addPrefixACLs(metas, "", map[api.Role][]string{
