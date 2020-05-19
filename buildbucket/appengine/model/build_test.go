@@ -92,7 +92,11 @@ func TestBuild(t *testing.T) {
 				Proto: pb.Build{
 					Id: 1,
 				},
-				Tags: []string{"key1:value1", "key2:value2"},
+				Tags: []string{
+					"key1:value1",
+					"builder:hidden",
+					"key2:value2",
+				},
 			}
 			key := datastore.KeyForObj(ctx, b)
 			So(datastore.Put(ctx, &BuildInfra{

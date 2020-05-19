@@ -28,6 +28,17 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// isHiddenTag returns whether the given tag should be hidden by ToProto.
+func isHiddenTag(key string) bool {
+	// build_address is reserved by the server so that the TagIndex infrastructure
+	// can be reused to fetch builds by builder + number (see tagindex.go and
+	// rpc/get_build.go).
+	// TODO(crbug/1042991): Unhide builder and gitiles_ref.
+	// builder and gitiles_ref are allowed to be specified, are not internal,
+	// and are only hidden here to match Python behavior.
+	return key == "build_address" || key == "builder" || key == "gitiles_ref"
+}
+
 // PubSubCallback encapsulates parameters for a Pub/Sub callback.
 type PubSubCallback struct {
 	AuthToken string `gae:"auth_token,noindex"`
@@ -94,10 +105,12 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	case inc != mask.Exclude:
 		for _, t := range b.Tags {
 			k, v := strpair.Parse(t)
-			p.Tags = append(p.Tags, &pb.StringPair{
-				Key:   k,
-				Value: v,
-			})
+			if !isHiddenTag(k) {
+				p.Tags = append(p.Tags, &pb.StringPair{
+					Key:   k,
+					Value: v,
+				})
+			}
 		}
 	}
 	key := datastore.KeyForObj(ctx, b)
