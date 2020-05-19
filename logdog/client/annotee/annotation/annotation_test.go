@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const testDataDir = "test_data"
@@ -328,7 +329,7 @@ func TestState(t *testing.T) {
 					rootStep := st.RootStep()
 
 					exp := loadStepProto(t, testCase.name, rootStep)
-					So(rootStep.Proto(), ShouldResemble, exp)
+					So(rootStep.Proto(), ShouldResembleProto, exp)
 				})
 
 				// Iterate over each generated log and assert that it matches its

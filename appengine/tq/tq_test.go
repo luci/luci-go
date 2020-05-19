@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var epoch = time.Unix(1500000000, 0).UTC()
@@ -130,7 +131,7 @@ func TestDispatcher(t *testing.T) {
 			Convey("Executed", func() {
 				// Execute the task.
 				So(runTasks(ctx), ShouldResemble, []int{200})
-				So(calls, ShouldResemble, []proto.Message{
+				So(calls, ShouldResembleProto, []proto.Message{
 					&duration.Duration{Seconds: 123},
 				})
 			})

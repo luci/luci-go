@@ -35,7 +35,7 @@ func TestSetErrorOnBuild(t *testing.T) {
 		Convey(`basic`, func() {
 			build := &bbpb.Build{}
 			setErrorOnBuild(build, errors.New("hi"))
-			So(build, ShouldResemble, &bbpb.Build{
+			So(build, ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: "\n\nError in build protocol: hi",
 				Status:          bbpb.Status_INFRA_FAILURE,
 			})
@@ -49,7 +49,7 @@ func TestSetErrorOnBuild(t *testing.T) {
 			So(build.SummaryMarkdown, ShouldHaveLength, 4096)
 			So(build.SummaryMarkdown, ShouldEndWith, "...\n\nError in build protocol: hi")
 			build.SummaryMarkdown = ""
-			So(build, ShouldResemble, &bbpb.Build{
+			So(build, ShouldResembleProto, &bbpb.Build{
 				Status: bbpb.Status_INFRA_FAILURE,
 			})
 		})
@@ -65,7 +65,7 @@ func TestProcessFinalBuild(t *testing.T) {
 		Convey(`empty`, func() {
 			build := &bbpb.Build{}
 			processFinalBuild(now, build)
-			So(build, ShouldResemble, &bbpb.Build{
+			So(build, ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: ("\n\nError in build protocol: " +
 					"Expected a terminal build status, got STATUS_UNSPECIFIED."),
 				UpdateTime: now,
@@ -82,7 +82,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				},
 			}
 			processFinalBuild(now, build)
-			So(build, ShouldResemble, &bbpb.Build{
+			So(build, ShouldResembleProto, &bbpb.Build{
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_SUCCESS,
@@ -101,7 +101,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				},
 			}
 			processFinalBuild(now, build)
-			So(build, ShouldResemble, &bbpb.Build{
+			So(build, ShouldResembleProto, &bbpb.Build{
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_SUCCESS,
@@ -136,7 +136,7 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				},
 			}
 			updateStepFromBuild(step, build)
-			So(step, ShouldResemble, &bbpb.Step{
+			So(step, ShouldResembleProto, &bbpb.Step{
 				SummaryMarkdown: "hi",
 				Status:          bbpb.Status_FAILURE,
 				EndTime:         now,
@@ -186,7 +186,7 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 			}
 			baseClone := proto.Clone(base).(*bbpb.Build)
 			updateBaseFromUserBuild(base, nil)
-			So(base, ShouldResemble, baseClone)
+			So(base, ShouldResembleProto, baseClone)
 		})
 
 		Convey(`output is merged`, func() {
