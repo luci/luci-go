@@ -114,7 +114,7 @@ steps of build 54 go here`)
 						Bucket:  "ci",
 						Builder: "linux-rel",
 					},
-					Output: &buildbucketpb.Build_Output{
+					Input: &buildbucketpb.Build_Input{
 						GitilesCommit: &buildbucketpb.GitilesCommit{
 							Id: "deadbeefdeadbeef",
 						},
@@ -141,7 +141,7 @@ steps of build 54 go here`)
 						Bucket:  "ci",
 						Builder: "linux-rel",
 					},
-					Output: &buildbucketpb.Build_Output{GitilesCommit: nil},
+					Input: &buildbucketpb.Build_Input{GitilesCommit: nil},
 				},
 				MatchingFailedSteps: []*buildbucketpb.Step{
 					&buildbucketpb.Step{Name: "test1"},
