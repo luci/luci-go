@@ -310,12 +310,15 @@ def _handle_executable(node):
             '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
         ])
     )
-    executable_def = None
+    executable_def = common_pb.Executable(
+        cmd = executable.props.cmd,
+    ) if executable.props.cmd else None
     properties = None
   else:
     executable_def = common_pb.Executable(
         cipd_package = executable.props.cipd_package,
         cipd_version = executable.props.cipd_version,
+        cmd = executable.props.cmd,
     )
     recipe_def = None
     properties = to_json(node.props.properties)
