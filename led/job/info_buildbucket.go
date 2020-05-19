@@ -41,7 +41,8 @@ func (b bbInfo) TaskName() string {
 
 func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 	if b.userPayload.GetDigest() != "" {
-		return b.userPayload, nil
+		ret := *b.userPayload
+		return &ret, nil
 	}
 	return nil, nil
 }
