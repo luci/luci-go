@@ -25,6 +25,9 @@ message Project {
   // Consoles is a list of consoles to define under /console/
   repeated Console consoles = 2;
 
+  // ExternalConsoles is a list of consoles to be included from other projects.
+  repeated ExternalConsole external_consoles = 6;
+
   // Headers is a list of defined headers that may be referenced by a console.
   repeated Header headers = 3;
 
@@ -163,8 +166,8 @@ message Console {
   reserved 4;
   reserved "ref";
 
-  // Id is the reference to the console, and will be the address to make the
-  // console reachable from /console/<Project>/<ID>.
+  // Id is the reference to the console. The console will be visible at the
+  // following URL: /p/<Project>/g/<ID>/console.
   string id = 1;
 
   // Name is the longform name of the waterfall, and will be used to be
@@ -243,6 +246,29 @@ message Console {
   // If set, will default the console page to expanded view.
   // If not set, will default to collapsed view.
   bool default_expand = 16;
+}
+
+// ExternalConsole allows users to include consoles from other projects on the
+// projects page.
+// When listing consoles on the projects page, external consoles will be listed
+// amongst native consoles, sorted by console ID.
+// Note that external consoles will only be listed if the user has permission to
+// view the external project.
+message ExternalConsole {
+  // Id is the reference to the console in this project. This is purely used for
+  // sorting purposes.
+  string id = 1;
+
+  // Name is the longform name of the console, and will be displayed in the
+  // title.
+  string name = 2;
+
+  // ExternalProject is the name of the project from which the external console
+  // will be included.
+  string external_project = 3;
+
+  // ExternalId is the ID of the external console within its parent project.
+  string external_id = 4;
 }
 
 // Builder is a reference to a Milo builder.
