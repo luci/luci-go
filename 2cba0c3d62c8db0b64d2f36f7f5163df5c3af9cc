@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db16ae93_355d6708",
+        "filename": "led/ledcmd/edit_recipe_bundle.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-19T20:53:31Z",
+      "side": 1,
+      "message": "This is the actual fix; You can see that when the TaskPayload API was broken up, the bit where we set the source was lost 😞",
+      "range": {
+        "startLine": 120,
+        "startChar": 5,
+        "endLine": 120,
+        "endChar": 22
+      },
+      "revId": "2cba0c3d62c8db0b64d2f36f7f5163df5c3af9cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
