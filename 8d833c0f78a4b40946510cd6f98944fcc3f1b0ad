@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9b19006_63637793",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "nit: L165 is a bit long and hard to read. Consider extract this to a variable",
+      "range": {
+        "startLine": 165,
+        "startChar": 12,
+        "endLine": 165,
+        "endChar": 88
+      },
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5df3aea9_511a1d21",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "this may get out of date if we change this, and we don\u0027t have to copy it here: \n\n  /^invocations\\/(?\u003cinvId\u003e[^\\/]+)\\//\n\nor just v.name.split(\u0027/\u0027)[1]",
+      "range": {
+        "startLine": 165,
+        "startChar": 49,
+        "endLine": 165,
+        "endChar": 68
+      },
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1ee2d68_8e4977c4",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "stale?",
+      "range": {
+        "startLine": 197,
+        "startChar": 0,
+        "endLine": 198,
+        "endChar": 48
+      },
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16e7c3f9_34396024",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "we can use ignorePunctuation option:\n\n   if (resultNext.value[1].localeCompare(exonerationNext.value[1], \u0027en\u0027, {ignorePunctiation: true}) \u003c\u003d 0) {\n\nand then we don\u0027t need getOrderStr",
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e082644_a81d97c8",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "stale?",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 227,
+        "endChar": 48
+      },
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38bcf646_4b1dc613",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "fwiu the order established by streamTestResultOrExonerations is lost in streamTests, so we can simplify this code significantly now. I suspect streamTestResultOrExonerations can be inlined here and merge-sort can be removed. WDYT?",
+      "range": {
+        "startLine": 230,
+        "startChar": 35,
+        "endLine": 230,
+        "endChar": 65
+      },
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82291c08_c4ac2ab0",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T05:29:56Z",
+      "side": 1,
+      "message": "we should probably use ignorePunctiation and sensitive options here too, to avoid surprises for developers, who expect basic byte-based order.",
+      "range": {
+        "startLine": 104,
+        "startChar": 58,
+        "endLine": 104,
+        "endChar": 60
+      },
+      "revId": "8d833c0f78a4b40946510cd6f98944fcc3f1b0ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
