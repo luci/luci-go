@@ -23,7 +23,8 @@ def _executable_props(
       ctx,
       cipd_package=None,
       cipd_version=None,
-      recipe=None
+      recipe=None,
+      cmd=None,
   ):
   """Defines an executable's properties. See luci.executable(...).
 
@@ -52,6 +53,11 @@ def _executable_props(
           recipe,
           required = False,
       ),
+      'cmd': validate.str_list(
+          'cmd',
+          cmd,
+          required = False,
+      ),
   }
 
 
@@ -59,7 +65,8 @@ def _executable(
       ctx,
       name=None,
       cipd_package=None,
-      cipd_version=None
+      cipd_version=None,
+      cmd=None
   ):
   """Defines an executable.
 
@@ -84,6 +91,12 @@ def _executable(
         module-scoped default.
     cipd_version: a version of the executable package to fetch, default
         is `refs/heads/master`. Supports the module-scoped default.
+    cmd: A list of strings which are the command line to use for this
+      executable. If omitted, either `('recipes',)` or `('luciexe',)` will
+      be used by buildbucket, according to its global configuration. The special
+      value of `('recipes',)` indicates that this executable should be run under
+      the legacy kitchen runtime. All other values will be executed under the
+      go.chromium.org/luci/luciexe protocol.
   """
   name = validate.string('name', name)
   key = keys.executable(name)
@@ -91,6 +104,7 @@ def _executable(
       ctx,
       cipd_package = cipd_package,
       cipd_version = cipd_version,
+      cmd = cmd,
   )
   graph.add_node(key, idempotent = True, props = props)
   return graph.keyset(key)
@@ -102,7 +116,8 @@ def _recipe(
       name=None,
       cipd_package=None,
       cipd_version=None,
-      recipe=None
+      recipe=None,
+      use_bbagent=None,  # transitional for crbug.com/1015181
   ):
   """Defines an executable that runs a particular recipe.
 
@@ -144,14 +159,29 @@ def _recipe(
         `name`. Useful if recipe names clash between different recipe bundles.
         When this happens, `name` can be used as a non-ambiguous alias, and
         `recipe` can provide the actual recipe name. Defaults to `name`.
+    use_bbagent: A boolean to override buildbucket's global configuration. If
+        True, then builders with this recipe will always use bbagent. If False,
+        then builders with this recipe will temporarially stop using bbagent
+        (note that all builders are expected to use bbagent by ~2020Q3).
+        If unspecified, then this builder will use bbagent according to
+        buildbucket's own global configuration. See crbug.com/1015181 for the
+        global bbagent rollout.
   """
   name = validate.string('name', name)
   key = keys.executable(name)
+  cmd = None
+  if use_bbagent != None:
+    use_bbagent = validate.bool('use_bbagent', use_bbagent)
+    if use_bbagent:
+      cmd = ['luciexe']
+    else:
+      cmd = ['recipes']
   props = _executable_props(
       ctx,
       cipd_package = cipd_package,
       cipd_version = cipd_version,
       recipe = recipe or name,
+      cmd = cmd,
   )
   graph.add_node(key, idempotent = True, props = props)
   return graph.keyset(key)
