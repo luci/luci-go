@@ -24,8 +24,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/server/auth/authtest"
-
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
@@ -54,7 +52,7 @@ func TestReportTestResults(t *testing.T) {
 	t.Parallel()
 
 	ctx := metadata.NewIncomingContext(
-		authtest.MockAuthConfig(context.Background()),
+		context.Background(),
 		metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
 
 	Convey("ReportTestResults", t, func() {

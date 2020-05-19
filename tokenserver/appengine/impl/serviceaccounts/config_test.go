@@ -65,13 +65,14 @@ func TestRules(t *testing.T) {
 
 	ctx := auth.WithState(context.Background(), &authtest.FakeState{
 		Identity: "user:unused@example.com",
-		FakeDB: authtest.FakeDB{
-			"user:via-group1@robots.com":           []string{"account-group-1"},
-			"user:via-group2@robots.com":           []string{"account-group-2"},
-			"user:via-both@robots.com":             []string{"account-group-1", "account-group-2"},
-			"user:via-group1-and-rule1@robots.com": []string{"account-group-1"},
-			"user:via-group1-and-rule2@robots.com": []string{"account-group-1"},
-		},
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockMembership("user:via-group1@robots.com", "account-group-1"),
+			authtest.MockMembership("user:via-group2@robots.com", "account-group-2"),
+			authtest.MockMembership("user:via-both@robots.com", "account-group-1"),
+			authtest.MockMembership("user:via-both@robots.com", "account-group-2"),
+			authtest.MockMembership("user:via-group1-and-rule1@robots.com", "account-group-1"),
+			authtest.MockMembership("user:via-group1-and-rule2@robots.com", "account-group-1"),
+		),
 	})
 
 	Convey("Loads", t, func() {

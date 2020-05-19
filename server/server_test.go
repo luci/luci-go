@@ -24,7 +24,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -59,9 +58,10 @@ var fakeUser = &auth.User{
 	Email:    "a@example.com",
 }
 
-var fakeAuthDB = authtest.FakeDB{
-	"user:a@example.com": {"group 1", "group 2"},
-}
+var fakeAuthDB = authtest.NewFakeDB(
+	authtest.MockMembership("user:a@example.com", "group-1"),
+	authtest.MockMembership("user:a@example.com", "group-2"),
+)
 
 const (
 	testServerAccountEmail = "fake-email@example.com"
@@ -269,7 +269,7 @@ func TestServer(t *testing.T) {
 				c.So(state.PeerIP().String(), ShouldEqual, "2.2.2.2")
 				c.So(auth.CurrentUser(rc.Context), ShouldEqual, fakeUser)
 				c.So(auth.CurrentIdentity(rc.Context), ShouldEqual, fakeUser.Identity)
-				yes, err := auth.IsMember(rc.Context, "group 1")
+				yes, err := auth.IsMember(rc.Context, "group-1")
 				c.So(err, ShouldBeNil)
 				c.So(yes, ShouldBeTrue)
 			})
@@ -366,7 +366,7 @@ func testContextFeatures(ctx context.Context) (err error) {
 	switch state := auth.GetState(ctx); {
 	case state == nil:
 		return errors.Reason("auth.State unexpectedly nil").Err()
-	case !reflect.DeepEqual(state.DB(), fakeAuthDB): // these are maps
+	case state.DB() != fakeAuthDB:
 		return errors.Reason("unexpected auth.DB %v", state.DB()).Err()
 	}
 

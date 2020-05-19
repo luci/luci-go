@@ -33,7 +33,7 @@ type MemorySessionStore struct {
 
 // OpenSession create a new session for a user with given expiration time.
 // It returns unique session ID.
-func (s *MemorySessionStore) OpenSession(c context.Context, userID string, u *auth.User, exp time.Time) (string, error) {
+func (s *MemorySessionStore) OpenSession(ctx context.Context, userID string, u *auth.User, exp time.Time) (string, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.counter++
@@ -52,7 +52,7 @@ func (s *MemorySessionStore) OpenSession(c context.Context, userID string, u *au
 
 // CloseSession closes a session given its ID. Does nothing if session is
 // already closed or doesn't exist. Returns only transient errors.
-func (s *MemorySessionStore) CloseSession(c context.Context, sessionID string) error {
+func (s *MemorySessionStore) CloseSession(ctx context.Context, sessionID string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	delete(s.store, sessionID)
@@ -61,10 +61,10 @@ func (s *MemorySessionStore) CloseSession(c context.Context, sessionID string) e
 
 // GetSession returns existing non-expired session given its ID. Returns nil
 // if session doesn't exist, closed or expired. Returns only transient errors.
-func (s *MemorySessionStore) GetSession(c context.Context, sessionID string) (*auth.Session, error) {
+func (s *MemorySessionStore) GetSession(ctx context.Context, sessionID string) (*auth.Session, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if session, ok := s.store[sessionID]; ok && clock.Now(c).Before(session.Exp) {
+	if session, ok := s.store[sessionID]; ok && clock.Now(ctx).Before(session.Exp) {
 		return &session, nil
 	}
 	return nil, nil

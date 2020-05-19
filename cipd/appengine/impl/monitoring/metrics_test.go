@@ -53,11 +53,7 @@ func TestMetrics(t *testing.T) {
 
 		Convey("configured", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				FakeDB: ipWhitelistDB{
-					IPs: map[string][]string{
-						"127.0.0.1": {"bots"},
-					},
-				},
+				PeerIPWhitelists: []string{"bots"},
 			})
 			FileSize(ctx, 123)
 			So(s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), ShouldEqual, 123)
