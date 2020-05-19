@@ -81,6 +81,7 @@ func NewServer() minter.TokenMinterServer {
 			Mapping:         serviceaccountsv2.GlobalMappingCache.Mapping,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
 			MintIDToken:     auth.MintIDTokenForServiceAccount,
+			LogToken:        serviceaccountsv2.LogToken,
 		},
 	}
 }
