@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "2931f2b1_6c94f4dd",
+        "filename": "server/auth/authtest/db.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T05:18:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "584620cb_cbb78dda",
+      "range": {
+        "startLine": 110,
+        "startChar": 45,
+        "endLine": 110,
+        "endChar": 47
+      },
+      "revId": "b3aff7e7add0c2619519ba952c77ced16e4829ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "123e016e_257cc487",
         "filename": "server/auth/authtest/state.go",
         "patchSetId": 2
