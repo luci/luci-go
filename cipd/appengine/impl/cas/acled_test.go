@@ -41,9 +41,9 @@ func TestACLDecorator(t *testing.T) {
 	admin := identity.Identity("user:admin@example.com")
 
 	state := &authtest.FakeState{
-		FakeDB: authtest.FakeDB{
-			admin: {"administrators"},
-		},
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockMembership(admin, "administrators"),
+		),
 	}
 	ctx := auth.WithState(context.Background(), state)
 

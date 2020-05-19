@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -27,19 +28,120 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 )
 
-// FakeDB implements user group checking part of db.DB (IsMember).
+// FakeDB implements authdb.DB by mocking membership and permission checks.
 //
-// It is a mapping "identity -> list of its groups". Intended to be used mostly
-// for testing request handlers, thus all other DB methods are hardcoded to
-// implement some default behavior sufficient for fake requests to pass
-// authentication.
-type FakeDB map[identity.Identity][]string
+// Initialize it with a bunch of mocks like:
+//
+// db := authtest.NewFakeDB(
+//   authtest.MockMembership("user:a@example.com", "group"),
+//   authtest.MockPermission("user:a@example.com", "proj:realm", perm),
+//   ...
+// )
+//
+// The list of mocks can also be extended later via db.AddMocks(...).
+type FakeDB struct {
+	m     sync.RWMutex
+	err   error                              // if not nil, return this error
+	perID map[identity.Identity]*mockedForID // id => groups and perms it has
+	ips   map[string]stringset.Set           // IP => whitelists it belongs to
+}
 
-var _ authdb.DB = (FakeDB)(nil)
+var _ authdb.DB = (*FakeDB)(nil)
+
+// mockedForID is mocked groups and permissions of some identity.
+type mockedForID struct {
+	groups stringset.Set // a set of group names
+	perms  stringset.Set // a set of "<realm>\t<perm>" strings
+}
+
+// mockedPermKey is used as a key in mocked.perms map.
+func mockedPermKey(realm string, perm realms.Permission) string {
+	return fmt.Sprintf("%s\t%s", realm, perm)
+}
+
+// MockedDatum is a return value of various Mock* constructors.
+type MockedDatum struct {
+	// apply mutates the db to apply the mock, called under the write lock.
+	apply func(db *FakeDB)
+}
+
+// MockMembership modifies db to make IsMember(id, group) == true.
+func MockMembership(id identity.Identity, group string) MockedDatum {
+	return MockedDatum{
+		apply: func(db *FakeDB) { db.mockedForID(id).groups.Add(group) },
+	}
+}
+
+// MockPermission modifies db to make HasPermission(id, realm, perm) == true.
+//
+// Panics if `realm` is not a valid globally scoped realm, i.e. it doesn't look
+// like "<project>:<realm>".
+func MockPermission(id identity.Identity, realm string, perm realms.Permission) MockedDatum {
+	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+		panic(err)
+	}
+	return MockedDatum{
+		apply: func(db *FakeDB) { db.mockedForID(id).perms.Add(mockedPermKey(realm, perm)) },
+	}
+}
+
+// MockIPWhitelist modifies db to make IsInWhitelist(ip, whitelist) == true.
+//
+// Panics if `ip` is not a valid IP address.
+func MockIPWhitelist(ip, whitelist string) MockedDatum {
+	if net.ParseIP(ip) == nil {
+		panic(fmt.Sprintf("%q is not a valid IP address", ip))
+	}
+	return MockedDatum{
+		apply: func(db *FakeDB) {
+			wl, ok := db.ips[ip]
+			if !ok {
+				wl = stringset.New(1)
+				if db.ips == nil {
+					db.ips = make(map[string]stringset.Set, 1)
+				}
+				db.ips[ip] = wl
+			}
+			wl.Add(whitelist)
+		},
+	}
+}
+
+// MockError modifies db to make its methods return this error.
+//
+// `err` may be nil, in which case the previously mocked error is removed.
+func MockError(err error) MockedDatum {
+	return MockedDatum{
+		apply: func(db *FakeDB) { db.err = err },
+	}
+}
+
+// NewFakeDB creates a FakeDB populated with the given mocks.
+//
+// Construct mocks using MockMembership, MockPermission, MockIPWhitelist and
+// MockError functions.
+func NewFakeDB(mocks ...MockedDatum) *FakeDB {
+	db := &FakeDB{}
+	db.AddMocks(mocks...)
+	return db
+}
+
+// AddMocks applies a bunch of mocks to the state in the db.
+func (db *FakeDB) AddMocks(mocks ...MockedDatum) {
+	db.m.Lock()
+	defer db.m.Unlock()
+	for _, m := range mocks {
+		m.apply(db)
+	}
+}
 
 // Use installs the fake db into the context.
-func (db FakeDB) Use(c context.Context) context.Context {
-	return auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
+//
+// Note that if you use auth.WithState(ctx, &authtest.FakeState{...}), you don't
+// need this method. Modify FakeDB in the FakeState instead. See its doc for
+// some examples.
+func (db *FakeDB) Use(ctx context.Context) context.Context {
+	return auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
 			return db, nil
 		}
@@ -48,10 +150,8 @@ func (db FakeDB) Use(c context.Context) context.Context {
 }
 
 // IsMember is part of authdb.DB interface.
-//
-// It returns true if any of 'groups' is listed in db[id].
-func (db FakeDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
-	hits, err := db.CheckMembership(c, id, groups)
+func (db *FakeDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
+	hits, err := db.CheckMembership(ctx, id, groups)
 	if err != nil {
 		return false, err
 	}
@@ -59,96 +159,99 @@ func (db FakeDB) IsMember(c context.Context, id identity.Identity, groups []stri
 }
 
 // CheckMembership is part of authdb.DB interface.
-//
-// It returns a list of groups the identity belongs to.
-func (db FakeDB) CheckMembership(c context.Context, id identity.Identity, groups []string) (out []string, err error) {
-	belongsTo := stringset.NewFromSlice(db[id]...)
-	for _, g := range groups {
-		if belongsTo.Has(g) {
-			out = append(out, g)
+func (db *FakeDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) (out []string, err error) {
+	db.m.RLock()
+	defer db.m.RUnlock()
+
+	if db.err != nil {
+		return nil, db.err
+	}
+
+	if mocked := db.perID[id]; mocked != nil {
+		for _, group := range groups {
+			if mocked.groups.Has(group) {
+				out = append(out, group)
+			}
 		}
 	}
+
 	return
 }
 
 // HasPermission is part of authdb.DB interface.
-//
-// Currently always returns false.
-func (db FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
-	// TODO(vadimsh): Implement a meaningful interface to setup fake permission
-	// checks.
+func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+	db.m.RLock()
+	defer db.m.RUnlock()
+
+	if db.err != nil {
+		return false, db.err
+	}
+
+	if mocked := db.perID[id]; mocked != nil {
+		for _, realm := range realms {
+			if mocked.perms.Has(mockedPermKey(realm, perm)) {
+				return true, nil
+			}
+		}
+	}
+
 	return false, nil
 }
 
 // IsAllowedOAuthClientID is part of authdb.DB interface.
-func (db FakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
+func (db *FakeDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
 	return true, nil
 }
 
 // IsInternalService is part of authdb.DB interface.
-func (db FakeDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+func (db *FakeDB) IsInternalService(ctx context.Context, hostname string) (bool, error) {
 	return false, nil
 }
 
 // GetCertificates is part of authdb.DB interface.
-func (db FakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+func (db *FakeDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, fmt.Errorf("GetCertificates is not implemented by FakeDB")
 }
 
 // GetWhitelistForIdentity is part of authdb.DB interface.
-func (db FakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+func (db *FakeDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
 // IsInWhitelist is part of authdb.DB interface.
-func (db FakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
-	return false, nil
+func (db *FakeDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
+	db.m.RLock()
+	defer db.m.RUnlock()
+	if db.err != nil {
+		return false, db.err
+	}
+	return db.ips[ip.String()].Has(whitelist), nil
 }
 
 // GetAuthServiceURL is part of authdb.DB interface.
-func (db FakeDB) GetAuthServiceURL(c context.Context) (string, error) {
+func (db *FakeDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("GetAuthServiceURL is not implemented by FakeDB")
 }
 
 // GetTokenServiceURL is part of authdb.DB interface.
-func (db FakeDB) GetTokenServiceURL(c context.Context) (string, error) {
+func (db *FakeDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("GetTokenServiceURL is not implemented by FakeDB")
 }
 
-// FakeErroringDB is authdb.DB with IsMember returning an error.
-type FakeErroringDB struct {
-	FakeDB
-
-	// Error is returned by IsMember.
-	Error error
-}
-
-// IsMember is part of authdb.DB interface.
+// mockedForID returns db.perID[id], initializing it if necessary.
 //
-// It returns db.Error if it is not nil.
-func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
-	if db.Error != nil {
-		return false, db.Error
-	}
-	return db.FakeDB.IsMember(c, id, groups)
-}
-
-// CheckMembership is part of authdb.DB interface.
-//
-// It returns db.Error if it is not nil.
-func (db *FakeErroringDB) CheckMembership(c context.Context, id identity.Identity, groups []string) ([]string, error) {
-	if db.Error != nil {
-		return nil, db.Error
-	}
-	return db.FakeDB.CheckMembership(c, id, groups)
-}
-
-// Use installs the fake db into the context.
-func (db *FakeErroringDB) Use(c context.Context) context.Context {
-	return auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
-		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
-			return db, nil
+// Called under the write lock.
+func (db *FakeDB) mockedForID(id identity.Identity) *mockedForID {
+	m, ok := db.perID[id]
+	if !ok {
+		m = &mockedForID{
+			groups: stringset.New(1),
+			perms:  stringset.New(1),
 		}
-		return cfg
-	})
+		if db.perID == nil {
+			db.perID = make(map[identity.Identity]*mockedForID, 1)
+		}
+		db.perID[id] = m
+	}
+	return m
 }

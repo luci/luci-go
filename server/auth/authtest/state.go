@@ -22,17 +22,39 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/realms"
 )
 
-// FakeState implements auth.State returning predefined values.
+// FakeState implements auth.State by returning predefined values.
 //
-// Inject it into the context when testing handlers that expect auth state:
+// Inject it into the context when testing handlers that expect an auth state:
 //
 //   ctx = auth.WithState(ctx, &authtest.FakeState{
 //     Identity: "user:user@example.com",
 //     IdentityGroups: []string{"admins"},
+//     IdentityPermissions: []authtest.RealmPermission{
+//       {"proj:realm1", perm1},
+//       {"proj:realm1", perm2},
+//     }
 //   })
 //   auth.IsMember(ctx, "admins") -> returns true.
+//   auth.HasPermission(ctx, perm1, []string{"proj:realm1"}) -> returns true.
+//
+// Note that IdentityGroups, IdentityPermissions, PeerIPWhitelists and Error
+// are effective only when FakeDB is nil. They are used as a shortcut to
+// construct the corresponding FakeDB on the fly. If you need to prepare a more
+// complex fake state, pass NewFakeDB(...) as FakeDB instead:
+//
+//   ctx = auth.WithState(ctx, &authtest.FakeState{
+//     Identity: "user:user@example.com",
+//     FakeDB: NewFakeDB(
+//       authtest.MockMembership("user:user@example.com", "group"),
+//       authtest.MockMembership("user:another@example.com", "group"),
+//       authtest.MockPermission("user:user@example.com", "proj:realm1", perm1),
+//       ...
+//     ),
+//   })
+
 type FakeState struct {
 	// Identity is main identity associated with the request.
 	//
@@ -42,12 +64,20 @@ type FakeState struct {
 	// IdentityGroups is list of groups the calling identity belongs to.
 	IdentityGroups []string
 
-	// Error if not nil is returned by IsMember checks.
+	// IdentityPermissions is a list of (realm, permission) tuples that define
+	// caller's permissions.
+	IdentityPermissions []RealmPermission
+
+	// PeerIPWhitelists is a list of IP whitelists the caller IP belongs to.
+	PeerIPWhitelists []string
+
+	// Error, if not nil, is returned by auth DB checks.
 	Error error
 
-	// FakeDB is a mock authdb.DB implementation to use.
+	// FakeDB is an authdb.DB implementation to use.
 	//
-	// If not nil, overrides 'IdentityGroups' and 'Error'.
+	// If not nil, takes precedence over IdentityGroups, IdentityPermissions,
+	// PeerIPWhitelists and Error.
 	FakeDB authdb.DB
 
 	// PeerIdentityOverride may be set for PeerIdentity() to return custom value.
@@ -67,6 +97,12 @@ type FakeState struct {
 	UserCredentialsOverride *oauth2.Token
 }
 
+// RealmPermission is used to populate IdentityPermissions in FakeState.
+type RealmPermission struct {
+	Realm      string
+	Permission realms.Permission
+}
+
 var _ auth.State = (*FakeState)(nil)
 
 // Authenticator is part of State interface.
@@ -83,10 +119,26 @@ func (s *FakeState) DB() authdb.DB {
 	if s.FakeDB != nil {
 		return s.FakeDB
 	}
-	return &FakeErroringDB{
-		FakeDB: FakeDB{s.User().Identity: s.IdentityGroups},
-		Error:  s.Error,
+
+	ident := s.User().Identity
+	peerIP := s.PeerIP().String()
+
+	// We construct it on the fly each time to allow FakeState users to modify
+	// Identity, IdentityGroups, IdentityPermissions, etc. dynamically.
+	mocks := []MockedDatum{}
+	for _, group := range s.IdentityGroups {
+		mocks = append(mocks, MockMembership(ident, group))
 	}
+	for _, perm := range s.IdentityPermissions {
+		mocks = append(mocks, MockPermission(ident, perm.Realm, perm.Permission))
+	}
+	for _, wl := range s.PeerIPWhitelists {
+		mocks = append(mocks, MockIPWhitelist(peerIP, wl))
+	}
+	if s.Error != nil {
+		mocks = append(mocks, MockError(s.Error))
+	}
+	return NewFakeDB(mocks...)
 }
 
 // Method is part of State interface.

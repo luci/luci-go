@@ -27,8 +27,7 @@ func testingContext(mockClock bool) context.Context {
 	ctx := context.Background()
 
 	// Enable logging to stdout/stderr.
-	logCfg := gologger.StdConfig
-	ctx = logCfg.Use(ctx)
+	ctx = gologger.StdConfig.Use(ctx)
 
 	if mockClock {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
