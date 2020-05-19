@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 
@@ -119,21 +118,12 @@ func mainImpl() int {
 
 	opts.BaseDir = filepath.Join(cwd, "x")
 
-	exeArgs := input.Build.Exe.Cmd
-	payloadPath := input.PayloadPath
-	if len(exeArgs) == 0 {
-		// TODO(iannucci): delete me with ExecutablePath.
-		var exe string
-		payloadPath, exe = path.Split(input.ExecutablePath)
-		exeArgs = []string{exe}
-	}
-	exePath, err := filepath.Abs(filepath.Join(payloadPath, exeArgs[0]))
+	exePath, err := filepath.Abs(input.ExecutablePath)
 	check(errors.Annotate(err, "absoluting exe path %q", input.ExecutablePath).Err())
 	if runtime.GOOS == "windows" {
 		exePath, err = resolveExe(exePath)
 		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
 	}
-	exeArgs[0] = exePath
 
 	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
 	// for the top level user stdout/stderr streams.
@@ -156,9 +146,9 @@ func mainImpl() int {
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	builds, err := host.Run(cctx, opts, func(ctx context.Context) error {
-		logging.Infof(ctx, "running luciexe: %q", exeArgs)
+		logging.Infof(ctx, "running luciexe: %q", exePath)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
-		subp, err := invoke.Start(ctx, exeArgs, input.Build, &invoke.Options{
+		subp, err := invoke.Start(ctx, exePath, input.Build, &invoke.Options{
 			CacheDir: input.CacheDir,
 		})
 		if err != nil {

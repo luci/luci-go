@@ -35,15 +35,13 @@ func (b *Buildbucket) WriteProperties(inputs map[string]interface{}) {
 //
 //   b.BbagentArgs
 //   b.BbagentArgs.Build
-//   b.BbagentArgs.Build.Exe
-//   b.BbagentArgs.Build.Infra
-//   b.BbagentArgs.Build.Infra.Logdog
-//   b.BbagentArgs.Build.Infra.Swarming
 //   b.BbagentArgs.Build.Input
 //   b.BbagentArgs.Build.Input.Properties
+//   b.BbagentArgs.Build.Infra
+//   b.BbagentArgs.Build.Infra.Swarming
+//   b.BbagentArgs.Build.Infra.Logdog
 func (b *Buildbucket) EnsureBasics() {
 	proto.Merge(b, &Buildbucket{BbagentArgs: &bbpb.BBAgentArgs{Build: &bbpb.Build{
-		Exe: &bbpb.Executable{},
 		Input: &bbpb.Build_Input{
 			Properties: &structpb.Struct{},
 		},

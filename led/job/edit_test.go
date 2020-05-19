@@ -573,16 +573,12 @@ func TestTaskPayload(t *testing.T) {
 			skipSW: true,
 			fn: func(jd *Definition) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayloadSource("", "")
-					je.TaskPayloadPath("")
-					je.TaskPayloadCmd(nil)
+					je.TaskPayload("", "", "")
 				})
-				hli := jd.HighLevelInfo()
-				pkg, vers := hli.TaskPayloadSource()
+				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
 				So(pkg, ShouldEqual, "")
 				So(vers, ShouldEqual, "")
-				So(hli.TaskPayloadPath(), ShouldEqual, "")
-				So(hli.TaskPayloadCmd(), ShouldResemble, []string{"luciexe"})
+				So(path, ShouldEqual, ".")
 			},
 		},
 
@@ -591,14 +587,12 @@ func TestTaskPayload(t *testing.T) {
 			skipSW: true,
 			fn: func(jd *Definition) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayloadSource("", "")
-					je.TaskPayloadPath("some/path")
+					je.TaskPayload("", "", "some/path")
 				})
-				hli := jd.HighLevelInfo()
-				pkg, vers := hli.TaskPayloadSource()
+				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
 				So(pkg, ShouldEqual, "")
 				So(vers, ShouldEqual, "")
-				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
+				So(path, ShouldEqual, "some/path")
 			},
 		},
 
@@ -607,30 +601,12 @@ func TestTaskPayload(t *testing.T) {
 			skipSW: true,
 			fn: func(jd *Definition) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayloadSource("pkgname", "latest")
-					je.TaskPayloadPath("some/path")
+					je.TaskPayload("pkgname", "latest", "some/path")
 				})
-				hli := jd.HighLevelInfo()
-				pkg, vers := hli.TaskPayloadSource()
+				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
 				So(pkg, ShouldEqual, "pkgname")
 				So(vers, ShouldEqual, "latest")
-				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
-			},
-		},
-
-		{
-			name:   "cipd latest",
-			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayloadSource("pkgname", "")
-					je.TaskPayloadPath("some/path")
-				})
-				hli := jd.HighLevelInfo()
-				pkg, vers := hli.TaskPayloadSource()
-				So(pkg, ShouldEqual, "pkgname")
-				So(vers, ShouldEqual, "latest")
-				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
+				So(path, ShouldEqual, "some/path")
 			},
 		},
 	})

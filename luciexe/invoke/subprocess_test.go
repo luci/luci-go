@@ -77,10 +77,8 @@ func TestSubprocess(t *testing.T) {
 
 		o.Env.Set(selfTestEnvvar, "1")
 
-		selfArgs := []string{os.Args[0]}
-
 		Convey(`defaults`, func() {
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			sp, err := Start(ctx, os.Args[0], &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -90,7 +88,7 @@ func TestSubprocess(t *testing.T) {
 
 		Convey(`collect`, func() {
 			o.CollectOutput = true
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			sp, err := Start(ctx, os.Args[0], &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			So(sp.Step, ShouldBeNil)
 			build, err := sp.Wait()
@@ -106,7 +104,7 @@ func TestSubprocess(t *testing.T) {
 			start := time.Now()
 
 			o.Env.Set(selfTestEnvvar, "hang")
-			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			sp, err := Start(ctx, os.Args[0], &bbpb.Build{Id: 1}, o)
 			So(err, ShouldBeNil)
 			cancel()
 			_, err = sp.Wait()

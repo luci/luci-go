@@ -15,6 +15,8 @@
 package job
 
 import (
+	"path"
+
 	"github.com/golang/protobuf/jsonpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -130,18 +132,10 @@ func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
 	return
 }
 
-func (b bbInfo) TaskPayloadSource() (cipdPkg, cipdVers string) {
+func (b bbInfo) TaskPayload() (cipdPkg, cipdVers string, pathInTask string) {
 	exe := b.GetBbagentArgs().GetBuild().GetExe()
 	cipdPkg = exe.GetCipdPackage()
 	cipdVers = exe.GetCipdVersion()
-	return
-}
-
-func (b bbInfo) TaskPayloadPath() (path string) {
-	return b.GetBbagentArgs().PayloadPath
-}
-
-func (b bbInfo) TaskPayloadCmd() (args []string) {
-	args = append(args, b.GetBbagentArgs().GetBuild().GetExe().GetCmd()...)
+	pathInTask = path.Dir(b.GetBbagentArgs().GetExecutablePath())
 	return
 }

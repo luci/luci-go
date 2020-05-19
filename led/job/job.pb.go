@@ -30,6 +30,13 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // Buildbucket message into BBAgentArgs, but for now we store it separately to
 // get led v2 up and running.
 type Buildbucket struct {
+	// NOTE: for kitchen builds, the "executable_path" field is used to hold the
+	// argument "$checkout_dir/luciexe". This is a bit bogus, as for kitchen we
+	// only will use the "$checkout_dir" bit; but it makes it easy to upgrade
+	// a task from kitchen to luciexe by just flipping the 'legacy_kitchen'
+	// boolean.
+	//
+	// TODO(iannucci): luciexe should be run_build
 	BbagentArgs      *proto1.BBAgentArgs   `protobuf:"bytes,1,opt,name=bbagent_args,json=bbagentArgs,proto3" json:"bbagent_args,omitempty"`
 	CipdPackages     []*api.CIPDPackage    `protobuf:"bytes,2,rep,name=cipd_packages,json=cipdPackages,proto3" json:"cipd_packages,omitempty"`
 	EnvVars          []*api.StringPair     `protobuf:"bytes,3,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty"`

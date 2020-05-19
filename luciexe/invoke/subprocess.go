@@ -47,7 +47,7 @@ type Subprocess struct {
 //
 // Args:
 //  * ctx will be used for deadlines/cancellation of the started luciexe.
-//  * luciexeArgs[0] must be the full absolute path to the luciexe binary.
+//  * luciexePath must be the full absolute path to the luciexe binary.
 //  * input must be the Build message you wish to pass to the luciexe binary.
 //  * opts is optional (may be nil to take all defaults)
 //
@@ -60,7 +60,7 @@ type Subprocess struct {
 // The caller SHOULD immediately take Subprocess.Step, append it to the current
 // Build state, and send that (e.g. using `exe.BuildSender`). Otherwise this
 // luciexe's steps will not show up in the Build.
-func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
+func Start(ctx context.Context, luciexePath string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
 	inputData, err := proto.Marshal(input)
 	if err != nil {
 		return nil, errors.Annotate(err, "marshalling input Build").Err()
@@ -84,11 +84,7 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		allClosed <- err.Get()
 	}()
 
-	args := make([]string, 0, len(luciexeArgs)+len(launchOpts.args)-1)
-	args = append(args, luciexeArgs[1:]...)
-	args = append(args, launchOpts.args...)
-
-	cmd := exec.CommandContext(ctx, luciexeArgs[0], args...)
+	cmd := exec.CommandContext(ctx, luciexePath, launchOpts.args...)
 	cmd.Env = launchOpts.env.Sorted()
 	cmd.Dir = launchOpts.workDir
 	cmd.Stdin = bytes.NewBuffer(inputData)

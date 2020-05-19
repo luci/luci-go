@@ -17,7 +17,6 @@ package jobcreate
 import (
 	"context"
 	"path"
-	"strings"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -107,15 +106,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 
 		// drop the executable package; it's canonically represented by
 		// out.BBAgentArgs.Build.Exe.
-		if exePath := bb.BbagentArgs.ExecutablePath; exePath != "" {
-			// convert to new mode
-			payload, arg := path.Split(exePath)
-			bb.BbagentArgs.ExecutablePath = ""
-			bb.BbagentArgs.PayloadPath = strings.TrimSuffix(payload, "/")
-			bb.BbagentArgs.Build.Exe.Cmd = []string{arg}
-		}
-
-		dropRecipePackage(&bb.CipdPackages, bb.BbagentArgs.PayloadPath)
+		dropRecipePackage(&bb.CipdPackages, path.Dir(bb.BbagentArgs.ExecutablePath))
 
 		// drop legacy recipe fields
 		if recipe := bb.BbagentArgs.Build.Infra.Recipe; recipe != nil {

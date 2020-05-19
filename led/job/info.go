@@ -79,24 +79,14 @@ type HighLevelInfo interface {
 	// its JSON-encoded value.
 	Properties() (map[string]string, error)
 
-	// TaskPayloadSource returns the CIPD package and version of the user's task
-	// payload. If they are empty, then it means the source of the user task
-	// payload is within the UserPayload in the job.Definition.
-	TaskPayloadSource() (cipdPkg, cipdVers string)
-
-	// TaskPayloadPath returns the location of where bbagent/kitchen will locate
-	// the task payload data within the task.
-	TaskPayloadPath() (path string)
-
-	// TaskPayloadCmd returns the arguments used to run the task payload.
+	// TaskPayload returns information about where the job's payload lives:
 	//
-	// args[0] is the path, relative to the payload path, of the executable to
-	// run.
-	//
-	// If this is empty, it defaults to []string{"luciexe"}.
-	//
-	// NOTE: Kitchen tasks ignore this value.
-	TaskPayloadCmd() (args []string)
+	//  * (cipdPkg, cipdVers) - If both are set, they describe the cipd package
+	//    where the job will pull the payload from. If unset, payload is assumed
+	//    to live in UserPayload.
+	//  * pathInTask - the path from the task root to the directory containing the
+	//    payload.
+	TaskPayload() (cipdPkg, cipdVers string, pathInTask string)
 
 	// Returns the gerrit changes associated with this job.
 	GerritChanges() []*bbpb.GerritChange
