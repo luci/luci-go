@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8dcf6aa_31a3a6ed",
+        "filename": "resultdb/internal/artifactcontent/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T21:18:14Z",
+      "side": 1,
+      "message": "mostly cargo culted from prpc code, but simplified",
+      "revId": "c4a7e8f3c07f33b197bece5f70cf0a161604a02d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
