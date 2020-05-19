@@ -22,6 +22,30 @@
       "revId": "8c2f8f041ba3db7f3cb7bc578243b7ea81c987b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0433331_c9c30fc5",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-05-19T05:31:47Z",
+      "side": 1,
+      "message": "No, I think requiring aboslute path is bit annoying after fixing the issue.",
+      "parentUuid": "f48d6fdc_4b4bf7ec",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 30
+      },
+      "revId": "8c2f8f041ba3db7f3cb7bc578243b7ea81c987b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
