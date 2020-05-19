@@ -57,7 +57,8 @@ func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 			"Definition contains multiple isolateds: %v", isolatedOptions).Err()
 	}
 	for _, v := range isolatedOptions {
-		return v, nil
+		ret := *v
+		return &ret, nil
 	}
 	return nil, nil
 }
