@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1b749d84_3a2962f3",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T00:07:46Z",
+      "side": 1,
+      "message": "Total number of",
+      "range": {
+        "startLine": 290,
+        "startChar": 5,
+        "endLine": 290,
+        "endChar": 20
+      },
+      "revId": "24d2599c34acf2de79f06e7bc3c05a11e17a086a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
