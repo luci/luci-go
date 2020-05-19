@@ -20,7 +20,7 @@
 import { computed, observable } from 'mobx';
 
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
-import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExoneration, VariantStatus } from './test_node';
+import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
 
 
 /**
@@ -73,7 +73,6 @@ export class TestLoader {
       const {value, done} = await this.testIter.next();
       if (done) {
         this._done = true;
-        this.node.finalizeLoading();
         break;
       }
       this.node.addTest(value);
@@ -113,33 +112,35 @@ class TestVariant implements ReadonlyVariant {
 // Use an unexported class that implements an exported interface to artificially
 // create file-scoped access modifier.
 class Test implements ReadonlyTest {
-  // Use an key-index map for O(1) lookup.
-  private readonly variantKeyIndexMap: {[key: string]: number | undefined} = {};
+  // Use a map for O(1) lookup.
+  @observable private readonly variantMap = new Map<string, TestVariant>();
 
-  // Use an array instead of a dictionary so
-  //   1. the order is stable when new variants are added.
-  //   2. we can keep variantKey as an implementation detail.
-  @observable.shallow readonly variants: TestVariant[] = [];
+  @computed get variants(): readonly TestVariant[] {
+    return [...this.variantMap.entries()]
+      .sort(([key1], [key2]) => key1.localeCompare(key2))
+      .map(([_k, v]) => v);
+  }
+
   constructor(readonly id: string) {}
 
   private getOrCreateTestVariant(variant: Variant) {
     const variantKey = keyForVariant(variant);
-    let variantIndex = this.variantKeyIndexMap[variantKey];
-    if (variantIndex === undefined) {
-      variantIndex = this.variants.length;
-      this.variants.push(new TestVariant(variant, variantKey));
-      this.variantKeyIndexMap[variantKey] = variantIndex;
+    let testVariant = this.variantMap.get(variantKey);
+    if (testVariant === undefined) {
+      testVariant = new TestVariant(variant, variantKey);
+      this.variantMap.set(variantKey, testVariant);
     }
-    return this.variants[variantIndex];
+    return testVariant;
   }
 
-  addTestResultOrExoneration(testResultOrExoneration: TestResultOrExoneration) {
-    const variant = this.getOrCreateTestVariant(testResultOrExoneration.variant || {def: {}});
-    if (isTestResult(testResultOrExoneration)) {
-      variant.results.push(testResultOrExoneration);
-    } else {
-      variant.exonerations.push(testResultOrExoneration);
-    }
+  addResult(result: TestResult) {
+    const variant = this.getOrCreateTestVariant(result.variant || {def: {}});
+    variant.results.push(result);
+  }
+
+  addExoneration(exoneration: TestExoneration) {
+    const variant = this.getOrCreateTestVariant(exoneration.variant || {def: {}});
+    variant.exonerations.push(exoneration);
   }
 }
 
@@ -181,55 +182,36 @@ export async function* streamTestExonerations(req: QueryTestExonerationsRequest,
 }
 
 /**
- * Combines results generator and exoneration generator.
- * Yields TestResultOrExoneration with variant key sorted by testId.
- * When a result and an exoneration have the same ID, the result is yielded
- * first.
- * @param results must be sorted by testId.
- * @param exonerations must be sorted by testId.
- */
-async function* streamTestResultOrExonerations(results: AsyncIterableIterator<TestResult>, exonerations: AsyncIterableIterator<TestExoneration>) {
-  let [resultNext, exonerationNext] = await Promise.all([results.next(), exonerations.next()]);
-
-  while (!resultNext.done && !exonerationNext.done) {
-    if (resultNext.value.testId.localeCompare(exonerationNext.value.testId) <= 0) {
-      yield resultNext.value;
-      resultNext = await results.next();
-    } else {
-      yield exonerationNext.value;
-      exonerationNext = await exonerations.next();
-    }
-  }
-  if (!resultNext.done) {
-    yield resultNext.value;
-    yield* results;
-  }
-  if (!exonerationNext.done) {
-    yield exonerationNext.value;
-    yield* exonerations;
-  }
-}
-
-/**
  * Groups test results and exonerations into Test objects.
- * @param results must be sorted by testId.
- * @param exonerations must be sorted by testId.
+ * Yielded tests could be modified when new results and exonerations are
+ * fetched.
+ * Exonerations are loaded before results and the number of exonerations is
+ * expected to be small.
  */
 export async function* streamTests(results: AsyncIterableIterator<TestResult>, exonerations: AsyncIterableIterator<TestExoneration>): AsyncIterableIterator<ReadonlyTest> {
-  const testResultOrExonerations = streamTestResultOrExonerations(results, exonerations);
-  let test: Test | undefined;
-  for await (const nextResultOrExoneration of testResultOrExonerations) {
-    if (nextResultOrExoneration.testId === test?.id) {
-      test.addTestResultOrExoneration(nextResultOrExoneration);
-    } else {
-      if (test !== undefined) {
-        yield test;
-      }
-      test = new Test(nextResultOrExoneration.testId);
-      test.addTestResultOrExoneration(nextResultOrExoneration);
+  const testMap = new Map<string, Test>();
+
+  for await (const exoneration of exonerations) {
+    let test = testMap.get(exoneration.testId);
+    if (test) {
+      test.addExoneration(exoneration);
+      continue;
     }
+    test = new Test(exoneration.testId);
+    testMap.set(exoneration.testId, test);
+    test.addExoneration(exoneration);
+    yield test;
   }
-  if (test !== undefined) {
+
+  for await (const result of results) {
+    let test = testMap.get(result.testId);
+    if (test) {
+      test.addResult(result);
+      continue;
+    }
+    test = new Test(result.testId);
+    testMap.set(result.testId, test);
+    test.addResult(result);
     yield test;
   }
 }
