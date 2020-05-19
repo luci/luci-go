@@ -45,6 +45,30 @@
       "revId": "5ff99846b80e1e86fbf5c3b112a9452427ae8bce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7bc2017a_cc18d09a",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-19T04:44:06Z",
+      "side": 0,
+      "message": "i believe this was cargo-culted",
+      "parentUuid": "f425a4c9_db4690f1",
+      "range": {
+        "startLine": 57,
+        "startChar": 2,
+        "endLine": 57,
+        "endChar": 47
+      },
+      "revId": "5ff99846b80e1e86fbf5c3b112a9452427ae8bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
