@@ -48,12 +48,12 @@
 // At the root of every tree of luciexe invocations there is a 'host'
 // application which sets up an manages all environmental singletons (like the
 // Logdog 'butler' service, the LUCI ambient authentication service, etc.). This
-// host application is responsible for intercepting and merging all
+// Host Application is responsible for intercepting and merging all
 // 'build.proto' streams emitted within this tree of luciexes (see "Recursive
-// Invocation"). The host application may choose what happens to these
+// Invocation"). The Host Application may choose what happens to these
 // intercepted build.proto messages.
 //
-// The host application MUST:
+// The Host Application MUST:
 //   * Run a logdog butler service and expose all relevant LOGDOG_* environment
 //     variables such that the following client libraries can stream log data:
 //       * Golang: go.chromium.org/luci/logdog/client/butlerlib/bootstrap
@@ -63,14 +63,14 @@
 //   * Set up a local LUCI ambient authentication service which luciexe's can
 //     use to mint auth tokens.
 //   * Prepare an empty temporary directory which will house tempdirs and
-//     workdirs for all luciexe invocations. The host application MAY clean
+//     workdirs for all luciexe invocations. The Host Application MAY clean
 //     this directory up, but it may be useful to leak it for debugging.
-//     It's permissible for the host application to defer this cleanup to an
+//     It's permissible for the Host Application to defer this cleanup to an
 //     external process (e.g. buildbucket's agent may defer this to swarming).
 //
-// The host application MAY hook additional streams for debugging/logging; it is
+// The Host Application MAY hook additional streams for debugging/logging; it is
 // frequently convenient to hook the stderr/stdout streams from the top level
-// luciexe and tee them to the host application's stdout/stderr.
+// luciexe and tee them to the Host Application's stdout/stderr.
 //
 // For example: the `go.chromium.org/luci/buildbucket/cmd/agent` binary forwards
 // these merged build.proto messages to the Buildbucket service, and also
@@ -79,15 +79,15 @@
 // /dev/null or render them as html. However, from the point of view of the
 // luciexe that they run, this is transparent.
 //
-// Host applications MAY implement 'backpressure' on the luciexe binaries by
+// Host Applications MAY implement 'backpressure' on the luciexe binaries by
 // throttling the rate at which the Logdog butler accepts data on its various
 // streams. However, doing this could introduce timing issues in the luciexe
 // binaries as they try to run, so this should be done thoughtfully.
 //
-// If a host application detects a protocol violation from a luciexe within its
+// If a Host Application detects a protocol violation from a luciexe within its
 // purview, it SHOULD report the violation (in a manner of its choosing) and
 // MUST consider the entire Build status to be INFRA_FAILURE. In addition the
-// host application SHOULD attempt to kill (via process group SIGTERM/SIGKILL on
+// Host Application SHOULD attempt to kill (via process group SIGTERM/SIGKILL on
 // *nix, and CTRL+BREAK/Terminate on windows) the luciexe hierarchy. The host
 // application MAY provide a window of time between the initial "please stop"
 // signal and the "you die now" signal, but this comes with the usual caveats of
@@ -99,8 +99,6 @@
 //
 // When invoking a luciexe, the parent process has a couple responsibilities. It
 // must:
-//
-//   * Start the luciexe with an empty current working directory (CWD).
 //
 //   * Set $TEMPDIR, $TMPDIR, $TEMP, $TMP and $MAC_CHROMIUM_TMPDIR to all point
 //     to the same, empty directory.
@@ -115,9 +113,13 @@
 //   * Set the $LOGDOG_NAMESPACE to a prefix which namespaces all logdog streams
 //     generated from the luciexe.
 //
+// The CWD is up to your application. Some contexts (like Buildbucket) will
+// guarantee an empty CWD, but others (like recursive invocation) may explicitly
+// share CWD between multiple luciexe's.
+//
 // The tempdir and workdir paths SHOULD NOT be cleaned up by the invoking
-// process. Instead, the invoking process should defer to the host application
-// to provide this cleanup, since the host application may be configured to leak
+// process. Instead, the invoking process should defer to the Host Application
+// to provide this cleanup, since the Host Application may be configured to leak
 // these for debugging purposes.
 //
 // The invoker MUST attach the stdout/stderr to the logdog butler as text
@@ -134,10 +136,10 @@
 //
 // Once running, the luciexe MUST read a binary-encoded buildbucket.v2.Build
 // message from stdin until EOF. It MUST NOT assume that any particular fields
-// in the Build message are set. However, the host application MAY fill in any
+// in the Build message are set. However, the Host Application MAY fill in any
 // fields it thinks are useful.
 //
-// As per the host application's responsibilities, the luciexe binary MAY expect
+// As per the Host Application's responsibilities, the luciexe binary MAY expect
 // the "luciexe" and "local_auth" sections of LUCI_CONTEXT to be filled. Other
 // sections of LUCI_CONTEXT MAY also be filled. See the LUCI_CONTEXT docs:
 // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
@@ -219,7 +221,7 @@
 //
 // LUCI Executables MAY invoke other LUCI Executables as sub-steps and have the
 // Steps from the child luciexe show in the parent's Build updates. This is one
-// of the responsibilities of the host application.
+// of the responsibilities of the Host Application.
 //
 // The parent can achieve this by recording a Step (with no children), and
 // a Step.Log named "$build.proto" which points to a "build.proto" stream (see
@@ -254,7 +256,7 @@
 // For implementation-level details, please refer to the following:
 //
 //  * "go.chromium.org/luci/luciexe" - low-level protocol details (this module).
-//  * "go.chromium.org/luci/luciexe/host" - the host application library.
+//  * "go.chromium.org/luci/luciexe/host" - the Host Application library.
 //  * "go.chromium.org/luci/luciexe/invoke" - luciexe invocation.
 //  * "go.chromium.org/luci/luciexe/exe" - luciexe binary helper library.
 //
