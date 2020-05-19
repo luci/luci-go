@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f48d6fdc_4b4bf7ec",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-05-19T05:18:12Z",
+      "side": 1,
+      "message": "Do you plan to revert this later? If so, add a TODO?",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 30
+      },
+      "revId": "8c2f8f041ba3db7f3cb7bc578243b7ea81c987b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
