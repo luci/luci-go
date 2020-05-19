@@ -154,12 +154,6 @@ func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string, 
 
 func (s *swarmingServiceImpl) GetTaskOutput(ctx context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
 	err = retryGoogleRPC(ctx, "GetTaskOutput", func() (ierr error) {
-		// We set a timeout only on this endpoint because this is the only one
-		// that has been observed to time out.
-		// TODO(fuchsia:50776): Evaluate whether the timeout should be enabled
-		// on other endpoints as well.
-		ctx, cancel := context.WithTimeout(ctx, swarmingRPCRequestTimeout)
-		defer cancel()
 		res, ierr = s.service.Task.Stdout(taskID).Context(ctx).Do()
 		return
 	})
@@ -336,7 +330,12 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	if err != nil {
 		return nil, err
 	}
-	s, err := swarming.New(client)
+	// Create a copy of the client so that the timeout only applies to Swarming
+	// RPC requests, not to Isolate requests made by this service. A shallow
+	// copy is ok because only the timeout needs to be different.
+	rpcClient := *client
+	rpcClient.Timeout = swarmingRPCRequestTimeout
+	s, err := swarming.New(&rpcClient)
 	if err != nil {
 		return nil, err
 	}
