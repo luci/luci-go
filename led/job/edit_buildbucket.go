@@ -16,7 +16,6 @@ package job
 
 import (
 	"encoding/json"
-	"path"
 	"sort"
 	"time"
 
@@ -74,22 +73,41 @@ func (bbe *buildbucketEditor) Tags(values []string) {
 	})
 }
 
-func (bbe *buildbucketEditor) TaskPayload(cipdPkg, cipdVers, dirInTask string) {
+func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 	bbe.tweak(func() error {
-		// TODO(iannucci): luciexe should be run_build
-		bbe.bb.BbagentArgs.ExecutablePath = path.Join(dirInTask, "luciexe")
-		if cipdPkg != "" && cipdVers != "" {
-			bbe.bb.BbagentArgs.Build.Exe = &bbpb.Executable{
-				CipdPackage: cipdPkg,
-				CipdVersion: cipdVers,
+		exe := bbe.bb.BbagentArgs.Build.Exe
+		if cipdPkg != "" {
+			exe.CipdPackage = cipdPkg
+			if cipdVers == "" {
+				exe.CipdVersion = "latest"
+			} else {
+				exe.CipdVersion = cipdVers
 			}
 		} else if cipdPkg == "" && cipdVers == "" {
-			bbe.bb.BbagentArgs.Build.Exe = nil
+			exe.CipdPackage = ""
+			exe.CipdVersion = ""
 		} else {
 			return errors.Reason(
 				"cipdPkg and cipdVers must both be set or both be empty: cipdPkg=%q cipdVers=%q",
 				cipdPkg, cipdVers).Err()
 		}
+		return nil
+	})
+}
+
+func (bbe *buildbucketEditor) TaskPayloadPath(path string) {
+	bbe.tweak(func() error {
+		bbe.bb.BbagentArgs.PayloadPath = path
+		return nil
+	})
+}
+
+func (bbe *buildbucketEditor) TaskPayloadCmd(args []string) {
+	bbe.tweak(func() error {
+		if len(args) == 0 {
+			args = []string{"luciexe"}
+		}
+		bbe.bb.BbagentArgs.Build.Exe.Cmd = args
 		return nil
 	})
 }

@@ -85,20 +85,21 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 	// Pass the CIPD package or isolate containing the recipes code into
 	// the led recipe module. This gives the build the information it needs
 	// to launch child builds using the same version of the recipes code.
-	props := ledProperties{LedRunID: logdogProjectPrefix}
-
+	//
 	// The logdog prefix is unique to each led job, so it can be used as an
 	// ID for the job.
-	if payload := jd.GetUserPayload(); payload.GetDigest() != "" {
+	props := ledProperties{LedRunID: logdogProjectPrefix}
+
+	if exe := bb.GetBbagentArgs().GetBuild().GetExe(); exe.GetCipdPackage() != "" {
+		props.CIPDInput = &cipdInput{
+			Package: exe.CipdPackage,
+			Version: exe.CipdVersion,
+		}
+	} else if payload := jd.GetUserPayload(); payload.GetDigest() != "" {
 		props.IsolatedInput = &isoInput{
 			Server:    payload.GetServer(),
 			Namespace: payload.GetNamespace(),
 			Hash:      payload.GetDigest(),
-		}
-	} else if pkg := bb.GetBbagentArgs().GetBuild().GetExe(); pkg != nil {
-		props.CIPDInput = &cipdInput{
-			Package: pkg.GetCipdPackage(),
-			Version: pkg.GetCipdVersion(),
 		}
 	}
 
@@ -274,7 +275,6 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 
 	// TODO(iannucci): have bbagent set 'logdog.viewer_url' to the milo build
 	// view URL if there's no buildbucket build associated with it.
-
 	ret := []string{"bbagent${EXECUTABLE_SUFFIX}"}
 	if bb.FinalBuildProtoPath != "" {
 		ret = append(ret, "--output", path.Join("${ISOLATED_OUTDIR}", bb.FinalBuildProtoPath))
@@ -365,11 +365,11 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		return errors.Annotate(err, "generating Command").Err()
 	}
 
-	if exe := bb.BbagentArgs.Build.Exe; exe != nil {
+	if exe := bb.BbagentArgs.Build.Exe; exe.GetCipdPackage() != "" {
 		baseProperties.CipdInputs = append(baseProperties.CipdInputs, &swarmingpb.CIPDPackage{
 			PackageName: exe.CipdPackage,
 			Version:     exe.CipdVersion,
-			DestPath:    path.Dir(bb.BbagentArgs.ExecutablePath),
+			DestPath:    bb.BbagentArgs.PayloadPath,
 		})
 	}
 
