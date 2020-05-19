@@ -158,7 +158,7 @@ func TestQueryable(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(q.ConfigRevision(), ShouldEqual, rev1)
 		qf := q.(*queryableForm)
-		So(qf.bundle["config.cfg"], ShouldResemble, &timestamp.Timestamp{Seconds: 12345})
+		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamp.Timestamp{Seconds: 12345})
 
 		So(counter.GetMulti.Total(), ShouldEqual, 4)
 
@@ -196,6 +196,6 @@ func TestQueryable(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(q.ConfigRevision(), ShouldEqual, rev2)
 		qf = q.(*queryableForm)
-		So(qf.bundle["config.cfg"], ShouldResemble, &timestamp.Timestamp{Seconds: 6789})
+		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamp.Timestamp{Seconds: 6789})
 	})
 }

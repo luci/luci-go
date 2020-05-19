@@ -103,7 +103,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
-			So(tracker.getLatest().build, ShouldResemble, &bbpb.Build{
+			So(tracker.getLatest().build, ShouldResembleProto, &bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -120,7 +120,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
-			So(tracker.getLatest().build, ShouldResemble, &bbpb.Build{
+			So(tracker.getLatest().build, ShouldResembleProto, &bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -190,7 +190,7 @@ func TestAgent(t *testing.T) {
 				},
 			}))
 			// the root stream doesn't have the merge step yet, so it doesn't show up.
-			So(<-merger.MergedBuildC, ShouldResemble, &expect)
+			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
 
 			// Ok, now add the merge step
 			rootTrack.handleNewData(mkDgram(&bbpb.Build{
@@ -209,7 +209,7 @@ func TestAgent(t *testing.T) {
 			})
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Merge|SubStep"})
 			expect.UpdateTime = now
-			So(<-merger.MergedBuildC, ShouldResemble, &expect)
+			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
 
 			Convey(`and shut down`, func() {
 				merger.Close()
@@ -226,7 +226,7 @@ func TestAgent(t *testing.T) {
 						step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
 					}
 				}
-				So(getFinal(), ShouldResemble, &expect)
+				So(getFinal(), ShouldResembleProto, &expect)
 			})
 
 			Convey(`can handle recursive merge steps`, func() {
@@ -250,7 +250,7 @@ func TestAgent(t *testing.T) {
 						Name: "$build.proto", Url: "url://u/sub/super_deep/build.proto",
 					}},
 				})
-				So(<-merger.MergedBuildC, ShouldResemble, &expect)
+				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
 
 				superTrack.handleNewData(mkDgram(&bbpb.Build{
 					Steps: []*bbpb.Step{
@@ -262,7 +262,7 @@ func TestAgent(t *testing.T) {
 				expect.Steps = append(expect.Steps, &bbpb.Step{
 					Name: "Merge|SuperDeep|Hi!",
 				})
-				So(<-merger.MergedBuildC, ShouldResemble, &expect)
+				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
 
 				Convey(`and shut down`, func() {
 					merger.Close()
@@ -281,7 +281,7 @@ func TestAgent(t *testing.T) {
 							step.SummaryMarkdown = "step was never finalized; did the build crash?"
 						}
 					}
-					So(getFinal(), ShouldResemble, &expect)
+					So(getFinal(), ShouldResembleProto, &expect)
 				})
 			})
 		})

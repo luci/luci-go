@@ -101,7 +101,7 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetPrefixMetadata happy path", func() {
 			resp, err := callGet("a/b/c/d", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, leafMeta)
+			So(resp, ShouldResembleProto, leafMeta)
 		})
 
 		Convey("GetInheritedPrefixMetadata happy path", func() {
@@ -822,7 +822,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			// Mock "successfully started upload op".
 			cas.BeginUploadImpl = func(_ context.Context, req *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				So(req, ShouldResemble, &api.BeginUploadRequest{
+				So(req, ShouldResembleProto, &api.BeginUploadRequest{
 					Object: &api.ObjectRef{
 						HashAlgo:  api.HashAlgo_SHA1,
 						HexDigest: digest,
@@ -834,7 +834,7 @@ func TestRegisterInstance(t *testing.T) {
 			// The instance is not uploaded yet => asks to upload.
 			resp, err := impl.RegisterInstance(ctx, inst)
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
+			So(resp, ShouldResembleProto, &api.RegisterInstanceResponse{
 				Status:   api.RegistrationStatus_NOT_UPLOADED,
 				UploadOp: &uploadOp,
 			})
@@ -853,7 +853,7 @@ func TestRegisterInstance(t *testing.T) {
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
+			So(resp, ShouldResembleProto, &api.RegisterInstanceResponse{
 				Status:   api.RegistrationStatus_REGISTERED,
 				Instance: fullInstProto,
 			})
@@ -864,7 +864,7 @@ func TestRegisterInstance(t *testing.T) {
 			So(ent.ProcessorsPending, ShouldResemble, []string{"proc_id_1"})
 			tqt := tq.GetScheduledTasks()
 			So(tqt, ShouldHaveLength, 1)
-			So(tqt[0].Payload, ShouldResemble, &tasks.RunProcessors{
+			So(tqt[0].Payload, ShouldResembleProto, &tasks.RunProcessors{
 				Instance: fullInstProto,
 			})
 		})
@@ -878,7 +878,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			resp, err := impl.RegisterInstance(ctx, inst)
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
+			So(resp, ShouldResembleProto, &api.RegisterInstanceResponse{
 				Status: api.RegistrationStatus_ALREADY_REGISTERED,
 				Instance: &api.Instance{
 					Package:      inst.Package,
@@ -2554,7 +2554,7 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Happy path", func() {
 				resp, err := call(goodPkg, goodDigest)
 				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, &api.DescribeClientResponse{
+				So(resp, ShouldResembleProto, &api.DescribeClientResponse{
 					Instance: &api.Instance{
 						Package: goodPkg,
 						Instance: &api.ObjectRef{
