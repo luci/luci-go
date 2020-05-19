@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/runtime/profiling"
 )
 
 type commonFlags struct {
@@ -34,12 +35,14 @@ type commonFlags struct {
 	isolatedFlags  isolatedclient.Flags
 	authFlags      authcli.Flags
 	parsedAuthOpts auth.Options
+	profilerFlags  profiling.Profiler
 }
 
 func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
 	c.isolatedFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
+	c.profilerFlags.AddFlags(&c.Flags)
 }
 
 func (c *commonFlags) Parse() error {
@@ -48,6 +51,9 @@ func (c *commonFlags) Parse() error {
 		return err
 	}
 	if err = c.isolatedFlags.Parse(); err != nil {
+		return err
+	}
+	if err := c.profilerFlags.Start(); err != nil {
 		return err
 	}
 	c.parsedAuthOpts, err = c.authFlags.Options()

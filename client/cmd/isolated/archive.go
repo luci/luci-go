@@ -155,6 +155,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		return 1
 	}
 	defer cl.Close()
+	defer c.profilerFlags.Stop()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
