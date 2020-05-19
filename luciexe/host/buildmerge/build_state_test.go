@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkDgram(build *bbpb.Build) *logpb.LogEntry {
@@ -39,6 +40,13 @@ func mkDgram(build *bbpb.Build) *logpb.LogEntry {
 			Data: data,
 		}},
 	}
+}
+
+func assertStateEqual(actual, expected *buildState) {
+	So(actual.build, ShouldResembleProto, expected.build)
+	So(actual.closed, ShouldEqual, expected.closed)
+	So(actual.final, ShouldEqual, expected.final)
+	So(actual.invalid, ShouldEqual, expected.invalid)
 }
 
 func TestBuildState(t *testing.T) {
@@ -67,7 +75,7 @@ func TestBuildState(t *testing.T) {
 		Convey(`opened in error state`, func() {
 			bs := newBuildStateTracker(ctx, merger, "ns/", false, errors.New("nope"))
 			wait() // for final build
-			So(bs.getLatest(), ShouldResemble, &buildState{
+			assertStateEqual(bs.getLatest(), &buildState{
 				build: &bbpb.Build{
 					SummaryMarkdown: "\n\nError in build protocol: nope",
 					Status:          bbpb.Status_INFRA_FAILURE,
@@ -102,7 +110,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				// No wait, because this handleNewData was ignored.
 
-				So(bs.GetFinal(), ShouldResemble, &buildState{
+				assertStateEqual(bs.GetFinal(), &buildState{
 					build: &bbpb.Build{
 						EndTime:         now,
 						UpdateTime:      now,
@@ -115,7 +123,7 @@ func TestBuildState(t *testing.T) {
 
 				Convey(`can still close, though`, func() {
 					bs.handleNewData(nil)
-					So(bs.GetFinal(), ShouldResemble, &buildState{
+					assertStateEqual(bs.GetFinal(), &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -130,7 +138,7 @@ func TestBuildState(t *testing.T) {
 
 			Convey(`no updates`, func() {
 				Convey(`getLatest`, func() {
-					So(bs.getLatest(), ShouldResemble, &buildState{
+					assertStateEqual(bs.getLatest(), &buildState{
 						build: &bbpb.Build{
 							Status:          bbpb.Status_SCHEDULED,
 							SummaryMarkdown: "build.proto not found",
@@ -140,7 +148,7 @@ func TestBuildState(t *testing.T) {
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()
-					So(bs.GetFinal(), ShouldResemble, &buildState{
+					assertStateEqual(bs.GetFinal(), &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -160,7 +168,7 @@ func TestBuildState(t *testing.T) {
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
 						}
 						bs.handleNewData(nil)
-						So(bs.GetFinal(), ShouldResemble, &buildState{
+						assertStateEqual(bs.GetFinal(), &buildState{
 							closed: true,
 							final:  true,
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
@@ -186,7 +194,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				So(bs.getLatest(), ShouldResemble, &buildState{
+				assertStateEqual(bs.getLatest(), &buildState{
 					build: &bbpb.Build{
 						SummaryMarkdown: "some stuff",
 						Steps: []*bbpb.Step{
@@ -213,7 +221,7 @@ func TestBuildState(t *testing.T) {
 					})
 					wait()
 					wait() // for final build
-					So(bs.GetFinal(), ShouldResemble, &buildState{
+					assertStateEqual(bs.GetFinal(), &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,
@@ -248,7 +256,7 @@ func TestBuildState(t *testing.T) {
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()
-					So(bs.GetFinal(), ShouldResemble, &buildState{
+					assertStateEqual(bs.GetFinal(), &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -288,7 +296,7 @@ func TestBuildState(t *testing.T) {
 				})
 				wait()
 				wait() // for final build
-				So(bs.GetFinal(), ShouldResemble, &buildState{
+				assertStateEqual(bs.GetFinal(), &buildState{
 					closed:  true,
 					final:   true,
 					invalid: true,
@@ -303,7 +311,7 @@ func TestBuildState(t *testing.T) {
 
 				Convey(`ignores further updates`, func() {
 					bs.handleNewData(mkDgram(&bbpb.Build{SummaryMarkdown: "hi"}))
-					So(bs.GetFinal(), ShouldResemble, &buildState{
+					assertStateEqual(bs.GetFinal(), &buildState{
 						invalid: true,
 						closed:  true,
 						build: &bbpb.Build{
@@ -331,7 +339,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 				wait() // for final build
-				So(bs.GetFinal(), ShouldResemble, &buildState{
+				assertStateEqual(bs.GetFinal(), &buildState{
 					closed:  true,
 					final:   true,
 					invalid: true,

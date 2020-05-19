@@ -1343,7 +1343,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(triggeringInv.Status, ShouldEqual, task.StatusSucceeded)
 			outgoing, err := triggeringInv.OutgoingTriggers()
 			So(err, ShouldBeNil)
-			So(outgoing, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			So(outgoing, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
 			// At this point triggered job's triage is about to start. Before it does,
 			// verify emitted trigger (sitting in the pending triggers set) is
@@ -1351,7 +1351,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			tj, _ := e.getJob(c, triggeredJob)
 			triggers, err := e.ListTriggers(c, tj)
 			So(err, ShouldBeNil)
-			So(triggers, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			So(triggers, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
 			// Resume the simulation to do the triages and start the triggered
 			// invocation.
@@ -1389,7 +1389,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			})
 
 			// Verify LaunchTask callback saw the triggers.
-			So(seen, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			So(seen, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
 			// And they are recoded in IncomingTriggers set.
 			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID)
@@ -1397,7 +1397,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(triggeredInv.Status, ShouldEqual, task.StatusSucceeded)
 			incoming, err := triggeredInv.IncomingTriggers()
 			So(err, ShouldBeNil)
-			So(incoming, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			So(incoming, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 		})
 	})
 }
