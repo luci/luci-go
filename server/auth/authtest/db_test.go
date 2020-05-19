@@ -17,60 +17,105 @@ package authtest
 import (
 	"context"
 	"errors"
+	"net"
 	"testing"
 
-	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/server/auth/realms"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFakeDB(t *testing.T) {
-	Convey("FakeDB works", t, func() {
-		c := context.Background()
-		db := FakeDB{
-			"user:abc@def.com": []string{"group a", "group b"},
-		}
+	t.Parallel()
 
-		resp, err := db.IsMember(c, identity.Identity("user:abc@def.com"), nil)
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeFalse)
+	ctx := context.Background()
+	testPerm1 := realms.RegisterPermission("testing.tests.perm1")
+	testPerm2 := realms.RegisterPermission("testing.tests.perm2")
+	testPerm3 := realms.RegisterPermission("testing.tests.perm3")
 
-		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"group b"})
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeTrue)
+	Convey("With FakeDB", t, func() {
+		db := NewFakeDB(
+			MockMembership("user:abc@def.com", "group-a"),
+			MockMembership("user:abc@def.com", "group-b"),
+			MockPermission("user:abc@def.com", "proj:realm", testPerm1),
+			MockPermission("user:abc@def.com", "proj:realm", testPerm2),
+			MockIPWhitelist("127.0.0.42", "wl"),
+		)
 
-		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"another", "group b"})
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeTrue)
+		Convey("Membership checks work", func() {
+			out, err := db.CheckMembership(ctx, "user:abc@def.com", []string{"group-a", "group-b", "group-c"})
+			So(err, ShouldBeNil)
+			So(out, ShouldResemble, []string{"group-a", "group-b"})
 
-		resp, err = db.IsMember(c, identity.Identity("user:another@def.com"), []string{"group b"})
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeFalse)
+			resp, err := db.IsMember(ctx, "user:abc@def.com", nil)
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
 
-		resp, err = db.IsMember(c, identity.Identity("user:another@def.com"), []string{"another", "group b"})
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeFalse)
+			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-b"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
 
-		resp, err = db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"another"})
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeFalse)
-	})
-}
+			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"another", "group-b"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
 
-func TestFakeErroringDB(t *testing.T) {
-	Convey("FakeErroringDB works", t, func() {
-		c := context.Background()
-		db := FakeErroringDB{
-			FakeDB: FakeDB{"user:abc@def.com": []string{"group a", "group b"}},
-			Error:  errors.New("boo"),
-		}
+			resp, err = db.IsMember(ctx, "user:another@def.com", []string{"group-b"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
 
-		_, err := db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"group a"})
-		So(err.Error(), ShouldEqual, "boo")
+			resp, err = db.IsMember(ctx, "user:another@def.com", []string{"another", "group-b"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
 
-		db.Error = nil
-		resp, err := db.IsMember(c, identity.Identity("user:abc@def.com"), []string{"group a"})
-		So(err, ShouldBeNil)
-		So(resp, ShouldBeTrue)
+			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"another"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+		})
+
+		Convey("Permission checks work", func() {
+			resp, err := db.HasPermission(ctx, "user:abc@def.com", testPerm1, []string{"proj:realm"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, []string{"proj:realm"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm3, []string{"proj:realm"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, []string{"proj:unknown", "proj:realm"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+		})
+
+		Convey("IP whitelist checks work", func() {
+			resp, err := db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "wl")
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+
+			resp, err = db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "another")
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+
+			resp, err = db.IsInWhitelist(ctx, net.ParseIP("192.0.0.1"), "wl")
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+		})
+
+		Convey("Error works", func() {
+			mockedErr := errors.New("boom")
+			db.AddMocks(MockError(mockedErr))
+
+			_, err := db.IsMember(ctx, "user:abc@def.com", []string{"group-a"})
+			So(err, ShouldEqual, mockedErr)
+
+			_, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, []string{"proj:realm"})
+			So(err, ShouldEqual, mockedErr)
+
+			_, err = db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "wl")
+			So(err, ShouldEqual, mockedErr)
+		})
 	})
 }

@@ -88,7 +88,6 @@ func TestBatchCreateInvocations(t *testing.T) {
 	Convey(`TestBatchCreateInvocations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		// Configure mock authentication to allow creation of custom invocation ids.
-		ctx = authtest.MockAuthConfig(ctx)
 		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{trustedInvocationCreators},

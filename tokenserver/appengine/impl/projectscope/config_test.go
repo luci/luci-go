@@ -59,7 +59,6 @@ func TestRules(t *testing.T) {
 
 	ctx := auth.WithState(gaetesting.TestingContext(), &authtest.FakeState{
 		Identity: "user:unused@example.com",
-		FakeDB:   authtest.FakeDB{},
 	})
 	storage := projectidentity.ProjectIdentities(ctx)
 

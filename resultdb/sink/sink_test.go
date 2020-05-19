@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
@@ -67,7 +66,7 @@ func TestServer(t *testing.T) {
 
 	Convey("Server", t, func() {
 		req := &sinkpb.ReportTestResultsRequest{}
-		ctx := authtest.MockAuthConfig(context.Background())
+		ctx := context.Background()
 
 		// a test server with a test listener
 		srvCfg := testServerConfig(ctl, "", "secret")

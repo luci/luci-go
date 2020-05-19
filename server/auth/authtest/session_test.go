@@ -28,29 +28,29 @@ import (
 
 func TestSession(t *testing.T) {
 	Convey("Works", t, func() {
-		c, _ := testclock.UseTime(context.Background(), time.Unix(1442540000, 0))
+		ctx, _ := testclock.UseTime(context.Background(), time.Unix(1442540000, 0))
 		s := MemorySessionStore{}
 
-		ss, err := s.GetSession(c, "missing")
+		ss, err := s.GetSession(ctx, "missing")
 		So(err, ShouldBeNil)
 		So(ss, ShouldBeNil)
 
-		sid, err := s.OpenSession(c, "uid", &auth.User{Name: "dude"}, clock.Now(c).Add(1*time.Hour))
+		sid, err := s.OpenSession(ctx, "uid", &auth.User{Name: "dude"}, clock.Now(ctx).Add(1*time.Hour))
 		So(err, ShouldBeNil)
 		So(sid, ShouldEqual, "uid/1")
 
-		ss, err = s.GetSession(c, "uid/1")
+		ss, err = s.GetSession(ctx, "uid/1")
 		So(err, ShouldBeNil)
 		So(ss, ShouldResemble, &auth.Session{
 			SessionID: "uid/1",
 			UserID:    "uid",
 			User:      auth.User{Name: "dude"},
-			Exp:       clock.Now(c).Add(1 * time.Hour),
+			Exp:       clock.Now(ctx).Add(1 * time.Hour),
 		})
 
-		So(s.CloseSession(c, "uid/1"), ShouldBeNil)
+		So(s.CloseSession(ctx, "uid/1"), ShouldBeNil)
 
-		ss, err = s.GetSession(c, "missing")
+		ss, err = s.GetSession(ctx, "missing")
 		So(err, ShouldBeNil)
 		So(ss, ShouldBeNil)
 	})
