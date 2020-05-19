@@ -55,7 +55,8 @@ type EditRecipeBundleOpts struct {
 	DebugSleep time.Duration
 }
 
-// This very unfortunate constant is here for a combination of reasons:
+// RecipeDirectory is a very unfortunate constant which is here for
+// a combination of reasons:
 //   1) swarming doesn't allow you to 'checkout' an isolate relative to any path
 //      in the task (other than the task root). This means that whatever value
 //      we pick for EditRecipeBundle must be used EVERYWHERE the isolated hash
@@ -116,7 +117,8 @@ func EditRecipeBundle(ctx context.Context, authClient *http.Client, jd *job.Defi
 	}
 
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
-		je.TaskPayload("", "", RecipeDirectory)
+		je.TaskPayloadSource("", "")
+		je.TaskPayloadPath(RecipeDirectory)
 	})
 }
 

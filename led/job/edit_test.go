@@ -573,12 +573,16 @@ func TestTaskPayload(t *testing.T) {
 			skipSW: true,
 			fn: func(jd *Definition) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayload("", "", "")
+					je.TaskPayloadSource("", "")
+					je.TaskPayloadPath("")
+					je.TaskPayloadCmd(nil)
 				})
-				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
+				hli := jd.HighLevelInfo()
+				pkg, vers := hli.TaskPayloadSource()
 				So(pkg, ShouldEqual, "")
 				So(vers, ShouldEqual, "")
-				So(path, ShouldEqual, ".")
+				So(hli.TaskPayloadPath(), ShouldEqual, "")
+				So(hli.TaskPayloadCmd(), ShouldResemble, []string{"luciexe"})
 			},
 		},
 
@@ -587,12 +591,14 @@ func TestTaskPayload(t *testing.T) {
 			skipSW: true,
 			fn: func(jd *Definition) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayload("", "", "some/path")
+					je.TaskPayloadSource("", "")
+					je.TaskPayloadPath("some/path")
 				})
-				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
+				hli := jd.HighLevelInfo()
+				pkg, vers := hli.TaskPayloadSource()
 				So(pkg, ShouldEqual, "")
 				So(vers, ShouldEqual, "")
-				So(path, ShouldEqual, "some/path")
+				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
 			},
 		},
 
@@ -601,12 +607,30 @@ func TestTaskPayload(t *testing.T) {
 			skipSW: true,
 			fn: func(jd *Definition) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
-					je.TaskPayload("pkgname", "latest", "some/path")
+					je.TaskPayloadSource("pkgname", "latest")
+					je.TaskPayloadPath("some/path")
 				})
-				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
+				hli := jd.HighLevelInfo()
+				pkg, vers := hli.TaskPayloadSource()
 				So(pkg, ShouldEqual, "pkgname")
 				So(vers, ShouldEqual, "latest")
-				So(path, ShouldEqual, "some/path")
+				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
+			},
+		},
+
+		{
+			name:   "cipd latest",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.TaskPayloadSource("pkgname", "")
+					je.TaskPayloadPath("some/path")
+				})
+				hli := jd.HighLevelInfo()
+				pkg, vers := hli.TaskPayloadSource()
+				So(pkg, ShouldEqual, "pkgname")
+				So(vers, ShouldEqual, "latest")
+				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
 			},
 		},
 	})
