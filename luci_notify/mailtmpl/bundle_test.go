@@ -129,6 +129,29 @@ steps of build 54 go here`)
 			So(generateDefaultStatusMessage(input), ShouldEqual,
 				`"test1", "test2" on https://buildbucket.example.com/build/123 linux-rel from deadbeefdeadbeef`)
 		})
+
+		// Regression test for https://crbug.com/1084358.
+		Convey(`GenerateStatusMessage, nil commit`, func() {
+			input := &config.TemplateInput{
+				BuildbucketHostname: "buildbucket.example.com",
+				Build: &buildbucketpb.Build{
+					Id: 123,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "chromium",
+						Bucket:  "ci",
+						Builder: "linux-rel",
+					},
+					Output: &buildbucketpb.Build_Output{GitilesCommit: nil},
+				},
+				MatchingFailedSteps: []*buildbucketpb.Step{
+					&buildbucketpb.Step{Name: "test1"},
+					&buildbucketpb.Step{Name: "test2"},
+				},
+			}
+
+			So(generateDefaultStatusMessage(input), ShouldEqual,
+				`"test1", "test2" on https://buildbucket.example.com/build/123 linux-rel`)
+		})
 	})
 }
 

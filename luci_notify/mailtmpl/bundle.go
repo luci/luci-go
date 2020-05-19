@@ -210,7 +210,7 @@ func (b *Bundle) generateErrorEmail(templateName string, input *config.TemplateI
 	return
 }
 
-const defaultStatusTemplateStr = "{{ stepNames .MatchingFailedSteps }} on {{ buildUrl . }} {{ .Build.Builder.Builder }} from {{ .Build.Output.GitilesCommit.Id }}"
+const defaultStatusTemplateStr = "{{ stepNames .MatchingFailedSteps }} on {{ buildUrl . }} {{ .Build.Builder.Builder }}{{ if .Build.Output.GitilesCommit }} from {{ .Build.Output.GitilesCommit.Id }}{{end}}"
 
 var defaultStatusTemplate *text.Template = text.Must(text.New("").Funcs(Funcs).Parse(defaultStatusTemplateStr))
 
