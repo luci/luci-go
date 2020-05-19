@@ -54,58 +54,49 @@ enum Status {
 
 // An executable to run when the build is ready to start.
 //
-// The following describes the protocol between buildbucket and the executable.
-// The executable MUST NOT assume/rely on anything that is not explicitly
-// specified below.
+// Please refer to go.chromium.org/luci/luciexe for the protocol this executable
+// is expected to implement.
 //
-// The executable will be started with the following input:
-// - empty current working directory (CWD).
-// - stdin: binary-encoded buildbucket.v2.Build message.
-// - $TMPDIR, $TEMP, $TMP: env variables point to an empty directory, on the
-//   same file system as CWD.
-// - $LOGDOG_COORDINATOR_HOST, $LOGDOG_STREAM_PROJECT, $LOGDOG_STREAM_PREFIX,
-//   $LOGDOG_NAMESPACE, $LOGDOG_STREAM_SERVER_PATH: env variables describing
-//   LogDog context, part of the LogDog Butler protocol.
-//   The executable MAY create logdog streams using these variables.
-//   Read more at https://godoc.org/go.chromium.org/luci/logdog/client/butlerlib/bootstrap
-// - LUCI_CONTEXT["run_build"]["cache_dir"]: a LUCI context value pointing to
-//   the root directory of Swarming named caches.
-//   MAY be on the same file system as CWD.
-//   For example, builder cache is available at "<cache_dir>/builder".
-//   For LUCI Context doc, see
-//   https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
-//   See also CacheEntry.
-// - LUCI_CONTEXT["buildbucket"]["hostname"]: Buildbucket hostname,
-//   e.g. "cr-buildbucket.appspot.com".
-//
-// The executable MUST write "$LOGDOG_NAMESPACE/build.proto" stream using the
-// LogDog streamserver at $LOGDOG_STREAM_SERVER_PATH.
-// The stream MUST have a binary-encoded buildbucket.v2.Build message datagrams,
-// with content type "application/luci+proto; message=buildbucket.v2.Build".
-// Each build message must be valid, as defined by the comments in proto files.
-// Server-side build will be updated with the values from the latest message.
-//
-// A build step S without children in the datagram MAY have a Step.Log named
-// "$build.proto".
-// It MUST point to a LogDog datagram stream with binary-encoded
-// buildbucket.v2.Build messages and content type
-// "application/luci+proto; message=buildbucket.v2.Build".
-// The step tree from the second datagram will appear as substeps of step S.
-// This rule applies recursively, i.e. a leaf step in the datagram MAY also
-// have a "$build.proto" log.
-// The graph of datagram streams MUST be a tree, i.e. acyclic.
-//
-// All build step log urls of all Build messages MUST be relative to
-// $LOGDOG_STREAM_PREFIX (only stream name) and start with $LOGDOG_NAMESPACE.
+// In addition to the "Host Application" responsibilities listed there,
+// buildbucket will also ensure that $CWD points to an empty directory when it
+// starts the build.
 message Executable {
   // The CIPD package containing the executable.
-  // On Linux/Mac, the executable MUST be named "run_build".
-  // On Windows, it MUST be named "run_build.exe" or "run_build.bat",
-  // in this order of precedence.
+  //
+  // See the `cmd` field below for how the executable will be located within the
+  // package.
   string cipd_package = 1;
 
-  // The CIPD version to fetch. Defaults to `latest`.
+  // The CIPD version to fetch.
+  //
+  // Optional. If omitted, this defaults to `latest`.
   string cipd_version = 2;
+
+  // The command to invoke within the package.
+  //
+  // The 0th argument is taken as relative to the cipd_package root (a.k.a.
+  // BBAgentArgs.payload_path), so to invoke the binary called "foo" in the root
+  // of the package, it is just "foo". On Windows, this will automatically look
+  // first for "foo.exe" followed by "foo.bat". Similarly, "subdir/foo" would
+  // expect the foo binary to live in the top level "subdir" within the CIPD
+  // package.
+  //
+  // The other arguments are passed verbatim to the executable.
+  //
+  // The 'build.proto' binary message will always be passed to stdin, even when
+  // this command has arguments (see go.chromium.org/luci/luciexe).
+  //
+  // RECOMMENDATION: It's advised to rely on the build.proto's Input.Properties
+  // field for passing task-specific data. Not only are the properties
+  // JSON-typed, they can be modeled with a protobuf (using JSON PB encoding).
+  // However, supplying additional arguments can occasionally be useful to, for
+  // example, increase logging verbosity, or similar 'system level' settings
+  // within the binary.
+  //
+  // Optional. If omitted, this defaults to `['luciexe']` (i.e. invoke the
+  // binary 'luciexe' at the top of the CIPD package, with no additional
+  // arguments).
+  repeated string cmd = 3;
 }
 
 // Machine-readable details of a status.
