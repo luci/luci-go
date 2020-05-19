@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66408d0c_8830977b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "please either update Args section in the doc string or remove it completely, just don\u0027t keep it stale",
+      "range": {
+        "startLine": 27,
+        "startChar": 6,
+        "endLine": 27,
+        "endChar": 9
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9708dd8_89e4c4d6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 94,
+        "startChar": 9,
+        "endLine": 94,
+        "endChar": 10
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b8bd7bd_4b7e3d00",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "more spaces",
+      "range": {
+        "startLine": 95,
+        "startChar": 0,
+        "endLine": 95,
+        "endChar": 6
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5928720_f32654b9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "Buildbucket",
+      "range": {
+        "startLine": 96,
+        "startChar": 17,
+        "endLine": 96,
+        "endChar": 28
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64add44f_ebceda22",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 162,
+        "startChar": 17,
+        "endLine": 162,
+        "endChar": 18
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a8543c3_54f464b4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "Buildbucket\u0027s",
+      "range": {
+        "startLine": 162,
+        "startChar": 39,
+        "endLine": 162,
+        "endChar": 52
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "090da731_fcd8f261",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "markdown-linkify",
+      "range": {
+        "startLine": 167,
+        "startChar": 52,
+        "endLine": 167,
+        "endChar": 69
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a0711c9_c63d9a1f",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "Document what is the default.",
+      "range": {
+        "startLine": 168,
+        "startChar": 30,
+        "endLine": 168,
+        "endChar": 31
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1fe9cf9_e4372078",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/executable.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "consider adding it to recipes.defaults below, it would allow to opt-in large chunks of builders at once by doing something like:\n\n  luci.recipe.defaults.use_bbagent.set(True)",
+      "range": {
+        "startLine": 174,
+        "startChar": 4,
+        "endLine": 174,
+        "endChar": 15
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f7cf8f8_1282c40e",
+        "filename": "lucicfg/starlark/stdlib/internal/validate.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "add a unit test to testdata/misc/validators.star",
+      "range": {
+        "startLine": 387,
+        "startChar": 4,
+        "endLine": 387,
+        "endChar": 13
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff35a448_6a7a5cf9",
+        "filename": "lucicfg/starlark/stdlib/internal/validate.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T18:23:12Z",
+      "side": 1,
+      "message": "wat?",
+      "range": {
+        "startLine": 389,
+        "startChar": 0,
+        "endLine": 391,
+        "endChar": 79
+      },
+      "revId": "26598cb5e49978d67c177efe5155b7462330fc28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
