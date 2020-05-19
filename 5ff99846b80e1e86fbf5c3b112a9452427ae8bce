@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd877b81_dc317a9c",
+        "filename": "resultdb/internal/testutil/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T04:32:48Z",
+      "side": 0,
+      "message": "it copies sync.Once inside StdConfig, my editor complained (somehow... not sure how it detected)",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 29
+      },
+      "revId": "5ff99846b80e1e86fbf5c3b112a9452427ae8bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f425a4c9_db4690f1",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T04:32:48Z",
+      "side": 0,
+      "message": "as far as I can tell, sink.Server is not using the auth library at all...",
+      "range": {
+        "startLine": 57,
+        "startChar": 2,
+        "endLine": 57,
+        "endChar": 47
+      },
+      "revId": "5ff99846b80e1e86fbf5c3b112a9452427ae8bce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

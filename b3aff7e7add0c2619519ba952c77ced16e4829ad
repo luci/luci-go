@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa113d60_4bebee2c",
+        "filename": "resultdb/internal/artifactcontent/server_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-19T04:32:48Z",
+      "side": 1,
+      "message": "it is not correct to initialize the *server* as already executing in some request context",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 56,
+        "endChar": 4
+      },
+      "revId": "b3aff7e7add0c2619519ba952c77ced16e4829ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
