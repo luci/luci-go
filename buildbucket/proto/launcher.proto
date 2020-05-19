@@ -33,18 +33,12 @@ message BuildSecrets {
 
 // Arguments for bbagent command.
 //
-// All paths are relateive to bbagent's working directory, and must be delimited
-// with slashes ("/"), regardless of the host OS.
+// All paths are relateive to bbagent's working directory.
 message BBAgentArgs {
   // Path to the user executable.
   //
-  // Deprecated. Superceded by payload_path and `build.exe.cmd`.
-  string executable_path = 1;
-
-  // Path to the base of the user executable package.
-  //
   // Required.
-  string payload_path = 5;
+  string executable_path = 1;
 
   // Path to a directory where each subdirectory is a cache dir.
   //

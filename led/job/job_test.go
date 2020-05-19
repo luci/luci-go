@@ -77,8 +77,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
 			So(err, ShouldBeNil)
 
-			So(bbArgs.PayloadPath, ShouldResemble, "kitchen-checkout")
-			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
+			So(bbArgs.ExecutablePath, ShouldResemble, "kitchen-checkout/luciexe")
 
 			props := ledProperties{}
 			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]interface{}{
@@ -152,8 +151,7 @@ func TestFlattenToSwarming(t *testing.T) {
 
 		Convey(`UserPayload recipe`, func() {
 			SoHLEdit(bbJob, func(je HighLevelEditor) {
-				je.TaskPayloadSource("", "")
-				je.TaskPayloadPath("some/path")
+				je.TaskPayload("", "", "some/path")
 			})
 			bbJob.UserPayload.Digest = "beef"
 
@@ -176,8 +174,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
 			So(err, ShouldBeNil)
 
-			So(bbArgs.PayloadPath, ShouldResemble, "some/path")
-			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
+			So(bbArgs.ExecutablePath, ShouldResemble, "some/path/luciexe")
 		})
 
 	})
