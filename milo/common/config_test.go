@@ -70,6 +70,20 @@ func TestConfig(t *testing.T) {
 				So(len(ve.Errors), ShouldEqual, 1)
 				So(ve.Errors[0].Error(), ShouldContainSubstring, "id can not contain '/'")
 			})
+			Convey("Load a bad config due to malformed external consoles", func() {
+				content := []byte(badCfg4)
+				validateProjectCfg(ctx, configSet, path, content)
+				err := ctx.Finalize()
+				ve, ok := err.(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 6)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "missing id")
+				So(ve.Errors[1].Error(), ShouldContainSubstring, "id can not contain '/'")
+				So(ve.Errors[2].Error(), ShouldContainSubstring, "external console has same id as local console")
+				So(ve.Errors[3].Error(), ShouldContainSubstring, "duplicate external console")
+				So(ve.Errors[4].Error(), ShouldContainSubstring, "missing external project")
+				So(ve.Errors[5].Error(), ShouldContainSubstring, "missing external console id")
+			})
 			Convey("Load bad config due to console builder's definitions", func() {
 				content := []byte(badConsoleCfg)
 				validateProjectCfg(ctx, configSet, path, content)
@@ -271,6 +285,56 @@ consoles: {
 		short_name: "o"
 	}
 	header_id: "main_header"
+}
+`
+
+var badCfg4 = `
+headers: {
+	id: "main_header"
+	tree_status_host: "blarg.example.com"
+}
+consoles: {
+	id: "dupe-id"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "refs/heads/master"
+	manifest_name: "REVISION"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		category: "main|something"
+		short_name: "s"
+	}
+}
+external_consoles: {
+	external_project: "proj"
+	external_id: "console"
+}
+external_consoles: {
+	id: "with/slash"
+	external_project: "proj"
+	external_id: "console"
+}
+external_consoles: {
+	id: "dupe-id"
+	external_project: "proj"
+	external_id: "console"
+}
+external_consoles: {
+	id: "dupe-id-2"
+	external_project: "proj"
+	external_id: "console"
+}
+external_consoles: {
+	id: "dupe-id-2"
+	external_project: "proj"
+	external_id: "console"
+}
+external_consoles: {
+	id: "missing-external-proj"
+	external_id: "console"
+}
+external_consoles: {
+	id: "missing-external-id"
+	external_project: "proj"
 }
 `
 
