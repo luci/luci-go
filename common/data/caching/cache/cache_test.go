@@ -154,9 +154,8 @@ func TestNewDisk(t *testing.T) {
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
 
-		c, err = NewDisk(pol, "non absolute path", namespace)
-		So(c, ShouldBeNil)
-		So(err, ShouldNotBeNil)
+		_, err = NewDisk(pol, "non absolute path", namespace)
+		So(err, ShouldBeNil)
 	})
 
 	Convey(`invalid state.json`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
