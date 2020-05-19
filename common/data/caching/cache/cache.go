@@ -107,10 +107,17 @@ func NewMemory(policies Policies, namespace string) Cache {
 // NewDisk creates a disk based cache.
 //
 // It may return both a valid Cache and an error if it failed to load the
-// previous cache metadata. It is safe to ignore this error.
+// previous cache metadata. It is safe to ignore this error. This creates
+// cache directory if it doesn't exist.
 func NewDisk(policies Policies, path, namespace string) (Cache, error) {
-	if !filepath.IsAbs(path) {
-		return nil, errors.Reason("must use absolute path: %s", path).Err()
+	var err error
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to call Abs(%s)", path).Err()
+	}
+	err = os.MkdirAll(path, 0700)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to call MkdirAll(%s)", path).Err()
 	}
 	d := &disk{
 		policies:              policies,
@@ -121,7 +128,7 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	}
 	p := d.statePath()
 
-	err := func() error {
+	err = func() error {
 		f, err := os.Open(p)
 		if err != nil && os.IsNotExist(err) {
 			// The fact that the cache is new is not an error.
