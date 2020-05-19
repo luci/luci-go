@@ -110,14 +110,22 @@ luci.gitiles_poller(
 )
 
 
-def ci_builder(name, *, os, category, cpu="x86-64"):
+def ci_builder(name, *, os, category, cpu="x86-64", use_bbagent=True):
   """Defines a post-submit builder."""
+  recipe_id = "ci_builder"
+  if use_bbagent == True:
+    recipe_id += "-bbagent"
+  else:
+    recipe_id += "-luciexe"
+
   luci.builder(
       name = name,
       bucket = "ci",
       executable = luci.recipe(
-          name = "ci_builder",
+          name = recipe_id,
+          recipe = "ci_builder",
           cipd_package = RECIPE_BUNDLE,
+          use_bbagent = use_bbagent,
       ),
       dimensions = {
           "pool": "luci.my-awesome-project.ci",
@@ -141,17 +149,25 @@ def ci_builder(name, *, os, category, cpu="x86-64"):
 ci_builder("xenial", os="Ubuntu-16.04", category="Linux|16.04")
 ci_builder("bionic", os="Ubuntu-18.04", category="Linux|18.04")
 ci_builder("mac-10.13", os="Mac-10.13", category="Mac|10.13")
-ci_builder("win-32", os="Windows", cpu="x86-32", category="Win|32")
+ci_builder("win-32", os="Windows", cpu="x86-32", category="Win|32",
+           use_bbagent=False)
 ci_builder("win-64", os="Windows", cpu="x86-64", category="Win|64")
 
 
-def try_builder(name, *, os, cpu="x86-64"):
+def try_builder(name, *, os, cpu="x86-64", use_bbagent=True):
   """Defines a pre-submit builder."""
+  recipe_id = "try_builder"
+  if use_bbagent == True:
+    recipe_id += "-bbagent"
+  else:
+    recipe_id += "-luciexe"
+
   luci.builder(
       name = name,
       bucket = "try",
       executable = luci.recipe(
-          name = "try_builder",
+          name = recipe_id,
+          recipe = "try_builder",
           cipd_package = RECIPE_BUNDLE,
       ),
       dimensions = {
@@ -175,8 +191,11 @@ def try_builder(name, *, os, cpu="x86-64"):
 
 
 # Actually define a bunch of Try builders.
-try_builder("xenial", os="Ubuntu-16.04")
-try_builder("bionic", os="Ubuntu-18.04")
+#
+# In this hypothetical scenario, we set use_bbagent=None (the default) to have
+# buildbucket choose according to its global configuration.
+try_builder("xenial", os="Ubuntu-16.04", use_bbagent=None)
+try_builder("bionic", os="Ubuntu-18.04", use_bbagent=None)
 try_builder("mac-10.13", os="Mac-10.13")
-try_builder("win-32", os="Windows", cpu="x86-32")
+try_builder("win-32", os="Windows", cpu="x86-32", use_bbagent=False)
 try_builder("win-64", os="Windows", cpu="x86-64")

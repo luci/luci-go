@@ -23,7 +23,8 @@ def _executable_props(
       ctx,
       cipd_package=None,
       cipd_version=None,
-      recipe=None
+      recipe=None,
+      cmd=None,
   ):
   """Defines an executable's properties. See luci.executable(...).
 
@@ -33,6 +34,9 @@ def _executable_props(
     cipd_version: a version of the executable package to fetch, default
         is `refs/heads/master`. Supports the module-scoped default.
     recipe: name of a recipe. Required if the executable is a recipe bundle.
+    cmd: a list of strings to use as the executable command. If None (or empty),
+        Buildbucket will fill this in on the server side to either ['luciexe']
+        or ['recipes'], depending on its global configuration.
   """
   return {
       'cipd_package': validate.string(
@@ -52,6 +56,11 @@ def _executable_props(
           recipe,
           required = False,
       ),
+      'cmd': validate.str_list(
+          'cmd',
+          cmd,
+          required = False,
+      ),
   }
 
 
@@ -59,7 +68,8 @@ def _executable(
       ctx,
       name=None,
       cipd_package=None,
-      cipd_version=None
+      cipd_version=None,
+      cmd=None
   ):
   """Defines an executable.
 
@@ -84,6 +94,12 @@ def _executable(
         module-scoped default.
     cipd_version: a version of the executable package to fetch, default
         is `refs/heads/master`. Supports the module-scoped default.
+    cmd: a list of strings which are the command line to use for this
+        executable. If omitted, either `('recipes',)` or `('luciexe',)` will be
+        used by Buildbucket, according to its global configuration. The special
+        value of `('recipes',)` indicates that this executable should be run
+        under the legacy kitchen runtime. All other values will be executed
+        under the go.chromium.org/luci/luciexe protocol.
   """
   name = validate.string('name', name)
   key = keys.executable(name)
@@ -91,6 +107,7 @@ def _executable(
       ctx,
       cipd_package = cipd_package,
       cipd_version = cipd_version,
+      cmd = cmd,
   )
   graph.add_node(key, idempotent = True, props = props)
   return graph.keyset(key)
@@ -102,7 +119,8 @@ def _recipe(
       name=None,
       cipd_package=None,
       cipd_version=None,
-      recipe=None
+      recipe=None,
+      use_bbagent=None,  # transitional for crbug.com/1015181
   ):
   """Defines an executable that runs a particular recipe.
 
@@ -144,14 +162,31 @@ def _recipe(
         `name`. Useful if recipe names clash between different recipe bundles.
         When this happens, `name` can be used as a non-ambiguous alias, and
         `recipe` can provide the actual recipe name. Defaults to `name`.
+    use_bbagent: a boolean to override Buildbucket's global configuration. If
+        True, then builders with this recipe will always use bbagent. If False,
+        then builders with this recipe will temporarially stop using bbagent
+        (note that all builders are expected to use bbagent by ~2020Q3).
+        Defaults to unspecified, which will cause Buildbucket to pick according
+        to it's own global configuration. See [this bug](crbug.com/1015181) for
+        the global bbagent rollout. Supports the module-scoped default.
   """
   name = validate.string('name', name)
+  use_bbagent = validate.bool('use_bbagent', use_bbagent, required=False)
   key = keys.executable(name)
+
+  cmd = None
+  if use_bbagent != None:
+    if use_bbagent:
+      cmd = ['luciexe']
+    else:
+      cmd = ['recipes']
+
   props = _executable_props(
       ctx,
       cipd_package = cipd_package,
       cipd_version = cipd_version,
       recipe = recipe or name,
+      cmd = cmd,
   )
   graph.add_node(key, idempotent = True, props = props)
   return graph.keyset(key)
@@ -171,5 +206,6 @@ recipe = lucicfg.rule(
     defaults = validate.vars_with_validators({
         'cipd_package': validate.string,
         'cipd_version': validate.string,
+        'use_bbagent': validate.bool,
     }),
 )

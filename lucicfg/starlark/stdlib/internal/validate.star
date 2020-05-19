@@ -384,6 +384,35 @@ def _regex_list(attr, val, *, required=False):
   fail('bad %r: got %s, want string or list' % (attr, type(val)))
 
 
+def _str_list(attr, val, *, required=False):
+  """Validates that the value is a list of strings.
+
+  None is treated as an empty list.
+
+  Args:
+    attr: field name with this value, for error messages.
+    val: a value to validate.
+    required: if False, allow 'val' to be None or empty, return empty list in
+        this case.
+
+  Returns:
+    The validated list.
+  """
+  if val == None:
+    val = []
+
+  if required and not val:
+    fail('missing required field %r' % attr)
+
+  if type(val) == 'list':
+    for s in val:
+      if type(s) != 'string':
+        fail('bad %r: got list element of type %s, want string' % (attr, type(s)))
+    return val
+
+  fail('bad %r: got %s, want list of strings' % (attr, type(val)))
+
+
 def _var_with_validator(attr, validator, **kwargs):
   """Returns a lucicfg.var that validates the value via a validator callback.
 
@@ -426,6 +455,7 @@ validate = struct(
     repo_url = _repo_url,
     relative_path = _relative_path,
     regex_list = _regex_list,
+    str_list = _str_list,
 
     var_with_validator = _var_with_validator,
     vars_with_validators = _vars_with_validators,
