@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e94a4d84_38f0b0fe",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-20T00:14:40Z",
+      "side": 1,
+      "message": "just for my own learning, are @observable Maps updated when their contents change?",
+      "range": {
+        "startLine": 116,
+        "startChar": 2,
+        "endLine": 116,
+        "endChar": 14
+      },
+      "revId": "192768b30946e92a922aa989e7396cc0b96224c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ffae09e_2ce2f6b5",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-20T00:14:40Z",
+      "side": 1,
+      "message": "++?",
+      "range": {
+        "startLine": 142,
+        "startChar": 19,
+        "endLine": 142,
+        "endChar": 24
+      },
+      "revId": "192768b30946e92a922aa989e7396cc0b96224c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
