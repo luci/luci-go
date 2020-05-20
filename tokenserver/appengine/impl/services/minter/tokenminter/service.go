@@ -77,7 +77,10 @@ func NewServer() minter.TokenMinterServer {
 			LogToken:          projectscope.LogToken,
 		},
 		MintServiceAccountTokenRPC: serviceaccountsv2.MintServiceAccountTokenRPC{
-			Mapping: serviceaccountsv2.GlobalMappingCache.Mapping,
+			Signer:          gaesigner.Signer{},
+			Mapping:         serviceaccountsv2.GlobalMappingCache.Mapping,
+			MintAccessToken: auth.MintAccessTokenForServiceAccount,
+			MintIDToken:     auth.MintIDTokenForServiceAccount,
 		},
 	}
 }
