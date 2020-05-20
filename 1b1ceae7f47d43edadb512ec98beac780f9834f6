@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "42361ce1_3528a53d",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-20T22:52:24Z",
+      "side": 1,
+      "message": "nit: add a tracing span here so we know how much time it takes",
+      "range": {
+        "startLine": 378,
+        "startChar": 25,
+        "endLine": 378,
+        "endChar": 35
+      },
+      "revId": "1b1ceae7f47d43edadb512ec98beac780f9834f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
