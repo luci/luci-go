@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
 	"go.chromium.org/luci/tokenserver/appengine/impl/projectscope"
 	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
+	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccountsv2"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 )
@@ -62,6 +63,7 @@ func main() {
 	r.GET("/internal/cron/bqlog/oauth-token-grants-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokenGrantsLogCron)
 	r.GET("/internal/cron/bqlog/oauth-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokensLogCron)
 	r.GET("/internal/cron/bqlog/project-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushProjectTokensLogCron)
+	r.GET("/internal/cron/bqlog/service-account-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushServiceAccountTokensLogCron)
 
 	http.DefaultServeMux.Handle("/", r)
 	appengine.Main()
@@ -172,6 +174,12 @@ func flushOAuthTokensLogCron(c *router.Context) {
 // flushProjectTokensLogCron is handler for /internal/cron/bqlog/project-tokens-flush.
 func flushProjectTokensLogCron(c *router.Context) {
 	projectscope.FlushTokenLog(c.Context)
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// flushServiceAccountTokensLogCron is handler for /internal/cron/bqlog/service-account-tokens-flush.
+func flushServiceAccountTokensLogCron(c *router.Context) {
+	serviceaccountsv2.FlushTokenLog(c.Context)
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
