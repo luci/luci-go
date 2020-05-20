@@ -16,8 +16,12 @@ package recorder
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -104,6 +108,10 @@ type artifactCreator struct {
 	size int64
 }
 
+func (ac *artifactCreator) sha256Hash() string {
+	return strings.TrimPrefix(ac.hash, "sha256:")
+}
+
 func (ac *artifactCreator) handle(c *router.Context) error {
 	ctx := c.Context
 
@@ -120,11 +128,23 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 		return nil
 	}
 
-	// TODO(crbug.com/1071258): verify digest ourselves.
+	// Read the request body through a digest verifying proxy.
+	// This is mandatory because RBE-CAS does not guarantee digest verification in
+	// all cases.
+	ver := &digestVerifier{
+		r:            c.Request.Body,
+		expectedHash: ac.sha256Hash(),
+		expectedSize: ac.size,
+		actualHash:   sha256.New(),
+	}
 
 	// Forward the request body to RBE-CAS.
-	if err := ac.writeToCAS(ctx, c.Request.Body); err != nil {
+	if err := ac.writeToCAS(ctx, ver); err != nil {
 		return errors.Annotate(err, "failed to write to CAS").Err()
+	}
+
+	if err := ver.ReadVerify(ctx); err != nil {
+		return err
 	}
 
 	// TODO(crbug.com/1071258): write to Spanner.
@@ -222,7 +242,7 @@ func (ac *artifactCreator) genWriteResourceName(ctx context.Context) string {
 		"%s/uploads/%s/blobs/%s/%d",
 		ac.RBEInstance,
 		uuid.Must(uuid.FromBytes(uuidBytes)),
-		strings.TrimPrefix(ac.hash, "sha256:"),
+		ac.sha256Hash(),
 		ac.size)
 }
 
@@ -333,4 +353,57 @@ func (ac *artifactCreator) verifyState(ctx context.Context, txn span.Txn) (sameA
 	default:
 		return false, nil
 	}
+}
+
+// digestVerifier is an io.Reader that also verifies the digest.
+type digestVerifier struct {
+	r            io.Reader
+	expectedSize int64
+	expectedHash string
+
+	actualSize int64
+	actualHash hash.Hash
+}
+
+func (v *digestVerifier) Read(p []byte) (n int, err error) {
+	n, err = v.r.Read(p)
+	v.actualSize += int64(n)
+	v.actualHash.Write(p[:n])
+	return n, err
+}
+
+// ReadVerify reads through the rest of the v.r
+// and returns a non-nil error if the content have unexpected hash or size.
+// The error may be annotated with appstatus.
+func (v *digestVerifier) ReadVerify(ctx context.Context) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.digestVerifier.ReadVerify")
+	defer func() { ts.End(err) }()
+
+	// Read until the end.
+	if _, err := io.Copy(ioutil.Discard, v); err != nil {
+		return err
+	}
+
+	// Verify size.
+	if v.actualSize != v.expectedSize {
+		return appstatus.Errorf(
+			codes.InvalidArgument,
+			"Content-Length header value %d does not match the length of the request body which is %d",
+			v.expectedSize,
+			v.actualSize,
+		)
+	}
+
+	// Verify hash.
+	actualHash := hex.EncodeToString(v.actualHash.Sum(nil))
+	if actualHash != v.expectedHash {
+		return appstatus.Errorf(
+			codes.InvalidArgument,
+			`Content-Hash header value "sha256:%s" does not match the hash of the request body which is "sha256:%s"`,
+			v.expectedHash,
+			actualHash,
+		)
+	}
+
+	return nil
 }
