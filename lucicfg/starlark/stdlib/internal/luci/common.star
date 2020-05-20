@@ -46,6 +46,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.list_view -> [luci.list_view_entry]
 #   luci.list_view_entry -> list.builder_ref
 #   luci.milo_view -> luci.console_view
+#   luci.milo_view -> luci.external_console_view
 #   luci.console_view -> [luci.console_view_entry]
 #   luci.console_view_entry -> list.builder_ref
 #   luci.cq_verifiers_root -> [luci.cq_tryjob_verifier]
@@ -150,6 +151,7 @@ kinds = struct(
     LIST_VIEW_ENTRY = 'luci.list_view_entry',
     CONSOLE_VIEW = 'luci.console_view',
     CONSOLE_VIEW_ENTRY = 'luci.console_view_entry',
+    EXTERNAL_CONSOLE_VIEW = 'luci.external_console_view',
     CQ = 'luci.cq',
     CQ_GROUP = 'luci.cq_group',
     CQ_TRYJOB_VERIFIER = 'luci.cq_tryjob_verifier',
@@ -185,6 +187,7 @@ keys = struct(
     milo = lambda: _namespaced_key(kinds.MILO, '...'),
     list_view = lambda ref: _project_scoped_key(kinds.LIST_VIEW, 'list_view', ref),
     console_view = lambda ref: _project_scoped_key(kinds.CONSOLE_VIEW, 'console_view', ref),
+    external_console_view = lambda ref: _project_scoped_key(kinds.EXTERNAL_CONSOLE_VIEW, 'external_console_view', ref),
 
     cq = lambda: _namespaced_key(kinds.CQ, '...'),
     cq_group = lambda ref: _project_scoped_key(kinds.CQ_GROUP, 'cq_group', ref),
@@ -486,6 +489,31 @@ def _view_add_view(key, entry_kind, entry_ctor, entries, props):
   return graph.keyset(key, milo_view_key)
 
 
+def _view_add_external_console_view(key, props):
+  """Adds an external console, ensuring it doesn't clash with some other view.
+
+  Args:
+    key: a key of external_console_view node to add.
+    props: properties for the added node.
+
+  Returns:
+    A keyset with added keys.
+  """
+  graph.add_node(key, props)
+
+  # If there's some other view of different kind with the same name this will
+  # cause an error.
+  milo_view_key = keys.milo_view(key.id)
+  graph.add_node(milo_view_key)
+
+  # project -> milo_view -> external_console_view. Indirection through milo_view
+  # allows to treat different kinds of views uniformly.
+  graph.add_edge(keys.project(), milo_view_key)
+  graph.add_edge(milo_view_key, key)
+
+  return graph.keyset(key, milo_view_key)
+
+
 def _view_add_entry(kind, view, builder, props=None):
   """Adds *_view_entry node.
 
@@ -526,6 +554,7 @@ def _view_add_entry(kind, view, builder, props=None):
 view = struct(
     add_view = _view_add_view,
     add_entry = _view_add_entry,
+    add_external_console_view = _view_add_external_console_view,
 )
 
 
