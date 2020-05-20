@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f6d2baca_92be5083",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/bigquery_log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-20T22:10:16Z",
+      "side": 1,
+      "message": "ACK",
+      "parentUuid": "e9fd7742_527156e8",
+      "range": {
+        "startLine": 51,
+        "startChar": 35,
+        "endLine": 51,
+        "endChar": 68
+      },
+      "revId": "3df4284b34926f91954b50d54b26ec334312139e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8b5bc702_1bb4090b",
         "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token.go",
         "patchSetId": 1
