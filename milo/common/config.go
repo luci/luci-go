@@ -635,84 +635,100 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 	knownConsoles := stringset.New(len(proj.Consoles))
 	for i, console := range proj.Consoles {
 		ctx.Enter("console #%d (%s)", i, console.Id)
-		if console.Id == "" {
-			ctx.Errorf("missing id")
-		} else if strings.ContainsAny(console.Id, "/") {
-			// unfortunately httprouter uses decoded path when performing URL routing
-			// therefore we can't use '/' in the console ID. Other chars are safe as long as we encode them
-			ctx.Errorf("id can not contain '/'")
-		} else if !knownConsoles.Add(console.Id) {
-			ctx.Errorf("duplicate console")
-		}
-		// If this is a CI console and it's missing manifest name, the author
-		// probably forgot something.
-		if !console.BuilderViewOnly {
-			if console.ManifestName == "" {
-				ctx.Errorf("ci console missing manifest name")
-			}
-			if console.RepoUrl == "" {
-				ctx.Errorf("ci console missing repo url")
-			}
-			if len(console.Refs) == 0 {
-				ctx.Errorf("ci console missing refs")
-			} else {
-				gitiles.ValidateRefSet(ctx, console.Refs)
-			}
-		} else {
-			if console.IncludeExperimentalBuilds {
-				ctx.Errorf("builder_view_only and include_experimental_builds both set")
-			}
-		}
-
-		if console.HeaderId != "" && !knownHeaders.Has(console.HeaderId) {
-			ctx.Errorf("header %s not defined", console.HeaderId)
-		}
-		if console.HeaderId != "" && console.Header != nil {
-			ctx.Errorf("cannot specify both header and header_id")
-		}
-		for j, b := range console.Builders {
-			ctx.Enter("builders #%d", j+1)
-			switch {
-			case b.Name == "":
-				ctx.Errorf("name must be non-empty")
-			case strings.HasPrefix(b.Name, "buildbucket/"):
-				// OK
-			default:
-				ctx.Errorf(`name must be in the form of "buildbucket/<bucket>/<builder>"`)
-			}
-			ctx.Exit()
-		}
+		validateConsole(ctx, &knownConsoles, &knownHeaders, console)
 		ctx.Exit()
 	}
-
-	knownExternalConsoles := stringset.New(len(proj.ExternalConsoles))
-	for i, console := range proj.ExternalConsoles {
-		ctx.Enter("external console #%d (%s)", i, console.Id)
-		if console.Id == "" {
-			ctx.Errorf("missing id")
-		} else if strings.ContainsAny(console.Id, "/") {
-			// unfortunately httprouter uses decoded path when performing URL routing
-			// therefore we can't use '/' in the console ID. Other chars are safe as long as we encode them
-			ctx.Errorf("id can not contain '/'")
-		} else if knownConsoles.Has(console.Id) {
-			ctx.Errorf("external console has same id as local console")
-		} else if !knownExternalConsoles.Add(console.Id) {
-			ctx.Errorf("duplicate external console")
-		}
-		if console.ExternalProject == "" {
-			ctx.Errorf("missing external project")
-		}
-		if console.ExternalId == "" {
-			ctx.Errorf("missing external console id")
-		}
-		ctx.Exit()
-	}
-
 	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
 		ctx.Errorf("invalid logo url %q, must begin with https://storage.googleapis.com/", proj.LogoUrl)
 	}
 
 	return nil
+}
+
+func validateConsole(ctx *validation.Context, knownConsoles *stringset.Set, knownHeaders *stringset.Set, console *config.Console) {
+	if console.Id == "" {
+		ctx.Errorf("missing id")
+	} else if strings.ContainsAny(console.Id, "/") {
+		// unfortunately httprouter uses decoded path when performing URL routing
+		// therefore we can't use '/' in the console ID. Other chars are safe as long as we encode them
+		ctx.Errorf("id can not contain '/'")
+	} else if !knownConsoles.Add(console.Id) {
+		ctx.Errorf("duplicate console")
+	}
+	isExternalConsole := console.ExternalProject != "" || console.ExternalId != ""
+	if isExternalConsole {
+		validateExternalConsole(ctx, console)
+	} else {
+		validateLocalConsole(ctx, knownHeaders, console)
+	}
+}
+
+func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, console *config.Console) {
+	// If this is a CI console and it's missing manifest name, the author
+	// probably forgot something.
+	if !console.BuilderViewOnly {
+		if console.ManifestName == "" {
+			ctx.Errorf("ci console missing manifest name")
+		}
+		if console.RepoUrl == "" {
+			ctx.Errorf("ci console missing repo url")
+		}
+		if len(console.Refs) == 0 {
+			ctx.Errorf("ci console missing refs")
+		} else {
+			gitiles.ValidateRefSet(ctx, console.Refs)
+		}
+	} else {
+		if console.IncludeExperimentalBuilds {
+			ctx.Errorf("builder_view_only and include_experimental_builds both set")
+		}
+	}
+
+	if console.HeaderId != "" && !knownHeaders.Has(console.HeaderId) {
+		ctx.Errorf("header %s not defined", console.HeaderId)
+	}
+	if console.HeaderId != "" && console.Header != nil {
+		ctx.Errorf("cannot specify both header and header_id")
+	}
+	for j, b := range console.Builders {
+		ctx.Enter("builders #%d", j+1)
+		switch {
+		case b.Name == "":
+			ctx.Errorf("name must be non-empty")
+		case strings.HasPrefix(b.Name, "buildbucket/"):
+			// OK
+		default:
+			ctx.Errorf(`name must be in the form of "buildbucket/<bucket>/<builder>"`)
+		}
+		ctx.Exit()
+	}
+}
+
+func validateExternalConsole(ctx *validation.Context, console *config.Console) {
+	// Verify that both project and external ID are set.
+	if console.ExternalProject == "" {
+		ctx.Errorf("missing external project")
+	}
+	if console.ExternalId == "" {
+		ctx.Errorf("missing external console id")
+	}
+
+	// Verify that external consoles have no local-console-only fields.
+	if console.RepoUrl != "" {
+		ctx.Errorf("repo url found in external console")
+	}
+	if len(console.Refs) > 0 {
+		ctx.Errorf("refs found in external console")
+	}
+	if console.ManifestName != "" {
+		ctx.Errorf("manifest name found in external console")
+	}
+	if len(console.Builders) > 0 {
+		ctx.Errorf("builders found in external console")
+	}
+	if console.HeaderId != "" || console.Header != nil {
+		ctx.Errorf("header found in external console")
+	}
 }
 
 // validateServiceCfg implements validation.Func by taking a potential Milo
