@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dcb18149_eef89953",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 601,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-20T06:34:50Z",
+      "side": 1,
+      "message": "Note: Based on my comment in https://crbug.com/1068630#c14, I may end up changing this so that external consoles just use the milo_pb.Console message. That way, the Starlark-defined ordering will be preserved throughout the pipeline.\n\nI won\u0027t submit this CL until that decision is made (+ I\u0027ll need to redo my proto changes first.)",
+      "range": {
+        "startLine": 601,
+        "startChar": 28,
+        "endLine": 601,
+        "endChar": 44
+      },
+      "revId": "e4444e1b1c7833f45e2f61ff2276284b2b38270d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
