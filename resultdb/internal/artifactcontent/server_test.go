@@ -98,7 +98,7 @@ func TestServeContent(t *testing.T) {
 			req, err := http.NewRequest("GET", rawurl, nil)
 			So(err, ShouldBeNil)
 			rec := httptest.NewRecorder()
-			s.handleContent(&router.Context{
+			s.handleGET(&router.Context{
 				Context: ctx,
 				Request: req,
 				Writer:  rec,

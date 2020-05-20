@@ -98,12 +98,38 @@ func (s *Server) InstallHandlers(r *router.Router) {
 	// Ideally we use a more narrow pattern, but we cannot because of
 	// https://github.com/julienschmidt/httprouter/issues/208
 	// This is triggered by URL-escaped test IDs.
-	r.GET("/invocations/*rest", router.NewMiddlewareChain(), s.handleContent)
+	r.GET("/invocations/*rest", router.NewMiddlewareChain(), s.handleGET)
+	r.OPTIONS("/invocations/*rest", router.NewMiddlewareChain(), s.handleOPTIONS)
 }
 
-func (s *Server) handleContent(c *router.Context) {
+func (s *Server) handleGET(c *router.Context) {
 	req := &contentRequest{Server: s, w: c.Writer}
 	req.handle(c)
+}
+
+func (s *Server) handleOPTIONS(c *router.Context) {
+	s.setAccessControlHeaders(c, true)
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// setAccessControlHeaders allows CORS.
+func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
+	// Don't write out access control headers if the origin is unspecified.
+	const originHeader = "Origin"
+	origin := c.Request.Header.Get(originHeader)
+	if origin == "" {
+		return
+	}
+
+	h := c.Writer.Header()
+	h.Add("Access-Control-Allow-Origin", origin)
+	h.Add("Vary", originHeader)
+	h.Add("Access-Control-Allow-Credentials", "true")
+
+	if preflight {
+		h.Add("Access-Control-Allow-Headers", "Origin, Authorization")
+		h.Add("Access-Control-Allow-Methods", "OPTIONS, GET")
+	}
 }
 
 type contentRequest struct {
@@ -121,6 +147,8 @@ type contentRequest struct {
 }
 
 func (r *contentRequest) handle(c *router.Context) {
+	r.setAccessControlHeaders(c, false)
+
 	if err := r.parseRequest(c.Context, c.Request); err != nil {
 		r.sendError(c.Context, appstatus.BadRequest(err))
 		return
