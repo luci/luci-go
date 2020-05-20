@@ -22,6 +22,30 @@
       "revId": "bfbd24fa4a0bd37c06ce3f8504ae6a461bd4cf3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "493ae6c5_9088256b",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-20T16:24:48Z",
+      "side": 1,
+      "message": "done. document a convention in StartSpan?",
+      "parentUuid": "cbf04c29_1cca147e",
+      "range": {
+        "startLine": 137,
+        "startChar": 43,
+        "endLine": 137,
+        "endChar": 53
+      },
+      "revId": "bfbd24fa4a0bd37c06ce3f8504ae6a461bd4cf3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
