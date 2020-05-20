@@ -643,7 +643,6 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			ctx.Errorf("id can not contain '/'")
 		} else if !knownConsoles.Add(console.Id) {
 			ctx.Errorf("duplicate console")
-
 		}
 		// If this is a CI console and it's missing manifest name, the author
 		// probably forgot something.
@@ -685,6 +684,30 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		}
 		ctx.Exit()
 	}
+
+	knownExternalConsoles := stringset.New(len(proj.ExternalConsoles))
+	for i, console := range proj.ExternalConsoles {
+		ctx.Enter("external console #%d (%s)", i, console.Id)
+		if console.Id == "" {
+			ctx.Errorf("missing id")
+		} else if strings.ContainsAny(console.Id, "/") {
+			// unfortunately httprouter uses decoded path when performing URL routing
+			// therefore we can't use '/' in the console ID. Other chars are safe as long as we encode them
+			ctx.Errorf("id can not contain '/'")
+		} else if knownConsoles.Has(console.Id) {
+			ctx.Errorf("external console has same id as local console")
+		} else if !knownExternalConsoles.Add(console.Id) {
+			ctx.Errorf("duplicate external console")
+		}
+		if console.ExternalProject == "" {
+			ctx.Errorf("missing external project")
+		}
+		if console.ExternalId == "" {
+			ctx.Errorf("missing external console id")
+		}
+		ctx.Exit()
+	}
+
 	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
 		ctx.Errorf("invalid logo url %q, must begin with https://storage.googleapis.com/", proj.LogoUrl)
 	}
