@@ -23,7 +23,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -65,6 +67,11 @@ type MintServiceAccountTokenRPC struct {
 	//
 	// In prod it is auth.MintIDTokenForServiceAccount.
 	MintIDToken func(context.Context, auth.MintIDTokenParams) (*auth.Token, error)
+
+	// LogToken is mocked in tests.
+	//
+	// In prod it is LogToken from bigquery_log.go.
+	LogToken func(context.Context, *MintedTokenInfo) error
 }
 
 // validatedRequest is extracted from MintServiceAccountTokenRequest.
@@ -179,7 +186,27 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 		ServiceVersion: serviceVer,
 	}
 
-	// TODO(vadimsh): Log `req` and `resp` to BQ.
+	// Log it to BigQuery.
+	if r.LogToken != nil {
+		info := MintedTokenInfo{
+			Request:         req,
+			Response:        resp,
+			RequestedAt:     clock.Now(ctx),
+			OAuthScopes:     validated.oauthScopes,
+			RequestIdentity: env.caller,
+			PeerIdentity:    env.peer,
+			ConfigRev:       env.mapping.ConfigRevision(),
+			PeerIP:          env.state.PeerIP(),
+			RequestID:       info.RequestID(ctx),
+			AuthDBRev:       authdb.Revision(state.DB()),
+		}
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		if err := r.LogToken(ctx, &info); err != nil {
+			logging.Errorf(ctx, "Failed to insert the token info into the BigQuery log: %s", err)
+		}
+	}
 
 	return resp, nil
 }

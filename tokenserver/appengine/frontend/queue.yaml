@@ -13,3 +13,6 @@ queue:
 
 - name: bqlog-project-tokens
   mode: pull
+
+- name: bqlog-minted-sa-tokens
+  mode: pull

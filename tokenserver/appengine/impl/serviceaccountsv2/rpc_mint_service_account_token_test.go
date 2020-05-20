@@ -46,22 +46,26 @@ const (
 	testAppID      = "unit-tests"
 	testAppVer     = "mocked-ver"
 	testServiceVer = testAppID + "/" + testAppVer
-	testCaller     = identity.Identity("user:caller@example.com")
+	testCaller     = identity.Identity("project:something")
+	testPeer       = identity.Identity("user:service@example.com")
+	testPeerIP     = "127.10.10.10"
 	testAccount    = identity.Identity("user:sa@example.com")
 	testProject    = "test-proj"
 	testRealm      = testProject + ":test-realm"
+	testRequestID  = "gae-request-id"
 )
 
 func TestMintServiceAccountToken(t *testing.T) {
 	ctx := gaetesting.TestingContext()
-	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
+	ctx = info.GetTestable(ctx).SetRequestID(testRequestID)
 	ctx = logging.SetLevel(ctx, logging.Debug) // coverage for logRequest
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 	// Will be changed on per test case basis.
 	ctx = auth.WithState(ctx, &authtest.FakeState{
-		Identity:       testCaller,
-		PeerIPOverride: net.ParseIP("127.10.10.10"),
+		Identity:             testCaller,
+		PeerIdentityOverride: testPeer,
+		PeerIPOverride:       net.ParseIP(testPeerIP),
 		FakeDB: authtest.NewFakeDB(
 			authtest.MockPermission(testCaller, testRealm, permMintToken),
 			authtest.MockPermission(testAccount, testRealm, permExistInRealm),
@@ -75,6 +79,9 @@ func TestMintServiceAccountToken(t *testing.T) {
 	// Records last received arguments of Mint*Token.
 	var lastAccessTokenCall auth.MintAccessTokenParams
 	var lastIDTokenCall auth.MintIDTokenParams
+
+	// Records last call to LogToken.
+	var loggedTok *MintedTokenInfo
 
 	rpc := MintServiceAccountTokenRPC{
 		Signer: signingtest.NewSigner(&signing.ServiceInfo{
@@ -97,6 +104,10 @@ func TestMintServiceAccountToken(t *testing.T) {
 				Token:  "id-token-for-" + params.ServiceAccount,
 				Expiry: clock.Now(ctx).Add(time.Hour).Truncate(time.Second),
 			}, nil
+		},
+		LogToken: func(ctx context.Context, info *MintedTokenInfo) error {
+			loggedTok = info
+			return nil
 		},
 	}
 
@@ -122,6 +133,19 @@ func TestMintServiceAccountToken(t *testing.T) {
 				Scopes:         []string{"scope-a", "scope-z"},
 				MinTTL:         5 * time.Minute,
 			})
+
+			// We can't use ShouldResemble here because it contains proto messages.
+			// Compare field-by-field instead.
+			So(loggedTok.Request, ShouldEqual, req)
+			So(loggedTok.Response, ShouldEqual, resp)
+			So(loggedTok.RequestedAt, ShouldResemble, clock.Now(ctx))
+			So(loggedTok.OAuthScopes, ShouldResemble, []string{"scope-a", "scope-z"})
+			So(loggedTok.RequestIdentity, ShouldEqual, testCaller)
+			So(loggedTok.PeerIdentity, ShouldEqual, testPeer)
+			So(loggedTok.ConfigRev, ShouldEqual, "fake-revision")
+			So(loggedTok.PeerIP.String(), ShouldEqual, testPeerIP)
+			So(loggedTok.RequestID, ShouldEqual, testRequestID)
+			So(loggedTok.AuthDBRev, ShouldEqual, 0) // FakeDB is always 0
 		})
 
 		Convey("ID token", func() {

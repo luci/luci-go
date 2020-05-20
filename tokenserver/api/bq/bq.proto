@@ -220,12 +220,14 @@ message ServiceAccountToken {
   google.protobuf.Timestamp expiration = 10;
   // Arbitrary key:value pairs provided by the caller.
   repeated string audit_tags = 11;
+  // Revision of the luci-config repo with project_owned_accounts.cfg.
+  string config_rev = 12;
   // IP address of the caller.
-  string peer_ip = 12;
+  string peer_ip = 13;
   // Identifier of the token server GAE app and version.
-  string service_version = 13;
+  string service_version = 14;
   // ID of the GAE request that handled the call.
-  string gae_request_id = 14;
+  string gae_request_id = 15;
   // Revision of the authorization database used to authorize this call.
-  int64 auth_db_rev = 15;
+  int64 auth_db_rev = 16;
 }
