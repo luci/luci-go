@@ -140,6 +140,30 @@
       "revId": "3df4284b34926f91954b50d54b26ec334312139e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6cafa39a_e1fb63e6",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-20T22:07:06Z",
+      "side": 1,
+      "message": "oh, i misread its doc. I thought \"values that contain proto messages\" implies arbitrary go struct some field being protos.",
+      "parentUuid": "0bbcaef4_11f73c07",
+      "range": {
+        "startLine": 137,
+        "startChar": 19,
+        "endLine": 137,
+        "endChar": 33
+      },
+      "revId": "3df4284b34926f91954b50d54b26ec334312139e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
