@@ -206,7 +206,37 @@ func TestUpdateTrees(t *testing.T) {
 			So(status.status, ShouldEqual, config.Closed)
 		})
 
-		Convey("Opened manually, still closes", func() {
+		Convey("Opened manually, stays open with no new failures", func() {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium-status.appspot.com": treeStatus{
+						username:  "somedev@chromium.org",
+						message:   "Opened, because I feel like it",
+						key:       -1,
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder1),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      evenEarlierTime,
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Open)
+			So(status.message, ShouldEqual, "Opened, because I feel like it")
+		})
+
+		Convey("Opened manually, closes on new failure", func() {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium-status.appspot.com": treeStatus{
@@ -368,6 +398,45 @@ func TestUpdateTrees(t *testing.T) {
 				TreeCloser:     notifypb.TreeCloser{},
 				Status:         config.Open,
 				Timestamp:      evenEarlierTime,
+			}, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder2),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Closed,
+				Timestamp:      evenEarlierTime,
+			}), ShouldBeNil)
+			defer cleanup()
+
+			So(updateTrees(c, &ts), ShouldBeNil)
+
+			status, err := ts.getStatus(c, "chromium-status.appspot.com")
+			So(err, ShouldBeNil)
+			So(status.status, ShouldEqual, config.Closed)
+			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
+		})
+
+		Convey("Doesn't open when a builder is still failing", func() {
+			// This test replicates the likely state after we've automatically
+			// closed the tree, but some other builder has had a successful
+			// build.
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium-status.appspot.com": treeStatus{
+						username:  botUsername,
+						message:   "Tree is closed (Automatic: some builder failed)",
+						key:       -1,
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			So(datastore.Put(c, &config.TreeCloser{
+				BuilderKey:     datastore.KeyForObj(c, builder1),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     notifypb.TreeCloser{},
+				Status:         config.Open,
+				Timestamp:      time.Now().UTC(),
 			}, &config.TreeCloser{
 				BuilderKey:     datastore.KeyForObj(c, builder2),
 				TreeStatusHost: "chromium-status.appspot.com",
