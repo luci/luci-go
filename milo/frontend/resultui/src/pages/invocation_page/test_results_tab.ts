@@ -24,6 +24,7 @@ import '../../components/test_filter';
 import { TestFilter } from '../../components/test_filter';
 import '../../components/test_nav_tree';
 import { consumeContext } from '../../libs/context';
+import * as iter from '../../libs/iter_utils';
 import { TestNode } from '../../models/test_node';
 import { InvocationPageState } from './context';
 
@@ -43,10 +44,10 @@ export class TestResultsTabElement extends MobxLitElement {
     // Load more tests when there are more tests to be displayed but not loaded.
     this.disposers.push(autorun(() => {
       const state = this.pageState;
-      if (state.selectedNode.fullyLoaded || state.testLoader.isLoading || this.pageLength <= state.selectedNode.allTests.length) {
+      if (state.testLoader.done || state.testLoader.isLoading || this.pageLength <= state.selectedNode.testCount) {
         return;
       }
-      state.testLoader.loadMore(this.pageLength - state.selectedNode.allTests.length);
+      state.testLoader.loadMore(this.pageLength - state.selectedNode.testCount);
     }));
   }
   disconnectedCallback() {
@@ -74,18 +75,18 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-nav-tree>
         </tr-left-panel>
         <div id="test-result-view">
-          ${repeat(state.selectedNode.allTests.slice(0, this.pageLength), (t) => t.id, (t, i) => html`
+          ${repeat(iter.withPrev(iter.take(state.selectedNode.tests(), this.pageLength)), ([t]) => t.id, ([t, prev]) => html`
           <tr-test-entry
             .test=${t}
-            .prevTestId=${(state.selectedNode.allTests[i-1]?.id || '')}
-            .expanded=${state.selectedNode.allTests.length === 1}
+            .prevTestId=${(prev?.id || '')}
+            .expanded=${state.selectedNode.testCount === 1}
           ></tr-test-entry>
           `)}
           <div id="list-tail">
-            <span>Showing ${Math.min(state.selectedNode.allTests.length, this.pageLength)}/${state.selectedNode.allTests.length}${state.selectedNode.fullyLoaded ? '' : '+'} tests.</span>
+            <span>Showing ${Math.min(state.selectedNode.testCount, this.pageLength)}/${state.selectedNode.testCount}${state.testLoader.done ? '' : '+'} tests.</span>
             <span
               id="load-more"
-              style=${styleMap({'display': this.pageLength >= state.selectedNode.allTests.length && state.selectedNode.fullyLoaded ? 'none' : ''})}
+              style=${styleMap({'display': this.pageLength >= state.selectedNode.testCount && state.testLoader.done ? 'none' : ''})}
               @click=${() => this.pageLength += 100}
             >
               Load More

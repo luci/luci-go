@@ -13,21 +13,9 @@
 // limitations under the License.
 
 import { computed, observable } from 'mobx';
-import { fromResource } from 'mobx-utils';
 
 import { TestExoneration, TestResult, Variant } from '../services/resultdb';
 
-/**
- * TestResult or TestExoneration.
- */
-export type TestResultOrExoneration = TestResult | TestExoneration;
-
-/**
- * Tests if a TestResultOrExoneration is a test result.
- */
-export function isTestResult(testResultOrExoneration: TestResultOrExoneration): testResultOrExoneration is TestResult {
-  return (testResultOrExoneration as TestResult).resultId !== undefined;
-}
 
 /**
  * Regex for extracting segments from a test ID.
@@ -92,8 +80,13 @@ export class TestNode {
   // The path leads to this node, including the name of this node.
   // Can be used as an identifier of this node.
   private readonly unelidedPath: string;
-  @observable.shallow private readonly unelidedChildren: TestNode[] = [];
+  @observable.shallow private readonly unelidedChildrenMap = new Map<string, TestNode>();
   private readonly unelidedTests: ReadonlyTest[] = [];
+  @computed private get unelidedChildren() {
+    return [...this.unelidedChildrenMap.values()].sort((v1, v2) => {
+      return v1.unelidedName.localeCompare(v2.unelidedName);
+    });
+  }
 
   // The properties belongs to the elided node
   // (descendants with no siblings are elided into this node).
@@ -105,15 +98,18 @@ export class TestNode {
 
     // If the node has a single child, elide it into its parent.
     let node: TestNode = this;
-    while (node.unelidedChildren.length === 1) {
-      node = node.unelidedChildren[0];
+    while (node.unelidedChildrenMap.size === 1) {
+      node = node.unelidedChildrenMap.values().next().value;
       name += node.unelidedName;
     }
     return {name, node};
   }
 
-  @computed get fullyLoaded() { return this._fullyLoaded; }
-  @observable.ref private _fullyLoaded = false;
+  /**
+   * Total number of tests in this node.
+   */
+  @computed get testCount() { return this._testCount; }
+  @observable private _testCount = 0;
 
   static newRoot() { return new TestNode('', ''); }
   private constructor(prefix: string, private readonly unelidedName: string) {
@@ -121,37 +117,14 @@ export class TestNode {
   }
 
   /**
-   * Contains all tests belonging to this node and its descendants.
+   * Iterates through all tests belonging to this node and its descendants.
    */
-  // Use keepAlive so the value is computed and cached when the value is
-  // accessed by non-observers.
-  // Note that when keepAlive is used, the computed value should only depends on
-  // values whose lifetime is no longer than `this` to prevent memory leak.
-  @computed({keepAlive: true})
-  get allTests(): readonly ReadonlyTest[] {
-    return this.allTestsResource.current();
+  *tests(): Iterable<ReadonlyTest> {
+    yield *this.unelidedTests;
+    for (const child of this.unelidedChildren) {
+      yield *child.tests();
+    }
   }
-
-  // Computes allTests on demand and updates allTests when new tests are added.
-  // This helps to improve time complexity on recomputation and memory
-  // efficiency comparing to pre-computing on every node or using @computed.
-  private allTestsResource = fromResource<ReadonlyTest[]>(
-    (sink) => {
-      const tests: ReadonlyTest[] = observable([], {deep: false});
-      // Computes the tests from scratch using depth-first-search.
-      function dfs(node: TestNode) {
-        tests.push(...node.unelidedTests);
-        node.unelidedChildren.forEach(dfs);
-      }
-      dfs(this);
-      sink(tests);
-
-      // Keeps track of new tests added to the node.
-      this.onAddTest = (test) => tests.push(test);
-    },
-    () => this.onAddTest = undefined,
-  );
-  private onAddTest?: (test: ReadonlyTest) => void;
 
   /**
    * Takes a test and adds it to the appropriate place in the tree,
@@ -166,31 +139,17 @@ export class TestNode {
   }
 
   private addTestWithIdSegs(test: ReadonlyTest, idSegStack: string[]) {
-    this.onAddTest?.(test);
+    this._testCount++;
     const nextSeg = idSegStack.pop();
     if (nextSeg === undefined) {
       this.unelidedTests.push(test);
       return;
     }
-    let child = this.unelidedChildren.last;
-    if (child?.unelidedName !== nextSeg) {
-      child?.finalizeLoading();
+    let child = this.unelidedChildrenMap.get(nextSeg);
+    if (child === undefined) {
       child = new TestNode(this.unelidedPath, nextSeg);
-      this.unelidedChildren.push(child);
+      this.unelidedChildrenMap.set(nextSeg, child);
     }
     child.addTestWithIdSegs(test, idSegStack);
-  }
-
-  /**
-   * Marks the nodes in the tree as fully loaded.
-   * This method should be called after the last test is added to the node.
-   */
-  finalizeLoading() {
-    if (this._fullyLoaded) {
-      return;
-    }
-    this._fullyLoaded = true;
-    const child = this.unelidedChildren.last;
-    child?.finalizeLoading();
   }
 }

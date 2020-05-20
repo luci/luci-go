@@ -28,17 +28,17 @@ describe('TestNode', () => {
     assert.equal(node.path, 'a/b/c/');
     assert.equal(node.name, 'a/b/c/');
     assert.equal(node.children.length, 2);
-    assert.deepEqual(node.allTests, [test1, test2]);
+    assert.deepEqual([...node.tests()], [test1, test2]);
 
     assert.equal(node.children[0].path, 'a/b/c/d');
     assert.equal(node.children[0].name, 'd');
     assert.equal(node.children[0].children.length, 0);
-    assert.deepEqual(node.children[0].allTests, [test1]);
+    assert.deepEqual([...node.children[0].tests()], [test1]);
 
     assert.equal(node.children[1].path, 'a/b/c/e');
     assert.equal(node.children[1].name, 'e');
     assert.equal(node.children[1].children.length, 0);
-    assert.deepEqual(node.children[1].allTests, [test2]);
+    assert.deepEqual([...node.children[1].tests()], [test2]);
   });
 
   it('should un-elide test id segments after a new branch is added', async () => {
@@ -74,32 +74,5 @@ describe('TestNode', () => {
     assert.equal(node.children.length, 2);
     assert.equal(node.children[0].name, '');
     assert.equal(node.children[1].name, 'e');
-  });
-
-  it('should mark nodes as fully loaded correctly', async () => {
-    const node = TestNode.newRoot();
-    const test1 = {id: 'a/b/c/d', variants: []};
-    const test2 = {id: 'a/b/c/e/f', variants: []};
-    const test3 = {id: 'a/b/c/e/g', variants: []};
-    const test4 = {id: 'a/b/c/f', variants: []};
-    node.addTest(test1);
-    node.addTest(test2);
-    node.addTest(test3);
-    node.addTest(test4);
-
-    assert.equal(node.fullyLoaded, false);
-    assert.equal(node.children[0].fullyLoaded, true);
-    assert.equal(node.children[1].fullyLoaded, true);
-    assert.equal(node.children[1].children[0].fullyLoaded, true);
-    assert.equal(node.children[1].children[1].fullyLoaded, true);
-    assert.equal(node.children[2].fullyLoaded, false);
-
-    node.finalizeLoading();
-    assert.equal(node.fullyLoaded, true);
-    assert.equal(node.children[0].fullyLoaded, true);
-    assert.equal(node.children[1].fullyLoaded, true);
-    assert.equal(node.children[1].children[0].fullyLoaded, true);
-    assert.equal(node.children[1].children[1].fullyLoaded, true);
-    assert.equal(node.children[2].fullyLoaded, true);
   });
 });
