@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5292e74d_3b7ebf51",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/bigquery_log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-20T18:08:40Z",
+      "side": 1,
+      "message": "is this JUST for delegation tokens case?",
+      "range": {
+        "startLine": 51,
+        "startChar": 35,
+        "endLine": 51,
+        "endChar": 68
+      },
+      "revId": "3df4284b34926f91954b50d54b26ec334312139e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b5bc702_1bb4090b",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-20T18:08:40Z",
+      "side": 1,
+      "message": "nit: move closer to L206.",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 193,
+        "endChar": 23
+      },
+      "revId": "3df4284b34926f91954b50d54b26ec334312139e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22f66383_8e414da3",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/rpc_mint_service_account_token_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-20T18:08:40Z",
+      "side": 1,
+      "message": "why not ShouldResembleProto \nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/testing/assertions/proto_tests.go?q\u003dShouldResembleProto\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d33",
+      "range": {
+        "startLine": 137,
+        "startChar": 19,
+        "endLine": 137,
+        "endChar": 33
+      },
+      "revId": "3df4284b34926f91954b50d54b26ec334312139e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
