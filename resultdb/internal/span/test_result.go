@@ -163,9 +163,9 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
 			AND (
-				(tr.TestId > @afterTestId) OR
-				(tr.TestId = @afterTestId AND tr.InvocationId > @afterInvocationId) OR
-				(tr.TestId = @afterTestId AND tr.InvocationId = @afterInvocationId AND tr.ResultId > @afterResultId)
+				(tr.InvocationId > @afterInvocationId) OR
+				(tr.InvocationId = @afterInvocationId AND tr.TestId > @afterTestId) OR
+				(tr.InvocationId = @afterInvocationId AND tr.TestId = @afterTestId AND tr.ResultId > @afterResultId)
 			)
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
 			AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
@@ -173,7 +173,7 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 				SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
 				FROM UNNEST(@variantContains) kv
 			))
-		ORDER BY tr.TestId, tr.InvocationId, tr.ResultId
+		ORDER BY InvocationId, TestId, ResultId
 		%s
 	`, strings.Join(extraSelect, ","), from, limit))
 	st.Params["invIDs"] = q.InvocationIDs
@@ -239,7 +239,8 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 }
 
 // Fetch returns a page of test results matching q.
-// Returned test results are ordered by test ID.
+// Returned test results are ordered by parent invocation ID, test ID and result
+// ID.
 func (q *TestResultQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (trs []*pb.TestResult, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
@@ -272,7 +273,7 @@ type TestResultQueryItem struct {
 }
 
 // Run calls f for test results matching the query.
-// The test results are ordered by test id.
+// The test results are ordered by parent invocation ID, test ID and result ID.
 func (q *TestResultQuery) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(TestResultQueryItem) error) error {
 	if q.PageSize > 0 {
 		panic("PageSize is specified when TestResultQuery.Run")

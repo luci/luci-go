@@ -84,7 +84,8 @@ type TestExonerationQuery struct {
 }
 
 // Fetch returns a page test of exonerations matching the query.
-// Returned test exonerations are ordered by test id.
+// Returned test exonerations are ordered by invocation ID, test ID and
+// exoneration ID.
 func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tes []*pb.TestExoneration, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
@@ -96,11 +97,11 @@ func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyT
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
 			AND (
-				(TestId > @afterTestId) OR
-				(TestId = @afterTestId AND InvocationId > @afterInvocationId) OR
-				(TestId = @afterTestId AND InvocationId = @afterInvocationId AND ExonerationID > @afterExonerationID)
+				(InvocationId > @afterInvocationId) OR
+				(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
+				(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ExonerationID > @afterExonerationID)
 		  )
-		ORDER BY TestId, InvocationId, ExonerationId
+		ORDER BY InvocationId, TestId, ExonerationId
 		LIMIT @limit
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
