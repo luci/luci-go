@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff4363e8_37242fbc",
+        "filename": "common/runtime/profiling/profiler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-20T17:49:19Z",
+      "side": 1,
+      "message": "nit: \"instructs the profiler to periodically dump heap profiler snapshots\"\n\nAlso \"until Stop is called\" is not true, the goroutine currently never stops.",
+      "range": {
+        "startLine": 65,
+        "startChar": 43,
+        "endLine": 66,
+        "endChar": 59
+      },
+      "revId": "32be054f3e7bd7ba0f18620dd319087e5c58269f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7988eade_8f54a109",
+        "filename": "common/runtime/profiling/profiler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-20T17:49:19Z",
+      "side": 1,
+      "message": "Either add integration with Stop() to gracefully cancel the timer and shutdown the goroutine, or just use regular time.Sleep(...). Using p.Clock with background context is identical to using time.Sleep(...), since the background context is never canceled.",
+      "range": {
+        "startLine": 138,
+        "startChar": 3,
+        "endLine": 141,
+        "endChar": 14
+      },
+      "revId": "32be054f3e7bd7ba0f18620dd319087e5c58269f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
