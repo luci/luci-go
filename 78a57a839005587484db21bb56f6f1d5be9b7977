@@ -22,6 +22,30 @@
       "revId": "78a57a839005587484db21bb56f6f1d5be9b7977",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a0f1e52_ffec73d0",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-20T23:58:59Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "208e8570_52fff9f1",
+      "range": {
+        "startLine": 29,
+        "startChar": 47,
+        "endLine": 29,
+        "endChar": 48
+      },
+      "revId": "78a57a839005587484db21bb56f6f1d5be9b7977",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
