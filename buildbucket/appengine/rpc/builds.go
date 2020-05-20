@@ -16,6 +16,8 @@ package rpc
 
 import (
 	"context"
+	"regexp"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -29,6 +31,30 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+var (
+	projRegex    = regexp.MustCompile(`^[a-z0-9\-_]+$`)
+	bucketRegex  = regexp.MustCompile(`^[a-z0-9\-_.]{1,100}$`)
+	builderRegex = regexp.MustCompile(`^[a-zA-Z0-9\-.\(\) ]{1,128}$`)
+	sha1Regex    = regexp.MustCompile(`^[a-z0-9]{40}$`)
+)
+
+// validateBuilderID validates the given builderID.
+// Bucket and Builder are optional and only validated if specified.
+func validateBuilderID(b *pb.BuilderID) error {
+	switch parts := strings.Split(b.Bucket, "."); {
+	case !projRegex.MatchString(b.Project):
+		return appstatus.Errorf(codes.InvalidArgument, "builder.project must match %q", projRegex.String())
+	case b.Bucket != "" && !bucketRegex.MatchString(b.Bucket):
+		return appstatus.Errorf(codes.InvalidArgument, "builder.bucket must match %q", bucketRegex.String())
+	case b.Builder != "" && !builderRegex.MatchString(b.Builder):
+		return appstatus.Errorf(codes.InvalidArgument, "builder.builder must match %q", builderRegex.String())
+	case b.Bucket != "" && parts[0] == "luci" && len(parts) > 2:
+		return appstatus.Errorf(codes.InvalidArgument, "invalid use of v1 builder.bucket in v2 API (hint: try %q)", parts[2])
+	default:
+		return nil
+	}
+}
 
 // defMask is the default field mask to use for GetBuild requests.
 // Initialized by init.
@@ -110,11 +136,6 @@ var _ pb.BuildsServer = &Builds{}
 
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (*Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
-// SearchBuilds handles a request to search for builds. Implements pb.BuildsServer.
-func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 

@@ -103,7 +103,7 @@ func TestGetBuild(t *testing.T) {
 						BuildNumber: 1,
 					}
 					err := validateGet(req)
-					So(err, ShouldErrLike, "bucket must match")
+					So(err, ShouldErrLike, "bucket is required")
 				})
 
 				Convey("v1", func() {
@@ -129,7 +129,7 @@ func TestGetBuild(t *testing.T) {
 					BuildNumber: 1,
 				}
 				err := validateGet(req)
-				So(err, ShouldErrLike, "builder must match")
+				So(err, ShouldErrLike, "builder is required")
 			})
 		})
 	})
