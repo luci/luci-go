@@ -25,6 +25,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"sync/atomic"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -60,6 +61,14 @@ type Profiler struct {
 	// Can also be set with "-profile-heap".
 	ProfileHeap bool
 
+	// ProfileHeapFrequency, if set non-zero, instructs the profiler to
+	// periodically dump heap profiler snapshots.
+	//
+	// Requires Dir to be set, since it's where the profiler output is dumped.
+	//
+	// Can also be set with "-profile-heap-frequency".
+	ProfileHeapFrequency time.Duration
+
 	// Logger, if not nil, will be used to log events and errors. If nil, no
 	// logging will be used.
 	Logger logging.Logger
@@ -84,7 +93,7 @@ func (p *Profiler) AddFlags(fs *flag.FlagSet) {
 		"If specified, allow generation of profiling artifacts, which will be written here.")
 	fs.BoolVar(&p.ProfileCPU, "profile-cpu", false, "If specified, enables CPU profiling.")
 	fs.BoolVar(&p.ProfileHeap, "profile-heap", false, "If specified, enables heap profiling.")
-
+	fs.DurationVar(&p.ProfileHeapFrequency, "profile-heap-frequency", 0, "If specified non-zero, enables periodic heap profiler snapshots dump.")
 }
 
 // Start starts the Profiler's configured operations.  On success, returns a
@@ -100,6 +109,18 @@ func (p *Profiler) Start() error {
 		if p.ProfileHeap {
 			return errors.New("-profile-heap requires -profile-output-dir to be set")
 		}
+
+		if p.ProfileHeapFrequency > 0 {
+			return errors.New("-profile-heap-frequency requires -profile-output-dir to be set")
+		}
+	}
+
+	if p.ProfileHeapFrequency < 0 {
+		return errors.New("-profile-heap-frequency should be positive if set")
+	}
+
+	if p.ProfileHeapFrequency > 0 && !p.ProfileHeap {
+		return errors.New("-profile-heap-frequency requires -profile-heap")
 	}
 
 	if p.ProfileCPU {
@@ -109,6 +130,17 @@ func (p *Profiler) Start() error {
 		}
 		pprof.StartCPUProfile(out)
 		p.profilingCPU = true
+	}
+
+	if p.ProfileHeapFrequency > 0 {
+		go func() {
+			for {
+				time.Sleep(p.ProfileHeapFrequency)
+				if err := p.dumpHeapProfile(); err != nil {
+					p.getLogger().Errorf("Error dump heap profile: %v", err)
+				}
+			}
+		}()
 	}
 
 	if p.BindHTTP != "" {
