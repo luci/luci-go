@@ -25,16 +25,21 @@ import (
 )
 
 func main() {
+	opts := recorder.Options{}
 	expectedTestResultsExpirationDays := flag.Int(
 		"expected-results-expiration",
 		60,
 		"How many days to keep results for test variants with only expected results",
 	)
+	flag.StringVar(
+		&opts.ArtifactRBEInstance,
+		"artifact-rbe-instance",
+		"",
+		"Name of the RBE instance to use for artifact storage",
+	)
 
 	internal.Main(func(srv *server.Server) error {
-		recorder.InitServer(srv, recorder.Options{
-			ExpectedResultsExpiration: time.Duration(*expectedTestResultsExpirationDays) * 24 * time.Hour,
-		})
-		return nil
+		opts.ExpectedResultsExpiration = time.Duration(*expectedTestResultsExpirationDays) * 24 * time.Hour
+		return recorder.InitServer(srv, opts)
 	})
 }

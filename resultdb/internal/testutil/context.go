@@ -16,8 +16,10 @@ package testutil
 
 import (
 	"context"
+	"math/rand"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
@@ -35,6 +37,8 @@ func testingContext(mockClock bool) context.Context {
 
 	// Set test secrets store for token generation/validation.
 	ctx = secrets.Set(ctx, &testsecrets.Store{})
+
+	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 
 	return ctx
 }
