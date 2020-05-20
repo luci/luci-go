@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "a0afd9b6_c15ef942",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-20T00:36:12Z",
+      "side": 1,
+      "message": "Well, you can setup a sync.Pool with 1MB buffers, but I don\u0027t think it will make much of a difference. \n\nA better optimization would be to allocate LESS than 1MB if we know the file size is smaller than that. I assume this information is known to writeToCAS caller? It will help avoid OOMs when writing a ton of small files.",
+      "parentUuid": "d65a4828_73560b31",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 21
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3065256b_a76610be",
         "filename": "resultdb/internal/services/recorder/create_artifact.go",
         "patchSetId": 6
@@ -178,6 +202,30 @@
       "side": 1,
       "message": "fail how? \n\nmy first version did what you say. Send a request with resource name and with no data. Then send requests without a resource name and with data in the loop. I was hoping the first request will return io.EOF if the blob is already there. It did not: in practice duplication may happen after some data is already sent, so I\u0027d have error handling in both places.",
       "parentUuid": "3065256b_a76610be",
+      "range": {
+        "startLine": 176,
+        "startChar": 3,
+        "endLine": 179,
+        "endChar": 4
+      },
+      "revId": "bc60f4210741a32d37de755ef40a37bbdf7b4f0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44830c2d_59723366",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-20T00:36:12Z",
+      "side": 1,
+      "message": "Oh, genWriteResourceName never actually returns an error (because reading from mathrand never fails). Better remove (, error) from its signature then.",
+      "parentUuid": "125c56a4_b3662bbe",
       "range": {
         "startLine": 176,
         "startChar": 3,
