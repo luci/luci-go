@@ -580,11 +580,33 @@ def gen_milo_cfg(ctx):
   set_config(ctx, milo.cfg_file, milo_pb.Project(
       build_bug_template = build_bug_template,
       logo_url = opts.logo,
-      consoles = [
-          _milo_console_pb(view, opts, project_name)
-          for view in views
-      ],
+      consoles = _milo_consoles(views, opts, project_name),
+      external_consoles = _milo_external_consoles(views, opts, project_name),
   ))
+
+
+def _milo_consoles(views, opts, project_name):
+  """Gets a list of milo_pb.Consoles given a list of MILO_VIEW nodes.
+
+  Excludes external consoles."""
+  consoles = []
+  for view in views:
+    console = _milo_console_pb(view, opts, project_name)
+    if console != None:
+      consoles.append(console)
+  return consoles
+
+
+def _milo_external_consoles(views, opts, project_name):
+  """Gets a list of milo_pb.ExternalConsoles given a list of MILO_VIEW nodes.
+
+  Excludes local consoles."""
+  external_consoles = []
+  for view in views:
+    external_console = _milo_external_console_pb(view, opts, project_name)
+    if external_console != None:
+      external_consoles.append(external_console)
+  return external_consoles
 
 
 def _milo_check_connections():
@@ -611,8 +633,29 @@ def _milo_console_pb(view, opts, project_name):
     return _milo_list_view(view, opts, project_name)
   if view.key.kind == kinds.CONSOLE_VIEW:
     return _milo_console_view(view, opts, project_name)
+  if view.key.kind == kinds.EXTERNAL_CONSOLE_VIEW:
+    return None
   fail('impossible: %s' % (view,))
 
+
+def _milo_external_console_pb(view, opts, project_name):
+  """Given MILO_VIEW node returns milo_pb.ExternalConsole."""
+  ch = graph.children(view.key)
+  if len(ch) != 1:
+    fail('impossible: %s' % (ch,))
+  view = ch[0]
+  if view.key.kind == kinds.LIST_VIEW:
+    return None
+  if view.key.kind == kinds.CONSOLE_VIEW:
+    return None
+  if view.key.kind == kinds.EXTERNAL_CONSOLE_VIEW:
+    return milo_pb.ExternalConsole(
+        id = view.props.name,
+        name = view.props.title,
+        external_project = view.props.external_project,
+        external_id = view.props.external_id,
+    )
+  fail('impossible: %s' % (view,))
 
 def _milo_list_view(view, opts, project_name):
   """Given a LIST_VIEW node produces milo_pb.Console."""
