@@ -269,10 +269,11 @@ func tcProject(tc *config.TreeCloser) string {
 
 func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set) error {
 	treeStatus, err := ts.getStatus(c, host)
-	switch {
-	case err != nil:
+	if err != nil {
 		return err
-	case treeStatus.status == config.Closed && treeStatus.username != botUsername && treeStatus.username != legacyBotUsername:
+	}
+
+	if treeStatus.status == config.Closed && treeStatus.username != botUsername && treeStatus.username != legacyBotUsername {
 		// Don't do anything if the tree was manually closed.
 		return nil
 	}
@@ -285,51 +286,67 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 		}
 	}
 
-	haveNewBuild := false
+	anyFailingBuild := false
+	anyNewBuild := false
 	var oldestClosed *config.TreeCloser
 	for _, tc := range treeClosers {
-		// Only pay attention to builds from after the last update to the
-		// tree. Otherwise we'll automatically close the tree every minute
-		// when people try to manually re-open.
-		if tc.Timestamp.Before(treeStatus.timestamp) {
-			continue
-		}
-
-		// If any TreeClosers are from projects with tree closing
-		// enabled, ignore any TreeClosers *not* from such projects. In
-		// general we don't expect different projects to close the same
-		// tree, so we're okay with not seeing dry run logging for
-		// these TreeClosers in this rare case.
+		// If any TreeClosers are from projects with tree closing enabled,
+		// ignore any TreeClosers *not* from such projects. In general we don't
+		// expect different projects to close the same tree, so we're okay with
+		// not seeing dry run logging for these TreeClosers in this rare case.
 		if anyEnabled && !closingEnabledProjects.Has(tcProject(tc)) {
 			continue
 		}
 
-		haveNewBuild = true
+		// For opening the tree, we need to make sure *all* builders are
+		// passing, not just those that have had new builds. Otherwise we'll
+		// open the tree after any new green build, even if the builder that
+		// caused us to close it is still failing.
+		anyFailingBuild = anyFailingBuild || tc.Status == config.Closed
+
+		// Only pay attention to failing builds from after the last update to
+		// the tree. Otherwise we'll close the tree even after people manually
+		// open it.
+		if tc.Timestamp.Before(treeStatus.timestamp) {
+			continue
+		}
+
+		anyNewBuild = true
+
 		if tc.Status == config.Closed && (oldestClosed == nil || tc.Timestamp.Before(oldestClosed.Timestamp)) {
 			oldestClosed = tc
 		}
 	}
 
-	if !haveNewBuild {
-		// Don't do anything if all the builds are older than the last
-		// update to the tree.
+	var newStatus config.TreeCloserStatus
+	if !anyNewBuild {
+		// Don't do anything if all the builds are older than the last update
+		// to the tree - nothing has changed, so there's no reason to take any
+		// action.
+		return nil
+	}
+	if !anyFailingBuild {
+		// We can open the tree, as no builders are failing, including builders
+		// that haven't run since the last update to the tree.
+		newStatus = config.Open
+	} else if oldestClosed != nil {
+		// We can close the tree, as at least one builder has failed since the
+		// last update to the tree.
+		newStatus = config.Closed
+	} else {
+		// Some builders are failing, but they were already failing before the
+		// last update. Don't do anything, so as not to close the tree after a
+		// sheriff has manually opened it.
 		return nil
 	}
 
-	var overallStatus config.TreeCloserStatus
-	if oldestClosed == nil {
-		overallStatus = config.Open
-	} else {
-		overallStatus = config.Closed
-	}
-
-	if treeStatus.status == overallStatus {
-		// Don't do anything if the status is already correct.
+	if treeStatus.status == newStatus {
+		// Don't do anything if the current status is already correct.
 		return nil
 	}
 
 	var message string
-	if overallStatus == config.Open {
+	if newStatus == config.Open {
 		message = fmt.Sprintf("Tree is open (Automatic: %s)", randomEmoji())
 	} else {
 		message = fmt.Sprintf("Tree is closed (Automatic: %s)", oldestClosed.Message)
