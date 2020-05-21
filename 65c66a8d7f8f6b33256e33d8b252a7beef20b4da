@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d80c03b2_22201571",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-05-21T18:45:20Z",
+      "side": 1,
+      "message": "I don\u0027t understand this line.\n\nWhy is this not `s.taskCount \u003d cnt; s.oldestCreateTime \u003d oldestCreateTime;` ?",
+      "revId": "65c66a8d7f8f6b33256e33d8b252a7beef20b4da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
