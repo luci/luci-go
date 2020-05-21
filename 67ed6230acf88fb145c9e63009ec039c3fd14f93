@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e17f9656_b7d4272e",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1001939
+      },
+      "writtenOn": "2020-05-21T01:44:00Z",
+      "side": 1,
+      "message": "it\u0027s not err of w.Send. but r.Read?",
+      "revId": "67ed6230acf88fb145c9e63009ec039c3fd14f93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
