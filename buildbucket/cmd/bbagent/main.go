@@ -119,7 +119,7 @@ func mainImpl() int {
 
 	opts.BaseDir = filepath.Join(cwd, "x")
 
-	exeArgs := input.Build.Exe.Cmd
+	exeArgs := append(([]string)(nil), input.Build.Exe.Cmd...)
 	payloadPath := input.PayloadPath
 	if len(exeArgs) == 0 {
 		// TODO(iannucci): delete me with ExecutablePath.
