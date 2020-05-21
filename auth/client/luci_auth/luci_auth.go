@@ -27,7 +27,7 @@ import (
 )
 
 // Version is the version of luci-auth tool.
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 // GetApplication returns cli.Application that implements 'luci-auth'.
 //
@@ -47,32 +47,31 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 			versioncli.CmdVersion("luci-auth v" + Version),
 
 			authcli.SubcommandLoginWithParams(authcli.CommandParams{
-				Name:              "login",
-				AuthOptions:       defaultAuthOpts,
-				ScopesFlag:        true,
-				ContextScopesFlag: true,
+				Name:          "login",
+				AuthOptions:   defaultAuthOpts,
+				UseScopeFlags: true,
 			}),
 			authcli.SubcommandLogoutWithParams(authcli.CommandParams{
-				Name:        "logout",
-				AuthOptions: defaultAuthOpts,
-				ScopesFlag:  true,
+				Name:          "logout",
+				AuthOptions:   defaultAuthOpts,
+				UseScopeFlags: true,
 			}),
 
 			authcli.SubcommandInfoWithParams(authcli.CommandParams{
-				Name:        "info",
-				AuthOptions: defaultAuthOpts,
-				ScopesFlag:  true,
+				Name:          "info",
+				AuthOptions:   defaultAuthOpts,
+				UseScopeFlags: true,
 			}),
 			authcli.SubcommandTokenWithParams(authcli.CommandParams{
-				Name:        "token",
-				AuthOptions: defaultAuthOpts,
-				ScopesFlag:  true,
+				Name:          "token",
+				AuthOptions:   defaultAuthOpts,
+				UseScopeFlags: true,
 			}),
 
 			authcli.SubcommandContextWithParams(authcli.CommandParams{
-				Name:        "context",
-				AuthOptions: defaultAuthOpts,
-				ScopesFlag:  true,
+				Name:          "context",
+				AuthOptions:   defaultAuthOpts,
+				UseScopeFlags: true,
 			}),
 		},
 	}
