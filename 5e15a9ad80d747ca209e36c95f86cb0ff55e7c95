@@ -70,6 +70,30 @@
       "revId": "5e15a9ad80d747ca209e36c95f86cb0ff55e7c95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "262311db_5e47c2ca",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-21T20:53:19Z",
+      "side": 1,
+      "message": "oh I see. You need it double quoted. Then ignore my previous comments.",
+      "parentUuid": "997b0010_680552aa",
+      "range": {
+        "startLine": 77,
+        "startChar": 75,
+        "endLine": 77,
+        "endChar": 77
+      },
+      "revId": "5e15a9ad80d747ca209e36c95f86cb0ff55e7c95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
