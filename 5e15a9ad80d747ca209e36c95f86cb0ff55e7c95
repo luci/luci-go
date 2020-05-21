@@ -22,6 +22,30 @@
       "revId": "5e15a9ad80d747ca209e36c95f86cb0ff55e7c95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "631318cb_85b02472",
+        "filename": "buildbucket/appengine/model/bucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T20:21:42Z",
+      "side": 1,
+      "message": "It can be, but %q will quote it as \"administrators\" which I would otherwise have to double escape if I didn\u0027t use string formatting. Mostly it\u0027s this way because I copied it from L92.",
+      "parentUuid": "a4d62add_960e3bf3",
+      "range": {
+        "startLine": 77,
+        "startChar": 75,
+        "endLine": 77,
+        "endChar": 77
+      },
+      "revId": "5e15a9ad80d747ca209e36c95f86cb0ff55e7c95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
