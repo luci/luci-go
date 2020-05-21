@@ -1936,10 +1936,10 @@ This optional rule can be used to set global CQ parameters that apply to all
 ```python
 luci.cq_group(
     # Required arguments.
-    name,
     watch,
 
     # Optional arguments.
+    name = None,
     acls = None,
     allow_submit_with_open_deps = None,
     allow_owner_if_submittable = None,
@@ -1956,7 +1956,7 @@ whenever there's a pending approved CL for a ref in the watched set.
 
 #### Arguments {#luci.cq_group-args}
 
-* **name**: a name of this CQ group, to reference it in other rules. Doesn't show up anywhere in configs or UI. Required.
+* **name**: a human- and machine-readable name this CQ group. Must be unique within this project. This is used in messages posted to users and in monitoring data. Must match regex `^[a-zA-Z][a-zA-Z0-9_-]*$`.
 * **watch**: either a single [cq.refset(...)](#cq.refset) or a list of [cq.refset(...)](#cq.refset) (one per repo), defining what set of refs the CQ should monitor for pending CLs. Required.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects with ACLs specific for this CQ group. Only `acl.CQ_*` roles are allowed here. By default ACLs are inherited from [luci.project(...)](#luci.project) definition. At least one `acl.CQ_COMMITTER` entry should be provided somewhere (either here or in [luci.project(...)](#luci.project)).
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
