@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "a545ea32_aa0795b9",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T23:05:10Z",
+      "side": 1,
+      "message": "the status message returned to the user would not have the weirdness because appstatus.Get(err).Message would be clean",
+      "parentUuid": "dddc5585_4a4056c2",
+      "range": {
+        "startLine": 47,
+        "startChar": 50,
+        "endLine": 47,
+        "endChar": 59
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e5695506_7b89ced8",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -457,6 +481,30 @@
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c71c64aa_0693ccb6",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T23:05:10Z",
+      "side": 1,
+      "message": "\u003e What is the difference between appstatus.BadRequest and appstatus.Errorf called with codes.InvalidArgument?\n\nBadRequest also accepts additional optional details about the invalid argument.\nErrrof with InvalidArgument would be OK too.\n\n\u003e What if validation code itself fails? I think if it returns a plain error it should be treated as such (i.e. postlude func logs and converts it to Internal). Returning a non-appstatus error when the error code is known seems counterintuitive with respect to the design of the appstatus package; I thought the whole point was that the function returning the error knows what kind of error to return. e.g. Returning a gRPC error and letting the caller override it to Internal is fine but returning a plain error and expecting the caller to decide its gRPC code is missing the point of the appstatus package. At least it was my understanding.\n\nI think it can be a public contract of the function that if it returns a non-nil error, then it is a validation error. \n\nHow would it itself fail? it does not accept context (and we don\u0027t write code that relies on global mutable variables), so the only way it could fail is either there is a bug (in which case it will panic) or the input was wrong.",
+      "parentUuid": "bc00d6d8_8239f1e1",
+      "range": {
+        "startLine": 71,
+        "startChar": 26,
+        "endLine": 71,
+        "endChar": 47
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
