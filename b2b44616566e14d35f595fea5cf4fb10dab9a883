@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a92ca059_ba14b757",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "f",
+      "range": {
+        "startLine": 39,
+        "startChar": 40,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1c13b4e_eeb35148",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "unnecessary. Calling .String() is how %q converts interface{} to a string\n\nsame below",
+      "range": {
+        "startLine": 47,
+        "startChar": 91,
+        "endLine": 47,
+        "endChar": 100
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ab51ffc_0b41f8f2",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "nit: this assumes that the caller has a field called \"builder\", which is not necessarily true. I think it should just say \"project\" and it is the caller\u0027s job to talk about its \"bulider\" field.\n\nexample: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/predicate.go;l\u003d36\n\nsame below",
+      "range": {
+        "startLine": 47,
+        "startChar": 50,
+        "endLine": 47,
+        "endChar": 59
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5695506_7b89ced8",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "i spent some time reviewing this code until i realized that this code moved without many changes. Moving code is easy for you, but the reviewer spends time reviewing it from scratch if they don\u0027t realize that this code is not new, or spends time trying to figure out what part of the code is new and what part of the code does not have to be reviewed. The latter is done manually because Gerrit does not help here.\n\nThis can be prevented by thinking about the code organization ahead of time and placing generic code in appropriate places (to reduce code moves).\n\nCode moves are unavoidable, but it is easier to review CLs if code moves are separated from CLs with new code. Then the reviewer can quickly stamp the CL that merely moves code.\n\nThis can also be prevented by explicit inline comments \"this part is new\" for example, or \"this code was moved without changes\"",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae9f1b34_71c48fb9",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 60,
+        "startChar": 102,
+        "endLine": 60,
+        "endChar": 111
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df62af59_50601491",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "this code could be more modular: a func to validate a Gerrit change, a func to validate a gitiles change. Then we wouldn\u0027t have to repeat \"output_gitiles_commit\" 7 times. This would make the code more concise and readable. As a reviewer, I\u0027d pay more attention to the nuances of the logic, rather than reading copy-pasted code.",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb49ae07_ac9ab7f1",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 71,
+        "startChar": 105,
+        "endLine": 71,
+        "endChar": 126
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e600806a_782fe35b",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "remove. Seems to be a consequence of copy-pasting.",
+      "range": {
+        "startLine": 71,
+        "startChar": 50,
+        "endLine": 71,
+        "endChar": 72
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0bcbbf0_73fa7bba",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T00:23:24Z",
+      "side": 1,
+      "message": "this is repeated 11 times in this func. Consider returning a non-annotated error (simple errors.Reason) and use appstatus.BadRequest in L81 just once",
+      "range": {
+        "startLine": 71,
+        "startChar": 26,
+        "endLine": 71,
+        "endChar": 47
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
