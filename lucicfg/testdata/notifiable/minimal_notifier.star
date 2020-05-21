@@ -78,47 +78,47 @@ luci.builder(
 #     builders: <
 #       name: "builder 1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #     builders: <
 #       name: "builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #     builders: <
 #       name: "builder 3"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #     builders: <
 #       name: "builder 4"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #     builders: <
 #       name: "builder 5"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #   >
 # >

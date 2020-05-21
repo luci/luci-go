@@ -89,13 +89,11 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe: <
-#         name: "recipe1"
+#       exe: <
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
-#         properties_j: "base:\"base val\""
-#         properties_j: "overridden:\"original\""
 #       >
+#       properties: "{\"base\":\"base val\",\"overridden\":\"original\",\"recipe\":\"recipe1\"}"
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -118,14 +116,11 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:new 1"
 #       dimensions: "overridden:new 2"
-#       recipe: <
-#         name: "recipe1"
+#       exe: <
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
-#         properties_j: "base:\"base val\""
-#         properties_j: "extra:\"extra\""
-#         properties_j: "overridden:\"new\""
 #       >
+#       properties: "{\"base\":\"base val\",\"extra\":\"extra\",\"overridden\":\"new\",\"recipe\":\"recipe1\"}"
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -151,13 +146,11 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe: <
-#         name: "recipe2"
+#       exe: <
 #         cipd_package: "cipd/another"
 #         cipd_version: "refs/another"
-#         properties_j: "base:\"base val\""
-#         properties_j: "overridden:\"original\""
 #       >
+#       properties: "{\"base\":\"base val\",\"overridden\":\"original\",\"recipe\":\"recipe2\"}"
 #       priority: 1
 #       execution_timeout_secs: 1800
 #       expiration_secs: 1200

@@ -40,11 +40,11 @@ luci.list_view_entry(
 #     builders: <
 #       name: "builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #   >
 # >

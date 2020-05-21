@@ -124,111 +124,111 @@ one('builder-a')
 #     builders: <
 #       name: "builder-a"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-b"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-c"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-d"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-e"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-f"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-g"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-h"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-i"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-j"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #     builders: <
 #       name: "builder-k"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "noop@example.com"
 #     >
 #   >

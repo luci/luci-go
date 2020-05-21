@@ -575,29 +575,29 @@ lucicfg.emit(
 #     builders: <
 #       name: "builder with custom swarming host"
 #       swarming_host: "another-swarming.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "cron builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "generically named executable builder"
@@ -617,13 +617,11 @@ lucicfg.emit(
 #       dimensions: "os:Linux"
 #       dimensions: "300:prefer_if_available:first-choice"
 #       dimensions: "prefer_if_available:fallback"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#         properties_j: "prop1:\"val1\""
-#         properties_j: "prop2:[\"val2\",123]"
 #       >
+#       properties: "{\"prop1\":\"val1\",\"prop2\":[\"val2\",123],\"recipe\":\"main/recipe\"}"
 #       priority: 80
 #       execution_timeout_secs: 10800
 #       expiration_secs: 3600
@@ -668,11 +666,11 @@ lucicfg.emit(
 #     builders: <
 #       name: "watched builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #   >
 # >
@@ -689,11 +687,11 @@ lucicfg.emit(
 #     builders: <
 #       name: "another builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "inline/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"inline/recipe\"}"
 #       service_account: "builder@example.com"
 #     >
 #     builders: <
@@ -709,20 +707,20 @@ lucicfg.emit(
 #     builders: <
 #       name: "triggered builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "inline/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"inline/recipe\"}"
 #     >
 #     builders: <
 #       name: "triggerer builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "inline/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"inline/recipe\"}"
 #       service_account: "builder@example.com"
 #     >
 #   >
@@ -753,47 +751,47 @@ lucicfg.emit(
 #     builders: <
 #       name: "equivalent cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "linux try builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "linux try builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #     builders: <
 #       name: "main cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "main/recipe"
+#       exe: <
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"main/recipe\"}"
 #     >
 #   >
 # >

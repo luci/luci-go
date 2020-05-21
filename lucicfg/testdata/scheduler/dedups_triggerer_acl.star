@@ -41,31 +41,31 @@ luci.builder(
 #     builders: <
 #       name: "b1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "account@example.com"
 #     >
 #     builders: <
 #       name: "b2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #       service_account: "account@example.com"
 #     >
 #     builders: <
 #       name: "b3"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #   >
 # >

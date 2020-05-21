@@ -256,12 +256,11 @@ def _buildbucket_builders(bucket, swarming_host):
   """luci.bucket(...) node => [buildbucket_pb.Builder]."""
   out = []
   for node in graph.children(bucket.key, kinds.BUILDER):
-    exe, recipe, properties = _handle_executable(node)
+    exe, properties = _handle_executable(node)
     out.append(buildbucket_pb.Builder(
         name = node.props.name,
         swarming_host = node.props.swarming_host or swarming_host,
         exe = exe,
-        recipe = recipe,
         properties = properties,
         service_account = node.props.service_account,
         caches = _buildbucket_caches(node.props.caches),
@@ -301,28 +300,20 @@ def _handle_executable(node):
   if len(executables) != 1:
     fail('impossible: the builder should have a reference to an executable')
   executable = executables[0]
+
+  executable_def = common_pb.Executable(
+      cipd_package = executable.props.cipd_package,
+      cipd_version = executable.props.cipd_version,
+      cmd = executable.props.cmd,
+  )
   if executable.props.recipe:
-    recipe_def = buildbucket_pb.Builder.Recipe(
-        name = executable.props.recipe,
-        cipd_package = executable.props.cipd_package,
-        cipd_version = executable.props.cipd_version,
-        properties_j = sorted([
-            '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
-        ])
-    )
-    executable_def = common_pb.Executable(
-        cmd = executable.props.cmd,
-    ) if executable.props.cmd else None
-    properties = None
+    props_dict = dict(node.props.properties)
+    props_dict['recipe'] = executable.props.recipe
+    properties = to_json(props_dict)
   else:
-    executable_def = common_pb.Executable(
-        cipd_package = executable.props.cipd_package,
-        cipd_version = executable.props.cipd_version,
-        cmd = executable.props.cmd,
-    )
-    recipe_def = None
     properties = to_json(node.props.properties)
-  return executable_def, recipe_def, properties
+
+  return executable_def, properties
 
 
 def _buildbucket_caches(caches):

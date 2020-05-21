@@ -47,20 +47,20 @@ luci.tree_closer(
 #     builders: <
 #       name: "builder 1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #     builders: <
 #       name: "builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
-#         name: "noop"
+#       exe: <
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       >
+#       properties: "{\"recipe\":\"noop\"}"
 #     >
 #   >
 # >
