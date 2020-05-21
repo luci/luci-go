@@ -76,7 +76,19 @@ type Console struct {
 	Builders []string
 
 	// Def is the actual underlying proto Console definition.
+	// If this console is external (i.e. a reference to a console from
+	// another project), this will contain the resolved Console definition.
 	Def config.Console `gae:",noindex"`
+
+	// ExternalProjectID contains the ID of the external project that this
+	// console refers to. Only populated if this Console is a reference to
+	// a console from another project.
+	ExternalProjectID string `gae:",noindex"`
+
+	// ExternalID contains the ID of the external console that this
+	// console refers to. Only populated if this Console is a reference to
+	// a console from another project.
+	ExternalID string `gae:",noindex"`
 
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
@@ -88,8 +100,12 @@ func (c *Console) ConsoleID() ConsoleID {
 }
 
 // ProjectID retrieves the project ID string of the console out of the Console's
-// parent key.
+// parent key. If the console is external, it will return the ID of the
+// referenced project instead.
 func (c *Console) ProjectID() string {
+	if c.ExternalProjectID != "" {
+		return c.ExternalProjectID
+	}
 	if c.Parent == nil {
 		return ""
 	}
@@ -395,6 +411,13 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 				// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
 				continue
 			}
+			externalProjectID := ""
+			externalID := ""
+			builders := pc.AllBuilderIDs()
+			if pc.ExternalProject != "" {
+				externalProjectID = pc.ExternalProject
+				externalID = pc.ExternalId
+			}
 			toPut = append(toPut, &Console{
 				Parent:         parentKey,
 				ID:             pc.Id,
@@ -403,6 +426,8 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 				ConfigRevision: cfg.Revision,
 				Builders:       pc.AllBuilderIDs(),
 				Def:            *pc,
+				ExternalProjectID: externalProjectID,
+				ExternalID: externalID,
 			})
 		}
 		return datastore.Put(c, toPut)
@@ -563,7 +588,17 @@ func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error)
 	con := []*Console{}
 	err := datastore.GetAll(c, q, &con)
 	sort.Slice(con, func(i, j int) bool { return con[i].Ordinal < con[j].Ordinal })
+	for i, console := range con {
+
+	}
 	return con, errors.Annotate(err, "getting project %q consoles", projectID).Err()
+}
+
+// resolveExternalConsole checks whether a console is "external" (i.e. a
+// reference to a console from another project) and if so, returns the actual
+// console that it points to.
+func resolveExternalConsole(c context.Context, console *Console) (*Console, error) {
+
 }
 
 // GetConsole returns the requested console.

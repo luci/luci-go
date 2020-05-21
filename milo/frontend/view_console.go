@@ -495,6 +495,10 @@ func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup)
 	return consoleIDs, nil
 }
 
+func filterUnauthorizedExternalConsoles(c context.Context, cons []*common.Console) error {
+
+}
+
 // filterUnauthorizedBuildersFromConsoles filters out builders the user does not have access to.
 func filterUnauthorizedBuildersFromConsoles(c context.Context, cons []*common.Console) error {
 	buckets := stringset.New(0)
