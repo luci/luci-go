@@ -211,6 +211,30 @@
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3238a35c_75a201f4",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-21T01:03:30Z",
+      "side": 1,
+      "message": "+1. I\u0027ve left a suggestion above for basically this.",
+      "parentUuid": "f0bcbbf0_73fa7bba",
+      "range": {
+        "startLine": 71,
+        "startChar": 26,
+        "endLine": 71,
+        "endChar": 47
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
