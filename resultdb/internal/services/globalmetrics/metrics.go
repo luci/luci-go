@@ -18,10 +18,12 @@ package globalmetrics
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -52,6 +54,8 @@ var (
 		"Current number of tasks.",
 		nil,
 		field.String("type")) // tasks.Type
+
+	taskStats = &taskStatPerType{}
 )
 
 // Options is global metrics server configuration.
@@ -67,8 +71,27 @@ func InitServer(srv *server.Server, opts Options) {
 		interval = 5 * time.Minute
 	}
 
+	tsmon.RegisterCallbackIn(srv.Context, func(ctx context.Context) {
+		taskStats.Range(func(taskType string, stat *taskStat) bool {
+			// reset the stat of each task type so that the stat of each task type can
+			// continue being reported with the default values, even if it stopped being
+			// present in the output of the SQL query.
+			s := stat.CloneAndReset()
+
+			// reset the oldest task creation time if there no longer exists any tasks
+			// with the type.
+			if s.taskCount == 0 {
+				tsmon.Store(ctx).Reset(ctx, oldestTaskMetric)
+			} else {
+				oldestTaskMetric.Set(ctx, s.oldestCreateTime.Unix(), taskType)
+			}
+			taskCountMetric.Set(ctx, s.taskCount, taskType)
+			return true
+		})
+	})
+
 	srv.RunInBackground("resultdb.tasks", func(ctx context.Context) {
-		cron.Run(ctx, interval, updateTaskMetrics)
+		cron.Run(ctx, interval, updateTaskStats)
 	})
 
 	srv.RunInBackground("resultdb.oldest_expired_result", func(ctx context.Context) {
@@ -76,7 +99,7 @@ func InitServer(srv *server.Server, opts Options) {
 	})
 }
 
-func updateTaskMetrics(ctx context.Context) error {
+func updateTaskStats(ctx context.Context) error {
 	st := spanner.NewStatement(`
 		SELECT TaskType, MIN(CreateTime), COUNT(*)
 		FROM InvocationTasks
@@ -91,8 +114,7 @@ func updateTaskMetrics(ctx context.Context) error {
 		if err := b.FromSpanner(row, &taskType, &minCreateTime, &count); err != nil {
 			return err
 		}
-		oldestTaskMetric.Set(ctx, minCreateTime.Unix(), taskType)
-		taskCountMetric.Set(ctx, count, taskType)
+		taskStats.Update(taskType, count, minCreateTime)
 		return nil
 	})
 }
@@ -131,4 +153,42 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 	err = span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &earliest, &pendingInvocationsCount)
 	oldestResult = earliest.Time
 	return
+}
+
+type taskStatPerType struct {
+	m sync.Map
+}
+
+func (t *taskStatPerType) Update(taskType string, cnt int64, oldestCreateTime time.Time) {
+	stat, loaded := t.m.LoadOrStore(
+		taskType, &taskStat{sync.Mutex{}, cnt, oldestCreateTime})
+	if loaded {
+		stat.(*taskStat).Update(cnt, oldestCreateTime)
+	}
+}
+
+func (t *taskStatPerType) Range(fn func(taskType string, stat *taskStat) bool) {
+	t.m.Range(func(k, v interface{}) bool { return fn(k.(string), v.(*taskStat)) })
+}
+
+type taskStat struct {
+	lock             sync.Mutex
+	taskCount        int64
+	oldestCreateTime time.Time
+}
+
+func (s *taskStat) Update(cnt int64, oldestCreateTime time.Time) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.taskCount = cnt
+	s.oldestCreateTime = oldestCreateTime
+}
+
+func (s *taskStat) CloneAndReset() *taskStat {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	ret := &taskStat{sync.Mutex{}, s.taskCount, s.oldestCreateTime}
+	s.taskCount = 0
+	s.oldestCreateTime = time.Time{}
+	return ret
 }
