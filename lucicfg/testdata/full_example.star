@@ -345,6 +345,12 @@ luci.console_view_entry(
     builder = 'inline/triggered builder',
 )
 
+luci.external_console_view(
+    name = 'external-console',
+    title = 'External console',
+    source = 'chromium:main',
+)
+
 
 # Notifier.
 
@@ -859,6 +865,12 @@ lucicfg.emit(
 #   include_experimental_builds: true
 #   default_commit_limit: 3
 #   default_expand: true
+# >
+# consoles: <
+#   id: "external-console"
+#   name: "External console"
+#   external_project: "chromium"
+#   external_id: "main"
 # >
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
 # build_bug_template: <
