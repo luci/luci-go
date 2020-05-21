@@ -17,8 +17,6 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 
@@ -30,13 +28,6 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// TODO(crbug/1042991): Move to a common location.
-var (
-	projRegex    = regexp.MustCompile(`^[a-z0-9\-_]+$`)
-	bucketRegex  = regexp.MustCompile(`^[a-z0-9\-_.]{1,100}$`)
-	builderRegex = regexp.MustCompile(`^[a-zA-Z0-9\-.\(\) ]{1,128}$`)
-)
-
 // validateGet validates the given request.
 func validateGet(req *pb.GetBuildRequest) error {
 	switch {
@@ -45,16 +36,13 @@ func validateGet(req *pb.GetBuildRequest) error {
 			return appstatus.Errorf(codes.InvalidArgument, "id is mutually exclusive with (builder and build_number)")
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
-		// TODO(crbug/1042991): Move pb.BuilderID validation to a common location.
-		switch parts := strings.Split(req.Builder.Bucket, "."); {
-		case !projRegex.MatchString(req.Builder.Project):
-			return appstatus.Errorf(codes.InvalidArgument, "builder.project must match %q", projRegex.String())
-		case !bucketRegex.MatchString(req.Builder.Bucket):
-			return appstatus.Errorf(codes.InvalidArgument, "builder.bucket must match %q", bucketRegex.String())
-		case !builderRegex.MatchString(req.Builder.Builder):
-			return appstatus.Errorf(codes.InvalidArgument, "builder.builder must match %q", builderRegex.String())
-		case parts[0] == "luci" && len(parts) > 2:
-			return appstatus.Errorf(codes.InvalidArgument, "invalid use of v1 builder.bucket in v2 API (hint: try %q)", parts[2])
+		switch err := validateBuilderID(req.Builder); {
+		case err != nil:
+			return err
+		case req.Builder.Bucket == "":
+			return appstatus.Errorf(codes.InvalidArgument, "builder.bucket is required")
+		case req.Builder.Builder == "":
+			return appstatus.Errorf(codes.InvalidArgument, "builder.builder is required")
 		}
 	default:
 		return appstatus.Errorf(codes.InvalidArgument, "one of id or (builder and build_number) is required")
