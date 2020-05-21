@@ -16,6 +16,24 @@
       "revId": "65c66a8d7f8f6b33256e33d8b252a7beef20b4da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b8d6493_55fdf9f4",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-21T19:38:49Z",
+      "side": 1,
+      "message": "yeah, that looks more intuitive. Updated.",
+      "parentUuid": "d80c03b2_22201571",
+      "revId": "65c66a8d7f8f6b33256e33d8b252a7beef20b4da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
