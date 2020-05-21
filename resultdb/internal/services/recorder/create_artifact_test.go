@@ -67,10 +67,8 @@ func (w *fakeWriter) CloseAndRecv() (*bytestream.WriteResponse, error) {
 }
 
 func (w *fakeWriter) Send(req *bytestream.WriteRequest) error {
-	if len(w.requests) < w.requestsToAccept {
-		w.requests = append(w.requests, proto.Clone(req).(*bytestream.WriteRequest))
-	}
-	if len(w.requests) == w.requestsToAccept {
+	w.requests = append(w.requests, proto.Clone(req).(*bytestream.WriteRequest))
+	if len(w.requests) >= w.requestsToAccept {
 		return io.EOF
 	}
 	return nil
@@ -252,6 +250,17 @@ func TestCreateArtifact(t *testing.T) {
 				rec := casSend()
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldEqual, "Content-Hash and/or Content-Length do not match the request body\n")
+			})
+
+			Convey(`RBE-CAS stops request early`, func() {
+				w.requestsToAccept = 1
+				w.res = &bytestream.WriteResponse{CommittedSize: 5} // blob already exists
+				ach.bufSize = 1
+				rec := casSend()
+				So(rec.Code, ShouldEqual, http.StatusNoContent)
+				// Must not continue requests after receiving io.EOF in the first
+				// request.
+				So(w.requests, ShouldHaveLength, 1)
 			})
 		})
 
