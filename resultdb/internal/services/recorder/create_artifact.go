@@ -205,7 +205,8 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 
 		// Send the request.
 		_, writeSpan := trace.StartSpan(ctx, "resultdb.writeChunk")
-		if err := w.Send(req); err != nil && err != io.EOF {
+		// Do not shadow err! It is checked below again.
+		if err = w.Send(req); err != nil && err != io.EOF {
 			writeSpan.End(err)
 			return errors.Annotate(err, "failed to write data to RBE-CAS").Err()
 		}
