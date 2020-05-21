@@ -150,7 +150,8 @@ type CacheKey struct {
 	//  * user/<client_id> when using UserCredentialsMethod with some ClientID.
 	//  * service_account/<email>/<key_id> when using ServiceAccountMethod.
 	//  * gce/<account> when using GCEMetadataMethod.
-	//  * iam/<account> when using actor mode with ActAsServiceAccount != "".
+	//  * iam/<account> when using IAM actor mode.
+	//  * luci_ts/<account>/<host>/<realm> when using Token Server actor mode.
 	//  * luci_ctx/<digest> when using LUCIContextMethod.
 	Key string `json:"key"`
 

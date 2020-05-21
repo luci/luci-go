@@ -191,6 +191,18 @@ func (c *commandRunBase) registerBaseFlags() {
 	c.flags.Register(&c.Flags, c.params.AuthOptions)
 }
 
+// askToLogin emits to stderr an instruction to login.
+//
+// TODO(vadimsh): This can be improved to recommend the correct list of -scopes.
+func (c *commandRunBase) askToLogin(opts auth.Options, forContext bool) {
+	fmt.Fprintf(os.Stderr, "Not logged in. Login first by running:\n")
+	if !forContext {
+		fmt.Fprintf(os.Stderr, "   $ luci-auth login\n")
+	} else {
+		fmt.Fprintf(os.Stderr, "   $ luci-auth login -context-scopes\n")
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // SubcommandLogin returns subcommands.Command that can be used to perform
@@ -352,18 +364,22 @@ func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 		Advanced:  params.Advanced,
 		UsageLine: params.Name,
 		ShortDesc: "prints an access token",
-		LongDesc:  "Generates an access token if requested and prints it.",
+		LongDesc:  "Refreshes an access token (if necessary) and prints it or writes it to a JSON file.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &tokenRun{}
 			c.params = &params
 			c.registerBaseFlags()
 			c.Flags.DurationVar(
 				&c.lifetime, "lifetime", time.Minute,
-				"Minimum token lifetime. If existing token expired and refresh token or service account is not present, returns nothing.",
+				"The returned token will live for at least that long. Depending on\n"+
+					"what exact token provider is used internally, large values may not\n"+
+					"work. Avoid using this parameter unless really necessary.\n"+
+					"The maximum acceptable value is 30m.",
 			)
 			c.Flags.StringVar(
 				&c.jsonOutput, "json-output", "",
-				"Destination file to print token and expiration time in JSON. \"-\" for standard output.")
+				`Path to a JSON file to write {"token": "...", expiry: <unix_ts>} into.`+
+					"\nUse \"-\" for standard output.")
 			return c
 		},
 	}
@@ -381,8 +397,8 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 		fmt.Fprintln(os.Stderr, err)
 		return ExitCodeInvalidInput
 	}
-	if c.lifetime > 45*time.Minute {
-		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 45m")
+	if c.lifetime > 30*time.Minute {
+		fmt.Fprintf(os.Stderr, "Requested -lifetime (%s) must not exceed 30m.\n", c.lifetime)
 		return ExitCodeInvalidInput
 	}
 
@@ -391,7 +407,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
-			fmt.Fprintln(os.Stderr, "Not logged in. Run 'luci-auth login'.")
+			c.askToLogin(opts, false)
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}
@@ -453,7 +469,16 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 			c.registerBaseFlags()
 			c.Flags.StringVar(
 				&c.actAs, "act-as-service-account", "",
-				"Act as a given service account (caller must have iam.serviceAccountActor role).")
+				"Act as a given service account (via Cloud IAM or via LUCI Token Server).")
+			c.Flags.StringVar(
+				&c.actViaRealm, "act-via-realm", params.AuthOptions.ActViaLUCIRealm,
+				"When used together with -act-as-service-account enables account\n"+
+					"impersonation through LUCI Token Server using LUCI Realms for ACLs.\n"+
+					"Must have form `<project>:<realm>`. If unset, the impersonation will\n"+
+					"be done through Cloud IAM instead bypassing LUCI.")
+			c.Flags.StringVar(
+				&c.tokenServerHost, "token-server-host", params.AuthOptions.TokenServerHost,
+				"The LUCI Token Server hostname to use when using -act-via-realm.")
 			c.Flags.BoolVar(&c.verbose, "verbose", false, "More logging")
 			return c
 		},
@@ -463,8 +488,10 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 type contextRun struct {
 	commandRunBase
 
-	actAs   string
-	verbose bool
+	actAs           string
+	actViaRealm     string
+	tokenServerHost string
+	verbose         bool
 }
 
 func (c *contextRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -476,6 +503,8 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		return ExitCodeInvalidInput
 	}
 	opts.ActAsServiceAccount = c.actAs
+	opts.ActViaLUCIRealm = c.actViaRealm
+	opts.TokenServerHost = c.tokenServerHost
 	if c.verbose {
 		ctx = logging.SetLevel(ctx, logging.Debug)
 	}
@@ -510,7 +539,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	if err = authenticator.CheckLoginRequired(); err != nil {
 		if err == auth.ErrLoginRequired {
-			fmt.Fprintln(os.Stderr, "Not logged in. Run 'luci-auth login -context-scopes'.")
+			c.askToLogin(opts, true)
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}

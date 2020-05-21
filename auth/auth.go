@@ -49,7 +49,6 @@ import (
 	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -61,9 +60,9 @@ var (
 	// are not cached and the user must go through interactive login.
 	ErrLoginRequired = errors.New("interactive login is required")
 
-	// ErrInsufficientAccess is returned by Login() or Transport() if access_token
-	// can't be minted for given OAuth scopes. For example if GCE instance wasn't
-	// granted access to requested scopes when it was created.
+	// ErrInsufficientAccess is returned by Login() or Transport() if an access
+	// token can't be minted for given OAuth scopes. For example if a GCE instance
+	// wasn't granted access to requested scopes when it was created.
 	ErrInsufficientAccess = internal.ErrInsufficientAccess
 
 	// ErrBadCredentials is returned by authenticating RoundTripper if service
@@ -75,6 +74,11 @@ var (
 	// associated with some particular email. This may happen, for example, when
 	// using a refresh token that doesn't have 'userinfo.email' scope.
 	ErrNoEmail = errors.New("the token is not associated with an email")
+
+	// ErrBadOptions is returned by Login() or Transport() if Options passed
+	// to authenticator indicate incompatible features. This likely indicates
+	// a programming error.
+	ErrBadOptions = errors.New("bad authenticator options")
 )
 
 // Some known Google API OAuth scopes.
@@ -226,34 +230,65 @@ type Options struct {
 
 	// ActAsServiceAccount is used to act as a specified service account email.
 	//
-	// This uses generateAccessToken Cloud IAM API and "Service Account Token
-	// Creator" role.
-	//
 	// When this option is set, there are two identities involved:
-	//  1. A service account identity directly specified by `ActAsServiceAccount`.
+	//  1. A service account identity specified by `ActAsServiceAccount`.
 	//  2. An identity conveyed by the authenticator options (via cached refresh
 	//     token, or via `ServiceAccountJSON`, or other similar ways), i.e. the
 	//     identity asserted by the authenticator in case `ActAsServiceAccount` is
-	//     not set. This identity must have "Service Account Token Creator" role
-	//     in the `ActAsServiceAccount` IAM resource. It is referred to below as
-	//     Actor identity.
+	//     not set. It is referred to below as the Actor identity.
 	//
 	// The resulting authenticator will produce access tokens for service account
-	// `ActAsServiceAccount`, using Actor identity to generate them via Cloud IAM
-	// API.
+	// `ActAsServiceAccount`, using the Actor identity to generate them via some
+	// "acting" API.
 	//
-	// `Scopes` parameter specifies what OAuth scopes to request for access tokens
-	// belonging to `ActAsServiceAccount`.
+	// If `ActViaLUCIRealm` is not set, the "acting" API is Google Cloud IAM.
+	// The Actor credentials will internally be used to generate access tokens
+	// with IAM scope (see `OAuthScopeIAM`). These tokens will then be used to
+	// call `generateAccessToken` Cloud IAM RPC to obtain the final tokens that
+	// belong to the service account `ActAsServiceAccount`. This requires the
+	// Actor to have "iam.serviceAccounts.getAccessToken" Cloud IAM permission,
+	// which is usually granted via "Service Account Token Creator" IAM role.
 	//
-	// The Actor credentials will be internally used to generate access token with
-	// IAM scope (see `OAuthScopeIAM`). It means Login() action sets up a refresh
-	// token with IAM scope (not `Scopes`), and the user will be presented with
-	// a consent screen for IAM scope.
+	// If `ActViaLUCIRealm` is set, the "acting" API is the LUCI Token Server.
+	// The Actor credentials will internally be used to generate access tokens
+	// with just email scope (see `OAuthScopeEmail`). These tokens will then be
+	// used to call `MintServiceAccountToken` RPC. This requires the following
+	// LUCI permissions in the realm specified by `ActViaLUCIRealm`:
+	//  1. The Actor needs "luci.serviceAccounts.mintToken" permission.
+	//  2. The target service account needs "luci.serviceAccounts.existInRealm"
+	//     permission.
+	//  3. The LUCI project the realm belongs to must be authorized to use the
+	//     target service account (currently via project_owned_accounts.cfg global
+	//     config file).
 	//
-	// More info at https://cloud.google.com/iam/docs/service-accounts
+	// Regardless of what "acting" API is used, `Scopes` parameter specifies what
+	// OAuth scopes to request for the final access token belonging to
+	// `ActAsServiceAccount`.
 	//
 	// Default: none.
 	ActAsServiceAccount string
+
+	// ActViaLUCIRealm is a LUCI Realm to use to authorize access to the service
+	// account when "acting" as it through a LUCI Token Server.
+	//
+	// See `ActAsServiceAccount` for a detailed explanation.
+	//
+	// Should have form "<project>:<realm>" (e.g. "chromium:ci"). It instructs
+	// the Token Server to lookup acting permissions in a realm named "<realm>",
+	// defined in `realms.cfg` project config file in a LUCI project named
+	// "<project>".
+	//
+	// Using this option requires `TokenServerHost` to be set.
+	//
+	// Default: none.
+	ActViaLUCIRealm string
+
+	// TokenServerHost is a hostname of a LUCI Token Server to use when acting.
+	//
+	// Used only when `ActAsServiceAccount` and `ActViaLUCIRealm` are set.
+	//
+	// Default: none.
+	TokenServerHost string
 
 	// ClientID is OAuth client ID to use with UserCredentialsMethod.
 	//
@@ -415,9 +450,9 @@ func AllowsArbitraryScopes(ctx context.Context, opts Options) bool {
 		// We can ask the local auth server for any combination of scopes.
 		return true
 	case opts.ActAsServiceAccount != "":
-		// When using IAM-derived tokens authenticator relies on singBytes IAM RPC.
-		// It is similar to having a private key, and also can be used to generate
-		// tokens with any combination of scopes
+		// When using derived tokens the authenticator can ask the corresponding API
+		// (Cloud IAM's generateAccessToken or LUCI's MintServiceAccountToken) for
+		// any scopes it wants.
 		return true
 	}
 	return false
@@ -447,12 +482,13 @@ type Authenticator struct {
 	// Methods like 'CheckLoginRequired' check that the base token exists in the
 	// cache or can be generated on the fly.
 	//
-	// In actor mode, the base token is always an IAM-scoped token that is used
-	// to call generateAccessToken API to generate an auth token. Base token is
-	// also always using whatever auth method was specified by Options.Method.
+	// In actor mode, the base token has scopes necessary for the corresponding
+	// acting API to work (e.g. IAM scope when using Cloud's generateAccessToken).
+	// The base token is also always using whatever auth method was specified by
+	// Options.Method.
 	//
-	// In non-actor mode, baseToken coincides with authToken: both point to exact
-	// same struct.
+	// In non-actor mode, baseToken coincides with authToken: both point to the
+	// exact same struct.
 	baseToken *tokenWithProvider
 
 	// authToken is a token (and its provider and cache) that is actually used for
@@ -461,12 +497,13 @@ type Authenticator struct {
 	// It is a token returned by 'GetAccessToken'. It is always scoped to 'Scopes'
 	// list, as passed to NewAuthenticator via Options.
 	//
-	// In actor mode, it is derived from the base token by using IAM API call
-	// generateAccessToken. This process is non-interactive and thus can always be
-	// performed as long as we have the base token.
+	// In actor mode, it is derived from the base token by using some "acting" API
+	// (which one depends on Options, see ActAsServiceAccount comment). This
+	// process is non-interactive and thus can always be performed as long as we
+	// have the base token.
 	//
 	// In non-actor mode it is the main token generated by the authenticator. In
-	// this case it coincides with baseToken: both point to exact same object.
+	// this case it coincides with baseToken: both point to the exact same object.
 	authToken *tokenWithProvider
 }
 
@@ -832,11 +869,25 @@ func (s tokenSource) Token() (*oauth2.Token, error) {
 ////////////////////////////////////////////////////////////////////////////////
 // Authenticator private methods.
 
-// isActing is true if ActAsServiceAccount is set.
-//
-// In this mode baseToken != authToken.
-func (a *Authenticator) isActing() bool {
-	return a.opts.ActAsServiceAccount != ""
+// actingMode returns possible ways the authenticator can "act" as an account.
+type actingMode int
+
+const (
+	actingModeNone actingMode = 0
+	actingModeIAM  actingMode = 1
+	actingModeLUCI actingMode = 2
+)
+
+// actingMode returns an acting mode based on Options.
+func (a *Authenticator) actingMode() actingMode {
+	switch {
+	case a.opts.ActAsServiceAccount == "":
+		return actingModeNone
+	case a.opts.ActViaLUCIRealm != "":
+		return actingModeLUCI
+	default:
+		return actingModeIAM
+	}
 }
 
 // checkInitialized is (true, <err>) if initialization happened (successfully or
@@ -857,18 +908,32 @@ func (a *Authenticator) ensureInitialized() error {
 		return err
 	}
 
+	// ActViaLUCIRealm makes sense only with ActAsServiceAccount.
+	if a.opts.ActViaLUCIRealm != "" && a.opts.ActAsServiceAccount == "" {
+		a.err = ErrBadOptions
+		return a.err
+	}
+
 	// SelectBestMethod may do heavy calls like talking to GCE metadata server,
 	// call it lazily here rather than in NewAuthenticator.
 	if a.opts.Method == AutoSelectMethod {
 		a.opts.Method = SelectBestMethod(a.ctx, *a.opts)
 	}
 
-	// In Actor mode, make the base token IAM-scoped, to be able to use
-	// generateAccessToken API. In non-actor mode, the base token is also the main
-	// auth token, so scope it to whatever options were requested.
-	scopes := a.opts.Scopes
-	if a.isActing() {
-		scopes = []string{iam.OAuthScope}
+	// In Actor mode, switch the base token to have scopes required to call
+	// the API used to generate target auth tokens. In non-actor mode, the base
+	// token is also the target auth token, so scope it to whatever scopes were
+	// requested via Options.
+	var scopes []string
+	switch a.actingMode() {
+	case actingModeNone:
+		scopes = a.opts.Scopes
+	case actingModeIAM:
+		scopes = []string{OAuthScopeIAM}
+	case actingModeLUCI:
+		scopes = []string{OAuthScopeEmail}
+	default:
+		panic("impossible")
 	}
 	a.baseToken = &tokenWithProvider{}
 	a.baseToken.provider, a.err = makeBaseTokenProvider(a.ctx, a.opts, scopes)
@@ -879,14 +944,20 @@ func (a *Authenticator) ensureInitialized() error {
 	// In non-actor mode, the token we must check in 'CheckLoginRequired' is the
 	// same as returned by 'GetAccessToken'. In actor mode, they are different.
 	// See comments for 'baseToken' and 'authToken'.
-	if a.isActing() {
+	switch a.actingMode() {
+	case actingModeNone:
+		a.authToken = a.baseToken
+	case actingModeIAM:
 		a.authToken = &tokenWithProvider{}
 		a.authToken.provider, a.err = makeIAMTokenProvider(a.ctx, a.opts)
-		if a.err != nil {
-			return a.err
-		}
-	} else {
-		a.authToken = a.baseToken
+	case actingModeLUCI:
+		a.authToken = &tokenWithProvider{}
+		a.authToken.provider, a.err = makeLUCITokenProvider(a.ctx, a.opts)
+	default:
+		panic("impossible")
+	}
+	if a.err != nil {
+		return a.err
 	}
 
 	// Initialize the token cache. Use the disk cache only if SecretsDir is given
@@ -941,8 +1012,9 @@ func (a *Authenticator) ensureInitialized() error {
 
 	// Note: a.authToken.provider is either equal to a.baseToken.provider (if not
 	// using actor mode), or (when using actor mode) it doesn't require
-	// interaction (because it is an IAM one). So don't bother with fetching
-	// 'authToken' from cache. It will be fetched lazily on the first use.
+	// interaction (because all "acting" providers are non-interactive). So don't
+	// bother fetching 'authToken' from the cache. It will be fetched lazily on
+	// the first use.
 
 	return nil
 }
@@ -1066,12 +1138,13 @@ func (a *Authenticator) refreshToken(prev *internal.Token, lifetime time.Duratio
 		lifetime: lifetime,
 		refreshCb: func(ctx context.Context, prev *internal.Token) (*internal.Token, error) {
 			// In Actor mode, need to make sure we have a sufficiently fresh base
-			// token first, since it's needed to get the new auth token. 30 sec should
-			// be more than enough to make an IAM call.
+			// token first, since it's needed to call "acting" API to get a new auth
+			// token for the target service account. 1 min should be more than enough
+			// to make an RPC.
 			var base *internal.Token
-			if a.isActing() {
+			if a.actingMode() != actingModeNone {
 				var err error
-				if base, err = a.getBaseTokenLocked(ctx, 30*time.Second); err != nil {
+				if base, err = a.getBaseTokenLocked(ctx, time.Minute); err != nil {
 					return nil, err
 				}
 			}
@@ -1080,19 +1153,12 @@ func (a *Authenticator) refreshToken(prev *internal.Token, lifetime time.Duratio
 	})
 }
 
-// getBaseTokenLocked is used to get an IAM-scoped token when running in
-// actor mode.
-//
-// Passing negative lifetime causes a forced refresh.
+// getBaseTokenLocked is used to get an actor token when running in actor mode.
 //
 // It is called with a.lock locked.
 func (a *Authenticator) getBaseTokenLocked(ctx context.Context, lifetime time.Duration) (*internal.Token, error) {
-	if !a.isActing() {
-		panic("impossible")
-	}
-
 	// Already have a good token?
-	if lifetime > 0 && !internal.TokenExpiresInRnd(ctx, a.baseToken.token, lifetime) {
+	if !internal.TokenExpiresInRnd(ctx, a.baseToken.token, lifetime) {
 		return a.baseToken.token, nil
 	}
 
@@ -1334,7 +1400,7 @@ func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, b
 // makeBaseTokenProvider creates TokenProvider implementation based on options.
 //
 // opts.Scopes is ignored, 'scopes' is used instead. This is used in actor mode
-// to substitute scopes with IAM scope.
+// to supply scopes necessary to use an "acting" API.
 //
 // Called by ensureInitialized.
 func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) (internal.TokenProvider, error) {
@@ -1368,9 +1434,9 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) 
 	}
 }
 
-// makeIAMTokenProvider create TokenProvider to use in Actor mode.
+// makeIAMTokenProvider creates TokenProvider to use in actingModeIAM mode.
 //
-// Called by ensureInitialized in actor mode.
+// Called by ensureInitialized.
 func makeIAMTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvider, error) {
 	if opts.testingIAMTokenProvider != nil {
 		return opts.testingIAMTokenProvider, nil
@@ -1378,6 +1444,22 @@ func makeIAMTokenProvider(ctx context.Context, opts *Options) (internal.TokenPro
 	return internal.NewIAMTokenProvider(
 		ctx,
 		opts.ActAsServiceAccount,
+		opts.Scopes,
+		opts.Transport)
+}
+
+// makeLUCITokenProvider creates TokenProvider to use in actingModeLUCI mode.
+//
+// Called by ensureInitialized.
+func makeLUCITokenProvider(ctx context.Context, opts *Options) (internal.TokenProvider, error) {
+	if opts.TokenServerHost == "" {
+		return nil, ErrBadOptions
+	}
+	return internal.NewLUCITSTokenProvider(
+		ctx,
+		opts.TokenServerHost,
+		opts.ActAsServiceAccount,
+		opts.ActViaLUCIRealm,
 		opts.Scopes,
 		opts.Transport)
 }
