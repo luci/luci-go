@@ -53,6 +53,9 @@ const (
 	// Chrome Operations.
 	LogDogDevHost = "luci-logdog-dev.appspot.com"
 
+	// TokenServerHost is the default host to use in auth.Options.TokenServerHost.
+	TokenServerHost = "luci-token-server.appspot.com"
+
 	// MachineDatabaseHost is the URL of the Machine Database.
 	MachineDatabaseHost = "machine-db.appspot.com"
 
@@ -78,9 +81,10 @@ func DefaultAuthOptions() auth.Options {
 	// ClientSecret they have to run something on user's local machine anyway
 	// to get the refresh_token.
 	return auth.Options{
-		ClientID:     "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com",
-		ClientSecret: "uBfbay2KCy9t4QveJ-dOqHtp",
-		SecretsDir:   SecretsDir(),
+		TokenServerHost: TokenServerHost,
+		ClientID:        "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com",
+		ClientSecret:    "uBfbay2KCy9t4QveJ-dOqHtp",
+		SecretsDir:      SecretsDir(),
 	}
 }
 
@@ -89,6 +93,7 @@ func DefaultAuthOptions() auth.Options {
 func SetDefaultAuthOptions(opts auth.Options) auth.Options {
 	dflts := DefaultAuthOptions()
 	ret := opts
+	ret.TokenServerHost = TokenServerHost
 	ret.ClientID = dflts.ClientID
 	ret.ClientSecret = dflts.ClientSecret
 	ret.SecretsDir = dflts.SecretsDir
