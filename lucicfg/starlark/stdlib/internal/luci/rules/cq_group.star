@@ -40,8 +40,9 @@ def _cq_group(
   whenever there's a pending approved CL for a ref in the watched set.
 
   Args:
-    name: a name of this CQ group, to reference it in other rules. Doesn't show
-        up anywhere in configs or UI. Required.
+    name: a human- and machine-readable name this CQ group. Must be unique
+        within this project. This is used in messages posted to users and in
+        monitoring data. Must match regex `^[a-zA-Z][a-zA-Z0-9_-]*$`.
     watch: either a single cq.refset(...) or a list of cq.refset(...) (one per
         repo), defining what set of refs the CQ should monitor for pending CLs.
         Required.
