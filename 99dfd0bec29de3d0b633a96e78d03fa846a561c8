@@ -22,6 +22,30 @@
       "revId": "99dfd0bec29de3d0b633a96e78d03fa846a561c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6227ccd3_fd5cabe9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-21T01:30:05Z",
+      "side": 1,
+      "message": "Great suggestion, thanks. Done.",
+      "parentUuid": "f3b21537_78862a30",
+      "range": {
+        "startLine": 492,
+        "startChar": 4,
+        "endLine": 492,
+        "endChar": 35
+      },
+      "revId": "99dfd0bec29de3d0b633a96e78d03fa846a561c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
