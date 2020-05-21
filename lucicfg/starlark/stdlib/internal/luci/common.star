@@ -46,6 +46,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.list_view -> [luci.list_view_entry]
 #   luci.list_view_entry -> list.builder_ref
 #   luci.milo_view -> luci.console_view
+#   luci.milo_view -> luci.external_console_view
 #   luci.console_view -> [luci.console_view_entry]
 #   luci.console_view_entry -> list.builder_ref
 #   luci.cq_verifiers_root -> [luci.cq_tryjob_verifier]
@@ -150,6 +151,7 @@ kinds = struct(
     LIST_VIEW_ENTRY = 'luci.list_view_entry',
     CONSOLE_VIEW = 'luci.console_view',
     CONSOLE_VIEW_ENTRY = 'luci.console_view_entry',
+    EXTERNAL_CONSOLE_VIEW = 'luci.external_console_view',
     CQ = 'luci.cq',
     CQ_GROUP = 'luci.cq_group',
     CQ_TRYJOB_VERIFIER = 'luci.cq_tryjob_verifier',
@@ -185,6 +187,7 @@ keys = struct(
     milo = lambda: _namespaced_key(kinds.MILO, '...'),
     list_view = lambda ref: _project_scoped_key(kinds.LIST_VIEW, 'list_view', ref),
     console_view = lambda ref: _project_scoped_key(kinds.CONSOLE_VIEW, 'console_view', ref),
+    external_console_view = lambda ref: _project_scoped_key(kinds.EXTERNAL_CONSOLE_VIEW, 'external_console_view', ref),
 
     cq = lambda: _namespaced_key(kinds.CQ, '...'),
     cq_group = lambda ref: _project_scoped_key(kinds.CQ_GROUP, 'cq_group', ref),

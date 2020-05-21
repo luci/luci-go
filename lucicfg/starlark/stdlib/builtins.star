@@ -26,6 +26,7 @@ load('@stdlib//internal/luci/rules/cq.star', _cq='cq')
 load('@stdlib//internal/luci/rules/cq_group.star', _cq_group='cq_group')
 load('@stdlib//internal/luci/rules/cq_tryjob_verifier.star', _cq_tryjob_verifier='cq_tryjob_verifier')
 load('@stdlib//internal/luci/rules/executable.star', _executable='executable', _recipe='recipe')
+load('@stdlib//internal/luci/rules/external_console_view.star', _external_console_view='external_console_view')
 load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
 load('@stdlib//internal/luci/rules/list_view.star', _list_view='list_view')
 load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list_view_entry')
@@ -70,6 +71,7 @@ luci = struct(
     list_view_entry = _list_view_entry,
     console_view = _console_view,
     console_view_entry = _console_view_entry,
+    external_console_view = _external_console_view,
     notify = _notify,
     notifier = _notifier,
     tree_closer = _tree_closer,
