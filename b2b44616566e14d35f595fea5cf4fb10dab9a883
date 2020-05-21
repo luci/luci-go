@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "844f6e7c_6eaeca70",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a92ca059_ba14b757",
+      "range": {
+        "startLine": 39,
+        "startChar": 40,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1c13b4e_eeb35148",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "dddc5585_4a4056c2",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "In this case both GetBuildRequest and BuildPredicate do have their field of type BuilderID called \"builder\", however I agree that knowing it\u0027s called \"builder\" is technically outside the scope of this function.\n\nUsing errors.Annotate on an appstatus.Errorf seems to produce a weird error message, e.g.\n\"predicate.builder: attaching a status: rpc error: code \u003d InvalidArgument desc \u003d invalid use of v1 bucket in v2 API (hint: try \"bucket\")\"\n\nI could accept a prefix string in this function signature but I don\u0027t like that API. Unless there\u0027s a way to fix Annotate maybe it can just be left for the time being? It\u0027s not like this function is exported.",
+      "parentUuid": "7ab51ffc_0b41f8f2",
+      "range": {
+        "startLine": 47,
+        "startChar": 50,
+        "endLine": 47,
+        "endChar": 59
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a65ad584_66c0b143",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1c13b4e_eeb35148",
+      "range": {
+        "startLine": 47,
+        "startChar": 91,
+        "endLine": 47,
+        "endChar": 100
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5695506_7b89ced8",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "6418ed5c_e23d1197",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "Sorry, although you did have some valid comments in the second round review.",
+      "parentUuid": "e5695506_7b89ced8",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4813106e_c393ce31",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 1
@@ -99,6 +189,24 @@
       "writtenOn": "2020-05-21T01:02:13Z",
       "side": 1,
       "message": "i like Vadim\u0027s approach I saw yesterday on validating token server requests:\n\nall validate*() funcs return plain error, which removes the need to copy-pasta \"codes.InvalidArgument\" everywhere. It also makes it easy to outsource sub-validate calls.\n\nFor example, when validating builderID{project, bucket, builder} is done in several places. This would be possible:\n\nvalidateBuilderID(proto) error {\n case proto.bucket \u003d\u003d \"\":\n   return errors.New(\"bucket is required\")\n}\n\nvalidateXYZ(proto) error {\n  if err :\u003d validateBuilderID(proto.some_field); err !\u003d nil {\n    return errors.Reason(\"some_filed: %s\",  err)\n  }\n}\n\n\nxyzHandler(){\n  if err:\u003d validateXYZ(); err !\u003d nil {\n    return appstatus.Errorf(codes.InvalidArgument, err.Error())\n  }\n}",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d58b57ba_f6cceff8",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "\u003eeasy to outsource sub-validate calls\nWhy is it difficult now? This function calls validateBuilderID just fine.\n\nI could imagine a case where validation itself fails and we want to return an internal error, so assuming validation returns something to which InvalidArgument must always be attached may not be correct.",
+      "parentUuid": "4813106e_c393ce31",
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "1d5df7cc_2b3117d8",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae9f1b34_71c48fb9",
+      "range": {
+        "startLine": 60,
+        "startChar": 102,
+        "endLine": 60,
+        "endChar": 111
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df62af59_50601491",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 1
@@ -139,6 +271,24 @@
       "writtenOn": "2020-05-21T00:23:24Z",
       "side": 1,
       "message": "this code could be more modular: a func to validate a Gerrit change, a func to validate a gitiles change. Then we wouldn\u0027t have to repeat \"output_gitiles_commit\" 7 times. This would make the code more concise and readable. As a reviewer, I\u0027d pay more attention to the nuances of the logic, rather than reading copy-pasted code.",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d09a3d17_1fb2e662",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "I will do this, but differently depending on the resolution of the comment below.",
+      "parentUuid": "df62af59_50601491",
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -235,6 +385,78 @@
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc00d6d8_8239f1e1",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "What is the difference between appstatus.BadRequest and appstatus.Errorf called with codes.InvalidArgument?\n\nWhat if validation code itself fails? I think if it returns a plain error it should be treated as such (i.e. postlude func logs and converts it to Internal). Returning a non-appstatus error when the error code is known seems counterintuitive with respect to the design of the appstatus package; I thought the whole point was that the function returning the error knows what kind of error to return. e.g. Returning a gRPC error and letting the caller override it to Internal is fine but returning a plain error and expecting the caller to decide its gRPC code is missing the point of the appstatus package. At least it was my understanding.",
+      "parentUuid": "3238a35c_75a201f4",
+      "range": {
+        "startLine": 71,
+        "startChar": 26,
+        "endLine": 71,
+        "endChar": 47
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "898e58c6_24a9ac1e",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e600806a_782fe35b",
+      "range": {
+        "startLine": 71,
+        "startChar": 50,
+        "endLine": 71,
+        "endChar": 72
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a8fdb7c_b049bea5",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-21T18:01:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb49ae07_ac9ab7f1",
+      "range": {
+        "startLine": 71,
+        "startChar": 105,
+        "endLine": 71,
+        "endChar": 126
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
