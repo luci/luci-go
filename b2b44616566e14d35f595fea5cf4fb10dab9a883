@@ -88,6 +88,23 @@
     },
     {
       "key": {
+        "uuid": "4813106e_c393ce31",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-21T01:02:13Z",
+      "side": 1,
+      "message": "i like Vadim\u0027s approach I saw yesterday on validating token server requests:\n\nall validate*() funcs return plain error, which removes the need to copy-pasta \"codes.InvalidArgument\" everywhere. It also makes it easy to outsource sub-validate calls.\n\nFor example, when validating builderID{project, bucket, builder} is done in several places. This would be possible:\n\nvalidateBuilderID(proto) error {\n case proto.bucket \u003d\u003d \"\":\n   return errors.New(\"bucket is required\")\n}\n\nvalidateXYZ(proto) error {\n  if err :\u003d validateBuilderID(proto.some_field); err !\u003d nil {\n    return errors.Reason(\"some_filed: %s\",  err)\n  }\n}\n\n\nxyzHandler(){\n  if err:\u003d validateXYZ(); err !\u003d nil {\n    return appstatus.Errorf(codes.InvalidArgument, err.Error())\n  }\n}",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ae9f1b34_71c48fb9",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 1
