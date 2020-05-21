@@ -111,54 +111,75 @@ import (
 // CommandParams specifies various parameters for a subcommand.
 type CommandParams struct {
 	Name     string // name of the subcommand
-	Advanced bool   // subcommands should treat this as an 'advanced' command
+	Advanced bool   // treat this as an 'advanced' subcommand
 
 	AuthOptions auth.Options // default auth options
 
-	// ScopesFlag specifies if -scope flag must be registered.
+	// UseScopeFlags specifies whether scope-related flags must be registered.
 	//
-	// AuthOptions.Scopes is used as a default value.
-	// If it is empty, defaults to https://www.googleapis.com/auth/userinfo.email.
-	ScopesFlag bool
-
-	// ContextScopesFlag specifies if -context-scopes flag must be registered.
+	// This is primarily used by `luci-auth` executable.
 	//
-	// Used only by `login` subcommand. Presence of this flag indicates to `login`
-	// to setup refresh token with scopes necessary to run `context` subcommand.
-	ContextScopesFlag bool
+	// UseScopeFlags is *not needed* for command line tools that call a fixed
+	// number of backends. Just add all necessary scopes to AuthOptions.Scopes,
+	// no need to expose a flag.
+	UseScopeFlags bool
 }
 
 // Flags defines command line flags related to authentication.
 type Flags struct {
-	// RegisterScopesFlag tells Register to add -scopes flag.
-	RegisterScopesFlag bool
 	defaults           auth.Options
-	serviceAccountJSON string
-	scopes             string
+	serviceAccountJSON string // value of -service-account-json
+
+	hasScopeFlags bool   // true if registered -scopes (and related) flags
+	scopes        string // value of -scopes
+	scopesIAM     bool   // value of -scopes-iam
+	scopesContext bool   // value of -scopes-context
 }
 
 // Register adds auth related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 	fl.defaults = defaults
-	f.StringVar(&fl.serviceAccountJSON, "service-account-json", fl.defaults.ServiceAccountJSONPath, "Path to JSON file with service account credentials to use.")
-	if fl.RegisterScopesFlag {
-		defaultScopes := strings.Join(defaults.Scopes, " ")
-		if defaultScopes == "" {
-			defaultScopes = auth.OAuthScopeEmail
-		}
-		f.StringVar(&fl.scopes, "scopes", defaultScopes, "Space-separated list of OAuth 2.0 scopes")
+	if len(fl.defaults.Scopes) == 0 {
+		fl.defaults.Scopes = append([]string(nil), scopesDefault...)
 	}
+	f.StringVar(&fl.serviceAccountJSON, "service-account-json", fl.defaults.ServiceAccountJSONPath,
+		"Path to JSON file with service account credentials to use.")
 }
 
-// Options return instance of auth.Options struct with values set accordingly to
-// parsed command line flags.
+// registerScopesFlags can be called after Register to add scope-related flags.
+func (fl *Flags) registerScopesFlags(f *flag.FlagSet) {
+	fl.hasScopeFlags = true
+	f.StringVar(&fl.scopes, "scopes", strings.Join(fl.defaults.Scopes, " "),
+		"Space-separated list of OAuth 2.0 scopes to use.")
+	f.BoolVar(&fl.scopesIAM, "scopes-iam", false,
+		"When set, use scopes needed to impersonate accounts via Cloud IAM. Overrides -scopes when present.")
+	f.BoolVar(&fl.scopesContext, "scopes-context", false,
+		"When set, use scopes needed to run `context` subcommand. Overrides -scopes when present.")
+}
+
+// Options returns auth.Options populated based on parsed command line flags.
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
 	opts.ServiceAccountJSONPath = fl.serviceAccountJSON
-	if fl.RegisterScopesFlag {
-		opts.Scopes = strings.Split(fl.scopes, " ")
-		sort.Strings(opts.Scopes)
+
+	if !fl.hasScopeFlags {
+		return opts, nil
 	}
+
+	if fl.scopesIAM && fl.scopesContext {
+		return auth.Options{}, fmt.Errorf("-scopes-iam and -scopes-context can't be used together")
+	}
+
+	switch {
+	case fl.scopesIAM:
+		opts.Scopes = append([]string(nil), scopesIAM...)
+	case fl.scopesContext:
+		opts.Scopes = append([]string(nil), scopesContext...)
+	default:
+		opts.Scopes = strings.Split(fl.scopes, " ")
+	}
+	sort.Strings(opts.Scopes)
+
 	return opts, nil
 }
 
@@ -171,9 +192,19 @@ const (
 	ExitCodeBadLogin
 )
 
+// List of scopes requested by `luci-auth login` by default.
+var scopesDefault = []string{
+	auth.OAuthScopeEmail,
+}
+
+// List of scopes needed to impersonate accounts via Cloud IAM.
+var scopesIAM = []string{
+	auth.OAuthScopeIAM,
+}
+
 // List of scopes needed to run `luci-auth context`. It correlates with a list
 // of requested features in authctx.Context{...} construction in contextRun.
-var allContextScopes = []string{
+var scopesContext = []string{
 	"https://www.googleapis.com/auth/cloud-platform",
 	"https://www.googleapis.com/auth/firebase",
 	"https://www.googleapis.com/auth/gerritcodereview",
@@ -182,25 +213,74 @@ var allContextScopes = []string{
 
 type commandRunBase struct {
 	subcommands.CommandRunBase
-	flags  Flags
-	params *CommandParams
+	flags   Flags
+	params  CommandParams
+	verbose bool
 }
 
-func (c *commandRunBase) registerBaseFlags() {
-	c.flags.RegisterScopesFlag = c.params.ScopesFlag
+func (c *commandRunBase) ModifyContext(ctx context.Context) context.Context {
+	if c.verbose {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	}
+	return ctx
+}
+
+func (c *commandRunBase) registerBaseFlags(params CommandParams) {
+	c.params = params
 	c.flags.Register(&c.Flags, c.params.AuthOptions)
+	c.Flags.BoolVar(&c.verbose, "verbose", false, "More verbose logging.")
+	if c.params.UseScopeFlags {
+		c.flags.registerScopesFlags(&c.Flags)
+	}
 }
 
 // askToLogin emits to stderr an instruction to login.
-//
-// TODO(vadimsh): This can be improved to recommend the correct list of -scopes.
 func (c *commandRunBase) askToLogin(opts auth.Options, forContext bool) {
-	fmt.Fprintf(os.Stderr, "Not logged in. Login first by running:\n")
-	if !forContext {
-		fmt.Fprintf(os.Stderr, "   $ luci-auth login\n")
+	var loginFlags []string
+
+	if forContext {
+		switch {
+		case opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm != "":
+			// When acting via LUCI the default `luci-auth login` is sufficient to
+			// get necessary tokens, since we need only userinfo.email scope.
+		case opts.ActAsServiceAccount != "":
+			// When acting via IAM need an IAM-scoped token.
+			loginFlags = []string{"-scopes-iam"}
+		default:
+			// When not acting, need all scopes used by `luci-auth context`.
+			loginFlags = []string{"-scopes-context"}
+		}
 	} else {
-		fmt.Fprintf(os.Stderr, "   $ luci-auth login -context-scopes\n")
+		// Ask for custom scopes only if they were actually requested. Use our
+		// neat aliases when possible.
+		switch {
+		case isSameScopes(opts.Scopes, scopesIAM):
+			loginFlags = []string{"-scopes-iam"}
+		case isSameScopes(opts.Scopes, scopesContext):
+			loginFlags = []string{"-scopes-context"}
+		case !isSameScopes(opts.Scopes, c.flags.defaults.Scopes):
+			loginFlags = []string{"-scopes", fmt.Sprintf("%q", strings.Join(opts.Scopes, " "))}
+		}
 	}
+
+	fmt.Fprintf(os.Stderr, "Not logged in.\n\nLogin by running:\n")
+	fmt.Fprintf(os.Stderr, "   $ luci-auth login")
+	if len(loginFlags) != 0 {
+		fmt.Fprintf(os.Stderr, " %s", strings.Join(loginFlags, " "))
+	}
+	fmt.Fprintf(os.Stderr, "\n")
+}
+
+func isSameScopes(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +288,11 @@ func (c *commandRunBase) askToLogin(opts auth.Options, forContext bool) {
 // SubcommandLogin returns subcommands.Command that can be used to perform
 // interactive login.
 func SubcommandLogin(opts auth.Options, name string, advanced bool) *subcommands.Command {
-	return SubcommandLoginWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
+	return SubcommandLoginWithParams(CommandParams{
+		Name:        name,
+		Advanced:    advanced,
+		AuthOptions: opts,
+	})
 }
 
 // SubcommandLoginWithParams returns subcommands.Command that can be used to
@@ -221,14 +305,7 @@ func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 		LongDesc:  "Performs interactive login flow and caches obtained credentials",
 		CommandRun: func() subcommands.CommandRun {
 			c := &loginRun{}
-			c.params = &params
-			c.registerBaseFlags()
-			if params.ContextScopesFlag {
-				c.Flags.BoolVar(
-					&c.contextScopes, "context-scopes", false,
-					"When set, request all scopes needed to run `context` subcommand. Overrides -scopes when present.",
-				)
-			}
+			c.registerBaseFlags(params)
 			return c
 		},
 	}
@@ -236,7 +313,6 @@ func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 
 type loginRun struct {
 	commandRunBase
-	contextScopes bool
 }
 
 func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.Env) int {
@@ -244,9 +320,6 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return ExitCodeInvalidInput
-	}
-	if c.contextScopes {
-		opts.Scopes = allContextScopes
 	}
 	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
@@ -262,7 +335,11 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 // SubcommandLogout returns subcommands.Command that can be used to purge cached
 // credentials.
 func SubcommandLogout(opts auth.Options, name string, advanced bool) *subcommands.Command {
-	return SubcommandLogoutWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
+	return SubcommandLogoutWithParams(CommandParams{
+		Name:        name,
+		Advanced:    advanced,
+		AuthOptions: opts,
+	})
 }
 
 // SubcommandLogoutWithParams returns subcommands.Command that can be used to purge cached
@@ -275,8 +352,7 @@ func SubcommandLogoutWithParams(params CommandParams) *subcommands.Command {
 		LongDesc:  "Removes cached credentials from the disk",
 		CommandRun: func() subcommands.CommandRun {
 			c := &logoutRun{}
-			c.params = &params
-			c.registerBaseFlags()
+			c.registerBaseFlags(params)
 			return c
 		},
 	}
@@ -306,7 +382,11 @@ func (c *logoutRun) Run(a subcommands.Application, args []string, env subcommand
 // SubcommandInfo returns subcommand.Command that can be used to print current
 // cached credentials.
 func SubcommandInfo(opts auth.Options, name string, advanced bool) *subcommands.Command {
-	return SubcommandInfoWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
+	return SubcommandInfoWithParams(CommandParams{
+		Name:        name,
+		Advanced:    advanced,
+		AuthOptions: opts,
+	})
 }
 
 // SubcommandInfoWithParams returns subcommand.Command that can be used to print
@@ -319,8 +399,7 @@ func SubcommandInfoWithParams(params CommandParams) *subcommands.Command {
 		LongDesc:  "Prints an email address associated with currently cached token",
 		CommandRun: func() subcommands.CommandRun {
 			c := &infoRun{}
-			c.params = &params
-			c.registerBaseFlags()
+			c.registerBaseFlags(params)
 			return c
 		},
 	}
@@ -340,7 +419,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	switch _, err := authenticator.Client(); {
 	case err == auth.ErrLoginRequired:
-		fmt.Fprintln(os.Stderr, "Not logged in")
+		fmt.Fprintln(os.Stderr, "Not logged in.")
 		return ExitCodeNoValidToken
 	case err != nil:
 		fmt.Fprintln(os.Stderr, err)
@@ -354,7 +433,10 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 // SubcommandToken returns subcommand.Command that can be used to print current
 // access token.
 func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandTokenWithParams(CommandParams{Name: name, AuthOptions: opts})
+	return SubcommandTokenWithParams(CommandParams{
+		Name:        name,
+		AuthOptions: opts,
+	})
 }
 
 // SubcommandTokenWithParams returns subcommand.Command that can be used to
@@ -367,8 +449,7 @@ func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 		LongDesc:  "Refreshes an access token (if necessary) and prints it or writes it to a JSON file.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &tokenRun{}
-			c.params = &params
-			c.registerBaseFlags()
+			c.registerBaseFlags(params)
 			c.Flags.DurationVar(
 				&c.lifetime, "lifetime", time.Minute,
 				"The returned token will live for at least that long. Depending on\n"+
@@ -451,13 +532,16 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 // development and debugging of programs that rely on LUCI authentication
 // context.
 func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandContextWithParams(CommandParams{Name: name, AuthOptions: opts})
+	return SubcommandContextWithParams(CommandParams{
+		Name:        name,
+		AuthOptions: opts,
+	})
 }
 
 // SubcommandContextWithParams returns subcommand.Command that can be used to
 // setup new LUCI authentication context for a process tree.
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
-	params.AuthOptions.Scopes = allContextScopes
+	params.AuthOptions.Scopes = append([]string(nil), scopesContext...)
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
 		UsageLine: fmt.Sprintf("%s [flags] [--] <bin> [args]", params.Name),
@@ -465,8 +549,7 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 		LongDesc:  "Starts local RPC auth server, prepares LUCI_CONTEXT, launches a process in this environment.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &contextRun{}
-			c.params = &params
-			c.registerBaseFlags()
+			c.registerBaseFlags(params)
 			c.Flags.StringVar(
 				&c.actAs, "act-as-service-account", "",
 				"Act as a given service account (via Cloud IAM or via LUCI Token Server).")
@@ -479,7 +562,6 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 			c.Flags.StringVar(
 				&c.tokenServerHost, "token-server-host", params.AuthOptions.TokenServerHost,
 				"The LUCI Token Server hostname to use when using -act-via-realm.")
-			c.Flags.BoolVar(&c.verbose, "verbose", false, "More logging")
 			return c
 		},
 	}
@@ -491,7 +573,6 @@ type contextRun struct {
 	actAs           string
 	actViaRealm     string
 	tokenServerHost string
-	verbose         bool
 }
 
 func (c *contextRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -505,9 +586,6 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	opts.ActAsServiceAccount = c.actAs
 	opts.ActViaLUCIRealm = c.actViaRealm
 	opts.TokenServerHost = c.tokenServerHost
-	if c.verbose {
-		ctx = logging.SetLevel(ctx, logging.Debug)
-	}
 
 	// 'args' specify a subcommand to run. Prepare *exec.Cmd.
 	if len(args) == 0 {
@@ -548,7 +626,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// Now that there exists a cached token for requested options, we can launch
 	// an auth context with all bells and whistles. If you enable or disable
-	// a feature here, make sure to adjust allContextScopes as well.
+	// a feature here, make sure to adjust scopesContext as well.
 	authCtx := authctx.Context{
 		ID:                 "luci-auth",
 		Options:            opts,
@@ -612,9 +690,9 @@ func checkToken(ctx context.Context, a *auth.Authenticator) int {
 
 	// Email is set only if the token has userinfo.email scope.
 	if info.Email != "" {
-		fmt.Printf("Logged in as %s.\n", info.Email)
+		fmt.Printf("Logged in as %s.\n\n", info.Email)
 	} else {
-		fmt.Printf("Logged in as uid %q.\n", info.Sub)
+		fmt.Printf("Logged in as uid %q.\n\n", info.Sub)
 	}
 	fmt.Printf("OAuth token details:\n")
 	fmt.Printf("  Client ID: %s\n", info.Aud)

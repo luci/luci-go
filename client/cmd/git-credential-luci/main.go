@@ -44,7 +44,6 @@ var (
 func init() {
 	defaults := chromeinfra.DefaultAuthOptions()
 	defaults.Scopes = []string{gitiles.OAuthScope, auth.OAuthScopeEmail}
-	flags.RegisterScopesFlag = true
 	flags.Register(flag.CommandLine, defaults)
 	flag.DurationVar(
 		&lifetime, "lifetime", time.Minute,
@@ -70,8 +69,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if lifetime > 45*time.Minute {
-		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 45m")
+	if lifetime > 30*time.Minute {
+		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 30m")
 		os.Exit(1)
 	}
 
