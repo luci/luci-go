@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cfc6960f_5cfb3cb8",
+        "filename": "auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-21T20:26:11Z",
+      "side": 1,
+      "message": "I meant ErrBadOptions is only possible if the source code is wrong (as opposite to something wrong in the inputs or environment, as is the case for other errors here). End users of non-buggy programs should never see this error.",
+      "parentUuid": "9814322d_1f3c5e2d",
+      "range": {
+        "startLine": 80,
+        "startChar": 6,
+        "endLine": 80,
+        "endChar": 17
+      },
+      "revId": "1b0d800971268cd47062d9c39a63d6ecb158ce4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "310d11bd_10ece85b",
         "filename": "auth/auth.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "1b0d800971268cd47062d9c39a63d6ecb158ce4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2bfadb0_79fec3e5",
+        "filename": "auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1016,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-21T20:26:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "310d11bd_10ece85b",
+      "range": {
+        "startLine": 1016,
+        "startChar": 32,
+        "endLine": 1016,
+        "endChar": 41
+      },
+      "revId": "1b0d800971268cd47062d9c39a63d6ecb158ce4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
