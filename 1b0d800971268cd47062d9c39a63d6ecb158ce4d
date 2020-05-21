@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2240afd_2dcf7f91",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-21T04:07:45Z",
+      "side": 1,
+      "message": "I\u0027ll make it in a separate CL. This one is already convoluted.",
+      "range": {
+        "startLine": 196,
+        "startChar": 3,
+        "endLine": 196,
+        "endChar": 80
+      },
+      "revId": "1b0d800971268cd47062d9c39a63d6ecb158ce4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f1714773_ddb4fbc5",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-21T04:07:45Z",
+      "side": 1,
+      "message": "Code search shows only some recipes using `-lifetime 3m`, so this should be fine....",
+      "range": {
+        "startLine": 400,
+        "startChar": 4,
+        "endLine": 400,
+        "endChar": 31
+      },
+      "revId": "1b0d800971268cd47062d9c39a63d6ecb158ce4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2e90d3c8_e15264e6",
+        "filename": "auth/internal/luci_ts.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-21T04:07:45Z",
+      "side": 1,
+      "message": "Everything here sucks. The core problem is that we have a large bunch of APIs to generate access token (service account JSON keys, Cloud IAM, GCE metadata server, GAEv2 metadata server, GKE workload identity metadata server, LUCI Context protocol, Swarming /oauth_token endpoint, LUCI Token Server). They are layered on top of each other, and they have no consistent way of supporting \"min token lifetime\" (e.g. GCE/GAEv2/GKE metadata servers give no shit, they will give you some token with some \"random\" lifetime).\n\nOne option is to try to unravel this complexity and carefully propagate \"min token lifetime\" through all call chains and supports it where possible.\n\nAnother option (currently chosen) is just hardcode some assumptions and ask users nicely not to request tokens that life for too long, and instead refresh them whenever necessary. This is also what Cloud does with their metadata servers. The just didn\u0027t document anything about token\u0027s lifetime and instead ask users to treat tokens as very short lived.\n\nIn application to LUCI, I\u0027ve seen lazy code like:\n\n   ./long-running-script.py ... -auth-token `luci-auth token`\n\nIt will not work reliably in all LUCI environments.",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 53
+      },
+      "revId": "1b0d800971268cd47062d9c39a63d6ecb158ce4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
