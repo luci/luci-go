@@ -16,6 +16,24 @@
       "revId": "67ed6230acf88fb145c9e63009ec039c3fd14f93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce6f791a_20f9025b",
+        "filename": "resultdb/internal/services/recorder/create_artifact.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-21T01:53:42Z",
+      "side": 1,
+      "message": "yes, i noticed this too about 30min ago. fixed it in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2207815",
+      "parentUuid": "e17f9656_b7d4272e",
+      "revId": "67ed6230acf88fb145c9e63009ec039c3fd14f93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
