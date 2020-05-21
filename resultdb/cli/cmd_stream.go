@@ -243,7 +243,7 @@ func genInvID(ctx context.Context) (string, error) {
 	username = matchInvalidInvocationIDChars.ReplaceAllString(username, "")
 
 	suffix := strings.ToLower(fmt.Sprintf(
-		"%s-%s", time.Now().UTC().Format(time.RFC3339),
+		"%s-%s", time.Now().UTC().Format("2006-01-02-15-04-00"),
 		// Note: cannot use base64 because not all of its characters are allowed
 		// in invocation IDs.
 		hex.EncodeToString(bytes)))
