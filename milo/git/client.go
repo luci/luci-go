@@ -99,8 +99,6 @@ func UseACLs(c context.Context, acls *gitacls.ACLs) context.Context {
 }
 
 // Use returns context with provided Client implementation.
-//
-// Useful in tests, see also gittest.MockClient
 func Use(c context.Context, s Client) context.Context {
 	return context.WithValue(c, &contextKey, s)
 }
