@@ -76,6 +76,9 @@ type Console struct {
 	Builders []string
 
 	// Def is the actual underlying proto Console definition.
+	// If this console is external (i.e. a reference to a console from
+	// another project), this will contain the resolved Console definition,
+	// but with ExternalId and ExternalProjectId also set.
 	Def config.Console `gae:",noindex"`
 
 	// _ is a "black hole" which absorbs any extra props found during a
@@ -83,13 +86,26 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// IsExternal returns true if the console does not belong to its parent project.
+func (c *Console) IsExternal() bool {
+	return c.Def.ExternalId != ""
+}
+
 func (c *Console) ConsoleID() ConsoleID {
-	return ConsoleID{Project: c.ProjectID(), ID: c.ID}
+	id := c.ID
+	if c.isExternal() {
+		id = c.Def.ExternalId
+	}
+	return ConsoleID{Project: c.ProjectID(), ID: id}
 }
 
 // ProjectID retrieves the project ID string of the console out of the Console's
-// parent key.
+// parent key. If the console is external, it will return the ID of the
+// referenced project instead.
 func (c *Console) ProjectID() string {
+	if c.IsExternal() {
+		return c.Def.ExternalProjectId
+	}
 	if c.Parent == nil {
 		return ""
 	}
@@ -395,6 +411,13 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 				// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
 				continue
 			}
+			externalProjectID := ""
+			externalID := ""
+			builders := pc.AllBuilderIDs()
+			if pc.ExternalProject != "" {
+				externalProjectID = pc.ExternalProject
+				externalID = pc.ExternalId
+			}
 			toPut = append(toPut, &Console{
 				Parent:         parentKey,
 				ID:             pc.Id,
@@ -403,6 +426,8 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 				ConfigRevision: cfg.Revision,
 				Builders:       pc.AllBuilderIDs(),
 				Def:            *pc,
+				ExternalProjectID: externalProjectID,
+				ExternalID: externalID,
 			})
 		}
 		return datastore.Put(c, toPut)
@@ -418,19 +443,57 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	return knownConsoles, nil
 }
 
-// UpdateConsoles updates internal console definitions entities based off luci-config.
+// getConsolesByProjectAndId returns a map of maps, indexing config.Console
+// protos by their project ID and console ID. The map does not include external
+// consoles.
+func getConsolesByProjectAndId(c context.Context, configs []luciconfig.Config) (map[string]map[string]*config.Console, error) {
+	consolesByProject := map[string]map[string]*config.Console{}
+	for _, cfg := range configs {
+		projectName := cfg.ConfigSet.Project()
+		if projectName == "" {
+			return nil, fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
+		}
+		consolesById := map[string]*config.Console{}
+		proj := config.Project{}
+		if err := protoutil.UnmarshalTextML(cfg.Content, &proj); err != nil {
+			return nil, errors.Annotate(err, "unmarshalling proto").Err()
+		}
+		for i, pc := range proj.Consoles {
+			// Store any non-external consoles in the map.
+			// This map will be used to resolve external consoles,
+			// and we don't allow them to resolve to other external
+			// consoles.
+			if pc.ExternalId == "" {
+				consolesById[pc.Id] = pc
+			}
+		}
+		consolesByProject[projectName] = consolesById
+	}
+	return consolesByProject
+}
+
+// TODO:
+// 1. Get all project configs.
+// 2. Convert to a map of maps. project-id => console-id => console proto
+// 3. Pass that into updateProjectConsoles and use it to resolve external consoles.
+
+// UpdateConsoles updates internal console definition entities based off luci-config.
 func UpdateConsoles(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 
 	logging.Debugf(c, "fetching configs for %s", cfgName)
 	// Acquire the raw config client.
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
-	// Project configs for Milo contains console definitions.
+	// Project configs for Milo contain console definitions.
 	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
 		return errors.Annotate(err, "while fetching project configs").Err()
 	}
 	logging.Infof(c, "got %d project configs", len(configs))
+
+	// Collect a map of consoles by project ID and console ID, so we can use
+	// it to resolve external consoles later.
+	consolesByProjectAndId := getConsolesByProjectAndId(configs)
 
 	merr := errors.MultiError{}
 	knownProjects := map[string]stringset.Set{}
@@ -449,7 +512,7 @@ func UpdateConsoles(c context.Context) error {
 		}
 	}
 
-	// Delete all the consoles that no longer exists or are part of deleted projects.
+	// Delete all the consoles that no longer exist or are part of deleted projects.
 	toDelete := []*datastore.Key{}
 	err = datastore.Run(c, datastore.NewQuery("Console"), func(key *datastore.Key) error {
 		proj := key.Parent().StringID()
