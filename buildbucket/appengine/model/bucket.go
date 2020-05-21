@@ -67,8 +67,15 @@ const NoRole pb.Acl_Role = -1
 // TODO(crbug/1042991): Move elsewhere as needed.
 func (b *Bucket) GetRole(ctx context.Context) (pb.Acl_Role, error) {
 	id := auth.CurrentIdentity(ctx)
-	// Projects can do anything regardless of ACLs.
+	// Projects can do anything in their own buckets regardless of ACLs.
 	if id.Kind() == identity.Project && id.Value() == b.Parent.StringID() {
+		return pb.Acl_WRITER, nil
+	}
+	// Admins can do anything in all buckets regardless of ACLs.
+	switch is, err := auth.IsMember(ctx, "administrators"); {
+	case err != nil:
+		return NoRole, errors.Annotate(err, "failed to check group membership in %q", "administrators").Err()
+	case is:
 		return pb.Acl_WRITER, nil
 	}
 	role := NoRole

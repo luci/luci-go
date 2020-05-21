@@ -71,6 +71,23 @@ func TestBucket(t *testing.T) {
 				})
 			})
 
+			Convey("administrator", func() {
+				b := &Bucket{}
+
+				Convey("match", func() {
+					s.IdentityGroups = []string{"administrators"}
+					r, err := b.GetRole(ctx)
+					So(err, ShouldBeNil)
+					So(r, ShouldEqual, pb.Acl_WRITER)
+				})
+
+				Convey("mismatch", func() {
+					r, err := b.GetRole(ctx)
+					So(err, ShouldBeNil)
+					So(r, ShouldEqual, NoRole)
+				})
+			})
+
 			Convey("email", func() {
 				b := &Bucket{
 					Proto: pb.Bucket{
@@ -138,7 +155,7 @@ func TestBucket(t *testing.T) {
 					Proto: pb.Bucket{
 						Acls: []*pb.Acl{
 							{
-								Group: "group:group",
+								Group: "group",
 								Role:  pb.Acl_READER,
 							},
 						},
@@ -146,7 +163,7 @@ func TestBucket(t *testing.T) {
 				}
 
 				Convey("match", func() {
-					s.IdentityGroups = []string{"group:group"}
+					s.IdentityGroups = []string{"group"}
 					r, err := b.GetRole(ctx)
 					So(err, ShouldBeNil)
 					So(r, ShouldEqual, pb.Acl_READER)
