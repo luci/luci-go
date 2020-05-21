@@ -75,11 +75,10 @@ message Executable {
   // The command to invoke within the package.
   //
   // The 0th argument is taken as relative to the cipd_package root (a.k.a.
-  // BBAgentArgs.payload_path), so to invoke the binary called "foo" in the root
-  // of the package, it is just "foo". On Windows, this will automatically look
-  // first for "foo.exe" followed by "foo.bat". Similarly, "subdir/foo" would
-  // expect the foo binary to live in the top level "subdir" within the CIPD
-  // package.
+  // BBAgentArgs.payload_path), so "foo" would invoke the binary called "foo" in
+  // the root of the package. On Windows, this will automatically look
+  // first for ".exe" and ".bat" variants. Similarly, "subdir/foo" would
+  // look for "foo" in "subdir" of the CIPD package.
   //
   // The other arguments are passed verbatim to the executable.
   //
@@ -87,15 +86,12 @@ message Executable {
   // this command has arguments (see go.chromium.org/luci/luciexe).
   //
   // RECOMMENDATION: It's advised to rely on the build.proto's Input.Properties
-  // field for passing task-specific data. Not only are the properties
-  // JSON-typed, they can be modeled with a protobuf (using JSON PB encoding).
-  // However, supplying additional arguments can occasionally be useful to, for
-  // example, increase logging verbosity, or similar 'system level' settings
-  // within the binary.
+  // field for passing task-specific data. Properties are JSON-typed and can be
+  // modeled with a protobuf (using JSONPB). However, supplying additional args
+  // can be useful to, e.g., increase logging verbosity, or similar
+  // 'system level' settings within the binary.
   //
-  // Optional. If omitted, this defaults to `['luciexe']` (i.e. invoke the
-  // binary 'luciexe' at the top of the CIPD package, with no additional
-  // arguments).
+  // Optional. If omitted, defaults to `['luciexe']`.
   repeated string cmd = 3;
 }
 
