@@ -1615,6 +1615,38 @@ the console declaration. In particular useful in functions. For example:
 
 
 
+### luci.external_console_view {#luci.external_console_view}
+
+```python
+luci.external_console_view(name, source, title = None)
+```
+
+
+
+Includes a Milo console view from another project.
+
+This console will be listed in the Milo UI on the project page, alongside the
+consoles native to this project.
+
+In the following example, we include a console from the 'chromium' project
+called 'main', and we give it a local name of 'cr-main' and title of
+'Chromium Main Console'.
+
+    luci.external_console_view(
+        name = 'cr-main',
+        title = 'Chromium Main Console',
+        source = 'chromium:main'
+    )
+
+#### Arguments {#luci.external_console_view-args}
+
+* **name**: a local name for this console. Will be used for sorting consoles on the project page. Note that the name must not clash with existing consoles or list views in this project. Required.
+* **title**: a title for this console, will show up in UI. Defaults to `name`.
+* **source**: a string referring to the external console to be included, in the format `project:console_id`. Required.
+
+
+
+
 ### luci.notify {#luci.notify}
 
 ```python
