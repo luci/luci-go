@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3b21537_78862a30",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-21T01:13:58Z",
+      "side": 1,
+      "message": "Is this different from `_view_add_view(key, None, None, [], props)`? Doesn\u0027t look like it... Better to get rid of it and use view.add_view(...) directly. External view is a subkind of a view anyway (that happens to be entry-less).",
+      "range": {
+        "startLine": 492,
+        "startChar": 4,
+        "endLine": 492,
+        "endChar": 35
+      },
+      "revId": "99dfd0bec29de3d0b633a96e78d03fa846a561c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
