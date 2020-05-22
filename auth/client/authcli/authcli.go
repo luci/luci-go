@@ -589,7 +589,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// 'args' specify a subcommand to run. Prepare *exec.Cmd.
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Specify a command to run:\n  auth-util context [flags] [--] <bin> [args]")
+		fmt.Fprintf(os.Stderr, "Specify a command to run:\n  %s context [flags] [--] <bin> [args]\n", os.Args[0])
 		return ExitCodeInvalidInput
 	}
 	bin := args[0]
