@@ -89,7 +89,6 @@ type streamRun struct {
 
 	// TODO(ddoman): add flags
 	// - tag (invocation-tag)
-	// - complete-invocation-exit-codes
 	// - log-file
 
 	invocation lucictx.Invocation
