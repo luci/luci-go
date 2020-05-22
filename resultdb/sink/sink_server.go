@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // sinkServer implements sinkpb.SinkServer.
@@ -98,7 +99,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		for k, v := range tr.Variant.GetDef() {
 			def[k] = v
 		}
-		tr.Variant.Def = def
+		tr.Variant = &typepb.Variant{Def: def}
 
 		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
