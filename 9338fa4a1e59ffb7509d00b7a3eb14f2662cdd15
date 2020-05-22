@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8fde89f8_654bb167",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T21:21:24Z",
+      "side": 1,
+      "message": "I\u0027d probably add a logging message here.\ne.g.,\n\n```\nfunc() {\n  logging.Infof(ctx, \"Interrupt signal received; cancelling the command context\")\n  cancelCmd()\n}\n```\n\nI\u0027m not sure if Errorf() should be used instead, though.",
+      "range": {
+        "startLine": 166,
+        "startChar": 31,
+        "endLine": 166,
+        "endChar": 40
+      },
+      "revId": "9338fa4a1e59ffb7509d00b7a3eb14f2662cdd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
