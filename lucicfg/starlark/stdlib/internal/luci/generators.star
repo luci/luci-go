@@ -301,7 +301,8 @@ def _handle_executable(node):
   if len(executables) != 1:
     fail('impossible: the builder should have a reference to an executable')
   executable = executables[0]
-  if executable.props.recipe:
+  if not executable.props.cmd and executable.props.recipe:
+    # old kitchen way
     recipe_def = buildbucket_pb.Builder.Recipe(
         name = executable.props.recipe,
         cipd_package = executable.props.cipd_package,
@@ -310,9 +311,7 @@ def _handle_executable(node):
             '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
         ])
     )
-    executable_def = common_pb.Executable(
-        cmd = executable.props.cmd,
-    ) if executable.props.cmd else None
+    executable_def = None
     properties = None
   else:
     executable_def = common_pb.Executable(
@@ -321,7 +320,11 @@ def _handle_executable(node):
         cmd = executable.props.cmd,
     )
     recipe_def = None
-    properties = to_json(node.props.properties)
+    props_dict = node.props.properties
+    if executable.props.recipe:
+      props_dict = dict(props_dict)
+      props_dict["recipe"] = executable.props.recipe
+    properties = to_json(props_dict)
   return executable_def, recipe_def, properties
 
 
