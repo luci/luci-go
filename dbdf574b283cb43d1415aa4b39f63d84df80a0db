@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2822598b_f8347a2a",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T03:13:55Z",
+      "side": 0,
+      "message": "Ah....thanks for fixing this!\nI tested crrev.com/2213191 with and without this CL to reproduce the panic.",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 22
+      },
+      "revId": "dbdf574b283cb43d1415aa4b39f63d84df80a0db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
