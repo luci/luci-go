@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd79171b_fe47537b",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T04:21:08Z",
+      "side": 1,
+      "message": "Add trailing \u0027/\u0027 to have a consistent URL pattern. (or remove it from [1] and [2])",
+      "range": {
+        "startLine": 48,
+        "startChar": 91,
+        "endLine": 48,
+        "endChar": 92
+      },
+      "revId": "5c07e8ee85c6a52feafaa05e8c5cbd93f59bf07b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e739ef42_90949558",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T04:21:08Z",
+      "side": 1,
+      "message": "a mix use of \"backwards compatible\" and \"backward compatible\". Perhaps, use only one.",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "5c07e8ee85c6a52feafaa05e8c5cbd93f59bf07b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62adafdc_11b793a4",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T04:21:08Z",
+      "side": 1,
+      "message": "could we link https://chromium.googlesource.com/infra/infra/ into this text? It can be found from [infra.git commit] with an extra click. However, by linking https://chromium.googlesource.com/infra/infra/ into this text, readers can easily follow where they should look to find the roll-out status.",
+      "range": {
+        "startLine": 123,
+        "startChar": 32,
+        "endLine": 123,
+        "endChar": 41
+      },
+      "revId": "5c07e8ee85c6a52feafaa05e8c5cbd93f59bf07b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc8c42ac_12535a1a",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T04:21:08Z",
+      "side": 1,
+      "message": "I\u0027d start \"Wait until\", as all other steps are written in imperative form.\n#1. Land ...\n#2. Wait until ...\n#4. Land ...\n#5. .... modify ...",
+      "range": {
+        "startLine": 125,
+        "startChar": 3,
+        "endLine": 125,
+        "endChar": 13
+      },
+      "revId": "5c07e8ee85c6a52feafaa05e8c5cbd93f59bf07b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9ffae2e_e2508622",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 9
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-22T04:21:08Z",
+      "side": 1,
+      "message": "I\u0027d reorder these phrases to make this section more patternized.\n\n5. Modify [cr-buildbucket/settings.cfg] to release the change to bots. Bots don\u0027t use depot_tools: [example](https://chrome-internal-review.googlesource.com/c/infradata/config/+/2849250)",
+      "range": {
+        "startLine": 134,
+        "startChar": 3,
+        "endLine": 135,
+        "endChar": 43
+      },
+      "revId": "5c07e8ee85c6a52feafaa05e8c5cbd93f59bf07b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
