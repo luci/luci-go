@@ -269,7 +269,7 @@ func (m *SubmitOptions) GetBurstDelay() *duration.Duration {
 type ConfigGroup struct {
 	// The human- and machine-readable name (unique within this project) of this
 	// config group. This is used in messages posted to users and in monitoring
-	// data. Must match regex '^[a-z0-9_]+$'
+	// data. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]*$".
 	Name string `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
 	// At least 1 Gerrit instance with repositories to work with is required.
 	Gerrit []*ConfigGroup_Gerrit `protobuf:"bytes,1,rep,name=gerrit,proto3" json:"gerrit,omitempty"`
@@ -815,7 +815,7 @@ type Verifiers_Tryjob struct {
 	Builders []*Verifiers_Tryjob_Builder `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
 	// Optional, defaulting to no retries whatsoever.
 	RetryConfig *Verifiers_Tryjob_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
-	// DEPRECATED & IGNORED BY CQ. Use per-builder `cancel_stale` to opt out.
+	// DEPRECATED. Use per-builder `cancel_stale` instead.
 	CancelStaleTryjobs   Toggle   `protobuf:"varint,3,opt,name=cancel_stale_tryjobs,json=cancelStaleTryjobs,proto3,enum=cq.config.Toggle" json:"cancel_stale_tryjobs,omitempty"` // Deprecated: Do not use.
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
