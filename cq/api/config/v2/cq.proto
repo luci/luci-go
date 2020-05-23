@@ -337,7 +337,7 @@ message Verifiers {
     // Optional, defaulting to no retries whatsoever.
     RetryConfig retry_config = 2;
 
-    // DEPRECATED & IGNORED BY CQ. Use per-builder `cancel_stale` to opt out.
+    // DEPRECATED. Use per-builder `cancel_stale` instead.
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {

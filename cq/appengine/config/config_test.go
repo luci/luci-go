@@ -446,8 +446,8 @@ func TestTryjobValidation(t *testing.T) {
 		}
 
 		So(validate(``), ShouldErrLike, "at least 1 builder required")
-		// cancel_stale_tryjobs: YES is still allowed.
-		So(mustWarn(validate(`
+
+		So(mustError(validate(`
 			cancel_stale_tryjobs: YES
 			builders {name: "a/b/c"}`)), ShouldErrLike, "please remove")
 		So(mustError(validate(`
