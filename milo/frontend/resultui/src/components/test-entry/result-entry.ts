@@ -148,7 +148,8 @@ export class ResultEntryElement extends MobxLitElement {
             <span class="${this.testResult.expected ? 'expected' : 'unexpected'}-result">
               ${this.testResult.expected ? '' : html`unexpectedly`}
               ${STATUS_DISPLAY_MAP[this.testResult.status]}
-            </span> after ${this.testResult.duration || '-s'}
+            </span>
+            ${this.testResult.duration ? `after ${this.testResult.duration}` : ''}
           </span>
         </div>
         <div id="body">
