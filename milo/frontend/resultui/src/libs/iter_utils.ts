@@ -13,22 +13,6 @@
 // limitations under the License.
 
 /**
- * Yields up to certain number of items.
- */
-export function* take<T>(iter: Iterable<T>, count: number): IterableIterator<T> {
-  if (count <= 0) {
-    return;
-  }
-  for (const item of iter) {
-    yield item;
-    count--;
-    if (count === 0) {
-      break;
-    }
-  }
-}
-
-/**
  * Yields the current item and the previous item (or null if there's no previous
  * item).
  */
