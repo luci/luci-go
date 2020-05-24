@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe9be67f_6ab3235d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-24T11:00:57Z",
+      "side": 1,
+      "message": "Doesn\u0027t it also flicker if we append a node after the artifacts are loaded (when there are artifacts)?",
+      "revId": "5f4ea6184e307a5e88d929ae37a4344e5ebe9418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
