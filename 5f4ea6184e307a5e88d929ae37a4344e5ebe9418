@@ -16,6 +16,24 @@
       "revId": "5f4ea6184e307a5e88d929ae37a4344e5ebe9418",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2488453d_0a28c979",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-24T18:36:16Z",
+      "side": 1,
+      "message": "improved CL message. PTAL",
+      "parentUuid": "fe9be67f_6ab3235d",
+      "revId": "5f4ea6184e307a5e88d929ae37a4344e5ebe9418",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
