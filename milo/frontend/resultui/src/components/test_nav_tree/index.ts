@@ -70,7 +70,7 @@ export class TestNavTreeElement extends MobxLitElement {
           <mwc-button
             id="load-more-btn"
             unelevated dense
-            @click=${() => this.testLoader.loadMore()}
+            @click=${() => this.testLoader.loadNextPage()}
             ?disabled=${this.testLoader.done || this.testLoader.isLoading}
           >
             ${this.testLoader.isLoading ?
