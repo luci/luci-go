@@ -58,7 +58,7 @@ export class TestFilterElement extends MobxLitElement {
       </div class="filter">
       <div class="filter">
         <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked}>
-        <label for="exonerated" style="color: #fa3;">Exonerated</label>
+        <label for="exonerated" style="color: #ff33d2;">Exonerated</label>
       </div class="filter">
     `;
   }

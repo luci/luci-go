@@ -52,11 +52,6 @@ export class TestEntryElement extends MobxLitElement {
   // don't get reset after the node is collapsed.
   @observable.ref private wasExpanded = false;
 
-  @computed
-  private get hasUnexpected() {
-    return this.test.variants.some((v) => v.results.some((r) => !r.expected));
-  }
-
   /**
    * Common prefix between this.test.id and this.prevTestId.
    */
@@ -67,9 +62,24 @@ export class TestEntryElement extends MobxLitElement {
     return takeWhile(prevSegs, (seg, i) => currentSegs[i] === seg).join('');
   }
 
+  @computed
+  private get icon() {
+    // If there are variants without expected results, renderer an error.
+    if (this.test.variants.some((v) => v.results.every((r) => !r.expected))) {
+      return 'error';
+    }
+
+    // If there are variants with unxpected results, render a warning sign.
+    if (this.test.variants.some((v) => v.results.some((r) => !r.expected))) {
+      return 'warning';
+    }
+
+    return 'check';
+  }
+
   protected render() {
     return html`
-      <div class=${classMap({unexpected: this.hasUnexpected})}>
+      <div>
         <div
           class="expandable-header"
           @click=${() => this.expanded = !this.expanded}
@@ -78,8 +88,8 @@ export class TestEntryElement extends MobxLitElement {
           <div id="header" class="one-line-content">
             <mwc-icon
               id="expectancy-indicator"
-              class=${classMap({unexpected: this.hasUnexpected})}
-            >${this.hasUnexpected ?  'error': 'check'}</mwc-icon>
+              class=${classMap({[this.icon]: true})}
+            >${this.icon}</mwc-icon>
             <div id="test-identifier">
               <span class="light">${this.commonTestIdPrefix}</span>${this.test.id.slice(this.commonTestIdPrefix.length)}
               <tr-copy-to-clipboard
@@ -152,8 +162,11 @@ export class TestEntryElement extends MobxLitElement {
       grid-row: 1;
       grid-column: 1;
     }
-    #expectancy-indicator.unexpected {
+    #expectancy-indicator.error {
       color: #d23f31;
+    }
+    #expectancy-indicator.warning {
+      color: #f5a309;
     }
 
     #test-identifier {
