@@ -17,7 +17,7 @@
  * results and exonerations from resultDb to a TestNode.
  */
 
-import { computed, observable } from 'mobx';
+import { action, computed, observable } from 'mobx';
 
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
 import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
@@ -39,26 +39,24 @@ export class TestLoader {
   @computed get done() { return this._done; }
   @observable.ref private _done = false;
 
-  /**
-   * @param testIter the tests should be sorted by id.
-   */
   constructor(
     readonly node: TestNode,
-    private readonly testIter: AsyncIterator<ReadonlyTest>,
-  ) {}
+    private readonly testBatches: AsyncIterator<[ReadonlyTest[], boolean]>,
+  ) {
+  }
 
   private loadPromise = Promise.resolve();
 
   /**
    * Loads more tests from the iterator to the node.
    */
-  loadMore(limit = 100) {
+  loadNextPage() {
     if (this.done) {
       return this.loadPromise;
     }
     this.loadingReqCount++;
     // TODO(weiweilin): better error handling.
-    this.loadPromise = this.loadPromise.then(() => this.loadMoreInternal(limit));
+    this.loadPromise = this.loadPromise.then(() => this.loadMoreInternal());
     return this.loadPromise.then(() => this.loadingReqCount--);
   }
 
@@ -68,15 +66,23 @@ export class TestLoader {
    * @precondition there should not exist a running instance of
    * this.loadMoreInternal
    */
-  private async loadMoreInternal(limit: number) {
-    while (limit > 0) {
-      const {value, done} = await this.testIter.next();
-      if (done) {
-        this._done = true;
-        break;
-      }
-      this.node.addTest(value);
-      limit--;
+  private async loadMoreInternal() {
+    const next = await this.testBatches.next();
+    if (next.done) {
+      this._done = true;
+      return;
+    }
+    this.processTests(next.value[0]);
+
+    if (next.value[1]) {
+      this._done = true;
+    }
+  }
+
+  @action
+  private processTests(tests: ReadonlyTest[]) {
+    for (const test of tests) {
+      this.node.addTest(test);
     }
   }
 }
@@ -160,24 +166,24 @@ function keyForVariant(variant: Variant) {
 /**
  * Streams test results from resultDb.
  */
-export async function* streamTestResults(req: QueryTestResultRequest, resultDb: ResultDb) {
+export async function* streamTestResultBatches(req: QueryTestResultRequest, resultDb: ResultDb): AsyncIterableIterator<[TestResult[], boolean]> {
   let pageToken = req.pageToken;
   do {
     const res = await resultDb.queryTestResults({...req, pageToken});
     pageToken = res.nextPageToken;
-    yield* res.testResults;
+    yield [res.testResults, !pageToken];
   } while (pageToken);
 }
 
 /**
  * Streams test exonerations from resultDb.
  */
-export async function* streamTestExonerations(req: QueryTestExonerationsRequest, resultDb: ResultDb) {
+export async function* streamTestExonerationBatches(req: QueryTestExonerationsRequest, resultDb: ResultDb): AsyncIterableIterator<[TestExoneration[], boolean]> {
   let pageToken = req.pageToken;
   do {
     const res = await resultDb.queryTestExonerations({...req, pageToken});
     pageToken = res.nextPageToken;
-    yield* res.testExonerations;
+    yield [res.testExonerations, !pageToken];
   } while (pageToken);
 }
 
@@ -188,30 +194,44 @@ export async function* streamTestExonerations(req: QueryTestExonerationsRequest,
  * Exonerations are loaded before results and the number of exonerations is
  * expected to be small.
  */
-export async function* streamTests(results: AsyncIterableIterator<TestResult>, exonerations: AsyncIterableIterator<TestExoneration>): AsyncIterableIterator<ReadonlyTest> {
+export async function* streamTestBatches(resultBatches: AsyncIterator<[TestResult[], boolean]>, exonerationBatches: AsyncIterator<[TestExoneration[], boolean]>): AsyncIterableIterator<[ReadonlyTest[], boolean]> {
   const testMap = new Map<string, Test>();
+  let [nextResultBatch, nextExonerationBatch] = await Promise.all([
+    resultBatches.next().then((v) => v.done ? [[], true] as [TestResult[], boolean] : v.value),
+    exonerationBatches.next().then((v) => v.done ? [[], true] as [TestExoneration[], boolean] : v.value),
+  ]);
 
-  for await (const exoneration of exonerations) {
-    let test = testMap.get(exoneration.testId);
-    if (test) {
-      test.addExoneration(exoneration);
-      continue;
-    }
-    test = new Test(exoneration.testId);
-    testMap.set(exoneration.testId, test);
-    test.addExoneration(exoneration);
-    yield test;
-  }
-
-  for await (const result of results) {
-    let test = testMap.get(result.testId);
-    if (test) {
+  while (true) {
+    const newTests = [] as ReadonlyTest[];
+    for (const result of nextResultBatch[0]) {
+      let test = testMap.get(result.testId);
+      if (!test) {
+        test = new Test(result.testId);
+        testMap.set(result.testId, test);
+        newTests.push(test);
+      }
       test.addResult(result);
-      continue;
     }
-    test = new Test(result.testId);
-    testMap.set(result.testId, test);
-    test.addResult(result);
-    yield test;
+
+    for (const exoneration of nextExonerationBatch[0]) {
+      let test = testMap.get(exoneration.testId);
+      if (!test) {
+        test = new Test(exoneration.testId);
+        testMap.set(exoneration.testId, test);
+        newTests.push(test);
+      }
+      test.addExoneration(exoneration);
+    }
+
+    const done = nextResultBatch[1] && nextExonerationBatch[1];
+    yield [newTests, done];
+    if (done) {
+      break;
+    }
+
+    [nextResultBatch, nextExonerationBatch] = await Promise.all([
+      resultBatches.next().then((v) => v.done ? [[], true] as [TestResult[], boolean] : v.value),
+      exonerationBatches.next().then((v) => v.done ? [[], true] as [TestExoneration[], boolean] : v.value),
+    ]);
   }
 }
