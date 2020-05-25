@@ -51,7 +51,7 @@ export class ResultEntryElement extends MobxLitElement {
     this.wasExpanded = this.wasExpanded || newVal;
   }
 
-  @observable.ref private outputArtifactsExpanded = false;
+  @observable.ref private artifactsExpanded = false;
   @observable.ref private tagExpanded = false;
 
   @computed
@@ -114,18 +114,22 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   private renderArtifacts() {
+    if (this.artifacts.length == 0) {
+      return html``;
+    }
+
     return html`
       <div
         class="expandable-header"
-        @click=${() => this.outputArtifactsExpanded = !this.outputArtifactsExpanded}
+        @click=${() => this.artifactsExpanded = !this.artifactsExpanded}
       >
-        <mwc-icon class="expand-toggle">${this.outputArtifactsExpanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
+        <mwc-icon class="expand-toggle">${this.artifactsExpanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <div class="one-line-content">
           Artifacts:
-          <span class="light">${this.artifactsRes.state === 'fulfilled' ? `${this.artifacts.length} artifact(s)` : 'loading...'}</span>
+          <span class="light">${this.artifacts.length}</span>
         </div>
       </div>
-      <ul id="artifact-list" style=${styleMap({display: this.outputArtifactsExpanded ? '' : 'none'})}>
+      <ul id="artifact-list" style=${styleMap({display: this.artifactsExpanded ? '' : 'none'})}>
         ${this.artifacts.map((artifact) => html`
         <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
         <li><a href=${artifact.fetchUrl}>${artifact.artifactId}</a></li>
