@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { computed, observable } from 'mobx';
+import { action, computed, observable } from 'mobx';
 
 import { TestExoneration, TestResult, Variant } from '../services/resultdb';
 
@@ -132,6 +132,7 @@ export class TestNode {
    * @param test test.id must be alphabetically greater than the id of any
    *     previously added test.
    */
+  @action
   addTest(test: ReadonlyTest) {
     const idSegs = test.id.match(ID_SEG_REGEX)!;
     idSegs.reverse();
