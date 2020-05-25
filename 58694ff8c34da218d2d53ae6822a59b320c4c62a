@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88fb1fbf_3214defd",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:28:57Z",
+      "side": 1,
+      "message": "nit: maybe just `a`?",
+      "range": {
+        "startLine": 73,
+        "startChar": 34,
+        "endLine": 73,
+        "endChar": 42
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e276c10_bf6a1dba",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:28:57Z",
+      "side": 1,
+      "message": "artifactId",
+      "range": {
+        "startLine": 73,
+        "startChar": 56,
+        "endLine": 73,
+        "endChar": 60
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74219845_0b0baf43",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:28:57Z",
+      "side": 1,
+      "message": "nit: could fit on one line?",
+      "range": {
+        "startLine": 164,
+        "startChar": 34,
+        "endLine": 166,
+        "endChar": 12
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b5b2dc0_9e98eb28",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:28:57Z",
+      "side": 1,
+      "message": "not for this CL, but I believe I\u0027ve seen this code repeated a few times. Possible to package in a nice component?",
+      "range": {
+        "startLine": 51,
+        "startChar": 23,
+        "endLine": 51,
+        "endChar": 36
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c49e293d_d18b1609",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:28:57Z",
+      "side": 1,
+      "message": "is this what\u0027s cause a scrolled view inside a scrolled view?",
+      "range": {
+        "startLine": 95,
+        "startChar": 6,
+        "endLine": 95,
+        "endChar": 23
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
