@@ -22,6 +22,30 @@
       "revId": "24d50eb8e2d3c56ac6ce9c3b7960c8206f2ff3ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7282f4fe_b7371408",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T12:53:04Z",
+      "side": 1,
+      "message": "It was added to avoid fetching unnecessary data. But you are right. Prefetching probably would end up being a better solution.",
+      "parentUuid": "a52b450b_9750da4c",
+      "range": {
+        "startLine": 30,
+        "startChar": 17,
+        "endLine": 30,
+        "endChar": 23
+      },
+      "revId": "24d50eb8e2d3c56ac6ce9c3b7960c8206f2ff3ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

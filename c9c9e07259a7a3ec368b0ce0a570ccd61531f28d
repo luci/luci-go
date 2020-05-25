@@ -311,6 +311,30 @@
       "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c264233_bdf898bb",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T12:53:04Z",
+      "side": 1,
+      "message": "thanks for your suggestion.\nRemoved.",
+      "parentUuid": "cc05dd69_3c513489",
+      "range": {
+        "startLine": 81,
+        "startChar": 33,
+        "endLine": 81,
+        "endChar": 36
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
