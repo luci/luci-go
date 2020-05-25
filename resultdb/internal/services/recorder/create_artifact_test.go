@@ -288,5 +288,21 @@ func TestCreateArtifact(t *testing.T) {
 				So(rec.Body.String(), ShouldEqual, "Content-Length header value 100 does not match the length of the request body which is 5\n")
 			})
 		})
+
+		Convey(`e2e`, func() {
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+
+			res := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello")
+			So(res.Code, ShouldEqual, http.StatusNoContent)
+
+			var actualSize int64
+			var actualHash string
+			testutil.MustReadRow(ctx, "Artifacts", span.InvocationID("inv").Key("", "a"), map[string]interface{}{
+				"Size":       &actualSize,
+				"RBECASHash": &actualHash,
+			})
+			So(actualSize, ShouldEqual, 5)
+			So(actualHash, ShouldEqual, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
+		})
 	})
 }
