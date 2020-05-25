@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64b42cdd_397ddf5b",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T02:04:36Z",
+      "side": 1,
+      "message": "from this type annotation, it is unclear what is this boolean.\nfrom the code, i take this means \"the end\"",
+      "range": {
+        "startLine": 44,
+        "startChar": 65,
+        "endLine": 44,
+        "endChar": 72
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14407022_ff417f1f",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T02:04:36Z",
+      "side": 1,
+      "message": "should this function be renamed too? loadNextPageInternal?",
+      "range": {
+        "startLine": 69,
+        "startChar": 16,
+        "endLine": 69,
+        "endChar": 32
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ccf1be7_56eec2ad",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T02:04:36Z",
+      "side": 1,
+      "message": "wasn\u0027t `const {value, done} \u003d` simpler?",
+      "range": {
+        "startLine": 70,
+        "startChar": 4,
+        "endLine": 70,
+        "endChar": 14
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5197c443_4a85ab4b",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T02:04:36Z",
+      "side": 1,
+      "message": "shouldn\u0027t @action be on addTest?\nthis function itself does not seem to change state",
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50c536be_17775fde",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T02:04:36Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 81,
+        "startChar": 33,
+        "endLine": 81,
+        "endChar": 36
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0727998e_859d543f",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T02:04:36Z",
+      "side": 1,
+      "message": "this is the same expression. unnecessary",
+      "range": {
+        "startLine": 81,
+        "startChar": 68,
+        "endLine": 81,
+        "endChar": 99
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
