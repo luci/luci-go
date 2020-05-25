@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3651692f_cc030d2c",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:03:11Z",
+      "side": 1,
+      "message": "i think we should initiate the next request before processTests",
+      "range": {
+        "startLine": 80,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 61
+      },
+      "revId": "2efd453b6ff9c7f31ba4a8296fe9ffdcd94dfacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "431e6c2c_b167963b",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T15:03:11Z",
+      "side": 1,
+      "message": "nit: is gts OK with this? \nhttps://google.github.io/styleguide/jsguide.html#formatting-nonempty-blocks discourages this",
+      "range": {
+        "startLine": 240,
+        "startChar": 30,
+        "endLine": 240,
+        "endChar": 50
+      },
+      "revId": "2efd453b6ff9c7f31ba4a8296fe9ffdcd94dfacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
