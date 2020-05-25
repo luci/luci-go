@@ -50,6 +50,7 @@ import (
 const (
 	artifactContentHashHeaderKey = "Content-Hash"
 	artifactContentSizeHeaderKey = "Content-Length"
+	artifactContentTypeHeaderKey = "Content-Type"
 	updateTokenHeaderKey         = "Update-Token"
 	maxArtifactContentSize       = 64 * 1024 * 1024 // 64 MiB.
 )
@@ -103,6 +104,7 @@ type artifactCreator struct {
 	resultID      string
 	artifactID    string
 	localParentID string
+	contentType   string
 
 	hash string
 	size int64
@@ -147,8 +149,28 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 		return err
 	}
 
-	// TODO(crbug.com/1071258): write to Spanner.
-	return nil
+	// Record the artifact in Spanner.
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Verify the state again.
+		switch sameExists, err := ac.verifyState(ctx, txn); {
+		case err != nil:
+			return err
+		case sameExists:
+			return nil
+		}
+
+		return txn.BufferWrite([]*spanner.Mutation{
+			span.InsertMap("Artifacts", map[string]interface{}{
+				"InvocationId": ac.invID,
+				"ParentId":     ac.localParentID,
+				"ArtifactId":   ac.artifactID,
+				"ContentType":  ac.contentType,
+				"Size":         ac.size,
+				"RBECASHash":   ac.hash,
+			}),
+		})
+	})
+	return err
 }
 
 // writeToCAS writes contents in r to RBE-CAS.
@@ -291,6 +313,8 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	if err := validateInvocationToken(c.Context, updateToken, ac.invID); err != nil {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid %s header value", updateTokenHeaderKey)
 	}
+
+	ac.contentType = c.Request.Header.Get(artifactContentTypeHeaderKey)
 
 	return nil
 }
