@@ -178,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "1a9a8173_2ae8de22",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T07:08:20Z",
+      "side": 1,
+      "message": "ah got it",
+      "parentUuid": "0efedd9f_541d4c07",
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50c536be_17775fde",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
         "patchSetId": 4
@@ -269,6 +287,30 @@
       "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc05dd69_3c513489",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T07:08:20Z",
+      "side": 1,
+      "message": "1) see item 5 in http://go/howtowritesoftware. Right now this looks like a bug. Let\u0027s add \"/total\" when we actually have it\n2) crbug.com/1034881 is about the total number of test results, not total number of tests though?",
+      "parentUuid": "46a8cf87_0075e9a8",
+      "range": {
+        "startLine": 81,
+        "startChar": 33,
+        "endLine": 81,
+        "endChar": 36
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

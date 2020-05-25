@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a52b450b_9750da4c",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-25T07:08:20Z",
+      "side": 1,
+      "message": "i read this CL a couple of times, but I am failing to understand why we need the \"is last\" concept in this CL. If the intention is to not display \"load more\" on the last page (e.g. the only page), then I think this can be solved by loading current AND next page, but displaying only the current one. If the next one exists, then display \"load more\" too. One nice outcome is that \"load more\" button would work instantaneously from the perspective of the user because we\u0027d prefetching the next page.",
+      "range": {
+        "startLine": 30,
+        "startChar": 17,
+        "endLine": 30,
+        "endChar": 23
+      },
+      "revId": "24d50eb8e2d3c56ac6ce9c3b7960c8206f2ff3ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
