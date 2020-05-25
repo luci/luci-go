@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7d18d1fa_05681e0d",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T05:28:02Z",
+      "side": 1,
+      "message": "I\u0027ll change this to an object to make it clearer.",
+      "parentUuid": "64b42cdd_397ddf5b",
+      "range": {
+        "startLine": 44,
+        "startChar": 65,
+        "endLine": 44,
+        "endChar": 72
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14407022_ff417f1f",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "980dc4c8_f398ac20",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T05:28:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14407022_ff417f1f",
+      "range": {
+        "startLine": 69,
+        "startChar": 16,
+        "endLine": 69,
+        "endChar": 32
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "02bdd5b4_f0a37b2e",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T05:28:02Z",
+      "side": 1,
+      "message": "if we unpack it here. next.value has type [[TestResult[], boolean] | any (i.e. TypeOfIterYieldValue | TypeOfIterReturnValue) at L75 .\nIf we don\u0027t unpack it, typescript is able to tell that next.value at L75 must be [TestResult[], bool]. Because next.done must be true at L71 when the code reaches L75, next.value must has the type of IterYieldValue.",
+      "parentUuid": "2ccf1be7_56eec2ad",
+      "range": {
+        "startLine": 70,
+        "startChar": 4,
+        "endLine": 70,
+        "endChar": 14
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5197c443_4a85ab4b",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -85,6 +157,24 @@
       "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0efedd9f_541d4c07",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T05:28:02Z",
+      "side": 1,
+      "message": "@action means batch action.\nIt delays all the reactions until the end of the action. Therefore we won\u0027t compute values base on intermediate state. This helps improve performance.\nSo it makes sense to add @action to a batch operation.\nWe can add @action to addTest too.",
+      "parentUuid": "5197c443_4a85ab4b",
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -131,6 +221,54 @@
       "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46a8cf87_0075e9a8",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T05:28:02Z",
+      "side": 1,
+      "message": "This number is to be replaced by count returned from stats RPC.\nI think we should either leave it here or remove the \u0027+\u0027 sign as well.",
+      "parentUuid": "50c536be_17775fde",
+      "range": {
+        "startLine": 81,
+        "startChar": 33,
+        "endLine": 81,
+        "endChar": 36
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83ad3727_3d144618",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-25T05:28:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0727998e_859d543f",
+      "range": {
+        "startLine": 81,
+        "startChar": 68,
+        "endLine": 81,
+        "endChar": 99
+      },
+      "revId": "c9c9e07259a7a3ec368b0ce0a570ccd61531f28d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
