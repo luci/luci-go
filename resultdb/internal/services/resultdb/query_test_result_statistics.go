@@ -19,28 +19,15 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
-
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// validateQueryArtifactsRequest returns a non-nil error if req is determined
-// to be invalid.
-func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
-	if err := pbutil.ValidateTestResultPredicate(req.TestResultPredicate); err != nil {
-		return errors.Annotate(err, "test_result_predicate").Err()
-	}
-	return validateQueryRequestWithPaging(req)
-}
-
-// QueryArtifacts implements pb.ResultDBServer.
-func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
-	if err := validateQueryArtifactsRequest(in); err != nil {
+// QueryTestResultStatistics implements pb.ResultDBServer.
+func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+	if err := validateQueryRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -58,25 +45,12 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
-	// Query artifacts.
-	q := span.ArtifactQuery{
-		InvocationIDs:       invs,
-		TestResultPredicate: in.TestResultPredicate,
-		PageSize:            pagination.AdjustPageSize(in.PageSize),
-		PageToken:           in.PageToken,
-		FollowEdges:         in.FollowEdges,
-	}
-	arts, token, err := q.Fetch(ctx, txn)
+	totalNum, err := span.ReadTestResultCount(ctx, txn, invs)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.populateFetchURLs(ctx, arts...); err != nil {
-		return nil, err
-	}
-
-	return &pb.QueryArtifactsResponse{
-		Artifacts:     arts,
-		NextPageToken: token,
+	return &pb.QueryTestResultStatisticsResponse{
+		TotalTestResults: totalNum,
 	}, nil
 }
