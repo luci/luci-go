@@ -26,7 +26,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/user"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/appengine/tq"
@@ -227,7 +226,6 @@ func TestHandleBuild(t *testing.T) {
 		c := gaetesting.TestingContextWithAppID("luci-notify-test")
 		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
-		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
 
 		// Add entities to datastore and update indexes.
 		project := &config.Project{Name: "chromium"}
