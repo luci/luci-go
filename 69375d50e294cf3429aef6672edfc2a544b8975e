@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93342970_291d9dc4",
+        "filename": "resultdb/internal/services/resultdb/query_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:22:54Z",
+      "side": 1,
+      "message": "reuse queryRequest\n\n  type queryRequestWithPaging interface {\n        queryRequest\n\tGetPageSize() int32\n  }",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 49,
+        "endChar": 0
+      },
+      "revId": "69375d50e294cf3429aef6672edfc2a544b8975e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89fe3d3f_9933aba8",
+        "filename": "resultdb/internal/services/resultdb/query_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:22:54Z",
+      "side": 1,
+      "message": "can we just an if statement here:\n\n  if paging, ok :\u003d req.(queryRequestWithPaging); ok {\n     // validate paging\n  }\n\nit is easy to accidentally call validateQueryRequest without paging. \n\nthis pattern is consistent with APIs in Golang stdlib",
+      "revId": "69375d50e294cf3429aef6672edfc2a544b8975e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
