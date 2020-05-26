@@ -45,6 +45,30 @@
       "revId": "ab30d16bfd618b2df41e4b425a4e02dae2cde9f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "74bbd908_0fdad064",
+        "filename": "common/proto/realms/realms_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-26T21:05:57Z",
+      "side": 1,
+      "message": "oh, i see. Multirepos complexity 😞",
+      "parentUuid": "227918fa_ad1fc42d",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 2
+      },
+      "revId": "ab30d16bfd618b2df41e4b425a4e02dae2cde9f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
