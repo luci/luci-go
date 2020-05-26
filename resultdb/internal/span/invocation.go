@@ -295,3 +295,22 @@ func ReadInvocationRealm(ctx context.Context, txn Txn, id InvocationID) (string,
 	err := ReadInvocation(ctx, txn, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
 }
+
+// ReadTestResultCount returns the total number of test results of requested
+// invocations.
+func ReadTestResultCount(ctx context.Context, txn Txn, ids InvocationIDSet) (int64, error) {
+	var count int64
+	err := txn.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationId", "TestResultCount"}).Do(func(r *spanner.Row) error {
+		var id InvocationID
+		var testResultCount spanner.NullInt64
+		if err := FromSpanner(r, &id, &testResultCount); err != nil {
+			return errors.Annotate(err, "failed to fetch %s", ids).Err()
+		}
+		count += testResultCount.Int64
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
