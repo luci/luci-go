@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "028800e3_7d06ed8d",
+        "filename": "common/proto/realms/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-26T20:05:28Z",
+      "side": 1,
+      "message": "Will update once https://chromium-review.googlesource.com/c/infra/luci/luci-py/+/2216543 lands.",
+      "range": {
+        "startLine": 20,
+        "startChar": 13,
+        "endLine": 20,
+        "endChar": 52
+      },
+      "revId": "ab30d16bfd618b2df41e4b425a4e02dae2cde9f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "227918fa_ad1fc42d",
+        "filename": "common/proto/realms/realms_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-26T20:05:28Z",
+      "side": 1,
+      "message": "This is the added part. It is used by lucicfg to inject a reference to the doc into generated *.cfg files.",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 2
+      },
+      "revId": "ab30d16bfd618b2df41e4b425a4e02dae2cde9f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

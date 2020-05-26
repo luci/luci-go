@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2c491b3_c1c95257",
+        "filename": "common/proto/config/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-26T20:05:28Z",
+      "side": 0,
+      "message": "This was wrong, I noticed since I used LUCI Config project protos as a template for setting up Auth Service project protos. Note that adding luci.file_metadata annotation into original luci-py protos is non-trivial since it requires to import a *.proto file from luci-go.",
+      "range": {
+        "startLine": 23,
+        "startChar": 17,
+        "endLine": 23,
+        "endChar": 21
+      },
+      "revId": "48bcf2266373da65bef9165349bcc7649538547e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
