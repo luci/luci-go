@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -83,7 +84,10 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 	r.httpClient, err = auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
-	if err != nil {
+	switch {
+	case err == auth.ErrLoginRequired:
+		return errors.New("Login required: run `bb auth-login`")
+	case err != nil:
 		return err
 	}
 
