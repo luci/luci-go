@@ -94,6 +94,29 @@
     },
     {
       "key": {
+        "uuid": "5e3f5b35_394600d6",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-26T00:06:47Z",
+      "side": 1,
+      "message": "Usability suggestion: is it possible to remove the \"renamed\" badge in the Diff2Html header?",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 76
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c49e293d_d18b1609",
         "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
         "patchSetId": 5
