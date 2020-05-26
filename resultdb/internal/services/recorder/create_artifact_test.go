@@ -93,7 +93,7 @@ func TestCreateArtifact(t *testing.T) {
 		tok, err := invocationTokenKind.Generate(ctx, []byte("inv"), nil, time.Hour)
 		So(err, ShouldBeNil)
 
-		send := func(artifact, hash string, size int64, updateToken, content string) *httptest.ResponseRecorder {
+		send := func(artifact, hash string, size int64, updateToken, content, contentType string) *httptest.ResponseRecorder {
 			rec := httptest.NewRecorder()
 
 			// Create a URL whose EscapePath() returns `artifact`.
@@ -118,7 +118,10 @@ func TestCreateArtifact(t *testing.T) {
 				c.Request.Header.Set(artifactContentSizeHeaderKey, strconv.FormatInt(size, 10))
 			}
 			if updateToken != "" {
-				c.Request.Header.Set(UpdateTokenMetadataKey, updateToken)
+				c.Request.Header.Set(updateTokenHeaderKey, updateToken)
+			}
+			if contentType != "" {
+				c.Request.Header.Set(artifactContentTypeHeaderKey, contentType)
 			}
 			ach.Handle(c)
 			return rec
@@ -126,49 +129,49 @@ func TestCreateArtifact(t *testing.T) {
 
 		Convey(`Verify request`, func() {
 			Convey(`Artifact name is malformed`, func() {
-				rec := send("artifact", "", 0, "", "")
+				rec := send("artifact", "", 0, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "bad artifact name: does not match")
 			})
 
 			Convey(`Hash is missing`, func() {
-				rec := send(art, "", 0, "", "")
+				rec := send(art, "", 0, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "Content-Hash header is missing")
 			})
 
 			Convey(`Hash is malformed`, func() {
-				rec := send(art, "a", 0, "", "")
+				rec := send(art, "a", 0, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "Content-Hash header value does not match")
 			})
 
 			Convey(`Size is missing`, func() {
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -1, "", "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -1, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header is missing")
 			})
 
 			Convey(`Size is negative`, func() {
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -100, "", "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -100, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 67108864")
 			})
 
 			Convey(`Size is too large`, func() {
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 1<<30, "", "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 1<<30, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 67108864")
 			})
 
 			Convey(`Update token is missing`, func() {
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, "", "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, "", "", "")
 				So(rec.Code, ShouldEqual, http.StatusUnauthorized)
 				So(rec.Body.String(), ShouldContainSubstring, "Update-Token header is missing")
 			})
 
 			Convey(`Update token is invalid`, func() {
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, "x", "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, "x", "", "")
 				So(rec.Code, ShouldEqual, http.StatusForbidden)
 				So(rec.Body.String(), ShouldContainSubstring, "invalid Update-Token header value")
 			})
@@ -176,14 +179,14 @@ func TestCreateArtifact(t *testing.T) {
 
 		Convey(`Verify state`, func() {
 			Convey(`Invocation does not exist`, func() {
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
 				So(rec.Code, ShouldEqual, http.StatusNotFound)
 				So(rec.Body.String(), ShouldContainSubstring, "invocations/inv not found")
 			})
 
 			Convey(`Invocation is finalized`, func() {
 				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "invocations/inv is not active")
 			})
@@ -199,7 +202,7 @@ func TestCreateArtifact(t *testing.T) {
 						"Size":         0,
 					}),
 				)
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
 				So(rec.Code, ShouldEqual, http.StatusNoContent)
 			})
 
@@ -214,7 +217,7 @@ func TestCreateArtifact(t *testing.T) {
 						"Size":         1,
 					}),
 				)
-				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "")
+				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
 				So(rec.Code, ShouldEqual, http.StatusConflict)
 			})
 		})
@@ -224,7 +227,7 @@ func TestCreateArtifact(t *testing.T) {
 			w.requestsToAccept = 1
 
 			casSend := func() *httptest.ResponseRecorder {
-				return send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello")
+				return send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "")
 			}
 
 			Convey(`Single request`, func() {
@@ -269,7 +272,7 @@ func TestCreateArtifact(t *testing.T) {
 			w.requestsToAccept = 1
 
 			Convey(`Hash`, func() {
-				rec := send(art, "sha256:baaaaada5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello")
+				rec := send(art, "sha256:baaaaada5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(
 					rec.Body.String(),
@@ -283,10 +286,29 @@ func TestCreateArtifact(t *testing.T) {
 				// Satisfy the RBE-level verification.
 				w.res = &bytestream.WriteResponse{CommittedSize: 100}
 
-				rec := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 100, tok, "hello")
+				rec := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 100, tok, "hello", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldEqual, "Content-Length header value 100 does not match the length of the request body which is 5\n")
 			})
+		})
+
+		Convey(`e2e`, func() {
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+
+			res := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "text/plain")
+			So(res.Code, ShouldEqual, http.StatusNoContent)
+
+			var actualSize int64
+			var actualHash string
+			var actualContentType string
+			testutil.MustReadRow(ctx, "Artifacts", span.InvocationID("inv").Key("", "a"), map[string]interface{}{
+				"Size":        &actualSize,
+				"RBECASHash":  &actualHash,
+				"ContentType": &actualContentType,
+			})
+			So(actualSize, ShouldEqual, 5)
+			So(actualHash, ShouldEqual, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
+			So(actualContentType, ShouldEqual, "text/plain")
 		})
 	})
 }
