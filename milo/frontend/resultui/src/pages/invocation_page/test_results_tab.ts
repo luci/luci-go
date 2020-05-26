@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { autorun, observable } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import '../../components/left_panel';
 import '../../components/test-entry';
@@ -34,21 +34,16 @@ import { InvocationPageState } from './context';
 export class TestResultsTabElement extends MobxLitElement {
   @observable.ref pageState!: InvocationPageState;
 
-  @observable.ref private pageLength = 100;
-
   private disposers: Array<() => void> = [];
   connectedCallback() {
     super.connectedCallback();
     this.pageState.selectedTabId = 'test-results';
 
-    // Load more tests when there are more tests to be displayed but not loaded.
-    this.disposers.push(autorun(() => {
-      const state = this.pageState;
-      if (state.testLoader.done || state.testLoader.isLoading || this.pageLength <= state.selectedNode.testCount) {
-        return;
-      }
-      state.testLoader.loadMore(this.pageLength - state.selectedNode.testCount);
-    }));
+    // Load the first page when a new test loader is received.
+    this.disposers.push(reaction(
+      () => this.pageState.testLoader,
+      (testLoader) => testLoader.loadNextPage(),
+    ));
   }
   disconnectedCallback() {
     super.disconnectedCallback();
@@ -75,7 +70,7 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-nav-tree>
         </tr-left-panel>
         <div id="test-result-view">
-          ${repeat(iter.withPrev(iter.take(state.selectedNode.tests(), this.pageLength)), ([t]) => t.id, ([t, prev]) => html`
+          ${repeat(iter.withPrev(state.selectedNode.tests()), ([t]) => t.id, ([t, prev]) => html`
           <tr-test-entry
             .test=${t}
             .prevTestId=${(prev?.id || '')}
@@ -83,13 +78,23 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-entry>
           `)}
           <div id="list-tail">
-            <span>Showing ${Math.min(state.selectedNode.testCount, this.pageLength)}/${state.selectedNode.testCount}${state.testLoader.done ? '' : '+'} tests.</span>
+            <span>Showing ${state.selectedNode.testCount} tests.</span>
             <span
-              id="load-more"
-              style=${styleMap({'display': this.pageLength >= state.selectedNode.testCount && state.testLoader.done ? 'none' : ''})}
-              @click=${() => this.pageLength += 100}
+              id="load"
+              style=${styleMap({'display': state.testLoader.done ? 'none' : ''})}
             >
-              Load More
+              <span
+                id="load-more"
+                style=${styleMap({'display': state.testLoader.isLoading ? 'none' : ''})}
+                @click=${() => state.testLoader.loadNextPage()}
+              >
+                Load More
+              </span>
+              <span
+                style=${styleMap({'display': state.testLoader.isLoading ? '' : 'none'})}
+              >
+                Loading <tr-dot-spinner></tr-dot-spinner>
+              </span>
             </span>
           </div>
         </div>
@@ -123,6 +128,9 @@ export class TestResultsTabElement extends MobxLitElement {
 
     #list-tail {
       margin: 5px;
+    }
+    #load {
+      color: blue;
     }
     #load-more {
       color: blue;
