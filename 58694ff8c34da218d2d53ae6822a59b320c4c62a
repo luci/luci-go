@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "fea98f6e_48875187",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-26T01:18:21Z",
+      "side": 1,
+      "message": "The badge doesn\u0027t make sense. It says \"renamed\" because the unified diff you\u0027re passing in contains \"\u003cfile\u003e_expected.txt\" and \"\u003cfile\u003e_actual.txt\" as the filenames at the top.\n\nThe file hasn\u0027t actually been renamed, it\u0027s just comparing expected and actual files.",
+      "parentUuid": "a3ba2fcf_4a2dc1ec",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 76
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c49e293d_d18b1609",
         "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
         "patchSetId": 5
