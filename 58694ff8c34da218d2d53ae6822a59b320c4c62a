@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "ca2a3796_20d258a4",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-26T01:05:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88fb1fbf_3214defd",
+      "range": {
+        "startLine": 73,
+        "startChar": 34,
+        "endLine": 73,
+        "endChar": 42
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d9065668_1975030c",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-26T01:05:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e276c10_bf6a1dba",
+      "range": {
+        "startLine": 73,
+        "startChar": 56,
+        "endLine": 73,
+        "endChar": 60
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "74219845_0b0baf43",
         "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba9b6a7f_0b2c541c",
+        "filename": "milo/frontend/resultui/src/components/test-entry/result-entry.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-26T01:05:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74219845_0b0baf43",
+      "range": {
+        "startLine": 164,
+        "startChar": 34,
+        "endLine": 166,
+        "endChar": 12
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "92859b99_2a3c0b0a",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-26T01:05:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2b5b2dc0_9e98eb28",
+      "range": {
+        "startLine": 51,
+        "startChar": 23,
+        "endLine": 51,
+        "endChar": 36
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e3f5b35_394600d6",
         "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
         "patchSetId": 5
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "a3ba2fcf_4a2dc1ec",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-26T01:05:20Z",
+      "side": 1,
+      "message": "I can probably hide it via CSS.\nWhat\u0027s wrong with the badge though?",
+      "parentUuid": "5e3f5b35_394600d6",
+      "range": {
+        "startLine": 60,
+        "startChar": 8,
+        "endLine": 60,
+        "endChar": 76
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c49e293d_d18b1609",
         "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
         "patchSetId": 5
@@ -128,6 +248,30 @@
       "writtenOn": "2020-05-25T15:28:57Z",
       "side": 1,
       "message": "is this what\u0027s cause a scrolled view inside a scrolled view?",
+      "range": {
+        "startLine": 95,
+        "startChar": 6,
+        "endLine": 95,
+        "endChar": 23
+      },
+      "revId": "58694ff8c34da218d2d53ae6822a59b320c4c62a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a24fcbd4_ede4a6e4",
+        "filename": "milo/frontend/resultui/src/components/test-entry/text_diff_artifacts.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-26T01:05:20Z",
+      "side": 1,
+      "message": "Yes.\nIt\u0027s not ideal. But otherwise the size of the diff component is unlimited.\nThis component is mostly for viewing small text diff artifacts.\nFor larger artifacts, it\u0027s there to indicate that \u0027hey, there\u0027s an artifact you probably should  look into.\u0027. If the user wants to view the artifact, they should open it in a separate page (which will be added in a following CL).",
+      "parentUuid": "c49e293d_d18b1609",
       "range": {
         "startLine": 95,
         "startChar": 6,
