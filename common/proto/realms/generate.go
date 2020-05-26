@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package config contains luci-config protobuf definitions.
+// Package realms contains LUCI Realms protobuf definitions.
 //
 // Copied from:
 //
 // Repo: https://chromium.googlesource.com/infra/luci/luci-py/
-// Revision: be7f51a69f7ed3d1d61424e0150f65a932453735
-// Path: appengine/components/components/config/proto/*.proto
+// Revision: d5e72d070990966aea8d0d8d405b32fb3fdbbb4d
+// Path: appengine/auth_service/proto/realms_config.proto
 //
 // Modification: added luci.file_metadata annotation.
-package config
+package realms
 
 //go:generate cproto
