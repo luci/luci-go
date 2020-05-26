@@ -18,7 +18,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState } from '../../context/app_state_provider';
 import { consumeContext, provideContext } from '../../libs/context';
-import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../../models/test_loader';
+import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, TestLoader } from '../../models/test_loader';
 import { ReadonlyTest, TestNode } from '../../models/test_node';
 import { Expectancy, Invocation } from '../../services/resultdb';
 
@@ -57,12 +57,12 @@ export class InvocationPageState {
   @observable.ref showExonerated = false;
 
   @computed
-  private get testIter(): AsyncIterableIterator<ReadonlyTest> {
+  private get testIter(): AsyncIterableIterator<ReadonlyTest[]> {
     if (!this.appState?.resultDb) {
       return (async function*() {})();
     }
-    return streamTests(
-      streamTestResults(
+    return streamTestBatches(
+      streamTestResultBatches(
         {
           invocations: [this.invocationName],
           predicate: {
@@ -72,7 +72,7 @@ export class InvocationPageState {
         this.appState.resultDb,
       ),
       this.showExonerated ?
-        streamTestExonerations({invocations: [this.invocationName]}, this.appState.resultDb) :
+        streamTestExonerationBatches({invocations: [this.invocationName]}, this.appState.resultDb) :
         (async function*() {})(),
     );
   }

@@ -17,17 +17,17 @@
  * results and exonerations from resultDb to a TestNode.
  */
 
-import { computed, observable } from 'mobx';
+import { action, computed, observable } from 'mobx';
 
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
 import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
 
 
 /**
- * Keeps the progress of the iterators, group test results and exonerations into
- * tests and loads tests into the test node on request.
+ * Keeps the progress of the iterator and loads tests into the test node on
+ * request.
  * Instead of taking QueryTestResultRequest/QueryTestExonerationRequest,
- * TestLoader takes an AsyncIterator<ReadonlyTest>, which can be constructed
+ * TestLoader takes an AsyncIterator<ReadonlyTest[]>, which can be constructed
  * by combining stream... functions in this file.
  * This enables the caller to filter the result, exoneration, or tests at
  * different levels.
@@ -39,44 +39,55 @@ export class TestLoader {
   @computed get done() { return this._done; }
   @observable.ref private _done = false;
 
-  /**
-   * @param testIter the tests should be sorted by id.
-   */
+  private nextBatch: Promise<IteratorResult<ReadonlyTest[]>>;
+
   constructor(
     readonly node: TestNode,
-    private readonly testIter: AsyncIterator<ReadonlyTest>,
-  ) {}
+    private readonly testBatches: AsyncIterator<ReadonlyTest[]>,
+  ) {
+    this.nextBatch = this.testBatches.next();
+    this.nextBatch.then((v) => this._done = Boolean(v.done));
+  }
 
   private loadPromise = Promise.resolve();
 
   /**
-   * Loads more tests from the iterator to the node.
+   * Loads the next batch of tests from the iterator to the node.
    */
-  loadMore(limit = 100) {
+  loadNextPage() {
     if (this.done) {
       return this.loadPromise;
     }
     this.loadingReqCount++;
     // TODO(weiweilin): better error handling.
-    this.loadPromise = this.loadPromise.then(() => this.loadMoreInternal(limit));
+    this.loadPromise = this.loadPromise.then(() => this.loadNextPageInternal());
     return this.loadPromise.then(() => this.loadingReqCount--);
   }
 
   /**
-   * Loads more tests from the iterator to the node.
+   * Loads the next batch of tests from the iterator to the node.
    *
    * @precondition there should not exist a running instance of
    * this.loadMoreInternal
    */
-  private async loadMoreInternal(limit: number) {
-    while (limit > 0) {
-      const {value, done} = await this.testIter.next();
-      if (done) {
-        this._done = true;
-        break;
-      }
-      this.node.addTest(value);
-      limit--;
+  private async loadNextPageInternal() {
+    const next = await this.nextBatch;
+    if (next.done) {
+      return;
+    }
+
+    // Prefetch the next batch so the UI is more responsive and we can mark the
+    // set this._done to true when there's no more batches.
+    this.nextBatch = this.testBatches.next();
+    this.nextBatch.then((v) => this._done = Boolean(v.done));
+
+    this.processTests(next.value);
+  }
+
+  @action
+  private processTests(tests: ReadonlyTest[]) {
+    for (const test of tests) {
+      this.node.addTest(test);
     }
   }
 }
@@ -158,60 +169,82 @@ function keyForVariant(variant: Variant) {
 }
 
 /**
- * Streams test results from resultDb.
+ * Streams test result batches from resultDb.
  */
-export async function* streamTestResults(req: QueryTestResultRequest, resultDb: ResultDb) {
+export async function* streamTestResultBatches(req: QueryTestResultRequest, resultDb: ResultDb): AsyncIterableIterator<TestResult[]> {
   let pageToken = req.pageToken;
   do {
     const res = await resultDb.queryTestResults({...req, pageToken});
     pageToken = res.nextPageToken;
-    yield* res.testResults;
+    yield res.testResults;
   } while (pageToken);
 }
 
 /**
- * Streams test exonerations from resultDb.
+ * Streams test exoneration batches from resultDb.
  */
-export async function* streamTestExonerations(req: QueryTestExonerationsRequest, resultDb: ResultDb) {
+export async function* streamTestExonerationBatches(req: QueryTestExonerationsRequest, resultDb: ResultDb): AsyncIterableIterator<TestExoneration[]> {
   let pageToken = req.pageToken;
   do {
     const res = await resultDb.queryTestExonerations({...req, pageToken});
     pageToken = res.nextPageToken;
-    yield* res.testExonerations;
+    yield res.testExonerations;
   } while (pageToken);
 }
 
 /**
  * Groups test results and exonerations into Test objects.
- * Yielded tests could be modified when new results and exonerations are
- * fetched.
- * Exonerations are loaded before results and the number of exonerations is
- * expected to be small.
+ * The number of exonerations is assumed to be low. All exonerations are loaded
+ * in the first batch.
+ * Yielded tests could be modified when new results are fetched.
+ * The order of tests is not guaranteed.
  */
-export async function* streamTests(results: AsyncIterableIterator<TestResult>, exonerations: AsyncIterableIterator<TestExoneration>): AsyncIterableIterator<ReadonlyTest> {
+export async function* streamTestBatches(resultBatches: AsyncIterableIterator<TestResult[]>, exonerationBatches: AsyncIterableIterator<TestExoneration[]>): AsyncIterableIterator<ReadonlyTest[]> {
   const testMap = new Map<string, Test>();
+  let newTests = [] as ReadonlyTest[];
 
-  for await (const exoneration of exonerations) {
-    let test = testMap.get(exoneration.testId);
-    if (test) {
-      test.addExoneration(exoneration);
-      continue;
+  async function loadAllExonerations() {
+    for await (const exonerationBatch of exonerationBatches) {
+      for (const exoneration of exonerationBatch) {
+        let test = testMap.get(exoneration.testId);
+        if (!test) {
+          test = new Test(exoneration.testId);
+          testMap.set(exoneration.testId, test);
+          newTests.push(test);
+        }
+        test.addExoneration(exoneration);
+      }
     }
-    test = new Test(exoneration.testId);
-    testMap.set(exoneration.testId, test);
-    test.addExoneration(exoneration);
-    yield test;
   }
 
-  for await (const result of results) {
-    let test = testMap.get(result.testId);
-    if (test) {
-      test.addResult(result);
-      continue;
+  async function loadNextTestResultBatch() {
+    const next = await resultBatches.next();
+    if (next.done) {
+      return true;
     }
-    test = new Test(result.testId);
-    testMap.set(result.testId, test);
-    test.addResult(result);
-    yield test;
+
+    for (const result of next.value) {
+      let test = testMap.get(result.testId);
+      if (!test) {
+        test = new Test(result.testId);
+        testMap.set(result.testId, test);
+        newTests.push(test);
+      }
+      test.addResult(result);
+    }
+    return false;
+  }
+
+  let [done] = await Promise.all([loadNextTestResultBatch(), loadAllExonerations()]);
+
+  while (true) {
+    if (newTests.length !== 0) {
+      yield newTests;
+    }
+    if (done) {
+      return;
+    }
+    newTests = [];
+    done = await loadNextTestResultBatch();
   }
 }
