@@ -174,6 +174,26 @@ func (mr *MockResultDBClientMockRecorder) QueryTestExonerations(ctx, in interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestExonerations", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestExonerations), varargs...)
 }
 
+// QueryTestResultStatistics mocks base method.
+func (m *MockResultDBClient) QueryTestResultStatistics(ctx context.Context, in *QueryTestResultStatisticsRequest, opts ...grpc.CallOption) (*QueryTestResultStatisticsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryTestResultStatistics", varargs...)
+	ret0, _ := ret[0].(*QueryTestResultStatisticsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestResultStatistics indicates an expected call of QueryTestResultStatistics.
+func (mr *MockResultDBClientMockRecorder) QueryTestResultStatistics(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestResultStatistics", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestResultStatistics), varargs...)
+}
+
 // GetArtifact mocks base method.
 func (m *MockResultDBClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
 	m.ctrl.T.Helper()
@@ -360,6 +380,21 @@ func (m *MockResultDBServer) QueryTestExonerations(arg0 context.Context, arg1 *Q
 func (mr *MockResultDBServerMockRecorder) QueryTestExonerations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestExonerations", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestExonerations), arg0, arg1)
+}
+
+// QueryTestResultStatistics mocks base method.
+func (m *MockResultDBServer) QueryTestResultStatistics(arg0 context.Context, arg1 *QueryTestResultStatisticsRequest) (*QueryTestResultStatisticsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryTestResultStatistics", arg0, arg1)
+	ret0, _ := ret[0].(*QueryTestResultStatisticsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestResultStatistics indicates an expected call of QueryTestResultStatistics.
+func (mr *MockResultDBServerMockRecorder) QueryTestResultStatistics(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestResultStatistics", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestResultStatistics), arg0, arg1)
 }
 
 // GetArtifact mocks base method.
