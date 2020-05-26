@@ -166,7 +166,7 @@ export class TestEntryElement extends MobxLitElement {
       color: #d23f31;
     }
     #expectancy-indicator.warning {
-      color: #f5a309;
+      color: #e37400;
     }
 
     #test-identifier {
