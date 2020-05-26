@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c011af5_0d238353",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:31:16Z",
+      "side": 1,
+      "message": "question: why this isn\u0027t in rowOfInvocation? isn\u0027t rowInvocation incomplete now?",
+      "revId": "75475441d5dc199894309f6b9c884464688c020c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70ca0caf_737640ca",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:31:16Z",
+      "side": 1,
+      "message": "this reads the count recursively, so this number blows up.\n\nalso it would be simpler not to read it to begin with:\n\n  UPDATE Invocations \n  SET TestResultCount \u003d TestResultCount + @delta\n  WHERE InvocationId \u003d @invID",
+      "range": {
+        "startLine": 83,
+        "startChar": 24,
+        "endLine": 83,
+        "endChar": 43
+      },
+      "revId": "75475441d5dc199894309f6b9c884464688c020c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f45db3d1_304e19ac",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:31:16Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "75475441d5dc199894309f6b9c884464688c020c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad610b53_1af4a80b",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:31:16Z",
+      "side": 1,
+      "message": "we don\u0027t need to fetch individual counts from spanner if need only the aggregate:\n\n   SELECT SUM(TestResultCount)\n   FROM Invocations\n   WHERE InvocationId IN UNNEST(@invIDs)",
+      "range": {
+        "startLine": 302,
+        "startChar": 1,
+        "endLine": 311,
+        "endChar": 3
+      },
+      "revId": "75475441d5dc199894309f6b9c884464688c020c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
