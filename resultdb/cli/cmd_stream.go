@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
@@ -158,13 +159,22 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
-	cmd := exec2.CommandContext(ctx, args[0], args[1:]...)
+	// Kill the subprocess if rdb-stream is asked to stop.
+	// Subprocess exiting will unblock rdb-stream and it will stop soon.
+	cmdCtx, cancelCmd := context.WithCancel(ctx)
+	defer cancelCmd()
+	defer signals.HandleInterrupt(func() {
+		logging.Warningf(ctx, "Interrupt signal received; killing the subprocess")
+		cancelCmd()
+	})()
+
+	cmd := exec2.CommandContext(cmdCtx, args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	// TODO(ddoman): send the logs of SinkServer to --log-file
-	// TODO(ddoman): handle interrupts with luci/common/system/signals.
+
 	cfg := sink.ServerConfig{
 		Recorder:     r.recorder,
 		Invocation:   r.invocation.Name,
