@@ -22,6 +22,30 @@
       "revId": "9338fa4a1e59ffb7509d00b7a3eb14f2662cdd15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ba42bd2_e495ff04",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-26T23:52:24Z",
+      "side": 1,
+      "message": "did a warning, which is in the middle",
+      "parentUuid": "8fde89f8_654bb167",
+      "range": {
+        "startLine": 166,
+        "startChar": 31,
+        "endLine": 166,
+        "endChar": 40
+      },
+      "revId": "9338fa4a1e59ffb7509d00b7a3eb14f2662cdd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
