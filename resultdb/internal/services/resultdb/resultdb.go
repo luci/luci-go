@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
@@ -89,4 +91,10 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	srv.PRPC.AccessControl = prpc.AllowOriginAll
 	return nil
+}
+
+// QueryTestResultStatistics implements pb.ResultDBServer.
+func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+	// TODO(crbug.com/1034881): implement.
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
