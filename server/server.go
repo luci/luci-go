@@ -224,8 +224,8 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.ShutdownDelay = 15 * time.Second
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
-	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
-	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
+	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
+	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to or '-' to disable")
 	f.DurationVar(&o.ShutdownDelay, "shutdown-delay", o.ShutdownDelay, "How long to wait after SIGTERM before shutting down")
 	f.StringVar(
 		&o.ClientAuth.ServiceAccountJSONPath,
@@ -327,6 +327,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 // Equivalent to passing the following flags:
 //   -prod
 //   -http-addr 0.0.0.0:${PORT}
+//   -admin-addr -
 //   -shutdown-delay 0s
 //   -cloud-project ${GOOGLE_CLOUD_PROJECT}
 //   -service-account-json :gce
@@ -350,6 +351,7 @@ func (o *Options) FromGAEEnv() {
 		os.Getenv("GAE_INSTANCE")[:8],
 	)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	o.AdminAddr = "-"
 	o.ShutdownDelay = 0
 	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
@@ -448,7 +450,7 @@ type Server struct {
 	mainPort *Port // pre-registered main port, see initMainPort
 
 	mu      sync.Mutex    // protects fields below
-	ports   []*Port       // all registered ports (each one hosts an HTTP server)
+	ports   []*Port       // all non-dummy ports (each one hosts an HTTP server)
 	started bool          // true inside and after ListenAndServe
 	stopped bool          // true inside and after Shutdown
 	ready   chan struct{} // closed right before starting the serving loop
@@ -634,6 +636,10 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 // and opts.AdminAddr). The returned Port object can be used to populate the
 // router that serves requests hitting the added port.
 //
+// If opts.ListenAddr is '-', a dummy port will be added: it is a valid *Port
+// object, but it is not actually exposed as a listening TCP socket. This is
+// useful to disable listening ports without changing any code.
+//
 // Should be called before ListenAndServe (panics otherwise).
 func (s *Server) AddPort(opts PortOptions) *Port {
 	port := &Port{
@@ -647,7 +653,9 @@ func (s *Server) AddPort(opts PortOptions) *Port {
 	if s.started {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
-	s.ports = append(s.ports, port)
+	if opts.ListenAddr != "-" {
+		s.ports = append(s.ports, port)
+	}
 	return port
 }
 
@@ -1686,8 +1694,8 @@ func (s *Server) initMainPort() error {
 
 // initAdminPort initializes the server on options.AdminAddr port.
 func (s *Server) initAdminPort() error {
-	if s.Options.GAE {
-		return nil // additional ports are not reachable on GAE
+	if s.Options.AdminAddr == "-" {
+		return nil // the admin port is disabled
 	}
 
 	// Admin portal uses XSRF tokens that require a secret key. We generate this

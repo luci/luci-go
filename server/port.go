@@ -28,7 +28,7 @@ import (
 // See Server's AddPort.
 type PortOptions struct {
 	Name           string // optional logical name of the port for logs
-	ListenAddr     string // local address to bind to
+	ListenAddr     string // local address to bind to or "-" for a dummy port
 	DisableMetrics bool   // do not collect HTTP metrics for requests on this port
 }
 
@@ -81,10 +81,16 @@ func (p *Port) VirtualHost(host string) *router.Router {
 
 // nameForLog returns a string to identify this port in the server logs.
 func (p *Port) nameForLog() string {
-	if p.opts.Name != "" {
-		return fmt.Sprintf("http://%s [%s]", p.opts.ListenAddr, p.opts.Name)
+	var pfx string
+	if p.opts.ListenAddr == "-" {
+		pfx = "-"
+	} else {
+		pfx = "http://" + p.opts.ListenAddr
 	}
-	return fmt.Sprintf("http://%s", p.opts.ListenAddr)
+	if p.opts.Name != "" {
+		return fmt.Sprintf("%s [%s]", pfx, p.opts.Name)
+	}
+	return pfx
 }
 
 // httpServer lazy-initializes and returns http.Server for this port.
@@ -96,6 +102,11 @@ func (p *Port) nameForLog() string {
 func (p *Port) httpServer() *http.Server {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
+	if p.opts.ListenAddr == "-" {
+		panic("httpServer must not be used with dummy ports")
+	}
+
 	if p.srv == nil {
 		p.srv = &http.Server{
 			Addr:     p.opts.ListenAddr,
