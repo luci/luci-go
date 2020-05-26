@@ -162,10 +162,10 @@ export class VariantEntryElement extends MobxLitElement {
       color: rgb(210, 63, 49);
     }
     #status.flaky {
-      color: rgb(210, 63, 49);
+      color: #e37400;
     }
     #status.exonerated {
-      color: grey;
+      color: #ff33d2;
     }
 
     #body {
