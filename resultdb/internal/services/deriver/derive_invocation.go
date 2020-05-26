@@ -264,8 +264,10 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				Deadline:     inv.Deadline,
 				Tags:         inv.Tags,
 			}
+			invM := s.rowOfInvocation(ctx, batchInv, "")
+			invM["TestResultCount"] = len(batch)
 			ms = append(ms, span.InsertOrUpdateMap(
-				"Invocations", s.rowOfInvocation(ctx, batchInv, "")),
+				"Invocations", invM),
 			)
 
 			// Convert the TestResults in the batch.
