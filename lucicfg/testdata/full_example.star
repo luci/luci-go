@@ -348,7 +348,7 @@ luci.console_view_entry(
 luci.external_console_view(
     name = 'external-console',
     title = 'External console',
-    source = 'chromium:main',
+    source = 'chromium/main',
 )
 
 

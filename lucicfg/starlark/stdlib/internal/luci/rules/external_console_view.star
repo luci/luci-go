@@ -49,7 +49,7 @@ def _external_console_view(
     source: a string referring to the external console to be included, in the
         format `project:console_id`. Required.
   """
-  chunks = validate.string('source', source, regexp=r'^[^:]+:[^:]+$').split(':', 1)
+  chunks = validate.string('source', source, regexp=r'^[^/]+/[^/]+$').split('/', 1)
   external_project, external_id = chunks[0], chunks[1]
 
   return view.add_view(
