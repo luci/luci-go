@@ -22,6 +22,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 import { AppState, consumeAppState } from '../../context/app_state_provider';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult, TestStatus } from '../../services/resultdb';
+import './text_diff_artifacts';
 
 const STATUS_DISPLAY_MAP = {
   [TestStatus.Unspecified]: 'unspecified',
@@ -66,8 +67,11 @@ export class ResultEntryElement extends MobxLitElement {
     return fromPromise(this.appState.resultDb.listArtifacts({parent: this.testResult.name}));
   }
 
-  @computed
-  private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
+  @computed private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
+
+  @computed private get textDiffArtifacts() {
+    return this.artifacts.filter((a) => a.artifactId.match(/_diff$/) && a.contentType === 'text/plain');
+  }
 
   private renderSummaryHtml() {
     if (!this.testResult.summaryHtml) {
@@ -160,6 +164,10 @@ export class ResultEntryElement extends MobxLitElement {
           <div id="content-ruler"></div>
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
             ${this.renderSummaryHtml()}
+            ${this.textDiffArtifacts.map((artifact) => html`
+            <tr-text-diff-artifact .artifact=${artifact}>
+            </tr-text-diff-artifact>
+            `)}
             ${this.renderTags()}
             ${this.renderArtifacts()}
           </div>
