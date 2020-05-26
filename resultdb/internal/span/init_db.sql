@@ -71,7 +71,10 @@ CREATE TABLE Invocations (
   BigQueryExports ARRAY<BYTES(MAX)>,
 
   -- Value of Invocation.producer_resource. See its documentation.
-  ProducerResource STRING(MAX)
+  ProducerResource STRING(MAX),
+
+  -- Counter of TesultResults that belongs to this invocation directly.
+  TestResultCount INT64,
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration time.

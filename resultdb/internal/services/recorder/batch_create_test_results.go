@@ -75,11 +75,20 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	ret := &pb.BatchCreateTestResultsResponse{
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
-	ms := make([]*spanner.Mutation, len(in.Requests))
+	ms := make([]*spanner.Mutation, len(in.Requests)+1)
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 	}
+
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		curCount, err := span.ReadTestResultCount(ctx, txn, span.NewInvocationIDSet(invID))
+		if err != nil {
+			return err
+		}
+		ms[len(in.Requests)] = span.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId":    invID,
+			"TestResultCount": curCount + int64(len(in.Requests)),
+		})
 		return txn.BufferWrite(ms)
 	})
 	if err != nil {
