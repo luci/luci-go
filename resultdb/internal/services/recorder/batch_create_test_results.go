@@ -79,7 +79,6 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 	}
-
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		curCount, err := span.ReadTestResultCount(ctx, txn, span.NewInvocationIDSet(invID))
 		if err != nil {
