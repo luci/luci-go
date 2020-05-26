@@ -31,19 +31,19 @@ func TestValidateQueryRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateQueryRequest`, t, func() {
 		Convey(`no invocations`, func() {
-			err := validateQueryRequest(&pb.QueryTestResultsRequest{})
+			err := validateQueryRequestWithPaging(&pb.QueryTestResultsRequest{})
 			So(err, ShouldErrLike, `invocations: unspecified`)
 		})
 
 		Convey(`invalid invocation`, func() {
-			err := validateQueryRequest(&pb.QueryTestResultsRequest{
+			err := validateQueryRequestWithPaging(&pb.QueryTestResultsRequest{
 				Invocations: []string{"x"},
 			})
 			So(err, ShouldErrLike, `invocations: "x": does not match`)
 		})
 
 		Convey(`invalid max staleness`, func() {
-			err := validateQueryRequest(&pb.QueryTestResultsRequest{
+			err := validateQueryRequestWithPaging(&pb.QueryTestResultsRequest{
 				Invocations:  []string{"invocations/x"},
 				MaxStaleness: &durpb.Duration{Seconds: -1},
 			})
@@ -51,7 +51,7 @@ func TestValidateQueryRequest(t *testing.T) {
 		})
 
 		Convey(`invalid page size`, func() {
-			err := validateQueryRequest(&pb.QueryTestResultsRequest{
+			err := validateQueryRequestWithPaging(&pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/x"},
 				PageSize:    -1,
 			})

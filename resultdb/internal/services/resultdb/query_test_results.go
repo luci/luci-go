@@ -32,9 +32,16 @@ import (
 
 const maxInvocationGraphSize = 10000
 
-// queryRequest is implemented by *pb.QueryTestResultsRequest and
-// *pb.QueryTestExonerationsRequest.
+// queryRequest is implemented by *pb.QueryTestResultsRequest,
+// *pb.QueryTestExonerationsRequest and *pb.QueryTestResultStatisticsRequest.
 type queryRequest interface {
+	GetInvocations() []string
+	GetMaxStaleness() *durpb.Duration
+}
+
+// queryRequestWithPaging is implemented by *pb.QueryTestResultsRequest and
+// *pb.QueryTestExonerationsRequest.
+type queryRequestWithPaging interface {
 	GetInvocations() []string
 	GetPageSize() int32
 	GetMaxStaleness() *durpb.Duration
@@ -52,14 +59,24 @@ func validateQueryRequest(req queryRequest) error {
 		}
 	}
 
-	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
-	}
-
 	if req.GetMaxStaleness() != nil {
 		if err := pbutil.ValidateMaxStaleness(req.GetMaxStaleness()); err != nil {
 			return errors.Annotate(err, "max_staleness").Err()
 		}
+	}
+
+	return nil
+}
+
+// validateQueryRequestWithPaging returns a non-nil error if req is determined
+// to be invalid.
+func validateQueryRequestWithPaging(req queryRequestWithPaging) error {
+	if err := validateQueryRequest(req); err != nil {
+		return err
+	}
+
+	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
+		return errors.Annotate(err, "page_size").Err()
 	}
 
 	return nil
@@ -72,7 +89,7 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 		return errors.Annotate(err, "predicate").Err()
 	}
 
-	return validateQueryRequest(req)
+	return validateQueryRequestWithPaging(req)
 }
 
 // QueryTestResults implements pb.ResultDBServer.

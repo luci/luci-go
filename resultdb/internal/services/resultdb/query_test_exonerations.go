@@ -36,7 +36,7 @@ func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) 
 		return errors.Annotate(err, "predicate").Err()
 	}
 
-	return validateQueryRequest(req)
+	return validateQueryRequestWithPaging(req)
 }
 
 // QueryTestExonerations implements pb.ResultDBServer.
