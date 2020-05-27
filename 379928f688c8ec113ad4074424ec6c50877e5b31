@@ -65,6 +65,24 @@
     },
     {
       "key": {
+        "uuid": "1ba4c8c9_be41e04e",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-27T23:49:40Z",
+      "side": 1,
+      "message": "appstatus.Attachf seems to remove the error information entirely. In rpc explorer all I see is \"fields\" if I do this. This was the only way I could get it to actually show what went wrong.",
+      "parentUuid": "5aba10a7_041e4705",
+      "revId": "379928f688c8ec113ad4074424ec6c50877e5b31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5287084e_f894aa71",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
