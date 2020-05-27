@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24b739db_adc031d3",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "just realized that we forgot to ensure that (TestID, ResultID) tuples are unique in validateBatchCreateTestResultsRequest. Not for this CL, but without it, this number may be more than how many rows we actually insert",
+      "range": {
+        "startLine": 87,
+        "startChar": 59,
+        "endLine": 87,
+        "endChar": 81
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d6c6c09a_48fefab5",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "forgot to remove?",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 6
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23cb20e4_bb2e3973",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5af4a76e_dcbb46e9",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "return?",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 65,
+        "endChar": 10
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2578f0f_adf33ac6",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "mix of tabs and spaces",
+      "range": {
+        "startLine": 308,
+        "startChar": 0,
+        "endLine": 308,
+        "endChar": 3
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10ae55e4_884a4b95",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "why not QueryFirstRow",
+      "range": {
+        "startLine": 317,
+        "startChar": 2,
+        "endLine": 326,
+        "endChar": 2
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ccd546a_54388099",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "comment for public func",
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4312cefe_a125e87c",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "should we check that this is 1?",
+      "range": {
+        "startLine": 344,
+        "startChar": 1,
+        "endLine": 344,
+        "endChar": 2
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56378816_95840c1a",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 348,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:35:33Z",
+      "side": 1,
+      "message": "return err",
+      "range": {
+        "startLine": 345,
+        "startChar": 1,
+        "endLine": 348,
+        "endChar": 11
+      },
+      "revId": "45b5e11e9ad5c9151eebad3e3ca5053fe0394a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
