@@ -28,7 +28,7 @@ const notFoundRoute: Route = {
 
 export const router = new Router(document.getElementById('app-root'));
 router.setRoutes({
-  path: '/',
+  path: '/r',
   component: 'tr-app-config-provider',
   children: [
     {
