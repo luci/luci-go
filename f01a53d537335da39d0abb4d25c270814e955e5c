@@ -33,6 +33,24 @@
       "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09af4261_a1bf4573",
+        "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T17:36:21Z",
+      "side": 1,
+      "message": "ah, looks like we have this problem everywhere. Let\u0027s fix it later, when we implement Realms then.",
+      "parentUuid": "b5d46c1a_3d0a1782",
+      "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
