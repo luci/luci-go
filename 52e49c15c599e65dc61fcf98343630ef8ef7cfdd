@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1379dbb_1a29a51d",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "I\u0027d move this block to L191 to have all checks for `name` located together",
+      "range": {
+        "startLine": 213,
+        "startChar": 2,
+        "endLine": 215,
+        "endChar": 3
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5e1ed5c_f0c7ae5f",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "errors.Annotate",
+      "range": {
+        "startLine": 261,
+        "startChar": 19,
+        "endLine": 261,
+        "endChar": 32
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bac9923_7e1f12b7",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "Could we disallow an empty static value?\n\nIt\u0027s technically allowed in Monarch. However, it\u0027s also used as the default value if a field is missing in a reported data point. It is always better to avoid empty strings as field values.",
+      "range": {
+        "startLine": 270,
+        "startChar": 3,
+        "endLine": 270,
+        "endChar": 21
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be489feb_9825fa8d",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "nit; this check could be moved inside parsePattern() at L320, where there are other checks for var and the index is available.\n\n```\nif idx \u003d\u003d len(chunks) - 1 {\n  return nil, errors.Reason(\"a suffix with var\")\n}\n```",
+      "range": {
+        "startLine": 280,
+        "startChar": 0,
+        "endLine": 283,
+        "endChar": 2
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51b1d9c8_5acf7d4f",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "I wonder if this should limit the position of a wildcard component not to be the last component. config.perSuffix won\u0027t allow more than one rules to have * suffix.\n\ne.g.,\n```\npattern: a.cluster.*\n```",
+      "range": {
+        "startLine": 307,
+        "startChar": 5,
+        "endLine": 307,
+        "endChar": 18
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72919732_4e30f4ab",
+        "filename": "server/cmd/statsd-to-tsmon/converter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "I wonder if this should return an error if the value of a var is an empty string. WDYT?",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 57,
+        "endChar": 39
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32662d7f_3262734e",
+        "filename": "server/cmd/statsd-to-tsmon/converter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "I think this should reject m if it the value of a var is an empty string.\nOr, ParseStatsdMetric() rejects all incoming values with an empty component.",
+      "range": {
+        "startLine": 57,
+        "startChar": 15,
+        "endLine": 57,
+        "endChar": 39
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aecac157_1044ded7",
+        "filename": "server/cmd/statsd-to-tsmon/statsd.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-27T01:57:35Z",
+      "side": 1,
+      "message": "Does this allow an empty metric name?\ne.g.,\n```\n  \"a.b..c\" \u003d\u003e {{\u0027a\u0027}, {\"b\"}, {\"}, {\"c\"}}\n  \"\" \u003d\u003e {{\u0027\u0027}}\n```",
+      "range": {
+        "startLine": 100,
+        "startChar": 3,
+        "endLine": 100,
+        "endChar": 54
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
