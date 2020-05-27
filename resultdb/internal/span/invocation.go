@@ -295,3 +295,55 @@ func ReadInvocationRealm(ctx context.Context, txn Txn, id InvocationID) (string,
 	err := ReadInvocation(ctx, txn, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
 }
+
+// ReadTestResultCount returns the total number of test results of requested
+// invocations.
+func ReadTestResultCount(ctx context.Context, txn Txn, ids InvocationIDSet) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	st := spanner.NewStatement(`
+		SELECT SUM(TestResultCount)
+    FROM Invocations
+		WHERE InvocationId IN UNNEST(@invIDs)
+	`)
+	st.Params = ToSpannerMap(map[string]interface{}{
+		"invIDs": ids,
+	})
+
+	var b Buffer
+	var count spanner.NullInt64
+	err := Query(ctx, txn, st, func(row *spanner.Row) error {
+		err := b.FromSpanner(row, &count)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return count.Int64, nil
+}
+
+func IncrementTestResultCount(ctx context.Context, txn *spanner.ReadWriteTransaction, id InvocationID, delta int64) error {
+	if delta == 0 {
+		return nil
+	}
+
+	st := spanner.NewStatement(`
+		UPDATE Invocations
+		SET TestResultCount = TestResultCount + @delta
+		WHERE InvocationId = @invID
+	`)
+	st.Params = ToSpannerMap(map[string]interface{}{
+		"invID": id,
+		"delta": delta,
+	})
+	_, err := txn.Update(ctx, st)
+	if err != nil {
+		return err
+	}
+	return nil
+}

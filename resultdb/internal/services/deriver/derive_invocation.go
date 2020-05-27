@@ -120,7 +120,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	// Include originInv into inv.
 	inv.IncludedInvocations = []string{originInv.Name}
 	invMs := []*spanner.Mutation{
-		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "")),
+		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", 0)),
 		span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
 			"IncludedInvocationId": span.MustParseInvocationName(originInv.Name),
@@ -208,7 +208,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(batchInvs)+4)
-	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "")))
+	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "", 0)))
 	for includedID := range batchInvs {
 		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         originInvID,
@@ -265,7 +265,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				Tags:         inv.Tags,
 			}
 			ms = append(ms, span.InsertOrUpdateMap(
-				"Invocations", s.rowOfInvocation(ctx, batchInv, "")),
+				"Invocations", s.rowOfInvocation(ctx, batchInv, "", int64(len(batch)))),
 			)
 
 			// Convert the TestResults in the batch.

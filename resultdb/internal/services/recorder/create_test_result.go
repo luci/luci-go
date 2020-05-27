@@ -53,7 +53,19 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	invID := span.MustParseInvocationName(in.Invocation)
 	ret, mutation := insertTestResult(ctx, invID, in.RequestId, in.TestResult)
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		return txn.BufferWrite([]*spanner.Mutation{mutation})
+		err := txn.BufferWrite([]*spanner.Mutation{mutation,
+			span.UpdateMap("Invocations", map[string]interface{}{
+				"InvocationId": invID,
+			})})
+
+		if err != nil {
+			return err
+		}
+
+		if err = span.IncrementTestResultCount(ctx, txn, invID, 1); err != nil {
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
