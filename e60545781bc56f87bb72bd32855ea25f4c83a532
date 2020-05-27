@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d55578c_c2e0f2a6",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T21:17:37Z",
+      "side": 1,
+      "message": "return\n\nat least for consistency with create_test_result.go",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 12
+      },
+      "revId": "e60545781bc56f87bb72bd32855ea25f4c83a532",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8564898f_fe2bc837",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T21:17:37Z",
+      "side": 1,
+      "message": "if err !\u003d nil, then this is 0. This means that L337 loses the true error message",
+      "range": {
+        "startLine": 336,
+        "startChar": 4,
+        "endLine": 336,
+        "endChar": 12
+      },
+      "revId": "e60545781bc56f87bb72bd32855ea25f4c83a532",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
