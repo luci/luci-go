@@ -24,6 +24,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/genproto/googleapis/bytestream"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -46,10 +51,12 @@ func TestGenerateSignedURL(t *testing.T) {
 		ctx = testsecrets.Use(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
 
-		s, err := NewServer(ctx, false, func(string) string {
-			return "results.usercontent.example.com"
-		})
-		So(err, ShouldBeNil)
+		s := &Server{
+			HostnameProvider: func(string) string {
+				return "results.usercontent.example.com"
+			},
+		}
+		So(s.Init(ctx), ShouldBeNil)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
@@ -71,6 +78,28 @@ func TestGenerateSignedURL(t *testing.T) {
 	})
 }
 
+type fakeCASReader struct {
+	grpc.ClientStream // implements the rest of grpc.ClientStream
+
+	res         []*bytestream.ReadResponse
+	resIndex    int
+	resErr      error
+	resErrIndex int
+}
+
+func (r *fakeCASReader) Recv() (*bytestream.ReadResponse, error) {
+	if r.resErr != nil && r.resErrIndex == r.resIndex {
+		return nil, r.resErr
+	}
+
+	if r.resIndex < len(r.res) {
+		res := r.res[r.resIndex]
+		r.resIndex++
+		return res, nil
+	}
+	return nil, io.EOF
+}
+
 func TestServeContent(t *testing.T) {
 	Convey(`TestServeContent`, t, func(c C) {
 		ctx := SpannerTestContext(t)
@@ -79,10 +108,22 @@ func TestServeContent(t *testing.T) {
 		ctx = testsecrets.Use(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
 
-		s, err := NewServer(ctx, false, func(string) string {
-			return "example.com"
-		})
-		So(err, ShouldBeNil)
+		casReader := &fakeCASReader{
+			res: []*bytestream.ReadResponse{
+				{Data: []byte("contents")},
+			},
+		}
+		var casReadErr error
+		s := &Server{
+			HostnameProvider: func(string) string {
+				return "example.com"
+			},
+			RBECASInstanceName: "projects/example/instances/artifacts",
+			ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+				return casReader, casReadErr
+			},
+		}
+		So(s.Init(ctx), ShouldBeNil)
 		s.testFetchIsolate = func(ctx context.Context, isolateURL string, w io.Writer) error {
 			return fmt.Errorf("unexpected")
 		}
@@ -116,6 +157,11 @@ func TestServeContent(t *testing.T) {
 				"ContentType": "text/plain",
 				"Size":        64,
 				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
+			}),
+			InsertInvocationArtifact("inv", "rbe", map[string]interface{}{
+				"ContentType": "text/plain",
+				"Size":        64,
+				"RBECASHash":  "sha256:deadbeef",
 			}),
 			InsertTestResultArtifact("inv", "t/t", "r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
@@ -152,14 +198,49 @@ func TestServeContent(t *testing.T) {
 			So(actualContents, ShouldEqual, "contents")
 		})
 
-		Convey(`E2E`, func() {
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+		Convey(`RBE-CAS`, func() {
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
 			So(err, ShouldBeNil)
-			res, actualContents := fetch(u)
-			So(res.StatusCode, ShouldEqual, http.StatusOK)
-			So(actualContents, ShouldEqual, "contents")
-			So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
-			So(res.Header.Get("Content-Length"), ShouldEqual, "64")
+
+			Convey(`Not found`, func() {
+				casReadErr = status.Errorf(codes.NotFound, "not found")
+				res, _ := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusNotFound)
+			})
+
+			Convey(`Recv error`, func() {
+				casReader.resErr = status.Errorf(codes.Internal, "internal error")
+				res, _ := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusInternalServerError)
+			})
+
+		})
+
+		Convey(`E2E`, func() {
+			Convey(`Isolate`, func() {
+				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+				So(err, ShouldBeNil)
+				res, actualContents := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(actualContents, ShouldEqual, "contents")
+				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
+				So(res.Header.Get("Content-Length"), ShouldEqual, "64")
+			})
+
+			Convey(`RBE-CAS`, func() {
+				casReader.res = []*bytestream.ReadResponse{
+					{Data: []byte("first ")},
+					{Data: []byte("second")},
+				}
+
+				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
+				So(err, ShouldBeNil)
+				res, actualContents := fetch(u)
+				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				So(actualContents, ShouldEqual, "first second")
+				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
+				So(res.Header.Get("Content-Length"), ShouldEqual, "64")
+			})
 		})
 	})
 }
