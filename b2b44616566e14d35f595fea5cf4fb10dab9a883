@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "f20f2251_163e954e",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-27T05:14:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a545ea32_aa0795b9",
+      "range": {
+        "startLine": 47,
+        "startChar": 50,
+        "endLine": 47,
+        "endChar": 59
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5695506_7b89ced8",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -234,6 +258,24 @@
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f03a739f_40347549",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-27T05:14:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d58b57ba_f6cceff8",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -316,6 +358,24 @@
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4016bf32_3926360d",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-27T05:14:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d09a3d17_1fb2e662",
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -505,6 +565,30 @@
       "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9b6d555_2ae10824",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-05-27T05:14:08Z",
+      "side": 1,
+      "message": "It\u0027s a theoretical comment. Validation can do anything. Suppose there are runtime-configured validation rules stored in a database, validation may transiently fail to fetch those which needs to be communicated as an internal server error. In practice validation won\u0027t fail here.\n\nEven if it only produces validation errors, I still don\u0027t like it because you have to know whether the helper you\u0027re calling is appstatus-aware or not. Before it was simple: outside rpc package the function is obviously not aware, within rpc package the function obviously is.\n\nAnyway done.",
+      "parentUuid": "c71c64aa_0693ccb6",
+      "range": {
+        "startLine": 71,
+        "startChar": 26,
+        "endLine": 71,
+        "endChar": 47
+      },
+      "revId": "b2b44616566e14d35f595fea5cf4fb10dab9a883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
