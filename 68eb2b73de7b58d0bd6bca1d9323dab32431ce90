@@ -288,6 +288,24 @@
       "revId": "68eb2b73de7b58d0bd6bca1d9323dab32431ce90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63cc01a3_60ba296a",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/json_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-27T18:53:26Z",
+      "side": 1,
+      "message": "The test reveals that  json.go:315 is really a bug: expectedSet is not empty, it has an element keyed by empty string.",
+      "parentUuid": "32ef71f6_a333ef12",
+      "revId": "68eb2b73de7b58d0bd6bca1d9323dab32431ce90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
