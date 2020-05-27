@@ -311,11 +311,6 @@ func matchingSteps(build *buildbucketpb.Build, failedStepRegexp, failedStepRegex
 		excludeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", failedStepRegexpExclude))
 	}
 
-	// Don't scan steps if we have no regexes.
-	if includeRegex == nil && excludeRegex == nil {
-		return true, nil
-	}
-
 	var steps []*buildbucketpb.Step
 	for _, step := range build.Steps {
 		if step.Status == buildbucketpb.Status_FAILURE {
@@ -326,7 +321,9 @@ func matchingSteps(build *buildbucketpb.Build, failedStepRegexp, failedStepRegex
 		}
 	}
 
-	if len(steps) > 0 {
+	// If there are no regex filters, we return true regardless of whether any
+	// steps matched.
+	if len(steps) > 0 || (includeRegex == nil && excludeRegex == nil) {
 		return true, steps
 	}
 	return false, nil
