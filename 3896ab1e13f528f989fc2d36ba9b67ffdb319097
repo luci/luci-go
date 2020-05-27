@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98588234_0595468f",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-27T04:54:19Z",
+      "side": 1,
+      "message": "this comment seems a little confusing, since it says \"no matching steps\" but the if condition says \"len(steps) \u003e 0\"",
+      "range": {
+        "startLine": 324,
+        "startChar": 1,
+        "endLine": 324,
+        "endChar": 78
+      },
+      "revId": "3896ab1e13f528f989fc2d36ba9b67ffdb319097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
