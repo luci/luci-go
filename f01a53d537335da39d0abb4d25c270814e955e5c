@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6202582b_3808344f",
+        "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:39:40Z",
+      "side": 1,
+      "message": "nit: blank line before luci imports",
+      "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5d46c1a_3d0a1782",
+        "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:39:40Z",
+      "side": 1,
+      "message": "we must check that it exists first. we will need to do it soon anyway because we will need to check the Realm first",
+      "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
