@@ -1,0 +1,1 @@
+../../resultui/configs.template.js
