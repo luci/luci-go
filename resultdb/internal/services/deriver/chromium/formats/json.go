@@ -307,6 +307,10 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
 
+	if !expectedSet.Has("SKIP") {
+		// Treat all skipped results as expected.
+		expectedSet.Add("SKIP")
+	}
 	// TODO(crbug/1034025): Remove.
 	if len(expectedSet) == 0 {
 		expectedSet.Add("PASS")

@@ -201,6 +201,10 @@ func TestJSONConversions(t *testing.T) {
 					Expected: "PASS",
 					Time:     0.3,
 				},
+				"c2/t5.html": {
+					Actual:   "SKIP",
+					Expected: "PASS",
+				},
 			},
 		}
 
@@ -332,6 +336,16 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+			},
+
+			// Test 5
+			{
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c2/t5.html",
+					Status:   pb.TestStatus_SKIP,
+					Expected: true,
+					Tags:     pbutil.StringPairs("json_format_status", "SKIP"),
 				},
 			},
 		})
