@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "484602b6_ca1c2e7a",
+        "filename": "milo/common/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-27T20:52:31Z",
+      "side": 1,
+      "message": "unexpected, but OK.",
+      "range": {
+        "startLine": 48,
+        "startChar": 106,
+        "endLine": 48,
+        "endChar": 110
+      },
+      "revId": "3b3df08988c2d83e1e9631c24de3dd5fdbd250f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
