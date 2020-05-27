@@ -307,10 +307,12 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
 
+	// f.Expected is an empty string, use PASS as the expected status.
 	// TODO(crbug/1034025): Remove.
-	if len(expectedSet) == 0 {
+	if _, ok := expectedSet[""]; ok {
 		expectedSet.Add("PASS")
 	}
+	expectedSet.Add("SKIP")
 
 	// Process times.
 	// Time and Times are both optional, but if Times is present, its length should match the number

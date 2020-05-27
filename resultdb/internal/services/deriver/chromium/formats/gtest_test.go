@@ -146,7 +146,15 @@ func TestGTestConversions(t *testing.T) {
 		Convey("NOTRUN", func() {
 			tr := convert(&GTestRunResult{Status: "NOTRUN"})
 			So(tr.Status, ShouldEqual, pb.TestStatus_SKIP)
+			So(tr.Expected, ShouldBeFalse)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_status", "NOTRUN")), ShouldBeTrue)
+		})
+
+		Convey("SKIPPED", func() {
+			tr := convert(&GTestRunResult{Status: "SKIPPED"})
+			So(tr.Status, ShouldEqual, pb.TestStatus_SKIP)
+			So(tr.Expected, ShouldBeTrue)
+			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_status", "SKIPPED")), ShouldBeTrue)
 		})
 
 		Convey("Duration", func() {
