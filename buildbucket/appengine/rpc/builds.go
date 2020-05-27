@@ -16,12 +16,15 @@ package rpc
 
 import (
 	"context"
+	"regexp"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -29,6 +32,30 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+var (
+	projRegex    = regexp.MustCompile(`^[a-z0-9\-_]+$`)
+	bucketRegex  = regexp.MustCompile(`^[a-z0-9\-_.]{1,100}$`)
+	builderRegex = regexp.MustCompile(`^[a-zA-Z0-9\-.\(\) ]{1,128}$`)
+	sha1Regex    = regexp.MustCompile(`^[a-f0-9]{40}$`)
+)
+
+// validateBuilderID validates the given builder ID.
+// Bucket and Builder are optional and only validated if specified.
+func validateBuilderID(b *pb.BuilderID) error {
+	switch parts := strings.Split(b.GetBucket(), "."); {
+	case !projRegex.MatchString(b.GetProject()):
+		return errors.Reason("project must match %q", projRegex).Err()
+	case b.GetBucket() != "" && !bucketRegex.MatchString(b.Bucket):
+		return errors.Reason("bucket must match %q", bucketRegex).Err()
+	case b.GetBuilder() != "" && !builderRegex.MatchString(b.Builder):
+		return errors.Reason("builder must match %q", builderRegex).Err()
+	case b.GetBucket() != "" && parts[0] == "luci" && len(parts) > 2:
+		return errors.Reason("invalid use of v1 bucket in v2 API (hint: try %q)", parts[2]).Err()
+	default:
+		return nil
+	}
+}
 
 // defMask is the default field mask to use for GetBuild requests.
 // Initialized by init.
@@ -110,11 +137,6 @@ var _ pb.BuildsServer = &Builds{}
 
 // Batch handles a batch request. Implements pb.BuildsServer.
 func (*Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
-// SearchBuilds handles a request to search for builds. Implements pb.BuildsServer.
-func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
