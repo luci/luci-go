@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3e63cc68_df570898",
+        "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-27T19:56:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6202582b_3808344f",
+      "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b5d46c1a_3d0a1782",
         "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
         "patchSetId": 4
@@ -48,6 +66,24 @@
       "side": 1,
       "message": "ah, looks like we have this problem everywhere. Let\u0027s fix it later, when we implement Realms then.",
       "parentUuid": "b5d46c1a_3d0a1782",
+      "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dd20725c_f10cfc3d",
+        "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-27T19:56:26Z",
+      "side": 1,
+      "message": "To be clear, we much check what first?",
+      "parentUuid": "09af4261_a1bf4573",
       "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
