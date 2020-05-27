@@ -33,9 +33,10 @@ load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list
 load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
 load('@stdlib//internal/luci/rules/milo.star', _milo='milo')
 load('@stdlib//internal/luci/rules/notifier.star', _notifier='notifier')
-load('@stdlib//internal/luci/rules/notify.star', _notify='notify')
 load('@stdlib//internal/luci/rules/notifier_template.star', _notifier_template='notifier_template')
+load('@stdlib//internal/luci/rules/notify.star', _notify='notify')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
+load('@stdlib//internal/luci/rules/realm.star', _realm='realm')
 load('@stdlib//internal/luci/rules/tree_closer.star', _tree_closer='tree_closer')
 
 # LUCI helper modules.
@@ -60,6 +61,7 @@ time = _time
 
 luci = struct(
     project = _project,
+    realm = _realm,
     logdog =  _logdog,
     bucket = _bucket,
     executable = _executable,

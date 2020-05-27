@@ -16,6 +16,11 @@
 **Advanced function.** It is not used for common use cases.
 ***
 {{end}}
+{{- if $sym.HasDocTag "experimental"}}
+*** note
+**Experimental.** No backward compatibility guarantees.
+***
+{{end}}
 
 {{$sym.Doc.Description | LinkifySymbols}}
 {{if $sym.Doc.Args}}
