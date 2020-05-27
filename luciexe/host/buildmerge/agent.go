@@ -2,7 +2,7 @@
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain b copy of the License at
+// You may obtain a copy of the License at
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -34,6 +34,7 @@ package buildmerge
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"sync"
@@ -313,6 +314,12 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 
 			if isMergeStep {
 				subBuild := insertSteps(append(stepNS, baseName), step.Logs[0].Url)
+				if subBuild == nil {
+					subBuild = &bbpb.Build{
+						SummaryMarkdown: fmt.Sprintf("can't find valid build.proto stream: %q", step.Logs[0].Url),
+						Status:          bbpb.Status_INFRA_FAILURE,
+					}
+				}
 				updateStepFromBuild(step, subBuild)
 			}
 		}

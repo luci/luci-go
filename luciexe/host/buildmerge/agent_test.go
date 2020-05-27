@@ -285,5 +285,76 @@ func TestAgent(t *testing.T) {
 				})
 			})
 		})
+
+		Convey(`can handle missing sub-build`, func() {
+			merger.onNewStream(mkDesc("u/build.proto"))
+
+			rootTrack, ok := merger.states["url://u/build.proto"]
+			So(ok, ShouldBeTrue)
+
+			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+				Steps: []*bbpb.Step{
+					{Name: "Merge", Logs: []*bbpb.Log{
+						{Name: "$build.proto", Url: "sub/build.proto"},
+					}},
+				},
+			}))
+
+			expect := *base
+			expect.Steps = append(expect.Steps, &bbpb.Step{
+				Name:   "Merge",
+				Status: bbpb.Status_INFRA_FAILURE,
+				Logs: []*bbpb.Log{{
+					Name: "$build.proto", Url: "url://u/sub/build.proto",
+				}},
+				SummaryMarkdown: "can't find valid build.proto stream: \"url://u/sub/build.proto\"",
+			})
+			expect.UpdateTime = now
+			expect.Output.Logs[0].Url = "url://u/stdout"
+			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+
+			Convey(`and merge properly when sub-build stream is present`, func() {
+				merger.onNewStream(mkDesc("u/sub/build.proto"))
+				subTrack, ok := merger.states["url://u/sub/build.proto"]
+				So(ok, ShouldBeTrue)
+				subTrack.handleNewData(mkDgram(&bbpb.Build{
+					Steps: []*bbpb.Step{
+						{Name: "SubStep"},
+					},
+				}))
+
+				expect.Steps = nil
+				expect.Steps = append(expect.Steps,
+					&bbpb.Step{
+						Name: "Merge",
+						Logs: []*bbpb.Log{{
+							Name: "$build.proto", Url: "url://u/sub/build.proto",
+						}},
+					},
+					&bbpb.Step{Name: "Merge|SubStep"},
+				)
+				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+			})
+
+			// Convey(`and shut down`, func() {
+			// 	merger.Close()
+
+			// 	expect.EndTime = now
+			// 	expect.Status = bbpb.Status_INFRA_FAILURE
+			// 	expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+			// 	for _, step := range expect.Steps {
+			// 		step.EndTime = now
+			// 		switch step.Name {
+			// 		case "Merge", "Merge|SuperDeep":
+			// 			step.Status = bbpb.Status_INFRA_FAILURE
+			// 			step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+			// 		default:
+			// 			step.Status = bbpb.Status_CANCELED
+			// 			step.SummaryMarkdown = "step was never finalized; did the build crash?"
+			// 		}
+			// 	}
+			// 	So(getFinal(), ShouldResembleProto, &expect)
+			// })
+		})
 	})
 }
