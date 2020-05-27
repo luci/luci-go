@@ -193,31 +193,31 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 	return ret, nil
 }
 
-func fromGTestStatus(s string) (pb.TestStatus, error) {
+func fromGTestStatus(s string) (status pb.TestStatus, expected bool, err error) {
 	switch s {
 	case "SUCCESS":
-		return pb.TestStatus_PASS, nil
+		return pb.TestStatus_PASS, true, nil
 	case "FAILURE":
-		return pb.TestStatus_FAIL, nil
+		return pb.TestStatus_FAIL, false, nil
 	case "FAILURE_ON_EXIT":
-		return pb.TestStatus_FAIL, nil
+		return pb.TestStatus_FAIL, false, nil
 	case "TIMEOUT":
-		return pb.TestStatus_ABORT, nil
+		return pb.TestStatus_ABORT, false, nil
 	case "CRASH":
-		return pb.TestStatus_CRASH, nil
+		return pb.TestStatus_CRASH, false, nil
 	case "SKIPPED":
-		return pb.TestStatus_SKIP, nil
+		return pb.TestStatus_SKIP, true, nil
 	case "EXCESSIVE_OUTPUT":
-		return pb.TestStatus_FAIL, nil
+		return pb.TestStatus_FAIL, false, nil
 	case "NOTRUN":
-		return pb.TestStatus_SKIP, nil
+		return pb.TestStatus_SKIP, false, nil
 	case "UNKNOWN":
 		// TODO(jchinlee): Confirm this is reasonable.
-		return pb.TestStatus_ABORT, nil
+		return pb.TestStatus_ABORT, false, nil
 	default:
 		// This would only happen if the set of possible GTest result statuses change and resultsdb has
 		// not been updated to match.
-		return pb.TestStatus_STATUS_UNSPECIFIED, errors.Reason("unknown GTest status %q", s).Err()
+		return pb.TestStatus_STATUS_UNSPECIFIED, false, errors.Reason("unknown GTest status %q", s).Err()
 	}
 }
 
@@ -284,14 +284,14 @@ func extractGTestParameters(testID string) (baseID string, err error) {
 }
 
 func (r *GTestResults) convertTestResult(ctx context.Context, testID, name string, result *GTestRunResult, buf *strings.Builder) (*pb.TestResult, error) {
-	status, err := fromGTestStatus(result.Status)
+	status, expected, err := fromGTestStatus(result.Status)
 	if err != nil {
 		return nil, err
 	}
 
 	tr := &pb.TestResult{
 		TestId:   testID,
-		Expected: status == pb.TestStatus_PASS,
+		Expected: expected,
 		Status:   status,
 		Tags: pbutil.StringPairs(
 			// Store the original Gtest test name.
