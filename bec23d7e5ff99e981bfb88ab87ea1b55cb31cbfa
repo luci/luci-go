@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "365485ce_c4eb9e3a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/bucket.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-27T22:40:05Z",
+      "side": 1,
+      "message": "duh, i missed this the first time I reviewed the CL :(",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 22
+      },
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8103191f_fb11dc0d",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
         "patchSetId": 2
@@ -72,6 +95,30 @@
       "side": 1,
       "message": "luci.bucket(\u0027bucket\u0027) defines a new realm and luci.realm(\u0027realm1\u0027) is inheriting from it. If I remove luci.bucket(...) declaration, luci.realm(\u0027realm1\u0027) definition will complain that luci.realm(\u0027bucket\u0027) is not defined.",
       "parentUuid": "6a931425_edc4b1bb",
+      "range": {
+        "startLine": 11,
+        "startChar": 12,
+        "endLine": 11,
+        "endChar": 18
+      },
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3380983c_622d6061",
+        "filename": "lucicfg/testdata/realms/success.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-27T22:40:05Z",
+      "side": 1,
+      "message": "I swear I cycled through the files to find a place where this CL changed it by didn\u0027t see it at the time. Now I do see it, sorry for the noise!",
+      "parentUuid": "7bc9276c_4c10cb9b",
       "range": {
         "startLine": 11,
         "startChar": 12,
