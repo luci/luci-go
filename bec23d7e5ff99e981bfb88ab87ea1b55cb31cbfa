@@ -128,6 +128,30 @@
       "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b03b4122_5eeb2f62",
+        "filename": "lucicfg/testdata/realms/success.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T22:42:45Z",
+      "side": 1,
+      "message": "Once I\u0027m satisfied with the final API I\u0027ll do a pass to update docs. luci.bucket(...) doc currently doesn\u0027t mention any realms.",
+      "parentUuid": "3380983c_622d6061",
+      "range": {
+        "startLine": 11,
+        "startChar": 12,
+        "endLine": 11,
+        "endChar": 18
+      },
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
