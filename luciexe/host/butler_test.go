@@ -16,8 +16,11 @@ package host
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,6 +28,12 @@ import (
 
 func init() {
 	bufferLogs = false
+
+	for k := range environ.System() {
+		if strings.HasPrefix(k, "LOGDOG_") {
+			os.Unsetenv(k)
+		}
+	}
 }
 
 func TestButler(t *testing.T) {
