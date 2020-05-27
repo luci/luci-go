@@ -80,7 +80,14 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 	}
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		return txn.BufferWrite(ms)
+		if err := txn.BufferWrite(ms); err != nil {
+			return err
+		}
+
+		if err := span.IncrementTestResultCount(ctx, txn, invID, int64(len(in.Requests))); err != nil {
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
