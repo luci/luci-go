@@ -46,6 +46,30 @@
       "revId": "3896ab1e13f528f989fc2d36ba9b67ffdb319097",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0019777c_03cc592f",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-27T06:16:17Z",
+      "side": 1,
+      "message": "Yep, thanks.",
+      "parentUuid": "0e829fda_52e61e46",
+      "range": {
+        "startLine": 324,
+        "startChar": 1,
+        "endLine": 324,
+        "endChar": 78
+      },
+      "revId": "3896ab1e13f528f989fc2d36ba9b67ffdb319097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
