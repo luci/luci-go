@@ -27,6 +27,7 @@ import (
 	annotpb "go.chromium.org/luci/common/proto/milo"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAnnotations(t *testing.T) {
@@ -64,7 +65,7 @@ func TestAnnotations(t *testing.T) {
 
 		So(len(got), ShouldEqual, len(want.Steps))
 		for i := range got {
-			So(got[i], ShouldResemble, want.Steps[i])
+			So(got[i], ShouldResembleProto, want.Steps[i])
 		}
 
 		Convey("e2e", func() {
@@ -73,7 +74,7 @@ func TestAnnotations(t *testing.T) {
 
 			So(len(got), ShouldEqual, len(want.Steps))
 			for i := range got {
-				So(got[i], ShouldResemble, want.Steps[i])
+				So(got[i], ShouldResembleProto, want.Steps[i])
 			}
 		})
 	})
