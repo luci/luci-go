@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec85913d_cfdf7858",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T15:09:19Z",
+      "side": 1,
+      "message": "please include the original document.location.href",
+      "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
