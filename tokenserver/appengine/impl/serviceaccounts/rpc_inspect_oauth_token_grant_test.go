@@ -102,7 +102,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
+			InvalidityReason: "can't unmarshal the envelope - proto: cannot parse reserved wire type",
 		})
 	})
 

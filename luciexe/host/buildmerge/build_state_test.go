@@ -228,7 +228,7 @@ func TestBuildState(t *testing.T) {
 						build: &bbpb.Build{
 							SummaryMarkdown: ("some stuff\n\n" +
 								"Error in build protocol: parsing Build: proto: " +
-								"can't skip unknown wire type 6"),
+								"cannot parse reserved wire type"),
 							Status: bbpb.Status_INFRA_FAILURE,
 							Steps: []*bbpb.Step{
 								{Name: "Parent", EndTime: now, Status: bbpb.Status_CANCELED,
@@ -302,7 +302,7 @@ func TestBuildState(t *testing.T) {
 					invalid: true,
 					build: &bbpb.Build{
 						SummaryMarkdown: ("\n\nError in build protocol: " +
-							"parsing Build: proto: can't skip unknown wire type 6"),
+							"parsing Build: proto: cannot parse reserved wire type"),
 						Status:     bbpb.Status_INFRA_FAILURE,
 						UpdateTime: now,
 						EndTime:    now,
@@ -316,7 +316,7 @@ func TestBuildState(t *testing.T) {
 						closed:  true,
 						build: &bbpb.Build{
 							SummaryMarkdown: ("\n\nError in build protocol: " +
-								"parsing Build: proto: can't skip unknown wire type 6"),
+								"parsing Build: proto: cannot parse reserved wire type"),
 							Status:     bbpb.Status_INFRA_FAILURE,
 							UpdateTime: now,
 							EndTime:    now,
