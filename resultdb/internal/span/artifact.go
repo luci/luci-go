@@ -167,10 +167,10 @@ FilteredTestResults AS (
 	{{ end }}
 	WHERE InvocationId IN UNNEST(@invIDs)
 		AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
-		AND (@variantContains IS NULL OR (
-			SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
-			FROM UNNEST(@variantContains) kv
-	))
+		AND (@variantContains IS NULL
+			OR ARRAY_LENGTH(@variantContains) = 0
+			OR (SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant)) FROM UNNEST(@variantContains) kv)
+		)
 )
 SELECT InvocationId, ParentId, ArtifactId, ContentType, Size
 FROM Artifacts art

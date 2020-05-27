@@ -169,10 +169,10 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 			)
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
 			AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
-			AND (@variantContains IS NULL OR (
-				SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
-				FROM UNNEST(@variantContains) kv
-			))
+			AND (@variantContains IS NULL
+				OR ARRAY_LENGTH(@variantContains) = 0
+				OR (SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant)) FROM UNNEST(@variantContains) kv)
+			)
 		ORDER BY InvocationId, TestId, ResultId
 		%s
 	`, strings.Join(extraSelect, ","), from, limit))
