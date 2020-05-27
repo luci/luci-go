@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "4cad47f3_4299ec34",
+        "filename": "grpc/cmd/cproto/testdata/helloworld/test.pb.golden",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-27T22:15:36Z",
+      "side": 1,
+      "message": "Yes, I think so. Probably better as a separate CL?",
+      "parentUuid": "bfe94a55_40bebed1",
+      "range": {
+        "startLine": 8,
+        "startChar": 19,
+        "endLine": 8,
+        "endChar": 24
+      },
+      "revId": "3b3df08988c2d83e1e9631c24de3dd5fdbd250f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "484602b6_ca1c2e7a",
         "filename": "milo/common/config_test.go",
         "patchSetId": 1
