@@ -22,6 +22,30 @@
       "revId": "3896ab1e13f528f989fc2d36ba9b67ffdb319097",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e829fda_52e61e46",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-05-27T06:13:28Z",
+      "side": 1,
+      "message": "Right, this refers to the second part of the condition, after the ||. I\u0027ve rephrased a little, is it clearer now?",
+      "parentUuid": "98588234_0595468f",
+      "range": {
+        "startLine": 324,
+        "startChar": 1,
+        "endLine": 324,
+        "endChar": 78
+      },
+      "revId": "3896ab1e13f528f989fc2d36ba9b67ffdb319097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
