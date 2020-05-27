@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8103191f_fb11dc0d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-27T21:51:16Z",
+      "side": 1,
+      "message": "seems orthogonal to realms. Why is it that realms for -dev needs this?",
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a931425_edc4b1bb",
+        "filename": "lucicfg/testdata/realms/success.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-27T21:51:16Z",
+      "side": 1,
+      "message": "this is confusing. is `realm1` actually inheriting from implicit luci.realm(\u0027bucket\u0027) or is luci.bucket(\u0027bucket\u0027) implying a new realm?\n\nBased on this CL, i think the former, but i\u0027m not sure 😞",
+      "range": {
+        "startLine": 11,
+        "startChar": 12,
+        "endLine": 11,
+        "endChar": 18
+      },
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
