@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bfe94a55_40bebed1",
+        "filename": "grpc/cmd/cproto/testdata/helloworld/test.pb.golden",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-27T21:22:09Z",
+      "side": 1,
+      "message": "Yes I agree. Is this the only place[1] (along with two other platforms) to change for upgrading protoc?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:bootstrap/cipd/cipd_linux_amd64.txt;l\u003d9;drc\u003d208f1c434367bf7094864f9e70bef9cb30451601",
+      "parentUuid": "bc3faafa_8322e5f4",
+      "range": {
+        "startLine": 8,
+        "startChar": 19,
+        "endLine": 8,
+        "endChar": 24
+      },
+      "revId": "3b3df08988c2d83e1e9631c24de3dd5fdbd250f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "484602b6_ca1c2e7a",
         "filename": "milo/common/config_test.go",
         "patchSetId": 1
