@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8f04d74_1afc3b80",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T19:00:18Z",
+      "side": 1,
+      "message": "this means the bug is in L308. \nit assumes that strings.Split(\"\", \" \") returns an empty strings.\nwe should not add an empty strings to the set to begin with",
+      "range": {
+        "startLine": 312,
+        "startChar": 1,
+        "endLine": 312,
+        "endChar": 34
+      },
+      "revId": "5c24fd7578e1c21f94564a8d964686ba96ac0157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
