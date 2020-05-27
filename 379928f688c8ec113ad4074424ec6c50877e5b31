@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19b68bbe_99cbff4d",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:02:25Z",
+      "side": 1,
+      "message": "this will looks inconsistent from L41. Consider Reason(\"builder: bucket is required\")",
+      "range": {
+        "startLine": 43,
+        "startChar": 32,
+        "endLine": 43,
+        "endChar": 33
+      },
+      "revId": "379928f688c8ec113ad4074424ec6c50877e5b31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "feaff9da_1beeea52",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:02:25Z",
+      "side": 1,
+      "message": "hm, this looses the chain of errors, tags, etc which is not ideal. Are yo avoiding appstatus.Attachf because it says \"attaching a status\"? we can remove that string if it bothering.",
+      "range": {
+        "startLine": 56,
+        "startChar": 14,
+        "endLine": 56,
+        "endChar": 66
+      },
+      "revId": "379928f688c8ec113ad4074424ec6c50877e5b31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5aba10a7_041e4705",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:02:25Z",
+      "side": 1,
+      "message": "why not \n\n  return appstatus.Attachf(err, codes.InvalidArgument, \"fields\")\n\nthis is exactly what Attachf exists for",
+      "revId": "379928f688c8ec113ad4074424ec6c50877e5b31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5287084e_f894aa71",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T06:02:25Z",
+      "side": 1,
+      "message": "same here and below",
+      "revId": "379928f688c8ec113ad4074424ec6c50877e5b31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
