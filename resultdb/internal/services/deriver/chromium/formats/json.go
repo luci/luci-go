@@ -305,12 +305,14 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID string, availableArtifacts stringset.Set, buf *strings.Builder) error {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
-	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
 
+	expectedSlice := strings.Split(f.Expected, " ")
 	// TODO(crbug/1034025): Remove.
-	if len(expectedSet) == 0 {
-		expectedSet.Add("PASS")
+	if len(expectedSlice) == 1 && expectedSlice[0] == "" {
+		expectedSlice = []string{"PASS"}
 	}
+	expectedSet := stringset.NewFromSlice(expectedSlice...)
+	expectedSet.Add("SKIP")
 
 	// Process times.
 	// Time and Times are both optional, but if Times is present, its length should match the number
