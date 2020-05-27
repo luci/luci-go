@@ -1,0 +1,88 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package statsd_to_tsmon.config;
+
+option go_package = "config";
+
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  GAUGE = 1;
+  COUNTER = 2;
+  CUMULATIVE_DISTRIBUTION = 3;
+}
+
+
+enum Unit {
+  UNIT_UNSPECIFIED = 0;
+  MILLISECONDS = 1;
+  BYTES = 2;
+}
+
+
+message Config {
+  // A collection of tsmon metrics and rules for how to extract them from statsd
+  // metrics.
+  repeated Metric metrics = 1;
+}
+
+
+message Metric {
+  // Name of the tsmon metric to produce, required.
+  string metric = 1;
+  // A kind of the metric, required.
+  Kind kind = 2;
+  // Metric description. Optional, but recommended.
+  string desc = 3;
+  // Units of the metric value. Optional, but recommended.
+  Unit units = 4;
+  // A set of fields of this metric.
+  repeated string fields = 5;
+
+  // A list of rules that map statds metrics to fields of this metric.
+  //
+  // Each rule is represented by a statsd metric name pattern (that looks like
+  // e.g. "something.*.${var}.*.sfx") and a recipe of how to get tsmon field
+  // name of metrics matching the pattern.
+  //
+  // In the current implementation the last component of each pattern must be
+  // some static string (i.e. not `*` and not a var) and all such suffixes must
+  // be unique across the entire configuration file.
+  repeated Rule rules = 6;
+}
+
+
+message Rule {
+  // A pattern to match statsd metric name against.
+  //
+  // Also used to "extract" interesting portions of the metric name to use them
+  // in `fields`.
+  //
+  // For example, if the pattern is "something.*.${var}.*.sfx", statds metric
+  // "something.foo.val.bar.sfx" matches it, and `var` value is set to "val".
+  string pattern = 1;
+
+  // A map "field name => its value".
+  //
+  // The set of field names should be equal to the set of fields specified
+  // in the metric definition.
+  //
+  // Each field value is either a static string ("foo"), or a reference to
+  // some variable ("${var}") parsed from the statsd metric name according to
+  // the pattern.
+  map<string, string> fields = 2;
+}
