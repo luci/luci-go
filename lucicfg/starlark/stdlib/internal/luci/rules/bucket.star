@@ -18,6 +18,9 @@ load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
 load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
+load('@stdlib//internal/luci/lib/realms.star', 'realms')
+
+load('@stdlib//internal/luci/rules/realm.star', 'realm')
 
 
 def _bucket(ctx, *, name=None, acls=None):
@@ -37,6 +40,11 @@ def _bucket(ctx, *, name=None, acls=None):
       'acls': aclimpl.validate_acls(acls, project_level=False),
   })
   graph.add_edge(keys.project(), key)
+
+  # Each bucket also has an associated realm with the matching name.
+  if realms.experiment.is_enabled():
+    realm(name = name)
+
   return graph.keyset(key)
 
 

@@ -31,6 +31,7 @@ load('@stdlib//internal/luci/proto.star',
     'milo_pb',
     'notify_pb',
     'predicate_pb',
+    'realms_pb',
     'resultdb_pb',
     'scheduler_pb',
 )
@@ -42,6 +43,7 @@ load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 def register():
   """Registers all LUCI config generator callbacks."""
   lucicfg.generator(impl = gen_project_cfg)
+  lucicfg.generator(impl = gen_realms_cfg)
   lucicfg.generator(impl = gen_logdog_cfg)
   lucicfg.generator(impl = gen_buildbucket_cfg)
   lucicfg.generator(impl = gen_scheduler_cfg)
@@ -167,6 +169,34 @@ def gen_project_cfg(ctx):
       name = proj.props.name,
       access = access,
   ))
+
+
+################################################################################
+## realm.cfg.
+
+
+def gen_realms_cfg(ctx):
+  """Generates realms.cfg."""
+  proj = get_project(required=False)
+  if not proj or not proj.props.realms_enabled:
+    return
+  cfg_name = 'realms-dev.cfg' if proj.props.dev else 'realms.cfg'
+  set_config(ctx, cfg_name, realms_pb.RealmsCfg(
+      realms = [
+          _realms_realm(r)
+          for r in graph.children(proj.key, kinds.REALM)
+      ],
+  ))
+
+
+def _realms_realm(realm):
+  """Given a REALM node returns realms_pb.Realm."""
+  # TODO(vadimsh): Discover bindings.
+  parents = graph.parents(realm.key, kinds.REALM)
+  return realms_pb.Realm(
+      name = realm.props.name,
+      extends = [p.props.name for p in parents if p.props.name != '@root']
+  )
 
 
 ################################################################################

@@ -908,6 +908,7 @@ luci.project(
 
     # Optional arguments.
     config_dir = None,
+    dev = None,
     buildbucket = None,
     logdog = None,
     milo = None,
@@ -928,6 +929,7 @@ There should be exactly one such definition in the top-level config file.
 
 * **name**: full name of the project. Required.
 * **config_dir**: a subdirectory of the config output directory (see `config_dir` in [lucicfg.config(...)](#lucicfg.config)) to place generated LUCI configs under. Default is `.`. A custom value is useful when using `lucicfg` to generate LUCI and non-LUCI configs at the same time.
+* **dev**: set to True if this project belongs to a development or a staging LUCI deployment. This is rare. Default is False.
 * **buildbucket**: appspot hostname of a Buildbucket service to use (if any).
 * **logdog**: appspot hostname of a LogDog service to use (if any).
 * **milo**: appspot hostname of a Milo service to use (if any).
@@ -935,6 +937,74 @@ There should be exactly one such definition in the top-level config file.
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
 * **swarming**: appspot hostname of a Swarming service to use by default (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
+
+
+
+
+### luci.realm {#luci.realm}
+
+```python
+luci.realm(name, extends = None)
+```
+
+
+*** note
+**Experimental.** No backward compatibility guarantees.
+***
+
+
+Defines a realm.
+
+Realm is a named collection of `(<principal>, <permission>)` pairs.
+
+A LUCI resource can point to exactly one realm by referring to its full
+name (`<project>:<realm>`). We say that such resource "belongs to the realm"
+or "lives in the realm" or is just "in the realm". We also say that such
+resource belongs to the project `<project>`. The corresponding [luci.realm(...)](#luci.realm)
+definition then describes who can do what to the resource.
+
+The logic of how resources get assigned to realms is a part of the public API
+of the service that owns resources. Some services may use a static realm
+assignment via project configuration files, others may do it dynamically by
+accepting a realm when a resource is created via an RPC.
+
+A realm can "extend" one or more other realms. If a realm `A` extends `B`,
+then all permissions defined in `B` are also in `A`. Remembering that a realm
+is just a set of `(<principal>, <permission>)` pairs, the "extend" relation is
+just a set inclusion.
+
+The primary way of populating the permission set of a realm is via bindings.
+Each binding assigns a role to a set of principals. Since each role is
+essentially just a set of permissions, each binding adds to the realm a
+Cartesian product of a set of permissions (defined via the role) and a set of
+principals (defined via a direct listing or via groups).
+
+There are two special realms that a project can have: "@root" and "@legacy".
+
+The root realm is implicitly included into all other realms (including
+"@legacy"), and it is also used as a fallback when a resource points to a
+realm that no longer exists. Without the root realm, such resources become
+effectively inaccessible and this may be undesirable. Permissions in the root
+realm apply to all realms in the project (current, past and future), and thus
+the root realm should contain only administrative-level bindings. If you are
+not sure whether you should use the root realm or not, err on the side of not
+using it.
+
+The legacy realm is used for existing resources created before the realms
+mechanism was introduced. Such resources usually are not associated with any
+realm at all. They are implicitly placed into the legacy realm to allow
+reusing realms' machinery for them.
+
+Note that the details of how resources are placed in the legacy realm are up
+to a particular service implementation. Some services may be able to figure
+out an appropriate realm for a legacy resource based on resource's existing
+attributes. Some services may not have legacy resources at all. The legacy
+realm is not used in these case. Refer to the service documentation.
+
+#### Arguments {#luci.realm-args}
+
+* **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy`. Required.
+* **extends**: a reference or a list of references to realms to inherit permission from. Optional. Default (and implicit) is `@root`.
 
 
 
