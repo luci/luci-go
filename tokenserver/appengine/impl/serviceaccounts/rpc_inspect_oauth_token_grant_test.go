@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -102,7 +102,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
+			InvalidityReason: "can't unmarshal the envelope - proto: cannot parse reserved wire type",
 		})
 	})
 

@@ -74,7 +74,7 @@ func TestInspectToken(t *testing.T) {
 		ins, err := inspector.InspectToken(ctx, "zzzz")
 		So(err, ShouldBeNil)
 		So(ins, ShouldResemble, &Inspection{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
+			InvalidityReason: "can't unmarshal the envelope - proto: cannot parse reserved wire type",
 		})
 	})
 
