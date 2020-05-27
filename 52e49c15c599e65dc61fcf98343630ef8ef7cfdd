@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1eece4f9_07b3cbe4",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1379dbb_1a29a51d",
+      "range": {
+        "startLine": 213,
+        "startChar": 2,
+        "endLine": 215,
+        "endChar": 3
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5e1ed5c_f0c7ae5f",
         "filename": "server/cmd/statsd-to-tsmon/config.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9665ca8_989905e9",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5e1ed5c_f0c7ae5f",
+      "range": {
+        "startLine": 261,
+        "startChar": 19,
+        "endLine": 261,
+        "endChar": 32
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "0865a2df_104e46d5",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5bac9923_7e1f12b7",
+      "range": {
+        "startLine": 270,
+        "startChar": 3,
+        "endLine": 270,
+        "endChar": 21
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be489feb_9825fa8d",
         "filename": "server/cmd/statsd-to-tsmon/config.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "2063bfa8_1b74f00d",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Done. Also simplified a bit.",
+      "parentUuid": "be489feb_9825fa8d",
+      "range": {
+        "startLine": 280,
+        "startChar": 0,
+        "endLine": 283,
+        "endChar": 2
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51b1d9c8_5acf7d4f",
         "filename": "server/cmd/statsd-to-tsmon/config.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a7bed2f_6022e753",
+        "filename": "server/cmd/statsd-to-tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "\"abc.*\" are not allowed already, it\u0027s not a static suffix",
+      "parentUuid": "51b1d9c8_5acf7d4f",
+      "range": {
+        "startLine": 307,
+        "startChar": 5,
+        "endLine": 307,
+        "endChar": 18
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +283,54 @@
     },
     {
       "key": {
+        "uuid": "f3c078ce_47bfee5b",
+        "filename": "server/cmd/statsd-to-tsmon/converter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72919732_4e30f4ab",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 57,
+        "endChar": 39
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8c79875f_87f75fc1",
+        "filename": "server/cmd/statsd-to-tsmon/converter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Made ParseStatsdMetric reject \"abc..def\" with ErrMalformedStatsdLine.",
+      "parentUuid": "32662d7f_3262734e",
+      "range": {
+        "startLine": 57,
+        "startChar": 15,
+        "endLine": 57,
+        "endChar": 39
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aecac157_1044ded7",
         "filename": "server/cmd/statsd-to-tsmon/statsd.go",
         "patchSetId": 1
@@ -183,6 +351,30 @@
       "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08c1f591_cb856f21",
+        "filename": "server/cmd/statsd-to-tsmon/statsd.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T19:34:16Z",
+      "side": 1,
+      "message": "Not anymore.",
+      "parentUuid": "aecac157_1044ded7",
+      "range": {
+        "startLine": 100,
+        "startChar": 3,
+        "endLine": 100,
+        "endChar": 54
+      },
+      "revId": "52e49c15c599e65dc61fcf98343630ef8ef7cfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
