@@ -16,7 +16,7 @@ handlers:
   static_files: static/robots.txt
   upload: static/robots.txt
 
-# For other static resources such as css and js files.
+# For other static resources such as css and js files (including ResultUI).
 - url: /static
   secure: always
   static_dir: static
@@ -41,7 +41,13 @@ handlers:
   secure: always
   login: admin
 
-# Everything goes here.
+# ResultUI frontend routes.
+- url: /inv/.*
+  secure: always
+  static_files: index.html
+  upload: index.html
+
+# The rest is handled by Go code.
 - url: /.*
   script: auto
   secure: always

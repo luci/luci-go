@@ -17,6 +17,7 @@ package frontend
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
+	"go.chromium.org/luci/milo/common"
 )
 
 // Run sets up all the routes and runs the server.
@@ -121,6 +123,9 @@ func Run(templatePath string) {
 
 	r.GET("/internal_widgets/related_builds/:id", htmlMW, handleError(handleGetRelatedBuildsTable))
 
+	// Config for ResultUI frontend.
+	r.GET("/configs.js", baseMW, configsJSHandler)
+
 	http.DefaultServeMux.Handle("/", r)
 }
 
@@ -184,4 +189,33 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 	u := *c.Request.URL
 	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder)
 	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
+}
+
+// configsJSHandler serves /configs.js used by ResultUI frontend code.
+func configsJSHandler(c *router.Context) {
+	template, err := template.ParseFiles("templates/configs.template.js")
+	if err != nil {
+		logging.Errorf(c.Context, "Failed to load configs.template.js: %s", err)
+		http.Error(c.Writer, "Internal server error", 500)
+		return
+	}
+
+	rdbHost := ""
+	if settings := common.GetSettings(c.Context); settings != nil && settings.Resultdb != nil {
+		rdbHost = settings.Resultdb.Host
+	}
+
+	c.Writer.Header().Set("content-type", "application/javascript")
+	err = template.Execute(c.Writer, map[string]interface{}{
+		"ResultDB": map[string]string{
+			"Host": rdbHost,
+		},
+	})
+
+	if err != nil {
+		// Note: we may have already written something to c.Writer and it may be too
+		// late to send a status code.
+		logging.Errorf(c.Context, "Failed to execute configs.template.js: %s", err)
+		http.Error(c.Writer, "Internal server error", 500)
+	}
 }
