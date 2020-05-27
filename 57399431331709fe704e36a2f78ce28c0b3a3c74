@@ -22,6 +22,30 @@
       "revId": "57399431331709fe704e36a2f78ce28c0b3a3c74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "507c6175_fab44ce3",
+        "filename": "resultdb/internal/artifactcontent/rbecas.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T02:14:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a607f377_697de3a5",
+      "range": {
+        "startLine": 62,
+        "startChar": 25,
+        "endLine": 62,
+        "endChar": 44
+      },
+      "revId": "57399431331709fe704e36a2f78ce28c0b3a3c74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
