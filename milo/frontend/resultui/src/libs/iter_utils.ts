@@ -39,3 +39,12 @@ export function* withPrev<T>(iter: Iterable<T>): IterableIterator<[T, T | null]>
     prev = item;
   }
 }
+
+/**
+ * A map utility for async iterators.
+ */
+export async function* mapAsync<V, T>(iter: AsyncIterable<V>, mapFn: (v: V) => T): AsyncIterableIterator<T> {
+  for await (const item of iter) {
+    yield mapFn(item);
+  }
+}
