@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/services/resultdb"
 )
 
@@ -42,6 +43,8 @@ func main() {
 		"Key=value map where key is a ResultDB API hostname and value is a "+
 			"hostname to use for user-content URLs produced there. "+
 			"Key '*' indicates a fallback.")
+
+	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
 	internal.Main(func(srv *server.Server) error {
 		return resultdb.InitServer(srv, opts)

@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 )
 
@@ -31,12 +32,7 @@ func main() {
 		60,
 		"How many days to keep results for test variants with only expected results",
 	)
-	flag.StringVar(
-		&opts.ArtifactRBEInstance,
-		"artifact-rbe-instance",
-		"",
-		"Name of the RBE instance to use for artifact storage",
-	)
+	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
 	internal.Main(func(srv *server.Server) error {
 		opts.ExpectedResultsExpiration = time.Duration(*expectedTestResultsExpirationDays) * 24 * time.Hour

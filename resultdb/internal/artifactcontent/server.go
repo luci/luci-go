@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
@@ -62,6 +63,13 @@ type Server struct {
 	// Returns a hostname to use in generated signed URLs.
 	HostnameProvider HostnameProvider
 
+	// Reads a blob from RBE-CAS.
+	ReadCASBlob func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error)
+
+	// Full name of the RBE-CAS instance used to store artifacts,
+	// e.g. "projects/luci-resultdb/instances/artifacts".
+	RBECASInstanceName string
+
 	// used for isolate client
 	anonClient, authClient *http.Client
 
@@ -69,23 +77,25 @@ type Server struct {
 	testFetchIsolate func(ctx context.Context, isolateURL string, w io.Writer) error
 }
 
-// NewServer creates a Server.
-func NewServer(ctx context.Context, insecureURLs bool, hostnameProvider HostnameProvider) (*Server, error) {
+// Init initializes the server.
+// It must be called before calling other methods.
+func (s *Server) Init(ctx context.Context) error {
+	if s.anonClient != nil {
+		panic("already initialized")
+	}
+
 	anonTransport, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	selfTransport, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &Server{
-		InsecureURLs:     insecureURLs,
-		HostnameProvider: hostnameProvider,
-		anonClient:       &http.Client{Transport: anonTransport},
-		authClient:       &http.Client{Transport: selfTransport},
-	}, nil
+	s.anonClient = &http.Client{Transport: anonTransport}
+	s.authClient = &http.Client{Transport: selfTransport}
+	return nil
 }
 
 // InstallHandlers installs handlers to serve artifact content.
@@ -161,12 +171,14 @@ func (r *contentRequest) handle(c *router.Context) {
 
 	// Read the state from database.
 	var isolateURL spanner.NullString
+	var rbeCASHash spanner.NullString
 	txn := span.Client(c.Context).Single()
 	key := r.invID.Key(r.parentID, r.artifactID)
 	err := span.ReadRow(c.Context, txn, "Artifacts", key, map[string]interface{}{
 		"ContentType": &r.contentType,
 		"Size":        &r.size,
 		"IsolateURL":  &isolateURL,
+		"RBECASHash":  &rbeCASHash,
 	})
 
 	// Check the error and write content to the response body.
@@ -178,11 +190,14 @@ func (r *contentRequest) handle(c *router.Context) {
 	case err != nil:
 		r.sendError(c.Context, err)
 
+	case rbeCASHash.Valid:
+		r.handleRBECASContent(c, rbeCASHash.StringVal)
+
 	case isolateURL.Valid:
 		r.handleIsolateContent(c.Context, isolateURL.StringVal)
 
 	default:
-		r.sendError(c.Context, appstatus.Errorf(codes.Unimplemented, "currently only isolated artifacts can be served"))
+		r.sendError(c.Context, errors.Reason("neither RBECASHash nor IsolateURL is initialized in %q", key).Err())
 	}
 }
 

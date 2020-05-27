@@ -19,15 +19,12 @@ import (
 	"time"
 
 	"google.golang.org/genproto/googleapis/bytestream"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/oauth"
 
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -68,7 +65,7 @@ func installArtifactCreationHandler(srv *server.Server, opt *Options) error {
 		return nil
 	}
 
-	conn, err := newRBEConn(srv.Context)
+	conn, err := artifactcontent.RBEConn(srv.Context)
 	if err != nil {
 		return err
 	}
@@ -86,17 +83,4 @@ func installArtifactCreationHandler(srv *server.Server, opt *Options) error {
 	// unescaped paths: https://github.com/julienschmidt/httprouter/issues/208
 	srv.Routes.PUT("invocations/*rest", router.MiddlewareChain{}, ach.Handle)
 	return nil
-}
-
-func newRBEConn(ctx context.Context) (*grpc.ClientConn, error) {
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf)
-	if err != nil {
-		return nil, err
-	}
-
-	return grpc.Dial(
-		"remotebuildexecution.googleapis.com:443",
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(oauth.TokenSource{TokenSource: ts}),
-	)
 }

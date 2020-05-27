@@ -208,6 +208,7 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 			readSpan.End(err)
 			return errors.Annotate(err, "failed to read artifact contents").Err()
 		}
+		readSpan.Attribute("size", n)
 		readSpan.End(nil)
 		last := err == io.EOF
 
@@ -227,6 +228,7 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 
 		// Send the request.
 		_, writeSpan := trace.StartSpan(ctx, "resultdb.writeChunk")
+		writeSpan.Attribute("size", n)
 		// Do not shadow err! It is checked below again.
 		if err = w.Send(req); err != nil && err != io.EOF {
 			writeSpan.End(err)

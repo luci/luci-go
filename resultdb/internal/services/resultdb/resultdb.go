@@ -18,7 +18,10 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/genproto/googleapis/bytestream"
+
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"google.golang.org/grpc/codes"
@@ -48,18 +51,17 @@ type Options struct {
 	//
 	// Special key "*" indicates a fallback.
 	ContentHostnameMap map[string]string
+
+	// ArtifactRBEInstance is the name of the RBE instance to use for artifact
+	// storage. Example: "projects/luci-resultdb/instances/artifacts".
+	ArtifactRBEInstance string
 }
 
 // InitServer initializes a resultdb server.
 func InitServer(srv *server.Server, opts Options) error {
-	contentServer, err := artifactcontent.NewServer(srv.Context, opts.InsecureSelfURLs, func(requestHost string) string {
-		if host, ok := opts.ContentHostnameMap[requestHost]; ok {
-			return host
-		}
-		return opts.ContentHostnameMap["*"]
-	})
+	contentServer, err := newArtifactContentServer(srv.Context, opts)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to create an artifact content server").Err()
 	}
 
 	// Serve all possible content hostnames.
@@ -97,4 +99,34 @@ func InitServer(srv *server.Server, opts Options) error {
 func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
 	// TODO(crbug.com/1034881): implement.
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+func newArtifactContentServer(ctx context.Context, opts Options) (*artifactcontent.Server, error) {
+	// TODO(crbug.com/1071258): require opts.ArtifactRBEInstance.
+
+	conn, err := artifactcontent.RBEConn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bs := bytestream.NewByteStreamClient(conn)
+
+	contentServer := &artifactcontent.Server{
+		InsecureURLs: opts.InsecureSelfURLs,
+		HostnameProvider: func(requestHost string) string {
+			if host, ok := opts.ContentHostnameMap[requestHost]; ok {
+				return host
+			}
+			return opts.ContentHostnameMap["*"]
+		},
+
+		ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+			return bs.Read(ctx, req)
+		},
+		RBECASInstanceName: opts.ArtifactRBEInstance,
+	}
+
+	if err := contentServer.Init(ctx); err != nil {
+		return nil, err
+	}
+	return contentServer, nil
 }
