@@ -25,6 +25,8 @@ load('@stdlib//internal/validate.star', 'validate')
 
 # Node edges (parent -> child):
 #   luci.project: root
+#   luci.project -> [luci.realm]
+#   luci.realm -> [luci.realm]
 #   luci.project -> luci.logdog
 #   luci.project -> luci.milo
 #   luci.project -> luci.cq
@@ -141,6 +143,7 @@ kinds = struct(
 
     # Publicly declarable nodes.
     PROJECT = 'luci.project',
+    REALM = 'luci.realm',
     LOGDOG = 'luci.logdog',
     BUCKET = 'luci.bucket',
     EXECUTABLE = 'luci.executable',
@@ -173,6 +176,7 @@ kinds = struct(
 keys = struct(
     # Publicly declarable nodes.
     project = lambda: _namespaced_key(kinds.PROJECT, '...'),
+    realm = lambda ref: _project_scoped_key(kinds.REALM, 'realm', ref),
     logdog = lambda: _namespaced_key(kinds.LOGDOG, '...'),
     bucket = lambda ref: _project_scoped_key(kinds.BUCKET, 'bucket', ref),
     executable = lambda ref: _project_scoped_key(kinds.EXECUTABLE, 'executable', ref),
