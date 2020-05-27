@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "426b8143_e598c1bb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T21:55:46Z",
+      "side": 1,
+      "message": "Because realm configs are named `realms.cfg` and `realms-dev.cfg` instead of `chrome-infra-auth.cfg` and `chrome-infra-auth-dev.cfg` (as is the case with other services). I don\u0027t expect anyone but me to use `dev\u003dTrue`.",
+      "parentUuid": "8103191f_fb11dc0d",
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6a931425_edc4b1bb",
         "filename": "lucicfg/testdata/realms/success.star",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bc9276c_4c10cb9b",
+        "filename": "lucicfg/testdata/realms/success.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-27T21:55:46Z",
+      "side": 1,
+      "message": "luci.bucket(\u0027bucket\u0027) defines a new realm and luci.realm(\u0027realm1\u0027) is inheriting from it. If I remove luci.bucket(...) declaration, luci.realm(\u0027realm1\u0027) definition will complain that luci.realm(\u0027bucket\u0027) is not defined.",
+      "parentUuid": "6a931425_edc4b1bb",
+      "range": {
+        "startLine": 11,
+        "startChar": 12,
+        "endLine": 11,
+        "endChar": 18
+      },
+      "revId": "bec23d7e5ff99e981bfb88ab87ea1b55cb31cbfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
