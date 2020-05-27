@@ -87,6 +87,24 @@
       "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba8ddc12_a09fce71",
+        "filename": "resultdb/internal/services/resultdb/query_test_result_statistics.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-27T21:10:16Z",
+      "side": 1,
+      "message": "sorry, i put this comment in a wrong place. I meant that we need to check that invocation exits.\nRight now it would return 0 for non-existent invocations, although it should return NotFound",
+      "parentUuid": "dd20725c_f10cfc3d",
+      "revId": "f01a53d537335da39d0abb4d25c270814e955e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
