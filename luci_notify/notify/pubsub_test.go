@@ -606,6 +606,33 @@ func TestHandleBuild(t *testing.T) {
 
 			So(tc.Message, ShouldEqual, `Builder test-builder-tree-closer failed on steps "include"`)
 		})
+
+		Convey(`All failed steps listed if no filter`, func() {
+			// Insert the tree closer to test into datastore.
+			builderKey := datastore.KeyForObj(c, &config.Builder{
+				ProjectKey: datastore.KeyForObj(c, &config.Project{Name: "chromium"}),
+				ID:         "ci/test-builder-tree-closer",
+			})
+
+			tc := &config.TreeCloser{
+				BuilderKey:     builderKey,
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser:     apicfg.TreeCloser{Template: "template"},
+				Status:         config.Open,
+				Timestamp:      initialTimestamp,
+			}
+			So(datastore.Put(c, tc), ShouldBeNil)
+
+			// Handle a new build.
+			build := dummyBuildWithFailingSteps(buildbucketpb.Status_FAILURE, []string{"step1", "step2"})
+			history := mockHistoryFunc(map[string][]*gitpb.Commit{})
+			So(handleBuild(c, dispatcher, build, mockCheckoutFunc(nil), history), ShouldBeNil)
+
+			// Fetch the new tree closer.
+			So(datastore.Get(c, tc), ShouldBeNil)
+
+			So(tc.Message, ShouldEqual, `Builder test-builder-tree-closer failed on steps "step1", "step2"`)
+		})
 	})
 }
 
