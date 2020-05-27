@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a10ec19c_eec01f6a",
+        "filename": "resultdb/internal/services/deriver/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-27T01:14:28Z",
+      "side": 1,
+      "message": "when returning a bool, I recommend naming the output arguments so that it\u0027s clear what the bool means.",
+      "range": {
+        "startLine": 196,
+        "startChar": 47,
+        "endLine": 196,
+        "endChar": 51
+      },
+      "revId": "68eb2b73de7b58d0bd6bca1d9323dab32431ce90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
