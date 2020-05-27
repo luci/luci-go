@@ -311,6 +311,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 	if len(expectedSet) == 0 {
 		expectedSet.Add("PASS")
 	}
+	expectedSet.Add("SKIP")
 
 	// Process times.
 	// Time and Times are both optional, but if Times is present, its length should match the number
