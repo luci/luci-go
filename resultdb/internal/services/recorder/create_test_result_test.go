@@ -144,6 +144,12 @@ func TestCreateTestResult(t *testing.T) {
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
 				createTestResult(req)
+
+				txn := span.Client(ctx).ReadOnlyTransaction()
+				defer txn.Close()
+				trNum, err := span.ReadTestResultCount(ctx, txn, span.NewInvocationIDSet("u-build-1"))
+				So(err, ShouldBeNil)
+				So(trNum, ShouldEqual, 1)
 			})
 
 			Convey("without a request ID", func() {

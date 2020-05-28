@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"cloud.google.com/go/spanner"
@@ -294,4 +295,49 @@ func ReadInvocationRealm(ctx context.Context, txn Txn, id InvocationID) (string,
 	var realm string
 	err := ReadInvocation(ctx, txn, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
+}
+
+// ReadTestResultCount returns the total number of test results of requested
+// invocations.
+func ReadTestResultCount(ctx context.Context, txn Txn, ids InvocationIDSet) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	st := spanner.NewStatement(`
+		SELECT SUM(TestResultCount)
+		FROM Invocations
+		WHERE InvocationId IN UNNEST(@invIDs)
+	`)
+	st.Params = ToSpannerMap(map[string]interface{}{
+		"invIDs": ids,
+	})
+	var count spanner.NullInt64
+	err := QueryFirstRow(ctx, txn, st, &count)
+	return count.Int64, err
+}
+
+// IncrementTestResultCount increases the TestResultCount of the invocation.
+func IncrementTestResultCount(ctx context.Context, txn *spanner.ReadWriteTransaction, id InvocationID, delta int64) error {
+	if delta == 0 {
+		return nil
+	}
+
+	st := spanner.NewStatement(`
+		UPDATE Invocations
+		SET TestResultCount = TestResultCount + @delta
+		WHERE InvocationId = @invID
+	`)
+	st.Params = ToSpannerMap(map[string]interface{}{
+		"invID": id,
+		"delta": delta,
+	})
+	switch rowCount, err := txn.Update(ctx, st); {
+	case err != nil:
+		return err
+	case rowCount != 1:
+		return fmt.Errorf("expected to update 1 row, updated %d row instead", rowCount)
+	default:
+		return nil
+	}
 }
