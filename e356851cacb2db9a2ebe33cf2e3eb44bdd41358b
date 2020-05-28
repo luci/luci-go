@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9dcbaddb_967a5e65",
+        "filename": "auth/internal/luci_ts.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-28T01:44:24Z",
+      "side": 1,
+      "message": "It means \"compile this file only if `copybara` build tag is not set\". https://golang.org/pkg/go/build/#hdr-Build_Constraints\n\nIt is never really set automatically by anything. I\u0027ve added it to be able to do:\n\n   go list -f \u0027{{ join .Deps  \"\\n\"}}\u0027 -tags copybara \u003cpkg1\u003e\n\nIt will skip listing dependencies imported by files with \"+build !copybara\".",
+      "parentUuid": "760c379c_0ceefbae",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 19
+      },
+      "revId": "e356851cacb2db9a2ebe33cf2e3eb44bdd41358b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab70d85d_11216de4",
         "filename": "auth/internal/luci_ts.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "e356851cacb2db9a2ebe33cf2e3eb44bdd41358b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a798dace_bb3716d6",
+        "filename": "auth/internal/luci_ts.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-05-28T01:44:24Z",
+      "side": 1,
+      "message": "Yes, it will be fine. All init()s are called before main(). init() is like a global variable initializers in C++ (except safer).",
+      "parentUuid": "ab70d85d_11216de4",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "e356851cacb2db9a2ebe33cf2e3eb44bdd41358b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
