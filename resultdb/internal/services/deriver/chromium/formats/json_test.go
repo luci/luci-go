@@ -209,6 +209,10 @@ func TestJSONConversions(t *testing.T) {
 					Actual:   "PASS",
 					Expected: "",
 				},
+				"c2/t7.html": {
+					Actual:   "PASS",
+					Expected: "FAIL",
+				},
 			},
 		}
 
@@ -357,6 +361,16 @@ func TestJSONConversions(t *testing.T) {
 			{
 				TestResult: &pb.TestResult{
 					TestId:   "ninja://tests/c2/t6.html",
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+			},
+
+			// Test 7
+			{
+				TestResult: &pb.TestResult{
+					TestId:   "ninja://tests/c2/t7.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Tags:     pbutil.StringPairs("json_format_status", "PASS"),

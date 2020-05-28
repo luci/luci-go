@@ -307,11 +307,12 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 	actualStatuses := strings.Split(f.Actual, " ")
 
 	expectedSlice := strings.Split(f.Expected, " ")
-	// TODO(crbug/1034025): Remove.
+	// TODO(crbug.com/1034025): Remove.
 	if len(expectedSlice) == 1 && expectedSlice[0] == "" {
-		expectedSlice = []string{"PASS"}
+		expectedSlice = []string{}
 	}
 	expectedSet := stringset.NewFromSlice(expectedSlice...)
+	expectedSet.Add("PASS")
 	expectedSet.Add("SKIP")
 
 	// Process times.
