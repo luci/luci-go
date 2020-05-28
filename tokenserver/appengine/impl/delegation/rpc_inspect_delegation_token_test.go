@@ -91,9 +91,7 @@ func TestInspectDelegationToken(t *testing.T) {
 			Token: "zzzz",
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
-		})
+		So(resp.InvalidityReason, ShouldStartWith, "can't unmarshal the envelope - proto")
 	})
 
 	Convey("Bad signature", t, func() {

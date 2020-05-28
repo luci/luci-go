@@ -73,9 +73,7 @@ func TestInspectToken(t *testing.T) {
 	Convey("Not valid envelope proto", t, func() {
 		ins, err := inspector.InspectToken(ctx, "zzzz")
 		So(err, ShouldBeNil)
-		So(ins, ShouldResemble, &Inspection{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
-		})
+		So(ins.InvalidityReason, ShouldStartWith, "can't unmarshal the envelope - proto")
 	})
 
 	Convey("Bad signature", t, func() {
