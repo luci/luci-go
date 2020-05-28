@@ -60,9 +60,6 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     this.disposers.push(autorun(
       () => this.pageState.appState = this.appState,
     ));
-    this.disposers.push(autorun(
-      () => this.pageState.selectedNode = this.pageState.testLoader.node,
-    ));
     this.disposers.push(when(
       () => this.pageState.invocationReq.state === 'rejected',
       () => Router.go(router.urlForName('error')),
