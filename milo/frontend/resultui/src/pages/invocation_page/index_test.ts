@@ -31,12 +31,12 @@ describe('Invocation Test Page', () => {
     assert.strictEqual(page.pageState.invocationId, location.params['invocation_id']);
   });
 
-  it('should redirect to "/not-found" when invocation_id is not provided', async () => {
+  it('should redirect to "/r/not-found" when invocation_id is not provided', async () => {
     const page = await fixture<InvocationPageElement>(html`<tr-invocation-page></tr-invocation-page>`);
     const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
     const redirect = sinon.spy();
     const cmd = {redirect} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
-    assert.isTrue(redirect.calledOnceWith('/not-found'));
+    assert.isTrue(redirect.calledOnceWith('/r/not-found'));
   });
 });

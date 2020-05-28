@@ -20,6 +20,7 @@ import { action, computed, observable } from 'mobx';
 import { consumeContext, provideContext } from '../libs/context';
 import { ResultDb } from '../services/resultdb';
 import { consumeResultDbHost } from './config_provider';
+import { router } from '../routes';
 
 /**
  * Records the app-level state.
@@ -85,7 +86,7 @@ export class AppStateProviderElement extends LitElement implements BeforeEnterOb
     if (!this.appState.accessToken) {
       const searchParams = new URLSearchParams();
       searchParams.set('redirect', window.location.href);
-      return Router.go(`/login?${searchParams}`);
+      return Router.go(`${router.urlForName('login')}?${searchParams}`);
     }
     return;
   }
