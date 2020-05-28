@@ -14,7 +14,7 @@
 
 import { Route, Router } from '@vaadin/router';
 
-import './components/page_header';
+import './components/page_layout';
 import './context/app_state_provider';
 import './context/config_provider';
 
@@ -33,7 +33,7 @@ router.setRoutes({
   children: [
     {
       path: '/',
-      component: 'tr-page-header',
+      component: 'tr-page-layout',
       children: [
         {
           path: '/login',

@@ -15,8 +15,6 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 
-import '../components/page_header';
-
 
 @customElement('tr-error-page')
 export class ErrorPageElement extends MobxLitElement {

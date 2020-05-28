@@ -13,16 +13,17 @@
 // limitations under the License.
 
 import '@chopsui/chops-signin';
+import '@material/mwc-icon';
 import { css, customElement, html, LitElement, property, PropertyValues } from 'lit-element';
 
 import { consumeClientId } from '../context/config_provider';
 
 /**
- * Renders page header, including a sign-in widget, at the top of the child
- * nodes.
+ * Renders page header, including a sign-in widget and a feedback button, at the
+ * top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
-export class PageHeaderElement extends LitElement {
+export class PageLayoutElement extends LitElement {
   @property() clientId!: string;
 
   private rendered = false;
@@ -41,12 +42,24 @@ export class PageHeaderElement extends LitElement {
   }
 
   protected render() {
+    const feedbackComment = encodeURIComponent(
+`From Link: ${document.location.href}
+Please enter a description of the problem, with repro steps if applicable.
+`);
     return html`
       <div id="container">
         <div id="title-container">
           <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
           <span id="headline">LUCI Test Results (BETA)</span>
         </div>
+        <a
+          id="feedback"
+          title="Send Feedback"
+          target="_blank"
+          href="https://bugs.chromium.org/p/chromium/issues/entry?template=Build%20Infrastructure&components=Infra%3EPlatform%3EMilo%3EResultUI&labels=Pri-2&comment=${feedbackComment}"
+        >
+          <mwc-icon>feedback</mwc-icon>
+        </a>
         <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
       </div>
       <slot></slot>
@@ -84,13 +97,30 @@ export class PageHeaderElement extends LitElement {
       letter-spacing: 0.25px;
     }
     #signin {
-        margin-right: 14px;
+      margin-right: 14px;
+    }
+    #feedback {
+      height: 32px;
+      width: 32px;
+      --mdc-icon-size: 28px;
+      margin-right: 14px;
+      position: relative;
+      color: black;
+      opacity: 0.4;
+    }
+    #feedback>mwc-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    #feedback:hover {
+      opacity: 0.6;
     }
   `;
 }
 
-customElement('tr-page-header')(
+customElement('tr-page-layout')(
   consumeClientId(
-    PageHeaderElement,
+    PageLayoutElement,
   ),
 );
