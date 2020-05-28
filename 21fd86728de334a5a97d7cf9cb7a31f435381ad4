@@ -354,6 +354,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0b60245e_61b78b5d",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2020-05-28T20:48:44Z",
+      "side": 1,
+      "message": "Driving by 😊 Maybe I have misunderstood something, but I\u0027m not wild about the behavior in (2), what message are we delivering to the users by displaying a flaky as a failure until all the retries are done? Are we encouraging them to investigate the failure? I don\u0027t think that\u0027s the right thing to do because the flake is most likely unrelated to their CL, they shouldn\u0027t be held accountable for that, and given that a flake may randomly affect tons of people, there is a chance that multiple people may start looking into the same flake, which is sub-optimal in terms of resources.\n\nThe reason why there are multiple layers of retries is that, there are some flakes that are dependent on the browser/content_shell\u0027s global state, that said, a test may always fail if you run it individually, but succeed if run a long with an entire test suite.",
+      "parentUuid": "cdfabf09_732e278a",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
