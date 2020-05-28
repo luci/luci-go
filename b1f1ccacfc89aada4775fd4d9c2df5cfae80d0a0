@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c3a662e4_2f542f7f",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:56:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec85913d_cfdf7858",
+      "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a932c549_81cecd96",
         "filename": "milo/frontend/resultui/src/components/page_layout.ts",
         "patchSetId": 1
@@ -78,6 +96,30 @@
       "side": 1,
       "message": "Yep, I think just to the left of the login icon.",
       "parentUuid": "cfbac9bd_01ad7722",
+      "range": {
+        "startLine": 61,
+        "startChar": 8,
+        "endLine": 61,
+        "endChar": 37
+      },
+      "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b61d07ae_07fe6cb0",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:56:37Z",
+      "side": 1,
+      "message": "Moved.\nhttps://screenshot.googleplex.com/iPknUPQ7gec",
+      "parentUuid": "9f355ccf_609d93d7",
       "range": {
         "startLine": 61,
         "startChar": 8,
