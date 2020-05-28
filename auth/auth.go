@@ -1455,6 +1455,9 @@ func makeLUCITokenProvider(ctx context.Context, opts *Options) (internal.TokenPr
 	if opts.TokenServerHost == "" {
 		return nil, ErrBadOptions
 	}
+	if internal.NewLUCITSTokenProvider == nil {
+		return nil, errors.New("support for impersonation through LUCI is not compiled into this binary")
+	}
 	return internal.NewLUCITSTokenProvider(
 		ctx,
 		opts.TokenServerHost,
