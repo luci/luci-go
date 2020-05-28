@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d1dc170_bafb21ac",
+        "filename": "grpc/cmd/cproto/testdata/helloworld/test.pb.golden",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-28T22:25:42Z",
+      "side": 1,
+      "message": "hmm... this is weird. I have requested for v3.12.2 but the protoc version downloaded from cipd gives me v3.12.1",
+      "range": {
+        "startLine": 8,
+        "startChar": 18,
+        "endLine": 8,
+        "endChar": 25
+      },
+      "revId": "1d46a53974dcdcff1f116cb77f9cbfe209439e53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
