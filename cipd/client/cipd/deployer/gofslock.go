@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !copybara
+
 package deployer
 
 // Note: FS locking functionality is moved into a separate file for easier

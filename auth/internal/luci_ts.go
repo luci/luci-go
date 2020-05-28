@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !copybara
+
 package internal
 
 import (
@@ -55,20 +57,20 @@ type luciTSTokenProvider struct {
 	cacheKey  CacheKey
 }
 
-// NewLUCITSTokenProvider returns TokenProvider that uses a LUCI Token Server
-// to grab tokens belonging to some service account.
-func NewLUCITSTokenProvider(ctx context.Context, host, actAs, realm string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
-	return &luciTSTokenProvider{
-		host:      host,
-		actAs:     actAs,
-		realm:     realm,
-		scopes:    scopes,
-		transport: transport,
-		cacheKey: CacheKey{
-			Key:    fmt.Sprintf("luci_ts/%s/%s/%s", actAs, host, realm),
-			Scopes: scopes,
-		},
-	}, nil
+func init() {
+	NewLUCITSTokenProvider = func(ctx context.Context, host, actAs, realm string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
+		return &luciTSTokenProvider{
+			host:      host,
+			actAs:     actAs,
+			realm:     realm,
+			scopes:    scopes,
+			transport: transport,
+			cacheKey: CacheKey{
+				Key:    fmt.Sprintf("luci_ts/%s/%s/%s", actAs, host, realm),
+				Scopes: scopes,
+			},
+		}, nil
+	}
 }
 
 func (p *luciTSTokenProvider) RequiresInteraction() bool {
