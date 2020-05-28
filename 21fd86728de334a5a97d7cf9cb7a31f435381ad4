@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "92adf158_15325752",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T06:51:46Z",
+      "side": 1,
+      "message": "loadAllExonerations and loadNextTestResultBatch are already closures. How are they different?\nto be clear, I mean\n\n{\n  const testVariantMap \u003d new Map\u003cstring, TestVariant\u003e();\n  let newTestVariants \u003d [] as TestVariant[];\n\n  function getTestVariant(testId, variant) {  \n     ... mutate testVariantMap and newTestVariants...\n  }\n  async function loadAllExonerations() { ... use getTestVariant ... }\n  async function loadNextTestResultBatch() { ...use getTestVariant ... }\n\n  ...\n}",
+      "parentUuid": "57ab7b92_c20148dc",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 220,
+        "endChar": 7
+      },
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bb8a580a_29e0fb7f",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 3
@@ -195,6 +219,24 @@
       "side": 1,
       "message": "It\u0027s a bit tricky to implement flaky tests this way.\nBecause @computed tracks all the @observables accessed during computation, which does not include variables referenced in callbacks.\nAnd because the yielded variants can be modified when new results are fetched, we need to apply the flakiness filter where those variants are accessed.\nIs it possible to implement that on ResultDB? Since ResultDB is already able to tell variants with unexpected result, I imagine it shouldn\u0027t be hard to implement a VariantWithOnlyUnexpectedResult filter?",
       "parentUuid": "a79cfd4d_83071f6a",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e77bb2b8_c9961c5f",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T06:51:46Z",
+      "side": 1,
+      "message": "it is possible but then again, it would mean that merely checking/unchecking checkboxes would cause refetching data that ResultUI already has. It would be slow and unnecessary. \n\nI am also not sure ResultDB would be a good place for this because this problem is specific to ResultUI, so ideally it is solved by ResultUI. For example, we could implement any kind of filtering that you need in resultdb.js with caching. Then even though *this* file would look like a new request to resultdb.js is made, resultdb.js actually reuses the cached response and responds immediately.",
+      "parentUuid": "bdaa14c3_2ede437a",
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
