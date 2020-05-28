@@ -63,6 +63,30 @@
       "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f355ccf_609d93d7",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-05-28T00:39:45Z",
+      "side": 1,
+      "message": "Yep, I think just to the left of the login icon.",
+      "parentUuid": "cfbac9bd_01ad7722",
+      "range": {
+        "startLine": 61,
+        "startChar": 8,
+        "endLine": 61,
+        "endChar": 37
+      },
+      "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
