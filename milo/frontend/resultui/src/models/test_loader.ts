@@ -101,7 +101,7 @@ export class TestLoader {
 // create file-scoped access modifier.
 class TestVariant implements ReadonlyVariant {
   @computed get status() {
-    if (this.results.length === 0) {
+    if (this.exonerations.length !== 0) {
       return VariantStatus.Exonerated;
     }
     const firstExpected = Boolean(this.results[0].expected);
@@ -114,7 +114,7 @@ class TestVariant implements ReadonlyVariant {
   }
   @observable.shallow readonly results: TestResult[] = [];
   @observable.shallow readonly exonerations: TestExoneration[] = [];
-  constructor(readonly variant: Variant, readonly variantKey: string) {}
+  constructor(readonly testId: string, readonly variant: Variant, readonly variantKey: string) {}
 }
 
 /**
@@ -124,9 +124,9 @@ class TestVariant implements ReadonlyVariant {
 // create file-scoped access modifier.
 class Test implements ReadonlyTest {
   // Use a map for O(1) lookup.
-  @observable private readonly variantMap = new Map<string, TestVariant>();
+  @observable private readonly variantMap = new Map<string, ReadonlyVariant>();
 
-  @computed get variants(): readonly TestVariant[] {
+  @computed get variants(): readonly ReadonlyVariant[] {
     return [...this.variantMap.entries()]
       .sort(([key1], [key2]) => key1.localeCompare(key2))
       .map(([_k, v]) => v);
@@ -134,24 +134,8 @@ class Test implements ReadonlyTest {
 
   constructor(readonly id: string) {}
 
-  private getOrCreateTestVariant(variant: Variant) {
-    const variantKey = keyForVariant(variant);
-    let testVariant = this.variantMap.get(variantKey);
-    if (testVariant === undefined) {
-      testVariant = new TestVariant(variant, variantKey);
-      this.variantMap.set(variantKey, testVariant);
-    }
-    return testVariant;
-  }
-
-  addResult(result: TestResult) {
-    const variant = this.getOrCreateTestVariant(result.variant || {def: {}});
-    variant.results.push(result);
-  }
-
-  addExoneration(exoneration: TestExoneration) {
-    const variant = this.getOrCreateTestVariant(exoneration.variant || {def: {}});
-    variant.exonerations.push(exoneration);
+  addTestVariant(testVariant: ReadonlyVariant) {
+    this.variantMap.set(testVariant.variantKey, testVariant);
   }
 }
 
@@ -193,26 +177,36 @@ export async function* streamTestExonerationBatches(req: QueryTestExonerationsRe
 }
 
 /**
- * Groups test results and exonerations into Test objects.
+ * Groups test results and exonerations into variant objects.
  * The number of exonerations is assumed to be low. All exonerations are loaded
  * in the first batch.
- * Yielded tests could be modified when new results are fetched.
- * The order of tests is not guaranteed.
+ * Yielded variants could be modified when new results are processed.
+ * The order of variants is not guaranteed.
  */
-export async function* streamTestBatches(resultBatches: AsyncIterableIterator<TestResult[]>, exonerationBatches: AsyncIterableIterator<TestExoneration[]>): AsyncIterableIterator<ReadonlyTest[]> {
-  const testMap = new Map<string, Test>();
-  let newTests = [] as ReadonlyTest[];
+export async function* streamVariantBatches(resultBatches: AsyncIterableIterator<TestResult[]>, exonerationBatches: AsyncIterableIterator<TestExoneration[]>): AsyncIterableIterator<ReadonlyVariant[]> {
+  const testVariantMap = new Map<string, TestVariant>();
+  let newTestVariants = [] as TestVariant[];
+
+  // Get the test variant of the specified testId and variant from
+  // testVariantMap. If it doesn't exist, create a new one and add to
+  // testVariantMap and newTestVariants.
+  function getOrCreateTestVariants(testId: string, variant: Variant = {def: {}}) {
+    const variantKey = keyForVariant(variant);
+    const testVariantKey = `${testId} ${variantKey}`;
+    let testVariant = testVariantMap.get(testVariantKey);
+    if (!testVariant) {
+      testVariant = new TestVariant(testId, variant, variantKey);
+      testVariantMap.set(testVariantKey, testVariant);
+      newTestVariants.push(testVariant);
+    }
+    return testVariant;
+  }
 
   async function loadAllExonerations() {
     for await (const exonerationBatch of exonerationBatches) {
       for (const exoneration of exonerationBatch) {
-        let test = testMap.get(exoneration.testId);
-        if (!test) {
-          test = new Test(exoneration.testId);
-          testMap.set(exoneration.testId, test);
-          newTests.push(test);
-        }
-        test.addExoneration(exoneration);
+        const testVariant = getOrCreateTestVariants(exoneration.testId, exoneration.variant);
+        testVariant.exonerations.push(exoneration);
       }
     }
   }
@@ -224,13 +218,8 @@ export async function* streamTestBatches(resultBatches: AsyncIterableIterator<Te
     }
 
     for (const result of next.value) {
-      let test = testMap.get(result.testId);
-      if (!test) {
-        test = new Test(result.testId);
-        testMap.set(result.testId, test);
-        newTests.push(test);
-      }
-      test.addResult(result);
+      const testVariant = getOrCreateTestVariants(result.testId, result.variant);
+      testVariant.results.push(result);
     }
     return false;
   }
@@ -238,13 +227,37 @@ export async function* streamTestBatches(resultBatches: AsyncIterableIterator<Te
   let [done] = await Promise.all([loadNextTestResultBatch(), loadAllExonerations()]);
 
   while (true) {
-    if (newTests.length !== 0) {
-      yield newTests;
+    if (newTestVariants.length !== 0) {
+      yield newTestVariants;
     }
     if (done) {
       return;
     }
-    newTests = [];
+    newTestVariants = [];
     done = await loadNextTestResultBatch();
+  }
+}
+
+
+/**
+ * Groups test variants into tests.
+ * Yielded tests could be modified when new variants are processed.
+ * The order of tests is not guaranteed.
+ */
+export async function* streamTestBatches(variantBatches: AsyncIterable<ReadonlyVariant[]>): AsyncIterableIterator<ReadonlyTest[]> {
+  const testMap = new Map<string, Test>();
+
+  for await (const variantBatch of variantBatches) {
+    const newTests = [] as Test[];
+    for (const variant of variantBatch) {
+      let test = testMap.get(variant.testId);
+      if (!test) {
+        test = new Test(variant.testId);
+        testMap.set(test.id, test);
+        newTests.push(test);
+      }
+      test.addTestVariant(variant);
+    }
+    yield newTests;
   }
 }

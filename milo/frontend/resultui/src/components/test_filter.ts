@@ -31,7 +31,7 @@ export class TestFilterElement extends MobxLitElement {
   onFilterChanged: (filter: TestFilter) => void = () => {};
 
   @observable.ref showExpected = false;
-  @observable.ref showExonerated = false;
+  @observable.ref showExonerated = true;
 
   private disposer = () => {};
   connectedCallback() {
@@ -53,11 +53,11 @@ export class TestFilterElement extends MobxLitElement {
         <label for="unexpected" style="color: #d23f31;">Unexpected</label>
       </div class="filter">
       <div class="filter">
-        <input type="checkbox" id="expected" @change=${(v: MouseEvent) => this.showExpected = (v.target as HTMLInputElement).checked}>
+        <input type="checkbox" id="expected" @change=${(v: MouseEvent) => this.showExpected = (v.target as HTMLInputElement).checked} ?checked=${this.showExpected}>
       <label for="expected" style="color: #33ac71;">Expected</label>
       </div class="filter">
       <div class="filter">
-        <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked}>
+        <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked} ?checked=${this.showExonerated}>
         <label for="exonerated" style="color: #ff33d2;">Exonerated</label>
       </div class="filter">
     `;

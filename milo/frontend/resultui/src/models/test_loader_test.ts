@@ -19,8 +19,8 @@ import sinon from 'sinon';
 import '../libs/extensions';
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb, TestExoneration, TestResult } from '../services/resultdb';
-import { streamTestBatches as streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, TestLoader } from './test_loader';
-import { ReadonlyTest, TestNode, VariantStatus } from './test_node';
+import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from './test_loader';
+import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
 
 
 chai.use(chaiRecursiveDeepInclude);
@@ -55,87 +55,124 @@ describe('test_loader', () => {
   // Exoneration that has a different ID but shared the same variant with an exoneration.
   const testExoneration5 = {testId: 'e', exonerationId: '1', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
 
+  const variant1 = {
+    testId: 'a',
+    variant: {'def': {'key1': 'val1'}},
+    variantKey: 'key1:val1',
+    status: VariantStatus.Exonerated,
+    results: [testResult1, testResult2],
+    exonerations: [testExoneration1],
+  };
+
+  const variant2 = {
+    testId: 'a',
+    variant: {def: {'key1': 'val2'}},
+    variantKey: 'key1:val2',
+    status: VariantStatus.Unexpected,
+    results: [testResult3],
+    exonerations: [],
+  };
+
+  const variant3 = {
+    testId: 'a',
+    variant: {def: {'key1': 'val3'}},
+    variantKey: 'key1:val3',
+    status: VariantStatus.Exonerated,
+    results: [],
+    exonerations: [testExoneration2],
+  };
+
+  const variant4 = {
+    testId: 'b',
+    variant: {'def': {'key1': 'val2'}},
+    variantKey: 'key1:val2',
+    status: VariantStatus.Unexpected,
+    results: [testResult4, testResult8],
+    exonerations: [],
+  };
+
+  const variant5 = {
+    testId: 'c',
+    variant: {def: {'key1': 'val2', 'key2': 'val1'}},
+    variantKey: 'key1:val2|key2:val1',
+    status: VariantStatus.Flaky,
+    results: [testResult5, testResult6],
+    exonerations: [],
+  };
+
+
+  const variant6 = {
+    testId: 'c',
+    variant: {def: {'key1': 'val2', 'key2': 'val2'}},
+    variantKey: 'key1:val2|key2:val2',
+    status: VariantStatus.Expected,
+    results: [testResult7],
+    exonerations: [],
+  };
+
+  const variant7 = {
+    testId: 'd',
+    variant: {def: {'key1': 'val1'}},
+    variantKey: 'key1:val1',
+    status: VariantStatus.Exonerated,
+    results: [],
+    exonerations: [testExoneration3],
+  };
+
+  const variant8 = {
+    testId: 'd',
+    variant: {def: {'key1': 'val2'}},
+    variantKey: 'key1:val2',
+    status: VariantStatus.Exonerated,
+    results: [],
+    exonerations: [testExoneration4],
+  };
+
+  const variant9 = {
+    testId: 'e',
+    variant: {def: {'key1': 'val2'}},
+    variantKey: 'key1:val2',
+    status: VariantStatus.Exonerated,
+    results: [],
+    exonerations: [testExoneration5],
+  };
+
   const test1 = {
     id: 'a',
     variants: [
-      {
-        variant: {'def': {'key1': 'val1'}},
-        status: VariantStatus.Expected,
-        results: [testResult1, testResult2],
-        exonerations: [testExoneration1],
-      },
-      {
-        variant: {def: {'key1': 'val2'}},
-        status: VariantStatus.Unexpected,
-        results: [testResult3],
-        exonerations: [],
-      },
-      {
-        variant: {def: {'key1': 'val3'}},
-        status: VariantStatus.Exonerated,
-        results: [],
-        exonerations: [testExoneration2],
-      },
+      variant1,
+      variant2,
+      variant3,
     ],
   };
 
   const test2 = {
     id: 'b',
     variants: [
-      {
-        variant: {'def': {'key1': 'val2'}},
-        status: VariantStatus.Unexpected,
-        results: [testResult4, testResult8],
-        exonerations: [],
-      },
+      variant4,
     ],
   };
 
   const test3 = {
     id: 'c',
     variants: [
-      {
-        variant: {def: {'key1': 'val2', 'key2': 'val1'}},
-        status: VariantStatus.Flaky,
-        results: [testResult5, testResult6],
-        exonerations: [],
-      },
-      {
-        variant: {def: {'key1': 'val2', 'key2': 'val2'}},
-        status: VariantStatus.Expected,
-        results: [testResult7],
-        exonerations: [],
-      },
+      variant5,
+      variant6,
     ],
   };
 
   const test4 = {
     id: 'd',
     variants: [
-      {
-        variant: {def: {'key1': 'val1'}},
-        status: VariantStatus.Exonerated,
-        results: [],
-        exonerations: [testExoneration3],
-      },
-      {
-        variant: {def: {'key1': 'val2'}},
-        status: VariantStatus.Exonerated,
-        results: [],
-        exonerations: [testExoneration4],
-      },
+      variant7,
+      variant8,
     ],
   };
 
   const test5 = {
     id: 'e',
     variants: [
-      {
-        variant: {def: {'key1': 'val2'}},
-        status: VariantStatus.Exonerated,
-        results: [],
-        exonerations: [testExoneration5],
-      },
+      variant9,
     ],
   };
 
@@ -275,8 +312,8 @@ describe('test_loader', () => {
     });
   });
 
-  describe('streamTestBatches', () => {
-    it('can group test results and exonerations into tests correctly', async () => {
+  describe('streamVariantBatches', () => {
+    it('can group test results and exonerations into test variants correctly', async () => {
       const resultIter = (async function*() {
         yield [testResult1, testResult2, testResult3];
         yield [testResult4, testResult5, testResult6];
@@ -286,25 +323,57 @@ describe('test_loader', () => {
         yield [testExoneration1, testExoneration2, testExoneration3];
         yield [testExoneration4, testExoneration5];
       })();
-      const expectedTestBatches: ReadonlyTest[] = [];
-      for await (const tests of streamTestBatches(resultIter, exonerationIter)) {
-        for (const test of tests) {
-          expectedTestBatches.push(test);
+      const expectedTestVariants: ReadonlyVariant[] = [];
+      for await (const testVariants of streamVariantBatches(resultIter, exonerationIter)) {
+        for (const variant of testVariants) {
+          expectedTestVariants.push(variant);
         }
       }
 
-      assert.strictEqual(expectedTestBatches.length, 5);
+      assert.strictEqual(expectedTestVariants.length, 9);
 
       // The order doesn't matter.
-      expectedTestBatches.sort((v1, v2) => v1.id.localeCompare(v2.id));
+      expectedTestVariants.sort((v1, v2) => v1.testId.localeCompare(v2.testId));
 
       // Use recursiveDeepInclude to avoid (nested) private properties in actual
       // causing the test to fail.
-      assert.recursiveDeepInclude(expectedTestBatches[0], test1);
-      assert.recursiveDeepInclude(expectedTestBatches[1], test2);
-      assert.recursiveDeepInclude(expectedTestBatches[2], test3);
-      assert.recursiveDeepInclude(expectedTestBatches[3], test4);
-      assert.recursiveDeepInclude(expectedTestBatches[4], test5);
+      assert.recursiveDeepInclude(expectedTestVariants[0], variant1);
+      assert.recursiveDeepInclude(expectedTestVariants[1], variant2);
+      assert.recursiveDeepInclude(expectedTestVariants[2], variant3);
+      assert.recursiveDeepInclude(expectedTestVariants[3], variant4);
+      assert.recursiveDeepInclude(expectedTestVariants[4], variant5);
+      assert.recursiveDeepInclude(expectedTestVariants[5], variant6);
+      assert.recursiveDeepInclude(expectedTestVariants[6], variant7);
+      assert.recursiveDeepInclude(expectedTestVariants[7], variant8);
+      assert.recursiveDeepInclude(expectedTestVariants[8], variant9);
+    });
+  });
+
+  describe('streamTestBatches', () => {
+    it('can group test variants into tests correctly', async () => {
+      const variantIter = (async function*() {
+        yield [variant1, variant2, variant3, variant4, variant5];
+        yield [variant6, variant7, variant8, variant9];
+      })();
+      const expectedTests: ReadonlyTest[] = [];
+      for await (const tests of streamTestBatches(variantIter)) {
+        for (const test of tests) {
+          expectedTests.push(test);
+        }
+      }
+
+      assert.strictEqual(expectedTests.length, 5);
+
+      // The order doesn't matter.
+      expectedTests.sort((v1, v2) => v1.id.localeCompare(v2.id));
+
+      // Use recursiveDeepInclude to avoid (nested) private properties in actual
+      // causing the test to fail.
+      assert.recursiveDeepInclude(expectedTests[0], test1);
+      assert.recursiveDeepInclude(expectedTests[1], test2);
+      assert.recursiveDeepInclude(expectedTests[2], test3);
+      assert.recursiveDeepInclude(expectedTests[3], test4);
+      assert.recursiveDeepInclude(expectedTests[4], test5);
     });
   });
 });
