@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "57ab7b92_c20148dc",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:08:57Z",
+      "side": 1,
+      "message": "It could. But then that function needs to be a clousure that modifies external variables (testVariantMap and newTestVariants), which can be quite confusing.",
+      "parentUuid": "336fabf5_db25b153",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 220,
+        "endChar": 7
+      },
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bb8a580a_29e0fb7f",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c25f68ee_b2361f16",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:08:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb8a580a_29e0fb7f",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b8ce62b0_39bb2c13",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:08:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d55191bf_685b5bfa",
+      "range": {
+        "startLine": 77,
+        "startChar": 10,
+        "endLine": 77,
+        "endChar": 21
+      },
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee9dcbf2_a2deaf24",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
         "patchSetId": 3
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "a0d6a0d5_b19c03d8",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:08:57Z",
+      "side": 1,
+      "message": "It does.\nIterator cannot be reused so I can\u0027t move them to a separate @compute.\nI\u0027ll add a \u0027CachedIterator\u0027 in a separate CL to address that.",
+      "parentUuid": "ee9dcbf2_a2deaf24",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a79cfd4d_83071f6a",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
         "patchSetId": 3
@@ -93,6 +177,24 @@
       "writtenOn": "2020-05-27T15:37:51Z",
       "side": 1,
       "message": "+1 in general. we can use it to also implement filtering by flaky tests",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bdaa14c3_2ede437a",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:08:57Z",
+      "side": 1,
+      "message": "It\u0027s a bit tricky to implement flaky tests this way.\nBecause @computed tracks all the @observables accessed during computation, which does not include variables referenced in callbacks.\nAnd because the yielded variants can be modified when new results are fetched, we need to apply the flakiness filter where those variants are accessed.\nIs it possible to implement that on ResultDB? Since ResultDB is already able to tell variants with unexpected result, I imagine it shouldn\u0027t be hard to implement a VariantWithOnlyUnexpectedResult filter?",
+      "parentUuid": "a79cfd4d_83071f6a",
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
