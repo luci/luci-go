@@ -167,12 +167,19 @@ func TestBatchCreateTestResults(t *testing.T) {
 		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := testutil.InsertInvocation(span.InvocationID("u-build-1"), pb.Invocation_ACTIVE, nil)
+		invID := span.InvocationID("u-build-1")
+		mut := testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, nil)
 		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
 				createTestResults(req)
+
+				txn := span.Client(ctx).ReadOnlyTransaction()
+				defer txn.Close()
+				trNum, err := span.ReadTestResultCount(ctx, txn, span.NewInvocationIDSet(invID))
+				So(err, ShouldBeNil)
+				So(trNum, ShouldEqual, 2)
 			})
 
 			Convey("without a request ID", func() {

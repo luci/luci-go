@@ -226,6 +226,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValu
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,
 		"Deadline":                          future,
+		"TestResultCount":                   0,
 	}
 
 	if state == pb.Invocation_FINALIZED {
