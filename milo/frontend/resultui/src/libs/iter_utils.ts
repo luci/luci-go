@@ -48,3 +48,26 @@ export async function* mapAsync<V, T>(iter: AsyncIterable<V>, mapFn: (v: V) => T
     yield mapFn(item);
   }
 }
+
+/**
+ * A utility for copying an iterator.
+ * @returns a function that takes no parameter, returns a copy of the original
+ * iterator
+ */
+export function teeAsync<T>(iter: AsyncIterator<T>): () => AsyncIterableIterator<T> {
+  const cache = [] as Array<Promise<IteratorResult<T>>>;
+  return async function* () {
+    let i = 0;
+    while (true) {
+      if (i === cache.length) {
+        cache[i] = iter.next();
+      }
+      const item = await cache[i];
+      if (item.done) {
+        return item.value;
+      }
+      yield item.value;
+      i++;
+    }
+  };
+}
