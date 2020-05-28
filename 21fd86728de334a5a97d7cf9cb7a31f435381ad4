@@ -408,6 +408,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "283e699a_d494cf85",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T22:00:28Z",
+      "side": 1,
+      "message": "makes sense.\n\nto be very clear: whether to report results eagerly or wait until we have a definitive answer is 100% controlled by the recipe owned by EngProd. If it makes more sense not to report eagerly, then let\u0027s not include task invocations into build invocations until the end. Currently this is being done here:\nhttps://source.chromium.org/chromium/chromium/tools/build/+/master:scripts/slave/recipe_modules/test_utils/api.py;l\u003d339?q\u003dtest_utils%2Fapi.py\nI am OK with both recipe behavior.\n\nif we don\u0027t include eagerly, then we don\u0027t need the banner either. Do I understand correctly that the behavior of code in this CL (which has no idea about what recipe is going to do) is OK with you?",
+      "parentUuid": "bfddc222_445c78ea",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
