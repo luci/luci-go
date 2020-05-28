@@ -22,6 +22,30 @@
       "revId": "1d46a53974dcdcff1f116cb77f9cbfe209439e53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "934510c3_2d9b59f5",
+        "filename": "grpc/cmd/cproto/testdata/helloworld/test.pb.golden",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-28T22:49:21Z",
+      "side": 1,
+      "message": "Nothing wrong with the upgrade script. Run `protoc --version` from the binary downloaded from https://api.github.com/repos/protocolbuffers/protobuf/releases/26922454/assets gives me 3.12.1 as well. I\u0027ll change the protoc version to v3.12.1 instead then.",
+      "parentUuid": "7d1dc170_bafb21ac",
+      "range": {
+        "startLine": 8,
+        "startChar": 18,
+        "endLine": 8,
+        "endChar": 25
+      },
+      "revId": "1d46a53974dcdcff1f116cb77f9cbfe209439e53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
