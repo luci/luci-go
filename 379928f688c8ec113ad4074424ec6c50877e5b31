@@ -83,6 +83,24 @@
     },
     {
       "key": {
+        "uuid": "0d159a03_1cc36f78",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T07:04:54Z",
+      "side": 1,
+      "message": "ah, right, sorry, my suggestion was wrong. appstatus takes what you give and returns that to the user verbatim, so no magic.\n\n  return nil, appstatus.Attachf(err, codes.InvalidArgument, \"fields: %s\", err)\n\nor using the shortcut, simply\n\n  return nil, appstatus.BadRequest(err)",
+      "parentUuid": "1ba4c8c9_be41e04e",
+      "revId": "379928f688c8ec113ad4074424ec6c50877e5b31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5287084e_f894aa71",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
