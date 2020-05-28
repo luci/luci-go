@@ -39,10 +39,15 @@ export class TestResultsTabElement extends MobxLitElement {
     super.connectedCallback();
     this.pageState.selectedTabId = 'test-results';
 
-    // Load the first page when a new test loader is received.
+    // When a new test loader is received, load the first page and reset the
+    // selected node.
     this.disposers.push(reaction(
       () => this.pageState.testLoader,
-      (testLoader) => testLoader.loadNextPage(),
+      (testLoader) => {
+        testLoader.loadNextPage();
+        this.pageState.selectedNode = testLoader.node;
+      },
+      {fireImmediately: true},
     ));
   }
   disconnectedCallback() {
