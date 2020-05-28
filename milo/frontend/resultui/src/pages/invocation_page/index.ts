@@ -37,8 +37,8 @@ const INVOCATION_STATE_DISPLAY_MAP = {
 /**
  * Main test results page.
  * Reads invocation_id from URL params.
- * If not logged in, redirects to '/login?redirect=${current_url}'.
- * If invocation_id not provided, redirects to '/not-found'.
+ * If not logged in, redirects to '/r/login?redirect=${current_url}'.
+ * If invocation_id not provided, redirects to '/r/not-found'.
  * Otherwise, shows results for the invocation.
  */
 export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
@@ -48,7 +48,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const invocationId = location.params['invocation_id'];
     if (typeof invocationId !== 'string') {
-      return cmd.redirect('/not-found');
+      return cmd.redirect(router.urlForName('not-found'));
     }
     this.pageState.invocationId = invocationId;
     return;
@@ -65,7 +65,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     ));
     this.disposers.push(when(
       () => this.pageState.invocationReq.state === 'rejected',
-      () => Router.go('/error'),
+      () => Router.go(router.urlForName('error')),
     ));
   }
   disconnectedCallback() {
