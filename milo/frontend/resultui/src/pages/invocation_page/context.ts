@@ -56,6 +56,7 @@ export class InvocationPageState {
   @observable.ref selectedNode!: TestNode;
   @observable.ref showExpected = false;
   @observable.ref showExonerated = true;
+  @observable.ref showFlaky = true;
 
   @computed private get testResultBatchIterFn() {
     if (!this.appState?.resultDb) {
@@ -88,9 +89,15 @@ export class InvocationPageState {
       this.testResultBatchIterFn(),
       this.testExonerationBatchIterFn(),
     );
+
     variantBatches = this.showExonerated ?
       variantBatches :
       iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Exonerated));
+
+    variantBatches = this.showFlaky ?
+      variantBatches :
+      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Flaky));
+
     return iter.teeAsync(streamTestBatches(variantBatches));
   }
 
