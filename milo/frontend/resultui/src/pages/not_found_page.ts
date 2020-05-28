@@ -15,8 +15,6 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 
-import '../components/page_header';
-
 
 @customElement('tr-not-found-page')
 export class NotFoundPageElement extends MobxLitElement {

@@ -17,8 +17,6 @@ import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 
-import '../components/page_header';
-
 
 /**
  * Prompts the user to login.
