@@ -88,13 +88,13 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 //
 // If there are unrecognized HTTP headers, with or without headerSuffixBinary,
 // they are added to a metadata.MD and a new context is derived.
-// If c already has metadata, the latter is copied.
+// If ctx already has metadata, the latter is copied.
 //
-// In case of an error, returns c unmodified.
-func parseHeader(c context.Context, header http.Header, host string) (context.Context, error) {
-	origC := c
+// In case of an error, returns ctx unmodified.
+func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, error) {
+	origC := ctx
 
-	md, ok := metadata.FromIncomingContext(c)
+	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		md = md.Copy()
 	} else {
@@ -117,7 +117,7 @@ func parseHeader(c context.Context, header http.Header, host string) (context.Co
 				return origC, fmt.Errorf("%s header: %s", HeaderTimeout, err)
 			}
 			// TODO(crbug/1006920): Do not leak the cancel context.
-			c, _ = clock.WithTimeout(c, timeout)
+			ctx, _ = clock.WithTimeout(ctx, timeout)
 
 		case headerAccept, headerContentType:
 		// readMessage and writeMessage handle these headers.
@@ -140,7 +140,7 @@ func parseHeader(c context.Context, header http.Header, host string) (context.Co
 	}
 
 	if addedMeta {
-		c = metadata.NewIncomingContext(c, md)
+		ctx = metadata.NewIncomingContext(ctx, md)
 	}
-	return c, nil
+	return ctx, nil
 }
