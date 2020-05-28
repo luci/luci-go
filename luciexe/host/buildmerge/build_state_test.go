@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -42,7 +43,22 @@ func mkDgram(build *bbpb.Build) *logpb.LogEntry {
 	}
 }
 
+// cleanupProtoError inspects the SummaryMarkdown field of build proto
+// and if it contains proto err, it will strip out the proto error message.
+// The reason we are doing this is that the proto lib discourage us to perform
+// error string comparison. See:
+// https://github.com/protocolbuffers/protobuf-go/blob/cd108d00a8df3bba55927ef35ca07438b895d7aa/internal/errors/errors.go#L26-L34
+func cleanupProtoError(builds ...*bbpb.Build) {
+	re := regexp.MustCompile(`Error in build protocol:.*\sproto:`)
+	for _, build := range builds {
+		if loc := re.FindStringIndex(build.SummaryMarkdown); loc != nil {
+			build.SummaryMarkdown = build.SummaryMarkdown[:loc[1]]
+		}
+	}
+}
+
 func assertStateEqual(actual, expected *buildState) {
+	cleanupProtoError(actual.build, expected.build)
 	So(actual.build, ShouldResembleProto, expected.build)
 	So(actual.closed, ShouldEqual, expected.closed)
 	So(actual.final, ShouldEqual, expected.final)
@@ -227,8 +243,7 @@ func TestBuildState(t *testing.T) {
 						invalid: true,
 						build: &bbpb.Build{
 							SummaryMarkdown: ("some stuff\n\n" +
-								"Error in build protocol: parsing Build: proto: " +
-								"can't skip unknown wire type 6"),
+								"Error in build protocol: parsing Build: proto:"),
 							Status: bbpb.Status_INFRA_FAILURE,
 							Steps: []*bbpb.Step{
 								{Name: "Parent", EndTime: now, Status: bbpb.Status_CANCELED,
@@ -301,11 +316,10 @@ func TestBuildState(t *testing.T) {
 					final:   true,
 					invalid: true,
 					build: &bbpb.Build{
-						SummaryMarkdown: ("\n\nError in build protocol: " +
-							"parsing Build: proto: can't skip unknown wire type 6"),
-						Status:     bbpb.Status_INFRA_FAILURE,
-						UpdateTime: now,
-						EndTime:    now,
+						SummaryMarkdown: ("\n\nError in build protocol: parsing Build: proto:"),
+						Status:          bbpb.Status_INFRA_FAILURE,
+						UpdateTime:      now,
+						EndTime:         now,
 					},
 				})
 
@@ -315,11 +329,10 @@ func TestBuildState(t *testing.T) {
 						invalid: true,
 						closed:  true,
 						build: &bbpb.Build{
-							SummaryMarkdown: ("\n\nError in build protocol: " +
-								"parsing Build: proto: can't skip unknown wire type 6"),
-							Status:     bbpb.Status_INFRA_FAILURE,
-							UpdateTime: now,
-							EndTime:    now,
+							SummaryMarkdown: ("\n\nError in build protocol: parsing Build: proto:"),
+							Status:          bbpb.Status_INFRA_FAILURE,
+							UpdateTime:      now,
+							EndTime:         now,
 						},
 					})
 				})
