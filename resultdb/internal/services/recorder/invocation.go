@@ -145,6 +145,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 
 		"Tags":             inv.Tags,
 		"ProducerResource": inv.ProducerResource,
+		"TestResultCount":  0,
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {
