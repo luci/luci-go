@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4d0f702e_862ce8a1",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T07:37:20Z",
+      "side": 1,
+      "message": "move this logic into getOrCreateTestVariants too?",
+      "range": {
+        "startLine": 208,
+        "startChar": 91,
+        "endLine": 208,
+        "endChar": 104
+      },
+      "revId": "642a1fe84e86b325cb0b8f6c5b528ff1a5a872d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

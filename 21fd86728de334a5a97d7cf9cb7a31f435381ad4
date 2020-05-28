@@ -300,6 +300,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0ba587d0_e787236b",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T07:37:20Z",
+      "side": 1,
+      "message": "good point.\n\nI think (2) is fine here: although it is possible for the same test variant to be in different invocations, this is unlikely, so I expect to very rarely observe appearing/disappearing test variants. \n\nmore context: initally all test variants are sharded into smaller invocations (one test variant runs in one invocation) and those invocations are executed in parallel. In particular, we don\u0027t want to unnecessarily run the same test variant in different invocations because it would be duplication of work. \n\nIf a test is flaky, it is likely to have a mix of expected/unexpected results in the *same* invocation.\n\nNow suppose a test failed 3 times in a row. Currently Chromium recipe has a piece of code that hopes to still get a pass, so it retries the whole invocation. Then all test variants in that invocation are retried. and that previously failed test might pass. This is the case where failures might be in one inv, and pass may be in another, but then again, note that the test fail 3 times before that for this to happen. Note that if it does happen, then with 50% chance, we will see pass before failure because invocations are ordered by their hash in the database (so, random).\n\nfurther, currently rdb incorrectly marks OK results as unexpected, so we see a lot of redness/orangeness in ResultUI. Once that\u0027s fixed, the number of unexpected test results will shrink, so it is likely that all results will fit the first page (1000 results).\n\nAfter all, if it is still a problem, we can further reduce the probability of appearing/disappearing by increasing the page size.",
+      "parentUuid": "f98d4227_c433bef1",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
