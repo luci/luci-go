@@ -37,6 +37,7 @@ router.setRoutes({
       children: [
         {
           path: '/login',
+          name: 'login',
           action: async (_ctx, cmd) => {
             await import(/* webpackChunkName: "login_page" */ './pages/login_page');
             return cmd.component('tr-login-page');
@@ -44,6 +45,7 @@ router.setRoutes({
         },
         {
           path: '/error',
+          name: 'error',
           action: async (_ctx, cmd) => {
             await import(/* webpackChunkName: "error_page" */ './pages/error_page');
             return cmd.component('tr-error-page');
@@ -81,6 +83,7 @@ router.setRoutes({
                     return cmd.component('tr-invocation-details-tab');
                   },
                 },
+                notFoundRoute,
               ],
             },
             notFoundRoute,

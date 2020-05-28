@@ -18,6 +18,7 @@ import { customElement, html, LitElement } from 'lit-element';
 import { action, computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../libs/context';
+import { router } from '../routes';
 import { ResultDb } from '../services/resultdb';
 import { consumeResultDbHost } from './config_provider';
 
@@ -85,7 +86,7 @@ export class AppStateProviderElement extends LitElement implements BeforeEnterOb
     if (!this.appState.accessToken) {
       const searchParams = new URLSearchParams();
       searchParams.set('redirect', window.location.href);
-      return Router.go(`/login?${searchParams}`);
+      return Router.go(`${router.urlForName('login')}?${searchParams}`);
     }
     return;
   }
