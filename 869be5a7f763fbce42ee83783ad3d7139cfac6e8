@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "47e8af20_d642b5c3",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T01:39:32Z",
+      "side": 1,
+      "message": "nit: consider consolidating\n\n  switch rowCount, err :\u003d txn.Update(ctx, st); {",
+      "revId": "869be5a7f763fbce42ee83783ad3d7139cfac6e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
