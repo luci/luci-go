@@ -108,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "747d11a5_4d9dbdf9",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-05-28T00:35:01Z",
+      "side": 1,
+      "message": "yeah it didn\u0027t. But update without read is simpler anyways.",
+      "parentUuid": "b8b6c82a_15264332",
+      "range": {
+        "startLine": 83,
+        "startChar": 24,
+        "endLine": 83,
+        "endChar": 43
+      },
+      "revId": "75475441d5dc199894309f6b9c884464688c020c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f45db3d1_304e19ac",
         "filename": "resultdb/internal/services/recorder/create_test_result.go",
         "patchSetId": 3
