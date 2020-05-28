@@ -65,6 +65,8 @@ export enum VariantStatus {
  * Contains test results and exonerations for the given test variant.
  */
 export interface ReadonlyVariant {
+  readonly testId: string;
+  readonly variantKey: string;
   readonly status: VariantStatus;
   readonly variant: Variant;
   readonly results: ReadonlyArray<TestResult>;
