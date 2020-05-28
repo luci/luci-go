@@ -336,6 +336,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cdfabf09_732e278a",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T16:56:25Z",
+      "side": 1,
+      "message": "to avoid blocking CLs on flaky tests that were added by other CLs earlier.",
+      "parentUuid": "6e599044_2461f48d",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
