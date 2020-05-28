@@ -39,6 +39,30 @@
       "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfbac9bd_01ad7722",
+        "filename": "milo/frontend/resultui/src/components/page_layout.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T00:19:08Z",
+      "side": 1,
+      "message": "shall we put it next to the login icon?",
+      "parentUuid": "a932c549_81cecd96",
+      "range": {
+        "startLine": 61,
+        "startChar": 8,
+        "endLine": 61,
+        "endChar": 37
+      },
+      "revId": "b1f1ccacfc89aada4775fd4d9c2df5cfae80d0a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
