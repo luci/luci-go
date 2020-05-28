@@ -372,6 +372,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0ec5a84_e52d7c44",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-28T21:17:33Z",
+      "side": 1,
+      "message": "i agree that we should be clear that an failed test does not necessarily mean that it will stay failed. \nAt this level of abstraction, UI cannot predict whether another test result will appear later. It just displays what it has. I see two coexistent solutions\n- maybe we can more visibly display a banner that this invocation is still not finalized, so more results can be added at any point, also any test variant can be exonerated at any point\n- in the recipe, we can postpone including a task invocation until we know that we won\u0027t be adding more. However, I am not wild about this either because it precludes any streaming.",
+      "parentUuid": "0b60245e_61b78b5d",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
