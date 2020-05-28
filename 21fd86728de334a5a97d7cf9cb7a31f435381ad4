@@ -282,6 +282,24 @@
       "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f98d4227_c433bef1",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-28T07:16:22Z",
+      "side": 1,
+      "message": "\u003e If not, it\u0027s not possible to implement flaky filter in the frontend.\n\nIf not, it\u0027s not possible to implement flaky filter in resultdb.js.",
+      "parentUuid": "aedcb27c_803c3130",
+      "revId": "21fd86728de334a5a97d7cf9cb7a31f435381ad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
