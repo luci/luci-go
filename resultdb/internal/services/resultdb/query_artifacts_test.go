@@ -291,20 +291,41 @@ func TestQueryArtifacts(t *testing.T) {
 				insTRs("inv1", "t2", v10, pb.TestStatus_PASS),
 			)...)
 
-			req.TestResultPredicate.Variant = &pb.VariantPredicate{
-				Predicate: &pb.VariantPredicate_Contains{Contains: v00},
-			}
-			So(mustQueryNames(req), ShouldResemble, []string{
-				"invocations/inv1/artifacts/a",
-				"invocations/inv1/tests/t0/results/0/artifacts/a",
-				"invocations/inv1/tests/t1/results/0/artifacts/a",
-				"invocations/inv1/tests/t1/results/0/artifacts/b",
+			Convey(`Empty`, func() {
+				req.TestResultPredicate.Variant = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
+				}
+				So(mustQueryNames(req), ShouldResemble, []string{
+					"invocations/inv1/artifacts/a",
+					"invocations/inv1/tests/t0/results/0/artifacts/a",
+					"invocations/inv1/tests/t1/results/0/artifacts/a",
+					"invocations/inv1/tests/t1/results/0/artifacts/b",
+					"invocations/inv1/tests/t2/results/0/artifacts/a",
+				})
+
+				Convey(`Without invocation artifacts`, func() {
+					req.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
+					actual := mustQueryNames(req)
+					So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+				})
 			})
 
-			Convey(`Without invocation artifacts`, func() {
-				req.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
-				actual := mustQueryNames(req)
-				So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+			Convey(`Non-empty`, func() {
+				req.TestResultPredicate.Variant = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Contains{Contains: v00},
+				}
+				So(mustQueryNames(req), ShouldResemble, []string{
+					"invocations/inv1/artifacts/a",
+					"invocations/inv1/tests/t0/results/0/artifacts/a",
+					"invocations/inv1/tests/t1/results/0/artifacts/a",
+					"invocations/inv1/tests/t1/results/0/artifacts/b",
+				})
+
+				Convey(`Without invocation artifacts`, func() {
+					req.FollowEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{TestResults: true}
+					actual := mustQueryNames(req)
+					So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+				})
 			})
 		})
 

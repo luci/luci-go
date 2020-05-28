@@ -198,15 +198,32 @@ func TestQueryTestResults(t *testing.T) {
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
-			q.Predicate.Variant = &pb.VariantPredicate{
-				Predicate: &pb.VariantPredicate_Contains{Contains: v1},
-			}
 
-			So(mustReadNames(q), ShouldResemble, []string{
-				"invocations/inv0/tests/1-1/results/0",
-				"invocations/inv0/tests/1-1/results/1",
-				"invocations/inv0/tests/1-2/results/0",
-				"invocations/inv1/tests/1-1/results/0",
+			Convey(`Empty`, func() {
+				q.Predicate.Variant = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
+				}
+
+				So(mustReadNames(q), ShouldResemble, []string{
+					"invocations/inv0/tests/1-1/results/0",
+					"invocations/inv0/tests/1-1/results/1",
+					"invocations/inv0/tests/1-2/results/0",
+					"invocations/inv1/tests/1-1/results/0",
+					"invocations/inv1/tests/2-1/results/0",
+				})
+			})
+
+			Convey(`Non-empty`, func() {
+				q.Predicate.Variant = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Contains{Contains: v1},
+				}
+
+				So(mustReadNames(q), ShouldResemble, []string{
+					"invocations/inv0/tests/1-1/results/0",
+					"invocations/inv0/tests/1-1/results/1",
+					"invocations/inv0/tests/1-2/results/0",
+					"invocations/inv1/tests/1-1/results/0",
+				})
 			})
 		})
 
