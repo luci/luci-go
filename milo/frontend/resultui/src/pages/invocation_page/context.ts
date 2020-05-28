@@ -18,8 +18,9 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { AppState } from '../../context/app_state_provider';
 import { consumeContext, provideContext } from '../../libs/context';
-import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, TestLoader } from '../../models/test_loader';
-import { ReadonlyTest, TestNode } from '../../models/test_node';
+import * as iter from '../../libs/iter_utils';
+import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from '../../models/test_loader';
+import { ReadonlyTest, TestNode, VariantStatus } from '../../models/test_node';
 import { Expectancy, Invocation } from '../../services/resultdb';
 
 /**
@@ -54,14 +55,14 @@ export class InvocationPageState {
 
   @observable.ref selectedNode!: TestNode;
   @observable.ref showExpected = false;
-  @observable.ref showExonerated = false;
+  @observable.ref showExonerated = true;
 
   @computed
   private get testIter(): AsyncIterableIterator<ReadonlyTest[]> {
     if (!this.appState?.resultDb) {
       return (async function*() {})();
     }
-    return streamTestBatches(
+    let variantBatches = streamVariantBatches(
       streamTestResultBatches(
         {
           invocations: [this.invocationName],
@@ -71,10 +72,12 @@ export class InvocationPageState {
         },
         this.appState.resultDb,
       ),
-      this.showExonerated ?
-        streamTestExonerationBatches({invocations: [this.invocationName]}, this.appState.resultDb) :
-        (async function*() {})(),
+      streamTestExonerationBatches({invocations: [this.invocationName]}, this.appState.resultDb),
     );
+    variantBatches = this.showExonerated ?
+      variantBatches :
+      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Exonerated));
+    return streamTestBatches(variantBatches);
   }
 
   @computed({keepAlive: true})
