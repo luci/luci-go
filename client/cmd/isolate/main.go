@@ -30,7 +30,7 @@ import (
 
 // isolateVersion must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const isolateVersion = "0.5"
+const isolateVersion = "0.6"
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{

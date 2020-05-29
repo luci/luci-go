@@ -158,7 +158,6 @@ func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.A
 		Deps:          deps,
 		RootDir:       rootDir,
 		IgnoredPathRe: opts.IgnoredPathFilterRe,
-		Blacklist:     opts.Blacklist,
 		Isolated:      opts.Isolated,
 		Isol:          isol})
 	if err != nil {

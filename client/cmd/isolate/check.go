@@ -63,7 +63,6 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 	if !c.defaultFlags.Quiet {
 		fmt.Printf("Isolate:   %s\n", c.Isolate)
 		fmt.Printf("Isolated:  %s\n", c.Isolated)
-		fmt.Printf("Blacklist: %s\n", c.Blacklist)
 		fmt.Printf("Config:    %s\n", c.ConfigVariables)
 		fmt.Printf("Path:      %s\n", c.PathVariables)
 	}
