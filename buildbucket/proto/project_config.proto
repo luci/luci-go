@@ -75,7 +75,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 27.
+// Next tag: 29.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -407,10 +407,21 @@ message Builder {
   // remove it from your config and you should be good to go :).
   string luci_migration_host = 19;
 
-  // Percentage of builds that should use a canary swarming task template.
-  // A value from 0 to 100.
-  // If omitted, a global server-defined default percentage is used.
+  // Deprecated; Synonym of canary_percentage. If both are set,
+  // canary_percentage is used without evaluating this.
   google.protobuf.UInt32Value task_template_canary_percentage = 22;
+
+  // Percentage of builds that should use canary_options.
+  //
+  // A value from 0 to 100.
+  //
+  // If omitted, a global server-defined default percentage is used.
+  google.protobuf.UInt32Value canary_percentage = 27;
+
+  // If the build is selected for canary, apply these options.
+  //
+  // See CanaryOptions for details.
+  CanaryOptions canary_options = 28;
 
   // This field will set the default value of the "critical" field of
   // all the builds of this builder. Please refer to build.proto for
@@ -421,6 +432,38 @@ message Builder {
 
   // Used to enable and configure ResultDB integration.
   ResultDB resultdb = 26;
+}
+
+// Canary selection works as follows:
+//
+// When a build is created it is assigned a 'canary' status from the following
+// sources, in order of precedence:
+//   * The ScheduleBuildRequest.canary field
+//   * A random boolean with a probability of either:
+//     * The Builder's configured canary_percentage (if set), OR
+//     * The global canary chance (currently 10%).
+//
+// Once a build is assigned canary=true, the following options apply as
+// documented.
+message CanaryOptions {
+  // If UNSET or YES, this canary build will use the 'canary_version' channel of
+  // all packages listed in buildbucket's settings.cfg. This includes versions
+  // of packages like 'python', 'git', 'vpython', etc.
+  //
+  // If NO, then this canary build will use the stable channel of those
+  // packages.
+  buildbucket.v2.Trinary swarming_packages = 1;
+
+  // Has no effect if 'Builder.exe.cmd' is set.
+  //
+  // If YES, this canary build will use the the new luciexe protocol
+  // (i.e. go.chromium.org/luci/luciexe).
+  //
+  // If NO, this canary build will use the old kitchen protocol.
+  //
+  // If UNSET, this canary build will use the current global default (currently
+  // kitchen, but this will change over the course of 2020Q2).
+  buildbucket.v2.Trinary use_bbagent = 2;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
