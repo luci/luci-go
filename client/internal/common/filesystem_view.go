@@ -25,39 +25,25 @@ import (
 
 // FilesystemView provides a filtered "view" of a filesystem.
 // It translates absolute paths to relative paths based on its configured root path.
-// It also hides any paths which match a blacklist entry.
 type FilesystemView struct {
 	root          string
 	ignoredPathRe *regexp.Regexp
-	// TODO(crbug/1080471): Deprecate blacklist
-	blacklist []string
+
 	// The path prefix representing the relative path in another view which has this one
 	// obtained through a sequence of symlinked nodes.
 	sourcePrefix string
 }
 
-// NewFilesystemView returns a FilesystemView based on the supplied root and
-// blacklist, or an error if blacklist contains a bad pattern.
+// NewFilesystemView returns a FilesystemView based on the supplied root, or an
+// error if ignoredPathRe contains a bad pattern.
 //
 // root is the the base path used by RelativePath to calculate relative paths.
 //
-// blacklist is a list of globs of files to ignore. See RelativePath for more
-// information.
-//
-// ignoredPathRe is a regular expression string. Compared to blacklist, it's
-// not limited by how filepath.Match() works
-// (https://godoc.org/path/filepath#Match), hence offers more flexibility. For
-// example, instead of writing blacklist=["foo/*", "foo/a/*", "foo/a/b/*", ...]
-// to completely skip "foo/", you can just use ignoredPathRe="^foo/.*". Note
-// that this is NOT a full string match, so "foo/.*" may match "bar/foo/xyz".
-// Prepend ^ explicitly if you need to match a path that starts with the
-// pattern. Similarly, append $ if necessary.
-func NewFilesystemView(root string, blacklist []string, ignoredPathRe string) (FilesystemView, error) {
-	for _, b := range blacklist {
-		if _, err := filepath.Match(b, b); err != nil {
-			return FilesystemView{}, fmt.Errorf("bad blacklist pattern \"%s\"", b)
-		}
-	}
+// ignoredPathRe is a regular expression string. Note that this is NOT a full
+// string match, so "foo/.*" may match "bar/foo/xyz". Prepend ^ explicitly if
+// you need to match a path that starts with the pattern. Similarly, append $ if
+// necessary.
+func NewFilesystemView(root string, ignoredPathRe string) (FilesystemView, error) {
 	var compiledRe *regexp.Regexp
 	if ignoredPathRe != "" {
 		cr, err := regexp.Compile(ignoredPathRe)
@@ -66,16 +52,11 @@ func NewFilesystemView(root string, blacklist []string, ignoredPathRe string) (F
 		}
 		compiledRe = cr
 	}
-	return FilesystemView{root: root, blacklist: blacklist, ignoredPathRe: compiledRe}, nil
+	return FilesystemView{root: root, ignoredPathRe: compiledRe}, nil
 }
 
-// RelativePath returns a version of path which is relative to the FilesystemView root,
-// or an empty string if path matches a blacklist entry.
-//
-// Blacklist globs are matched against the entirety of each of:
-//  * the path relative to the FilesystemView root.
-//  * the basename return by filepath.Base(path).
-// See filepath.Match for details about the format of blacklist globs.
+// RelativePath returns a version of path which is relative to the FilesystemView root
+// or an empty string if path matches a ignored path filter.
 func (ff FilesystemView) RelativePath(path string) (string, error) {
 	relPath, err := filepath.Rel(ff.root, path)
 	if err != nil {
@@ -96,12 +77,6 @@ func (ff FilesystemView) skipRelPath(relPath string) bool {
 		return false
 	}
 
-	for _, glob := range ff.blacklist {
-		if match(glob, relPath) || match(glob, filepath.Base(relPath)) {
-			return true
-		}
-	}
-
 	if ff.ignoredPathRe != nil && ff.ignoredPathRe.MatchString(relPath) {
 		return true
 	}
@@ -115,13 +90,7 @@ func (ff FilesystemView) NewSymlinkedView(source, linkname string) FilesystemVie
 	if ff.sourcePrefix != "" {
 		prefix = filepath.Join(ff.sourcePrefix, source)
 	}
-	return FilesystemView{root: linkname, blacklist: ff.blacklist, sourcePrefix: prefix}
-}
-
-// match is equivalent to filepath.Match, but assumes that pattern is valid.
-func match(pattern, name string) bool {
-	matched, _ := filepath.Match(pattern, name)
-	return matched
+	return FilesystemView{root: linkname, sourcePrefix: prefix}
 }
 
 // WalkFuncSkipFile is a helper for implementations of filepath.WalkFunc. The
