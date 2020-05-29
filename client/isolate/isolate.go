@@ -28,7 +28,6 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/client/archiver"
-	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -62,7 +61,6 @@ type ArchiveOptions struct {
 	Isolate                    string              `json:"isolate"`
 	Isolated                   string              `json:"isolated"`
 	IgnoredPathFilterRe        string              `json:"ignored_path_filter_re"`
-	Blacklist                  stringlistflag.Flag `json:"blacklist"`
 	PathVariables              stringmapflag.Value `json:"path_variables"`
 	ConfigVariables            stringmapflag.Value `json:"config_variables"`
 	AllowCommandAndRelativeCWD bool                `json:"allow_command_and_relative_cwd"`
@@ -71,7 +69,6 @@ type ArchiveOptions struct {
 
 // Init initializes with non-nil values.
 func (a *ArchiveOptions) Init() {
-	a.Blacklist = stringlistflag.Flag{}
 	a.PathVariables = map[string]string{}
 	if runtime.GOOS == "windows" {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ".exe"
@@ -106,7 +103,7 @@ func genDirectoriesRegex(dirs ...string) string {
 
 // PostProcess post-processes the flags to fix any compatibility issue.
 func (a *ArchiveOptions) PostProcess(cwd string) {
-	if a.IgnoredPathFilterRe == "" && len(a.Blacklist) == 0 {
+	if a.IgnoredPathFilterRe == "" {
 		// Set default ignored paths regexp
 		// .swp are vim files
 		a.IgnoredPathFilterRe = genExtensionsRegex("pyc", "swp") + "|" + genDirectoriesRegex(`\.git`, `\.hg`, `\.svn`)
@@ -297,7 +294,7 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 			if relPath, err = filepath.Rel(rootDir, dep); err != nil {
 				return nil, err
 			}
-			dirItems = append(dirItems, archiver.PushDirectory(arch, dep, relPath, opts.Blacklist))
+			dirItems = append(dirItems, archiver.PushDirectory(arch, dep, relPath))
 		} else {
 			if mode&os.ModeSymlink == os.ModeSymlink {
 				l, err := os.Readlink(dep)

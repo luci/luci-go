@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/client/archiver"
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/data/text/units"
-	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
@@ -134,7 +133,6 @@ func TestArchive(t *testing.T) {
 		So(os.Mkdir(fooDir, 0700), ShouldBeNil)
 		So(os.Mkdir(secondDir, 0700), ShouldBeNil)
 		So(ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(baseDir, "ignored"), []byte("ignored"), 0600), ShouldBeNil)
 		So(ioutil.WriteFile(filepath.Join(secondDir, "boz"), []byte("foo2"), 0600), ShouldBeNil)
 		isolate := `{
 		'variables': {
@@ -167,7 +165,6 @@ func TestArchive(t *testing.T) {
 		opts := &ArchiveOptions{
 			Isolate:                    isolatePath,
 			Isolated:                   filepath.Join(tmpDir, "baz.isolated"),
-			Blacklist:                  stringlistflag.Flag{"ignored", "*.isolate"},
 			PathVariables:              map[string]string{"VAR": "wonderful"},
 			ConfigVariables:            map[string]string{"OS": "amiga"},
 			AllowCommandAndRelativeCWD: true,

@@ -46,12 +46,6 @@ type ArchiveOptions struct {
 	// The working directories may be relative to CWD.
 	Dirs ScatterGather
 
-	// Blacklist is a list of filename regexes describing which files to
-	// ignore when crawling the directories in Dirs.
-	//
-	// Note that this Blacklist will not filter files in Files.
-	Blacklist []string
-
 	// Isolated is the display name of the isolated to upload.
 	Isolated string
 
@@ -78,7 +72,7 @@ func Archive(ctx context.Context, arch *archiver.Archiver, opts *ArchiveOptions)
 //
 // This is thin wrapper of Archive.
 // Note that this function may have large number of concurrent RPCs to isolate server.
-func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, files []string, blacklist []string) ([]*archiver.PendingItem, error) {
+func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, files []string) ([]*archiver.PendingItem, error) {
 	items := make([]*archiver.PendingItem, len(files))
 
 	var g errgroup.Group
@@ -106,9 +100,8 @@ func ArchiveFiles(ctx context.Context, arch *archiver.Archiver, baseDir string, 
 			}
 
 			opts := ArchiveOptions{
-				Files:     fg,
-				Dirs:      dg,
-				Blacklist: blacklist,
+				Files: fg,
+				Dirs:  dg,
 			}
 
 			items[i] = Archive(ctx, arch, &opts)
@@ -149,7 +142,7 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	dItems := make(itemToPathMap, len(opts.Dirs))
 	for dir, wd := range opts.Dirs {
 		path := filepath.Join(wd, dir)
-		dItems[archiver.PushDirectory(arch, path, dir, opts.Blacklist)] = path
+		dItems[archiver.PushDirectory(arch, path, dir)] = path
 	}
 
 	// Construct isolated file.

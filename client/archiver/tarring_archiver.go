@@ -57,7 +57,6 @@ type TarringArgs struct {
 	Deps          []string
 	RootDir       string
 	IgnoredPathRe string
-	Blacklist     []string
 	Isolated      string
 	Isol          *isolated.Isolated
 }
@@ -65,7 +64,7 @@ type TarringArgs struct {
 // Archive uploads a single isolate.
 func (ta *TarringArchiver) Archive(args *TarringArgs) (IsolatedSummary, error) {
 	prepareToArchive(ta, args.Isol, &ta.fileHashCache)
-	parts, err := ta.partitionDeps(args.Deps, args.RootDir, args.Blacklist, args.IgnoredPathRe)
+	parts, err := ta.partitionDeps(args.Deps, args.RootDir, args.IgnoredPathRe)
 	if err != nil {
 		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
 	}
@@ -172,8 +171,8 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 
 // partitionDeps walks each of the deps, partitioning the results into symlinks
 // and files categorized by size.
-func (ta *TarringArchiver) partitionDeps(deps []string, rootDir string, blacklist []string, ignoredPathRe string) (partitionedDeps, error) {
-	fsView, err := common.NewFilesystemView(rootDir, blacklist, ignoredPathRe)
+func (ta *TarringArchiver) partitionDeps(deps []string, rootDir string, ignoredPathRe string) (partitionedDeps, error) {
+	fsView, err := common.NewFilesystemView(rootDir, nil, ignoredPathRe)
 	if err != nil {
 		return partitionedDeps{}, err
 	}

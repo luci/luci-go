@@ -69,10 +69,8 @@ func TestArchive(t *testing.T) {
 		So(os.Mkdir(secondDir, 0700), ShouldBeNil)
 
 		barData := []byte("foo")
-		ignoredData := []byte("ignored")
 		bozData := []byte("foo2")
 		So(ioutil.WriteFile(filepath.Join(baseDir, "bar"), barData, 0600), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(baseDir, "ignored"), ignoredData, 0600), ShouldBeNil)
 		So(ioutil.WriteFile(filepath.Join(secondDir, "boz"), bozData, 0600), ShouldBeNil)
 		winLinkData := []byte("no link on Windows")
 		if !isWindows() {
@@ -93,7 +91,6 @@ func TestArchive(t *testing.T) {
 		opts := &ArchiveOptions{
 			Files:        filesSC,
 			Dirs:         dirsSC,
-			Blacklist:    []string{"ignored", "*.isolate"},
 			Isolated:     filepath.Join(tmpDir, "baz.isolated"),
 			LeakIsolated: &buf,
 		}
@@ -169,7 +166,7 @@ func TestArchiveFiles(t *testing.T) {
 			"b/d": "bd",
 		}), ShouldBeNil)
 
-		items, err := ArchiveFiles(ctx, a, dir, []string{"a", "b"}, nil)
+		items, err := ArchiveFiles(ctx, a, dir, []string{"a", "b"})
 		So(err, ShouldBeNil)
 		So(items, ShouldHaveLength, 2)
 		items[0].WaitForHashed()
