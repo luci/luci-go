@@ -152,8 +152,7 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 // relDir is a relative directory to offset relative paths against in the
 // generated .isolated file.
 //
-// blacklist is a list of globs of files to ignore.
-func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) *PendingItem {
+func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 	total := 0
 	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
 	defer func() { end(tracer.Args{"total": total}) }()
@@ -161,7 +160,7 @@ func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) 
 
 	displayName := filepath.Base(root) + ".isolated"
 	s := &PendingItem{DisplayName: displayName}
-	fsView, err := common.NewFilesystemView(root, blacklist, "")
+	fsView, err := common.NewFilesystemView(root, nil, "")
 	if err != nil {
 		s.SetErr(err)
 		return s
