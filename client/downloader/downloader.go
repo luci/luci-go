@@ -383,7 +383,7 @@ func (d *Downloader) ensureDir(dir string) error {
 		parents = append(parents, i)
 	}
 	for i := len(parents) - 1; i >= 0; i-- {
-		if err := os.Mkdir(parents[i], os.ModePerm); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(parents[i], 0700); err != nil && !os.IsExist(err) {
 			return err
 		}
 		d.dirCache.Add(parents[i])
