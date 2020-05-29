@@ -63,7 +63,8 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bb := &job.Buildbucket{}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
 		bbCommonFromTaskRequest(bb, r)
-		bb.BbagentArgs, err = bbinput.Parse(r.TaskSlices[0].Properties.Command[1])
+		cmd := r.TaskSlices[0].Properties.Command
+		bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
 
 	case "kitchen":
 		bb := &job.Buildbucket{LegacyKitchen: true}
@@ -128,6 +129,13 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		ir := slice.Properties.InputsRef
 		if ir == nil {
 			continue
+		}
+
+		if ret.UserPayload.Digest == "" {
+			ret.UserPayload.Digest = ir.Isolated
+		} else if ret.UserPayload.Digest != ir.Isolated {
+			return nil, errors.Reason("isolate hash inconsistency in slice %d: %q != %q",
+				i, ret.UserPayload.Digest, ir.Isolated).Err()
 		}
 
 		if ret.UserPayload.Server == "" {
