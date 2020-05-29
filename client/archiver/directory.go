@@ -160,7 +160,7 @@ func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 
 	displayName := filepath.Base(root) + ".isolated"
 	s := &PendingItem{DisplayName: displayName}
-	fsView, err := common.NewFilesystemView(root, nil, "")
+	fsView, err := common.NewFilesystemView(root, "")
 	if err != nil {
 		s.SetErr(err)
 		return s

@@ -20,60 +20,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestValidatesBlacklist(t *testing.T) {
-	type testCase struct {
-		desc      string
-		blacklist []string
-		wantErr   bool
-	}
-
-	testCases := []testCase{
-		{
-			desc:      "no patterns",
-			blacklist: nil,
-			wantErr:   false,
-		},
-		{
-			desc:      "good pattern",
-			blacklist: []string{"*"},
-			wantErr:   false,
-		},
-		{
-			desc:      "good patterns",
-			blacklist: []string{"a*", "b*"},
-			wantErr:   false,
-		},
-		{
-			desc:      "bad pattern",
-			blacklist: []string{"["},
-			wantErr:   true,
-		},
-		{
-			desc:      "bad first pattern",
-			blacklist: []string{"[", "*"},
-			wantErr:   true,
-		},
-		{
-			desc:      "bad last pattern",
-			blacklist: []string{"*", "["},
-			wantErr:   true,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		Convey(tc.desc, t, func() {
-			_, err := NewFilesystemView("/root", tc.blacklist, "")
-			if tc.wantErr {
-				So(err, ShouldNotBeNil)
-			} else {
-				So(err, ShouldBeNil)
-			}
-		})
-	}
-
-}
-
 func TestCalculatesRelativePaths(t *testing.T) {
 	type testCase struct {
 		desc        string
@@ -124,7 +70,7 @@ func TestCalculatesRelativePaths(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			fsView, err := NewFilesystemView(tc.root, nil, "")
+			fsView, err := NewFilesystemView(tc.root, "")
 
 			So(err, ShouldBeNil)
 
@@ -139,72 +85,21 @@ func TestCalculatesRelativePaths(t *testing.T) {
 	}
 }
 
-func TestAppliesBlacklist(t *testing.T) {
+func TestAppliesIgnoredPathFilter(t *testing.T) {
 	type testCase struct {
 		desc          string
 		root          string
 		ignoredPathRe string
-		blacklist     []string
 		absPath       string
 		wantRelPath   string
 	}
 
 	testCases := []testCase{
 		{
-			desc:        "no blacklist",
+			desc:        "no filter",
 			root:        "/a",
-			blacklist:   nil,
 			absPath:     "/a/x/y",
 			wantRelPath: "x/y",
-		},
-		{
-			desc:        "blacklist matches relative path",
-			root:        "/a",
-			blacklist:   []string{"?/z"},
-			absPath:     "/a/x/z",
-			wantRelPath: "",
-		},
-		{
-			desc:        "blacklist doesn't match relative path",
-			root:        "/a",
-			blacklist:   []string{"?/z"},
-			absPath:     "/a/x/y",
-			wantRelPath: "x/y",
-		},
-		{
-			desc:        "blacklist matches basename",
-			root:        "/a",
-			blacklist:   []string{"z"},
-			absPath:     "/a/x/z",
-			wantRelPath: "",
-		},
-		{
-			desc:        "blacklist doesn't match basename",
-			root:        "/a",
-			blacklist:   []string{"z"},
-			absPath:     "/a/z/y",
-			wantRelPath: "z/y",
-		},
-		{
-			desc:        "root never matches blacklist",
-			root:        "/a",
-			blacklist:   []string{"?"},
-			absPath:     "/a",
-			wantRelPath: ".",
-		},
-		{
-			desc:        "only one blacklist need match path (1)",
-			root:        "/a",
-			blacklist:   []string{"z", "abc"},
-			absPath:     "/a/x/z",
-			wantRelPath: "",
-		},
-		{
-			desc:        "only one blacklist need match path (2)",
-			root:        "/a",
-			blacklist:   []string{"abc", "z"},
-			absPath:     "/a/x/z",
-			wantRelPath: "",
 		},
 		{
 			desc:          "ignoredPathsRe matches relative path",
@@ -260,10 +155,9 @@ func TestAppliesBlacklist(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		Convey(tc.desc, t, func() {
-			fsView, err := NewFilesystemView(tc.root, tc.blacklist, tc.ignoredPathRe)
+			fsView, err := NewFilesystemView(tc.root, tc.ignoredPathRe)
 
-			// These test cases contain only valid blacklists.
-			// Invalid blacklists are tested in TestValidatesBlacklist.
+			// These test cases contain only valid file path filter.
 			So(err, ShouldBeNil)
 
 			relPath, err := fsView.RelativePath(tc.absPath)

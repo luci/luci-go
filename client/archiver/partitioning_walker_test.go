@@ -80,7 +80,7 @@ var errBang = errors.New("bang")
 
 // fsView constructs a FilesystemView with no file path filter.
 func fsView(root string) common.FilesystemView {
-	fsView, err := common.NewFilesystemView("/rootDir", nil, "")
+	fsView, err := common.NewFilesystemView("/rootDir", "")
 	if err != nil {
 		// NewFilesystemView only fails due to bad file path filter. So this should never occur.
 		panic("unexpected failure to construct FilesytemView")
