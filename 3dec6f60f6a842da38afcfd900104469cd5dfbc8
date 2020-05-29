@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "a6a0e0a1_1fa5ead8",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T22:11:27Z",
+      "side": 1,
+      "message": "i agree",
+      "parentUuid": "bfb33b1b_cbf202ba",
+      "range": {
+        "startLine": 81,
+        "startChar": 12,
+        "endLine": 81,
+        "endChar": 31
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c43f57cb_15046a65",
         "filename": "resultdb/sink/rdb_channel.go",
         "patchSetId": 1
