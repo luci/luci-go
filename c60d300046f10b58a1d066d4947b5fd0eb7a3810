@@ -170,6 +170,30 @@
       "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d8e4a94_384444f3",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-29T18:54:14Z",
+      "side": 1,
+      "message": "Ok, these are legitimate concerns.\n\nI was trying to capture being able to opt-in/opt-out of \"experiments\".\n\nWhat if instead of a new message, we instead had a permanent field\n\n   map\u003cstring, Trinary\u003e canary_experiments\n\nAnd document which experiment keys currently do which things?\n\nI would only add \"use_bbagent\" there for now, but we could also use this field for other experiments.",
+      "parentUuid": "b604cbfb_68bb4b52",
+      "range": {
+        "startLine": 466,
+        "startChar": 25,
+        "endLine": 466,
+        "endChar": 36
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
