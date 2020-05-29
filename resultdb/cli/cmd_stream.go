@@ -219,8 +219,7 @@ func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocatio
 	}
 
 	ret = lucictx.Invocation{resp.Name, tks[0]}
-	// TODO(crbug.com/1082992): switch to ci.chromium.org
-	fmt.Fprintf(os.Stderr, "created invocation: https://resultui-dot-luci-milo.appspot.com/inv/%s\n", invID)
+	fmt.Fprintf(os.Stderr, "created invocation: https://ci.chromium.org/inv/%s\n", invID)
 	return
 }
 
