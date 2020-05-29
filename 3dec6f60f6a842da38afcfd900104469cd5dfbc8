@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "8c6b63f3_226c9237",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-29T21:35:28Z",
+      "side": 1,
+      "message": "Good point. :) Comment updated.",
+      "parentUuid": "df08ef63_56402161",
+      "range": {
+        "startLine": 42,
+        "startChar": 12,
+        "endLine": 42,
+        "endChar": 28
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53b2147e_e27577a1",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-29T21:35:28Z",
+      "side": 1,
+      "message": "It\u0027s a function that feed given test results into dispatcher.Channel.\nThe prpc service handler invokes this function to feed received results into the channel. Let me know if this doesn\u0027t answer your question.",
+      "parentUuid": "62d4ef8d_fd9cd7d8",
+      "range": {
+        "startLine": 42,
+        "startChar": 52,
+        "endLine": 42,
+        "endChar": 69
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b82d7af3_c1cf39c2",
         "filename": "resultdb/sink/rdb_channel.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29fe280f_7b01235f",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-29T21:35:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b82d7af3_c1cf39c2",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 8
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "bfb33b1b_cbf202ba",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-29T21:35:28Z",
+      "side": 1,
+      "message": "You are right that it\u0027s not harmful, but atomic.CompareAndSwapInt32() prevents closeAndDrain() invoked more than once (or in parallel), and the amount of code and complexity between those two are not really different. Let me know if you have different opinions.",
+      "parentUuid": "aaa06402_e74213f4",
+      "range": {
+        "startLine": 81,
+        "startChar": 12,
+        "endLine": 81,
+        "endChar": 31
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c43f57cb_15046a65",
         "filename": "resultdb/sink/rdb_channel.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a657e508_fb90d97f",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-05-29T21:35:28Z",
+      "side": 1,
+      "message": "If we invoke waitgroup.Add() after checking \u0026rdbc.closed, it becomes racy.\nclosed can be marked with 1 after the check but before waitgroup.Add().",
+      "parentUuid": "c43f57cb_15046a65",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 26
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
