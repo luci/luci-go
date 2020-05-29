@@ -273,7 +273,7 @@ func upload(ctx context.Context, client *isolatedclient.Client, baseDir, outDir 
 		arch := archiver.New(ctx, client, nil)
 		defer arch.Close() // Ignore "was already closed" error here.
 
-		items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir}, nil)
+		items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir})
 		if err != nil {
 			return "", nil, errors.Annotate(err, "failed to upload files in %s", absOutDir).Err()
 		}

@@ -33,7 +33,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// Input to a PushDirectory test case: the given nodes (with respect to a blacklist) are
+// Input to a PushDirectory test case: the given nodes are
 // isolated and the server contents are validated against the expected files specified
 // within the nodes.
 type testCase struct {
@@ -42,9 +42,6 @@ type testCase struct {
 
 	// List of file nodes.
 	nodes []fileNode
-
-	// List of file patterns to ignore.
-	blacklist []string
 }
 
 // Represents a file in a tree with relevant isolated metadata.
@@ -57,9 +54,6 @@ type fileNode struct {
 
 	// The expected isolated.File to be constructed.
 	expectedFile isolated.File
-
-	// Whether we expect the file to be ignored, per a given blacklist.
-	expectIgnored bool
 
 	// Symlink information about the file.
 	symlink *symlinkData
@@ -122,34 +116,6 @@ func TestPushDirectory(t *testing.T) {
 					expectedFile: basicFile("foo"),
 				},
 			},
-		},
-		{
-			name: "Can push with a blacklist",
-			nodes: []fileNode{
-				{
-					relPath:      "a",
-					contents:     "foo",
-					expectedFile: basicFile("foo"),
-				},
-				{
-					relPath:      filepath.Join("b", "c"),
-					contents:     "bar",
-					expectedFile: basicFile("bar"),
-				},
-				{
-					relPath:       filepath.Join("ignored1", "d"),
-					contents:      "ignore me",
-					expectedFile:  basicFile("ignore me"),
-					expectIgnored: true,
-				},
-				{
-					relPath:       filepath.Join("also", "ignored2"),
-					contents:      "ignore me too",
-					expectedFile:  basicFile("ignore me too"),
-					expectIgnored: true,
-				},
-			},
-			blacklist: []string{"ignored1", filepath.Join("*", "ignored2")},
 		},
 	}
 
@@ -228,21 +194,6 @@ func TestPushDirectory(t *testing.T) {
 					},
 				},
 			},
-			testCase{
-				name: "Can push with a symlinked directory out-of-tree and a blacklist",
-				nodes: []fileNode{
-					{
-						relPath:       filepath.Join("d", "of", "tree"),
-						expectIgnored: true,
-						symlink: &symlinkData{
-							src:    filepath.Join(otherDir, "out"),
-							name:   filepath.Join("$ROOT", "d"),
-							inTree: false,
-						},
-					},
-				},
-				blacklist: []string{filepath.Join("*", "tree")},
-			},
 		)
 	}
 
@@ -256,12 +207,12 @@ func TestPushDirectory(t *testing.T) {
 					t.Fatal(err)
 				}
 			}()
-			expectValidPush(t, tmpDir, testCase.nodes, testCase.blacklist, namespace, mode)
+			expectValidPush(t, tmpDir, testCase.nodes, namespace, mode)
 		})
 	}
 }
 
-func expectValidPush(t *testing.T, root string, nodes []fileNode, blacklist []string, namespace string, mode os.FileMode) {
+func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace string, mode os.FileMode) {
 	h := isolated.GetHash(namespace)
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
@@ -287,7 +238,7 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, blacklist []st
 		So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
 	}
 
-	item := PushDirectory(a, root, "", blacklist)
+	item := PushDirectory(a, root, "")
 	So(item.Error(), ShouldBeNil)
 	So(item.DisplayName, ShouldResemble, filepath.Base(root)+".isolated")
 	item.WaitForHashed()
@@ -298,9 +249,6 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, blacklist []st
 	expectedBytesPushed := 0
 	files := make(map[string]isolated.File)
 	for _, node := range nodes {
-		if node.expectIgnored {
-			continue
-		}
 		files[node.relPath] = node.expectedFile
 		if node.symlink != nil && node.symlink.inTree {
 			continue

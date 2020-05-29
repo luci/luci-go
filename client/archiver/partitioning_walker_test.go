@@ -78,11 +78,11 @@ func directory(path string) file {
 
 var errBang = errors.New("bang")
 
-// fsView constructs a FilesystemView with no blacklist.
+// fsView constructs a FilesystemView with no file path filter.
 func fsView(root string) common.FilesystemView {
 	fsView, err := common.NewFilesystemView("/rootDir", nil, "")
 	if err != nil {
-		// NewFilesystemView only fails due to bad blacklists. So this should never occur.
+		// NewFilesystemView only fails due to bad file path filter. So this should never occur.
 		panic("unexpected failure to construct FilesytemView")
 	}
 	return fsView
