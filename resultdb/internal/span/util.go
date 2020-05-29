@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -125,7 +124,6 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
-//   - pb.Artifact
 //   - typepb.Variant
 //   - typepb.StringPair
 //   - Compressed
@@ -183,8 +181,6 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.strSlice
 	case *[]*typepb.StringPair:
 		spanPtr = &b.strSlice
-	case *[]*pb.Artifact:
-		spanPtr = &b.byteSlice
 	case proto.Message:
 		spanPtr = &b.byteSlice
 	case *Compressed:
@@ -249,14 +245,6 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 				panic(err)
 			}
 		}
-
-	case *[]*pb.Artifact:
-		container := &internalpb.Artifacts{}
-		if err := proto.Unmarshal(b.byteSlice, container); err != nil {
-			// If it was written to Spanner, it should have been validated.
-			panic(err)
-		}
-		*goPtr = container.ArtifactsV1
 
 	case proto.Message:
 		if reflect.ValueOf(goPtr).IsNil() {
@@ -341,13 +329,6 @@ func ToSpanner(v interface{}) interface{} {
 
 	case []*typepb.StringPair:
 		return pbutil.StringPairsToStrings(v...)
-
-	case []*pb.Artifact:
-		ret, err := proto.Marshal(&internalpb.Artifacts{ArtifactsV1: v})
-		if err != nil {
-			panic(err)
-		}
-		return ret
 
 	case proto.Message:
 		if isMessageNil(v) {

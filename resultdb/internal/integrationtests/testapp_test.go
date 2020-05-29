@@ -145,8 +145,9 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	err = resultdb.InitServer(resultdbServer, resultdb.Options{
-		InsecureSelfURLs:   true,
-		ContentHostnameMap: map[string]string{"*": "localhost"},
+		ArtifactRBEInstance: "projects/luci-resultdb-dev/instances/artifacts",
+		InsecureSelfURLs:    true,
+		ContentHostnameMap:  map[string]string{"*": "localhost"},
 	})
 	if err != nil {
 		return err
@@ -158,6 +159,7 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	err = recorder.InitServer(recorderServer, recorder.Options{
+		ArtifactRBEInstance:       "projects/luci-resultdb-dev/instances/artifacts",
 		ExpectedResultsExpiration: time.Hour,
 	})
 	if err != nil {
