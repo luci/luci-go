@@ -60,6 +60,24 @@
     },
     {
       "key": {
+        "uuid": "dc820e56_28620788",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T18:23:25Z",
+      "side": 1,
+      "message": "i think i was not very clear.\n\ntoday we rely on metrics with canary\u003dtrue. For example, we can narrow down to (canary\u003dtrue, builder\u003dX), see that such builds exist and conclude that canary is working for them. This knob enable users to lie about canary: the canary would be true, but nothing is being actually canaryed.\n\n---------\n\nalso i still don\u0027t understand why this is needd",
+      "parentUuid": "102378a9_eac61843",
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "83b37d09_f587f19e",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 1
@@ -119,6 +137,30 @@
       "side": 1,
       "message": "+1 to allow user-controlled opt in/out, which will be ignored after a certain communicated deadline.\n\nwrt surfacing leftover options, I used LUCI Config-propagated warnings, but these are only happening when config is modified. I was thinking we should have automated bug filing or at least email on a weekly basis + dashboard for whom to nag. Surfacing via builds would be useful for small projects where all devs are actually doing some infra work.",
       "parentUuid": "ae3be5ab_85d06ece",
+      "range": {
+        "startLine": 466,
+        "startChar": 25,
+        "endLine": 466,
+        "endChar": 36
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b604cbfb_68bb4b52",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T18:23:25Z",
+      "side": 1,
+      "message": "my main concern is leftover cruft. I think we should generally try to keep things clean. \n\nIf we continue adding things without cleaning them up, at some point it will turn into a mess. For this reason, when it comes to temporary things I generally prefer to keep them in a tightly-controlled places, like settings.cfg or even code. Public APIs are not tightly controlled.\n\nI think there is a contradiction above:\n- one hand it says \"if they were proactive enough to set it in the first place\", implying there will be *few* users.\n- on the other hand, it says \"we have to hand-hold all users\" implying *a lot* of users.\n\nI think there will be few users because it is an advanced feature.\nI don\u0027t see what\u0027s the problem for power users to modify settings.cfg in such an exception case. This is not a mainstream feature. Users already modify other files in the same repo (bots.cfg).\n\n\u003e deal with reverts and conflicts, etc.\n\nThis seems far-fetched to me.\n\nfurther, actually using this feature via cr-bulidbucket.cfg also means we will need to extend starlark to generate it. This is more work and more temporary cruft. Are we going to cleanup starlark too?\n\nGiven the track record of not following through with cleanups in the past, when it comes to temporary stuff, my personal preference is for approaches where cleanups are easier, to increase the likelyhood of them actually happening in a timely manner.\n\nSo I am not opposed to this change if cleanup actually happens right after bbagent is rolled out everywhere. But also there is a caveat: this approach seems to be more work (because of starlark) so I am not clear why would we chose this path.",
+      "parentUuid": "73c5ac7c_919eb385",
       "range": {
         "startLine": 466,
         "startChar": 25,
