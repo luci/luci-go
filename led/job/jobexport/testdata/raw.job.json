@@ -119,6 +119,7 @@
   },
   "user_payload": {
     "server": "https://isolateserver.appspot.com",
+    "digest": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15",
     "namespace": "default-gzip"
   }
 }
