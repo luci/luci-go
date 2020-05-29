@@ -18,8 +18,6 @@ package luci.resultdb.internal;
 
 option go_package = "internalpb";
 
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/artifact.proto";
-
 // A message for storing all the information attached to a page token.
 message PageToken {
   // Position marks the cursor's start (exclusive). Its interpretation is
@@ -29,9 +27,3 @@ message PageToken {
   // start at the beginning.
   repeated string position = 1;
 }
-
-// A container of artifacts.
-// Used to store artifacts in Spanner.
-//
-// TODO(crbug.com/1071258): remove this type.
-message Artifacts { repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1; }

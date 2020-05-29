@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -47,12 +46,7 @@ func TestTypeConversion(t *testing.T) {
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
 		So(err, ShouldBeNil)
-		switch goValue.(type) {
-		case proto.Message, []*pb.Artifact:
-			So(goPtr.Elem().Interface(), ShouldResembleProto, goValue)
-		default:
-			So(goPtr.Elem().Interface(), ShouldResemble, goValue)
-		}
+		So(goPtr.Elem().Interface(), ShouldResemble, goValue)
 	}
 
 	Convey(`int64`, t, func() {
@@ -94,28 +88,6 @@ func TestTypeConversion(t *testing.T) {
 			pbutil.StringPairs("a", "1", "b", "2"),
 			[]string{"a:1", "b:2"},
 		)
-	})
-
-	Convey(`[]*pb.Artifact`, t, func() {
-		arts := &internalpb.Artifacts{
-			ArtifactsV1: []*pb.Artifact{
-				{
-					Name:        "traces/a.txt",
-					FetchUrl:    "https://example.com/a",
-					ContentType: "text/plain",
-					SizeBytes:   4,
-				},
-				{
-					Name:        "diff/b.png",
-					FetchUrl:    "https://example.com/b",
-					ContentType: "image/png",
-					SizeBytes:   16384,
-				},
-			},
-		}
-		expected, err := proto.Marshal(arts)
-		So(err, ShouldBeNil)
-		test(arts.ArtifactsV1, expected)
 	})
 
 	Convey(`Compressed`, t, func() {

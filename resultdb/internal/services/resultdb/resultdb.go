@@ -102,7 +102,9 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 }
 
 func newArtifactContentServer(ctx context.Context, opts Options) (*artifactcontent.Server, error) {
-	// TODO(crbug.com/1071258): require opts.ArtifactRBEInstance.
+	if opts.ArtifactRBEInstance == "" {
+		return nil, errors.Reason("opts.ArtifactRBEInstance is required").Err()
+	}
 
 	conn, err := artifactcontent.RBEConn(ctx)
 	if err != nil {

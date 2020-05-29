@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/genproto/googleapis/bytestream"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
@@ -61,8 +62,7 @@ func InitServer(srv *server.Server, opt Options) error {
 // installArtifactCreationHandler installs artifact creation handler.
 func installArtifactCreationHandler(srv *server.Server, opt *Options) error {
 	if opt.ArtifactRBEInstance == "" {
-		// TODO(crbug.com/1071258): make opt.ArtifactRBEInstance required.
-		return nil
+		return errors.Reason("opt.ArtifactRBEInstance is required").Err()
 	}
 
 	conn, err := artifactcontent.RBEConn(srv.Context)
