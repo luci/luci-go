@@ -218,6 +218,30 @@
       "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6742bdc7_dd081bc5",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-29T20:45:20Z",
+      "side": 1,
+      "message": "\u003e yes, this would address my concern, thanks 😊 since we are talking about generalizations ;)...\n\u003e \n\u003e some time ago Yuke needed to roll out a new experiment: exoneration of flaky tests, and see how it changes time duration. Correlating this with time of change rollout was very noisy, so instead he generated a random number in the recipe, conditionally enabled the experiment, and recorded the boolean in the output property. Then he used BQ to see how much better builds with the experiment perform.\n\u003e \n\u003e note that this does not need to be related to canary. Essentially, the problem with \"canary\" is that it is a single boolean, as opposed to a *set* of experiments. With a set, different teams would be able to conduct their own experiments (like Finch?) and do A-B comparisons, independently. \n\u003e \n\u003e so, we might want to consider a mapping from arbitrary experiment name to percentage at the builder level, and then a set of enabled experiments at the build level. \"bbagent\" would be one of them, and it would have a server-defined default.\n\u003e \n\u003e Or maybe \"$bbagent\" with \"$\" meaning reserved to LUCI stuff.\n\n\nI like this idea, but it makes me slightly nervous that there could be overlapping experiments, though I suppose that\u0027s really up to the experiment author to make sure there aren\u0027t any conflicts.\n\nMaybe just reserving just \"luci.\" as the prefix (to make it clear).\n\nI\u0027d want to have the Build message contain a list of the currently enabled experiments; would it make sense for this to subsume the \u0027canary\u0027 boolean and then show up as, e.g. \"luci.buildbucket_canary_software\" or something like that?\n\nI\u0027ll upload another version of this CL today that we can punch at.",
+      "parentUuid": "81967d4a_76c377bf",
+      "range": {
+        "startLine": 466,
+        "startChar": 25,
+        "endLine": 466,
+        "endChar": 36
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
