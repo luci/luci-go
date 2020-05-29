@@ -95,11 +95,11 @@ func TestProtocol(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer s.Stop(ctx)
 
-		So(p.Accounts, ShouldResemble, []lucictx.LocalAuthAccount{
-			{ID: "acc_id", Email: "some@example.com"},
-			{ID: "another_id", Email: "another@example.com"},
+		So(p.Accounts, ShouldResemble, []*lucictx.LocalAuthAccount{
+			{Id: "acc_id", Email: "some@example.com"},
+			{Id: "another_id", Email: "another@example.com"},
 		})
-		So(p.DefaultAccountID, ShouldEqual, "acc_id")
+		So(p.DefaultAccountId, ShouldEqual, "acc_id")
 
 		goodRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
@@ -260,7 +260,7 @@ func prepReq(p *lucictx.LocalAuth, uri string, body interface{}) *http.Request {
 		}
 		reader = bytes.NewReader(blob)
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d%s", p.RPCPort, uri), reader)
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d%s", p.RpcPort, uri), reader)
 	if err != nil {
 		panic(err)
 	}

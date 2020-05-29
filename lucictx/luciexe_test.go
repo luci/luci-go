@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	. "go.chromium.org/luci/common/testing/assertions"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -26,16 +28,16 @@ func TestLUCIExe(t *testing.T) {
 		ctx := context.Background()
 
 		Convey(`can get from empty ctx`, func() {
-			So(GetLUCIExe(ctx), ShouldResemble, (*LUCIExe)(nil))
+			So(GetLUCIExe(ctx), ShouldResembleProto, (*LUCIExe)(nil))
 		})
 
 		Convey(`can set in ctx`, func() {
-			ctx = SetLUCIExe(ctx, &LUCIExe{"hello"})
-			So(GetLUCIExe(ctx), ShouldResemble, &LUCIExe{"hello"})
+			ctx = SetLUCIExe(ctx, &LUCIExe{CacheDir: "hello"})
+			So(GetLUCIExe(ctx), ShouldResembleProto, &LUCIExe{CacheDir: "hello"})
 
 			Convey(`setting nil clears it out`, func() {
 				ctx = SetLUCIExe(ctx, nil)
-				So(GetLUCIExe(ctx), ShouldResemble, (*LUCIExe)(nil))
+				So(GetLUCIExe(ctx), ShouldResembleProto, (*LUCIExe)(nil))
 			})
 		})
 	})

@@ -16,17 +16,7 @@ package lucictx
 
 import (
 	"context"
-	"fmt"
 )
-
-// LUCIExe is a struct that may be used with the "luciexe" section of
-// LUCI_CONTEXT.
-type LUCIExe struct {
-	// The absolute path of the base cache directory. This directory MAY be on the
-	// same filesystem as CWD (but is not guaranteed to be). The available caches
-	// are described in Buildbucket as CacheEntry messages.
-	CacheDir string `json:"cache_dir"`
-}
 
 // GetLUCIExe calls Lookup and returns a copy of the current LUCIExe from
 // LUCI_CONTEXT if it was present. If no LUCIExe is in the context, this
@@ -45,13 +35,5 @@ func GetLUCIExe(ctx context.Context) *LUCIExe {
 
 // SetLUCIExe sets the LUCIExe in the LUCI_CONTEXT.
 func SetLUCIExe(ctx context.Context, le *LUCIExe) context.Context {
-	var raw interface{}
-	if le != nil {
-		raw = le
-	}
-	ctx, err := Set(ctx, "luciexe", raw)
-	if err != nil {
-		panic(fmt.Errorf("impossible: %s", err))
-	}
-	return ctx
+	return Set(ctx, "luciexe", le)
 }

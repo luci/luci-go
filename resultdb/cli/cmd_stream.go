@@ -92,7 +92,7 @@ type streamRun struct {
 	// - tag (invocation-tag)
 	// - log-file
 
-	invocation lucictx.Invocation
+	invocation lucictx.ResultDBInvocation
 }
 
 func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
@@ -127,7 +127,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		// Update lucictx with the new invocation.
 		ctx = lucictx.SetResultDB(ctx, &lucictx.ResultDB{
 			Hostname:          r.host,
-			CurrentInvocation: r.invocation,
+			CurrentInvocation: &r.invocation,
 		})
 	} else {
 		if r.resultdbCtx == nil {
@@ -136,7 +136,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
 		}
-		r.invocation = r.resultdbCtx.CurrentInvocation
+		r.invocation = *r.resultdbCtx.CurrentInvocation
 	}
 
 	defer func() {
@@ -198,7 +198,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	})
 }
 
-func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocation, err error) {
+func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.ResultDBInvocation, err error) {
 	invID, err := genInvID(ctx)
 	if err != nil {
 		return
@@ -218,7 +218,7 @@ func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.Invocatio
 		return
 	}
 
-	ret = lucictx.Invocation{resp.Name, tks[0]}
+	ret = lucictx.ResultDBInvocation{Name: resp.Name, UpdateToken: tks[0]}
 	fmt.Fprintf(os.Stderr, "created invocation: https://ci.chromium.org/inv/%s\n", invID)
 	return
 }

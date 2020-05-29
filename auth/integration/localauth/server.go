@@ -133,7 +133,7 @@ func (s *Server) Start(ctx context.Context) (*lucictx.LocalAuth, error) {
 		return nil, errors.Annotate(err, "failed to start the local server").Err()
 	}
 
-	la.RPCPort = uint32(addr.Port)
+	la.RpcPort = uint32(addr.Port)
 	return la, nil
 }
 
@@ -158,7 +158,7 @@ func (s *Server) initLocalAuth(ctx context.Context) (*lucictx.LocalAuth, error) 
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
-	accounts := make([]lucictx.LocalAuthAccount, len(ids))
+	accounts := make([]*lucictx.LocalAuthAccount, len(ids))
 	for i, id := range ids {
 		email, err := s.TokenGenerators[id].GetEmail()
 		switch {
@@ -167,7 +167,7 @@ func (s *Server) initLocalAuth(ctx context.Context) (*lucictx.LocalAuth, error) 
 		case err != nil:
 			return nil, errors.Annotate(err, "could not grab email of account %q", id).Err()
 		}
-		accounts[i] = lucictx.LocalAuthAccount{ID: id, Email: email}
+		accounts[i] = &lucictx.LocalAuthAccount{Id: id, Email: email}
 	}
 
 	secret := make([]byte, 48)
@@ -178,7 +178,7 @@ func (s *Server) initLocalAuth(ctx context.Context) (*lucictx.LocalAuth, error) 
 	return &lucictx.LocalAuth{
 		Secret:           secret,
 		Accounts:         accounts,
-		DefaultAccountID: s.DefaultAccountID,
+		DefaultAccountId: s.DefaultAccountID,
 	}, nil
 }
 
