@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e10bb86_4a4d53bd",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T05:29:06Z",
+      "side": 1,
+      "message": "Known",
+      "range": {
+        "startLine": 97,
+        "startChar": 7,
+        "endLine": 97,
+        "endChar": 11
+      },
+      "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2daf46cb_2566a97c",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T05:29:06Z",
+      "side": 1,
+      "message": "in the previous CL, I thought you said that a test variant will appear, but then may disappear. \nnow this code looks like it will stay there, for example the checkbox is unchecked, but a warning sign is there.\n\nI am curious, why this filtering isn\u0027t done at the rendering level where we know exactly whether a test variant is flaky/exonerated?",
+      "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
