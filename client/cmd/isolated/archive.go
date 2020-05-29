@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
-	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/system/signals"
@@ -54,8 +53,6 @@ working directory, '-files :foo' is sufficient.`,
 			c.commonFlags.Init(defaultAuthOpts)
 			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
-			c.Flags.Var(&c.blacklist, "blacklist",
-				"List of regexp to use as blacklist filter when uploading directories")
 			c.Flags.StringVar(&c.dumpHash, "dump-hash", "",
 				"Write the composite isolated hash to a file")
 			c.Flags.StringVar(&c.isolated, "isolated", "",
@@ -67,11 +64,10 @@ working directory, '-files :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	dirs      isolated.ScatterGather
-	files     isolated.ScatterGather
-	blacklist common.Strings
-	dumpHash  string
-	isolated  string
+	dirs     isolated.ScatterGather
+	files    isolated.ScatterGather
+	dumpHash string
+	isolated string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -107,10 +103,9 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	}()
 
 	opts := isolated.ArchiveOptions{
-		Files:     c.files,
-		Dirs:      c.dirs,
-		Blacklist: []string(c.blacklist),
-		Isolated:  c.isolated,
+		Files:    c.files,
+		Dirs:     c.dirs,
+		Isolated: c.isolated,
 	}
 	if len(c.isolated) != 0 {
 		var dumpIsolated *os.File
