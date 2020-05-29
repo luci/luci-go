@@ -27,8 +27,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -154,15 +152,15 @@ func (p *Profiler) Start() error {
 
 func (p *Profiler) startHTTP() error {
 	// Register paths: https://golang.org/src/net/http/pprof/pprof.go
-	router := httprouter.New()
-	router.HandlerFunc("GET", "/debug/pprof/", httpProf.Index)
-	router.HandlerFunc("GET", "/debug/pprof/cmdline", httpProf.Cmdline)
-	router.HandlerFunc("GET", "/debug/pprof/profile", httpProf.Profile)
-	router.HandlerFunc("GET", "/debug/pprof/symbol", httpProf.Symbol)
-	router.HandlerFunc("GET", "/debug/pprof/trace", httpProf.Trace)
+	router := http.NewServeMux()
+	router.HandleFunc("/debug/pprof/", httpProf.Index)
+	router.HandleFunc("/debug/pprof/cmdline", httpProf.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", httpProf.Profile)
+	router.HandleFunc("/debug/pprof/symbol", httpProf.Symbol)
+	router.HandleFunc("/debug/pprof/trace", httpProf.Trace)
 	for _, p := range pprof.Profiles() {
 		name := p.Name()
-		router.Handler("GET", fmt.Sprintf("/debug/pprof/%s", name), httpProf.Handler(name))
+		router.Handle(fmt.Sprintf("/debug/pprof/%s", name), httpProf.Handler(name))
 	}
 
 	// Bind to our profiling port.
@@ -172,7 +170,7 @@ func (p *Profiler) startHTTP() error {
 	}
 
 	server := http.Server{
-		Handler: http.HandlerFunc(router.ServeHTTP),
+		Handler: router,
 	}
 	go func() {
 		if err := server.Serve(l); err != nil {
