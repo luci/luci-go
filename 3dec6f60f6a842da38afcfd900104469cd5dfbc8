@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "62d4ef8d_fd9cd7d8",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-29T21:16:43Z",
+      "side": 1,
+      "message": "iiuc, these are processes which are feeding into dispatcher.Channel?",
+      "range": {
+        "startLine": 42,
+        "startChar": 52,
+        "endLine": 42,
+        "endChar": 69
+      },
+      "revId": "3dec6f60f6a842da38afcfd900104469cd5dfbc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
