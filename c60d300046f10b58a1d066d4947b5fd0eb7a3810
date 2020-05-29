@@ -104,6 +104,30 @@
       "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73c5ac7c_919eb385",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-05-29T16:27:28Z",
+      "side": 1,
+      "message": "+1 to allow user-controlled opt in/out, which will be ignored after a certain communicated deadline.\n\nwrt surfacing leftover options, I used LUCI Config-propagated warnings, but these are only happening when config is modified. I was thinking we should have automated bug filing or at least email on a weekly basis + dashboard for whom to nag. Surfacing via builds would be useful for small projects where all devs are actually doing some infra work.",
+      "parentUuid": "ae3be5ab_85d06ece",
+      "range": {
+        "startLine": 466,
+        "startChar": 25,
+        "endLine": 466,
+        "endChar": 36
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
