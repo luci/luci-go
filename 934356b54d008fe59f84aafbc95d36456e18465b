@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f10777f7_fcc5d290",
+        "filename": "auth/integration/localauth/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-29T23:51:42Z",
+      "side": 1,
+      "message": "\u003e ShouldResembleProto? \n\n+1\n\n\u003e You\u0027ll need to split this into two assertions\n\nProbably not? I remember ShouldResembleProto can compare two slices of proto messages",
+      "parentUuid": "6c83fd24_d73e533e",
+      "range": {
+        "startLine": 98,
+        "startChar": 17,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "891ed646_a099c884",
         "filename": "lucictx/lucictx.go",
         "patchSetId": 1
@@ -58,6 +82,29 @@
         "startChar": 0,
         "endLine": 153,
         "endChar": 76
+      },
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3933706_ec87e676",
+        "filename": "lucictx/lucictx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-05-29T23:51:42Z",
+      "side": 1,
+      "message": "Curious, why do we need this comparison here?",
+      "range": {
+        "startLine": 156,
+        "startChar": 17,
+        "endLine": 156,
+        "endChar": 45
       },
       "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
