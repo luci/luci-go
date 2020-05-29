@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6caa0425_3e97bcb5",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T05:06:53Z",
+      "side": 1,
+      "message": "i think this is a great documentation for Build.canary field. If I was looking at that field, this info would be helpful, but it might not occur to me to read about CanaryOptions in builder conifg.",
+      "range": {
+        "startLine": 439,
+        "startChar": 0,
+        "endLine": 445,
+        "endChar": 2
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "711f7e26_9520e5b0",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T05:06:53Z",
+      "side": 1,
+      "message": "why is this needed? this means that if someone is looking at the canary graph in go/buildbucket-dashboard and sees that everything seems fine, they might incorrectly conclude that canary packages wai, while in reality they aren\u0027t even used.",
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83b37d09_f587f19e",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-05-29T05:06:53Z",
+      "side": 1,
+      "message": "FWIU this field is temporary because soon we delete kitchen. Is this field going to be removed? are we going to send PSA asking people to remove usage of this field?\nI remember it took a year to remove vpython-native tag completely because it was sitting in user configs and I am worried we will not to timely follow up again because it is busy work.\n\nthis was the reason why bb_agent switch is done in the global settings.cfg which we control 100% and can update at any time.",
+      "range": {
+        "startLine": 466,
+        "startChar": 25,
+        "endLine": 466,
+        "endChar": 36
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
