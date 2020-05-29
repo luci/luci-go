@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,6 +38,17 @@ import (
 
 type rdbChannel struct {
 	testResultCh *dispatcher.Channel
+
+	// nActive tells the number of goroutines invoking reportTestResults.
+	//
+	// reportTestResults can be invoked by multiple goroutines in parallel. nActive is used
+	// to ensure that all active goroutines finish enqueing messages to the channel before
+	// closeAndDrain closes and drains the channel.
+	nActive sync.WaitGroup
+
+	// 1 indicates that rdb started the process of closing and draining the channel. 0,
+	// otherwise.
+	closed int32
 }
 
 func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
@@ -64,10 +77,22 @@ func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
 }
 
 func (rdbc *rdbChannel) closeAndDrain(ctx context.Context) {
+	// annonuce that it is in the process of closeAndDrain.
+	if !atomic.CompareAndSwapInt32(&rdbc.closed, 0, 1) {
+		return
+	}
+	// wait for all the active sessions to finish enquing tests results to the channel
+	rdbc.nActive.Wait()
 	rdbc.testResultCh.CloseAndDrain(ctx)
 }
 
 func (rdbc *rdbChannel) reportTestResults(trs []*sinkpb.TestResult) {
+	rdbc.nActive.Add(1)
+	defer rdbc.nActive.Done()
+	// if the channel already has been closed, drop the test results.
+	if atomic.LoadInt32(&rdbc.closed) == 1 {
+		return
+	}
 	for _, tr := range trs {
 		rdbc.testResultCh.C <- tr
 	}
