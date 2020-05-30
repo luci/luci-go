@@ -23,12 +23,18 @@ load('@stdlib//internal/luci/lib/realms.star', 'realms')
 load('@stdlib//internal/luci/rules/realm.star', 'realm')
 
 
-def _bucket(ctx, *, name=None, acls=None):
-  """Defines a bucket: a container for LUCI resources that share the same ACL.
+def _bucket(ctx, *, name=None, acls=None, bindings=None):
+  """Defines a bucket: a container for LUCI builds.
+
+  This rule also implicitly defines the realm to use for the builds in this
+  bucket. It can be used to specify permissions that apply to all builds in this
+  bucket and all resources these builds produce. See luci.realm(...).
 
   Args:
     name: name of the bucket, e.g. `ci` or `try`. Required.
     acls: list of acl.entry(...) objects.
+    bindings: a list of luci.binding(...) to add to the bucket's realm.
+        Experimental. Will eventually replace `acls`.
   """
   name = validate.string('name', name)
   if name.startswith('luci.'):
@@ -43,7 +49,10 @@ def _bucket(ctx, *, name=None, acls=None):
 
   # Each bucket also has an associated realm with the matching name.
   if realms.experiment.is_enabled():
-    realm(name = name)
+    realm(
+        name = name,
+        bindings = bindings,
+    )
 
   return graph.keyset(key)
 

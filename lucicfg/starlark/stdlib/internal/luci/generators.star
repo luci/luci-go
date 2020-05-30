@@ -180,6 +180,12 @@ def gen_realms_cfg(ctx):
   proj = get_project(required=False)
   if not proj or not proj.props.realms_enabled:
     return
+
+  # Discover bindings not attached to any realm. They likely indicate a bug.
+  for b in graph.children(keys.bindings_root()):
+    if not graph.parents(b.key, kinds.REALM):
+      error("the binding %s is not added to any realm" % b, trace=b.trace)
+
   cfg_name = 'realms-dev.cfg' if proj.props.dev else 'realms.cfg'
   set_config(ctx, cfg_name, realms_pb.RealmsCfg(
       realms = [
@@ -191,11 +197,28 @@ def gen_realms_cfg(ctx):
 
 def _realms_realm(realm):
   """Given a REALM node returns realms_pb.Realm."""
-  # TODO(vadimsh): Discover bindings.
+  per_role = {}
+  for b in graph.children(realm.key, kinds.BINDING):
+    for role in b.props.roles:
+      principals = []
+      principals.extend(['group:' + g for g in b.props.groups])
+      principals.extend(['user:' + u for u in b.props.users])
+      principals.extend(['project:' + p for p in b.props.projects])
+      if role in per_role:
+        per_role[role] = per_role[role].union(principals)
+      else:
+        per_role[role] = set(principals)
+
   parents = graph.parents(realm.key, kinds.REALM)
   return realms_pb.Realm(
       name = realm.props.name,
-      extends = [p.props.name for p in parents if p.props.name != '@root']
+      extends = [p.props.name for p in parents if p.props.name != '@root'],
+      bindings = [
+          realms_pb.Binding(
+              role = role,
+              principals = sorted(per_role[role]),
+          ) for role in sorted(per_role)
+      ],
   )
 
 

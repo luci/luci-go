@@ -18,6 +18,7 @@ load('@stdlib//internal/lucicfg.star', _lucicfg='lucicfg')
 load('@stdlib//internal/time.star', _time='time')
 
 # Individual LUCI rules.
+load('@stdlib//internal/luci/rules/binding.star', _binding='binding')
 load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
 load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
 load('@stdlib//internal/luci/rules/console_view.star', _console_view='console_view')
@@ -62,6 +63,7 @@ time = _time
 luci = struct(
     project = _project,
     realm = _realm,
+    binding = _binding,
     logdog =  _logdog,
     bucket = _bucket,
     executable = _executable,

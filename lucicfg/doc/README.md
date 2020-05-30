@@ -916,6 +916,7 @@ luci.project(
     scheduler = None,
     swarming = None,
     acls = None,
+    bindings = None,
 )
 ```
 
@@ -924,6 +925,10 @@ luci.project(
 Defines a LUCI project.
 
 There should be exactly one such definition in the top-level config file.
+
+This rule also implicitly defines the `@root` realm of the project. It can be
+used to setup permissions that apply to all resources in the project. See
+[luci.realm(...)](#luci.realm).
 
 #### Arguments {#luci.project-args}
 
@@ -937,6 +942,7 @@ There should be exactly one such definition in the top-level config file.
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
 * **swarming**: appspot hostname of a Swarming service to use by default (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
+* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Experimental. Will eventually replace `acls`.
 
 
 
@@ -944,7 +950,7 @@ There should be exactly one such definition in the top-level config file.
 ### luci.realm {#luci.realm}
 
 ```python
-luci.realm(name, extends = None)
+luci.realm(name, extends = None, bindings = None)
 ```
 
 
@@ -973,12 +979,6 @@ then all permissions defined in `B` are also in `A`. Remembering that a realm
 is just a set of `(<principal>, <permission>)` pairs, the "extend" relation is
 just a set inclusion.
 
-The primary way of populating the permission set of a realm is via bindings.
-Each binding assigns a role to a set of principals. Since each role is
-essentially just a set of permissions, each binding adds to the realm a
-Cartesian product of a set of permissions (defined via the role) and a set of
-principals (defined via a direct listing or via groups).
-
 There are two special realms that a project can have: "@root" and "@legacy".
 
 The root realm is implicitly included into all other realms (including
@@ -1001,10 +1001,89 @@ out an appropriate realm for a legacy resource based on resource's existing
 attributes. Some services may not have legacy resources at all. The legacy
 realm is not used in these case. Refer to the service documentation.
 
+The primary way of populating the permission set of a realm is via bindings.
+Each binding assigns a role to a set of principals (individuals, groups or
+LUCI projects). A role is just a set of permissions. A binding grants these
+permissions to all principals listed in it.
+
+Binding can be specific either right here:
+
+    luci.realm(
+        name = 'try',
+        bindings = [
+            luci.binding(
+                roles = 'role/a',
+                groups = ['group-a'],
+            ),
+            luci.binding(
+                roles = 'role/b',
+                groups = ['group-b'],
+            ),
+        ],
+    )
+
+Or separately one by one via [luci.binding(...)](#luci.binding) declarations:
+
+    luci.binding(
+        realm = 'try',
+        roles = 'role/a',
+        groups = ['group-a'],
+    )
+    luci.binding(
+        realm = 'try',
+        roles = 'role/b',
+        groups = ['group-b'],
+    )
+
 #### Arguments {#luci.realm-args}
 
 * **name**: name of the realm. Must match `[a-z0-9_\.\-/]{1,400}` or be `@root` or `@legacy`. Required.
 * **extends**: a reference or a list of references to realms to inherit permission from. Optional. Default (and implicit) is `@root`.
+* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the realm.
+
+
+
+
+### luci.binding {#luci.binding}
+
+```python
+luci.binding(
+    # Required arguments.
+    roles,
+
+    # Optional arguments.
+    realm = None,
+    groups = None,
+    users = None,
+    projects = None,
+)
+```
+
+
+*** note
+**Experimental.** No backward compatibility guarantees.
+***
+
+
+Binding assigns roles in a realm to individuals, groups or LUCI projects.
+
+A role can either be predefined (if its name starts with `role/`) or custom
+(if its name starts with `customRole/`).
+
+Predefined roles are declared in the LUCI deployment configs, see **TODO**
+for the up-to-date list of available predefined roles and their meaning.
+
+Custom roles are defined in the project configs via luci.custom_role(...).
+They can be used if none of the predefined roles represent the desired set
+of permissions.
+
+#### Arguments {#luci.binding-args}
+
+* **realm**: a single realm or a list of realms to add the binding to. Can be omitted if the binding is used inline inside some [luci.realm(...)](#luci.realm) declaration.
+* **roles**: a single role or a list of roles to assign. Required.
+* **groups**: a single group name or a list of groups to assign the role to.
+* **users**: a single user email or a list of emails to assign the role to.
+* **projects**: a single LUCI project name or a list of project names to assign the role to.
 
 
 
@@ -1031,17 +1110,22 @@ Usually required for any non-trivial project.
 ### luci.bucket {#luci.bucket}
 
 ```python
-luci.bucket(name, acls = None)
+luci.bucket(name, acls = None, bindings = None)
 ```
 
 
 
-Defines a bucket: a container for LUCI resources that share the same ACL.
+Defines a bucket: a container for LUCI builds.
+
+This rule also implicitly defines the realm to use for the builds in this
+bucket. It can be used to specify permissions that apply to all builds in this
+bucket and all resources these builds produce. See [luci.realm(...)](#luci.realm).
 
 #### Arguments {#luci.bucket-args}
 
 * **name**: name of the bucket, e.g. `ci` or `try`. Required.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects.
+* **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the bucket's realm. Experimental. Will eventually replace `acls`.
 
 
 

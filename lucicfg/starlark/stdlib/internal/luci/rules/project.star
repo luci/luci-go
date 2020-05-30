@@ -38,11 +38,16 @@ def _project(
       scheduler=None,
       swarming=None,
 
-      acls=None
+      acls=None,
+      bindings=None,
   ):
   """Defines a LUCI project.
 
   There should be exactly one such definition in the top-level config file.
+
+  This rule also implicitly defines the `@root` realm of the project. It can be
+  used to setup permissions that apply to all resources in the project. See
+  luci.realm(...).
 
   Args:
     name: full name of the project. Required.
@@ -59,6 +64,9 @@ def _project(
     scheduler: appspot hostname of a LUCI Scheduler service to use (if any).
     swarming: appspot hostname of a Swarming service to use by default (if any).
     acls: list of acl.entry(...) objects, will be inherited by all buckets.
+    bindings: a list of luci.binding(...) to add to the root realm. They will be
+        inherited by all realms in the project. Experimental. Will eventually
+        replace `acls`.
   """
   key = keys.project()
   graph.add_node(key, props = {
@@ -76,7 +84,10 @@ def _project(
   })
   # All projects have a root realm.
   if realms.experiment.is_enabled():
-    realm(name = '@root')
+    realm(
+        name = '@root',
+        bindings = bindings,
+    )
   return graph.keyset(key)
 
 
