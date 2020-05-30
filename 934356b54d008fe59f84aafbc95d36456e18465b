@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ed371888_52169f75",
+        "filename": "auth/integration/localauth/server_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T00:07:09Z",
+      "side": 1,
+      "message": "good catch",
+      "parentUuid": "6c83fd24_d73e533e",
+      "range": {
+        "startLine": 98,
+        "startChar": 17,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "891ed646_a099c884",
         "filename": "lucictx/lucictx.go",
         "patchSetId": 1
@@ -63,6 +87,24 @@
       "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd2dfb5d_4af1616c",
+        "filename": "lucictx/lucictx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T00:07:09Z",
+      "side": 1,
+      "message": "goimports :(",
+      "parentUuid": "891ed646_a099c884",
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -86,6 +128,30 @@
       "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "580f6f8e_db34e3b0",
+        "filename": "lucictx/lucictx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T00:07:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39e41178_ef426c44",
+      "range": {
+        "startLine": 153,
+        "startChar": 0,
+        "endLine": 153,
+        "endChar": 76
+      },
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -129,6 +195,24 @@
     },
     {
       "key": {
+        "uuid": "4ab3ce2f_1a9763b5",
+        "filename": "lucictx/lucictx_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T00:07:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "692abc4b_590909ef",
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63a4aa57_8cc038ba",
         "filename": "lucictx/luciexe_test.go",
         "patchSetId": 1
@@ -146,6 +230,24 @@
     },
     {
       "key": {
+        "uuid": "e8ad4084_533c19f2",
+        "filename": "lucictx/luciexe_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T00:07:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63a4aa57_8cc038ba",
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d904e9fe_21dbbca7",
         "filename": "lucictx/types_test.go",
         "patchSetId": 1
@@ -160,6 +262,24 @@
       "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74a2ef25_143d1400",
+        "filename": "lucictx/types_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T00:07:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d904e9fe_21dbbca7",
+      "revId": "934356b54d008fe59f84aafbc95d36456e18465b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
