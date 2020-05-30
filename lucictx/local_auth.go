@@ -16,7 +16,6 @@ package lucictx
 
 import (
 	"context"
-	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -24,27 +23,6 @@ import (
 // ErrNoLocalAuthAccount is returned by SwitchLocalAccount if requested account
 // is not available in the LUCI_CONTEXT.
 var ErrNoLocalAuthAccount = errors.New("the requested logical account is not present in LUCI_CONTEXT")
-
-// LocalAuth is a struct that may be used with the "local_auth" section of
-// LUCI_CONTEXT.
-type LocalAuth struct {
-	// RPCPort and Secret define how to connect to the local auth server.
-	RPCPort uint32 `json:"rpc_port"`
-	Secret  []byte `json:"secret"`
-
-	// Accounts and DefaultAccountID defines what access tokens are available.
-	Accounts         []LocalAuthAccount `json:"accounts"`
-	DefaultAccountID string             `json:"default_account_id"`
-}
-
-// LocalAuthAccount contains information about a service account available
-// through a local auth server.
-type LocalAuthAccount struct {
-	// ID is logical identifier of the account, e.g. "system" or "task".
-	ID string `json:"id"`
-	// Email is an account email or "-" if not available.
-	Email string `json:"email"`
-}
 
 // GetLocalAuth calls Lookup and returns a copy of the current LocalAuth from
 // LUCI_CONTEXT if it was present. If no LocalAuth is in the context, this
@@ -63,15 +41,7 @@ func GetLocalAuth(ctx context.Context) *LocalAuth {
 
 // SetLocalAuth sets the LocalAuth in the LUCI_CONTEXT.
 func SetLocalAuth(ctx context.Context, la *LocalAuth) context.Context {
-	var raw interface{}
-	if la != nil {
-		raw = la
-	}
-	ctx, err := Set(ctx, "local_auth", raw)
-	if err != nil {
-		panic(fmt.Errorf("impossible: %s", err))
-	}
-	return ctx
+	return Set(ctx, "local_auth", la)
 }
 
 // SwitchLocalAccount changes default logical account selected in the context.
@@ -87,12 +57,12 @@ func SetLocalAuth(ctx context.Context, la *LocalAuth) context.Context {
 // If the given account is not available, returns (nil, ErrNoLocalAuthAccount).
 func SwitchLocalAccount(ctx context.Context, accountID string) (context.Context, error) {
 	if la := GetLocalAuth(ctx); la != nil {
-		if la.DefaultAccountID == accountID {
+		if la.DefaultAccountId == accountID {
 			return ctx, nil
 		}
 		for _, acc := range la.Accounts {
-			if acc.ID == accountID {
-				la.DefaultAccountID = accountID
+			if acc.Id == accountID {
+				la.DefaultAccountId = accountID
 				return SetLocalAuth(ctx, la), nil
 			}
 		}

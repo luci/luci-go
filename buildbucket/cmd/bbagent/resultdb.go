@@ -28,7 +28,7 @@ func setResultDBContext(ctx context.Context, buildProto *bbpb.Build) (context.Co
 	}
 	return lucictx.SetResultDB(ctx, &lucictx.ResultDB{
 		Hostname: buildProto.Infra.Resultdb.Hostname,
-		CurrentInvocation: lucictx.Invocation{
+		CurrentInvocation: &lucictx.ResultDBInvocation{
 			Name:        buildProto.Infra.Resultdb.Invocation,
 			UpdateToken: secrets.ResultdbInvocationUpdateToken,
 		},

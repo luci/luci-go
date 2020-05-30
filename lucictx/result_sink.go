@@ -16,18 +16,7 @@ package lucictx
 
 import (
 	"context"
-	"fmt"
 )
-
-// ResultSink is a struct that may be used with the "result_sink" section of
-// LUCI_CONTEXT.
-type ResultSink struct {
-	// TCP address (e.g. "localhost:62115") where a ResultSink pRPC server is hosted.
-	Address string `json:"address"`
-	// secret string required in all ResultSink requests in HTTP header
-	// `Authorization: ResultSink <auth-token>`
-	AuthToken string `json:"auth_token"`
-}
 
 // GetResultSink returns the current ResultSink from LUCI_CONTEXT if it was present.
 // nil, otherwise.
@@ -45,13 +34,5 @@ func GetResultSink(ctx context.Context) *ResultSink {
 
 // SetResultSink sets the ResultSink in the LUCI_CONTEXT.
 func SetResultSink(ctx context.Context, sink *ResultSink) context.Context {
-	var raw interface{}
-	if sink != nil {
-		raw = sink
-	}
-	ctx, err := Set(ctx, "result_sink", raw)
-	if err != nil {
-		panic(fmt.Errorf("impossible: %s", err))
-	}
-	return ctx
+	return Set(ctx, "result_sink", sink)
 }

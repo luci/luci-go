@@ -16,10 +16,10 @@ package lucictx
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPredefinedTypes(t *testing.T) {
@@ -30,51 +30,48 @@ func TestPredefinedTypes(t *testing.T) {
 		Convey("local_auth", func() {
 			So(GetLocalAuth(c), ShouldBeNil)
 
-			localAuth := LocalAuth{
-				RPCPort: 100,
+			localAuth := &LocalAuth{
+				RpcPort: 100,
 				Secret:  []byte("foo"),
-				Accounts: []LocalAuthAccount{
-					{ID: "test", Email: "some@example.com"},
+				Accounts: []*LocalAuthAccount{
+					{Id: "test", Email: "some@example.com"},
 				},
-				DefaultAccountID: "test",
+				DefaultAccountId: "test",
 			}
 
-			c = SetLocalAuth(c, &localAuth)
-			rawJSON := json.RawMessage{}
-			Get(c, "local_auth", &rawJSON)
-			So(string(rawJSON), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v",`+
+			c = SetLocalAuth(c, localAuth)
+			data, _ := getCurrent(c).sections["local_auth"]
+			So(string(*data), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v",`+
 				`"accounts":[{"id":"test","email":"some@example.com"}],"default_account_id":"test"}`)
 
-			So(GetLocalAuth(c), ShouldResemble, &localAuth)
+			So(GetLocalAuth(c), ShouldResembleProto, localAuth)
 		})
 
 		Convey("swarming", func() {
 			So(GetSwarming(c), ShouldBeNil)
 
-			c = SetSwarming(c, &Swarming{[]byte("foo")})
-			rawJSON := json.RawMessage{}
-			Get(c, "swarming", &rawJSON)
-			So(string(rawJSON), ShouldEqual, `{"secret_bytes":"Zm9v"}`)
+			c = SetSwarming(c, &Swarming{SecretBytes: []byte("foo")})
+			data, _ := getCurrent(c).sections["swarming"]
+			So(string(*data), ShouldEqual, `{"secret_bytes":"Zm9v"}`)
 
-			So(GetSwarming(c), ShouldResemble, &Swarming{[]byte("foo")})
+			So(GetSwarming(c), ShouldResembleProto, &Swarming{SecretBytes: []byte("foo")})
 		})
 
 		Convey("resultdb", func() {
 			So(GetResultDB(c), ShouldBeNil)
 
-			resultdb := ResultDB{
+			resultdb := &ResultDB{
 				Hostname: "test.results.cr.dev",
-				CurrentInvocation: Invocation{
+				CurrentInvocation: &ResultDBInvocation{
 					Name:        "invocations/build:1",
 					UpdateToken: "foobarbazsecretoken",
 				}}
-			c = SetResultDB(c, &resultdb)
-			rawJSON := json.RawMessage{}
-			Get(c, "resultdb", &rawJSON)
-			So(string(rawJSON), ShouldEqual, `{"hostname":"test.results.cr.dev","current_invocation":`+
+			c = SetResultDB(c, resultdb)
+			data, _ := getCurrent(c).sections["resultdb"]
+			So(string(*data), ShouldEqual, `{"hostname":"test.results.cr.dev","current_invocation":`+
 				`{"name":"invocations/build:1","update_token":"foobarbazsecretoken"}}`)
 
-			So(GetResultDB(c), ShouldResemble, &resultdb)
+			So(GetResultDB(c), ShouldResembleProto, resultdb)
 		})
 	})
 }

@@ -12,27 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package lucictx
+syntax = "proto3";
 
-import (
-	"context"
-)
+package lucictx;
 
-// GetResultDB returns the current ResultDB from LUCI_CONTEXT if it was present.
-// nil, otherwise.
-func GetResultDB(ctx context.Context) *ResultDB {
-	ret := ResultDB{}
-	ok, err := Lookup(ctx, "resultdb", &ret)
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		return nil
-	}
-	return &ret
-}
+option go_package = "go.chromium.org/luci/lucictx;lucictx";
 
-// SetResultDB sets the ResultDB in the LUCI_CONTEXT.
-func SetResultDB(ctx context.Context, db *ResultDB) context.Context {
-	return Set(ctx, "resultdb", db)
+message TestStructure {
+  int32 hello_there = 1;
 }
