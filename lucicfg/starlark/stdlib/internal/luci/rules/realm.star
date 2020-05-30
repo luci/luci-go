@@ -16,7 +16,7 @@ load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
-load('@stdlib//internal/luci/common.star', 'keys')
+load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
 load('@stdlib//internal/luci/lib/realms.star', 'realms')
 
 
@@ -25,6 +25,7 @@ def _realm(
       *,
       name,
       extends=None,
+      bindings=None,
   ):
   """Defines a realm.
 
@@ -45,12 +46,6 @@ def _realm(
   then all permissions defined in `B` are also in `A`. Remembering that a realm
   is just a set of `(<principal>, <permission>)` pairs, the "extend" relation is
   just a set inclusion.
-
-  The primary way of populating the permission set of a realm is via bindings.
-  Each binding assigns a role to a set of principals. Since each role is
-  essentially just a set of permissions, each binding adds to the realm a
-  Cartesian product of a set of permissions (defined via the role) and a set of
-  principals (defined via a direct listing or via groups).
 
   There are two special realms that a project can have: "@root" and "@legacy".
 
@@ -74,6 +69,40 @@ def _realm(
   attributes. Some services may not have legacy resources at all. The legacy
   realm is not used in these case. Refer to the service documentation.
 
+  The primary way of populating the permission set of a realm is via bindings.
+  Each binding assigns a role to a set of principals (individuals, groups or
+  LUCI projects). A role is just a set of permissions. A binding grants these
+  permissions to all principals listed in it.
+
+  Binding can be specific either right here:
+
+      luci.realm(
+          name = 'try',
+          bindings = [
+              luci.binding(
+                  roles = 'role/a',
+                  groups = ['group-a'],
+              ),
+              luci.binding(
+                  roles = 'role/b',
+                  groups = ['group-b'],
+              ),
+          ],
+      )
+
+  Or separately one by one via luci.binding(...) declarations:
+
+      luci.binding(
+          realm = 'try',
+          roles = 'role/a',
+          groups = ['group-a'],
+      )
+      luci.binding(
+          realm = 'try',
+          roles = 'role/b',
+          groups = ['group-b'],
+      )
+
   DocTags:
     Experimental.
 
@@ -82,6 +111,7 @@ def _realm(
         `@root` or `@legacy`. Required.
     extends: a reference or a list of references to realms to inherit permission
         from. Optional. Default (and implicit) is `@root`.
+    bindings: a list of luci.binding(...) to add to the realm.
   """
   realms.experiment.require()
 
@@ -105,6 +135,12 @@ def _realm(
   graph.add_edge(keys.project(), key)
   for parent in parents:
     graph.add_edge(parent, key, title='extends')
+
+  for b in validate.list('bindings', bindings):
+    if graph.is_keyset(b) and b.has(kinds.BINDING):
+      graph.add_edge(key, b.get(kinds.BINDING))
+    else:
+      fail('bad "bindings": %s is not a luci.binding(...)' % (b,))
 
   return graph.keyset(key)
 
