@@ -266,6 +266,30 @@
       "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ece46e9_461d70f8",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T01:43:33Z",
+      "side": 1,
+      "message": "\u003e yeah, this is a valid concern. CIPD packages don\u0027t have this problem because they are explicitly registered in a central repo. \n\u003e\n\u003e But this is same as input properties, right?\n\nI was actually thinking about two experiments which interact with each-other (i.e. \"experiment_A\" changes some presentation and \"experiment_B\" also changes some presentation).\n\nLess worried about picking the same names; I agree that they should be very similar to properties (but my strawman example also should help encourage some namespacing to prevent that).",
+      "parentUuid": "4d68625c_267120c8",
+      "range": {
+        "startLine": 466,
+        "startChar": 25,
+        "endLine": 466,
+        "endChar": 36
+      },
+      "revId": "c60d300046f10b58a1d066d4947b5fd0eb7a3810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
