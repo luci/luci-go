@@ -34,106 +34,6 @@ import (
 func TestGetBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateGet", t, func() {
-		Convey("request", func() {
-			Convey("nil", func() {
-				err := validateGet(nil)
-				So(err, ShouldErrLike, "id or (builder and build_number) is required")
-			})
-
-			Convey("empty", func() {
-				req := &pb.GetBuildRequest{}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "id or (builder and build_number) is required")
-			})
-
-			Convey("builder", func() {
-				req := &pb.GetBuildRequest{
-					Builder: &pb.BuilderID{},
-				}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "id or (builder and build_number) is required")
-			})
-
-			Convey("build number", func() {
-				req := &pb.GetBuildRequest{
-					BuildNumber: 1,
-				}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "id or (builder and build_number) is required")
-			})
-		})
-
-		Convey("mutual exclusion", func() {
-			Convey("builder", func() {
-				req := &pb.GetBuildRequest{
-					Id:      1,
-					Builder: &pb.BuilderID{},
-				}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
-			})
-
-			Convey("build number", func() {
-				req := &pb.GetBuildRequest{
-					Id:          1,
-					BuildNumber: 1,
-				}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
-			})
-		})
-
-		Convey("builder", func() {
-			Convey("project", func() {
-				req := &pb.GetBuildRequest{
-					Builder:     &pb.BuilderID{},
-					BuildNumber: 1,
-				}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "project must match")
-			})
-
-			Convey("bucket", func() {
-				Convey("empty", func() {
-					req := &pb.GetBuildRequest{
-						Builder: &pb.BuilderID{
-							Project: "project",
-						},
-						BuildNumber: 1,
-					}
-					err := validateGet(req)
-					So(err, ShouldErrLike, "bucket must match")
-				})
-
-				Convey("v1", func() {
-					req := &pb.GetBuildRequest{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "luci.project.bucket",
-							Builder: "builder",
-						},
-						BuildNumber: 1,
-					}
-					err := validateGet(req)
-					So(err, ShouldErrLike, "invalid use of v1 builder.bucket in v2 API")
-				})
-			})
-
-			Convey("builder", func() {
-				req := &pb.GetBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-					},
-					BuildNumber: 1,
-				}
-				err := validateGet(req)
-				So(err, ShouldErrLike, "builder must match")
-			})
-		})
-	})
-
 	Convey("GetBuild", t, func() {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
@@ -336,6 +236,104 @@ func TestGetBuild(t *testing.T) {
 					},
 					Input: &pb.Build_Input{},
 				})
+			})
+		})
+	})
+
+	Convey("validateGet", t, func() {
+		Convey("nil", func() {
+			err := validateGet(nil)
+			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+		})
+
+		Convey("empty", func() {
+			req := &pb.GetBuildRequest{}
+			err := validateGet(req)
+			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+		})
+
+		Convey("builder", func() {
+			req := &pb.GetBuildRequest{
+				Builder: &pb.BuilderID{},
+			}
+			err := validateGet(req)
+			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+		})
+
+		Convey("build number", func() {
+			req := &pb.GetBuildRequest{
+				BuildNumber: 1,
+			}
+			err := validateGet(req)
+			So(err, ShouldErrLike, "id or (builder and build_number) is required")
+		})
+
+		Convey("mutual exclusion", func() {
+			Convey("builder", func() {
+				req := &pb.GetBuildRequest{
+					Id:      1,
+					Builder: &pb.BuilderID{},
+				}
+				err := validateGet(req)
+				So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
+			})
+
+			Convey("build number", func() {
+				req := &pb.GetBuildRequest{
+					Id:          1,
+					BuildNumber: 1,
+				}
+				err := validateGet(req)
+				So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
+			})
+		})
+
+		Convey("validateBuilderID", func() {
+			Convey("project", func() {
+				req := &pb.GetBuildRequest{
+					Builder:     &pb.BuilderID{},
+					BuildNumber: 1,
+				}
+				err := validateGet(req)
+				So(err, ShouldErrLike, "project must match")
+			})
+
+			Convey("bucket", func() {
+				Convey("empty", func() {
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+						},
+						BuildNumber: 1,
+					}
+					err := validateGet(req)
+					So(err, ShouldErrLike, "bucket is required")
+				})
+
+				Convey("v1", func() {
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "luci.project.bucket",
+							Builder: "builder",
+						},
+						BuildNumber: 1,
+					}
+					err := validateGet(req)
+					So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
+				})
+			})
+
+			Convey("builder", func() {
+				req := &pb.GetBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+					},
+					BuildNumber: 1,
+				}
+				err := validateGet(req)
+				So(err, ShouldErrLike, "builder is required")
 			})
 		})
 	})

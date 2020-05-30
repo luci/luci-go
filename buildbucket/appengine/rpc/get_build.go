@@ -17,10 +17,6 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"strings"
-
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
@@ -30,34 +26,24 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// TODO(crbug/1042991): Move to a common location.
-var (
-	projRegex    = regexp.MustCompile(`^[a-z0-9\-_]+$`)
-	bucketRegex  = regexp.MustCompile(`^[a-z0-9\-_.]{1,100}$`)
-	builderRegex = regexp.MustCompile(`^[a-zA-Z0-9\-.\(\) ]{1,128}$`)
-)
-
 // validateGet validates the given request.
 func validateGet(req *pb.GetBuildRequest) error {
 	switch {
 	case req.GetId() != 0:
 		if req.Builder != nil || req.BuildNumber != 0 {
-			return appstatus.Errorf(codes.InvalidArgument, "id is mutually exclusive with (builder and build_number)")
+			return errors.Reason("id is mutually exclusive with (builder and build_number)").Err()
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
-		// TODO(crbug/1042991): Move pb.BuilderID validation to a common location.
-		switch parts := strings.Split(req.Builder.Bucket, "."); {
-		case !projRegex.MatchString(req.Builder.Project):
-			return appstatus.Errorf(codes.InvalidArgument, "builder.project must match %q", projRegex.String())
-		case !bucketRegex.MatchString(req.Builder.Bucket):
-			return appstatus.Errorf(codes.InvalidArgument, "builder.bucket must match %q", bucketRegex.String())
-		case !builderRegex.MatchString(req.Builder.Builder):
-			return appstatus.Errorf(codes.InvalidArgument, "builder.builder must match %q", builderRegex.String())
-		case parts[0] == "luci" && len(parts) > 2:
-			return appstatus.Errorf(codes.InvalidArgument, "invalid use of v1 builder.bucket in v2 API (hint: try %q)", parts[2])
+		switch err := validateBuilderID(req.Builder); {
+		case err != nil:
+			return errors.Annotate(err, "builder").Err()
+		case req.Builder.Bucket == "":
+			return errors.Annotate(errors.Reason("bucket is required").Err(), "builder").Err()
+		case req.Builder.Builder == "":
+			return errors.Annotate(errors.Reason("builder is required").Err(), "builder").Err()
 		}
 	default:
-		return appstatus.Errorf(codes.InvalidArgument, "one of id or (builder and build_number) is required")
+		return errors.Reason("one of id or (builder and build_number) is required").Err()
 	}
 	return nil
 }
@@ -65,11 +51,11 @@ func validateGet(req *pb.GetBuildRequest) error {
 // GetBuild handles a request to retrieve a build. Implements pb.BuildsServer.
 func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build, error) {
 	if err := validateGet(req); err != nil {
-		return nil, err
+		return nil, appstatus.BadRequest(err)
 	}
 	m, err := getFieldMask(req.Fields)
 	if err != nil {
-		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid field mask")
+		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
 	if req.Id == 0 {
 		addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)

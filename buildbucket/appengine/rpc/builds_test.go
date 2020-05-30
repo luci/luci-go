@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	pb "go.chromium.org/luci/buildbucket/proto"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -60,6 +62,53 @@ func TestBuilds(t *testing.T) {
 				rsp, err := srv.UpdateBuild(ctx, nil)
 				So(err, ShouldErrLike, "method not implemented")
 				So(rsp, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("validateBuilderID", t, func() {
+		Convey("nil", func() {
+			err := validateBuilderID(nil)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("empty", func() {
+			b := &pb.BuilderID{}
+			err := validateBuilderID(b)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("project", func() {
+			b := &pb.BuilderID{}
+			err := validateBuilderID(b)
+			So(err, ShouldErrLike, "project must match")
+		})
+
+		Convey("bucket", func() {
+			Convey("empty", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+				}
+				err := validateBuilderID(b)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("invalid", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket!",
+				}
+				err := validateBuilderID(b)
+				So(err, ShouldErrLike, "bucket must match")
+			})
+
+			Convey("v1", func() {
+				b := &pb.BuilderID{
+					Project: "project",
+					Bucket:  "luci.project.bucket",
+				}
+				err := validateBuilderID(b)
+				So(err, ShouldErrLike, "invalid use of v1 bucket in v2 API")
 			})
 		})
 	})
