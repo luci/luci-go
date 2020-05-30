@@ -199,7 +199,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 16.
+// Next ID: 17.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -217,17 +217,22 @@ message ScheduleBuildRequest {
   // Required, unless template_build_id is specified.
   BuilderID builder = 3;
 
-  // If specified, overrides server-defined value of
-  // Build.infra.buildbucket.canary.
-  // Otherwise the value is computed based on the builder config.
-  // See Swarming.task_template_canary_percentage in
-  // ./config/project_config.proto.
+  // DEPRECATED
+  //
+  // YES sets "luci.buildbucket.canary_software" to true in `experiments`.
+  // NO sets "luci.buildbucket.canary_software" to false in `experiments`.
   Trinary canary = 4;
 
-  // If specified, overrides server-defined value of Build.input.experimental.
-  // Otherwise the value is computed based on the builder config.
-  // See Builder.experimental in ./config/project_config.proto.
+  // DEPRECATED
+  //
+  // YES sets "luci.buildbucket.non_production" to true in `experiments`.
+  // NO sets "luci.buildbucket.non_production" to false in `experiments`.
   Trinary experimental = 5;
+
+  // Sets (or prevents) these experiments on the scheduled build.
+  //
+  // See `Builder.experiments` for well known experiments.
+  map<string, bool> experiments = 16;
 
   // Properties to include in Build.input.properties.
   //
