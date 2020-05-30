@@ -1,0 +1,91 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package lucictx;
+
+option go_package = "go.chromium.org/luci/lucictx;lucictx";
+
+
+// LocalAuth is a struct that may be used with the "local_auth" section of
+// LUCI_CONTEXT.
+message LocalAuth {
+	// RPCPort and Secret define how to connect to the local auth server.
+  uint32 rpc_port = 1 [json_name = "rpc_port"];
+  bytes secret = 2 [json_name = "secret"];
+
+	// Accounts and DefaultAccountID defines what access tokens are available.
+  repeated LocalAuthAccount accounts = 3 [json_name = "accounts"];
+  string default_account_id = 4 [json_name = "default_account_id"];
+}
+
+// LocalAuthAccount contains information about a service account available
+// through a local auth server.
+message LocalAuthAccount {
+  // ID is logical identifier of the account, e.g. "system" or "task".
+  string id = 1 [json_name = "id"];
+  // Email is an account email or "-" if not available.
+  string email = 2 [json_name = "email"];
+}
+
+// Swarming is a struct that may be used with the "swarming" section of
+// LUCI_CONTEXT.
+message Swarming {
+  // The user-supplied secret bytes specified for the task, if any. This can be
+  // used to pass application or task-specific secret keys, JSON, etc. from the
+  // task triggerer directly to the task. The bytes will not appear on any
+  // swarming UI, or be visible to any users of the swarming service.
+  bytes secret_bytes = 1 [json_name = "secret_bytes"];
+}
+
+
+// LUCIExe is a struct that may be used with the "luciexe" section of
+// LUCI_CONTEXT.
+message LUCIExe {
+  // The absolute path of the base cache directory. This directory MAY be on the
+  // same filesystem as CWD (but is not guaranteed to be). The available caches
+  // are described in Buildbucket as CacheEntry messages.
+  string cache_dir = 1 [json_name = "cache_dir"];
+}
+
+
+// ResultDB is a struct that may be used with the "resultdb" section of
+// LUCI_CONTEXT.
+message ResultDB {
+  string hostname = 1 [json_name = "hostname"]; // e.g. results.api.cr.dev
+
+  // The invocation in the current context.
+  // For example, in a Buildbucket build context, it is the build's invocation.
+  //
+  // This is the recommended way to propagate invocation name and update token
+  // to subprocesses.
+  ResultDBInvocation current_invocation = 2 [json_name = "current_invocation"];
+}
+
+// ResultDBInvocation is a struct that contains the necessary info to update an
+// invocation in the ResultDB service.
+message ResultDBInvocation {
+  string name = 1 [json_name = "name"]; // e.g. "invocations/build:1234567890"
+  string update_token = 2 [json_name = "update_token"]; // required in all mutation requests
+}
+
+message ResultSink {
+  // TCP address (e.g. "localhost:62115") where a ResultSink pRPC server is hosted.
+  string address = 1 [json_name = "address"];
+
+  // secret string required in all ResultSink requests in HTTP header
+  // `Authorization: ResultSink <auth-token>`
+  string auth_token = 2 [json_name = "auth_token"];
+}
