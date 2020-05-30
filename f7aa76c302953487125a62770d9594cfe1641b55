@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a634ef9a_0575a6f8",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T02:33:19Z",
+      "side": 1,
+      "message": "Yeah that would be a huge amount of work, and we want this one to be opt-out, rather than opt-in.\n\nNote that use_bbagent below will have its value go up over time, so \u0027different defaults\u0027 may be an overfit impression here.",
+      "parentUuid": "0f745556_f07a323b",
+      "revId": "f7aa76c302953487125a62770d9594cfe1641b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c5d5ab5_a828de9c",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2020-05-30T02:27:48Z",
       "side": 1,
       "message": "I don\u0027t understand what will happen for this experiment. If there\u0027s a 10% chance of receiving canary packages, the build will be dispatched with canary packages installed 10% of the time. But if there\u0027s a 10% chance of non-production, what will happen 10% of the time? The build will start with...?",
+      "revId": "f7aa76c302953487125a62770d9594cfe1641b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5be3bfe_60f2f869",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-05-30T02:33:19Z",
+      "side": 1,
+      "message": "The build will have that experiment set 10% of the time, but there\u0027s no other implication. The non-production experiment is just the experiment string; buildbucket doesn\u0027t do anything differently.",
+      "parentUuid": "8c5d5ab5_a828de9c",
       "revId": "f7aa76c302953487125a62770d9594cfe1641b55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
