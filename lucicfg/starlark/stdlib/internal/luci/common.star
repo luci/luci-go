@@ -27,6 +27,8 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.project: root
 #   luci.project -> [luci.realm]
 #   luci.realm -> [luci.realm]
+#   luci.bindings_root -> [luci.binding]
+#   luci.realm -> [luci.binding]
 #   luci.project -> luci.logdog
 #   luci.project -> luci.milo
 #   luci.project -> luci.cq
@@ -144,6 +146,7 @@ kinds = struct(
     # Publicly declarable nodes.
     PROJECT = 'luci.project',
     REALM = 'luci.realm',
+    BINDING = 'luci.binding',
     LOGDOG = 'luci.logdog',
     BUCKET = 'luci.bucket',
     EXECUTABLE = 'luci.executable',
@@ -165,6 +168,7 @@ kinds = struct(
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = 'luci.builder_ref',
     TRIGGERER = 'luci.triggerer',
+    BINDINGS_ROOT = 'luci.bindings_root',
     MILO_ENTRIES_ROOT = 'luci.milo_entries_root',
     MILO_VIEW = 'luci.milo_view',
     CQ_VERIFIERS_ROOT = 'luci.cq_verifiers_root',
@@ -203,6 +207,7 @@ keys = struct(
     # Internal nodes (declared internally as dependency of other nodes).
     builder_ref = _builder_ref_key,
     triggerer = lambda ref, attr='triggered_by': _bucket_scoped_key(kinds.TRIGGERER, attr, ref),
+    bindings_root = lambda: _namespaced_key(kinds.BINDINGS_ROOT, '...'),
     milo_entries_root = lambda: _namespaced_key(kinds.MILO_ENTRIES_ROOT, '...'),
     milo_view = lambda name: _namespaced_key(kinds.MILO_VIEW, name),
     cq_verifiers_root = lambda: _namespaced_key(kinds.CQ_VERIFIERS_ROOT, '...'),
