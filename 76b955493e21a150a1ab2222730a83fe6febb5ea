@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8c52706a_0ca23ff2",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-31T10:44:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e10bb86_4a4d53bd",
+      "range": {
+        "startLine": 97,
+        "startChar": 7,
+        "endLine": 97,
+        "endChar": 11
+      },
+      "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2daf46cb_2566a97c",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
         "patchSetId": 4
@@ -36,6 +60,24 @@
       "writtenOn": "2020-05-29T05:29:06Z",
       "side": 1,
       "message": "in the previous CL, I thought you said that a test variant will appear, but then may disappear. \nnow this code looks like it will stay there, for example the checkbox is unchecked, but a warning sign is there.\n\nI am curious, why this filtering isn\u0027t done at the rendering level where we know exactly whether a test variant is flaky/exonerated?",
+      "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23281ea9_e5367f3e",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-05-31T10:44:10Z",
+      "side": 1,
+      "message": "I tried to implement it at other levels again but it\u0027s a lot more involved.\n\nWe can filter the variants at rendering level, but that would lead to a much more complicated solution because the tests are stored a tree, which is used to render the folder-like tree. We need to conditionally recursively remove nodes that only contains flaky variants.\n\nFiltering at the test node level is hard too. The test node itself isn\u0027t a @computed property, therefore isn\u0027t able to track the changes in properties on its own. And we can\u0027t make it a @computed property either. Because that means an update in the variant will trigger a complete recomputation of test node, which is slow.\n\nI reckon the current solution is good enough. A limited number of flaky variants may not be filtered out. That shouldn\u0027t stop the user from seeing the tests they care. If someone complains about it, then we can move to a more involved solution.",
+      "parentUuid": "2daf46cb_2566a97c",
       "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
