@@ -18,8 +18,11 @@ import (
 	"encoding/base64"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
+
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 )
 
@@ -79,4 +82,11 @@ func ValidatePageSize(pageSize int32) error {
 		return errors.Reason("negative").Err()
 	}
 	return nil
+}
+
+// TokenError returns a generic error message that a page token
+// is invalid and records err as an internal error.
+// The returned error is anontated with INVALID_ARUGMENT code.
+func TokenError(err error) error {
+	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page_token")
 }
