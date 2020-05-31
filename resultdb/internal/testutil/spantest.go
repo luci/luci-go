@@ -208,7 +208,8 @@ func fatalIf(err error) {
 	}
 }
 
-func updateDict(dest, source map[string]interface{}) {
+// UpdateDict copies values from source to dest.
+func UpdateDict(dest, source map[string]interface{}) {
 	for k, v := range source {
 		dest[k] = v
 	}
@@ -232,7 +233,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValu
 	if state == pb.Invocation_FINALIZED {
 		values["FinalizeTime"] = spanner.CommitTimestamp
 	}
-	updateDict(values, extraValues)
+	UpdateDict(values, extraValues)
 	return span.InsertMap("Invocations", values)
 }
 
@@ -301,30 +302,6 @@ func InsertTestExonerations(invID span.InvocationID, testID string, variant *typ
 		})
 	}
 	return ms
-}
-
-// InsertInvocationArtifact returns a spanner mutation to insert an invocation
-// artifact.
-func InsertInvocationArtifact(invID span.InvocationID, artifactID string, extraValues map[string]interface{}) *spanner.Mutation {
-	values := map[string]interface{}{
-		"InvocationId": invID,
-		"ParentID":     "",
-		"ArtifactId":   artifactID,
-	}
-	updateDict(values, extraValues)
-	return span.InsertMap("Artifacts", values)
-}
-
-// InsertTestResultArtifact returns a spanner mutation to insert a test result
-// artifact.
-func InsertTestResultArtifact(invID span.InvocationID, testID, resultID, artifactID string, extraValues map[string]interface{}) *spanner.Mutation {
-	values := map[string]interface{}{
-		"InvocationId": invID,
-		"ParentID":     span.ArtifactParentID(testID, resultID),
-		"ArtifactId":   artifactID,
-	}
-	updateDict(values, extraValues)
-	return span.InsertMap("Artifacts", values)
 }
 
 // MakeTestResults creates test results.

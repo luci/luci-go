@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -37,7 +38,9 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
-	rpcpb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/resultdb/internal/testutil"
@@ -152,18 +155,18 @@ func TestServeContent(t *testing.T) {
 		}
 
 		MustApply(ctx,
-			InsertInvocation("inv", rpcpb.Invocation_FINALIZED, nil),
-			InsertInvocationArtifact("inv", "a", map[string]interface{}{
+			InsertInvocation("inv", pb.Invocation_FINALIZED, nil),
+			insertArtifact("inv", "", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
 				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
 			}),
-			InsertInvocationArtifact("inv", "rbe", map[string]interface{}{
+			insertArtifact("inv", "", "rbe", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
 				"RBECASHash":  "sha256:deadbeef",
 			}),
-			InsertTestResultArtifact("inv", "t/t", "r", "a", map[string]interface{}{
+			insertArtifact("inv", "tr/t/t/r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
 				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
@@ -243,4 +246,14 @@ func TestServeContent(t *testing.T) {
 			})
 		})
 	})
+}
+
+func insertArtifact(invID span.InvocationID, parentID, artifactID string, extraValues map[string]interface{}) *spanner.Mutation {
+	values := map[string]interface{}{
+		"InvocationId": invID,
+		"ParentID":     parentID,
+		"ArtifactId":   artifactID,
+	}
+	testutil.UpdateDict(values, extraValues)
+	return span.InsertMap("Artifacts", values)
 }
