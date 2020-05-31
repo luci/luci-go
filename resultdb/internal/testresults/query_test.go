@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -33,8 +34,8 @@ func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insInv := testutil.InsertInvocation
-		insTRs := testutil.InsertTestResults
+		insInv := insert.Invocation
+		insTRs := insert.TestResults
 
 		testutil.MustApply(ctx, insInv("inv1", pb.Invocation_ACTIVE, nil))
 		q := &Query{
@@ -67,7 +68,7 @@ func TestQueryTestResults(t *testing.T) {
 		}
 
 		Convey(`Does not fetch test results of other invocations`, func() {
-			expected := testutil.MakeTestResults("inv1", "DoBaz", nil,
+			expected := insert.MakeTestResults("inv1", "DoBaz", nil,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL,
@@ -80,7 +81,7 @@ func TestQueryTestResults(t *testing.T) {
 			)
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insTRs("inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				testutil.InsertTestResultMessages(expected),
+				insert.TestResultMessages(expected),
 				insTRs("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 			)...)
 
@@ -203,14 +204,14 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Paging`, func() {
-			trs := testutil.MakeTestResults("inv1", "DoBaz", nil,
+			trs := insert.MakeTestResults("inv1", "DoBaz", nil,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			testutil.MustApply(ctx, testutil.InsertTestResultMessages(trs)...)
+			testutil.MustApply(ctx, insert.TestResultMessages(trs)...)
 
 			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestResult) string {
 				q2 := q

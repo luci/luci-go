@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -92,7 +93,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
-		insInv := testutil.InsertInvocation
+		insInv := insert.Invocation
 
 		assertIncluded := func(includedInvID span.InvocationID) {
 			var throwAway span.InvocationID

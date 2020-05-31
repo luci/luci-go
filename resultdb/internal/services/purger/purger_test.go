@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -71,7 +72,7 @@ func insertInvocation(ctx context.Context, invID span.InvocationID, nTests, nPas
 	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
-	testutil.MustApply(ctx, testutil.InsertInvocation(invID, pb.Invocation_FINALIZED, map[string]interface{}{
+	testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_FINALIZED, map[string]interface{}{
 		"ExpectedTestResultsExpirationTime": now.Add(-time.Minute),
 		"CreateTime":                        now.Add(-time.Hour),
 		"FinalizeTime":                      now.Add(-time.Hour),
@@ -81,7 +82,7 @@ func insertInvocation(ctx context.Context, invID span.InvocationID, nTests, nPas
 	inserts := []*spanner.Mutation{}
 	for i := 0; i < nTests; i++ {
 		results := makeTestResultsWithVariants(string(invID), fmt.Sprintf("Test%d", i), nPassingVariants, nFailedVariants)
-		inserts = append(inserts, testutil.InsertTestResultMessages(results)...)
+		inserts = append(inserts, insert.TestResultMessages(results)...)
 		for _, res := range results {
 			for j := 0; j < nArtifactsPerResult; j++ {
 				inserts = append(inserts, span.InsertMap("Artifacts", map[string]interface{}{

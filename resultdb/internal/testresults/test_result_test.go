@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -61,7 +62,7 @@ func TestRead(t *testing.T) {
 		invID := span.InvocationID("inv")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 			span.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "t t",

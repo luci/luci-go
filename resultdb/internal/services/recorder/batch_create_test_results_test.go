@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -169,7 +170,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
 		invID := span.InvocationID("u-build-1")
-		mut := testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, nil)
+		mut := insert.Invocation(invID, pb.Invocation_ACTIVE, nil)
 		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
