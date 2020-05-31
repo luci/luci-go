@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -65,7 +66,7 @@ func TestGetTestResult(t *testing.T) {
 			So(tr, ShouldResembleProto, expected)
 		}
 
-		invID := span.InvocationID("inv_0")
+		invID := invocations.ID("inv_0")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),

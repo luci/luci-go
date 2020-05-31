@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package spantest contains tests for package span.
-// Not to be confused with a package with spanner testing helper functions.
-//
-// The reason these tests are not in span package is to break the dep cycle
-// between packages span and testutil.
-package spantest
+package invocations
+
+import (
+	"testing"
+
+	"go.chromium.org/luci/resultdb/internal/testutil"
+)
+
+func TestMain(m *testing.M) {
+	testutil.SpannerTestMain(m)
+}
