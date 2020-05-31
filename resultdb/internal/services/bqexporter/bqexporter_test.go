@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -63,21 +64,21 @@ func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("a", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInvocation("b", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInclusion("a", "b"))
+			insert.Invocation("a", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("b", pb.Invocation_FINALIZED, nil),
+			insert.Inclusion("a", "b"))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
-			testutil.InsertTestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			testutil.InsertTestExonerations("a", "A", pbutil.Variant("k", "v"), 1),
+			insert.TestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), 1),
 			// Test results and exonerations have different variants.
-			testutil.InsertTestResults("b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			testutil.InsertTestExonerations("b", "B", pbutil.Variant("k", "different"), 1),
+			insert.TestResults("b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), 1),
 			// Passing test result without exoneration.
-			testutil.InsertTestResults("a", "C", nil, pb.TestStatus_PASS),
+			insert.TestResults("a", "C", nil, pb.TestStatus_PASS),
 			// Test results' parent is different from exported.
-			testutil.InsertTestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			testutil.InsertTestExonerations("b", "D", pbutil.Variant("k", "v"), 1),
+			insert.TestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), 1),
 		)...)
 
 		bqExport := &pb.BigQueryExport{

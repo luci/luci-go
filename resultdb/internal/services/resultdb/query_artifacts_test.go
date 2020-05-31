@@ -20,6 +20,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -59,7 +60,7 @@ func TestQueryArtifacts(t *testing.T) {
 	Convey(`QueryArtifacts`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insInv := testutil.InsertInvocation
+		insInv := insert.Invocation
 
 		testutil.MustApply(ctx, insInv("inv1", pb.Invocation_ACTIVE, nil))
 		req := &pb.QueryArtifactsRequest{
@@ -87,8 +88,8 @@ func TestQueryArtifacts(t *testing.T) {
 
 		Convey(`Reads both invocation and test result artifacts`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t t/r", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t t/r", "a", nil),
 			)
 			actual := mustFetchNames(req)
 			So(actual, ShouldResemble, []string{
@@ -99,7 +100,7 @@ func TestQueryArtifacts(t *testing.T) {
 
 		Convey(`Fetch URL`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
 			)
 			actual, _ := mustFetch(req)
 			So(actual, ShouldHaveLength, 1)
