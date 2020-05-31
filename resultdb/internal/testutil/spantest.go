@@ -267,9 +267,10 @@ func InsertTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.T
 func InsertTestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
-		invID, testID, resultID := span.MustParseTestResultName(tr.Name)
+		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
+		So(err, ShouldBeNil)
 		mutMap := map[string]interface{}{
-			"InvocationId":    invID,
+			"InvocationId":    span.InvocationID(invID),
 			"TestId":          testID,
 			"ResultId":        resultID,
 			"Variant":         trs[i].Variant,
