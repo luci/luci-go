@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,102 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package span
+package testresults
 
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
-	durpb "github.com/golang/protobuf/ptypes/duration"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// MustParseTestResultName retrieves the invocation ID, unescaped test id, and
-// result ID.
-//
-// Panics if the name is invalid. Should be used only with trusted data.
-//
-// MustParseTestResultName is faster than pbutil.ParseTestResultName.
-func MustParseTestResultName(name string) (invID InvocationID, testID, resultID string) {
-	parts := strings.Split(name, "/")
-	if len(parts) != 6 || parts[0] != "invocations" || parts[2] != "tests" || parts[4] != "results" {
-		panic(errors.Reason("malformed test result name: %q", name).Err())
-	}
-
-	invID = InvocationID(parts[1])
-	testID = parts[3]
-	resultID = parts[5]
-
-	unescaped, err := url.PathUnescape(testID)
-	if err != nil {
-		panic(errors.Annotate(err, "malformed test id %q", testID).Err())
-	}
-	testID = unescaped
-
-	return
-}
-
-// ReadTestResult reads specified TestResult within the transaction.
-// If the TestResult does not exist, the returned error is annotated with
-// NotFound GRPC code.
-func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, error) {
-	invID, testID, resultID := MustParseTestResultName(name)
-	tr := &pb.TestResult{
-		Name:     name,
-		TestId:   testID,
-		ResultId: resultID,
-		Expected: true,
-	}
-
-	var maybeUnexpected spanner.NullBool
-	var micros spanner.NullInt64
-	var summaryHTML Compressed
-	err := ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
-		"Variant":         &tr.Variant,
-		"IsUnexpected":    &maybeUnexpected,
-		"Status":          &tr.Status,
-		"SummaryHTML":     &summaryHTML,
-		"StartTime":       &tr.StartTime,
-		"RunDurationUsec": &micros,
-		"Tags":            &tr.Tags,
-	})
-	switch {
-	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
-
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
-	}
-
-	tr.SummaryHtml = string(summaryHTML)
-	populateExpectedField(tr, maybeUnexpected)
-	populateDurationField(tr, micros)
-	return tr, nil
-}
-
-// TestResultQuery specifies test results to fetch.
-type TestResultQuery struct {
-	InvocationIDs     InvocationIDSet
+// Query specifies test results to fetch.
+type Query struct {
+	InvocationIDs     span.InvocationIDSet
 	Predicate         *pb.TestResultPredicate
 	PageSize          int // must be positive
 	PageToken         string
 	SelectVariantHash bool
 }
 
-func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(TestResultQueryItem) error) (err error) {
+func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(QueryItem) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "QueryTestResults.run")
 	defer func() { ts.End(err) }()
 
@@ -190,20 +122,20 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 	PopulateVariantParams(&st, q.Predicate.GetVariant())
 
 	// Apply page token.
-	err = ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterResultId")
+	err = span.ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterResultId")
 	if err != nil {
 		return err
 	}
 
 	// Read the results.
-	var summaryHTML Compressed
-	var b Buffer
-	return Query(ctx, txn, st, func(row *spanner.Row) error {
-		var invID InvocationID
+	var summaryHTML span.Compressed
+	var b span.Buffer
+	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
+		var invID span.InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
 		tr := &pb.TestResult{}
-		item := TestResultQueryItem{TestResult: tr}
+		item := QueryItem{TestResult: tr}
 
 		ptrs := []interface{}{
 			&invID,
@@ -238,13 +170,13 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 // Fetch returns a page of test results matching q.
 // Returned test results are ordered by parent invocation ID, test ID and result
 // ID.
-func (q *TestResultQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (trs []*pb.TestResult, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (trs []*pb.TestResult, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	err = q.run(ctx, txn, func(item TestResultQueryItem) error {
+	err = q.run(ctx, txn, func(item QueryItem) error {
 		trs = append(trs, item.TestResult)
 		return nil
 	})
@@ -257,49 +189,25 @@ func (q *TestResultQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransa
 	// need to return the next page token.
 	if len(trs) == q.PageSize {
 		last := trs[q.PageSize-1]
-		invID, testID, resultID := MustParseTestResultName(last.Name)
+		invID, testID, resultID := MustParseName(last.Name)
 		nextPageToken = pagination.Token(string(invID), testID, resultID)
 	}
 	return
 }
 
-// TestResultQueryItem is one element returned by a TestResultQuery.
-type TestResultQueryItem struct {
+// QueryItem is one element returned by a Query.
+type QueryItem struct {
 	*pb.TestResult
 	VariantHash string
 }
 
 // Run calls f for test results matching the query.
 // The test results are ordered by parent invocation ID, test ID and result ID.
-func (q *TestResultQuery) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(TestResultQueryItem) error) error {
+func (q *Query) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(QueryItem) error) error {
 	if q.PageSize > 0 {
-		panic("PageSize is specified when TestResultQuery.Run")
+		panic("PageSize is specified when Query.Run")
 	}
 	return q.run(ctx, txn, f)
-}
-
-func populateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
-	tr.Duration = nil
-	if micros.Valid {
-		tr.Duration = FromMicros(micros.Int64)
-	}
-}
-
-func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
-	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
-}
-
-// ToMicros converts a duration.Duration proto to microseconds.
-func ToMicros(d *durpb.Duration) int64 {
-	if d == nil {
-		return 0
-	}
-	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
-}
-
-// FromMicros converts microseconds to a duration.Duration proto.
-func FromMicros(micros int64) *durpb.Duration {
-	return ptypes.DurationProto(time.Duration(1e3 * micros))
 }
 
 // PopulateVariantParams populates variantHashEquals and variantContains
