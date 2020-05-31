@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/cron"
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -194,7 +195,7 @@ func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv span
 		}
 
 		if artifactID.Valid {
-			parentID := span.ArtifactParentID(testID, resultID)
+			parentID := artifacts.ParentID(testID, resultID)
 			if err := f("Artifacts", inv.Key(parentID, artifactID)); err != nil {
 				return err
 			}
