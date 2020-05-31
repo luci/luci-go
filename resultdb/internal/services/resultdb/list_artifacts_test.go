@@ -19,11 +19,11 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateListArtifactsRequest(t *testing.T) {
@@ -64,9 +64,9 @@ func TestValidateListArtifactsRequest(t *testing.T) {
 
 func TestListArtifacts(t *testing.T) {
 	Convey(`ListArtifacts`, t, func() {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
-		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 		req := &pb.ListArtifactsRequest{
 			Parent:   "invocations/inv1",
 			PageSize: 100,
@@ -90,8 +90,8 @@ func TestListArtifacts(t *testing.T) {
 		}
 
 		Convey(`With both invocation and test result artifacts`, func() {
-			MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "", "a", nil),
 				span.InsertMap("Artifacts", map[string]interface{}{
 					"InvocationId": span.InvocationID("inv1"),
 					"ParentID":     "tr/t t/r",
@@ -118,7 +118,7 @@ func TestListArtifacts(t *testing.T) {
 
 		Convey(`Fetch URL`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
 			)
 			actual, _ := mustFetch(req)
 			So(actual, ShouldHaveLength, 1)

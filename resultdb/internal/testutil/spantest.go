@@ -15,27 +15,20 @@
 package testutil
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
-	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/spantest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -199,163 +192,4 @@ func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[
 func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
 	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
 	So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)
-}
-
-func fatalIf(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
-
-func updateDict(dest, source map[string]interface{}) {
-	for k, v := range source {
-		dest[k] = v
-	}
-}
-
-// InsertInvocation returns a spanner mutation that inserts an invocation.
-func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValues map[string]interface{}) *spanner.Mutation {
-	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	values := map[string]interface{}{
-		"InvocationId":                      id,
-		"ShardId":                           0,
-		"State":                             state,
-		"Realm":                             "",
-		"InvocationExpirationTime":          future,
-		"ExpectedTestResultsExpirationTime": future,
-		"CreateTime":                        spanner.CommitTimestamp,
-		"Deadline":                          future,
-		"TestResultCount":                   0,
-	}
-
-	if state == pb.Invocation_FINALIZED {
-		values["FinalizeTime"] = spanner.CommitTimestamp
-	}
-	updateDict(values, extraValues)
-	return span.InsertMap("Invocations", values)
-}
-
-// InsertFinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
-func InsertFinalizedInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
-	return InsertInvocationWithInclusions(id, pb.Invocation_FINALIZED, included...)
-}
-
-// InsertInvocationWithInclusions returns mutations to insert an invocation with inclusions.
-func InsertInvocationWithInclusions(id span.InvocationID, state pb.Invocation_State, included ...span.InvocationID) []*spanner.Mutation {
-	ms := []*spanner.Mutation{InsertInvocation(id, state, nil)}
-	for _, incl := range included {
-		ms = append(ms, InsertInclusion(id, incl))
-	}
-	return ms
-}
-
-// InsertInclusion returns a spanner mutation that inserts an inclusion.
-func InsertInclusion(including, included span.InvocationID) *spanner.Mutation {
-	return span.InsertMap("IncludedInvocations", map[string]interface{}{
-		"InvocationId":         including,
-		"IncludedInvocationId": included,
-	})
-}
-
-// InsertTestResults returns spanner mutations to insert test results
-func InsertTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
-	return InsertTestResultMessages(MakeTestResults(invID, testID, v, statuses...))
-}
-
-// InsertTestResultMessages returns spanner mutations to insert test results
-func InsertTestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, len(trs))
-	for i, tr := range trs {
-		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
-		So(err, ShouldBeNil)
-		mutMap := map[string]interface{}{
-			"InvocationId":    span.InvocationID(invID),
-			"TestId":          testID,
-			"ResultId":        resultID,
-			"Variant":         trs[i].Variant,
-			"VariantHash":     pbutil.VariantHash(trs[i].Variant),
-			"CommitTimestamp": spanner.CommitTimestamp,
-			"Status":          tr.Status,
-			"RunDurationUsec": 1e6*i + 234567,
-		}
-		if !trs[i].Expected {
-			mutMap["IsUnexpected"] = true
-		}
-
-		ms[i] = span.InsertMap("TestResults", mutMap)
-	}
-	return ms
-}
-
-// InsertTestExonerations returns a Spanner mutations to insert test exonerations.
-func InsertTestExonerations(invID span.InvocationID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, count)
-	for i := 0; i < count; i++ {
-		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
-			"InvocationId":    invID,
-			"TestId":          testID,
-			"ExonerationId":   strconv.Itoa(i),
-			"Variant":         variant,
-			"VariantHash":     pbutil.VariantHash(variant),
-			"ExplanationHTML": span.Compressed(fmt.Sprintf("explanation %d", i)),
-		})
-	}
-	return ms
-}
-
-// InsertArtifact returns a Spanner mutation to insert an artifact.
-func InsertArtifact(invID span.InvocationID, parentID, artID string, extraValues map[string]interface{}) *spanner.Mutation {
-	values := map[string]interface{}{
-		"InvocationId": invID,
-		"ParentID":     parentID,
-		"ArtifactId":   artID,
-	}
-	updateDict(values, extraValues)
-	return span.InsertMap("Artifacts", values)
-}
-
-// MakeTestResults creates test results.
-func MakeTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
-	trs := make([]*pb.TestResult, len(statuses))
-	for i, status := range statuses {
-		resultID := fmt.Sprintf("%d", i)
-		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(invID, testID, resultID),
-			TestId:   testID,
-			ResultId: resultID,
-			Variant:  v,
-			Expected: status == pb.TestStatus_PASS,
-			Status:   status,
-			Duration: &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-		}
-	}
-	return trs
-}
-
-// LogQueryResults executes the statement and logs results.
-// Useful to debug failing tests.
-func LogQueryResults(ctx context.Context, st spanner.Statement) {
-	var values []interface{}
-	buf := &bytes.Buffer{}
-	err := span.Client(ctx).Single().Query(ctx, st).Do(func(row *spanner.Row) error {
-		if len(values) < row.Size() {
-			values = make([]interface{}, row.Size())
-			for i := range values {
-				values[i] = &spanner.GenericColumnValue{}
-			}
-		}
-		if err := row.Columns(values...); err != nil {
-			return err
-		}
-
-		buf.Reset()
-		for i, v := range values {
-			fmt.Fprintf(buf, "\n  %s = %s", row.ColumnName(i), v.(*spanner.GenericColumnValue).Value)
-		}
-
-		logging.Infof(ctx, "row: %s", buf)
-		return nil
-	})
-	So(err, ShouldBeNil)
 }

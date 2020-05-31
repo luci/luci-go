@@ -38,15 +38,15 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestGenerateSignedURL(t *testing.T) {
 	Convey(`TestGenerateSignedURL`, t, func(c C) {
-		ctx := TestingContext()
+		ctx := testutil.TestingContext()
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = testsecrets.Use(ctx)
@@ -103,7 +103,7 @@ func (r *fakeCASReader) Recv() (*bytestream.ReadResponse, error) {
 
 func TestServeContent(t *testing.T) {
 	Convey(`TestServeContent`, t, func(c C) {
-		ctx := SpannerTestContext(t)
+		ctx := testutil.SpannerTestContext(t)
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = testsecrets.Use(ctx)
@@ -152,19 +152,19 @@ func TestServeContent(t *testing.T) {
 			return res, string(rawContents)
 		}
 
-		MustApply(ctx,
-			InsertInvocation("inv", pb.Invocation_FINALIZED, nil),
-			testutil.InsertArtifact("inv", "", "a", map[string]interface{}{
+		testutil.MustApply(ctx,
+			insert.Invocation("inv", pb.Invocation_FINALIZED, nil),
+			insert.Artifact("inv", "", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
 				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
 			}),
-			testutil.InsertArtifact("inv", "", "rbe", map[string]interface{}{
+			insert.Artifact("inv", "", "rbe", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
 				"RBECASHash":  "sha256:deadbeef",
 			}),
-			testutil.InsertArtifact("inv", "tr/t/t/r", "a", map[string]interface{}{
+			insert.Artifact("inv", "tr/t/t/r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        64,
 				"IsolateURL":  "isolate://isolate.example.com/default-gzip/deadbeef",
