@@ -101,29 +101,6 @@ func TestTypeConversion(t *testing.T) {
 		})
 	})
 
-	Convey(`CompressedProto`, t, func() {
-		Convey(`Empty`, func() {
-			var msg *pb.Invocation
-			actualSPValue := ToSpanner(CompressedProto{msg})
-			So(actualSPValue, ShouldBeNil)
-		})
-		Convey(`non-Empty`, func() {
-			msg := &pb.Invocation{
-				Name: "a",
-			}
-			actualSPValue := ToSpanner(CompressedProto{msg})
-			So(actualSPValue, ShouldResemble, []byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 25, 0, 0, 10, 1, 97, 135, 76, 200, 148})
-
-			// FromSpanner
-			row, err := spanner.NewRow([]string{"a"}, []interface{}{actualSPValue})
-			So(err, ShouldBeNil)
-			dest := &CompressedProto{&pb.Invocation{}}
-			err = b.FromSpanner(row, dest)
-			So(err, ShouldBeNil)
-			So(dest.Message, ShouldResembleProto, msg)
-		})
-	})
-
 	Convey(`Slice`, t, func() {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
