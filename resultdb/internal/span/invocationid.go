@@ -28,6 +28,25 @@ import (
 // InvocationID can convert an invocation id to various formats.
 type InvocationID string
 
+// ToSpanner implements span.Value.
+func (id InvocationID) ToSpanner() interface{} {
+	return id.RowID()
+}
+
+// SpannerPtr implements span.Ptr.
+func (id *InvocationID) SpannerPtr(b *Buffer) interface{} {
+	return &b.nullStr
+}
+
+// FromSpanner implements span.Ptr.
+func (id *InvocationID) FromSpanner(b *Buffer) error {
+	*id = ""
+	if b.nullStr.Valid {
+		*id = InvocationIDFromRowID(b.nullStr.StringVal)
+	}
+	return nil
+}
+
 // MustParseInvocationName converts an invocation name to an InvocationID.
 // Panics if the name is invalid. Useful for situations when name was already
 // validated.
@@ -110,6 +129,30 @@ func (s InvocationIDSet) Keys(suffix ...interface{}) spanner.KeySet {
 	for id := range s {
 		ret = spanner.KeySets(id.Key(suffix...), ret)
 	}
+	return ret
+}
+
+// SpannerPtr implements span.Ptr.
+func (s *InvocationIDSet) SpannerPtr(b *Buffer) interface{} {
+	return &b.strSlice
+}
+
+// FromSpanner implements span.Ptr.
+func (s *InvocationIDSet) FromSpanner(b *Buffer) error {
+	*s = make(InvocationIDSet, len(b.strSlice))
+	for _, rowID := range b.strSlice {
+		s.Add(InvocationIDFromRowID(rowID))
+	}
+	return nil
+}
+
+// ToSpanner implements span.Value.
+func (s InvocationIDSet) ToSpanner() interface{} {
+	ret := make([]string, 0, len(s))
+	for id := range s {
+		ret = append(ret, id.RowID())
+	}
+	sort.Strings(ret)
 	return ret
 }
 
