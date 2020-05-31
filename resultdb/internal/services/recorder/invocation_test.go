@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -60,19 +61,19 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with finalized invocation`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				err := mayMutate("inv")
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
 				err := mayMutate("inv2")
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 				err := mayMutate("inv")
 				So(err, ShouldBeNil)
 			})
@@ -95,7 +96,7 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`Finalized`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
 				"CreateTime":   ct,
 				"Deadline":     ct.Add(time.Hour),
 				"FinalizeTime": ct.Add(time.Hour),
@@ -113,10 +114,10 @@ func TestReadInvocation(t *testing.T) {
 
 			Convey(`with included invocations`, func() {
 				testutil.MustApply(ctx,
-					testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
-					testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
-					testutil.InsertInclusion("inv", "included0"),
-					testutil.InsertInclusion("inv", "included1"),
+					insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
+					insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
+					insert.Inclusion("inv", "included0"),
+					insert.Inclusion("inv", "included1"),
 				)
 
 				inv := readInv()

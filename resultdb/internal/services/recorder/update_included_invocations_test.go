@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -92,8 +93,6 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
-		insInv := testutil.InsertInvocation
-
 		assertIncluded := func(includedInvID span.InvocationID) {
 			var throwAway span.InvocationID
 			testutil.MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
@@ -132,8 +131,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 			Convey(`With existing inclusion`, func() {
 				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, nil),
-					insInv("toberemoved", pb.Invocation_FINALIZED, nil),
+					insert.Invocation("including", pb.Invocation_ACTIVE, nil),
+					insert.Invocation("toberemoved", pb.Invocation_FINALIZED, nil),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 					IncludingInvocation: "invocations/including",
@@ -149,8 +148,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 				Convey(`Success - idempotent`, func() {
 					testutil.MustApply(ctx,
-						insInv("included", pb.Invocation_FINALIZED, nil),
-						insInv("included2", pb.Invocation_FINALIZED, nil),
+						insert.Invocation("included", pb.Invocation_FINALIZED, nil),
+						insert.Invocation("included2", pb.Invocation_FINALIZED, nil),
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
