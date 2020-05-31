@@ -160,7 +160,7 @@ export async function* streamTestResultBatches(req: QueryTestResultRequest, resu
   do {
     const res = await resultDb.queryTestResults({...req, pageToken});
     pageToken = res.nextPageToken;
-    yield res.testResults;
+    yield res.testResults || [];
   } while (pageToken);
 }
 
@@ -172,7 +172,7 @@ export async function* streamTestExonerationBatches(req: QueryTestExonerationsRe
   do {
     const res = await resultDb.queryTestExonerations({...req, pageToken});
     pageToken = res.nextPageToken;
-    yield res.testExonerations;
+    yield res.testExonerations || [];
   } while (pageToken);
 }
 
