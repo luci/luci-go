@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -57,7 +58,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		q.ParentIDRegexp = "^$"
 	} else {
 		// in.Parent must be a test result name.
-		invID, testID, resultID := span.MustParseTestResultName(in.Parent)
+		invID, testID, resultID := testresults.MustParseName(in.Parent)
 		q.InvocationIDs = span.NewInvocationIDSet(invID)
 		q.ParentIDRegexp = regexp.QuoteMeta(artifacts.ParentID(testID, resultID))
 	}

@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package spantest
+package testresults
 
 import (
 	"sort"
@@ -29,31 +29,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestMustParseTestResultName(t *testing.T) {
-	t.Parallel()
-
-	Convey("MustParseTestResultName", t, func() {
-		Convey("Parse", func() {
-			invID, testID, resultID := span.MustParseTestResultName(
-				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
-			So(invID, ShouldEqual, "a")
-			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
-			So(resultID, ShouldEqual, "result5")
-		})
-
-		Convey("Invalid", func() {
-			invalidNames := []string{
-				"invocations/a/tests/b",
-				"invocations/a/tests/b/exonerations/c",
-			}
-			for _, name := range invalidNames {
-				name := name
-				So(func() { span.MustParseTestResultName(name) }, ShouldPanic)
-			}
-		})
-	})
-}
-
 func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
@@ -62,26 +37,26 @@ func TestQueryTestResults(t *testing.T) {
 		insTRs := testutil.InsertTestResults
 
 		testutil.MustApply(ctx, insInv("inv1", pb.Invocation_ACTIVE, nil))
-		q := span.TestResultQuery{
+		q := &Query{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
 			InvocationIDs: span.NewInvocationIDSet("inv1"),
 		}
 
-		read := func(q span.TestResultQuery) (trs []*pb.TestResult, token string, err error) {
+		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 			return q.Fetch(ctx, txn)
 		}
 
-		mustRead := func(q span.TestResultQuery) (trs []*pb.TestResult, token string) {
-			trs, token, err := read(q)
+		mustFetch := func(q *Query) (trs []*pb.TestResult, token string) {
+			trs, token, err := fetch(q)
 			So(err, ShouldBeNil)
 			return
 		}
 
-		mustReadNames := func(q span.TestResultQuery) []string {
-			trs, _, err := read(q)
+		mustFetchNames := func(q *Query) []string {
+			trs, _, err := fetch(q)
 			So(err, ShouldBeNil)
 			names := make([]string, len(trs))
 			for i, a := range trs {
@@ -109,7 +84,7 @@ func TestQueryTestResults(t *testing.T) {
 				insTRs("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 			)...)
 
-			actual, _ := mustRead(q)
+			actual, _ := mustFetch(q)
 			So(actual, ShouldResembleProto, expected)
 		})
 
@@ -126,10 +101,10 @@ func TestQueryTestResults(t *testing.T) {
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
 			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
-			actual, _ := mustRead(q)
+			actual, _ := mustFetch(q)
 			pbutil.NormalizeTestResultSlice(actual)
 
-			So(mustReadNames(q), ShouldResemble, []string{
+			So(mustFetchNames(q), ShouldResemble, []string{
 				"invocations/inv0/tests/T1/results/0",
 				"invocations/inv0/tests/T1/results/1",
 				"invocations/inv0/tests/T2/results/0",
@@ -152,7 +127,7 @@ func TestQueryTestResults(t *testing.T) {
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
 			q.Predicate.TestIdRegexp = "1-.+"
 
-			So(mustReadNames(q), ShouldResemble, []string{
+			So(mustFetchNames(q), ShouldResemble, []string{
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv0/tests/1-2/results/0",
@@ -177,7 +152,7 @@ func TestQueryTestResults(t *testing.T) {
 				Predicate: &pb.VariantPredicate_Equals{Equals: v1},
 			}
 
-			So(mustReadNames(q), ShouldResemble, []string{
+			So(mustFetchNames(q), ShouldResemble, []string{
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv1/tests/1-1/results/0",
@@ -204,7 +179,7 @@ func TestQueryTestResults(t *testing.T) {
 					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
 				}
 
-				So(mustReadNames(q), ShouldResemble, []string{
+				So(mustFetchNames(q), ShouldResemble, []string{
 					"invocations/inv0/tests/1-1/results/0",
 					"invocations/inv0/tests/1-1/results/1",
 					"invocations/inv0/tests/1-2/results/0",
@@ -218,7 +193,7 @@ func TestQueryTestResults(t *testing.T) {
 					Predicate: &pb.VariantPredicate_Contains{Contains: v1},
 				}
 
-				So(mustReadNames(q), ShouldResemble, []string{
+				So(mustFetchNames(q), ShouldResemble, []string{
 					"invocations/inv0/tests/1-1/results/0",
 					"invocations/inv0/tests/1-1/results/1",
 					"invocations/inv0/tests/1-2/results/0",
@@ -241,7 +216,7 @@ func TestQueryTestResults(t *testing.T) {
 				q2 := q
 				q2.PageToken = pageToken
 				q2.PageSize = pageSize
-				actual, token := mustRead(q2)
+				actual, token := mustFetch(q2)
 				So(actual, ShouldResembleProto, expected)
 				return token
 			}
