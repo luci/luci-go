@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/exonerations"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -46,7 +47,7 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 	}
 
 	q := exonerations.Query{
-		InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(in.Invocation)),
+		InvocationIDs: invocations.NewIDSet(invocations.MustParseName(in.Invocation)),
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.GetPageToken(),
 	}

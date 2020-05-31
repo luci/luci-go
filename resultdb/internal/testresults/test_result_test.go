@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -59,7 +60,7 @@ func TestRead(t *testing.T) {
 	Convey(`Read`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		invID := span.InvocationID("inv")
+		invID := invocations.ID("inv")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),

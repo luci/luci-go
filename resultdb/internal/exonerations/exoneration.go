@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -31,12 +32,12 @@ import (
 // MustParseName extracts invocation, test id and exoneration
 // IDs from the name.
 // Panics on failure.
-func MustParseName(name string) (invID span.InvocationID, testID, exonerationID string) {
+func MustParseName(name string) (invID invocations.ID, testID, exonerationID string) {
 	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
 	if err != nil {
 		panic(err)
 	}
-	invID = span.InvocationID(invIDStr)
+	invID = invocations.ID(invIDStr)
 	return
 }
 
@@ -48,7 +49,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestExoneration, 
 	if err != nil {
 		return nil, err
 	}
-	invID := span.InvocationID(invIDStr)
+	invID := invocations.ID(invIDStr)
 
 	ret := &pb.TestExoneration{
 		Name:          name,

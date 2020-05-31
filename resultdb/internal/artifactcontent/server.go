@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 )
@@ -149,7 +150,7 @@ type contentRequest struct {
 
 	artifactName string
 
-	invID      span.InvocationID
+	invID      invocations.ID
 	parentID   string
 	artifactID string
 
@@ -211,7 +212,7 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 	if err != nil {
 		return errors.Annotate(err, "invalid artifact name %q", r.artifactName).Err()
 	}
-	r.invID = span.InvocationID(invID)
+	r.invID = invocations.ID(invID)
 	r.parentID = artifacts.ParentID(testID, resultID)
 	r.artifactID = artifactID
 	return nil
