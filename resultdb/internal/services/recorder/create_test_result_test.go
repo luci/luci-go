@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -128,7 +129,7 @@ func TestCreateTestResult(t *testing.T) {
 			So(row, ShouldResembleProto, expected)
 
 			// variant hash
-			key := span.InvocationID("u-build-1").Key("test-id", "result-id-0")
+			key := invocations.ID("u-build-1").Key("test-id", "result-id-0")
 			var variantHash string
 			testutil.MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 				"VariantHash": &variantHash,
@@ -140,7 +141,7 @@ func TestCreateTestResult(t *testing.T) {
 		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := insert.Invocation(span.InvocationID("u-build-1"), pb.Invocation_ACTIVE, nil)
+		mut := insert.Invocation(invocations.ID("u-build-1"), pb.Invocation_ACTIVE, nil)
 		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
@@ -149,7 +150,7 @@ func TestCreateTestResult(t *testing.T) {
 
 				txn := span.Client(ctx).ReadOnlyTransaction()
 				defer txn.Close()
-				trNum, err := span.ReadTestResultCount(ctx, txn, span.NewInvocationIDSet("u-build-1"))
+				trNum, err := invocations.ReadTestResultCount(ctx, txn, invocations.NewIDSet("u-build-1"))
 				So(err, ShouldBeNil)
 				So(trNum, ShouldEqual, 1)
 			})

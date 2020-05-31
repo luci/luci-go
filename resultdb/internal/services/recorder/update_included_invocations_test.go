@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -93,15 +93,15 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
-		assertIncluded := func(includedInvID span.InvocationID) {
-			var throwAway span.InvocationID
-			testutil.MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+		assertIncluded := func(includedInvID invocations.ID) {
+			var throwAway invocations.ID
+			testutil.MustReadRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]interface{}{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
-		assertNotIncluded := func(includedInvID span.InvocationID) {
-			var throwAway span.InvocationID
-			testutil.MustNotFindRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+		assertNotIncluded := func(includedInvID invocations.ID) {
+			var throwAway invocations.ID
+			testutil.MustNotFindRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]interface{}{
 				"IncludedInvocationID": &throwAway,
 			})
 		}

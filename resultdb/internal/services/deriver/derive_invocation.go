@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -102,7 +103,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	case !doWrite:
 		readTxn := client.ReadOnlyTransaction()
 		defer readTxn.Close()
-		return span.ReadInvocationFull(ctx, readTxn, invID)
+		return invocations.Read(ctx, readTxn, invID)
 	}
 
 	inv, err := chromium.DeriveChromiumInvocation(task, in)
@@ -125,7 +126,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", 0)),
 		span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
-			"IncludedInvocationId": span.MustParseInvocationName(originInv.Name),
+			"IncludedInvocationId": invocations.MustParseName(originInv.Name),
 		}),
 	}
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -145,8 +146,8 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	return inv, nil
 }
 
-func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.InvocationID) (bool, error) {
-	state, err := span.ReadInvocationState(ctx, txn, id)
+func shouldWriteInvocation(ctx context.Context, txn span.Txn, id invocations.ID) (bool, error) {
+	state, err := invocations.ReadState(ctx, txn, id)
 	s, _ := appstatus.Get(err)
 	switch {
 	case s.Code() == codes.NotFound:
@@ -184,7 +185,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 	case !doWrite: // Origin invocation is already in Spanner. Return it.
 		readTxn := client.ReadOnlyTransaction()
 		defer readTxn.Close()
-		return span.ReadInvocationFull(ctx, readTxn, originInvID)
+		return invocations.Read(ctx, readTxn, originInvID)
 	}
 	originInv, err := chromium.DeriveChromiumInvocation(originTask, in)
 	if err != nil {
@@ -240,11 +241,11 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
 // returning container ids.
-func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*chromium.TestResult, batchSize int) (span.InvocationIDSet, error) {
+func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*chromium.TestResult, batchSize int) (invocations.IDSet, error) {
 	batches := batchTestResults(trs, batchSize)
-	includedInvs := make(span.InvocationIDSet, len(batches))
+	includedInvs := make(invocations.IDSet, len(batches))
 
-	invID := span.MustParseInvocationName(inv.Name)
+	invID := invocations.MustParseName(inv.Name)
 	eg, ctx := errgroup.WithContext(ctx)
 	client := span.Client(ctx)
 	for i, batch := range batches {
@@ -297,8 +298,8 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 }
 
 // batchInvocationID returns an InvocationID for the Invocation containing the referenced batch.
-func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID {
-	return span.InvocationID(fmt.Sprintf("%s-batch-%d", invID, batchInd))
+func batchInvocationID(invID invocations.ID, batchInd int) invocations.ID {
+	return invocations.ID(fmt.Sprintf("%s-batch-%d", invID, batchInd))
 }
 
 // batchTestResults batches the given TestResults given the maximum batch size.
@@ -317,7 +318,7 @@ func batchTestResults(trs []*chromium.TestResult, batchSize int) [][]*chromium.T
 	return batches
 }
 
-func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spanner.Mutation {
+func insertOrUpdateTestResult(invID invocations.ID, tr *pb.TestResult) *spanner.Mutation {
 	trMap := map[string]interface{}{
 		"InvocationId": invID,
 		"TestId":       tr.TestId,
@@ -343,7 +344,7 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spann
 	return span.InsertOrUpdateMap("TestResults", trMap)
 }
 
-func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
+func insertOrUpdateArtifact(invID invocations.ID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
 	return span.InsertOrUpdateMap("Artifacts", map[string]interface{}{
 		"InvocationId": invID,
 		"ParentId":     artifacts.ParentID(tr.TestId, tr.ResultId),

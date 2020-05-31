@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -167,8 +168,8 @@ func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
 	}, retry.LogCallback(ctx, "bigquery_put"))
 }
 
-func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
-	realm, err := span.ReadInvocationRealm(ctx, span.Client(ctx).Single(), invID)
+func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
+	realm, err := invocations.ReadRealm(ctx, span.Client(ctx).Single(), invID)
 	if err != nil {
 		return "", err
 	}
@@ -286,7 +287,7 @@ type testVariantKey struct {
 }
 
 // queryExoneratedTestVariants reads exonerated test variants matching the predicate.
-func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTransaction, invIDs span.InvocationIDSet) (map[testVariantKey]struct{}, error) {
+func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTransaction, invIDs invocations.IDSet) (map[testVariantKey]struct{}, error) {
 	st := spanner.NewStatement(`
 		SELECT DISTINCT TestId, VariantHash,
 		FROM TestExonerations
@@ -314,12 +315,12 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 func (b *bqExporter) queryTestResults(
 	ctx context.Context,
 	txn *spanner.ReadOnlyTransaction,
-	exportedID span.InvocationID,
+	exportedID invocations.ID,
 	q testresults.Query,
 	exoneratedTestVariants map[testVariantKey]struct{},
 	batchC chan []*bigquery.StructSaver) error {
 
-	invs, err := span.ReadInvocationsFull(ctx, txn, q.InvocationIDs)
+	invs, err := invocations.ReadBatch(ctx, txn, q.InvocationIDs)
 	if err != nil {
 		return err
 	}
@@ -421,11 +422,11 @@ func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*b
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
-func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
-	inv, err := span.ReadInvocationFull(ctx, txn, invID)
+	inv, err := invocations.Read(ctx, txn, invID)
 	if err != nil {
 		return err
 	}
@@ -434,9 +435,9 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 
 	// Get the invocation set.
-	invIDs, err := span.ReadReachableInvocations(ctx, txn, maxInvocationGraphSize, span.NewInvocationIDSet(invID))
+	invIDs, err := invocations.Reachable(ctx, txn, maxInvocationGraphSize, invocations.NewIDSet(invID))
 	if err != nil {
-		if span.TooManyInvocationsTag.In(err) {
+		if invocations.TooManyTag.In(err) {
 			err = tasks.PermanentFailure.Apply(err)
 		}
 		return err
@@ -471,7 +472,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, payload []byte) error {
+func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocations.ID, payload []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
