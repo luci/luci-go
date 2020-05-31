@@ -20,10 +20,12 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -66,20 +68,15 @@ func TestGetArtifact(t *testing.T) {
 			// Insert a Artifact.
 			testutil.MustApply(ctx,
 				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
-				testutil.InsertTestResultArtifact("inv", "t t", "r", "a", map[string]interface{}{
-					"ContentType": "text/plain",
-					"Size":        64,
-				}),
+				insertArt("inv", "", "a"),
 			)
-			const name = "invocations/inv/tests/t%20t/results/r/artifacts/a"
+			const name = "invocations/inv/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}
 			art, err := srv.GetArtifact(ctx, req)
 			So(err, ShouldBeNil)
 			So(art.Name, ShouldEqual, name)
 			So(art.ArtifactId, ShouldEqual, "a")
-			So(art.ContentType, ShouldEqual, "text/plain")
-			So(art.SizeBytes, ShouldEqual, 64)
-			So(art.FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv/tests/t%20t/results/r/artifacts/a")
+			So(art.FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv/artifacts/a")
 		})
 
 		Convey(`Does not exist`, func() {
@@ -87,5 +84,13 @@ func TestGetArtifact(t *testing.T) {
 			_, err := srv.GetArtifact(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv/artifacts/a not found")
 		})
+	})
+}
+
+func insertArt(invID span.InvocationID, parentID, artID string) *spanner.Mutation {
+	return span.InsertMap("Artifacts", map[string]interface{}{
+		"InvocationId": invID,
+		"ParentID":     parentID,
+		"ArtifactId":   artID,
 	})
 }
