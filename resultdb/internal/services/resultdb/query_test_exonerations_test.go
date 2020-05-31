@@ -22,6 +22,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -51,8 +52,8 @@ func TestQueryTestExonerations(t *testing.T) {
 	Convey(`QueryTestExonerations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insertInv := testutil.InsertFinalizedInvocationWithInclusions
-		insertEx := testutil.InsertTestExonerations
+		insertInv := insert.FinalizedInvocationWithInclusions
+		insertEx := insert.TestExonerations
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("a", "b"),
 			insertInv("b", "c"),
