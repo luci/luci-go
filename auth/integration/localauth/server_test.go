@@ -28,13 +28,14 @@ import (
 
 	"golang.org/x/oauth2"
 
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/lucictx"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type callbackGen struct {
@@ -95,11 +96,13 @@ func TestProtocol(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer s.Stop(ctx)
 
-		So(p.Accounts, ShouldResemble, []lucictx.LocalAuthAccount{
-			{ID: "acc_id", Email: "some@example.com"},
-			{ID: "another_id", Email: "another@example.com"},
+		So(p.Accounts[0], ShouldResembleProto, &lucictx.LocalAuthAccount{
+			Id: "acc_id", Email: "some@example.com",
 		})
-		So(p.DefaultAccountID, ShouldEqual, "acc_id")
+		So(p.Accounts[1], ShouldResembleProto, &lucictx.LocalAuthAccount{
+			Id: "another_id", Email: "another@example.com",
+		})
+		So(p.DefaultAccountId, ShouldEqual, "acc_id")
 
 		goodRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
@@ -260,7 +263,7 @@ func prepReq(p *lucictx.LocalAuth, uri string, body interface{}) *http.Request {
 		}
 		reader = bytes.NewReader(blob)
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d%s", p.RPCPort, uri), reader)
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d%s", p.RpcPort, uri), reader)
 	if err != nil {
 		panic(err)
 	}

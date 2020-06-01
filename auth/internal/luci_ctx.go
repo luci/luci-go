@@ -55,14 +55,14 @@ func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport
 	switch {
 	case localAuth == nil:
 		return nil, fmt.Errorf(`no "local_auth" in LUCI_CONTEXT`)
-	case localAuth.DefaultAccountID == "":
+	case localAuth.DefaultAccountId == "":
 		return nil, fmt.Errorf(`no "default_account_id" in LUCI_CONTEXT["local_auth"]`)
 	}
 
 	// Grab an email associated with default account, if any.
 	email := NoEmail
 	for _, account := range localAuth.Accounts {
-		if account.ID == localAuth.DefaultAccountID {
+		if account.Id == localAuth.DefaultAccountId {
 			// Previous protocol version didn't expose the email, so keep the value
 			// as NoEmail in this case. This should be rare.
 			if account.Email != "" {
@@ -124,7 +124,7 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (
 	request := rpcs.GetOAuthTokenRequest{
 		Scopes:    p.scopes,
 		Secret:    p.localAuth.Secret,
-		AccountID: p.localAuth.DefaultAccountID,
+		AccountID: p.localAuth.DefaultAccountId,
 	}
 	if err := request.Validate(); err != nil {
 		return nil, err // should not really happen
@@ -134,7 +134,7 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (
 		return nil, err
 	}
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/rpc/LuciLocalAuthService.GetOAuthToken", p.localAuth.RPCPort)
+	url := fmt.Sprintf("http://127.0.0.1:%d/rpc/LuciLocalAuthService.GetOAuthToken", p.localAuth.RpcPort)
 	logging.Debugf(ctx, "POST %s", url)
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
