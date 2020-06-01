@@ -35,9 +35,9 @@ func TestLocalAuth(t *testing.T) {
 
 		Convey("Noop change", func() {
 			c := SetLocalAuth(c, &LocalAuth{
-				DefaultAccountId: "some",
-				Accounts: []*LocalAuthAccount{
-					{Id: "some"},
+				DefaultAccountID: "some",
+				Accounts: []LocalAuthAccount{
+					{ID: "some"},
 				},
 			})
 			ctx, err := SwitchLocalAccount(c, "some")
@@ -47,23 +47,23 @@ func TestLocalAuth(t *testing.T) {
 
 		Convey("Switching into existing account", func() {
 			c := SetLocalAuth(c, &LocalAuth{
-				DefaultAccountId: "one",
-				Accounts: []*LocalAuthAccount{
-					{Id: "one"},
-					{Id: "two"},
+				DefaultAccountID: "one",
+				Accounts: []LocalAuthAccount{
+					{ID: "one"},
+					{ID: "two"},
 				},
 			})
 			ctx, err := SwitchLocalAccount(c, "two")
 			So(ctx, ShouldNotBeNil)
 			So(err, ShouldBeNil)
-			So(GetLocalAuth(ctx).DefaultAccountId, ShouldEqual, "two")
+			So(GetLocalAuth(ctx).DefaultAccountID, ShouldEqual, "two")
 		})
 
 		Convey("Switching into non-existing account", func() {
 			c := SetLocalAuth(c, &LocalAuth{
-				DefaultAccountId: "one",
-				Accounts: []*LocalAuthAccount{
-					{Id: "one"},
+				DefaultAccountID: "one",
+				Accounts: []LocalAuthAccount{
+					{ID: "one"},
 				},
 			})
 			ctx, err := SwitchLocalAccount(c, "two")
@@ -73,9 +73,9 @@ func TestLocalAuth(t *testing.T) {
 
 		Convey("Clearing local auth", func() {
 			c := SetLocalAuth(c, &LocalAuth{
-				DefaultAccountId: "one",
-				Accounts: []*LocalAuthAccount{
-					{Id: "some"},
+				DefaultAccountID: "one",
+				Accounts: []LocalAuthAccount{
+					{ID: "some"},
 				},
 			})
 			c = SetLocalAuth(c, nil)
