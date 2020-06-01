@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e95bc03_774bdd71",
+        "filename": "lucicfg/testdata/errors/bad_builder_props.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-01T22:32:52Z",
+      "side": 1,
+      "message": "this is more informative, but still not quite informative. I thought tests here also recorded line numbers, am I wrong?",
+      "range": {
+        "startLine": 22,
+        "startChar": 46,
+        "endLine": 22,
+        "endChar": 59
+      },
+      "revId": "20b59f1c34ce8793f49b194e83476f92082e997b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
