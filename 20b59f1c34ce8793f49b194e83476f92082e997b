@@ -22,6 +22,30 @@
       "revId": "20b59f1c34ce8793f49b194e83476f92082e997b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ddf1599_d40b12db",
+        "filename": "lucicfg/testdata/errors/bad_builder_props.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-01T22:38:45Z",
+      "side": 1,
+      "message": "No, tests drop line numbers, they caused too much churn in expectations when updating stuff.",
+      "parentUuid": "4e95bc03_774bdd71",
+      "range": {
+        "startLine": 22,
+        "startChar": 46,
+        "endLine": 22,
+        "endChar": 59
+      },
+      "revId": "20b59f1c34ce8793f49b194e83476f92082e997b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
