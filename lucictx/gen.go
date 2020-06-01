@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,5 @@
 
 package lucictx
 
-import (
-	"context"
-)
-
-// GetSwarming calls Lookup and returns the current Swarming from LUCI_CONTEXT
-// if it was present. If no Swarming is in the context, this returns nil.
-func GetSwarming(ctx context.Context) *Swarming {
-	ret := Swarming{}
-	ok, err := Lookup(ctx, "swarming", &ret)
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		return nil
-	}
-	return &ret
-}
-
-// SetSwarming Sets the Swarming in the LUCI_CONTEXT.
-func SetSwarming(ctx context.Context, swarm *Swarming) context.Context {
-	return Set(ctx, "swarming", swarm)
-}
+//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
+//go:generate cproto
