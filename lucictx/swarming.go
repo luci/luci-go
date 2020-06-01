@@ -16,7 +16,14 @@ package lucictx
 
 import (
 	"context"
+	"fmt"
 )
+
+// Swarming is a struct that may be used with the "swarming" section of
+// LUCI_CONTEXT.
+type Swarming struct {
+	SecretBytes []byte `json:"secret_bytes"`
+}
 
 // GetSwarming calls Lookup and returns the current Swarming from LUCI_CONTEXT
 // if it was present. If no Swarming is in the context, this returns nil.
@@ -34,5 +41,13 @@ func GetSwarming(ctx context.Context) *Swarming {
 
 // SetSwarming Sets the Swarming in the LUCI_CONTEXT.
 func SetSwarming(ctx context.Context, swarm *Swarming) context.Context {
-	return Set(ctx, "swarming", swarm)
+	var raw interface{}
+	if swarm != nil {
+		raw = swarm
+	}
+	ctx, err := Set(ctx, "swarming", raw)
+	if err != nil {
+		panic(fmt.Errorf("impossible: %s", err))
+	}
+	return ctx
 }

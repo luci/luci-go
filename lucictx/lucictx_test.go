@@ -24,10 +24,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/common/system/environ"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func rawctx(content string) func() {
@@ -73,9 +72,9 @@ func TestLUCIContextInitialization(t *testing.T) {
 		})
 
 		Convey("ignores bad sections", func() {
-			defer rawctx(`{"hi": {"hello_there": 10}, "not": "good"}`)()
+			defer rawctx(`{"hi": {"there": 10}, "not": "good"}`)()
 
-			blob := json.RawMessage(`{"hello_there":10}`)
+			blob := json.RawMessage(`{"there":10}`)
 			So(extractFromEnv(buf).sections, ShouldResemble, map[string]*json.RawMessage{
 				"hi": &blob,
 			})
@@ -86,56 +85,63 @@ func TestLUCIContextInitialization(t *testing.T) {
 
 func TestLUCIContextMethods(t *testing.T) {
 	// t.Parallel() manipulates environ
-	defer rawctx(`{"hi": {"hello_there": 10}}`)()
+	defer rawctx(`{"hi": {"there": 10}}`)()
 	externalContext = extractFromEnv(nil)
+
+	type Hi struct {
+		There int `json:"there"`
+	}
 
 	Convey("lctx", t, func() {
 		c := context.Background()
 
 		Convey("Get/Set", func() {
 			Convey("defaults to env values", func() {
-				h := &TestStructure{}
-				So(Get(c, "hi", h), ShouldBeNil)
-				So(h, ShouldResembleProto, &TestStructure{HelloThere: 10})
+				h := Hi{}
+				So(Get(c, "hi", &h), ShouldBeNil)
+				So(h, ShouldResemble, Hi{10})
 			})
 
 			Convey("nop for missing sections", func() {
-				h := &TestStructure{}
-				So(Get(c, "wut", h), ShouldBeNil)
-				So(h, ShouldResembleProto, &TestStructure{})
+				h := Hi{}
+				So(Get(c, "wut", &h), ShouldBeNil)
+				So(h, ShouldResemble, Hi{0})
 			})
 
 			Convey("can add section", func() {
-				c := Set(c, "wut", &TestStructure{HelloThere: 100})
+				c, err := Set(c, "wut", &Hi{100})
+				So(err, ShouldBeNil)
 
-				h := &TestStructure{}
-				So(Get(c, "wut", h), ShouldBeNil)
-				So(h, ShouldResembleProto, &TestStructure{HelloThere: 100})
+				h := Hi{}
+				So(Get(c, "wut", &h), ShouldBeNil)
+				So(h, ShouldResemble, Hi{100})
 
-				So(Get(c, "hi", h), ShouldBeNil)
-				So(h, ShouldResembleProto, &TestStructure{HelloThere: 10})
+				So(Get(c, "hi", &h), ShouldBeNil)
+				So(h, ShouldResemble, Hi{10})
 			})
 
 			Convey("can override section", func() {
-				c := Set(c, "hi", &TestStructure{HelloThere: 100})
+				c, err := Set(c, "hi", &Hi{100})
+				So(err, ShouldBeNil)
 
-				h := &TestStructure{}
-				So(Get(c, "hi", h), ShouldBeNil)
-				So(h, ShouldResembleProto, &TestStructure{HelloThere: 100})
+				h := Hi{}
+				So(Get(c, "hi", &h), ShouldBeNil)
+				So(h, ShouldResemble, Hi{100})
 			})
 
 			Convey("can remove section", func() {
-				c := Set(c, "hi", nil)
+				c, err := Set(c, "hi", nil)
+				So(err, ShouldBeNil)
 
-				h := &TestStructure{}
-				So(Get(c, "hi", h), ShouldBeNil)
-				So(h, ShouldResembleProto, &TestStructure{HelloThere: 0})
+				h := Hi{}
+				So(Get(c, "hi", &h), ShouldBeNil)
+				So(h, ShouldResemble, Hi{0})
 			})
 		})
 
 		Convey("Export", func() {
 			Convey("empty export is a noop", func() {
-				c = Set(c, "hi", nil)
+				c, _ = Set(c, "hi", nil)
 				e, err := Export(c)
 				So(err, ShouldBeNil)
 				So(e, ShouldHaveSameTypeAs, &nullExport{})
@@ -154,14 +160,15 @@ func TestLUCIContextMethods(t *testing.T) {
 				// There's a valid JSON there.
 				blob, err := ioutil.ReadFile(path)
 				So(err, ShouldBeNil)
-				So(string(blob), ShouldEqual, `{"hi": {"hello_there": 10}}`)
+				So(string(blob), ShouldEqual, `{"hi": {"there": 10}}`)
 
 				// And it is in fact located in same file as was supplied externally.
 				So(path, ShouldEqual, externalContext.path)
 			})
 
 			Convey("Export reuses files", func() {
-				c := Set(c, "blah", &TestStructure{})
+				c, err := Set(c, "blah", map[string]string{})
+				So(err, ShouldBeNil)
 
 				e1, err := Export(c)
 				So(err, ShouldBeNil)
@@ -209,7 +216,8 @@ func TestLUCIContextMethods(t *testing.T) {
 					os.RemoveAll(tmp)
 				}()
 
-				c := Set(c, "blah", &TestStructure{})
+				c, err := Set(c, "blah", map[string]string{})
+				So(err, ShouldBeNil)
 
 				e1, err := ExportInto(c, tmp)
 				So(err, ShouldBeNil)

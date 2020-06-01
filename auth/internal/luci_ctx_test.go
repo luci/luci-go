@@ -38,7 +38,10 @@ func TestLUCIContextProvider(t *testing.T) {
 
 	// Clear any existing LUCI_CONTEXT["local_auth"], it may be present if the
 	// test runs on a LUCI bot.
-	baseCtx := lucictx.Set(context.Background(), "local_auth", nil)
+	baseCtx, err := lucictx.Set(context.Background(), "local_auth", nil)
+	if err != nil {
+		t.Fatal(err) // this should never happen
+	}
 
 	Convey("Requires local_auth", t, func() {
 		_, err := NewLUCIContextTokenProvider(baseCtx, []string{"A"}, http.DefaultTransport)
@@ -47,7 +50,7 @@ func TestLUCIContextProvider(t *testing.T) {
 
 	Convey("Requires default_account_id", t, func() {
 		ctx := lucictx.SetLocalAuth(baseCtx, &lucictx.LocalAuth{
-			Accounts: []*lucictx.LocalAuthAccount{{Id: "zzz"}},
+			Accounts: []lucictx.LocalAuthAccount{{ID: "zzz"}},
 		})
 		_, err := NewLUCIContextTokenProvider(ctx, []string{"A"}, http.DefaultTransport)
 		So(err, ShouldErrLike, `no "default_account_id"`)
@@ -86,12 +89,12 @@ func TestLUCIContextProvider(t *testing.T) {
 		defer ts.Close()
 
 		ctx := lucictx.SetLocalAuth(baseCtx, &lucictx.LocalAuth{
-			RpcPort: uint32(ts.Listener.Addr().(*net.TCPAddr).Port),
+			RPCPort: uint32(ts.Listener.Addr().(*net.TCPAddr).Port),
 			Secret:  []byte("zekret"),
-			Accounts: []*lucictx.LocalAuthAccount{
-				{Id: "acc_id", Email: "some-acc-email@example.com"},
+			Accounts: []lucictx.LocalAuthAccount{
+				{ID: "acc_id", Email: "some-acc-email@example.com"},
 			},
-			DefaultAccountId: "acc_id",
+			DefaultAccountID: "acc_id",
 		})
 
 		p, err := NewLUCIContextTokenProvider(ctx, []string{"B", "A"}, http.DefaultTransport)

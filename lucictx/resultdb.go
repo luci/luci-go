@@ -16,7 +16,22 @@ package lucictx
 
 import (
 	"context"
+	"fmt"
 )
+
+// ResultDB is a struct that may be used with the "resultdb" section of
+// LUCI_CONTEXT.
+type ResultDB struct {
+	Hostname          string     `json:"hostname"`
+	CurrentInvocation Invocation `json:"current_invocation"`
+}
+
+// Invocation is a struct that contains the necessary info to update an
+// invocation in the ResultDB service.
+type Invocation struct {
+	Name        string `json:"name"`
+	UpdateToken string `json:"update_token"`
+}
 
 // GetResultDB returns the current ResultDB from LUCI_CONTEXT if it was present.
 // nil, otherwise.
@@ -34,5 +49,13 @@ func GetResultDB(ctx context.Context) *ResultDB {
 
 // SetResultDB sets the ResultDB in the LUCI_CONTEXT.
 func SetResultDB(ctx context.Context, db *ResultDB) context.Context {
-	return Set(ctx, "resultdb", db)
+	var raw interface{}
+	if db != nil {
+		raw = db
+	}
+	ctx, err := Set(ctx, "resultdb", raw)
+	if err != nil {
+		panic(fmt.Errorf("impossible: %s", err))
+	}
+	return ctx
 }

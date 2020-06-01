@@ -26,7 +26,6 @@
 package lucictx
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -35,9 +34,6 @@ import (
 	"os"
 	"reflect"
 	"sync"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -127,7 +123,7 @@ func getCurrent(ctx context.Context) *lctx {
 // deserializes it into out. Out may be any target for json.Unmarshal. If the
 // section exists, it deserializes it into the provided out object. If not, then
 // out is unmodified.
-func Get(ctx context.Context, section string, out proto.Message) error {
+func Get(ctx context.Context, section string, out interface{}) error {
 	_, err := Lookup(ctx, section, out)
 	return err
 }
@@ -136,12 +132,12 @@ func Get(ctx context.Context, section string, out proto.Message) error {
 // deserializes it into out. Out may be any target for json.Unmarshal. It
 // returns a deserialization error (if any), and a boolean indicating if the
 // section was actually found.
-func Lookup(ctx context.Context, section string, out proto.Message) (bool, error) {
+func Lookup(ctx context.Context, section string, out interface{}) (bool, error) {
 	data, _ := getCurrent(ctx).sections[section]
 	if data == nil {
 		return false, nil
 	}
-	return true, jsonpb.Unmarshal(bytes.NewReader(*data), out)
+	return true, json.Unmarshal(*data, out)
 }
 
 // Set writes the json serialization of `in` as the given section into the
@@ -151,19 +147,22 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 // If in is nil, it will clear that section of the LUCI_CONTEXT.
 //
 // The returned context is always safe to use, even if this returns an error.
-func Set(ctx context.Context, section string, in proto.Message) context.Context {
+// This only returns an error if `in` cannot be marshalled to a JSON Object.
+func Set(ctx context.Context, section string, in interface{}) (context.Context, error) {
+	var err error
 	var data json.RawMessage
-	if in != nil && !reflect.ValueOf(in).IsNil() {
-		buf := bytes.NewBuffer(nil)
-		if err := (&jsonpb.Marshaler{}).Marshal(buf, in); err != nil {
-			panic(err) // Only errors could be from writing to buf.
+	if in != nil {
+		if data, err = json.Marshal(in); err != nil {
+			return ctx, err
 		}
-		data = buf.Bytes()
+		if data[0] != '{' {
+			return ctx, errors.New("LUCI_CONTEXT sections must always be JSON Objects")
+		}
 	}
 	cur := getCurrent(ctx)
 	if _, alreadyHas := cur.sections[section]; data == nil && !alreadyHas {
 		// Removing a section which is already missing is a no-op
-		return ctx
+		return ctx, nil
 	}
 	newLctx := cur.clone()
 	if data == nil {
@@ -171,7 +170,7 @@ func Set(ctx context.Context, section string, in proto.Message) context.Context 
 	} else {
 		newLctx.sections[section] = &data
 	}
-	return context.WithValue(ctx, &lctxKey, newLctx)
+	return context.WithValue(ctx, &lctxKey, newLctx), nil
 }
 
 // Export takes the current LUCI_CONTEXT information from ctx, writes it to
