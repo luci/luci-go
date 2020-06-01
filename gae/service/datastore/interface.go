@@ -154,22 +154,24 @@ func AllocateIDs(c context.Context, ent ...interface{}) error {
 		panic(err)
 	}
 
-	keys, _, err := mma.getKeysPMs(GetKeyContext(c), false)
-	if err != nil {
-		return maybeSingleError(err, ent)
-	}
+	keys, _, et := mma.getKeysPMs(GetKeyContext(c), false)
 	if len(keys) == 0 {
 		return nil
 	}
 
-	// Convert each key to be partial valid, assigning an integer ID of 0. Confirm
-	// that each object can be populated with such a key.
-	for i, key := range keys {
-		keys[i] = key.Incomplete()
+	var dat DroppedArgTracker
+	dat.MarkNilKeys(keys)
+	keys, dal := dat.DropKeys(keys)
+
+	// Convert each key to be partial valid, assigning an integer ID of 0.
+	// Confirm that each object can be populated with such a key.
+	for compressedIdx, key := range keys {
+		keys[compressedIdx] = key.Incomplete()
 	}
 
-	et := newErrorTracker(mma)
-	err = Raw(c).AllocateIDs(keys, func(idx int, key *Key, err error) {
+	err = Raw(c).AllocateIDs(keys, func(compressedIdx int, key *Key, err error) {
+		idx := dal.OriginalIndex(compressedIdx)
+
 		index := mma.index(idx)
 
 		if err != nil {
@@ -501,18 +503,21 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 		panic(err)
 	}
 
-	keys, _, err := mma.getKeysPMs(GetKeyContext(c), false)
-	if err != nil {
-		return nil, maybeSingleError(err, ent)
-	}
+	keys, _, et := mma.getKeysPMs(GetKeyContext(c), false)
 	if len(keys) == 0 {
 		return nil, nil
 	}
 
-	bt := newBoolTracker(mma)
-	err = Raw(c).GetMulti(keys, nil, func(idx int, _ PropertyMap, err error) {
+	var dat DroppedArgTracker
+	dat.MarkNilKeys(keys)
+	keys, dal := dat.DropKeys(keys)
+
+	bt := newBoolTracker(mma, et)
+	err = Raw(c).GetMulti(keys, nil, func(compressedIdx int, _ PropertyMap, err error) {
+		idx := dal.OriginalIndex(compressedIdx)
 		bt.trackExistsResult(mma.index(idx), err)
 	})
+
 	if err == nil {
 		err = bt.error()
 	}
@@ -553,19 +558,19 @@ func Get(c context.Context, dst ...interface{}) error {
 		panic(err)
 	}
 
-	keys, pms, err := mma.getKeysPMs(GetKeyContext(c), true)
-	if err != nil {
-		return maybeSingleError(err, dst)
-	}
+	keys, pms, et := mma.getKeysPMs(GetKeyContext(c), true)
 	if len(keys) == 0 {
 		return nil
 	}
 
-	et := newErrorTracker(mma)
-	meta := NewMultiMetaGetter(pms)
-	err = Raw(c).GetMulti(keys, meta, func(idx int, pm PropertyMap, err error) {
-		index := mma.index(idx)
+	var dat DroppedArgTracker
+	dat.MarkNilKeysVals(keys, pms)
+	keys, pms, dal := dat.DropKeysAndVals(keys, pms)
 
+	meta := NewMultiMetaGetter(pms)
+	err = Raw(c).GetMulti(keys, meta, func(compressedIdx int, pm PropertyMap, err error) {
+		idx := dal.OriginalIndex(compressedIdx)
+		index := mma.index(idx)
 		if err != nil {
 			et.trackError(index, err)
 			return
@@ -627,16 +632,17 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 		panic(err)
 	}
 
-	keys, vals, err := mma.getKeysPMs(kctx, false)
-	if err != nil {
-		return maybeSingleError(err, src)
-	}
+	keys, vals, et := mma.getKeysPMs(kctx, false)
 	if len(keys) == 0 {
 		return nil
 	}
 
-	et := newErrorTracker(mma)
-	err = raw.PutMulti(keys, vals, func(idx int, key *Key, err error) {
+	var dat DroppedArgTracker
+	dat.MarkNilKeysVals(keys, vals)
+	keys, vals, dal := dat.DropKeysAndVals(keys, vals)
+
+	err = raw.PutMulti(keys, vals, func(compressedIdx int, key *Key, err error) {
+		idx := dal.OriginalIndex(compressedIdx)
 		index := mma.index(idx)
 
 		if err != nil {
@@ -644,12 +650,11 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 			return
 		}
 
-		if !key.Equal(keys[idx]) {
+		if !key.Equal(keys[compressedIdx]) {
 			mat, v := mma.get(index)
 			mat.setKey(v, key)
 		}
 	})
-
 	if err == nil {
 		err = et.error()
 	}
@@ -687,21 +692,24 @@ func Delete(c context.Context, ent ...interface{}) error {
 		panic(err)
 	}
 
-	keys, _, err := mma.getKeysPMs(GetKeyContext(c), false)
-	if err != nil {
-		return maybeSingleError(err, ent)
-	}
+	keys, _, et := mma.getKeysPMs(GetKeyContext(c), false)
 	if len(keys) == 0 {
 		return nil
 	}
 
-	et := newErrorTracker(mma)
-	err = Raw(c).DeleteMulti(keys, func(idx int, err error) {
+	var dat DroppedArgTracker
+	dat.MarkNilKeys(keys)
+	keys, dal := dat.DropKeys(keys)
+
+	err = Raw(c).DeleteMulti(keys, func(compressedIdx int, err error) {
+		idx := dal.OriginalIndex(compressedIdx)
+
 		if err != nil {
 			index := mma.index(idx)
 			et.trackError(index, err)
 		}
 	})
+
 	if err == nil {
 		err = et.error()
 	}

@@ -229,11 +229,10 @@ func GetPLS(obj interface{}) interface {
 	if !v.IsValid() {
 		panic(fmt.Errorf("cannot GetPLS(%T): failed to reflect", obj))
 	}
-	if v.IsNil() {
-		panic(fmt.Errorf("cannot GetPLS(%T): pointer is nil", obj))
-	}
-
 	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			panic(fmt.Errorf("cannot GetPLS(%T): pointer is nil", obj))
+		}
 		v = v.Elem()
 		if v.Kind() == reflect.Struct {
 			s := structPLS{

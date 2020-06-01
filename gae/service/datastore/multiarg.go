@@ -459,7 +459,6 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 	return &mma, nil
 }
 
-// get returns the element type and value at flattened index idx.
 func (mma *metaMultiArg) index(idx int) (mmaIdx metaMultiArgIndex) {
 	if mma.flat {
 		mmaIdx.elem = idx
@@ -473,6 +472,7 @@ func (mma *metaMultiArg) index(idx int) (mmaIdx metaMultiArgIndex) {
 	return
 }
 
+// get returns the element type and value at flattened index idx.
 func (mma *metaMultiArg) get(idx metaMultiArgIndex) (*multiArgType, reflect.Value) {
 	// Get the current slot value.
 	elem := &mma.elems[idx.elem]
@@ -486,7 +486,7 @@ func (mma *metaMultiArg) get(idx metaMultiArgIndex) (*multiArgType, reflect.Valu
 }
 
 // getKeysPMs returns the keys and PropertyMap for the supplied argument items.
-func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []PropertyMap, error) {
+func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []PropertyMap, *errorTracker) {
 	et := newErrorTracker(mma)
 
 	// Determine our flattened keys and property maps.
@@ -508,6 +508,7 @@ func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []Propert
 		key, err := mat.getKey(kc, slot)
 		if err != nil {
 			et.trackError(index, err)
+			index.slot++
 			continue
 		}
 		retKey[i] = key
@@ -520,6 +521,7 @@ func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []Propert
 				var err error
 				if pm, err = mat.getPM(slot); err != nil {
 					et.trackError(index, err)
+					index.slot++
 					continue
 				}
 			}
@@ -528,7 +530,7 @@ func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []Propert
 
 		index.slot++
 	}
-	return retKey, retPM, et.error()
+	return retKey, retPM, et
 }
 
 type errorTracker struct {
@@ -592,9 +594,9 @@ type boolTracker struct {
 	res ExistsResult
 }
 
-func newBoolTracker(mma *metaMultiArg) *boolTracker {
+func newBoolTracker(mma *metaMultiArg, et *errorTracker) *boolTracker {
 	bt := boolTracker{
-		errorTracker: newErrorTracker(mma),
+		errorTracker: et,
 	}
 
 	sizes := make([]int, len(mma.elems))

@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type fakeRDS struct{ RawInterface }
@@ -44,7 +45,7 @@ func TestCheckFilter(t *testing.T) {
 		So(rds, ShouldNotBeNil)
 
 		Convey("RunInTransaction", func() {
-			So(rds.RunInTransaction(nil, nil).Error(), ShouldContainSubstring, "is nil")
+			So(rds.RunInTransaction(nil, nil), ShouldErrLike, "is nil")
 			hit := false
 			So(func() {
 				So(rds.RunInTransaction(func(context.Context) error {
@@ -56,11 +57,11 @@ func TestCheckFilter(t *testing.T) {
 		})
 
 		Convey("Run", func() {
-			So(rds.Run(nil, nil).Error(), ShouldContainSubstring, "query is nil")
+			So(rds.Run(nil, nil), ShouldErrLike, "query is nil")
 			fq, err := NewQuery("sup").Finalize()
 			So(err, ShouldBeNil)
 
-			So(rds.Run(fq, nil).Error(), ShouldContainSubstring, "callback is nil")
+			So(rds.Run(fq, nil), ShouldErrLike, "callback is nil")
 			hit := false
 			So(func() {
 				So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
@@ -72,8 +73,8 @@ func TestCheckFilter(t *testing.T) {
 		})
 
 		Convey("GetMulti", func() {
-			So(rds.GetMulti(nil, nil, nil), ShouldBeNil)
-			So(rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil).Error(), ShouldContainSubstring, "is nil")
+			So(rds.GetMulti(nil, nil, func(int, PropertyMap, error) {}), ShouldBeNil)
+			So(rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil), ShouldErrLike, "is nil")
 
 			// this is in the wrong aid/ns
 			keys := []*Key{MkKeyContext("wut", "wrong").MakeKey("Kind", 1)}
@@ -93,14 +94,14 @@ func TestCheckFilter(t *testing.T) {
 		})
 
 		Convey("PutMulti", func() {
+			nullCb := func(int, *Key, error) {}
 			keys := []*Key{}
 			vals := []PropertyMap{{}}
-			So(rds.PutMulti(keys, vals, nil).Error(),
-				ShouldContainSubstring, "mismatched keys/vals")
-			So(rds.PutMulti(nil, nil, nil), ShouldBeNil)
+			So(rds.PutMulti(keys, vals, nullCb), ShouldErrLike, "mismatched keys/vals")
+			So(rds.PutMulti(nil, nil, nullCb), ShouldBeNil)
 
 			keys = append(keys, mkKey("aid", "ns", "Wut", 0, "Kind", 0))
-			So(rds.PutMulti(keys, vals, nil).Error(), ShouldContainSubstring, "callback is nil")
+			So(rds.PutMulti(keys, vals, nil), ShouldErrLike, "callback is nil")
 
 			So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
 				So(k, ShouldBeNil)
@@ -111,7 +112,7 @@ func TestCheckFilter(t *testing.T) {
 			vals = []PropertyMap{nil}
 			So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
 				So(k, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, "nil vals entry")
+				So(err, ShouldErrLike, "nil vals entry")
 			}), ShouldBeNil)
 
 			vals = []PropertyMap{{}}
@@ -125,8 +126,9 @@ func TestCheckFilter(t *testing.T) {
 		})
 
 		Convey("DeleteMulti", func() {
-			So(rds.DeleteMulti(nil, nil), ShouldBeNil)
-			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil).Error(), ShouldContainSubstring, "is nil")
+			So(rds.DeleteMulti(nil, func(int, error) {}), ShouldBeNil)
+
+			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil), ShouldErrLike, "is nil")
 			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(_ int, err error) {
 				So(IsErrInvalidKey(err), ShouldBeTrue)
 			}), ShouldBeNil)

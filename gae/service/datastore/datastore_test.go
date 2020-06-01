@@ -1055,6 +1055,46 @@ func TestGet(t *testing.T) {
 					So(cs0.Value, ShouldEqual, 5)
 					So(fpls.Value, ShouldEqual, 7)
 				})
+
+				Convey("mix of invalid key, type, and doesn't exist", func() {
+					successSlice := []CommonStruct{{ID: 1}, {ID: 2}}
+					type badKind struct {
+						ID    int64  `gae:"$id"`
+						Kind  string `gae:"$kind"`
+						Value string
+					}
+					badPMSlice := []interface{}{
+						&badKind{ID: 1},
+						&FakePLS{IntID: 1, failLoad: true},
+					}
+					type idStruct struct {
+						ID    string `gae:"$id"`
+						Value string
+					}
+					badKeySlice := []interface{}{&idStruct{Value: "hi"}, &CommonStruct{}}
+
+					err := Get(c, successSlice, badPMSlice, badKeySlice)
+					So(err, ShouldHaveSameTypeAs, errors.MultiError{})
+
+					merr := err.(errors.MultiError)
+					So(merr, ShouldHaveLength, 3)
+
+					So(merr[0], ShouldBeNil)
+					So(successSlice[0], ShouldResemble, CommonStruct{ID: 1, Value: 1})
+					So(successSlice[1], ShouldResemble, CommonStruct{ID: 2, Value: 2})
+
+					So(merr[1], ShouldHaveSameTypeAs, errors.MultiError{})
+					merr1 := merr[1].(errors.MultiError)
+					So(merr1, ShouldHaveLength, 2)
+					So(merr1[0], ShouldErrLike, "unable to extract $kind")
+					So(merr1[1], ShouldErrLike, "FakePLS.Load")
+
+					So(merr[2], ShouldHaveSameTypeAs, errors.MultiError{})
+					merr2 := merr[2].(errors.MultiError)
+					So(merr2, ShouldHaveLength, 2)
+					So(merr2[0], ShouldErrLike, "invalid key")
+					So(merr2[1], ShouldErrLike, "invalid key")
+				})
 			})
 
 			Convey("ok", func() {

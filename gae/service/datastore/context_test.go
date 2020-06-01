@@ -60,10 +60,6 @@ func TestServices(t *testing.T) {
 		Convey("adding a basic implementation", func() {
 			c = SetRaw(info.Set(c, fakeInfo{}), fakeService{})
 
-			Convey("lets you pull them back out", func() {
-				So(Raw(c), ShouldHaveSameTypeAs, &checkFilter{})
-			})
-
 			Convey("and lets you add filters", func() {
 				c = AddRawFilters(c, func(ic context.Context, rds RawInterface) RawInterface {
 					return fakeFilt{rds}
