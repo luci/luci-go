@@ -238,6 +238,11 @@ def _builder(
     elif prop_val == None:
       props[k] = def_val
 
+  # Properties should be JSON-serializable. The only way to check is to try to
+  # serialize. We do it here (instead of generators.star) to get a more
+  # informative stack trace.
+  _ = to_json(props['properties'])
+
   # There should be no dimensions with value None after merging.
   swarming.validate_dimensions('dimensions', props['dimensions'], allow_none=False)
 
