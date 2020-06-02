@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"runtime"
 	"runtime/pprof"
 	"strings"
 	"sync"
@@ -187,15 +186,6 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 		FileCallback: func(name string, _ *isolated.File) {
 			filesMu.Lock()
 			files = append(files, name)
-
-			// TODO(crbug.com/1045281): remove this once the issue is fixed.
-			if len(files)%100 == 0 &&
-				runtime.GOOS == "windows" && runtime.GOARCH == "386" {
-				var m runtime.MemStats
-				runtime.ReadMemStats(&m)
-				logging.Infof(ctx, "finished %d, alloc:%d, sys:%d, idle:%d, inuse:%d, nextgc:%d, numgc:%d",
-					len(files), m.Alloc, m.Sys, m.HeapIdle, m.HeapInuse, m.NextGC, m.NumGC)
-			}
 			filesMu.Unlock()
 		},
 		Cache: diskCache,
