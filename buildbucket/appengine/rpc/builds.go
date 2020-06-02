@@ -36,7 +36,7 @@ import (
 var (
 	projRegex    = regexp.MustCompile(`^[a-z0-9\-_]+$`)
 	bucketRegex  = regexp.MustCompile(`^[a-z0-9\-_.]{1,100}$`)
-	builderRegex = regexp.MustCompile(`^[a-zA-Z0-9\-.\(\) ]{1,128}$`)
+	builderRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_.\(\) ]{1,128}$`)
 	sha1Regex    = regexp.MustCompile(`^[a-f0-9]{40}$`)
 )
 
