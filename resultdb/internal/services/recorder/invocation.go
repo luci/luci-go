@@ -134,7 +134,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"InvocationId": span.MustParseInvocationName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
-		"Realm":        realms.Join("chromium", "public"), // TODO(crbug.com/1013316): accept realm in the proto
+		"Realm":        inv.Realm,
 		"CreatedBy":    inv.CreatedBy,
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
@@ -148,6 +148,10 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"TestResultCount":  0,
 	}
 
+	// TODO(crbug.com/1013316): Remove this clause when the realm is required on all APIs that accept invocation protos.
+	if row["Realm"] == "" {
+		row["Realm"] = realms.Join("chromium", "public")
+	}
 	if inv.State == pb.Invocation_FINALIZED {
 		// We are ignoring the provided inv.FinalizeTime because it would not
 		// make sense to have an invocation finalized before it was created,

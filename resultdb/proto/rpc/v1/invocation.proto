@@ -117,6 +117,10 @@ message Invocation {
   // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
   // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
   string producer_resource = 11;
+
+  // Realm that the invocation exists under.
+  // See go.chromium.org/luci/server/auth/realms
+  string realm = 12;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported
