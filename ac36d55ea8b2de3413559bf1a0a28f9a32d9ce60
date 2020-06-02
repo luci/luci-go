@@ -46,6 +46,30 @@
       "revId": "ac36d55ea8b2de3413559bf1a0a28f9a32d9ce60",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7573f4f_21983eec",
+        "filename": "client/cmd/isolate/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-02T06:22:00Z",
+      "side": 1,
+      "message": "Ah, I see. Sounds good.",
+      "parentUuid": "69031f8c_a45d4a49",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "ac36d55ea8b2de3413559bf1a0a28f9a32d9ce60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
