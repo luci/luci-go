@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -53,7 +54,7 @@ func TestListTestExonerations(t *testing.T) {
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          testID,

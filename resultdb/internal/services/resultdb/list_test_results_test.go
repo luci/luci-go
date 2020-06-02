@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -54,7 +55,7 @@ func TestListTestResults(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		// Insert some TestResults.
-		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, insert.Invocation("req", pb.Invocation_ACTIVE, nil))
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 

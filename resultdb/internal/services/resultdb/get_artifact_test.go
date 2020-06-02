@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -65,8 +66,8 @@ func TestGetArtifact(t *testing.T) {
 		Convey(`Exists`, func() {
 			// Insert a Artifact.
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
-				testutil.InsertArtifact("inv", "", "a", nil),
+				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
+				insert.Artifact("inv", "", "a", nil),
 			)
 			const name = "invocations/inv/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}

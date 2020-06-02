@@ -22,6 +22,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -83,8 +84,8 @@ func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insertInv := testutil.InsertFinalizedInvocationWithInclusions
-		insertTRs := testutil.InsertTestResults
+		insertInv := insert.FinalizedInvocationWithInclusions
+		insertTRs := insert.TestResults
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("a", "b"),
 			insertInv("b", "c"),

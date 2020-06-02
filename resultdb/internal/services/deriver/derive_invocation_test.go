@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -100,7 +101,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 	Convey(`TestDeriveChromiumInvocation`, t, func(c C) {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, insert.Invocation("inserted", pb.Invocation_FINALIZED, nil))
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {

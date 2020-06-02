@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -39,14 +40,14 @@ func TestReadInvocationFull(t *testing.T) {
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
+			insert.Invocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
 				"CreateTime": start,
 				"Deadline":   start.Add(time.Hour),
 			}),
-			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInclusion("including", "included0"),
-			testutil.InsertInclusion("including", "included1"),
+			insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
+			insert.Inclusion("including", "included0"),
+			insert.Inclusion("including", "included1"),
 		)
 
 		txn := span.Client(ctx).ReadOnlyTransaction()
@@ -69,7 +70,7 @@ func TestReadReachableInvocations(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insertInv := testutil.InsertFinalizedInvocationWithInclusions
+		insertInv := insert.FinalizedInvocationWithInclusions
 
 		read := func(limit int, roots ...span.InvocationID) (span.InvocationIDSet, error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -134,7 +135,7 @@ func BenchmarkChainFetch(b *testing.B) {
 		}
 		id := span.InvocationID(fmt.Sprintf("inv%d", i))
 		prev = id
-		ms = append(ms, testutil.InsertFinalizedInvocationWithInclusions(id, included...)...)
+		ms = append(ms, insert.FinalizedInvocationWithInclusions(id, included...)...)
 	}
 
 	if _, err := client.Apply(ctx, ms); err != nil {
@@ -166,9 +167,9 @@ func TestQueryInvocations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv0", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInvocation("inv1", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInvocation("inv2", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("inv0", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("inv1", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("inv2", pb.Invocation_FINALIZED, nil),
 		)
 
 		txn := span.Client(ctx).ReadOnlyTransaction()

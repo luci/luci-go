@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,9 +41,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Includes two ACTIVE`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
-				testutil.InsertInvocationWithInclusions("b", pb.Invocation_ACTIVE),
-				testutil.InsertInvocationWithInclusions("c", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
+				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE),
 			)...)
 
 			assertReady("a", false)
@@ -50,9 +51,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Includes ACTIVE and FINALIZED`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
-				testutil.InsertInvocationWithInclusions("b", pb.Invocation_ACTIVE),
-				testutil.InsertInvocationWithInclusions("c", pb.Invocation_FINALIZED),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
+				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZED),
 			)...)
 
 			assertReady("a", false)
@@ -60,9 +61,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`INCLUDES ACTIVE and FINALIZING`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
-				testutil.InsertInvocationWithInclusions("b", pb.Invocation_ACTIVE),
-				testutil.InsertInvocationWithInclusions("c", pb.Invocation_FINALIZING),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
+				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING),
 			)...)
 
 			assertReady("a", false)
@@ -70,9 +71,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`INCLUDES FINALIZING which includes ACTIVE`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("a", pb.Invocation_FINALIZING, "b"),
-				testutil.InsertInvocationWithInclusions("b", pb.Invocation_FINALIZING, "c"),
-				testutil.InsertInvocationWithInclusions("c", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b"),
+				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, "c"),
+				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE),
 			)...)
 
 			assertReady("a", false)
@@ -80,7 +81,7 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Cycle with one node`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("a", pb.Invocation_FINALIZING, "a"),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "a"),
 			)...)
 
 			assertReady("a", true)
@@ -88,8 +89,8 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Cycle with two nodes`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("a", pb.Invocation_FINALIZING, "b"),
-				testutil.InsertInvocationWithInclusions("b", pb.Invocation_FINALIZING, "a"),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b"),
+				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, "a"),
 			)...)
 
 			assertReady("a", true)
@@ -103,7 +104,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("x", pb.Invocation_FINALIZING),
+				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING),
 			)...)
 
 			err := finalizeInvocation(ctx, "x")
@@ -121,10 +122,10 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Enqueues more finalizing tasks`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				testutil.InsertInvocationWithInclusions("active", pb.Invocation_ACTIVE, "x"),
-				testutil.InsertInvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, "x"),
-				testutil.InsertInvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, "x"),
-				testutil.InsertInvocationWithInclusions("x", pb.Invocation_FINALIZING),
+				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, "x"),
+				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, "x"),
+				insert.InvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, "x"),
+				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING),
 			)...)
 
 			err := finalizeInvocation(ctx, "x")
@@ -151,7 +152,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Enqueues more bq_export tasks`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
+				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
 					"BigQueryExports": [][]byte{
 						[]byte("bq_export1"),
 						[]byte("bq_export2"),

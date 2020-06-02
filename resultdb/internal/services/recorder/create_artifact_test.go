@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -185,7 +186,7 @@ func TestCreateArtifact(t *testing.T) {
 			})
 
 			Convey(`Invocation is finalized`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
 				So(rec.Code, ShouldEqual, http.StatusBadRequest)
 				So(rec.Body.String(), ShouldContainSubstring, "invocations/inv is not active")
@@ -193,7 +194,7 @@ func TestCreateArtifact(t *testing.T) {
 
 			Convey(`Same artifact exists`, func() {
 				testutil.MustApply(ctx,
-					testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					span.InsertMap("Artifacts", map[string]interface{}{
 						"InvocationId": span.InvocationID("inv"),
 						"ParentId":     "",
@@ -208,7 +209,7 @@ func TestCreateArtifact(t *testing.T) {
 
 			Convey(`Different artifact exists`, func() {
 				testutil.MustApply(ctx,
-					testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil),
+					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					span.InsertMap("Artifacts", map[string]interface{}{
 						"InvocationId": span.InvocationID("inv"),
 						"ParentId":     "",
@@ -223,7 +224,7 @@ func TestCreateArtifact(t *testing.T) {
 		})
 
 		Convey(`Write to CAS`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			w.requestsToAccept = 1
 
 			casSend := func() *httptest.ResponseRecorder {
@@ -268,7 +269,7 @@ func TestCreateArtifact(t *testing.T) {
 		})
 
 		Convey(`Verify digest`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			w.requestsToAccept = 1
 
 			Convey(`Hash`, func() {
@@ -293,7 +294,7 @@ func TestCreateArtifact(t *testing.T) {
 		})
 
 		Convey(`e2e`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			res := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "text/plain")
 			So(res.Code, ShouldEqual, http.StatusNoContent)

@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -32,10 +33,7 @@ func TestQuery(t *testing.T) {
 	Convey(`Query`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insInv := testutil.InsertInvocation
-		insTRs := testutil.InsertTestResults
-
-		testutil.MustApply(ctx, insInv("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 		q := &Query{
 			InvocationIDs:       span.NewInvocationIDSet("inv1"),
 			PageSize:            100,
@@ -61,7 +59,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Populates fields correctly`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", map[string]interface{}{
+				insert.Artifact("inv1", "", "a", map[string]interface{}{
 					"ContentType": "text/plain",
 					"Size":        64,
 				}),
@@ -74,8 +72,8 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Reads both invocation and test result artifacts`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t t/r", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t t/r", "a", nil),
 			)
 			actual := mustFetchNames(q)
 			So(actual, ShouldResemble, []string{
@@ -86,11 +84,11 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Does not fetch artifacts of other invocations`, func() {
 			testutil.MustApply(ctx,
-				insInv("inv0", pb.Invocation_ACTIVE, nil),
-				insInv("inv2", pb.Invocation_ACTIVE, nil),
-				testutil.InsertArtifact("inv0", "", "a", nil),
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv2", "", "a", nil),
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, nil),
+				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
+				insert.Artifact("inv0", "", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv2", "", "a", nil),
 			)
 			actual := mustFetchNames(q)
 			So(actual, ShouldResemble, []string{"invocations/inv1/artifacts/a"})
@@ -98,11 +96,11 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Test ID regexp`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t00/r", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t10/r", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t11/r", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t20/r", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t00/r", "a", nil),
+				insert.Artifact("inv1", "tr/t10/r", "a", nil),
+				insert.Artifact("inv1", "tr/t11/r", "a", nil),
+				insert.Artifact("inv1", "tr/t20/r", "a", nil),
 			)
 			q.TestResultPredicate.TestIdRegexp = "t1."
 			actual := mustFetchNames(q)
@@ -115,10 +113,10 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Follow edges`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a0", nil),
-				testutil.InsertArtifact("inv1", "", "a1", nil),
-				testutil.InsertArtifact("inv1", "tr/t/r", "a0", nil),
-				testutil.InsertArtifact("inv1", "tr/t/r", "a1", nil),
+				insert.Artifact("inv1", "", "a0", nil),
+				insert.Artifact("inv1", "", "a1", nil),
+				insert.Artifact("inv1", "tr/t/r", "a0", nil),
+				insert.Artifact("inv1", "tr/t/r", "a1", nil),
 			)
 
 			Convey(`Unspecified`, func() {
@@ -179,17 +177,17 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Artifacts of interesting test results`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t0/0", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/0", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/1", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/1", "b", nil),
-				testutil.InsertArtifact("inv1", "tr/t2/0", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t0/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/1", "a", nil),
+				insert.Artifact("inv1", "tr/t1/1", "b", nil),
+				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insTRs("inv1", "t0", nil, pb.TestStatus_PASS),
-				insTRs("inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insTRs("inv1", "t2", nil, pb.TestStatus_FAIL),
+				insert.TestResults("inv1", "t0", nil, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults("inv1", "t2", nil, pb.TestStatus_FAIL),
 			)...)
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
@@ -211,18 +209,18 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Variant equals`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t0/0", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/0", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/0", "b", nil),
-				testutil.InsertArtifact("inv1", "tr/t2/0", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t0/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/0", "b", nil),
+				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insTRs("inv1", "t0", v1, pb.TestStatus_PASS),
-				insTRs("inv1", "t1", v2, pb.TestStatus_PASS),
-				insTRs("inv1", "t2", v1, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t0", v1, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t1", v2, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t2", v1, pb.TestStatus_PASS),
 			)...)
 
 			q.TestResultPredicate.Variant = &pb.VariantPredicate{
@@ -243,19 +241,19 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Variant contains`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t0/0", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/0", "a", nil),
-				testutil.InsertArtifact("inv1", "tr/t1/0", "b", nil),
-				testutil.InsertArtifact("inv1", "tr/t2/0", "a", nil),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t0/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/0", "a", nil),
+				insert.Artifact("inv1", "tr/t1/0", "b", nil),
+				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
 			v00 := pbutil.Variant("k0", "0")
 			v01 := pbutil.Variant("k0", "0", "k1", "1")
 			v10 := pbutil.Variant("k0", "1")
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insTRs("inv1", "t0", v00, pb.TestStatus_PASS),
-				insTRs("inv1", "t1", v01, pb.TestStatus_PASS),
-				insTRs("inv1", "t2", v10, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t0", v00, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t1", v01, pb.TestStatus_PASS),
+				insert.TestResults("inv1", "t2", v10, pb.TestStatus_PASS),
 			)...)
 
 			Convey(`Empty`, func() {
@@ -298,11 +296,11 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Paging`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertArtifact("inv1", "", "a0", nil),
-				testutil.InsertArtifact("inv1", "", "a1", nil),
-				testutil.InsertArtifact("inv1", "", "a2", nil),
-				testutil.InsertArtifact("inv1", "", "a3", nil),
-				testutil.InsertArtifact("inv1", "", "a4", nil),
+				insert.Artifact("inv1", "", "a0", nil),
+				insert.Artifact("inv1", "", "a1", nil),
+				insert.Artifact("inv1", "", "a2", nil),
+				insert.Artifact("inv1", "", "a3", nil),
+				insert.Artifact("inv1", "", "a4", nil),
 			)
 
 			mustReadPage := func(pageToken string, pageSize int, expectedArtifactIDs ...string) string {

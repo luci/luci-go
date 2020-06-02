@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -139,7 +140,7 @@ func TestCreateTestResult(t *testing.T) {
 		tok, err := generateInvocationToken(ctx, "u-build-1")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := testutil.InsertInvocation(span.InvocationID("u-build-1"), pb.Invocation_ACTIVE, nil)
+		mut := insert.Invocation(span.InvocationID("u-build-1"), pb.Invocation_ACTIVE, nil)
 		testutil.MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
