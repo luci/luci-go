@@ -26,6 +26,7 @@ load('@stdlib//internal/luci/rules/console_view_entry.star', _console_view_entry
 load('@stdlib//internal/luci/rules/cq.star', _cq='cq')
 load('@stdlib//internal/luci/rules/cq_group.star', _cq_group='cq_group')
 load('@stdlib//internal/luci/rules/cq_tryjob_verifier.star', _cq_tryjob_verifier='cq_tryjob_verifier')
+load('@stdlib//internal/luci/rules/custom_role.star', _custom_role='custom_role')
 load('@stdlib//internal/luci/rules/executable.star', _executable='executable', _recipe='recipe')
 load('@stdlib//internal/luci/rules/external_console_view.star', _external_console_view='external_console_view')
 load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
@@ -64,6 +65,7 @@ luci = struct(
     project = _project,
     realm = _realm,
     binding = _binding,
+    custom_role = _custom_role,
     logdog =  _logdog,
     bucket = _bucket,
     executable = _executable,
