@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "5ad47e93_c00d8c8d",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T01:07:57Z",
+      "side": 1,
+      "message": "sorted list?",
+      "range": {
+        "startLine": 81,
+        "startChar": 11,
+        "endLine": 81,
+        "endChar": 15
+      },
+      "revId": "f7aa76c302953487125a62770d9594cfe1641b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc47fc94_16f689cc",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T01:07:57Z",
+      "side": 1,
+      "message": "it says experiment, but does not clearly direct the user to the replacement (\"experiments\" field) like L418 does",
+      "range": {
+        "startLine": 397,
+        "startChar": 5,
+        "endLine": 397,
+        "endChar": 15
+      },
+      "revId": "f7aa76c302953487125a62770d9594cfe1641b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f19c41a_549bd36c",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T01:07:57Z",
+      "side": 1,
+      "message": "should we not allow an experiment to start with a digit, like symbols in programming languages?",
+      "range": {
+        "startLine": 431,
+        "startChar": 12,
+        "endLine": 431,
+        "endChar": 15
+      },
+      "revId": "f7aa76c302953487125a62770d9594cfe1641b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0f745556_f07a323b",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 3
