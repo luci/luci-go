@@ -24,9 +24,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
-	"go.chromium.org/luci/logdog/client/annotee"
-	"go.chromium.org/luci/logdog/client/annotee/annotation"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luciexe/legacy/annotee"
+	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
 )
 
 // Executor bootstraps an application, running its output through a Processor.
