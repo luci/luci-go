@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ddc4b022_5b461836",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-02T03:02:40Z",
+      "side": 1,
+      "message": "Is it validated somewhere via https://godoc.org/go.chromium.org/luci/server/auth/realms#ValidateRealmName?",
+      "range": {
+        "startLine": 137,
+        "startChar": 18,
+        "endLine": 137,
+        "endChar": 32
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
