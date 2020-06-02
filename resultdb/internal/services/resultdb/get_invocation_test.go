@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -58,14 +59,14 @@ func TestGetInvocation(t *testing.T) {
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
+			insert.Invocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
 				"CreateTime": ct,
 				"Deadline":   deadline,
 			}),
-			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
-			testutil.InsertInclusion("including", "included0"),
-			testutil.InsertInclusion("including", "included1"),
+			insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
+			insert.Inclusion("including", "included0"),
+			insert.Inclusion("including", "included1"),
 		)
 
 		// Fetch back the top-level Invocation.

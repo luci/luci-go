@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -213,7 +214,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`already exists`, func() {
 			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-				testutil.InsertInvocation("u-inv", 1, nil),
+				insert.Invocation("u-inv", 1, nil),
 			})
 			So(err, ShouldBeNil)
 

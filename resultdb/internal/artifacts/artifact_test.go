@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,7 +74,7 @@ func TestRead(t *testing.T) {
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
 		Convey(`Does not exist`, func() {
 			_, err := Read(ctx, txn, "invocations/i/artifacts/a")
@@ -81,7 +82,7 @@ func TestRead(t *testing.T) {
 		})
 
 		Convey(`Exists`, func() {
-			testutil.MustApply(ctx, testutil.InsertArtifact("inv", "tr/t/r", "a", map[string]interface{}{
+			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))

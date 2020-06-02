@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,10 +34,10 @@ func TestQueryTestExonerations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			testutil.InsertFinalizedInvocationWithInclusions("a"),
-			testutil.InsertFinalizedInvocationWithInclusions("b"),
-			testutil.InsertTestExonerations("a", "A", pbutil.Variant("v", "a"), 2),
-			testutil.InsertTestExonerations("b", "C", pbutil.Variant("v", "c"), 1),
+			insert.FinalizedInvocationWithInclusions("a"),
+			insert.FinalizedInvocationWithInclusions("b"),
+			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), 2),
+			insert.TestExonerations("b", "C", pbutil.Variant("v", "c"), 1),
 		)...)
 
 		q := &Query{
