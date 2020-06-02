@@ -163,6 +163,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 								bqExport,
 							},
 							ProducerResource: "//builds.example.com/builds/1",
+							Realm: "chromium:public",
 						},
 					},
 					{
@@ -174,6 +175,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 								bqExport,
 							},
 							ProducerResource: "//builds.example.com/builds/2",
+							Realm: "chromium:public",
 						},
 					},
 				},

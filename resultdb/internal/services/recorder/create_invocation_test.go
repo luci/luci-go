@@ -266,6 +266,7 @@ func TestCreateInvocation(t *testing.T) {
 						bqExport,
 					},
 					ProducerResource: "//builds.example.com/builds/1",
+					Realm: "chromium:public",
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
