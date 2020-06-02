@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74717661_a1c76f54",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T00:18:49Z",
+      "side": 1,
+      "message": "do we eventually get rid of this import?",
+      "revId": "7f59abf220262371c9476938b1d85bae0136be3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
