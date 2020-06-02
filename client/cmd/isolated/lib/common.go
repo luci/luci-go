@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -67,7 +67,7 @@ func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error
 }
 
 func (c *commonFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
-	userAgent := "isolated-go/" + isolatedVersion
+	userAgent := "isolated-go/" + IsolatedVersion
 	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
 		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
 	}

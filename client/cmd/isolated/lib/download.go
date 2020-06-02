@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -43,7 +43,8 @@ const maxInt = int(maxUint >> 1)
 const cacheMaxSizeDefault = math.MaxInt64
 const cacheMaxItemsDefault = maxInt
 
-func cmdDownload(authOpts auth.Options) *subcommands.Command {
+// CmdDownload returns an object for the `download` subcommand.
+func CmdDownload(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "download <options>...",
 		ShortDesc: "downloads a file or a .isolated tree from an isolate server.",

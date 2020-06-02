@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -128,7 +128,8 @@ func (t *taskResult) Print(w io.Writer) {
 	}
 }
 
-func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdCollect returns an object for the `collect` subcommand.
+func CmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "collect <options> (-requests-json file | task_id...)",
 		ShortDesc: "Waits on a set of Swarming tasks",

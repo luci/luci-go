@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -37,7 +37,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdBatchArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdBatchArchive returns an object for the `batcharchive` subcommand.
+func CmdBatchArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "batcharchive <options> file1 file2 ...",
 		ShortDesc: "archives multiple isolated trees at once.",

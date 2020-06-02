@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -184,7 +184,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 		return nil, nil
 	}
 
-	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent(swarmingUserAgent))
+	isolatedClient := isolatedclient.NewClient(ref.Isolatedserver, isolatedclient.WithAuthClient(s.client), isolatedclient.WithNamespace(ref.Namespace), isolatedclient.WithUserAgent(SwarmingUserAgent))
 
 	var filesMu sync.Mutex
 	var files []string
@@ -340,7 +340,7 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 		return nil, err
 	}
 	s.BasePath = c.serverURL + swarmingAPISuffix
-	s.UserAgent = swarmingUserAgent
+	s.UserAgent = SwarmingUserAgent
 	return &swarmingServiceImpl{client, s, c.worker}, nil
 }
 

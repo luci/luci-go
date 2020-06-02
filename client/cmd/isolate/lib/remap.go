@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"fmt"
@@ -23,7 +23,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func cmdRemap() *subcommands.Command {
+// CmdRemap returns an object for the `remap` subcommand.
+func CmdRemap() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "remap <options>",
 
