@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f79b757_98b60efc",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 488,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T07:21:09Z",
+      "side": 1,
+      "message": "consider using more standardized https://pkg.go.dev/go.chromium.org/luci/common/data/rand/mathrand?tab\u003ddoc#Intn\n\nthe base framework for luci apps already initializes a source and places it into the context",
+      "revId": "da2c54dab94a9bb83401d2fea43a39d0495d6c31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76d14732_2004233d",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 490,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T07:21:09Z",
+      "side": 1,
+      "message": "nit: most of those strings are not emoji",
+      "range": {
+        "startLine": 490,
+        "startChar": 5,
+        "endLine": 490,
+        "endChar": 16
+      },
+      "revId": "da2c54dab94a9bb83401d2fea43a39d0495d6c31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
