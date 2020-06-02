@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -60,7 +60,7 @@ func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 		return nil, appstatus.BadRequest(err)
 	}
 
-	invID := span.MustParseInvocationName(in.Invocation)
+	invID := invocations.MustParseName(in.Invocation)
 
 	ret := &pb.BatchCreateTestExonerationsResponse{
 		TestExonerations: make([]*pb.TestExoneration, len(in.Requests)),

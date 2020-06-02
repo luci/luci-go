@@ -129,12 +129,12 @@ export const enum Expectancy {
 }
 
 export interface QueryTestResultsResponse {
-  readonly testResults?: TestResult[];
+  readonly testResults: TestResult[];
   readonly nextPageToken?: string;
 }
 
 export interface QueryTestExonerationsResponse {
-  readonly testExonerations?: TestExoneration[];
+  readonly testExonerations: TestExoneration[];
   readonly nextPageToken?: string;
 }
 

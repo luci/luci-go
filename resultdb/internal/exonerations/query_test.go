@@ -20,6 +20,7 @@ import (
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -41,7 +42,7 @@ func TestQueryTestExonerations(t *testing.T) {
 		)...)
 
 		q := &Query{
-			InvocationIDs: span.NewInvocationIDSet("a", "b"),
+			InvocationIDs: invocations.NewIDSet("a", "b"),
 			PageSize:      100,
 		}
 		actual, _, err := q.Fetch(ctx, span.Client(ctx).Single())

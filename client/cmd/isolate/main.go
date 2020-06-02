@@ -22,12 +22,15 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/client/cmd/isolate/lib"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
+
+// isolateVersion must be updated whenever functional change (behavior, arguments,
+// supported commands) is done.
+const isolateVersion = "0.6"
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
@@ -35,16 +38,16 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Title: "isolate.py but faster",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
-			lib.CmdArchive(defaultAuthOpts),
-			lib.CmdBatchArchive(defaultAuthOpts),
-			lib.CmdCheck(),
-			lib.CmdRemap(),
-			lib.CmdRun(),
+			cmdArchive(defaultAuthOpts),
+			cmdBatchArchive(defaultAuthOpts),
+			cmdCheck(),
+			cmdRemap(),
+			cmdRun(),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
-			versioncli.CmdVersion(lib.IsolateVersion),
+			versioncli.CmdVersion(isolateVersion),
 		},
 	}
 }

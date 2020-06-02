@@ -23,7 +23,7 @@ CREATE TABLE Invocations (
   -- Format: "${hex(sha256(user_provided_id)[:8])}:${user_provided_id}".
   InvocationId STRING(MAX) NOT NULL,
 
-  -- A random value in [0, InvocationShards) where InvocationShards constant is
+  -- A random value in [0, Shards) where Shards constant is
   -- defined in code.
   -- Used in global secondary indexes, to prevent hot spots.
   -- The maximum value of ShardId in Spanner can be determined by querying the

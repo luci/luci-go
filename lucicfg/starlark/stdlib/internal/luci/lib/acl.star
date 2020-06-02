@@ -68,7 +68,7 @@ _entry_ctor = __native__.genstruct('acl.entry')
 _elementary_ctor = __native__.genstruct('acl.elementary')
 
 
-def _role(name, *, realms_role, project_level_only=False, groups_only=False):
+def _role(name, *, project_level_only=False, groups_only=False):
   """Defines a role.
 
   Internal API. Only predefined roles are available publicly, see the bottom of
@@ -76,7 +76,6 @@ def _role(name, *, realms_role, project_level_only=False, groups_only=False):
 
   Args:
     name: string name of the role.
-    realms_role: matching predefined Realms role.
     project_level_only: True if it can be used only in project(...) ACLs.
     groups_only: True if role supports only group-based ACL (not user-based).
 
@@ -85,7 +84,6 @@ def _role(name, *, realms_role, project_level_only=False, groups_only=False):
   """
   return _role_ctor(
       name = name,
-      realms_role = realms_role,
       project_level_only = project_level_only,
       groups_only = groups_only,
   )
@@ -207,7 +205,7 @@ def _normalize_acls(acls):
     A sorted deduped list of acl.elementary structs.
   """
   out = []
-  for e in (acls or []):
+  for e in acls:
     for r in e.roles:
       for u in e.users:
         out.append(_elementary_ctor(role=r, user=u, group=None, project=None))
@@ -231,38 +229,6 @@ def _sort_key(e):
   return (e.role.name, order, ident)
 
 
-def _binding_dicts(acls):
-  """Takes a list of validated acl.entry structs and returns a list of dicts.
-
-  Each dict contains keyword arguments for a luci.binding(...) rule. Together
-  they represent the same ACL entries as `acls`.
-  """
-  per_role = {}  # role -> {roles: [role], groups: [], users: [], projects: []}.
-  for e in _normalize_acls(acls):
-    role = e.role.realms_role
-
-    binding = per_role.get(role)
-    if not binding:
-      binding = {
-          'roles': [role],
-          'groups': [],
-          'users': [],
-          'projects': [],
-      }
-      per_role[role] = binding
-
-    # `e` is acl.elementary which is a "union" struct: one and only one field is
-    # set.
-    if e.user:
-      binding['users'].append(e.user)
-    elif e.group:
-      binding['groups'].append(e.group)
-    elif e.project:
-      binding['projects'].append(e.project)
-
-  return per_role.values()
-
-
 ################################################################################
 
 
@@ -276,90 +242,49 @@ acl = struct(
     #
     # DocTags:
     #   project_level_only.
-    PROJECT_CONFIGS_READER = _role(
-        'PROJECT_CONFIGS_READER',
-        realms_role = 'role/configs.reader',
-        project_level_only = True,
-    ),
+    PROJECT_CONFIGS_READER = _role('PROJECT_CONFIGS_READER', project_level_only=True),
 
     # Reading logs under project's logdog prefix.
     #
     # DocTags:
     #   project_level_only, groups_only.
-    LOGDOG_READER = _role(
-        'LOGDOG_READER',
-        realms_role = 'role/logdog.reader',
-        project_level_only = True,
-        groups_only = True,
-    ),
+    LOGDOG_READER = _role('LOGDOG_READER', project_level_only=True, groups_only=True),
 
     # Writing logs under project's logdog prefix.
     #
     # DocTags:
     #   project_level_only, groups_only.
-    LOGDOG_WRITER = _role(
-        'LOGDOG_WRITER',
-        realms_role = 'role/logdog.writer',
-        project_level_only = True,
-        groups_only = True,
-    ),
+    LOGDOG_WRITER = _role('LOGDOG_WRITER', project_level_only=True, groups_only=True),
 
     # Fetching info about a build, searching for builds in a bucket.
-    BUILDBUCKET_READER = _role(
-        'BUILDBUCKET_READER',
-        realms_role = 'role/buildbucket.reader',
-    ),
+    BUILDBUCKET_READER = _role('BUILDBUCKET_READER'),
     # Same as `BUILDBUCKET_READER` + scheduling and canceling builds.
-    BUILDBUCKET_TRIGGERER = _role(
-        'BUILDBUCKET_TRIGGERER',
-        realms_role = 'role/buildbucket.triggerer',
-    ),
+    BUILDBUCKET_TRIGGERER = _role('BUILDBUCKET_TRIGGERER'),
     # Full access to the bucket (should be used rarely).
-    BUILDBUCKET_OWNER = _role(
-        'BUILDBUCKET_OWNER',
-        realms_role = 'role/buildbucket.owner',
-    ),
+    BUILDBUCKET_OWNER = _role('BUILDBUCKET_OWNER'),
 
     # Viewing Scheduler jobs, invocations and their debug logs.
-    SCHEDULER_READER = _role(
-        'SCHEDULER_READER',
-        realms_role = 'role/scheduler.reader',
-    ),
+    SCHEDULER_READER = _role('SCHEDULER_READER'),
     # Same as `SCHEDULER_READER` + ability to trigger jobs.
-    SCHEDULER_TRIGGERER = _role(
-        'SCHEDULER_TRIGGERER',
-        realms_role = 'role/scheduler.triggerer',
-    ),
+    SCHEDULER_TRIGGERER = _role('SCHEDULER_TRIGGERER'),
     # Full access to Scheduler jobs, including ability to abort them.
-    SCHEDULER_OWNER = _role(
-        'SCHEDULER_OWNER',
-        realms_role = 'role/scheduler.owner',
-    ),
+    SCHEDULER_OWNER = _role('SCHEDULER_OWNER'),
 
     # Committing approved CLs via CQ.
     #
     # DocTags:
     #  cq_role, groups_only.
-    CQ_COMMITTER = _role(
-        'CQ_COMMITTER',
-        groups_only = True,
-        realms_role = 'role/cq.committer',
-    ),
+    CQ_COMMITTER = _role('CQ_COMMITTER', groups_only=True),
 
     # Executing presubmit tests for CLs via CQ.
     #
     # DocTags:
     #  cq_role, groups_only.
-    CQ_DRY_RUNNER = _role(
-        'CQ_DRY_RUNNER',
-        groups_only = True,
-        realms_role = 'role/cq.dryRunner',
-    ),
+    CQ_DRY_RUNNER = _role('CQ_DRY_RUNNER', groups_only=True),
 )
 
 
 aclimpl = struct(
     validate_acls = _validate_acls,
     normalize_acls = _normalize_acls,
-    binding_dicts = _binding_dicts,
 )

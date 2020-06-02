@@ -21,7 +21,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -151,7 +151,7 @@ func variantToStringPairs(vr *typepb.Variant) []StringPair {
 
 func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 	return Invocation{
-		ID:   string(span.MustParseInvocationName(inv.Name)),
+		ID:   string(invocations.MustParseName(inv.Name)),
 		Tags: stringPairProtosToStringPairs(inv.Tags),
 	}
 }

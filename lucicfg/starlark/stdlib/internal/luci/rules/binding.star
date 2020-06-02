@@ -63,28 +63,11 @@ def _binding(
       realm = [realm]
     realm_keys = [keys.realm(r) for r in realm]
 
-  if roles != None and type(roles) != 'list':
-    roles = [roles]
-
-  # Each element of `roles` is either a string 'role/...' or 'customRole/...',
-  # or a reference to luci.custom_role(...) node. We link to all custom role
-  # nodes to make sure they are defined.
-  roles_strs = []  # 'role/...' and 'customRole/...'
-  roles_keys = []  # keys of custom roles only
-  for r in validate.list('roles', roles, required=True):
-    if graph.is_keyset(r) and r.has(kinds.CUSTOM_ROLE):
-      key = r.get(kinds.CUSTOM_ROLE)
-      roles_strs.append(key.id)  # grab its string name
-      roles_keys.append(key)
-    elif type(r) == 'string':
-      if not r.startswith('role/') and not r.startswith('customRole/'):
-        fail('bad "roles": %r should start with "role/" or "customeRole/"' % (r,))
-      roles_strs.append(r)
-      if r.startswith('customRole/'):
-        roles_keys.append(keys.custom_role(r))
-    else:
-      fail('bad "roles": %r is not a string nor a luci.custom_role(...)' % (r,))
-  roles_strs = sorted(set(roles_strs))
+  # TODO(vadimsh): Add support for custom roles.
+  roles = _validate_str_or_list('roles', roles, required=True)
+  for r in roles:
+    if not r.startswith('role/') and not r.startswith('customRole/'):
+      error('bad "roles": %r should start with "role/" or "customeRole/"', r)
 
   groups = _validate_str_or_list('groups', groups)
   users = _validate_str_or_list('users', users)
@@ -92,9 +75,9 @@ def _binding(
 
   # Note: the second argument here is irrelevant. It will appear when this key
   # is printed but otherwise it is unused.
-  key = keys.unique(kinds.BINDING, ','.join(roles_strs))
+  key = keys.unique(kinds.BINDING, ','.join(roles))
   graph.add_node(key, props = {
-      'roles': roles_strs,
+      'roles': roles,
       'groups': groups,
       'users': users,
       'projects': projects,
@@ -103,10 +86,6 @@ def _binding(
   # This adds the binding to the realm(s).
   for r in realm_keys:
     graph.add_edge(r, key)
-
-  # This makes sure all referenced custom roles are defined.
-  for r in roles_keys:
-    graph.add_edge(r, key, title='roles')
 
   # This is used to detect luci.binding that are not added to any realm.
   graph.add_node(keys.bindings_root(), idempotent=True)
@@ -123,7 +102,7 @@ def _validate_str_or_list(name, val, required=False):
   val = validate.list(name, val, required=required)
   for v in val:
     validate.string(name, v)
-  return sorted(set(val))
+  return sorted(val)
 
 
 binding = lucicfg.rule(impl = _binding)

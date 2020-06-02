@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -71,7 +72,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		return nil, appstatus.BadRequest(err)
 	}
 
-	invID := span.MustParseInvocationName(in.Invocation)
+	invID := invocations.MustParseName(in.Invocation)
 	ret := &pb.BatchCreateTestResultsResponse{
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
@@ -83,7 +84,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		if err := txn.BufferWrite(ms); err != nil {
 			return err
 		}
-		return span.IncrementTestResultCount(ctx, txn, invID, int64(len(in.Requests)))
+		return invocations.IncrementTestResultCount(ctx, txn, invID, int64(len(in.Requests)))
 	})
 	if err != nil {
 		return nil, err
