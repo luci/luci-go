@@ -106,10 +106,7 @@ func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyT
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	st.Params["afterInvocationId"],
-		st.Params["afterTestId"],
-		st.Params["afterExonerationID"],
-		err = parseTestObjectPageToken(q.PageToken)
+	err = ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterExonerationID")
 	if err != nil {
 		return
 	}

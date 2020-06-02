@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -285,7 +286,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 		return appstatus.Errorf(codes.InvalidArgument, "bad artifact name: %s", err)
 	}
 	ac.invID = span.InvocationID(invIDString)
-	ac.localParentID = span.ArtifactParentID(ac.testID, ac.resultID)
+	ac.localParentID = artifacts.ParentID(ac.testID, ac.resultID)
 
 	// Parse and validate the hash.
 	switch ac.hash = c.Request.Header.Get(artifactContentHashHeaderKey); {
