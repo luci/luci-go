@@ -192,6 +192,10 @@ def gen_realms_cfg(ctx):
           _realms_realm(r)
           for r in graph.children(proj.key, kinds.REALM)
       ],
+      custom_roles = [
+          _realms_custom_role(r)
+          for r in graph.children(proj.key, kinds.CUSTOM_ROLE)
+      ],
   ))
 
 
@@ -219,6 +223,15 @@ def _realms_realm(realm):
               principals = sorted(per_role[role]),
           ) for role in sorted(per_role)
       ],
+  )
+
+
+def _realms_custom_role(role):
+  """Given a CUSTOM_ROLE node returns realms_pb.CustomRole."""
+  return realms_pb.CustomRole(
+      name = role.props.name,
+      extends = role.props.extends,
+      permissions = role.props.permissions,
   )
 
 
