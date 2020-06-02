@@ -19,7 +19,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -36,7 +35,7 @@ func TestQuery(t *testing.T) {
 
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 		q := &Query{
-			InvocationIDs:       invocations.NewIDSet("inv1"),
+			InvocationIDs:       span.NewInvocationIDSet("inv1"),
 			PageSize:            100,
 			TestResultPredicate: &pb.TestResultPredicate{},
 		}

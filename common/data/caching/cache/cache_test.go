@@ -194,23 +194,4 @@ func TestNewDisk(t *testing.T) {
 
 		So(c.Close(), ShouldBeNil)
 	}))
-
-	Convey(`Record hardlink stats`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
-		pol := Policies{MaxSize: 1024, MaxItems: 2}
-		namespace := isolatedclient.DefaultNamespace
-		c, err := NewDisk(pol, dir, namespace)
-		So(err, ShouldBeNil)
-
-		h := isolated.GetHash(namespace)
-		file1Content := []byte("foo")
-		file1Digest := isolated.HashBytes(h, file1Content)
-
-		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
-		dest := filepath.Join(dir, "foo")
-		So(c.Hardlink(file1Digest, dest, os.FileMode(0600)), ShouldBeNil)
-		d := c.(*disk)
-		expected := make(map[string]int)
-		expected[dest] = 1
-		So(d.digestHardlinkRecords[file1Digest].destToCount, ShouldResemble, expected)
-	}))
 }

@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -60,7 +59,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	if err := validateCreateTestExonerationRequest(in, true); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	invID := invocations.MustParseName(in.Invocation)
+	invID := span.MustParseInvocationName(in.Invocation)
 
 	ret, mutation := insertTestExoneration(ctx, invID, in.RequestId, 0, in.TestExoneration)
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -72,7 +71,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	return ret, nil
 }
 
-func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID string, ordinal int, body *pb.TestExoneration) (ret *pb.TestExoneration, mutation *spanner.Mutation) {
+func insertTestExoneration(ctx context.Context, invID span.InvocationID, requestID string, ordinal int, body *pb.TestExoneration) (ret *pb.TestExoneration, mutation *spanner.Mutation) {
 	// Compute exoneration ID and choose Insert vs InsertOrUpdate.
 	var exonerationIDSuffix string
 	mutFn := spanner.InsertMap

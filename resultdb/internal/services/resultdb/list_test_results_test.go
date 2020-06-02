@@ -22,7 +22,6 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -94,7 +93,7 @@ func TestListTestResults(t *testing.T) {
 
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
-func insertTestResults(ctx context.Context, invID invocations.ID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
+func insertTestResults(ctx context.Context, invID span.InvocationID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	ms := make([]*spanner.Mutation, len(statuses))
 

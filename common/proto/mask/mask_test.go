@@ -20,7 +20,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/runtime/protoimpl"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
 
@@ -30,7 +29,7 @@ import (
 
 type testMsg = testingpb.Full
 
-var testMsgDescriptor = protoimpl.X.MessageDescriptorOf(&testMsg{})
+var testMsgDescriptor = proto.MessageReflect(&testMsg{}).Descriptor()
 
 func TestNormalizePath(t *testing.T) {
 	Convey("Retrun empty paths when given empty paths", t, func() {

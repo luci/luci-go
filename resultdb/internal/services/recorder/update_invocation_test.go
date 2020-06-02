@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -152,7 +152,7 @@ func TestUpdateInvocation(t *testing.T) {
 			actual := &pb.Invocation{
 				Name: expected.Name,
 			}
-			invID := invocations.ID("inv")
+			invID := span.InvocationID("inv")
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
 				"Deadline": &actual.Deadline,
 			})

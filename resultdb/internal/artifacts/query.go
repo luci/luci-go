@@ -23,7 +23,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -38,7 +37,7 @@ var followAllEdges = &pb.QueryArtifactsRequest_EdgeTypeSet{
 
 // Query specifies artifacts to fetch.
 type Query struct {
-	InvocationIDs       invocations.IDSet
+	InvocationIDs       span.InvocationIDSet
 	ParentIDRegexp      string
 	FollowEdges         *pb.QueryArtifactsRequest_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
@@ -122,7 +121,7 @@ func (q *Query) Fetch(ctx context.Context, txn span.Txn) (arts []*pb.Artifact, n
 	st := spanner.NewStatement(sql.String())
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterParentId", "afterArtifactId")
+	err = span.ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterParentId", "afterArtifactId")
 	if err != nil {
 		return
 	}
@@ -132,7 +131,7 @@ func (q *Query) Fetch(ctx context.Context, txn span.Txn) (arts []*pb.Artifact, n
 
 	var b span.Buffer
 	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {
-		var invID invocations.ID
+		var invID span.InvocationID
 		var parentID string
 		var contentType spanner.NullString
 		var size spanner.NullInt64

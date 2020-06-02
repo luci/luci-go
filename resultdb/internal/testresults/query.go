@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -33,7 +32,7 @@ import (
 
 // Query specifies test results to fetch.
 type Query struct {
-	InvocationIDs     invocations.IDSet
+	InvocationIDs     span.InvocationIDSet
 	Predicate         *pb.TestResultPredicate
 	PageSize          int // must be positive
 	PageToken         string
@@ -123,7 +122,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	PopulateVariantParams(&st, q.Predicate.GetVariant())
 
 	// Apply page token.
-	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterResultId")
+	err = span.ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterResultId")
 	if err != nil {
 		return err
 	}
@@ -132,7 +131,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	var summaryHTML span.Compressed
 	var b span.Buffer
 	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
-		var invID invocations.ID
+		var invID span.InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
 		tr := &pb.TestResult{}

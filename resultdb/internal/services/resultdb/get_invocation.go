@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -47,5 +46,5 @@ func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocation
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-	return invocations.Read(ctx, txn, invocations.MustParseName(in.Name))
+	return span.ReadInvocationFull(ctx, txn, span.MustParseInvocationName(in.Name))
 }

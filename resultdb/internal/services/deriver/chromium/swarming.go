@@ -44,9 +44,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/util"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -236,8 +236,8 @@ func GetOriginTask(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult
 }
 
 // GetInvocationID gets the ID of the invocation associated with a task and swarming service.
-func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest) invocations.ID {
-	return invocations.ID(fmt.Sprintf("task-%s-%s", req.SwarmingTask.Hostname, task.RunId))
+func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveChromiumInvocationRequest) span.InvocationID {
+	return span.InvocationID(fmt.Sprintf("task-%s-%s", req.SwarmingTask.Hostname, task.RunId))
 }
 
 func getTaskResultStatus(task *swarmingAPI.SwarmingRpcsTaskResult) pb.TestStatus {

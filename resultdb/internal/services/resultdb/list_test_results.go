@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -52,7 +51,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	q := testresults.Query{
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invocations.NewIDSet(invocations.MustParseName(in.Invocation)),
+		InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(in.Invocation)),
 	}
 	trs, tok, err := q.Fetch(ctx, txn)
 	if err != nil {

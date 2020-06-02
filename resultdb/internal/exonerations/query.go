@@ -19,7 +19,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -28,7 +27,7 @@ import (
 
 // Query specifies test exonerations to fetch.
 type Query struct {
-	InvocationIDs invocations.IDSet
+	InvocationIDs span.InvocationIDSet
 	Predicate     *pb.TestExonerationPredicate
 	PageSize      int // must be positive
 	PageToken     string
@@ -57,7 +56,7 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (te
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	err = invocations.TokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterExonerationID")
+	err = span.ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterExonerationID")
 	if err != nil {
 		return
 	}
@@ -69,7 +68,7 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (te
 	var b span.Buffer
 	var explanationHTML span.Compressed
 	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {
-		var invID invocations.ID
+		var invID span.InvocationID
 		ex := &pb.TestExoneration{}
 		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &explanationHTML)
 		if err != nil {

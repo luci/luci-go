@@ -17,7 +17,6 @@ package resultdb
 import (
 	"testing"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -94,7 +93,7 @@ func TestListArtifacts(t *testing.T) {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", nil),
 				span.InsertMap("Artifacts", map[string]interface{}{
-					"InvocationId": invocations.ID("inv1"),
+					"InvocationId": span.InvocationID("inv1"),
 					"ParentID":     "tr/t t/r",
 					"ArtifactId":   "a",
 				}),

@@ -22,7 +22,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/exonerations"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -148,7 +147,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
 
 			// Check variant hash.
-			key := invocations.ID("inv").Key(res.TestId, res.ExonerationId)
+			key := span.InvocationID("inv").Key(res.TestId, res.ExonerationId)
 			var variantHash string
 			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
 				"VariantHash": &variantHash,

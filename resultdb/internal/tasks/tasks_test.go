@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 
@@ -65,7 +64,7 @@ func TestTasks(t *testing.T) {
 				}
 
 				So(err, ShouldBeNil)
-				So(invID, ShouldEqual, invocations.ID("inv"))
+				So(invID, ShouldEqual, span.InvocationID("inv"))
 				So(payload, ShouldResemble, []byte("payload"))
 
 				// Check the task's ProcessAfter is updated.

@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -54,13 +53,13 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		PageToken: in.PageToken,
 	}
 	if invIDStr, err := pbutil.ParseInvocationName(in.Parent); err == nil {
-		q.InvocationIDs = invocations.NewIDSet(invocations.ID(invIDStr))
+		q.InvocationIDs = span.NewInvocationIDSet(span.InvocationID(invIDStr))
 		// Fetch only invocation-level artifacts. They have empty ParentId.
 		q.ParentIDRegexp = "^$"
 	} else {
 		// in.Parent must be a test result name.
 		invID, testID, resultID := testresults.MustParseName(in.Parent)
-		q.InvocationIDs = invocations.NewIDSet(invID)
+		q.InvocationIDs = span.NewInvocationIDSet(invID)
 		q.ParentIDRegexp = regexp.QuoteMeta(artifacts.ParentID(testID, resultID))
 	}
 

@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -240,10 +239,10 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			invIDs, err := invocations.Reachable(ctx, txn, 100, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invIDs, err := span.ReadReachableInvocations(ctx, txn, 100, span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name)))
 			So(err, ShouldBeNil)
 
-			trNum, err := invocations.ReadTestResultCount(ctx, txn, invIDs)
+			trNum, err := span.ReadTestResultCount(ctx, txn, invIDs)
 			So(err, ShouldBeNil)
 			So(trNum, ShouldEqual, 3)
 
@@ -269,7 +268,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
 			// Read InvocationTask to confirm it's added.
-			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", invocations.MustParseName(inv.Name).RowID()))
+			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.Name).RowID()))
 			var payload []byte
 			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
 				"Payload": &payload,
@@ -291,7 +290,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			invIDs, err := invocations.Reachable(ctx, txn, 100, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invIDs, err := span.ReadReachableInvocations(ctx, txn, 100, span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name)))
 			So(err, ShouldBeNil)
 			So(len(invIDs), ShouldEqual, 3)
 
@@ -317,7 +316,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
 			// Read InvocationTask to confirm it's added for origin1 task.
-			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", invocations.MustParseName(inv.IncludedInvocations[0]).RowID()))
+			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.IncludedInvocations[0]).RowID()))
 			var payload []byte
 			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
 				"Payload": &payload,
@@ -348,9 +347,9 @@ func TestBatchInsertTestResults(t *testing.T) {
 		}
 		deriver := newTestDeriverServer()
 
-		checkBatches := func(baseID invocations.ID, actualInclusions invocations.IDSet, expectedBatches [][]*chromium.TestResult) {
+		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*chromium.TestResult) {
 			// Check included Invocations.
-			expectedInclusions := make(invocations.IDSet, len(expectedBatches))
+			expectedInclusions := make(span.InvocationIDSet, len(expectedBatches))
 			for i := range expectedBatches {
 				expectedInclusions.Add(batchInvocationID(baseID, i))
 			}
@@ -362,7 +361,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 			// Check that the TestResults are batched as expected.
 			for i, expectedBatch := range expectedBatches {
 				q := testresults.Query{
-					InvocationIDs: invocations.NewIDSet(batchInvocationID(baseID, i)),
+					InvocationIDs: span.NewInvocationIDSet(batchInvocationID(baseID, i)),
 					PageSize:      100,
 				}
 				actualResults, _, err := q.Fetch(ctx, txn)
@@ -378,7 +377,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 		}
 
 		Convey(`for one batch`, func() {
-			baseID := invocations.ID("one_batch")
+			baseID := span.InvocationID("one_batch")
 			inv.Name = baseID.Name()
 			actualInclusions, err := deriver.batchInsertTestResults(ctx, inv, results, 5)
 			So(err, ShouldBeNil)
@@ -386,14 +385,14 @@ func TestBatchInsertTestResults(t *testing.T) {
 		})
 
 		Convey(`for multiple batches`, func() {
-			baseID := invocations.ID("multiple_batches")
+			baseID := span.InvocationID("multiple_batches")
 			inv.Name = baseID.Name()
 			actualInclusions, err := deriver.batchInsertTestResults(ctx, inv, results, 2)
 			So(err, ShouldBeNil)
 			checkBatches(baseID, actualInclusions, [][]*chromium.TestResult{results[:2], results[2:]})
 
 			Convey(`with batch size a factor of number of TestResults`, func() {
-				baseID := invocations.ID("multiple_batches_factor")
+				baseID := span.InvocationID("multiple_batches_factor")
 				inv.Name = baseID.Name()
 				actualInclusions, err := deriver.batchInsertTestResults(ctx, inv, results, 1)
 				So(err, ShouldBeNil)

@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/auth/realms"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -43,8 +43,8 @@ const (
 func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string, trCount int64) map[string]interface{} {
 	now := clock.Now(ctx).UTC()
 	row := map[string]interface{}{
-		"InvocationId": invocations.MustParseName(inv.Name),
-		"ShardId":      mathrand.Intn(ctx, invocations.Shards),
+		"InvocationId": span.MustParseInvocationName(inv.Name),
+		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
 		"Realm":        realms.Join("chromium", "public"),
 

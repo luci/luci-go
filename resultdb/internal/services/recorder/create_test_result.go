@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -51,7 +50,7 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 		return nil, appstatus.BadRequest(err)
 	}
 
-	invID := invocations.MustParseName(in.Invocation)
+	invID := span.MustParseInvocationName(in.Invocation)
 	ret, mutation := insertTestResult(ctx, invID, in.RequestId, in.TestResult)
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		err := txn.BufferWrite([]*spanner.Mutation{mutation})
@@ -59,7 +58,7 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 			return err
 		}
 
-		return invocations.IncrementTestResultCount(ctx, txn, invID, 1)
+		return span.IncrementTestResultCount(ctx, txn, invID, 1)
 	})
 	if err != nil {
 		return nil, err
@@ -68,7 +67,7 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	return ret, nil
 }
 
-func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
+func insertTestResult(ctx context.Context, invID span.InvocationID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)

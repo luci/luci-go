@@ -63,6 +63,7 @@ type Downloader struct {
 	started  bool
 	finished bool
 
+	// err does not hold more than 10 errors not to consume too much memory.
 	err errors.MultiError
 
 	interval time.Duration
@@ -282,8 +283,12 @@ func (d *Downloader) CmdAndCwd() ([]string, string, error) {
 func (d *Downloader) addError(ty downloadType, name string, err error) {
 	err = errors.Annotate(err, "%s %s", ty, name).Err()
 	d.mu.Lock()
+	defer d.mu.Unlock()
+	if len(d.err) >= 10 {
+		logging.WithError(err).Errorf(d.ctx, "more than 10 errors happened")
+		return
+	}
 	d.err = append(d.err, err)
-	d.mu.Unlock()
 }
 
 func (d *Downloader) startFile(size *int64) {

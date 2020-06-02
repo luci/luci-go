@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -51,14 +50,14 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		return nil, err
 	}
 
-	invID := invocations.MustParseName(in.Name)
+	invID := span.MustParseInvocationName(in.Name)
 	if err := validateInvocationToken(ctx, token, invID); err != nil {
 		return nil, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
 
 	var ret *pb.Invocation
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		inv, err := invocations.Read(ctx, txn, invID)
+		inv, err := span.ReadInvocationFull(ctx, txn, invID)
 		if err != nil {
 			return err
 		}
