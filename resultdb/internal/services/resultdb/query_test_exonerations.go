@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -59,8 +60,8 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 		return nil, err
 	}
 
-	// Query test results.
-	q := span.TestExonerationQuery{
+	// Query test exonerations.
+	q := exonerations.Query{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,

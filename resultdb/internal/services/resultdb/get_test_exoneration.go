@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -40,5 +41,5 @@ func (s *resultDBServer) GetTestExoneration(ctx context.Context, in *pb.GetTestE
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-	return span.ReadTestExonerationFull(ctx, txn, in.Name)
+	return exonerations.Read(ctx, txn, in.Name)
 }

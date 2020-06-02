@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,72 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package span
+package exonerations
 
 import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// MustParseTestExonerationName extracts invocation, test id and exoneration
-// IDs from the name.
-// Panics on failure.
-func MustParseTestExonerationName(name string) (invID InvocationID, testID, exonerationID string) {
-	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
-	if err != nil {
-		panic(err)
-	}
-	invID = InvocationID(invIDStr)
-	return
-}
-
-// ReadTestExonerationFull reads a test exoneration from Spanner.
-// If it does not exist, the returned error is annotated with NotFound GRPC
-// code.
-func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.TestExoneration, error) {
-	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
-	if err != nil {
-		return nil, err
-	}
-	invID := InvocationID(invIDStr)
-
-	ret := &pb.TestExoneration{
-		Name:          name,
-		TestId:        testID,
-		ExonerationId: exonerationID,
-	}
-
-	// Populate fields from TestExonerations table.
-	var explanationHTML Compressed
-	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
-		"Variant":         &ret.Variant,
-		"ExplanationHTML": &explanationHTML,
-	})
-	switch {
-	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", ret.Name)
-
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", ret.Name).Err()
-
-	default:
-		ret.ExplanationHtml = string(explanationHTML)
-		return ret, nil
-	}
-}
-
-// TestExonerationQuery specifies test exonerations to fetch.
-type TestExonerationQuery struct {
-	InvocationIDs InvocationIDSet
+// Query specifies test exonerations to fetch.
+type Query struct {
+	InvocationIDs span.InvocationIDSet
 	Predicate     *pb.TestExonerationPredicate
 	PageSize      int // must be positive
 	PageToken     string
@@ -86,7 +36,7 @@ type TestExonerationQuery struct {
 // Fetch returns a page test of exonerations matching the query.
 // Returned test exonerations are ordered by invocation ID, test ID and
 // exoneration ID.
-func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tes []*pb.TestExoneration, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tes []*pb.TestExoneration, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
@@ -106,7 +56,7 @@ func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyT
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
-	err = ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterExonerationID")
+	err = span.ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterExonerationID")
 	if err != nil {
 		return
 	}
@@ -115,10 +65,10 @@ func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyT
 	// TODO(nodir): add support for q.Predicate.Variant.
 
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
-	var b Buffer
-	var explanationHTML Compressed
-	err = Query(ctx, txn, st, func(row *spanner.Row) error {
-		var invID InvocationID
+	var b span.Buffer
+	var explanationHTML span.Compressed
+	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {
+		var invID span.InvocationID
 		ex := &pb.TestExoneration{}
 		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &explanationHTML)
 		if err != nil {
@@ -138,7 +88,7 @@ func (q *TestExonerationQuery) Fetch(ctx context.Context, txn *spanner.ReadOnlyT
 	// need to return the next page token.
 	if len(tes) == q.PageSize {
 		last := tes[q.PageSize-1]
-		invID, testID, exID := MustParseTestExonerationName(last.Name)
+		invID, testID, exID := MustParseName(last.Name)
 		nextPageToken = pagination.Token(string(invID), testID, exID)
 	}
 	return

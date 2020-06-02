@@ -288,7 +288,7 @@ func InsertTestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 	return ms
 }
 
-// InsertTestExonerations returns a Spanner mutations to insert test exonerations.
+// InsertTestExonerations returns Spanner mutations to insert test exonerations.
 func InsertTestExonerations(invID span.InvocationID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
