@@ -16,6 +16,24 @@
       "revId": "22381a3ca5d81a44548d5a78e303f8746c4528ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66b57a9e_d863b29a",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-02T20:06:10Z",
+      "side": 1,
+      "message": "Sadly yes unless we do a move everything to v2 :(",
+      "parentUuid": "a4877aeb_a50a8531",
+      "revId": "22381a3ca5d81a44548d5a78e303f8746c4528ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
