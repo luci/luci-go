@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f9db35a_c43cce01",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T07:17:12Z",
+      "side": 1,
+      "message": "Add \"The code of handling compressed is also refactored.\" or something like that at the beginning of the paragraph? Since it\u0027s not mentioned in the subject.",
+      "revId": "550a056c301fe8ae2fad7d135122a09fff2ce548",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44303f5f_f95c4cd2",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T07:17:12Z",
+      "side": 1,
+      "message": "\"can be used as a ...\"?",
+      "revId": "550a056c301fe8ae2fad7d135122a09fff2ce548",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29fb9f26_6993135f",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T07:17:12Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 149,
+        "startChar": 23,
+        "endLine": 149,
+        "endChar": 25
+      },
+      "revId": "550a056c301fe8ae2fad7d135122a09fff2ce548",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
