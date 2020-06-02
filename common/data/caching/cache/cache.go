@@ -379,7 +379,7 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 	p := d.itemPath(digest)
 	dst, err := os.Create(p)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to call os.Create(%s)", p).Err()
 	}
 	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
 	h := d.h.New()
