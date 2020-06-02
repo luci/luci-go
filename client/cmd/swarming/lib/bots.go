@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -32,7 +32,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdBots returns an object for the `bots` subcommand.
+func CmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "bots <options>",
 		ShortDesc: "lists bots",

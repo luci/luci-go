@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -41,7 +41,8 @@ const (
 	infraFailExit = 2
 )
 
-func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdArchive returns an object for the `archive` subcommand.
+func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>",
 		ShortDesc: "parses a .isolate file to create a .isolated file, and uploads it and all referenced files to an isolate server",

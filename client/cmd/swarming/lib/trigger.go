@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -38,7 +38,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdTrigger returns an object for the `trigger` subcommand.
+func CmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "trigger <options>",
 		ShortDesc: "Triggers a Swarming task",

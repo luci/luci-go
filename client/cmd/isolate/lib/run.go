@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"fmt"
@@ -29,7 +29,8 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 )
 
-func cmdRun() *subcommands.Command {
+// CmdRun returns an object for the `run` subcommand.
+func CmdRun() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "run <options> -- <extra args>",
 

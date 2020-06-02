@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -33,7 +33,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdSpawnTasks returns an object for the `spawn-tasks` subcommand.
+func CmdSpawnTasks(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "spawn-tasks <options>",
 		ShortDesc: "Spawns a set of Swarming tasks",
