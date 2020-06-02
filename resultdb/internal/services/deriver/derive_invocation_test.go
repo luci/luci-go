@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -244,7 +245,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(trNum, ShouldEqual, 3)
 
-			q := span.TestResultQuery{
+			q := testresults.Query{
 				InvocationIDs: invIDs,
 				PageSize:      100,
 			}
@@ -292,7 +293,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(invIDs), ShouldEqual, 3)
 
-			q := span.TestResultQuery{
+			q := testresults.Query{
 				InvocationIDs: invIDs,
 				PageSize:      100,
 			}
@@ -358,7 +359,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 
 			// Check that the TestResults are batched as expected.
 			for i, expectedBatch := range expectedBatches {
-				q := span.TestResultQuery{
+				q := testresults.Query{
 					InvocationIDs: span.NewInvocationIDSet(batchInvocationID(baseID, i)),
 					PageSize:      100,
 				}
