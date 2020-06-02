@@ -22,6 +22,121 @@
       "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f22341de_b170ed28",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T03:06:59Z",
+      "side": 1,
+      "message": "for consistency: inv.Realm",
+      "range": {
+        "startLine": 137,
+        "startChar": 22,
+        "endLine": 137,
+        "endChar": 32
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8a9b7ca_abbf79eb",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T03:06:59Z",
+      "side": 1,
+      "message": "missing validation in creation request handler",
+      "range": {
+        "startLine": 137,
+        "startChar": 22,
+        "endLine": 137,
+        "endChar": 30
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b442115_b69b0be0",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T03:06:59Z",
+      "side": 1,
+      "message": "nit: for consistency: `if inv.Realm \u003d\u003d \"\"`",
+      "range": {
+        "startLine": 152,
+        "startChar": 4,
+        "endLine": 152,
+        "endChar": 22
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81ba3aa4_dad46b57",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T03:06:59Z",
+      "side": 1,
+      "message": "please update",
+      "range": {
+        "startLine": 31,
+        "startChar": 12,
+        "endLine": 31,
+        "endChar": 14
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c5b6a7e_579427a2",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T03:06:59Z",
+      "side": 1,
+      "message": "is this the best realms documentation we have? go.chromium.org/luci/server/auth/realms is a bit low-level",
+      "range": {
+        "startLine": 122,
+        "startChar": 9,
+        "endLine": 122,
+        "endChar": 48
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
