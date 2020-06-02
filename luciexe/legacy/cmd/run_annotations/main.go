@@ -26,7 +26,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/buildbucket/deprecated"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/milo"
@@ -75,7 +74,7 @@ func main() {
 		var buildMU sync.Mutex
 		sendAnnotations := func(ann *milo.Step) {
 			fullPrefix := fmt.Sprintf("%s/%s", ldBootstrap.Prefix, ldBootstrap.Namespace)
-			steps, err := deprecated.ConvertBuildSteps(ctx, ann.Substep, ldBootstrap.CoordinatorHost, fullPrefix)
+			steps, err := annotee.ConvertBuildSteps(ctx, ann.Substep, ldBootstrap.CoordinatorHost, fullPrefix)
 			check(errors.Annotate(err, "failed to extract steps from annotations").Err())
 
 			props, err := milo.ExtractProperties(ann)
