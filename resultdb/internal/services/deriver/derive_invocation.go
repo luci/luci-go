@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/spanner"
+	durpb "github.com/golang/protobuf/ptypes/duration"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
@@ -330,7 +331,7 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spann
 		"Status":          tr.Status,
 		"SummaryHTML":     span.Compressed([]byte(tr.SummaryHtml)),
 		"StartTime":       tr.StartTime,
-		"RunDurationUsec": span.ToMicros(tr.Duration),
+		"RunDurationUsec": toMicros(tr.Duration),
 		"Tags":            tr.Tags,
 	}
 
@@ -351,4 +352,12 @@ func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Ar
 		"Size":         a.SizeBytes,
 		"IsolateURL":   a.FetchUrl,
 	})
+}
+
+// toMicros converts a duration.Duration proto to microseconds.
+func toMicros(d *durpb.Duration) int64 {
+	if d == nil {
+		return 0
+	}
+	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
 }
