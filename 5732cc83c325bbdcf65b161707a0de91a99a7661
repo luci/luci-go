@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d68b45c_bf9cc8b9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/custom_role.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-02T04:15:51Z",
+      "side": 1,
+      "message": "feels like copy-pasta from above with \"extends\" in error messages, but i bet you decided the DRY costs are larger than benefits, right?",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 78,
+        "endChar": 0
+      },
+      "revId": "5732cc83c325bbdcf65b161707a0de91a99a7661",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
