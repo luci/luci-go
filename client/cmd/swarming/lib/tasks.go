@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -31,7 +31,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdTasks(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdTasks returns an object for the `tasks` subcommand.
+func CmdTasks(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "tasks <options>",
 		ShortDesc: "lists tasks",
