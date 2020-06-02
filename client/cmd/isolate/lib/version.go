@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
-import (
-	"testing"
-
-	"go.chromium.org/luci/auth"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-)
-
-func TestBotsParse(t *testing.T) {
-	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
-		b := botsRun{}
-		b.Init(auth.Options{})
-		err := b.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-quiet"})
-		So(err, ShouldBeNil)
-		err = b.Parse()
-		So(err, ShouldErrLike, "specify -json")
-	})
-}
+// IsolateVersion must be updated whenever functional change (behavior
+// arguments, supported commands) is done.
+const IsolateVersion = "0.6"
