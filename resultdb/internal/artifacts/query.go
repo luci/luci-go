@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -126,7 +127,7 @@ func (q *Query) Fetch(ctx context.Context, txn span.Txn) (arts []*pb.Artifact, n
 	}
 
 	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
-	span.PopulateVariantParams(&st, q.TestResultPredicate.GetVariant())
+	testresults.PopulateVariantParams(&st, q.TestResultPredicate.GetVariant())
 
 	var b span.Buffer
 	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {

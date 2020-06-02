@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -121,7 +122,7 @@ func TestCreateTestResult(t *testing.T) {
 			So(res, ShouldResembleProto, expected)
 
 			// double-check it with the database
-			row, err := span.ReadTestResult(ctx, span.Client(ctx).Single(), res.Name)
+			row, err := testresults.Read(ctx, span.Client(ctx).Single(), res.Name)
 			So(err, ShouldBeNil)
 			So(row, ShouldResembleProto, expected)
 

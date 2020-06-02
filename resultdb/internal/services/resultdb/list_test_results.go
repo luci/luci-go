@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -47,7 +48,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
-	q := span.TestResultQuery{
+	q := testresults.Query{
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(in.Invocation)),

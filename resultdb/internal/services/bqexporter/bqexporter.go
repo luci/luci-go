@@ -40,6 +40,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -314,7 +315,7 @@ func (b *bqExporter) queryTestResults(
 	ctx context.Context,
 	txn *spanner.ReadOnlyTransaction,
 	exportedID span.InvocationID,
-	q span.TestResultQuery,
+	q testresults.Query,
 	exoneratedTestVariants map[testVariantKey]struct{},
 	batchC chan []*bigquery.StructSaver) error {
 
@@ -325,9 +326,9 @@ func (b *bqExporter) queryTestResults(
 
 	rows := make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
-	err = q.Run(ctx, txn, func(tr span.TestResultQueryItem) error {
+	err = q.Run(ctx, txn, func(tr testresults.QueryItem) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
-		parentID, _, _ := span.MustParseTestResultName(tr.Name)
+		parentID, _, _ := testresults.MustParseName(tr.Name)
 		rows = append(rows, b.generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
 		batchSize += proto.Size(tr)
 		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
@@ -456,7 +457,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		return b.batchExportRows(ctx, ins, batchC)
 	})
 
-	q := span.TestResultQuery{
+	q := testresults.Query{
 		Predicate:         bqExport.GetTestResults().GetPredicate(),
 		InvocationIDs:     invIDs,
 		SelectVariantHash: true,
