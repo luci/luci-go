@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "268ac469_380a7a6d",
+        "filename": "client/cmd/isolate/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-02T06:11:59Z",
+      "side": 1,
+      "message": "How this part will be in google3?",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "ac36d55ea8b2de3413559bf1a0a28f9a32d9ce60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
