@@ -137,6 +137,30 @@
       "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dba01d4a_4672edb0",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-02T03:08:41Z",
+      "side": 1,
+      "message": "There\u0027s no public documentation for realms yet. Only internal design doc.",
+      "parentUuid": "1c5b6a7e_579427a2",
+      "range": {
+        "startLine": 122,
+        "startChar": 9,
+        "endLine": 122,
+        "endChar": 48
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
