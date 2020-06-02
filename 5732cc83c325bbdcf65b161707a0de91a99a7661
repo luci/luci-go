@@ -22,6 +22,30 @@
       "revId": "5732cc83c325bbdcf65b161707a0de91a99a7661",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e03c8de0_9606e042",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/custom_role.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-02T17:48:01Z",
+      "side": 1,
+      "message": "Eh, I invoke https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming). Extracting this into a separate function will only harm readability IMO.",
+      "parentUuid": "9d68b45c_bf9cc8b9",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 78,
+        "endChar": 0
+      },
+      "revId": "5732cc83c325bbdcf65b161707a0de91a99a7661",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
