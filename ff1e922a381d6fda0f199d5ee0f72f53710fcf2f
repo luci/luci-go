@@ -34,6 +34,24 @@
       "revId": "ff1e922a381d6fda0f199d5ee0f72f53710fcf2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "607f5522_d8ae4b28",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-02T15:43:26Z",
+      "side": 1,
+      "message": "Does this mean \"yes\" or \"no and I\u0027ve updated Go to match\"?",
+      "parentUuid": "439d3f81_402d24c8",
+      "revId": "ff1e922a381d6fda0f199d5ee0f72f53710fcf2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
