@@ -19,7 +19,6 @@ import { autorun, observable } from 'mobx';
 export interface TestFilter {
   showExpected: boolean;
   showExonerated: boolean;
-  showFlaky: boolean;
 }
 
 /**
@@ -33,17 +32,12 @@ export class TestFilterElement extends MobxLitElement {
 
   @observable.ref showExpected = false;
   @observable.ref showExonerated = true;
-  @observable.ref showFlaky = true;
 
   private disposer = () => {};
   connectedCallback() {
     super.connectedCallback();
     this.disposer = autorun(
-      () => this.onFilterChanged({
-        showExpected: this.showExpected,
-        showExonerated: this.showExonerated,
-        showFlaky: this.showFlaky,
-      }),
+      () => this.onFilterChanged({showExpected: this.showExpected, showExonerated: this.showExonerated}),
     );
   }
   disconnectedCallback() {
@@ -65,10 +59,6 @@ export class TestFilterElement extends MobxLitElement {
       <div class="filter">
         <input type="checkbox" id="exonerated" @change=${(v: MouseEvent) => this.showExonerated = (v.target as HTMLInputElement).checked} ?checked=${this.showExonerated}>
         <label for="exonerated" style="color: #ff33d2;">Exonerated</label>
-      </div class="filter">
-      <div class="filter">
-        <input type="checkbox" id="flaky" @change=${(v: MouseEvent) => this.showFlaky = (v.target as HTMLInputElement).checked} ?checked=${this.showFlaky}>
-        <label for="flaky" style="color: #f5a309;">Flaky</label>
       </div class="filter">
     `;
   }

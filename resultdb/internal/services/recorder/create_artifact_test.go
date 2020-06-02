@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -196,7 +197,7 @@ func TestCreateArtifact(t *testing.T) {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					span.InsertMap("Artifacts", map[string]interface{}{
-						"InvocationId": span.InvocationID("inv"),
+						"InvocationId": invocations.ID("inv"),
 						"ParentId":     "",
 						"ArtifactId":   "a",
 						"RBECASHash":   "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -211,7 +212,7 @@ func TestCreateArtifact(t *testing.T) {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					span.InsertMap("Artifacts", map[string]interface{}{
-						"InvocationId": span.InvocationID("inv"),
+						"InvocationId": invocations.ID("inv"),
 						"ParentId":     "",
 						"ArtifactId":   "a",
 						"RBECASHash":   "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b851",
@@ -302,7 +303,7 @@ func TestCreateArtifact(t *testing.T) {
 			var actualSize int64
 			var actualHash string
 			var actualContentType string
-			testutil.MustReadRow(ctx, "Artifacts", span.InvocationID("inv").Key("", "a"), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Artifacts", invocations.ID("inv").Key("", "a"), map[string]interface{}{
 				"Size":        &actualSize,
 				"RBECASHash":  &actualHash,
 				"ContentType": &actualContentType,

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -37,13 +38,13 @@ import (
 // Panics if the name is invalid. Should be used only with trusted data.
 //
 // MustParseName is faster than pbutil.ParseTestResultName.
-func MustParseName(name string) (invID span.InvocationID, testID, resultID string) {
+func MustParseName(name string) (invID invocations.ID, testID, resultID string) {
 	parts := strings.Split(name, "/")
 	if len(parts) != 6 || parts[0] != "invocations" || parts[2] != "tests" || parts[4] != "results" {
 		panic(errors.Reason("malformed test result name: %q", name).Err())
 	}
 
-	invID = span.InvocationID(parts[1])
+	invID = invocations.ID(parts[1])
 	testID = parts[3]
 	resultID = parts[5]
 

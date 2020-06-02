@@ -64,7 +64,6 @@ export class TestResultsTabElement extends MobxLitElement {
         .onFilterChanged=${(filter: TestFilter) => {
           this.pageState.showExonerated = filter.showExonerated;
           this.pageState.showExpected = filter.showExpected;
-          this.pageState.showFlaky = filter.showFlaky;
         }}
       >
       </tr-test-filter>

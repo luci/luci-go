@@ -20,7 +20,6 @@ load('@stdlib//internal/luci/common.star', 'keys')
 load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
 load('@stdlib//internal/luci/lib/realms.star', 'realms')
 
-load('@stdlib//internal/luci/rules/binding.star', 'binding')
 load('@stdlib//internal/luci/rules/realm.star', 'realm')
 
 
@@ -50,11 +49,10 @@ def _bucket(ctx, *, name=None, acls=None, bindings=None):
 
   # Each bucket also has an associated realm with the matching name.
   if realms.experiment.is_enabled():
-    # Convert legacy `acls` entries into binding(...) too.
-    bindings = bindings[:] if bindings else []
-    bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
-    # Add all bindings to the bucket realm.
-    realm(name = name, bindings = bindings)
+    realm(
+        name = name,
+        bindings = bindings,
+    )
 
   return graph.keyset(key)
 
