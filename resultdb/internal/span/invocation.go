@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -338,6 +339,44 @@ func IncrementTestResultCount(ctx context.Context, txn *spanner.ReadWriteTransac
 	case rowCount != 1:
 		return fmt.Errorf("expected to update 1 row, updated %d row instead", rowCount)
 	default:
+		return nil
+	}
+}
+
+// ParseInvocationEntityTokenToMap parses a token to a map.
+// The first component of the token is expected to be an invocation ID.
+// Convenient to initialize Spanner statement parameters.
+// Expects the token to be either empty or have len(keys) components.
+// If the token is empty, sets map values to "".
+func ParseInvocationEntityTokenToMap(token string, dest map[string]interface{}, keys ...string) error {
+	if len(keys) == 0 {
+		panic("keys is empty")
+	}
+	switch parts, err := pagination.ParseToken(token); {
+	case err != nil:
+		return err
+
+	case len(parts) == 0:
+		for i, k := range keys {
+			if i == 0 {
+				dest[k] = InvocationID("")
+			} else {
+				dest[k] = ""
+			}
+		}
+		return nil
+
+	case len(parts) != len(keys):
+		return pagination.InvalidToken(errors.Reason("expected %d components, got %q", len(keys), parts).Err())
+
+	default:
+		for i, k := range keys {
+			if i == 0 {
+				dest[k] = InvocationID(parts[i])
+			} else {
+				dest[k] = parts[i]
+			}
+		}
 		return nil
 	}
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package spantest
+package artifacts
 
 import (
 	"testing"
@@ -27,12 +27,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestMustParseArtifactName(t *testing.T) {
+func TestMustParseName(t *testing.T) {
 	t.Parallel()
 
-	Convey(`MustParseArtifactName`, t, func() {
+	Convey(`MustParseName`, t, func() {
 		Convey(`Parse`, func() {
-			invID, testID, resultID, artifactID := span.MustParseArtifactName(
+			invID, testID, resultID, artifactID := MustParseName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5/artifacts/a")
 			So(invID, ShouldEqual, "a")
 			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
@@ -47,28 +47,28 @@ func TestMustParseArtifactName(t *testing.T) {
 			}
 			for _, name := range invalidNames {
 				name := name
-				So(func() { span.MustParseArtifactName(name) }, ShouldPanic)
+				So(func() { MustParseName(name) }, ShouldPanic)
 			}
 		})
 	})
 }
 
-func TestArtifactParentID(t *testing.T) {
+func TestParentID(t *testing.T) {
 	t.Parallel()
-	Convey(`TestArtifactParentID`, t, func() {
+	Convey(`TestParentID`, t, func() {
 		Convey(`Invocation level`, func() {
-			id := span.ArtifactParentID("", "")
+			id := ParentID("", "")
 			So(id, ShouldEqual, "")
 		})
 		Convey(`Test result level`, func() {
-			id := span.ArtifactParentID("t t", "r")
+			id := ParentID("t t", "r")
 			So(id, ShouldEqual, "tr/t t/r")
 		})
 	})
 }
 
-func TestReadArtifact(t *testing.T) {
-	Convey(`TestReadArtifact`, t, func() {
+func TestRead(t *testing.T) {
+	Convey(`TestRead`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
@@ -76,17 +76,17 @@ func TestReadArtifact(t *testing.T) {
 		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
 
 		Convey(`Does not exist`, func() {
-			_, err := span.ReadArtifact(ctx, txn, "invocations/i/artifacts/a")
+			_, err := Read(ctx, txn, "invocations/i/artifacts/a")
 			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/i/artifacts/a not found")
 		})
 
 		Convey(`Exists`, func() {
-			testutil.MustApply(ctx, testutil.InsertTestResultArtifact("inv", "t", "r", "a", map[string]interface{}{
+			testutil.MustApply(ctx, testutil.InsertArtifact("inv", "tr/t/r", "a", map[string]interface{}{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))
 			const name = "invocations/inv/tests/t/results/r/artifacts/a"
-			a, err := span.ReadArtifact(ctx, txn, name)
+			a, err := Read(ctx, txn, name)
 			So(err, ShouldBeNil)
 			So(a, ShouldResembleProto, &pb.Artifact{
 				Name:        name,

@@ -18,8 +18,11 @@ import (
 	"encoding/base64"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
+
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 )
 
@@ -29,6 +32,7 @@ const (
 )
 
 // ParseToken extracts a string slice position from the given page token.
+// May return an appstatus-annotated error.
 func ParseToken(token string) ([]string, error) {
 	if token == "" {
 		return nil, nil
@@ -36,12 +40,12 @@ func ParseToken(token string) ([]string, error) {
 
 	tokBytes, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
-		return nil, err
+		return nil, InvalidToken(err)
 	}
 
 	msg := &internalpb.PageToken{}
 	if err := proto.Unmarshal(tokBytes, msg); err != nil {
-		return nil, err
+		return nil, InvalidToken(err)
 	}
 	return msg.Position, nil
 }
@@ -79,4 +83,9 @@ func ValidatePageSize(pageSize int32) error {
 		return errors.Reason("negative").Err()
 	}
 	return nil
+}
+
+// InvalidToken annotates the error with InvalidArgument appstatus.
+func InvalidToken(err error) error {
+	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page_token")
 }

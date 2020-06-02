@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -46,7 +47,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	}
 
 	// Prepare the query.
-	q := span.ArtifactQuery{
+	q := artifacts.Query{
 		PageSize:  pagination.AdjustPageSize(in.PageSize),
 		PageToken: in.PageToken,
 	}
@@ -58,7 +59,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		// in.Parent must be a test result name.
 		invID, testID, resultID := span.MustParseTestResultName(in.Parent)
 		q.InvocationIDs = span.NewInvocationIDSet(invID)
-		q.ParentIDRegexp = regexp.QuoteMeta(span.ArtifactParentID(testID, resultID))
+		q.ParentIDRegexp = regexp.QuoteMeta(artifacts.ParentID(testID, resultID))
 	}
 
 	// Read artifacts.

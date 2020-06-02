@@ -187,13 +187,10 @@ func (q *TestResultQuery) run(ctx context.Context, txn *spanner.ReadOnlyTransact
 	st.Params["TestIdRegexp"] = fmt.Sprintf("^%s$", testIDRegexp)
 
 	// Filter by variant.
-	populateVariantParams(&st, q.Predicate.GetVariant())
+	PopulateVariantParams(&st, q.Predicate.GetVariant())
 
 	// Apply page token.
-	st.Params["afterInvocationId"],
-		st.Params["afterTestId"],
-		st.Params["afterResultId"],
-		err = parseTestObjectPageToken(q.PageToken)
+	err = ParseInvocationEntityTokenToMap(q.PageToken, st.Params, "afterInvocationId", "afterTestId", "afterResultId")
 	if err != nil {
 		return err
 	}
@@ -305,37 +302,9 @@ func FromMicros(micros int64) *durpb.Duration {
 	return ptypes.DurationProto(time.Duration(1e3 * micros))
 }
 
-// parseTestObjectPageToken parses the page token into invocation ID, test id
-// and a test object id.
-func parseTestObjectPageToken(pageToken string) (inv InvocationID, testID, objID string, err error) {
-	switch pos, tokErr := pagination.ParseToken(pageToken); {
-	case tokErr != nil:
-		err = pageTokenError(tokErr)
-
-	case pos == nil:
-
-	case len(pos) != 3:
-		err = pageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
-
-	default:
-		inv = InvocationID(pos[0])
-		testID = pos[1]
-		objID = pos[2]
-	}
-
-	return
-}
-
-// pageTokenError returns a generic error message that a page token
-// is invalid and records err as an internal error.
-// The returned error is anontated with INVALID_ARUGMENT code.
-func pageTokenError(err error) error {
-	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page_token")
-}
-
-// populateVariantParams populates variantHashEquals and variantContains
+// PopulateVariantParams populates variantHashEquals and variantContains
 // parameters based on the predicate.
-func populateVariantParams(st *spanner.Statement, variantPredicate *pb.VariantPredicate) {
+func PopulateVariantParams(st *spanner.Statement, variantPredicate *pb.VariantPredicate) {
 	st.Params["variantHashEquals"] = spanner.NullString{}
 	st.Params["variantContains"] = []string(nil)
 	switch p := variantPredicate.GetPredicate().(type) {

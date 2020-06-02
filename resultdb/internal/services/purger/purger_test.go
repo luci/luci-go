@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -83,7 +84,11 @@ func insertInvocation(ctx context.Context, invID span.InvocationID, nTests, nPas
 		inserts = append(inserts, testutil.InsertTestResultMessages(results)...)
 		for _, res := range results {
 			for j := 0; j < nArtifactsPerResult; j++ {
-				inserts = append(inserts, testutil.InsertTestResultArtifact(invID, res.TestId, res.ResultId, strconv.Itoa(j), nil))
+				inserts = append(inserts, span.InsertMap("Artifacts", map[string]interface{}{
+					"InvocationId": invID,
+					"ParentId":     artifacts.ParentID(res.TestId, res.ResultId),
+					"ArtifactId":   strconv.Itoa(j),
+				}))
 			}
 		}
 	}

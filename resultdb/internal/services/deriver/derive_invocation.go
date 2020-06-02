@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -344,7 +345,7 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult) *spann
 func insertOrUpdateArtifact(invID span.InvocationID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
 	return span.InsertOrUpdateMap("Artifacts", map[string]interface{}{
 		"InvocationId": invID,
-		"ParentId":     span.ArtifactParentID(tr.TestId, tr.ResultId),
+		"ParentId":     artifacts.ParentID(tr.TestId, tr.ResultId),
 		"ArtifactId":   a.ArtifactId,
 		"ContentType":  a.ContentType,
 		"Size":         a.SizeBytes,
