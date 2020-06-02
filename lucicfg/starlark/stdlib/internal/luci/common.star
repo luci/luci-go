@@ -26,9 +26,12 @@ load('@stdlib//internal/validate.star', 'validate')
 # Node edges (parent -> child):
 #   luci.project: root
 #   luci.project -> [luci.realm]
+#   luci.project -> [luci.custom_role]
 #   luci.realm -> [luci.realm]
+#   luci.custom_role -> [luci.custom_role]
 #   luci.bindings_root -> [luci.binding]
 #   luci.realm -> [luci.binding]
+#   luci.custom_role -> [luci.binding]
 #   luci.project -> luci.logdog
 #   luci.project -> luci.milo
 #   luci.project -> luci.cq
@@ -146,6 +149,7 @@ kinds = struct(
     # Publicly declarable nodes.
     PROJECT = 'luci.project',
     REALM = 'luci.realm',
+    CUSTOM_ROLE = 'luci.custom_role',
     BINDING = 'luci.binding',
     LOGDOG = 'luci.logdog',
     BUCKET = 'luci.bucket',
@@ -181,6 +185,7 @@ keys = struct(
     # Publicly declarable nodes.
     project = lambda: _namespaced_key(kinds.PROJECT, '...'),
     realm = lambda ref: _project_scoped_key(kinds.REALM, 'realm', ref),
+    custom_role = lambda ref: _project_scoped_key(kinds.CUSTOM_ROLE, 'role', ref),
     logdog = lambda: _namespaced_key(kinds.LOGDOG, '...'),
     bucket = lambda ref: _project_scoped_key(kinds.BUCKET, 'bucket', ref),
     executable = lambda ref: _project_scoped_key(kinds.EXECUTABLE, 'executable', ref),

@@ -1073,7 +1073,7 @@ A role can either be predefined (if its name starts with `role/`) or custom
 Predefined roles are declared in the LUCI deployment configs, see **TODO**
 for the up-to-date list of available predefined roles and their meaning.
 
-Custom roles are defined in the project configs via luci.custom_role(...).
+Custom roles are defined in the project configs via [luci.custom_role(...)](#luci.custom_role).
 They can be used if none of the predefined roles represent the desired set
 of permissions.
 
@@ -1084,6 +1084,35 @@ of permissions.
 * **groups**: a single group name or a list of groups to assign the role to.
 * **users**: a single user email or a list of emails to assign the role to.
 * **projects**: a single LUCI project name or a list of project names to assign the role to.
+
+
+
+
+### luci.custom_role {#luci.custom_role}
+
+```python
+luci.custom_role(name, extends = None, permissions = None)
+```
+
+
+*** note
+**Experimental.** No backward compatibility guarantees.
+***
+
+
+Defines a custom role.
+
+It can be used in [luci.binding(...)](#luci.binding) if predefined roles are too broad or do
+not map well to the desired set of permissions.
+
+Custom roles are scoped to the project (i.e. different projects may have
+identically named, but semantically different custom roles).
+
+#### Arguments {#luci.custom_role-args}
+
+* **name**: name of the custom role. Must start with `customRole/`. Required.
+* **extends**: optional list of roles whose permissions will be included in this role. Each entry can either be a predefined role (if it is a string that starts with `role/`) or another custom role (if it is a string that starts with `customRole/` or a [luci.custom_role(...)](#luci.custom_role) key).
+* **permissions**: optional list of permissions to include in the role. Each permission is a symbol that has form `<service>.<subject>.<verb>`, which describes some elementary action (`<verb>`) that can be done to some category of resources (`<subject>`), managed by some particular kind of LUCI service (`<service>`). See **TODO** for the up-to-date list of available permissions and their meaning.
 
 
 
