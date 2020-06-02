@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b95f8909_505560f2",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T19:41:35Z",
+      "side": 1,
+      "message": "Nit: ReadIncluded?",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 28
+      },
+      "revId": "f86d43729c7bdaffb06a34e0020a2430f1e735a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ece9c90_3f1e6525",
+        "filename": "resultdb/internal/invocations/graph_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T19:41:35Z",
+      "side": 1,
+      "message": "I don\u0027t see any usage of this function?",
+      "range": {
+        "startLine": 85,
+        "startChar": 5,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "f86d43729c7bdaffb06a34e0020a2430f1e735a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07d614e0_e7346576",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T19:41:35Z",
+      "side": 1,
+      "message": "The comment is the same as the comment of Read (L118). Should we explain the difference between the tow functions?",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 49
+      },
+      "revId": "f86d43729c7bdaffb06a34e0020a2430f1e735a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4603615d_0699e8a3",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T19:41:35Z",
+      "side": 1,
+      "message": "ReadRow?",
+      "range": {
+        "startLine": 35,
+        "startChar": 18,
+        "endLine": 35,
+        "endChar": 29
+      },
+      "revId": "f86d43729c7bdaffb06a34e0020a2430f1e735a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ed8a540_fdef6cd4",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-02T19:41:35Z",
+      "side": 1,
+      "message": "span/util.go ?",
+      "range": {
+        "startLine": 35,
+        "startChar": 41,
+        "endLine": 35,
+        "endChar": 48
+      },
+      "revId": "f86d43729c7bdaffb06a34e0020a2430f1e735a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
