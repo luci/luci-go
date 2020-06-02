@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5fa51020_235ddee1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-02T04:25:29Z",
+      "side": 1,
+      "message": "when should we do this?",
+      "range": {
+        "startLine": 93,
+        "startChar": 64,
+        "endLine": 94,
+        "endChar": 28
+      },
+      "revId": "b91e6a8ee8b0957c9ae7787338d1deef9751cab1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
