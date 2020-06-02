@@ -304,8 +304,8 @@ type disk struct {
 	h        crypto.Hash
 
 	// Lock protected.
-	mu  sync.Mutex
-	lru lruDict // Implements LRU based eviction.
+	mu  sync.Mutex // This protects modification of cached entries under |path| too.
+	lru lruDict    // Implements LRU based eviction.
 	// TODO(maruel): Add stats about: # removed.
 	// TODO(maruel): stateFile
 	added []int64
@@ -376,28 +376,40 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
-	p := d.itemPath(digest)
-	dst, err := os.Create(p)
+	tmp, err := ioutil.TempFile(d.path, string(digest)+".*.tmp")
 	if err != nil {
 		return err
 	}
 	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
 	h := d.h.New()
-	size, err := io.Copy(dst, io.TeeReader(src, h))
-	if err2 := dst.Close(); err == nil {
+	size, err := io.Copy(tmp, io.TeeReader(src, h))
+	if err2 := tmp.Close(); err == nil {
 		err = err2
 	}
 	if err != nil {
-		_ = os.Remove(p)
+		_ = os.Remove(tmp.Name())
 		return err
 	}
 	if d := isolated.Sum(h); d != digest {
-		_ = os.Remove(p)
+		_ = os.Remove(tmp.Name())
 		return errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
 	}
 	if units.Size(size) > d.policies.MaxSize {
-		_ = os.Remove(p)
+		_ = os.Remove(tmp.Name())
 		return errors.Reason("item too large, size=%d, limit=%d", size, d.policies.MaxSize).Err()
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if err := os.Rename(tmp.Name(), d.itemPath(digest)); err != nil && !os.IsExist(err) {
+		_ = os.Remove(tmp.Name())
+		return errors.Annotate(err, "failed to rename %s -> %s", tmp.Name(), d.itemPath(digest)).Err()
+	} else if os.IsExist(err) { // Ignore already exists error.
+
+		if err := os.Remove(tmp.Name()); err != nil {
+			return errors.Annotate(err, "faile to Remove: %s", tmp.Name()).Err()
+		}
 	}
 
 	if cb != nil {
@@ -406,8 +418,6 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 		}
 	}
 
-	d.mu.Lock()
-	defer d.mu.Unlock()
 	d.lru.pushFront(digest, units.Size(size))
 	if err := d.respectPolicies(); err != nil {
 		d.lru.pop(digest)
