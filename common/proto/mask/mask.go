@@ -53,13 +53,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
+	protoV2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-
-	// TODO(yiwzhang): Get rid of protoimpl import by calling proto.MessageReflect
-	// and proto.MessageV1 instead once we've successfully upgrade the version of
-	// go protobuf library from v1.3 to v1.4 as these functions only exist in
-	// latest version. It is discouraged to import protoimpl as per its pkg doc.
-	"google.golang.org/protobuf/runtime/protoimpl"
 
 	"go.chromium.org/luci/common/data/stringset"
 )
@@ -101,7 +96,7 @@ type Mask struct {
 // If isUpdateMask is set to true, a repeated field is allowed only as the last
 // field in a path string.
 func FromFieldMask(fieldMask *field_mask.FieldMask, targeMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (Mask, error) {
-	descriptor := protoimpl.X.MessageDescriptorOf(targeMsg)
+	descriptor := proto.MessageReflect(targeMsg).Descriptor()
 	parsedPaths := make([]path, len(fieldMask.GetPaths()))
 	for i, p := range fieldMask.GetPaths() {
 		parsedPath, err := parsePath(p, descriptor, isFieldNameJSON)
@@ -197,7 +192,7 @@ func (m Mask) Trim(msg proto.Message) error {
 	if m.IsEmpty() {
 		return nil
 	}
-	reflectMsg := protoimpl.X.MessageOf(msg)
+	reflectMsg := proto.MessageReflect(msg)
 	if err := checkMsgHaveDesc(reflectMsg, m.descriptor); err != nil {
 		return err
 	}
@@ -324,11 +319,11 @@ func (m Mask) Merge(src, dest proto.Message) error {
 	if m.IsEmpty() {
 		return nil
 	}
-	srcReflectMsg := protoimpl.X.MessageOf(src)
+	srcReflectMsg := proto.MessageReflect(src)
 	if err := checkMsgHaveDesc(srcReflectMsg, m.descriptor); err != nil {
 		return fmt.Errorf("src message: %s", err.Error())
 	}
-	destReflectMsg := protoimpl.X.MessageOf(dest)
+	destReflectMsg := proto.MessageReflect(dest)
 	if err := checkMsgHaveDesc(destReflectMsg, m.descriptor); err != nil {
 		return fmt.Errorf("dest message: %s", err.Error())
 	}
@@ -375,9 +370,8 @@ func (m Mask) mergeImpl(src, dest protoreflect.Message) {
 // expected as they have been explicitly handled in mergeImpl.
 func cloneValue(v protoreflect.Value, kind protoreflect.Kind) protoreflect.Value {
 	if kind == protoreflect.MessageKind {
-		msg := protoimpl.X.ProtoMessageV1Of(v.Message().Interface())
-		clonedMsg := proto.Clone(msg)
-		return protoreflect.ValueOf(protoimpl.X.MessageOf(clonedMsg))
+		clonedMsg := protoV2.Clone(v.Message().Interface()).ProtoReflect()
+		return protoreflect.ValueOf(clonedMsg)
 	}
 	return v
 }
