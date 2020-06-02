@@ -86,7 +86,7 @@ func main() {
 		srv.PRPC.HackFixFieldMasksForJSON = true
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "GetBuild", func(ctx *router.Context) bool {
 			// Allow some requests to hit this service, proxy the rest back to Python.
-			pct := 25
+			pct := 50
 			if isDev(ctx.Request) {
 				// Dev has a lower volume of traffic and is less critical.
 				pct = 50
