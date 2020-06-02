@@ -81,6 +81,24 @@
       "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1e183e1_36f74d33",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-02T00:23:16Z",
+      "side": 1,
+      "message": "ok, let\u0027s use this implementation.\nif users complain, we might want to implement it on the server side, as you suggested.",
+      "parentUuid": "23281ea9_e5367f3e",
+      "revId": "76b955493e21a150a1ab2222730a83fe6febb5ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
