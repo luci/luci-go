@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/access"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -81,6 +82,7 @@ func main() {
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
 		buildbucketpb.RegisterBuildsServer(srv.PRPC, rpc.New())
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+		srv.PRPC.AccessControl = prpc.AllowOriginAll
 		srv.PRPC.HackFixFieldMasksForJSON = true
 		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "GetBuild", func(ctx *router.Context) bool {
 			// Proxy prod requests back to Python.
