@@ -16,6 +16,24 @@
       "revId": "7f59abf220262371c9476938b1d85bae0136be3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "513ef719_93e69daa",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-02T00:46:27Z",
+      "side": 1,
+      "message": "Yes and no. This import can only be removed after we use api and data structure purely from v2 library everywhere. My work last week was to upgrade this import to its latest version so that that the all APIs from v1 (i.e. this import) are now backed by v2 library to maintain backwards compatibility. However, as the api from v1 and v2 library are slightly different, it will require us some work to fully move to the api from v2 library and completely get rid of this import.",
+      "parentUuid": "74717661_a1c76f54",
+      "revId": "7f59abf220262371c9476938b1d85bae0136be3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
