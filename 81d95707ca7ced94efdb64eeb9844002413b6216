@@ -71,6 +71,29 @@
     },
     {
       "key": {
+        "uuid": "d6a0ef8d_6e20083d",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-02T03:08:46Z",
+      "side": 1,
+      "message": "why GetRealm when the previous line is inv.State?",
+      "range": {
+        "startLine": 137,
+        "startChar": 21,
+        "endLine": 137,
+        "endChar": 32
+      },
+      "revId": "81d95707ca7ced94efdb64eeb9844002413b6216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4b442115_b69b0be0",
         "filename": "resultdb/internal/services/recorder/invocation.go",
         "patchSetId": 1
