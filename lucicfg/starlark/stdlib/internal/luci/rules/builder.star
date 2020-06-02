@@ -17,9 +17,12 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'builder_ref', 'keys', 'triggerer')
+load('@stdlib//internal/luci/lib/realms.star', 'realms')
 load('@stdlib//internal/luci/lib/resultdb.star', 'resultdb')
 load('@stdlib//internal/luci/lib/scheduler.star', 'schedulerimpl')
 load('@stdlib//internal/luci/lib/swarming.star', 'swarming')
+
+load('@stdlib//internal/luci/rules/binding.star', 'binding')
 
 
 def _builder(
@@ -283,6 +286,15 @@ def _builder(
         parent = keys.notifiable(n),
         child = builder_ref_key,
         title = 'notifies',
+    )
+
+  # Setup a binding that allows the service account to be used for builds
+  # in the bucket's realm.
+  if realms.experiment.is_enabled() and props['service_account']:
+    binding(
+        realm = bucket_key.id,
+        roles = 'role/buildbucket.builderServiceAccount',
+        users = props['service_account'],
     )
 
   return graph.keyset(builder_key, builder_ref_key, triggerer_key)
