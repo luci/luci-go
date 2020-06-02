@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -40,7 +39,7 @@ func TestMutateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		mayMutate := func(id invocations.ID) error {
+		mayMutate := func(id span.InvocationID) error {
 			return mutateInvocation(ctx, id, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 				return nil
 			})
@@ -91,7 +90,7 @@ func TestReadInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			inv, err := invocations.Read(ctx, txn, "inv")
+			inv, err := span.ReadInvocationFull(ctx, txn, "inv")
 			So(err, ShouldBeNil)
 			return inv
 		}

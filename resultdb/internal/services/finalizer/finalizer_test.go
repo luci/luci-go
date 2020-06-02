@@ -20,7 +20,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -34,7 +33,7 @@ func TestShouldFinalize(t *testing.T) {
 	Convey(`ShouldFinalize`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		assertReady := func(invID invocations.ID, expected bool) {
+		assertReady := func(invID span.InvocationID, expected bool) {
 			should, err := readyToFinalize(ctx, invID)
 			So(err, ShouldBeNil)
 			So(should, ShouldEqual, expected)
@@ -113,7 +112,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			var state pb.Invocation_State
 			var finalizeTime time.Time
-			testutil.MustReadRow(ctx, "Invocations", invocations.ID("x").Key(), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Invocations", span.InvocationID("x").Key(), map[string]interface{}{
 				"State":        &state,
 				"FinalizeTime": &finalizeTime,
 			})
@@ -139,16 +138,16 @@ func TestFinalizeInvocation(t *testing.T) {
 			`)
 			st.Params["taskType"] = string(tasks.TryFinalizeInvocation)
 			var b span.Buffer
-			nextInvs := invocations.IDSet{}
+			nextInvs := span.InvocationIDSet{}
 			err = span.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
-				var nextInv invocations.ID
+				var nextInv span.InvocationID
 				err := b.FromSpanner(r, &nextInv)
 				So(err, ShouldBeNil)
 				nextInvs.Add(nextInv)
 				return nil
 			})
 			So(err, ShouldBeNil)
-			So(nextInvs, ShouldResemble, invocations.NewIDSet("finalizing1", "finalizing2"))
+			So(nextInvs, ShouldResemble, span.NewInvocationIDSet("finalizing1", "finalizing2"))
 		})
 
 		Convey(`Enqueues more bq_export tasks`, func() {
@@ -174,7 +173,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			var b span.Buffer
 			err = span.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
 				var taskID string
-				var invID invocations.ID
+				var invID span.InvocationID
 				var payload []byte
 				err := b.FromSpanner(r, &taskID, &invID, &payload)
 				So(err, ShouldBeNil)

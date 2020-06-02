@@ -56,6 +56,7 @@ export class InvocationPageState {
   @observable.ref selectedNode!: TestNode;
   @observable.ref showExpected = false;
   @observable.ref showExonerated = true;
+  @observable.ref showFlaky = true;
 
   @computed private get testResultBatchIterFn() {
     if (!this.appState?.resultDb) {
@@ -88,9 +89,21 @@ export class InvocationPageState {
       this.testResultBatchIterFn(),
       this.testExonerationBatchIterFn(),
     );
+
     variantBatches = this.showExonerated ?
       variantBatches :
       iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Exonerated));
+
+    // Known Issue:
+    // A variant's status may change after filtering from expected/unexpected to
+    // flaky if a result with a different expected value is received in the next
+    // batch. In that case, some flaky variants are not filtered out.
+    // This should be a rare occurrence. Since usually, results of the same test
+    // variant should be in the same batch.
+    variantBatches = this.showFlaky ?
+      variantBatches :
+      iter.mapAsync(variantBatches, (batch) => batch.filter((v) => v.status !== VariantStatus.Flaky));
+
     return iter.teeAsync(streamTestBatches(variantBatches));
   }
 

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -64,12 +63,12 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		return nil, appstatus.BadRequest(err)
 	}
 
-	invID := invocations.MustParseName(in.Invocation.Name)
+	invID := span.MustParseInvocationName(in.Invocation.Name)
 
 	var ret *pb.Invocation
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		var err error
-		if ret, err = invocations.Read(ctx, txn, invID); err != nil {
+		if ret, err = span.ReadInvocationFull(ctx, txn, invID); err != nil {
 			return err
 		}
 

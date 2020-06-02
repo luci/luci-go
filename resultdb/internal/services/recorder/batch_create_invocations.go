@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -36,7 +35,7 @@ import (
 // are valid, that they match the batch request requestID and that their names
 // are not repeated.
 func validateBatchCreateInvocationsRequest(
-	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string, allowCustomID bool) (invocations.IDSet, error) {
+	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string, allowCustomID bool) (span.InvocationIDSet, error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
 		return nil, errors.Annotate(err, "request_id").Err()
 	}
@@ -45,7 +44,7 @@ func validateBatchCreateInvocationsRequest(
 		return nil, err
 	}
 
-	idSet := make(invocations.IDSet, len(reqs))
+	idSet := make(span.InvocationIDSet, len(reqs))
 	for i, req := range reqs {
 		if err := validateCreateInvocationRequest(req, now, allowCustomID); err != nil {
 			return nil, errors.Annotate(err, "requests[%d]", i).Err()
@@ -57,7 +56,7 @@ func validateBatchCreateInvocationsRequest(
 			return nil, errors.Reason("requests[%d].request_id: %q does not match request_id %q", i, requestID, req.RequestId).Err()
 		}
 
-		invID := invocations.ID(req.InvocationId)
+		invID := span.InvocationID(req.InvocationId)
 		if idSet.Has(invID) {
 			return nil, errors.Reason("requests[%d].invocation_id: duplicated invocation id %q", i, req.InvocationId).Err()
 		}
@@ -88,7 +87,7 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 }
 
 // createInvocations is a shared implementation for CreateInvocation and BatchCreateInvocations RPCs.
-func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.CreateInvocationRequest, requestID string, now time.Time, idSet invocations.IDSet) ([]*pb.Invocation, []string, error) {
+func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.CreateInvocationRequest, requestID string, now time.Time, idSet span.InvocationIDSet) ([]*pb.Invocation, []string, error) {
 	createdBy := string(auth.CurrentIdentity(ctx))
 	ms := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID, createdBy)
 
@@ -124,7 +123,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		// Prepare the invocation we will save to spanner.
 		inv := &pb.Invocation{
-			Name:             invocations.ID(req.InvocationId).Name(),
+			Name:             span.InvocationID(req.InvocationId).Name(),
 			State:            pb.Invocation_ACTIVE,
 			Deadline:         req.Invocation.GetDeadline(),
 			Tags:             req.Invocation.GetTags(),
@@ -148,10 +147,10 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 // getCreatedInvocationsAndUpdateTokens reads the full details of the
 // invocations just created in a separate read-only transaction, and
 // generates an update token for each.
-func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations.IDSet, reqs []*pb.CreateInvocationRequest) ([]*pb.Invocation, []string, error) {
+func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet span.InvocationIDSet, reqs []*pb.CreateInvocationRequest) ([]*pb.Invocation, []string, error) {
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-	invMap, err := invocations.ReadBatch(ctx, txn, idSet)
+	invMap, err := span.ReadInvocationsFull(ctx, txn, idSet)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -160,7 +159,7 @@ func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations
 	// Ordering is important to match the tokens.
 	invs := make([]*pb.Invocation, len(reqs))
 	for i, req := range reqs {
-		invs[i] = invMap[invocations.ID(req.InvocationId)]
+		invs[i] = invMap[span.InvocationID(req.InvocationId)]
 	}
 
 	tokens, err := generateTokens(ctx, invs)
@@ -173,11 +172,11 @@ func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations
 // deduplicateCreateInvocations checks if the invocations have already been
 // created with the given requestID and current requester.
 // Returns a true if they have.
-func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet invocations.IDSet, requestID, createdBy string) (bool, error) {
+func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet span.InvocationIDSet, requestID, createdBy string) (bool, error) {
 	invCount := 0
 	columns := []string{"InvocationId", "CreateRequestId", "CreatedBy"}
 	err := txn.Read(ctx, "Invocations", idSet.Keys(), columns).Do(func(r *spanner.Row) error {
-		var invID invocations.ID
+		var invID span.InvocationID
 		var rowRequestID spanner.NullString
 		var rowCreatedBy spanner.NullString
 		switch err := span.FromSpanner(r, &invID, &rowRequestID, &rowCreatedBy); {
@@ -212,7 +211,7 @@ func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet invoc
 func generateTokens(ctx context.Context, invs []*pb.Invocation) ([]string, error) {
 	ret := make([]string, len(invs))
 	for i, inv := range invs {
-		updateToken, err := generateInvocationToken(ctx, invocations.MustParseName(inv.Name))
+		updateToken, err := generateInvocationToken(ctx, span.MustParseInvocationName(inv.Name))
 		if err != nil {
 			return nil, err
 		}

@@ -17,7 +17,6 @@ package resultdb
 import (
 	"testing"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -51,7 +50,7 @@ func TestListTestExonerations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		// Insert some TestExonerations.
-		invID := invocations.ID("inv")
+		invID := span.InvocationID("inv")
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,

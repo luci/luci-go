@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -69,7 +68,7 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 	return trs
 }
 
-func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassingVariants, nFailedVariants, nArtifactsPerResult int) invocations.ID {
+func insertInvocation(ctx context.Context, invID span.InvocationID, nTests, nPassingVariants, nFailedVariants, nArtifactsPerResult int) span.InvocationID {
 	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
@@ -98,7 +97,7 @@ func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassin
 	return invID
 }
 
-func countRows(ctx context.Context, invID invocations.ID) (testResults, artifacts int64) {
+func countRows(ctx context.Context, invID span.InvocationID) (testResults, artifacts int64) {
 	st := spanner.NewStatement(`
 		SELECT
 			(SELECT COUNT(*) FROM TestResults WHERE InvocationId = @invocationId),

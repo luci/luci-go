@@ -19,7 +19,6 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -76,16 +75,16 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
 			// Read the invocation from Spanner to confirm it's really FINALIZING.
-			inv, err = invocations.Read(ctx, span.Client(ctx).Single(), "inv")
+			inv, err = span.ReadInvocationFull(ctx, span.Client(ctx).Single(), "inv")
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
-			var taskInv invocations.ID
-			taskID := "finalize/" + invocations.ID("inv").RowID()
+			var taskInv span.InvocationID
+			taskID := "finalize/" + span.InvocationID("inv").RowID()
 			testutil.MustReadRow(ctx, "InvocationTasks", tasks.TryFinalizeInvocation.Key(taskID), map[string]interface{}{
 				"InvocationId": &taskInv,
 			})
-			So(taskInv, ShouldEqual, invocations.ID("inv"))
+			So(taskInv, ShouldEqual, span.InvocationID("inv"))
 		})
 	})
 }

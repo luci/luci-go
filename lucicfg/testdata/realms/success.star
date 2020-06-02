@@ -72,6 +72,54 @@ luci.binding(
     users = 'a@example.com',
 )
 
+luci.custom_role(
+    name = 'customRole/r1',
+    extends = [
+        'role/a',
+        luci.custom_role(
+            name = 'customRole/r2',
+            extends = ['customRole/r3'],
+            permissions = ['luci.dev.testing2'],
+        ),
+    ],
+    permissions = ['luci.dev.testing1'],
+)
+
+luci.custom_role(
+    name = 'customRole/r3',
+    permissions = ['luci.dev.testing3'],
+)
+
+luci.realm(
+    name = 'custom_roles',
+    bindings = [
+        luci.binding(
+            roles = 'customRole/r1',
+            users = 'a@example.com',
+        ),
+        luci.binding(
+            roles = ['role/a', 'customRole/r1'],
+            users = 'b@example.com',
+        ),
+        luci.binding(
+            roles = luci.custom_role(
+                name = 'customRole/r3',
+                permissions = ['luci.dev.testing3'],
+            ),
+            users = 'c@example.com',
+        ),
+        luci.binding(
+            roles = [
+                luci.custom_role(
+                    name = 'customRole/r3',
+                    permissions = ['luci.dev.testing3'],
+                ),
+                'role/a',
+            ],
+            users = 'd@example.com',
+        ),
+    ],
+)
 
 # Expect configs:
 #
@@ -106,6 +154,24 @@ luci.binding(
 #   bindings: <
 #     role: "role/a"
 #     principals: "group:bucket"
+#   >
+# >
+# realms: <
+#   name: "custom_roles"
+#   bindings: <
+#     role: "customRole/r1"
+#     principals: "user:a@example.com"
+#     principals: "user:b@example.com"
+#   >
+#   bindings: <
+#     role: "customRole/r3"
+#     principals: "user:c@example.com"
+#     principals: "user:d@example.com"
+#   >
+#   bindings: <
+#     role: "role/a"
+#     principals: "user:b@example.com"
+#     principals: "user:d@example.com"
 #   >
 # >
 # realms: <
@@ -158,5 +224,20 @@ luci.binding(
 #     principals: "project:proj-c"
 #     principals: "user:c@example.com"
 #   >
+# >
+# custom_roles: <
+#   name: "customRole/r1"
+#   extends: "customRole/r2"
+#   extends: "role/a"
+#   permissions: "luci.dev.testing1"
+# >
+# custom_roles: <
+#   name: "customRole/r2"
+#   extends: "customRole/r3"
+#   permissions: "luci.dev.testing2"
+# >
+# custom_roles: <
+#   name: "customRole/r3"
+#   permissions: "luci.dev.testing3"
 # >
 # ===

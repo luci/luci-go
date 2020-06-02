@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -53,7 +52,7 @@ const (
 var AllTypes = []Type{BQExport, TryFinalizeInvocation}
 
 // Enqueue inserts one row to InvocationTasks.
-func Enqueue(typ Type, taskID string, invID invocations.ID, payload interface{}, processAfter time.Time) *spanner.Mutation {
+func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface{}, processAfter time.Time) *spanner.Mutation {
 	internal.AssertUTC(processAfter)
 	return span.InsertMap("InvocationTasks", map[string]interface{}{
 		"TaskType":     string(typ),
@@ -66,7 +65,7 @@ func Enqueue(typ Type, taskID string, invID invocations.ID, payload interface{},
 }
 
 // EnqueueBQExport inserts one row to InvocationTasks for a bq export task.
-func EnqueueBQExport(invID invocations.ID, payload *pb.BigQueryExport, processAfter time.Time) *spanner.Mutation {
+func EnqueueBQExport(invID span.InvocationID, payload *pb.BigQueryExport, processAfter time.Time) *spanner.Mutation {
 	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID.RowID()), invID, payload, processAfter)
 }
 
@@ -96,7 +95,7 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 
 // Lease leases an invocation task.
 // If the task does not exist or is already leased, returns ErrConflict.
-func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID invocations.ID, payload []byte, err error) {
+func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
 	tried := false
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		if tried {

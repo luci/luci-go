@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -34,7 +33,7 @@ import (
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
 // new package as the code base grows.
-func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id invocations.ID) error {
+func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID) error {
 	return txn.BufferWrite([]*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,

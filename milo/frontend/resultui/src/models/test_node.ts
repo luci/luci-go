@@ -83,7 +83,7 @@ export class TestNode {
   // Can be used as an identifier of this node.
   private readonly unelidedPath: string;
   @observable.shallow private readonly unelidedChildrenMap = new Map<string, TestNode>();
-  private readonly unelidedTests: ReadonlyTest[] = [];
+  @observable.shallow private readonly unelidedTests: ReadonlyTest[] = [];
   @computed private get unelidedChildren() {
     return [...this.unelidedChildrenMap.values()].sort((v1, v2) => {
       return v1.unelidedName.localeCompare(v2.unelidedName);

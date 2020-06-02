@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -115,7 +115,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	if err := validateCreateInvocationRequest(in, now, trustedCreator); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, invocations.NewIDSet(invocations.ID(in.InvocationId)))
+	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, span.NewInvocationIDSet(span.InvocationID(in.InvocationId)))
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +128,6 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	return invs[0], nil
 }
 
-func invocationAlreadyExists(id invocations.ID) error {
+func invocationAlreadyExists(id span.InvocationID) error {
 	return appstatus.Errorf(codes.AlreadyExists, "%s already exists", id.Name())
 }
