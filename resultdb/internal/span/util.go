@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"reflect"
-	"sort"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -59,15 +58,36 @@ type Txn interface {
 // content with https://godoc.org/github.com/klauspost/compress/zstd encoding.
 type Compressed []byte
 
-// CompressedProto is like Compressed, but for protobuf messages.
-//
-// Although not strictly necessary, FromSpanner expects a *CompressedProto,
-// for consistency.
-//
-// Note that `type CompressedProto proto.Message` and
-// `type CompressedProto interface{proto.Message}` do not work well with
-// type-switches.
-type CompressedProto struct{ Message proto.Message }
+// ToSpanner implements Value.
+func (c Compressed) ToSpanner() interface{} {
+	if len(c) == 0 {
+		// Do not store empty bytes.
+		return []byte(nil)
+	}
+	return compress(c)
+}
+
+// SpannerPtr implements Ptr.
+func (c *Compressed) SpannerPtr(b *Buffer) interface{} {
+	return &b.ByteSlice
+}
+
+// FromSpanner implements Ptr.
+func (c *Compressed) FromSpanner(b *Buffer) error {
+	if len(b.ByteSlice) == 0 {
+		// do not set to nil; otherwise we lose the buffer.
+		*c = (*c)[:0]
+	} else {
+		// *c might be pointing to an existing memory buffer.
+		// Try to reuse it for decoding.
+		var err error
+		if *c, err = decompress(b.ByteSlice, *c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // ErrNoResults is an error returned when a query unexpectedly has no results.
 var ErrNoResults = iterator.Done
@@ -116,25 +136,41 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 	return FromSpanner(row, ptrs...)
 }
 
+// Value can be converted to a Spanner value.
+// Typically if type T implements Value, then *T implements Ptr.
+type Value interface {
+	// ToSpanner returns a value of a type supported by Spanner client.
+	ToSpanner() interface{}
+}
+
+// Ptr can be used as a destination of reading a Spanner cell.
+// Typically if type *T implements Ptr, then T implements Value.
+type Ptr interface {
+	// SpannerPtr returns a pointer of a type supported by Spanner client.
+	// SpannerPtr must use one of typed buffers in b.
+	SpannerPtr(b *Buffer) interface{}
+	// FromSpanner replaces Ptr value with the value in the typed buffer returned
+	// by SpannerPtr.
+	FromSpanner(b *Buffer) error
+}
+
 // Buffer can convert a value from a Spanner type to a Go type.
 // Supported types:
+//   - Value and Ptr
 //   - string
-//   - InvocationID
-//   - InvocationIDSet
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
 //   - typepb.Variant
 //   - typepb.StringPair
-//   - Compressed
-//   - CompressedProto
 //   - proto.Message
+// TODO(nodir): move to buffer.go
 type Buffer struct {
-	nullStr               spanner.NullString
-	nullTime              spanner.NullTime
-	i64                   int64
-	strSlice              []string
-	byteSlice, byteSlice2 []byte
+	NullString            spanner.NullString
+	NullTime              spanner.NullTime
+	Int64                 int64
+	StringSlice           []string
+	ByteSlice, ByteSlice2 []byte
 }
 
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
@@ -160,33 +196,27 @@ func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 }
 
 func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error {
-	b.strSlice = b.strSlice[:0]
-	b.byteSlice = b.byteSlice[:0]
+	b.StringSlice = b.StringSlice[:0]
+	b.ByteSlice = b.ByteSlice[:0]
 
 	var spanPtr interface{}
-	switch goPtr.(type) {
+	switch goPtr := goPtr.(type) {
+	case Ptr:
+		spanPtr = goPtr.SpannerPtr(b)
 	case *string:
-		spanPtr = &b.nullStr
-	case *InvocationID:
-		spanPtr = &b.nullStr
-	case *InvocationIDSet:
-		spanPtr = &b.strSlice
+		spanPtr = &b.NullString
 	case **tspb.Timestamp:
-		spanPtr = &b.nullTime
+		spanPtr = &b.NullTime
 	case *pb.TestStatus:
-		spanPtr = &b.i64
+		spanPtr = &b.Int64
 	case *pb.Invocation_State:
-		spanPtr = &b.i64
+		spanPtr = &b.Int64
 	case **typepb.Variant:
-		spanPtr = &b.strSlice
+		spanPtr = &b.StringSlice
 	case *[]*typepb.StringPair:
-		spanPtr = &b.strSlice
+		spanPtr = &b.StringSlice
 	case proto.Message:
-		spanPtr = &b.byteSlice
-	case *Compressed:
-		spanPtr = &b.byteSlice
-	case *CompressedProto:
-		spanPtr = &b.byteSlice
+		spanPtr = &b.ByteSlice
 	default:
 		spanPtr = goPtr
 	}
@@ -201,45 +231,38 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 
 	var err error
 	switch goPtr := goPtr.(type) {
+	case Ptr:
+		if err := goPtr.FromSpanner(b); err != nil {
+			return err
+		}
+
 	case *string:
 		*goPtr = ""
-		if b.nullStr.Valid {
-			*goPtr = b.nullStr.StringVal
-		}
-
-	case *InvocationID:
-		*goPtr = ""
-		if b.nullStr.Valid {
-			*goPtr = InvocationIDFromRowID(b.nullStr.StringVal)
-		}
-
-	case *InvocationIDSet:
-		*goPtr = make(InvocationIDSet, len(b.strSlice))
-		for _, rowID := range b.strSlice {
-			goPtr.Add(InvocationIDFromRowID(rowID))
+		if b.NullString.Valid {
+			*goPtr = b.NullString.StringVal
 		}
 
 	case **tspb.Timestamp:
 		*goPtr = nil
-		if b.nullTime.Valid {
-			*goPtr = pbutil.MustTimestampProto(b.nullTime.Time)
+		if b.NullTime.Valid {
+			*goPtr = pbutil.MustTimestampProto(b.NullTime.Time)
 		}
 
 	case *pb.Invocation_State:
-		*goPtr = pb.Invocation_State(b.i64)
+		*goPtr = pb.Invocation_State(b.Int64)
 
 	case *pb.TestStatus:
-		*goPtr = pb.TestStatus(b.i64)
+		*goPtr = pb.TestStatus(b.Int64)
 
 	case **typepb.Variant:
-		if *goPtr, err = pbutil.VariantFromStrings(b.strSlice); err != nil {
+		if *goPtr, err = pbutil.VariantFromStrings(b.StringSlice); err != nil {
 			// If it was written to Spanner, it should have been validated.
 			panic(err)
 		}
 
 	case *[]*typepb.StringPair:
-		*goPtr = make([]*typepb.StringPair, len(b.strSlice))
-		for i, p := range b.strSlice {
+		*goPtr = make([]*typepb.StringPair, len(b.StringSlice))
+		for i, p := range b.StringSlice {
 			if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
@@ -250,32 +273,9 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		if reflect.ValueOf(goPtr).IsNil() {
 			return errors.Reason("nil pointer encountered").Err()
 		}
-		if err := proto.Unmarshal(b.byteSlice, goPtr); err != nil {
+		if err := proto.Unmarshal(b.ByteSlice, goPtr); err != nil {
 			// If it was written to Spanner, it should have been validated.
 			panic(err)
-		}
-
-	case *Compressed:
-		if len(b.byteSlice) == 0 {
-			// do not set to nil; otherwise we lose the buffer.
-			*goPtr = (*goPtr)[:0]
-		} else {
-			// *goPtr might be pointing to an existing memory buffer.
-			// Try to reuse it for decoding.
-			if *goPtr, err = decompress(b.byteSlice, *goPtr); err != nil {
-				return err
-			}
-		}
-
-	case *CompressedProto:
-		goPtr.Message.Reset()
-		if len(b.byteSlice) != 0 {
-			if b.byteSlice2, err = decompress(b.byteSlice, b.byteSlice2); err != nil {
-				return err
-			}
-			if err := proto.Unmarshal(b.byteSlice2, goPtr.Message); err != nil {
-				return err
-			}
 		}
 
 	default:
@@ -289,16 +289,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 // map[string]interface{}.
 func ToSpanner(v interface{}) interface{} {
 	switch v := v.(type) {
-	case InvocationID:
-		return v.RowID()
-
-	case InvocationIDSet:
-		ret := make([]string, 0, len(v))
-		for id := range v {
-			ret = append(ret, id.RowID())
-		}
-		sort.Strings(ret)
-		return ret
+	case Value:
+		return v.ToSpanner()
 
 	case *tspb.Timestamp:
 		if v == nil {
@@ -355,27 +347,6 @@ func ToSpanner(v interface{}) interface{} {
 			ret[key] = ToSpanner(el)
 		}
 		return ret
-
-	case Compressed:
-		if len(v) == 0 {
-			// Do not store empty bytes.
-			return []byte(nil)
-		}
-		return compress(v)
-
-		// It must go before case proto.Message
-	case CompressedProto:
-		if isMessageNil(v.Message) {
-			// Do not store empty messages.
-			return []byte(nil)
-		}
-
-		// This might be optimized by reusing the memory buffer.
-		raw, err := proto.Marshal(v.Message)
-		if err != nil {
-			panic(err)
-		}
-		return compress(raw)
 
 	default:
 		return v
