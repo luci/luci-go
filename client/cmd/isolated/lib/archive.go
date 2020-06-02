@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -32,7 +32,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdArchive returns an object for the `archive` subcommand.
+func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>...",
 		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server",

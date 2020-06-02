@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"context"
@@ -27,7 +27,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
-func cmdRequestShow(defaultAuthOpts auth.Options) *subcommands.Command {
+// CmdRequestShow returns an object for the `request-show` subcommand.
+func CmdRequestShow(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "request-show <task_id>",
 		ShortDesc: "returns properties of a request",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package lib
 
 import (
 	"fmt"
@@ -23,7 +23,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func cmdCheck() *subcommands.Command {
+// CmdCheck returns an object for the `check` subcommand.
+func CmdCheck() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "check <options>",
 		ShortDesc: "checks that all the inputs are present",
