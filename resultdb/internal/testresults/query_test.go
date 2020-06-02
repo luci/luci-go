@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -38,7 +39,7 @@ func TestQueryTestResults(t *testing.T) {
 		q := &Query{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
-			InvocationIDs: span.NewInvocationIDSet("inv1"),
+			InvocationIDs: invocations.NewIDSet("inv1"),
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
@@ -97,7 +98,7 @@ func TestQueryTestResults(t *testing.T) {
 				insert.TestResults("inv1", "T4", nil, pb.TestStatus_FAIL),
 			)...)
 
-			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 			actual, _ := mustFetch(q)
 			pbutil.NormalizeTestResultSlice(actual)
@@ -122,7 +123,7 @@ func TestQueryTestResults(t *testing.T) {
 				insert.TestResults("inv1", "2", nil, pb.TestStatus_FAIL),
 			)...)
 
-			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 			q.Predicate.TestIdRegexp = "1-.+"
 
 			So(mustFetchNames(q), ShouldResemble, []string{
@@ -145,7 +146,7 @@ func TestQueryTestResults(t *testing.T) {
 				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
 			)...)
 
-			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 			q.Predicate.Variant = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_Equals{Equals: v1},
 			}
@@ -170,7 +171,7 @@ func TestQueryTestResults(t *testing.T) {
 				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
 			)...)
 
-			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 
 			Convey(`Empty`, func() {
 				q.Predicate.Variant = &pb.VariantPredicate{

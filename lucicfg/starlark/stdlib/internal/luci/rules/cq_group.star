@@ -89,10 +89,6 @@ def _cq_group(
   for w in validate.list('watch', watch, required=True):
     cqimpl.validate_refset('watch', w)
 
-  # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out what
-  # realm to use for them. This probably depends on a design of Realms + CQ
-  # which doesn't exist yet.
-
   graph.add_node(key, props = {
       'watch': watch,
       'acls': aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER]),

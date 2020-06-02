@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -33,12 +34,12 @@ import (
 // MustParseName extracts invocation, test, result and artifactIDs.
 // Test and result IDs are "" if this is a invocation-level artifact.
 // Panics on failure.
-func MustParseName(name string) (invID span.InvocationID, testID, resultID, artifactID string) {
+func MustParseName(name string) (invID invocations.ID, testID, resultID, artifactID string) {
 	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
 	if err != nil {
 		panic(err)
 	}
-	invID = span.InvocationID(invIDStr)
+	invID = invocations.ID(invIDStr)
 	return
 }
 
@@ -79,7 +80,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.Artifact, error) 
 	if err != nil {
 		return nil, err
 	}
-	invID := span.InvocationID(invIDStr)
+	invID := invocations.ID(invIDStr)
 	parentID := ParentID(testID, resultID)
 
 	ret := &pb.Artifact{

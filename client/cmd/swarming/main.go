@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -22,12 +23,28 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/client/cmd/swarming/lib"
+	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
+
+// version must be updated whenever functional change (behavior, arguments,
+// supported commands) is done.
+const (
+	swarmingVersion = "0.3"
+)
+
+var swarmingUserAgent = "swarming-go/" + swarmingVersion
+
+func init() {
+	ver, err := version.GetStartupVersion()
+	if err != nil || ver.InstanceID == "" {
+		return
+	}
+	swarmingUserAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+}
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
@@ -35,17 +52,17 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Title: "Client tool to access a swarming server.",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
-			lib.CmdBots(defaultAuthOpts),
-			lib.CmdCollect(defaultAuthOpts),
-			lib.CmdRequestShow(defaultAuthOpts),
-			lib.CmdSpawnTasks(defaultAuthOpts),
-			lib.CmdTasks(defaultAuthOpts),
-			lib.CmdTrigger(defaultAuthOpts),
+			cmdBots(defaultAuthOpts),
+			cmdCollect(defaultAuthOpts),
+			cmdRequestShow(defaultAuthOpts),
+			cmdSpawnTasks(defaultAuthOpts),
+			cmdTasks(defaultAuthOpts),
+			cmdTrigger(defaultAuthOpts),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
-			versioncli.CmdVersion(lib.SwarmingVersion),
+			versioncli.CmdVersion(swarmingVersion),
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{

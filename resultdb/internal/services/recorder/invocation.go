@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -63,7 +64,7 @@ var invocationTokenKind = tokens.TokenKind{
 }
 
 // generateInvocationToken generates an update token for a given invocation.
-func generateInvocationToken(ctx context.Context, invID span.InvocationID) (string, error) {
+func generateInvocationToken(ctx context.Context, invID invocations.ID) (string, error) {
 	// The token should last as long as a build is allowed to run.
 	// Buildbucket has a max of 2 days, so one week should be enough even
 	// for other use cases.
@@ -72,7 +73,7 @@ func generateInvocationToken(ctx context.Context, invID span.InvocationID) (stri
 
 // validateInvocationToken validates an update token for a given invocation,
 // returning an error if the token is invalid, nil otherwise.
-func validateInvocationToken(ctx context.Context, token string, invID span.InvocationID) error {
+func validateInvocationToken(ctx context.Context, token string, invID invocations.ID) error {
 	_, err := invocationTokenKind.Validate(ctx, token, []byte(invID))
 	return err
 }
@@ -80,7 +81,7 @@ func validateInvocationToken(ctx context.Context, token string, invID span.Invoc
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
-func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
+func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
 	var retErr error
 
 	token, err := extractUpdateToken(ctx)
@@ -92,7 +93,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 	}
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 
-		state, err := span.ReadInvocationState(ctx, txn, id)
+		state, err := invocations.ReadState(ctx, txn, id)
 		switch {
 		case err != nil:
 			return err
@@ -131,8 +132,8 @@ func extractUpdateToken(ctx context.Context) (string, error) {
 func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]interface{} {
 	now := clock.Now(ctx).UTC()
 	row := map[string]interface{}{
-		"InvocationId": span.MustParseInvocationName(inv.Name),
-		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
+		"InvocationId": invocations.MustParseName(inv.Name),
+		"ShardId":      mathrand.Intn(ctx, invocations.Shards),
 		"State":        inv.State,
 		"Realm":        realms.Join("chromium", "public"), // TODO(crbug.com/1013316): accept realm in the proto
 		"CreatedBy":    inv.CreatedBy,

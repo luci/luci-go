@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/access"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -79,7 +78,6 @@ func main() {
 			req.URL.Path = fmt.Sprintf("%s%s", target.Path, req.URL.Path)
 		}
 
-		srv.PRPC.AccessControl = prpc.AllowOriginAll
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
 		buildbucketpb.RegisterBuildsServer(srv.PRPC, rpc.New())
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.

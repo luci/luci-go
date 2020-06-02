@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -100,7 +101,7 @@ type artifactCreator struct {
 	*artifactCreationHandler
 
 	artifactName  string
-	invID         span.InvocationID
+	invID         invocations.ID
 	testID        string
 	resultID      string
 	artifactID    string
@@ -285,7 +286,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	if err != nil {
 		return appstatus.Errorf(codes.InvalidArgument, "bad artifact name: %s", err)
 	}
-	ac.invID = span.InvocationID(invIDString)
+	ac.invID = invocations.ID(invIDString)
 	ac.localParentID = artifacts.ParentID(ac.testID, ac.resultID)
 
 	// Parse and validate the hash.
@@ -343,7 +344,7 @@ func (ac *artifactCreator) verifyState(ctx context.Context, txn span.Txn) (sameA
 	// Read the state concurrently.
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
-			invState, err = span.ReadInvocationState(ctx, txn, ac.invID)
+			invState, err = invocations.ReadState(ctx, txn, ac.invID)
 			return
 		}
 

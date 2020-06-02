@@ -143,10 +143,10 @@ type Value interface {
 	ToSpanner() interface{}
 }
 
-// Ptr can be used as a destination of reading a Spanner cell.
+// Ptr can be used a destination of reading a Spanner cell.
 // Typically if type *T implements Ptr, then T implements Value.
 type Ptr interface {
-	// SpannerPtr returns a pointer of a type supported by Spanner client.
+	// SpannerPtr returns to a pointer of a type supported by Spanner client.
 	// SpannerPtr must use one of typed buffers in b.
 	SpannerPtr(b *Buffer) interface{}
 	// FromSpanner replaces Ptr value with the value in the typed buffer returned

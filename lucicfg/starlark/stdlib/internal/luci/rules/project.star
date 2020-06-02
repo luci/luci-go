@@ -21,7 +21,6 @@ load('@stdlib//internal/luci/lib/acl.star', 'aclimpl')
 load('@stdlib//internal/luci/lib/realms.star', 'realms')
 load('@stdlib//internal/luci/lib/service.star', 'service')
 
-load('@stdlib//internal/luci/rules/binding.star', 'binding')
 load('@stdlib//internal/luci/rules/realm.star', 'realm')
 
 
@@ -83,15 +82,12 @@ def _project(
       'acls': aclimpl.validate_acls(acls, project_level=True),
       'realms_enabled': realms.experiment.is_enabled(),
   })
-
   # All projects have a root realm.
   if realms.experiment.is_enabled():
-    # Convert legacy `acls` entries into binding(...) too.
-    bindings = bindings[:] if bindings else []
-    bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
-    # Add all bindings to the root realm.
-    realm(name = '@root', bindings = bindings)
-
+    realm(
+        name = '@root',
+        bindings = bindings,
+    )
   return graph.keyset(key)
 
 

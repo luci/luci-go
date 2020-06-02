@@ -17,6 +17,7 @@ package resultdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -48,7 +49,7 @@ func TestGetTestExoneration(t *testing.T) {
 
 		srv := newTestResultDBService()
 
-		invID := span.InvocationID("inv_0")
+		invID := invocations.ID("inv_0")
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),

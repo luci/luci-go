@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2019 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
-
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -38,7 +38,7 @@ func updateDict(dest, source map[string]interface{}) {
 }
 
 // Invocation returns a spanner mutation that inserts an invocation.
-func Invocation(id span.InvocationID, state pb.Invocation_State, extraValues map[string]interface{}) *spanner.Mutation {
+func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[string]interface{}) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
 	values := map[string]interface{}{
 		"InvocationId":                      id,
@@ -60,12 +60,12 @@ func Invocation(id span.InvocationID, state pb.Invocation_State, extraValues map
 }
 
 // FinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
-func FinalizedInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
+func FinalizedInvocationWithInclusions(id invocations.ID, included ...invocations.ID) []*spanner.Mutation {
 	return InvocationWithInclusions(id, pb.Invocation_FINALIZED, included...)
 }
 
 // InvocationWithInclusions returns mutations to insert an invocation with inclusions.
-func InvocationWithInclusions(id span.InvocationID, state pb.Invocation_State, included ...span.InvocationID) []*spanner.Mutation {
+func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, included ...invocations.ID) []*spanner.Mutation {
 	ms := []*spanner.Mutation{Invocation(id, state, nil)}
 	for _, incl := range included {
 		ms = append(ms, Inclusion(id, incl))
@@ -74,7 +74,7 @@ func InvocationWithInclusions(id span.InvocationID, state pb.Invocation_State, i
 }
 
 // Inclusion returns a spanner mutation that inserts an inclusion.
-func Inclusion(including, included span.InvocationID) *spanner.Mutation {
+func Inclusion(including, included invocations.ID) *spanner.Mutation {
 	return span.InsertMap("IncludedInvocations", map[string]interface{}{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
@@ -93,7 +93,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
 		So(err, ShouldBeNil)
 		mutMap := map[string]interface{}{
-			"InvocationId":    span.InvocationID(invID),
+			"InvocationId":    invocations.ID(invID),
 			"TestId":          testID,
 			"ResultId":        resultID,
 			"Variant":         trs[i].Variant,
@@ -112,7 +112,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 }
 
 // TestExonerations returns Spanner mutations to insert test exonerations.
-func TestExonerations(invID span.InvocationID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
+func TestExonerations(invID invocations.ID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
 		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
@@ -128,7 +128,7 @@ func TestExonerations(invID span.InvocationID, testID string, variant *typepb.Va
 }
 
 // Artifact returns a Spanner mutation to insert an artifact.
-func Artifact(invID span.InvocationID, parentID, artID string, extraValues map[string]interface{}) *spanner.Mutation {
+func Artifact(invID invocations.ID, parentID, artID string, extraValues map[string]interface{}) *spanner.Mutation {
 	values := map[string]interface{}{
 		"InvocationId": invID,
 		"ParentID":     parentID,
