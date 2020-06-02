@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package span
+package invocations
 
 import (
 	"crypto/sha256"
@@ -22,55 +22,56 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 )
 
-// InvocationID can convert an invocation id to various formats.
-type InvocationID string
+// ID can convert an invocation id to various formats.
+type ID string
 
 // ToSpanner implements span.Value.
-func (id InvocationID) ToSpanner() interface{} {
+func (id ID) ToSpanner() interface{} {
 	return id.RowID()
 }
 
 // SpannerPtr implements span.Ptr.
-func (id *InvocationID) SpannerPtr(b *Buffer) interface{} {
+func (id *ID) SpannerPtr(b *span.Buffer) interface{} {
 	return &b.NullString
 }
 
 // FromSpanner implements span.Ptr.
-func (id *InvocationID) FromSpanner(b *Buffer) error {
+func (id *ID) FromSpanner(b *span.Buffer) error {
 	*id = ""
 	if b.NullString.Valid {
-		*id = InvocationIDFromRowID(b.NullString.StringVal)
+		*id = IDFromRowID(b.NullString.StringVal)
 	}
 	return nil
 }
 
-// MustParseInvocationName converts an invocation name to an InvocationID.
+// MustParseName converts an invocation name to an ID.
 // Panics if the name is invalid. Useful for situations when name was already
 // validated.
-func MustParseInvocationName(name string) InvocationID {
+func MustParseName(name string) ID {
 	id, err := pbutil.ParseInvocationName(name)
 	if err != nil {
 		panic(err)
 	}
-	return InvocationID(id)
+	return ID(id)
 }
 
-// InvocationIDFromRowID converts a Spanner-level row ID to an InvocationID.
-func InvocationIDFromRowID(rowID string) InvocationID {
-	return InvocationID(stripHashPrefix(rowID))
+// IDFromRowID converts a Spanner-level row ID to an ID.
+func IDFromRowID(rowID string) ID {
+	return ID(stripHashPrefix(rowID))
 }
 
 // Name returns an invocation name.
-func (id InvocationID) Name() string {
+func (id ID) Name() string {
 	return pbutil.InvocationName(string(id))
 }
 
 // RowID returns an invocation ID used in spanner rows.
 // If id is empty, returns "".
-func (id InvocationID) RowID() string {
+func (id ID) RowID() string {
 	if id == "" {
 		return ""
 	}
@@ -78,19 +79,19 @@ func (id InvocationID) RowID() string {
 }
 
 // Key returns a invocation spanner key.
-func (id InvocationID) Key(suffix ...interface{}) spanner.Key {
+func (id ID) Key(suffix ...interface{}) spanner.Key {
 	ret := make(spanner.Key, 1+len(suffix))
 	ret[0] = id.RowID()
 	copy(ret[1:], suffix)
 	return ret
 }
 
-// InvocationIDSet is an unordered set of invocation ids.
-type InvocationIDSet map[InvocationID]struct{}
+// IDSet is an unordered set of invocation ids.
+type IDSet map[ID]struct{}
 
-// NewInvocationIDSet creates an InvocationIDSet from members.
-func NewInvocationIDSet(ids ...InvocationID) InvocationIDSet {
-	ret := make(InvocationIDSet, len(ids))
+// NewIDSet creates an IDSet from members.
+func NewIDSet(ids ...ID) IDSet {
+	ret := make(IDSet, len(ids))
 	for _, id := range ids {
 		ret.Add(id)
 	}
@@ -98,23 +99,23 @@ func NewInvocationIDSet(ids ...InvocationID) InvocationIDSet {
 }
 
 // Add adds id to the set.
-func (s InvocationIDSet) Add(id InvocationID) {
+func (s IDSet) Add(id ID) {
 	s[id] = struct{}{}
 }
 
 // Remove removes id from the set if it was present.
-func (s InvocationIDSet) Remove(id InvocationID) {
+func (s IDSet) Remove(id ID) {
 	delete(s, id)
 }
 
 // Has returns true if id is in the set.
-func (s InvocationIDSet) Has(id InvocationID) bool {
+func (s IDSet) Has(id ID) bool {
 	_, ok := s[id]
 	return ok
 }
 
 // String implements fmt.Stringer.
-func (s InvocationIDSet) String() string {
+func (s IDSet) String() string {
 	strs := make([]string, 0, len(s))
 	for id := range s {
 		strs = append(strs, string(id))
@@ -124,7 +125,7 @@ func (s InvocationIDSet) String() string {
 }
 
 // Keys returns a spanner.KeySet.
-func (s InvocationIDSet) Keys(suffix ...interface{}) spanner.KeySet {
+func (s IDSet) Keys(suffix ...interface{}) spanner.KeySet {
 	ret := spanner.KeySets()
 	for id := range s {
 		ret = spanner.KeySets(id.Key(suffix...), ret)
@@ -133,7 +134,7 @@ func (s InvocationIDSet) Keys(suffix ...interface{}) spanner.KeySet {
 }
 
 // ToSpanner implements span.Value.
-func (s InvocationIDSet) ToSpanner() interface{} {
+func (s IDSet) ToSpanner() interface{} {
 	ret := make([]string, 0, len(s))
 	for id := range s {
 		ret = append(ret, id.RowID())
@@ -143,32 +144,32 @@ func (s InvocationIDSet) ToSpanner() interface{} {
 }
 
 // SpannerPtr implements span.Ptr.
-func (s *InvocationIDSet) SpannerPtr(b *Buffer) interface{} {
+func (s *IDSet) SpannerPtr(b *span.Buffer) interface{} {
 	return &b.StringSlice
 }
 
 // FromSpanner implements span.Ptr.
-func (s *InvocationIDSet) FromSpanner(b *Buffer) error {
-	*s = make(InvocationIDSet, len(b.StringSlice))
+func (s *IDSet) FromSpanner(b *span.Buffer) error {
+	*s = make(IDSet, len(b.StringSlice))
 	for _, rowID := range b.StringSlice {
-		s.Add(InvocationIDFromRowID(rowID))
+		s.Add(IDFromRowID(rowID))
 	}
 	return nil
 }
 
-// MustParseInvocationNames converts invocation names to InvocationIDSet.
+// MustParseNames converts invocation names to IDSet.
 // Panics if a name is invalid. Useful for situations when names were already
 // validated.
-func MustParseInvocationNames(names []string) InvocationIDSet {
-	ids := make(InvocationIDSet, len(names))
+func MustParseNames(names []string) IDSet {
+	ids := make(IDSet, len(names))
 	for _, name := range names {
-		ids.Add(MustParseInvocationName(name))
+		ids.Add(MustParseName(name))
 	}
 	return ids
 }
 
 // Names returns a sorted slice of invocation names.
-func (s InvocationIDSet) Names() []string {
+func (s IDSet) Names() []string {
 	names := make([]string, 0, len(s))
 	for id := range s {
 		names = append(names, id.Name())

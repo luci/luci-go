@@ -115,7 +115,6 @@ func (r *queryRunBase) queryAndPrint(ctx context.Context, invIDs []string) error
 		})
 	} else {
 		for _, id := range invIDs {
-			id := id
 			tmpl := resultItem{invocationID: id}
 			eg.Go(func() error {
 				return r.fetchItems(ctx, []string{id}, tmpl, resultC)

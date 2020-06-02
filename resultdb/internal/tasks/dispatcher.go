@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 )
 
 // Statuses of invocation tasks.
@@ -73,7 +73,7 @@ var PermanentFailure = errors.BoolTag{
 // TaskFunc can execute a task.
 // If the returned error is tagged with PermanentFailure, then the failed task
 // is deleted.
-type TaskFunc func(ctx context.Context, invID span.InvocationID, payload []byte) error
+type TaskFunc func(ctx context.Context, invID invocations.ID, payload []byte) error
 
 // Dispatcher queries for available tasks and dispatches them to goroutines.
 type Dispatcher struct {

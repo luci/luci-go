@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -207,17 +208,17 @@ func TestBatchCreateInvocations(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			inv, err := span.ReadInvocationFull(ctx, txn, "u-batch-inv")
+			inv, err := invocations.Read(ctx, txn, "u-batch-inv")
 			So(err, ShouldBeNil)
 			So(inv, ShouldResembleProto, expected)
 
-			inv2, err := span.ReadInvocationFull(ctx, txn, "u-batch-inv2")
+			inv2, err := invocations.Read(ctx, txn, "u-batch-inv2")
 			So(err, ShouldBeNil)
 			So(inv2, ShouldResembleProto, expected2)
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
-			err = span.ReadInvocation(ctx, txn, "u-batch-inv", map[string]interface{}{
+			err = invocations.ReadColumns(ctx, txn, "u-batch-inv", map[string]interface{}{
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})

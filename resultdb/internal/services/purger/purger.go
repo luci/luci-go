@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/cron"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 )
 
@@ -58,10 +59,10 @@ func InitServer(srv *server.Server, opts Options) {
 // run continuously purges expired test results.
 // It blocks until context is canceled.
 func run(ctx context.Context, minInterval time.Duration) {
-	maxShard, err := span.CurrentMaxShard(ctx)
+	maxShard, err := invocations.CurrentMaxShard(ctx)
 	switch {
 	case err == span.ErrNoResults:
-		maxShard = span.InvocationShards - 1
+		maxShard = invocations.Shards - 1
 	case err != nil:
 		panic(errors.Annotate(err, "failed to determine number of shards").Err())
 	}
@@ -80,7 +81,7 @@ func purgeOneShard(ctx context.Context, shard int) error {
 	`)
 	st.Params["shardId"] = shard
 	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
-		var id span.InvocationID
+		var id invocations.ID
 		if err := span.FromSpanner(row, &id); err != nil {
 			return err
 		}
@@ -92,14 +93,14 @@ func purgeOneShard(ctx context.Context, shard int) error {
 	})
 }
 
-func purgeOneInvocation(ctx context.Context, invID span.InvocationID) error {
+func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	// Check that invocation hasn't been purged already.
 	var expirationTime spanner.NullTime
 	ptrs := map[string]interface{}{"ExpectedTestResultsExpirationTime": &expirationTime}
-	if err := span.ReadInvocation(ctx, txn, invID, ptrs); err != nil {
+	if err := invocations.ReadColumns(ctx, txn, invID, ptrs); err != nil {
 		return err
 	}
 	if expirationTime.IsNull() {
@@ -152,7 +153,7 @@ func purgeOneInvocation(ctx context.Context, invID span.InvocationID) error {
 }
 
 // rowsToPurge calls f for rows that should be purged.
-func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv span.InvocationID, f func(table string, key spanner.Key) error) error {
+func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv invocations.ID, f func(table string, key spanner.Key) error) error {
 	st := spanner.NewStatement(`
 		WITH DoNotPurge AS (
 			SELECT DISTINCT TestId, VariantHash
@@ -205,7 +206,7 @@ func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv span
 	})
 }
 
-func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
+func unsetInvocationResultsExpiration(ctx context.Context, id invocations.ID) error {
 	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationID":                      id,

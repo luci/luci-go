@@ -17,6 +17,7 @@ package exonerations
 import (
 	"testing"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -31,7 +32,7 @@ func TestRead(t *testing.T) {
 	Convey(`Read`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		invID := span.InvocationID("inv")
+		invID := invocations.ID("inv")
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
