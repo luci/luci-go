@@ -22,6 +22,30 @@
       "revId": "ac36d55ea8b2de3413559bf1a0a28f9a32d9ce60",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69031f8c_a45d4a49",
+        "filename": "client/cmd/isolate/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-02T06:14:27Z",
+      "side": 1,
+      "message": "Here\u0027s my plan, taking `isolate` as an example:\n\n1. Import everything under `isolate/**`, i.e. both lib and binary.\n2. See if google3 can just use the compiled output from `isolate/main.go`\n3. If not, we probably need to put getApplication into `lib/` as well.",
+      "parentUuid": "268ac469_380a7a6d",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "ac36d55ea8b2de3413559bf1a0a28f9a32d9ce60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
