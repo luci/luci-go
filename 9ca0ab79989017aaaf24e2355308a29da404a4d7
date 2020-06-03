@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "64bfec09_e5ae9ccb",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-03T03:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b55649e_fba18f09",
+      "range": {
+        "startLine": 390,
+        "startChar": 16,
+        "endLine": 390,
+        "endChar": 26
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5123b75e_7ae7fa96",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 8
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "7f718bbc_e7b7d48b",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-03T03:17:45Z",
+      "side": 1,
+      "message": "This CL uses mutex to prevent that.",
+      "parentUuid": "5123b75e_7ae7fa96",
+      "range": {
+        "startLine": 408,
+        "startChar": 3,
+        "endLine": 408,
+        "endChar": 28
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b908ab6c_046f6e7f",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 8
@@ -83,6 +131,30 @@
       "writtenOn": "2020-06-03T03:11:31Z",
       "side": 1,
       "message": "|cb| is called under |d.mu|, is this ok?",
+      "range": {
+        "startLine": 416,
+        "startChar": 12,
+        "endLine": 416,
+        "endChar": 14
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88d80e2e_538345ab",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-03T03:17:45Z",
+      "side": 1,
+      "message": "Yes, it is intentional because linked files should not be removed while os.link.",
+      "parentUuid": "b908ab6c_046f6e7f",
       "range": {
         "startLine": 416,
         "startChar": 12,
