@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9445360c_c26048f3",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 488,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-03T03:01:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f79b757_98b60efc",
+      "revId": "da2c54dab94a9bb83401d2fea43a39d0495d6c31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76d14732_2004233d",
         "filename": "luci_notify/notify/tree_status.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "da2c54dab94a9bb83401d2fea43a39d0495d6c31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "065ef4a5_17fdcbf5",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 490,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-03T03:01:04Z",
+      "side": 1,
+      "message": "Fair enough, I just copied the terminology from gatekeeper. Changed.",
+      "parentUuid": "76d14732_2004233d",
+      "range": {
+        "startLine": 490,
+        "startChar": 5,
+        "endLine": 490,
+        "endChar": 16
+      },
+      "revId": "da2c54dab94a9bb83401d2fea43a39d0495d6c31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
