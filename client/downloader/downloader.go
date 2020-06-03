@@ -22,6 +22,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -435,9 +436,12 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		}
 
 		mode := 0666
+		// Ignore mode other than executable bit.
 		if details.Mode != nil {
-			mode = *details.Mode
+			mode |= *details.Mode & 0100
 		}
+
+		log.Printf("%s %s", filename, os.FileMode(mode))
 
 		if d.options.Cache == nil {
 			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
@@ -459,6 +463,8 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 				return
 			}
 
+			fi, _ := os.Stat(filename)
+			log.Printf("%s mode %o", filename, fi.Mode())
 			d.completeFile(name, details)
 			return
 		}
@@ -559,7 +565,10 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 			}
 
 			filename := filepath.Join(d.outputDir, name)
-			mode := int(hdr.Mode)
+
+			// Igonre mode other than executable bit.
+			mode := 0666 | (int(hdr.Mode) & 0100)
+
 			if err := d.ensureDir(filepath.Dir(filename)); err != nil {
 				d.addError(tarType, string(hash)+":"+filename, err)
 				continue
