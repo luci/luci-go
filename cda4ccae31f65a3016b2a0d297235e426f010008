@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d601a373_7b64d1f9",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 531,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-03T13:42:29Z",
+      "side": 1,
+      "message": "why is this transient?",
+      "range": {
+        "startLine": 531,
+        "startChar": 76,
+        "endLine": 531,
+        "endChar": 85
+      },
+      "revId": "cda4ccae31f65a3016b2a0d297235e426f010008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
