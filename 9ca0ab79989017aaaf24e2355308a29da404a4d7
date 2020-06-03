@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b55649e_fba18f09",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-03T03:11:31Z",
+      "side": 1,
+      "message": "Just a nit: i\u0027d prefer assigning this to a variable, instead of calling it repeatedly",
+      "range": {
+        "startLine": 390,
+        "startChar": 16,
+        "endLine": 390,
+        "endChar": 26
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5123b75e_7ae7fa96",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-03T03:11:31Z",
+      "side": 1,
+      "message": "FYI, Go doc says the file will just be replaced, see: https://golang.org/pkg/os/#Rename",
+      "range": {
+        "startLine": 408,
+        "startChar": 3,
+        "endLine": 408,
+        "endChar": 28
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b908ab6c_046f6e7f",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-03T03:11:31Z",
+      "side": 1,
+      "message": "|cb| is called under |d.mu|, is this ok?",
+      "range": {
+        "startLine": 416,
+        "startChar": 12,
+        "endLine": 416,
+        "endChar": 14
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
