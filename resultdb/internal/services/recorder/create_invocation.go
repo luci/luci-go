@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -87,6 +88,13 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 
 	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
 		return errors.Annotate(err, "invocation.tags").Err()
+	}
+
+	// TODO(crbug.com/1013316): Do not allow empty realm.
+	if inv.GetRealm() != "" {
+		if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
+			return errors.Annotate(err, "invocation.realm").Err()
+		}
 	}
 
 	if inv.GetDeadline() != nil {

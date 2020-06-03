@@ -50,6 +50,8 @@ type Invocation struct {
 	// Tags represents Invocation-level string key-value pairs.
 	// A key can be repeated.
 	Tags []StringPair `bigquery:"tags"`
+
+	// TODO(crbug.com/1090503): Add Realm field.
 }
 
 // TestResultRow represents a row in a BigQuery table for result of a functional
@@ -153,6 +155,7 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 	return Invocation{
 		ID:   string(invocations.MustParseName(inv.Name)),
 		Tags: stringPairProtosToStringPairs(inv.Tags),
+		// TODO(crbug.com/1090503): Add Realm field.
 	}
 }
 

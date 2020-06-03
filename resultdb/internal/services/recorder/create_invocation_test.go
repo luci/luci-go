@@ -127,6 +127,16 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
+		Convey(`invalid realm`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm: "B@d/f::rm@t",
+				},
+			}, now, false)
+			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
+		})
+
 		Convey(`invalid bigqueryExports`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
@@ -268,6 +278,7 @@ func TestCreateInvocation(t *testing.T) {
 						bqExport,
 					},
 					ProducerResource: "//builds.example.com/builds/1",
+					Realm:            "chromium:public",
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))

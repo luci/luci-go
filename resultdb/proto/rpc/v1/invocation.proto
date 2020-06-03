@@ -28,7 +28,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 12.
+// Next id: 13.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -117,6 +117,10 @@ message Invocation {
   // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
   // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
   string producer_resource = 11;
+
+  // Realm that the invocation exists under.
+  // See https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/proto/realms_config.proto
+  string realm = 12;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

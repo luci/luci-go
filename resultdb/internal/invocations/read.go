@@ -67,6 +67,7 @@ func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *
 		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
 		 i.ProducerResource,
+		 i.Realm,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -82,6 +83,7 @@ func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *
 
 		var createdBy spanner.NullString
 		var producerResource spanner.NullString
+		var realm spanner.NullString
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -91,7 +93,8 @@ func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *
 			&inv.Tags,
 			&bqExports,
 			&included,
-			&producerResource)
+			&producerResource,
+			&realm)
 		if err != nil {
 			return err
 		}
@@ -100,6 +103,7 @@ func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *
 		inv.IncludedInvocations = included.Names()
 		inv.CreatedBy = createdBy.StringVal
 		inv.ProducerResource = producerResource.StringVal
+		inv.Realm = realm.StringVal
 
 		if len(bqExports) > 0 {
 			inv.BigqueryExports = make([]*pb.BigQueryExport, len(bqExports))
