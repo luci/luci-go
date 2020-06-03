@@ -524,7 +524,13 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 		var buf bytes.Buffer
 		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 			buf.Reset()
-			return d.c.Fetch(d.ctx, hash, d.track(&buf))
+			if err := d.c.Fetch(d.ctx, hash, d.track(&buf)); err != nil {
+				return err
+			}
+			if got, want := isolated.HashBytes(d.c.Hash(), buf.Bytes()), hash; got != want {
+				return errors.Reason("digest missmatch got %s, want %s", got, want).Tag(transient.Tag).Err()
+			}
+			return nil
 		}, nil); err != nil {
 			d.addError(tarType, string(hash), err)
 			return
