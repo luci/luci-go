@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package milo;
 
-option go_package = "config";
+option go_package = "go.chromium.org/luci/milo/api/config";
 
 import "go.chromium.org/luci/common/proto/options.proto";
 
