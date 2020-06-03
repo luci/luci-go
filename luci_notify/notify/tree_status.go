@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -347,7 +348,7 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 
 	var message string
 	if newStatus == config.Open {
-		message = fmt.Sprintf("Tree is open (Automatic: %s)", randomEmoji())
+		message = fmt.Sprintf("Tree is open (Automatic: %s)", randomMessage(c))
 	} else {
 		message = fmt.Sprintf("Tree is closed (Automatic: %s)", oldestClosed.Message)
 	}
@@ -359,7 +360,135 @@ func updateHost(c context.Context, ts treeStatusClient, host string, treeClosers
 	return nil
 }
 
-func randomEmoji() string {
-	// TODO: Import the emojis from Gatekeeper.
-	return "Yes!"
+// NOTE: If you want to add a new message, do so in Gatekeeper, not here. The
+// full list will be copied over before Gatekeeper is deleted.
+var messages = []string{
+	"(｡>﹏<｡)",
+	"☃",
+	"☀ Tree is open ☀",
+	"٩◔̯◔۶",
+	"☺",
+	"(´・ω・`)",
+	"(΄◞ิ౪◟ิ‵ )",
+	"(╹◡╹)",
+	"♩‿♩",
+	"(/･ω･)/",
+	" ʅ(◔౪◔ ) ʃ",
+	"ᕙ(`▿´)ᕗ",
+	"ヽ(^o^)丿",
+	"\\(･ω･)/",
+	"＼(^o^)／",
+	"ｷﾀ━━━━(ﾟ∀ﾟ)━━━━ｯ!!",
+	"ヽ(^。^)ノ",
+	"(ﾟдﾟ)",
+	"ヽ(´ω`*人*´ω`)ノ",
+	" ﾟ+｡:.ﾟヽ(*´∀`)ﾉﾟ.:｡+ﾟ",
+	"(゜ー゜＊）ネッ！",
+	" ♪d(´▽｀)b♪オールオッケィ♪",
+	"(ﾉ≧∀≦)ﾉ・‥…",
+	"☆（ゝω・）vｷｬﾋﾟ",
+	"ლ(╹◡╹ლ)",
+	"ƪ(•̃͡ε•̃͡)∫ʃ",
+	"(•_•)",
+	"( ་ ⍸ ་ )",
+	"(☉౪ ⊙)",
+	"˙ ͜ʟ˙",
+	"( ఠൠఠ )",
+	"☆.｡.:*･ﾟ☆.｡.:*･ﾟ☆祝☆ﾟ･*:.｡.☆ﾟ･*:.｡.☆",
+	"༼ꉺɷꉺ༽",
+	"◉_◉",
+	"ϵ( ‘Θ’ )϶",
+	"ヾ(⌐■_■)ノ♪",
+	"(◡‿◡✿)",
+	"★.:ﾟ+｡☆ (●´v｀○)bｫﾒﾃﾞﾄd(○´v｀●)☆.:ﾟ+｡★",
+	"(☆.☆)",
+	"ｵﾒﾃﾞﾄｰ♪c(*ﾟｰ^)ﾉ*･'ﾟ☆｡.:*:･'☆'･:*:.",
+	"☆.。.:*・°☆.。.:*・°☆",
+	"ʕ •ᴥ•ʔ",
+	"☼.☼",
+	"⊂(・(ェ)・)⊃",
+	"(ﾉ≧∇≦)ﾉ ﾐ ┸━┸",
+	"¯\\_(ツ)_/¯",
+	"UwU",
+	"Paç fat!",
+	"Sretno",
+	"Hodně štěstí!",
+	"Held og lykke!",
+	"Veel geluk!",
+	"Edu!",
+	"lykkyä tykö",
+	"Viel Glück!",
+	"Καλή τύχη!",
+	"Sok szerencsét kivánok!",
+	"Gangi þér vel!",
+	"Go n-éirí an t-ádh leat!",
+	"Buona fortuna!",
+	"Laimīgs gadījums!",
+	"Sėkmės!",
+	"Vill Gléck!",
+	"Со среќа!",
+	"Powodzenia!",
+	"Boa sorte!",
+	"Noroc!",
+	"Срећно",
+	"Veľa šťastia!",
+	"Lycka till!",
+	"Bona sort!",
+	"Zorte on!",
+	"Góða eydnu",
+	"¡Boa fortuna!",
+	"Bona fortuna!",
+	"Xewqat sbieħ",
+	"Aigh vie!",
+	"Pob lwc!",
+	" موفق باشيد",
+	"İyi şanslar!",
+	"Bonŝancon!",
+	"祝你好运！",
+	"祝你好運！",
+	"頑張って！",
+	"សំណាងល្អ ",
+	"행운을 빌어요",
+	"शुभ कामना ",
+	"โชคดี!",
+	"Chúc may mắn!",
+	"بالتوفيق!",
+	"Sterkte!",
+	"Ke o lakaletsa mohlohonolo",
+	"Uve nemhanza yakanaka",
+	"Kila la kheri!",
+	"Amathamsanqa",
+	"Ngikufisela iwela!",
+	"Bonne chance!",
+	"¡Buena suerte!",
+	"Good luck!",
+	"Semoga Beruntung!",
+	"Selamat Maju Jaya!",
+	"Ia manuia",
+	"Suwertehin ka sana",
+	"Удачи!",
+	"Հաջողությո'ւն",
+	"Іске сәт",
+	"Амжилт хүсье",
+	"удачі!",
+	"Da legst di nieda!",
+	"Gell, da schaugst?",
+	"Ois Guade",
+	"शुभ कामना!",
+	"நல் வாழ்த்துக்கள் ",
+	"అంతా శుభం కలగాలి! ",
+	":')",
+	":'D",
+	"Tree is open (^O^)",
+	"Thượng lộ bình an",
+	"Tree is open now (ง '̀͜ '́ )ง",
+	"ヽ(^o^)ノ",
+}
+
+func randomMessage(c context.Context) string {
+	message := messages[mathrand.Intn(c, len(messages))]
+	if message[len(message)-1] == ')' {
+		return message + " "
+	}
+	return message
 }

@@ -495,12 +495,12 @@ func TestUpdateTrees(t *testing.T) {
 			status, err := ts.getStatus(c, "chromium-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Tree is open (Automatic: Yes!)")
+			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 
 			status, err = ts.getStatus(c, "infra-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Tree is open (Automatic: Yes!)")
+			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 
 			So(log.Messages(), ShouldHaveLength, 1)
 			So(log.Messages()[0].Level, ShouldEqual, logging.Info)
@@ -564,7 +564,7 @@ func TestUpdateTrees(t *testing.T) {
 			status, err = ts.getStatus(c, "infra-status.appspot.com")
 			So(err, ShouldBeNil)
 			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Tree is open (Automatic: Yes!)")
+			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 		})
 	})
 }
