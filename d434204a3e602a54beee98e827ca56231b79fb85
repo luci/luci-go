@@ -63,6 +63,24 @@
       "revId": "d434204a3e602a54beee98e827ca56231b79fb85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cde2c41b_1e24309b",
+        "filename": "resultdb/proto/rpc/v1/invocation.pb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-03T06:38:27Z",
+      "side": 1,
+      "message": "It was not on purpose. I believe this code was generated with the old toolchain\nFix: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2227748/",
+      "parentUuid": "38c3deb5_26b4cc2f",
+      "revId": "d434204a3e602a54beee98e827ca56231b79fb85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
