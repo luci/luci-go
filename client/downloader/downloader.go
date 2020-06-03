@@ -461,6 +461,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 			}
 
 			d.completeFile(name, details)
+
 			return
 		}
 
