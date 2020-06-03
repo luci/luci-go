@@ -33,7 +33,7 @@ func TestInstallHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("Initialization of validator, validation routes and handlers", t, func() {
-		rules := validation.RuleSet{}
+		rules := validation.NewRuleSet()
 
 		r := router.New()
 		rr := httptest.NewRecorder()
@@ -68,7 +68,7 @@ func TestInstallHandlers(t *testing.T) {
 			return &resp
 		}
 
-		InstallHandlers(r, router.NewMiddlewareChain(), &rules)
+		InstallHandlers(r, router.NewMiddlewareChain(), rules)
 
 		Convey("Basic metadataHandler call", func() {
 			So(rr.Code, ShouldEqual, http.StatusOK)

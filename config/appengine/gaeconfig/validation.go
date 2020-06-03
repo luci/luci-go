@@ -25,17 +25,17 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/config/vars"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/router"
 )
 
 func init() {
-	RegisterValidationVars(&validation.Rules)
+	RegisterVars(&vars.Vars)
 }
 
-// RegisterValidationVars registers placeholders that can be used in validation
-// rules patterns.
+// RegisterVars registers placeholders that can be used in config set names.
 //
 // Registers:
 //    ${appid} - expands into a GAE app ID of the running service.
@@ -43,12 +43,12 @@ func init() {
 //        service that the running service is using (or empty string if
 //        unconfigured).
 //
-// This function is called during init() time for default rule set.
-func RegisterValidationVars(rules *validation.RuleSet) {
-	rules.RegisterVar("appid", func(c context.Context) (string, error) {
+// This function is called during init() with the default var set.
+func RegisterVars(vars *vars.VarSet) {
+	vars.Register("appid", func(c context.Context) (string, error) {
 		return info.TrimmedAppID(c), nil
 	})
-	rules.RegisterVar("config_service_appid", GetConfigServiceAppID)
+	vars.Register("config_service_appid", GetConfigServiceAppID)
 }
 
 // InstallValidationHandlers installs handlers for config validation.

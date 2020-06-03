@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/config/vars"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/module"
@@ -37,15 +38,19 @@ const configValidationAuthScope = "https://www.googleapis.com/auth/userinfo.emai
 type ModuleOptions struct {
 	ConfigServiceHost string // a hostname of a LUCI Config service to use
 
+	// Vars is a var set to use to render config set names.
+	//
+	// If nil, the module uses global &vars.Vars. This is usually what you want.
+	//
+	// During the initialization the module registers the following vars:
+	//   ${appid}: value of -cloud-project server flag.
+	//   ${config_service_appid}: app ID of the LUCI Config service.
+	Vars *vars.VarSet
+
 	// Rules is a rule set to use for the config validation.
 	//
 	// If nil, the module uses global &validation.Rules. This is usually what
 	// you want.
-	//
-	// During the initialization the module registers the following vars in the
-	// rule set:
-	//   ${appid}: value of -cloud-project server flag.
-	//   ${config_service_appid}: app ID of the LUCI Config service.
 	Rules *validation.RuleSet
 }
 
@@ -93,6 +98,9 @@ func (*serverModule) Name() string {
 
 // Initialize is part of module.Module interface.
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
+	if m.opts.Vars == nil {
+		m.opts.Vars = &vars.Vars
+	}
 	if m.opts.Rules == nil {
 		m.opts.Rules = &validation.Rules
 	}
@@ -128,16 +136,16 @@ func (m *serverModule) configServiceInfo(ctx context.Context) (*signing.ServiceI
 	return signing.FetchServiceInfoFromLUCIService(ctx, "https://"+m.opts.ConfigServiceHost)
 }
 
-// registerVars populates the rule set with predefined vars that can be used
+// registerVars populates the var set with predefined vars that can be used
 // in config patterns.
 func (m *serverModule) registerVars(opts module.HostOptions) {
-	m.opts.Rules.RegisterVar("appid", func(context.Context) (string, error) {
+	m.opts.Vars.Register("appid", func(context.Context) (string, error) {
 		if opts.CloudProject == "" {
 			return "", fmt.Errorf("can't resolve ${appid}: -cloud-project is not set")
 		}
 		return opts.CloudProject, nil
 	})
-	m.opts.Rules.RegisterVar("config_service_appid", func(ctx context.Context) (string, error) {
+	m.opts.Vars.Register("config_service_appid", func(ctx context.Context) (string, error) {
 		info, err := m.configServiceInfo(ctx)
 		if err != nil {
 			return "", errors.Annotate(err, "can't resolve ${config_service_appid}").Err()

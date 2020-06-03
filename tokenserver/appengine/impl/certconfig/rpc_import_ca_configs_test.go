@@ -192,12 +192,12 @@ func TestImportCAConfigsRPC(t *testing.T) {
 		})
 
 		Convey("validation rules", func() {
-			rules := validation.RuleSet{}
-			rules.RegisterVar("appid", func(context.Context) (string, error) {
+			rules := validation.NewRuleSet()
+			rules.Vars.Register("appid", func(context.Context) (string, error) {
 				return "appid", nil
 			})
 			rpc := ImportCAConfigsRPC{}
-			rpc.SetupConfigValidation(&rules)
+			rpc.SetupConfigValidation(rules)
 
 			vctx := validation.Context{Context: ctx}
 
