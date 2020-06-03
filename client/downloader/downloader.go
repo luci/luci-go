@@ -541,8 +541,8 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 			case nil:
 
 			default:
-				d.addError(tarType, string(hash), err)
-				continue
+				d.addError(tarType, string(hash), errors.Annotate(err, "failed to call Next()").Err())
+				return
 			}
 
 			name := filepath.Clean(normalizePathSeparator(hdr.Name))
@@ -579,7 +579,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 				defer f.Close()
 				n, err := io.Copy(f, tf)
 				if err != nil {
-					d.addError(tarType, string(hash)+":"+filename, err)
+					d.addError(tarType, string(hash)+":"+filename, errors.Annotate(err, "failed to call io.Copy()").Err())
 					return
 				}
 				if n != hdr.Size {
