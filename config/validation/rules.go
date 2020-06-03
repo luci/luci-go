@@ -16,20 +16,20 @@ package validation
 
 import (
 	"context"
-	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 
 	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/config/vars"
 )
 
 // Rules is the default validation rule set used by the process.
 //
-// Individual packages may register vars and rules there during init() time.
-var Rules RuleSet
+// Individual packages may register rules here during init() time.
+var Rules = RuleSet{Vars: &vars.Vars}
 
 // Func performs the actual config validation and stores the associated results
 // in the Context.
@@ -53,10 +53,13 @@ type ConfigPattern struct {
 // The primary use case is building the list of rules during init() time. Since
 // not all information is available at that time (most crucially on GAE Standard
 // App ID is not yet known), the rule patterns can have placeholders (such as
-// "${appid}") that are substituted during actual config validation time.
+// "${appid}") that are substituted during actual config validation time via
+// the given vars.VarSet instance.
 type RuleSet struct {
+	// Vars is a set of placeholder vars that can be used in patterns.
+	Vars *vars.VarSet
+
 	l sync.RWMutex
-	v map[string]func(context.Context) (string, error)
 	r []*rule
 }
 
@@ -66,34 +69,19 @@ type rule struct {
 	cb        Func   // a validator function to use for matching files
 }
 
-// RegisterVar registers a placeholder that can be used in patterns as ${name}.
+// NewRuleSet returns a RuleSet that uses its own new VarSet.
 //
-// Such placeholder is rendered into an actual value via the given callback
-// when doing the validation. The value of the placeholder is injected into
-// the pattern string as is. So for example if the pattern is 'regex:...',
-// the placeholder value can be a chunk of regexp.
-//
-// The primary use case for this mechanism is to allow to register rule
-// patterns that depend on not-yet known values during init() time.
-//
-// Panics if such variable is already registered.
-func (r *RuleSet) RegisterVar(name string, value func(context.Context) (string, error)) {
-	r.l.Lock()
-	defer r.l.Unlock()
-	if r.v == nil {
-		r.v = make(map[string]func(context.Context) (string, error), 1)
-	}
-	if r.v[name] != nil {
-		panic(fmt.Sprintf("variable %q is already registered", name))
-	}
-	r.v[name] = value
+// Primarily useful in tests to create a self-contained RuleSet to avoid relying
+// on global Rules and Vars.
+func NewRuleSet() *RuleSet {
+	return &RuleSet{Vars: &vars.VarSet{}}
 }
 
 // Add registers a validation function for the config set and path patterns.
 //
 // Patterns may contain placeholders (e.g. "${appid}") that will be resolved
 // when doing the validation. All such placeholder variables must be registered
-// via RegisterVar before the rule set is used, but they may be registered after
+// in the VarSet before the rule set is used, but they may be registered after
 // Add calls that reference them.
 func (r *RuleSet) Add(configSet, path string, cb Func) {
 	r.l.Lock()
@@ -119,9 +107,9 @@ func (r *RuleSet) Add(configSet, path string, cb Func) {
 // we understand.
 //
 // Returns an error if some config patterns can't be rendered, e.g. if they
-// reference placeholders that weren't registered via RegisterVar, or if the
+// reference placeholders that weren't registered in the VarSet, or if the
 // placeholder value can't be resolved.
-func (r *RuleSet) ConfigPatterns(c context.Context) ([]*ConfigPattern, error) {
+func (r *RuleSet) ConfigPatterns(ctx context.Context) ([]*ConfigPattern, error) {
 	r.l.RLock()
 	defer r.l.RUnlock()
 
@@ -130,7 +118,7 @@ func (r *RuleSet) ConfigPatterns(c context.Context) ([]*ConfigPattern, error) {
 
 	for i, rule := range r.r {
 		var err errors.MultiError
-		out[i], err = r.renderedConfigPattern(c, rule)
+		out[i], err = r.renderedConfigPattern(ctx, rule)
 		errs = append(errs, err...)
 	}
 
@@ -169,7 +157,7 @@ func (r *RuleSet) ValidateConfig(ctx *Context, configSet, path string, content [
 ///
 
 // matchingFuncs returns a validator callbacks matching the given file.
-func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Func, error) {
+func (r *RuleSet) matchingFuncs(ctx context.Context, configSet, path string) ([]Func, error) {
 	r.l.RLock()
 	defer r.l.RUnlock()
 
@@ -177,7 +165,7 @@ func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Fu
 	var errs errors.MultiError
 
 	for _, rule := range r.r {
-		switch pat, err := r.renderedConfigPattern(c, rule); {
+		switch pat, err := r.renderedConfigPattern(ctx, rule); {
 		case err != nil:
 			errs = append(errs, err...)
 		case pat.ConfigSet.Match(configSet) && pat.Path.Match(path):
@@ -192,23 +180,14 @@ func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Fu
 }
 
 // renderedConfigPattern expands variables in the config patterns.
-//
-// Must be called with r.l read lock held.
-func (r *RuleSet) renderedConfigPattern(c context.Context, rule *rule) (*ConfigPattern, errors.MultiError) {
-	sub := func(name string) (string, error) {
-		if cb := r.v[name]; cb != nil {
-			return cb(c)
-		}
-		return "", fmt.Errorf("no placeholder named %q is registered", name)
-	}
-
+func (r *RuleSet) renderedConfigPattern(ctx context.Context, rule *rule) (*ConfigPattern, errors.MultiError) {
 	var errs errors.MultiError
 
-	configSet, err := renderPatternString(rule.configSet, sub)
+	configSet, err := r.renderPattern(ctx, rule.configSet)
 	if err != nil {
 		errs = append(errs, errors.Annotate(err, "failed to compile config set pattern %q", rule.configSet).Err())
 	}
-	path, err := renderPatternString(rule.path, sub)
+	path, err := r.renderPattern(ctx, rule.path)
 	if err != nil {
 		errs = append(errs, errors.Annotate(err, "failed to compile path pattern %q", rule.path).Err())
 	}
@@ -223,22 +202,10 @@ func (r *RuleSet) renderedConfigPattern(c context.Context, rule *rule) (*ConfigP
 	}, nil
 }
 
-var placeholderRe = regexp.MustCompile(`\${[^}]*}`)
-
-// renderPatternString substitutes all ${name} placeholders via given callback
-// and compiles the resulting pattern.
-func renderPatternString(pat string, sub func(name string) (string, error)) (pattern.Pattern, error) {
-	var errs errors.MultiError
-	out := placeholderRe.ReplaceAllStringFunc(pat, func(match string) string {
-		name := match[2 : len(match)-1] // strip ${...}
-		val, err := sub(name)
-		if err != nil {
-			errs = append(errs, err)
-		}
-		return val
-	})
-	if len(errs) != 0 {
-		return nil, errs
+func (r *RuleSet) renderPattern(ctx context.Context, pat string) (pattern.Pattern, error) {
+	out, err := r.Vars.RenderTemplate(ctx, pat)
+	if err != nil {
+		return nil, err
 	}
 	return pattern.Parse(out)
 }

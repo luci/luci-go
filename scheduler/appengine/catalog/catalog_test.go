@@ -387,11 +387,11 @@ func TestValidateConfig(t *testing.T) {
 		task: &messages.UrlFetchTask{},
 	})
 
-	rules := validation.RuleSet{}
-	rules.RegisterVar("appid", func(context.Context) (string, error) {
+	rules := validation.NewRuleSet()
+	rules.Vars.Register("appid", func(context.Context) (string, error) {
 		return "luci-scheduler", nil
 	})
-	catalog.RegisterConfigRules(&rules)
+	catalog.RegisterConfigRules(rules)
 
 	Convey("Patterns are correct", t, func() {
 		patterns, err := rules.ConfigPatterns(context.Background())

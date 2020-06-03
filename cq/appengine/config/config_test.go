@@ -33,10 +33,10 @@ func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validation Rules", t, func() {
-		r := validation.RuleSet{}
-		r.RegisterVar("appid", func(context.Context) (string, error) { return "commit-queue", nil })
+		r := validation.NewRuleSet()
+		r.Vars.Register("appid", func(context.Context) (string, error) { return "commit-queue", nil })
 
-		addRules(&r)
+		addRules(r)
 
 		patterns, err := r.ConfigPatterns(context.Background())
 		So(err, ShouldBeNil)

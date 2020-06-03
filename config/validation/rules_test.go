@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/errors"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -45,10 +46,10 @@ func TestRuleSet(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			r := RuleSet{}
+			r := NewRuleSet()
 
-			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
-			r.RegisterVar("b", func(context.Context) (string, error) { return "b_val", nil })
+			r.Vars.Register("a", func(context.Context) (string, error) { return "a_val", nil })
+			r.Vars.Register("b", func(context.Context) (string, error) { return "b_val", nil })
 
 			r.Add("services/${a}", "paths/a", validator("rule_1"))
 			r.Add("services/${a}", "paths/${b}", validator("rule_2"))
@@ -94,16 +95,16 @@ func TestRuleSet(t *testing.T) {
 		})
 
 		Convey("Error in the var callback", func() {
-			r := RuleSet{}
-			r.RegisterVar("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })
+			r := NewRuleSet()
+			r.Vars.Register("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })
 			r.Add("services/${a}", "paths/a", validator("rule_1"))
 			err := r.ValidateConfig(&Context{Context: ctx}, "services/zzz", "some path", []byte("body"))
 			So(err, ShouldErrLike, "boom")
 		})
 
 		Convey("Missing variables", func() {
-			r := RuleSet{}
-			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
+			r := NewRuleSet()
+			r.Vars.Register("a", func(context.Context) (string, error) { return "a_val", nil })
 			r.Add("${zzz}", "a", validator("1"))
 			r.Add("a", "${zzz}", validator("1"))
 
@@ -125,8 +126,8 @@ func TestRuleSet(t *testing.T) {
 		})
 
 		Convey("Pattern is validated", func() {
-			r := RuleSet{}
-			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
+			r := NewRuleSet()
+			r.Vars.Register("a", func(context.Context) (string, error) { return "a_val", nil })
 			r.Add("unknown:${a}", "a", validator("1"))
 			r.Add("a", "unknown:${a}", validator("1"))
 
@@ -145,12 +146,6 @@ func TestRuleSet(t *testing.T) {
 				`config set pattern "unknown:${a}": unknown pattern kind: "unknown"`)
 			So(merr[1], ShouldErrLike,
 				`path pattern "unknown:${a}": unknown pattern kind: "unknown"`)
-		})
-
-		Convey("Duplicated variable", func() {
-			r := RuleSet{}
-			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
-			So(func() { r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil }) }, ShouldPanic)
 		})
 	})
 }
