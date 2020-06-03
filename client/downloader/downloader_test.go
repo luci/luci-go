@@ -76,7 +76,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	isolated1 := isolated.New(h)
 	isolated1.Files = map[string]isolated.File{
 		onePath:     isolated.BasicFile(data1hash, 0664, int64(len(data1))),
-		twoPath:     isolated.BasicFile(data2hash, 0664, int64(len(data2))),
+		twoPath:     isolated.BasicFile(data2hash, 0764, int64(len(data2))),
 		posixPath:   isolated.BasicFile(data1hash, 0664, int64(len(data1))),
 		winPath:     isolated.BasicFile(data2hash, 0664, int64(len(data2))),
 		tardataname: isolated.TarFile(tardatahash, int64(len(tardata))),
@@ -143,9 +143,19 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data1)
 
+		fi, err := os.Stat(filepath.Join(tmpDir, onePath))
+		So(err, ShouldBeNil)
+		// to ignore effect of umask, only check executable bit.
+		So(fi.Mode()&0111, ShouldEqual, 0)
+
 		b, err = ioutil.ReadFile(filepath.Join(tmpDir, twoPath))
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data2)
+
+		fi, err = os.Stat(filepath.Join(tmpDir, twoPath))
+		So(err, ShouldBeNil)
+		// to ignore effect of umask, only check executable bit.
+		So(fi.Mode()&0011, ShouldEqual, 0)
 
 		b, err = ioutil.ReadFile(filepath.Join(tmpDir, lolPath))
 		So(err, ShouldBeNil)
