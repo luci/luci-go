@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "9ab4dd67_0af84cde",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-03T03:15:11Z",
+      "side": 1,
+      "message": "I guess my point is that, we will later create a hardlink from d.itemPath(digest), but os.Rename could override the first file. It seems like the race condition at the filesystem level still exists... WDYT if we create the file only if it doesn\u0027t already exist? E.g. \n\nWith mu acquired:\n  check if d.itemPath(digest) already exists in some map\n  if not, create the file, insert the map",
+      "parentUuid": "5123b75e_7ae7fa96",
+      "range": {
+        "startLine": 408,
+        "startChar": 3,
+        "endLine": 408,
+        "endChar": 28
+      },
+      "revId": "9ca0ab79989017aaaf24e2355308a29da404a4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b908ab6c_046f6e7f",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 8
