@@ -25,6 +25,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 
@@ -333,7 +334,11 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 		defer resp.Body.Close()
 		decompressor, err := isolated.GetDecompressor(i.namespace, resp.Body)
 		if err != nil {
-			return errors.Annotate(err, "GCS GetDecompressor failed").Err()
+			annotator := errors.Annotate(err, "GCS GetDecompressor failed")
+			if _, ok := err.(*net.OpError); ok {
+				annotator.Tag(transient.Tag)
+			}
+			return annotator.Err()
 		}
 		defer decompressor.Close()
 		_, err = io.Copy(dest, decompressor)
