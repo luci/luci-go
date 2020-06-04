@@ -22,6 +22,30 @@
       "revId": "f91c0dfb1c806707a1b597cbfae0ac40c22c37b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a5518fd_9cbef80c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-04T06:45:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aea452d6_8b9cb278",
+      "range": {
+        "startLine": 201,
+        "startChar": 36,
+        "endLine": 201,
+        "endChar": 50
+      },
+      "revId": "f91c0dfb1c806707a1b597cbfae0ac40c22c37b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
