@@ -343,6 +343,7 @@ var (
 			"tags",
 			"summary_markdown",
 			"canary",
+			"exe",
 		},
 	}
 	tagsAndGitilesMask = &field_mask.FieldMask{
