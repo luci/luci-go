@@ -22,6 +22,30 @@
       "revId": "120789441e0ce1db414e4a9e04d3ef7d0558c076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1335dcb9_01fbc3c4",
+        "filename": "buildbucket/proto/launcher.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T23:13:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f9d4d24_7c5cd6b0",
+      "range": {
+        "startLine": 17,
+        "startChar": 18,
+        "endLine": 17,
+        "endChar": 25
+      },
+      "revId": "120789441e0ce1db414e4a9e04d3ef7d0558c076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
