@@ -88,6 +88,9 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 		return err
 	}
 	tasks, err := service.ListTasks(ctx, t.limit, t.state, t.tags, t.fields)
+	if err != nil {
+		return err
+	}
 	if !t.defaultFlags.Quiet {
 		j, err := json.MarshalIndent(tasks, "", " ")
 		if err != nil {
