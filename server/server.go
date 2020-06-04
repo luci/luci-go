@@ -56,6 +56,7 @@ package server
 import (
 	"context"
 	cryptorand "crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"flag"
@@ -345,11 +346,7 @@ func (o *Options) FromGAEEnv() {
 	}
 	o.GAE = true
 	o.Prod = true
-	o.Hostname = fmt.Sprintf("%s-%s-%s",
-		os.Getenv("GAE_SERVICE"),
-		os.Getenv("GAE_DEPLOYMENT_ID"),
-		os.Getenv("GAE_INSTANCE")[:8],
-	)
+	o.Hostname = uniqueGAEHostname()
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
 	o.AdminAddr = "-"
 	o.ShutdownDelay = 0
@@ -361,6 +358,18 @@ func (o *Options) FromGAEEnv() {
 		os.Getenv("GOOGLE_CLOUD_PROJECT"),
 		os.Getenv("GAE_SERVICE"),
 		os.Getenv("GAE_VERSION"),
+	)
+}
+
+// uniqueGAEHostname uses GAE_* env vars to derive a unique enough string that
+// is used as a hostname in monitoring metrics.
+func uniqueGAEHostname() string {
+	// GAE_INSTANCE is huge, hash it to get a small reasonably unique string.
+	id := sha256.Sum256([]byte(os.Getenv("GAE_INSTANCE")))
+	return fmt.Sprintf("%s-%s-%s",
+		os.Getenv("GAE_SERVICE"),
+		os.Getenv("GAE_DEPLOYMENT_ID"),
+		hex.EncodeToString(id[:])[:16],
 	)
 }
 
