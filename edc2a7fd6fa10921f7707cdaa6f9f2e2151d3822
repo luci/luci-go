@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c1fb118_826f0cf3",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T05:32:27Z",
+      "side": 1,
+      "message": "no reason for it to be public or package level.\nplease move the type *into* the function perhaps give it a shorter name, e.g. just Key",
+      "range": {
+        "startLine": 34,
+        "startChar": 5,
+        "endLine": 34,
+        "endChar": 18
+      },
+      "revId": "edc2a7fd6fa10921f7707cdaa6f9f2e2151d3822",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6c09ee5_41a7e32c",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T05:32:27Z",
+      "side": 1,
+      "message": "space",
+      "range": {
+        "startLine": 77,
+        "startChar": 4,
+        "endLine": 77,
+        "endChar": 5
+      },
+      "revId": "edc2a7fd6fa10921f7707cdaa6f9f2e2151d3822",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32c507f0_0623bc69",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T05:32:27Z",
+      "side": 1,
+      "message": "nit: duplicate",
+      "range": {
+        "startLine": 78,
+        "startChar": 38,
+        "endLine": 78,
+        "endChar": 48
+      },
+      "revId": "edc2a7fd6fa10921f7707cdaa6f9f2e2151d3822",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c980154_6f9f1fa9",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T05:32:27Z",
+      "side": 1,
+      "message": "why not errors.Reason(...).Err() ?",
+      "range": {
+        "startLine": 78,
+        "startChar": 10,
+        "endLine": 78,
+        "endChar": 36
+      },
+      "revId": "edc2a7fd6fa10921f7707cdaa6f9f2e2151d3822",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5da90039_fc129744",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T05:32:27Z",
+      "side": 1,
+      "message": "i think the index of the result is less useful than the test id and result id. FWIW there are at least two results here, but we report only one of them.",
+      "range": {
+        "startLine": 78,
+        "startChar": 87,
+        "endLine": 78,
+        "endChar": 89
+      },
+      "revId": "edc2a7fd6fa10921f7707cdaa6f9f2e2151d3822",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
