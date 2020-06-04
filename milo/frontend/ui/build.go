@@ -192,6 +192,26 @@ func (b *Build) ChangeLinks() []*Link {
 	return ret
 }
 
+func (b *Build) RecipeLink() *Link {
+	cipdPackage := b.GetExe().GetCipdPackage()
+	recipeName := b.GetInput().GetProperties().GetFields()["recipe"].GetStringValue()
+	// We don't know location of recipes within the repo and getting that
+	// information is not trivial, so use code search, which is precise enough.
+	csHost := "source.chromium.org"
+	if strings.Contains(cipdPackage, "internal") {
+		csHost = "source.corp.google.com"
+	}
+	u := url.URL{
+		Scheme: "https",
+		Host:   csHost,
+		Path:   "/search/",
+		RawQuery: url.Values{
+			"q": []string{fmt.Sprintf(`file:recipes/%s.py`, recipeName)},
+		}.Encode(),
+	}
+	return NewLink(recipeName, u.String(), fmt.Sprintf("recipe %s", recipeName))
+}
+
 // BuildbucketLink returns a link to the buildbucket version of the page.
 func (bp *BuildPage) BuildbucketLink() *Link {
 	if bp.BuildbucketHost == "" {

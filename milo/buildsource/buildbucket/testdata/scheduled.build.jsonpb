@@ -25,6 +25,7 @@
         "is_experimental": false,
         "is_luci": true
       },
+      "recipe": "chromium_trybot",
       "buildbucket": {
         "hostname": "cr-buildbucket.appspot.com",
         "build": {
@@ -81,10 +82,6 @@
             },
             "swarming": {
               "hostname": "chromium-swarm.appspot.com"
-            },
-            "recipe": {
-              "name": "chromium_trybot",
-              "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
             }
           },
           "createdBy": "user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com",
@@ -136,10 +133,6 @@
         "patch_project": "chromium/src",
         "revision": "HEAD"
       }
-    },
-    "recipe": {
-      "name": "chromium_trybot",
-      "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
     },
     "swarming": {
       "hostname": "chromium-swarm.appspot.com",

@@ -60,7 +60,6 @@ import (
 var funcMap = template.FuncMap{
 	"botLink":          botLink,
 	"logdogLink":       logdogLink,
-	"recipeLink":       recipeLink,
 	"duration":         common.Duration,
 	"faviconMIMEType":  faviconMIMEType,
 	"formatCommitDesc": formatCommitDesc,
@@ -265,21 +264,6 @@ func replaceLinkChunks(chunks []formatChunk) []formatChunk {
 		return makeLink(s, scheme+u)
 	})
 	return chunks
-}
-
-// recipeLink generates a link to codesearch given a recipe bundle.
-func recipeLink(r *buildbucketpb.BuildInfra_Recipe) (result template.HTML) {
-	if r == nil {
-		return
-	}
-	// We don't know location of recipes within the repo and getting that
-	// information is not trivial, so use code search, which is precise enough.
-	csHost := "cs.chromium.org"
-	if strings.HasPrefix(r.CipdPackage, "infra_internal") {
-		csHost = "cs.corp.google.com"
-	}
-	recipeURL := fmt.Sprintf("https://%s/search/?q=file:recipes/%s.py", csHost, r.Name)
-	return ui.NewLink(r.Name, recipeURL, fmt.Sprintf("recipe %s", r.Name)).HTML()
 }
 
 // botLink generates a link to a swarming bot given a buildbucketpb.BuildInfra_Swarming struct.

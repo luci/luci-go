@@ -159,13 +159,10 @@
           </li>
           <li>Bot: N/A</li>
         
-
-        
-          <li>
-            Recipe: <a href="https://cs.chromium.org/search/?q=file:recipes/chromium_trybot.py" aria-label="recipe chromium_trybot">chromium_trybot</a>
-          </li>
-        
       
+      <li>
+        Recipe: <a href="https://source.chromium.org/search/?q=file%3Arecipes%2Fchromium_trybot.py" aria-label="recipe chromium_trybot">chromium_trybot</a>
+      </li>
     </ul>
 
     <h2>Steps and Logs</h2>
@@ -258,10 +255,6 @@
       &#34;buildbucket&#34;: {
         &#34;serviceConfigRevision&#34;: &#34;01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c&#34;
       },
-      &#34;recipe&#34;: {
-        &#34;cipdPackage&#34;: &#34;infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build&#34;,
-        &#34;name&#34;: &#34;chromium_trybot&#34;
-      },
       &#34;swarming&#34;: {
         &#34;hostname&#34;: &#34;chromium-swarm.appspot.com&#34;
       }
@@ -310,10 +303,6 @@
       &#34;buildbucket&#34;: {
         &#34;serviceConfigRevision&#34;: &#34;01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c&#34;
       },
-      &#34;recipe&#34;: {
-        &#34;cipdPackage&#34;: &#34;infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build&#34;,
-        &#34;name&#34;: &#34;chromium_trybot&#34;
-      },
       &#34;swarming&#34;: {
         &#34;hostname&#34;: &#34;chromium-swarm.appspot.com&#34;
       }
@@ -336,7 +325,12 @@
       },
       {
         &#34;key&#34;: &#34;buildset&#34;,
-…</abbr></td>
+        &#34;value&#34;: &#34;patch/gerrit/chromium-review.googlesource.com/1447158/3&#34;
+      },
+      {
+        &#34;key&#34;: &#34;cq_experimental&#34;,
+        &#34;value&#34;: &#34;false&#34;
+    …</abbr></td>
       </tr>
     
       <tr>
@@ -459,6 +453,11 @@
       <tr>
         <td class="left">reason</td>
         <td class="middle"><abbr title="&#34;CQ&#34;">&#34;CQ&#34;</abbr></td>
+      </tr>
+    
+      <tr>
+        <td class="left">recipe</td>
+        <td class="middle"><abbr title="&#34;chromium_trybot&#34;">&#34;chromium_trybot&#34;</abbr></td>
       </tr>
     
       <tr>
