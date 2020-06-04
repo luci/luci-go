@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package lib is used to implement the parent package main.
 package lib
 
 // IsolateVersion must be updated whenever functional change (behavior
