@@ -91,7 +91,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"os/signal"
 	"sort"
 	"strings"
 	"time"
@@ -105,6 +105,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/lucictx"
 )
 
@@ -587,27 +588,20 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	opts.ActViaLUCIRealm = c.actViaRealm
 	opts.TokenServerHost = c.tokenServerHost
 
-	// 'args' specify a subcommand to run. Prepare *exec.Cmd.
+	// 'args' specify a subcommand to run.
 	if len(args) == 0 {
 		fmt.Fprintf(os.Stderr, "Specify a command to run:\n  %s context [flags] [--] <bin> [args]\n", os.Args[0])
 		return ExitCodeInvalidInput
 	}
-	bin := args[0]
-	if filepath.Base(bin) == bin {
-		resolved, err := exec.LookPath(bin)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Can't find %q in PATH\n", bin)
-			return ExitCodeInvalidInput
-		}
-		bin = resolved
-	}
-	cmd := &exec.Cmd{
-		Path:   bin,
-		Args:   args,
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
+
+	// Start watching for interrupts as soon as possible (in particular before
+	// any heavy setup calls).
+	interrupts := make(chan os.Signal, 1)
+	signal.Notify(interrupts, signals.Interrupts()...)
+	defer func() {
+		signal.Stop(interrupts)
+		close(interrupts)
+	}()
 
 	// Create an authenticator for requested options to make sure we have required
 	// refresh tokens (if any), asking the user to login if not.
@@ -641,7 +635,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 	defer authCtx.Close(ctx) // logs errors inside
 
-	// Adjust 'cmd' to run in the new modified environ.
+	// Prepare a modified environ for the subcommand.
 	cmdEnv := environ.System()
 	exported, err := lucictx.Export(authCtx.Export(ctx, cmdEnv))
 	if err != nil {
@@ -651,10 +645,35 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	defer exported.Close()
 	exported.SetInEnviron(cmdEnv)
 
-	// Launch the process and wait for it to finish. Return its exit code.
-	logging.Debugf(ctx, "Running %q", cmd.Args)
+	// Prepare the subcommand.
+	logging.Debugf(ctx, "Running %q", args)
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Env = cmdEnv.Sorted()
-	if err = cmd.Run(); err == nil {
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Rig it to die violently if the luci-auth unexpectedly dies. This works only
+	// on Linux. See pdeath_linux.go and pdeath_notlinux.go.
+	setPdeathsig(cmd)
+
+	// Launch.
+	if err = cmd.Start(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return ExitCodeInvalidInput
+	}
+
+	// Forward interrupts to the child process. See terminate_windows.go and
+	// terminate_notwindows.go.
+	go func() {
+		for sig := range interrupts {
+			if err := terminateProcess(cmd.Process, sig); err != nil {
+				logging.Errorf(ctx, "Failed to send %q to the child process: %s", sig, err)
+			}
+		}
+	}()
+
+	if err = cmd.Wait(); err == nil {
 		return 0
 	}
 	if code, hasCode := exitcode.Get(err); hasCode {
