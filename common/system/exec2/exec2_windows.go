@@ -55,7 +55,7 @@ func iterateChildThreads(pid uint32, f func(uint32) error) error {
 
 		if err := windows.Thread32Next(handle, &threadEntry); err != nil {
 			if serr, ok := err.(syscall.Errno); !ok || serr != windows.ERROR_NO_MORE_FILES {
-				return errors.Annotate(err, "failed to call Thread32First").Err()
+				return errors.Annotate(err, "failed to call Thread32Next").Err()
 			}
 			return nil
 		}
