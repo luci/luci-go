@@ -15,25 +15,20 @@
 package span
 
 import (
-	"bytes"
 	"context"
 	"reflect"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/klauspost/compress/zstd"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
+
+// ErrNoResults is an error returned when a query unexpectedly has no results.
+var ErrNoResults = iterator.Done
 
 // This file implements utility functions that make spanner API slightly easier
 // to use.
@@ -52,65 +47,6 @@ type Txn interface {
 
 	// Query reads multiple rows returned by SQL statement.
 	Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator
-}
-
-// Compressed instructs ToSpanner and FromSpanner functions to compress the
-// content with https://godoc.org/github.com/klauspost/compress/zstd encoding.
-type Compressed []byte
-
-// ToSpanner implements Value.
-func (c Compressed) ToSpanner() interface{} {
-	if len(c) == 0 {
-		// Do not store empty bytes.
-		return []byte(nil)
-	}
-	return compress(c)
-}
-
-// SpannerPtr implements Ptr.
-func (c *Compressed) SpannerPtr(b *Buffer) interface{} {
-	return &b.ByteSlice
-}
-
-// FromSpanner implements Ptr.
-func (c *Compressed) FromSpanner(b *Buffer) error {
-	if len(b.ByteSlice) == 0 {
-		// do not set to nil; otherwise we lose the buffer.
-		*c = (*c)[:0]
-	} else {
-		// *c might be pointing to an existing memory buffer.
-		// Try to reuse it for decoding.
-		var err error
-		if *c, err = decompress(b.ByteSlice, *c); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ErrNoResults is an error returned when a query unexpectedly has no results.
-var ErrNoResults = iterator.Done
-var zstdHeader = []byte("ztd\n")
-
-// Globally shared zstd encoder and decoder. We use only their EncodeAll and
-// DecodeAll methods which are allowed to be used concurrently. Internally, both
-// the encode and the decoder have worker pools (limited by GOMAXPROCS) and each
-// concurrent EncodeAll/DecodeAll call temporary consumes one worker (so overall
-// we do not run more jobs that we have cores for).
-var (
-	zstdEncoder *zstd.Encoder
-	zstdDecoder *zstd.Decoder
-)
-
-func init() {
-	var err error
-	if zstdEncoder, err = zstd.NewWriter(nil); err != nil {
-		panic(err) // this is impossible
-	}
-	if zstdDecoder, err = zstd.NewReader(nil); err != nil {
-		panic(err) // this is impossible
-	}
 }
 
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {
@@ -134,253 +70,6 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 	}
 
 	return FromSpanner(row, ptrs...)
-}
-
-// Value can be converted to a Spanner value.
-// Typically if type T implements Value, then *T implements Ptr.
-type Value interface {
-	// ToSpanner returns a value of a type supported by Spanner client.
-	ToSpanner() interface{}
-}
-
-// Ptr can be used a destination of reading a Spanner cell.
-// Typically if type *T implements Ptr, then T implements Value.
-type Ptr interface {
-	// SpannerPtr returns to a pointer of a type supported by Spanner client.
-	// SpannerPtr must use one of typed buffers in b.
-	SpannerPtr(b *Buffer) interface{}
-	// FromSpanner replaces Ptr value with the value in the typed buffer returned
-	// by SpannerPtr.
-	FromSpanner(b *Buffer) error
-}
-
-// Buffer can convert a value from a Spanner type to a Go type.
-// Supported types:
-//   - Value and Ptr
-//   - string
-//   - tspb.Timestamp
-//   - pb.InvocationState
-//   - pb.TestStatus
-//   - typepb.Variant
-//   - typepb.StringPair
-//   - proto.Message
-// TODO(nodir): move to buffer.go
-type Buffer struct {
-	NullString            spanner.NullString
-	NullTime              spanner.NullTime
-	Int64                 int64
-	StringSlice           []string
-	ByteSlice, ByteSlice2 []byte
-}
-
-// FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
-// Appropriate when FromSpanner is called only once, whereas Buffer is reusable
-// throughout function.
-func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
-	return (&Buffer{}).FromSpanner(row, ptrs...)
-}
-
-// FromSpanner reads values from row to ptrs, converting types from Spanner
-// to Go along the way.
-func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
-	if len(ptrs) != row.Size() {
-		panic("len(ptrs) != row.Size()")
-	}
-
-	for i, goPtr := range ptrs {
-		if err := b.fromSpanner(row, i, goPtr); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error {
-	b.StringSlice = b.StringSlice[:0]
-	b.ByteSlice = b.ByteSlice[:0]
-
-	var spanPtr interface{}
-	switch goPtr := goPtr.(type) {
-	case Ptr:
-		spanPtr = goPtr.SpannerPtr(b)
-	case *string:
-		spanPtr = &b.NullString
-	case **tspb.Timestamp:
-		spanPtr = &b.NullTime
-	case *pb.TestStatus:
-		spanPtr = &b.Int64
-	case *pb.Invocation_State:
-		spanPtr = &b.Int64
-	case **typepb.Variant:
-		spanPtr = &b.StringSlice
-	case *[]*typepb.StringPair:
-		spanPtr = &b.StringSlice
-	case proto.Message:
-		spanPtr = &b.ByteSlice
-	default:
-		spanPtr = goPtr
-	}
-
-	if err := row.Column(col, spanPtr); err != nil {
-		return errors.Annotate(err, "failed to read column %q", row.ColumnName(col)).Err()
-	}
-
-	if spanPtr == goPtr {
-		return nil
-	}
-
-	var err error
-	switch goPtr := goPtr.(type) {
-	case Ptr:
-		if err := goPtr.FromSpanner(b); err != nil {
-			return err
-		}
-
-	case *string:
-		*goPtr = ""
-		if b.NullString.Valid {
-			*goPtr = b.NullString.StringVal
-		}
-
-	case **tspb.Timestamp:
-		*goPtr = nil
-		if b.NullTime.Valid {
-			*goPtr = pbutil.MustTimestampProto(b.NullTime.Time)
-		}
-
-	case *pb.Invocation_State:
-		*goPtr = pb.Invocation_State(b.Int64)
-
-	case *pb.TestStatus:
-		*goPtr = pb.TestStatus(b.Int64)
-
-	case **typepb.Variant:
-		if *goPtr, err = pbutil.VariantFromStrings(b.StringSlice); err != nil {
-			// If it was written to Spanner, it should have been validated.
-			panic(err)
-		}
-
-	case *[]*typepb.StringPair:
-		*goPtr = make([]*typepb.StringPair, len(b.StringSlice))
-		for i, p := range b.StringSlice {
-			if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
-				// If it was written to Spanner, it should have been validated.
-				panic(err)
-			}
-		}
-
-	case proto.Message:
-		if reflect.ValueOf(goPtr).IsNil() {
-			return errors.Reason("nil pointer encountered").Err()
-		}
-		if err := proto.Unmarshal(b.ByteSlice, goPtr); err != nil {
-			// If it was written to Spanner, it should have been validated.
-			panic(err)
-		}
-
-	default:
-		panic("impossible")
-	}
-	return nil
-}
-
-// ToSpanner converts values from Go types to Spanner types. In addition to
-// supported types in FromSpanner, also supports []interface{} and
-// map[string]interface{}.
-func ToSpanner(v interface{}) interface{} {
-	switch v := v.(type) {
-	case Value:
-		return v.ToSpanner()
-
-	case *tspb.Timestamp:
-		if v == nil {
-			return spanner.NullTime{}
-		}
-		ret := spanner.NullTime{Valid: true}
-		ret.Time, _ = ptypes.Timestamp(v)
-		// ptypes.Timestamp always returns a timestamp, even
-		// if the returned err is non-nil, see its documentation.
-		// The error is returned only if the timestamp violates its
-		// own invariants, which will be caught on the attempt to
-		// insert this value into Spanner.
-		// This is consistent with the behavior of spanner.Insert() and
-		// other mutating functions that ignore invalid time.Time
-		// until it is time to apply the mutation.
-		// Not returning an error here significantly simplifies usage
-		// of this function and functions based on this one.
-		return ret
-
-	case pb.Invocation_State:
-		return int64(v)
-
-	case pb.TestStatus:
-		return int64(v)
-
-	case *typepb.Variant:
-		return pbutil.VariantToStrings(v)
-
-	case []*typepb.StringPair:
-		return pbutil.StringPairsToStrings(v...)
-
-	case proto.Message:
-		if isMessageNil(v) {
-			// Do not store empty messages.
-			return []byte(nil)
-		}
-
-		ret, err := proto.Marshal(v)
-		if err != nil {
-			panic(err)
-		}
-		return ret
-
-	case []interface{}:
-		ret := make([]interface{}, len(v))
-		for i, el := range v {
-			ret[i] = ToSpanner(el)
-		}
-		return ret
-
-	case map[string]interface{}:
-		ret := make(map[string]interface{}, len(v))
-		for key, el := range v {
-			ret[key] = ToSpanner(el)
-		}
-		return ret
-
-	default:
-		return v
-	}
-}
-
-// ToSpannerSlice converts a slice of Go values to a slice of Spanner values.
-// See also ToSpanner.
-func ToSpannerSlice(values ...interface{}) []interface{} {
-	return ToSpanner(values).([]interface{})
-}
-
-// ToSpannerMap converts a map of Go values to a map of Spanner values.
-// See also ToSpanner.
-func ToSpannerMap(values map[string]interface{}) map[string]interface{} {
-	return ToSpanner(values).(map[string]interface{})
-}
-
-// UpdateMap is a shortcut for spanner.UpdateMap with ToSpannerMap applied to
-// in.
-func UpdateMap(table string, in map[string]interface{}) *spanner.Mutation {
-	return spanner.UpdateMap(table, ToSpannerMap(in))
-}
-
-// InsertMap is a shortcut for spanner.InsertMap with ToSpannerMap applied to
-// in.
-func InsertMap(table string, in map[string]interface{}) *spanner.Mutation {
-	return spanner.InsertMap(table, ToSpannerMap(in))
-}
-
-// InsertOrUpdateMap is a shortcut for spanner.InsertOrUpdateMap with ToSpannerMap applied to
-// in.
-func InsertOrUpdateMap(table string, in map[string]interface{}) *spanner.Mutation {
-	return spanner.InsertOrUpdateMap(table, ToSpannerMap(in))
 }
 
 // ReadWriteTransaction calls Client(ctx).ReadWriteTransaction and unwraps
@@ -414,24 +103,6 @@ func QueryFirstRow(ctx context.Context, txn Txn, st spanner.Statement, ptrs ...i
 func Query(ctx context.Context, txn Txn, st spanner.Statement, fn func(row *spanner.Row) error) error {
 	st.Params = ToSpannerMap(st.Params)
 	return txn.Query(ctx, st).Do(fn)
-}
-
-func compress(data []byte) []byte {
-	out := make([]byte, 0, len(data)/2+len(zstdHeader)) // hope for at least 2x compression
-	out = append(out, zstdHeader...)
-	return zstdEncoder.EncodeAll(data, out)
-}
-
-func decompress(src, dest []byte) ([]byte, error) {
-	if !bytes.HasPrefix(src, zstdHeader) {
-		return nil, errors.Reason("expected ztd header").Err()
-	}
-
-	dest, err := zstdDecoder.DecodeAll(src[len(zstdHeader):], dest[:0])
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to decode from zstd").Err()
-	}
-	return dest, nil
 }
 
 func isMessageNil(m proto.Message) bool {
