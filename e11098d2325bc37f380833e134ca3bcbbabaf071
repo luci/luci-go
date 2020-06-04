@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8265b1cf_03a0981f",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T20:28:19Z",
+      "side": 1,
+      "message": "rowCount++",
+      "range": {
+        "startLine": 336,
+        "startChar": 2,
+        "endLine": 336,
+        "endChar": 15
+      },
+      "revId": "e11098d2325bc37f380833e134ca3bcbbabaf071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e5187d9_b1c8f492",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-04T20:28:19Z",
+      "side": 1,
+      "message": "to",
+      "range": {
+        "startLine": 361,
+        "startChar": 67,
+        "endLine": 361,
+        "endChar": 71
+      },
+      "revId": "e11098d2325bc37f380833e134ca3bcbbabaf071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
