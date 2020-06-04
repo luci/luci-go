@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aea452d6_8b9cb278",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-04T06:35:18Z",
+      "side": 1,
+      "message": "imo `strings.Contains(cipdPackage, \"internal\")`\n\n#hax",
+      "range": {
+        "startLine": 201,
+        "startChar": 36,
+        "endLine": 201,
+        "endChar": 50
+      },
+      "revId": "f91c0dfb1c806707a1b597cbfae0ac40c22c37b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
