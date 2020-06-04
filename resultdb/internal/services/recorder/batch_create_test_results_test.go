@@ -108,6 +108,15 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 				So(err, ShouldErrLike, "test_result: test_id: unspecified")
 			})
 
+			Convey("duplicated test_results", func() {
+				req.Requests[0].TestResult.TestId = "test-id"
+				req.Requests[0].TestResult.ResultId = "result-id"
+				req.Requests[1].TestResult.TestId = "test-id"
+				req.Requests[1].TestResult.ResultId = "result-id"
+				err := validateBatchCreateTestResultsRequest(req, now)
+				So(err, ShouldErrLike, "duplicate test results in request")
+			})
+
 			Convey("request_id", func() {
 				Convey("with an invalid character", func() {
 					// non-ascii character
