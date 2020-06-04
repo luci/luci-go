@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	homedir "github.com/mitchellh/go-homedir"
 	"go.chromium.org/luci/auth"
 )
 
@@ -110,7 +111,7 @@ var secrets struct {
 // cache).
 func SecretsDir() string {
 	secrets.once.Do(func() {
-		home, err := os.UserHomeDir()
+		home, err := homedir.Dir()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Can't resolve $HOME: %s", err)
 		} else {
