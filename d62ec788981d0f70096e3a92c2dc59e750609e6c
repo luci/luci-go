@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ccbf6272_7ba54ec7",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-04T22:57:49Z",
+      "side": 1,
+      "message": "I\u0027ve uploaded https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2231381",
+      "parentUuid": "b8662c28_cbfbb79f",
+      "range": {
+        "startLine": 355,
+        "startChar": 0,
+        "endLine": 355,
+        "endChar": 63
+      },
+      "revId": "d62ec788981d0f70096e3a92c2dc59e750609e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "98a46034_0d2e6d41",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -78,6 +102,24 @@
       "side": 1,
       "message": "I really want to deprecate task_num and kill the task_num assignment cron. Instead, we should use a string field like instance_id or container_id, etc. Custom schemas are ready for use in tsmon, and here is a demo\n: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/tsmon/examples/beep/dummy_project/dummy_project.proto?g\u003d0\n\nWe need to create and design a new proto and setup a retention policy for it. Let me know if you like to give it a try",
       "parentUuid": "98a46034_0d2e6d41",
+      "revId": "d62ec788981d0f70096e3a92c2dc59e750609e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7346a722_5e914c2e",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1521,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-04T22:57:49Z",
+      "side": 1,
+      "message": "Any reason we can\u0027t use hostname as an ID field? It already exists in target.Task schema and it is unique on GKE (and I \"made\" it unique on GAEv2). It is also naturally unique when sending metrics from GCE Provider bots.",
+      "parentUuid": "aaf4d6d5_0b106bf2",
       "revId": "d62ec788981d0f70096e3a92c2dc59e750609e6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
