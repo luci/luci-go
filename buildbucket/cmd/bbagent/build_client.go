@@ -130,6 +130,9 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.Build
 					req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.status")
 				}
 			}
+			if len(build.Tags) > 0 {
+				req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.tags")
+			}
 			b.Meta = req
 			b.Data[0] = nil
 		}
