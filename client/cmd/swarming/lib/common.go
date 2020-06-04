@@ -26,6 +26,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
@@ -335,7 +336,7 @@ func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService
 	// copy is ok because only the timeout needs to be different.
 	rpcClient := *client
 	rpcClient.Timeout = swarmingRPCRequestTimeout
-	s, err := swarming.New(&rpcClient)
+	s, err := swarming.NewService(ctx, option.WithHTTPClient(&rpcClient))
 	if err != nil {
 		return nil, err
 	}
