@@ -34,6 +34,24 @@
       "revId": "e35d5baa357f1d7b32a01ba88633f9b2e42ce4d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92ab0a80_f0dc3f61",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-04T14:35:28Z",
+      "side": 1,
+      "message": "Dev can probably be fixed at 50%. I never changed it for GetBuild. For the time being I added the comment because I think it\u0027s a weird function name.",
+      "parentUuid": "10bf8027_9efa4c9b",
+      "revId": "e35d5baa357f1d7b32a01ba88633f9b2e42ce4d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
