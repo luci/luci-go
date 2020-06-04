@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "08c43b41_49e94822",
+        "filename": "auth/client/authcli/terminate_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-04T06:59:18Z",
+      "side": 1,
+      "message": "this seems to have some insight: https://blog.codetitans.pl/post/sending-ctrl-c-signal-to-another-application-on-windows/",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
