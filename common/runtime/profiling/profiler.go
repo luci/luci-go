@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package profiling provides a tool to profile various aspects of the process.
 package profiling
 
 import (
