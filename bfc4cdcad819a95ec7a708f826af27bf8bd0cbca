@@ -39,6 +39,30 @@
       "revId": "bfc4cdcad819a95ec7a708f826af27bf8bd0cbca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bca06494_c667c0d9",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-04T23:00:50Z",
+      "side": 1,
+      "message": "paranoia, 4 bytes of randomness is not very much\nI\u0027m not sure why I picked only 4 bytes initially. Using only a prefix was also not the best idea. Maybe I was experiencing a sudden onset of stupidity at the time, it happens.",
+      "parentUuid": "c9bfc44a_8fccbb63",
+      "range": {
+        "startLine": 372,
+        "startChar": 27,
+        "endLine": 372,
+        "endChar": 32
+      },
+      "revId": "bfc4cdcad819a95ec7a708f826af27bf8bd0cbca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
