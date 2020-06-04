@@ -51,6 +51,12 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		return err
 	}
 
+	type Key struct {
+		testID   string
+		resultID string
+	}
+	KeySet := map[Key]struct{}{}
+
 	for i, r := range req.Requests {
 		if err := emptyOrEqual("invocation", r.Invocation, req.Invocation); err != nil {
 			return errors.Annotate(err, "requests: %d", i).Err()
@@ -61,6 +67,16 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		if err := pbutil.ValidateTestResult(now, r.TestResult); err != nil {
 			return errors.Annotate(err, "requests: %d: test_result", i).Err()
 		}
+
+		key := Key{
+			testID:   r.TestResult.TestId,
+			resultID: r.TestResult.ResultId,
+		}
+		if _, ok := KeySet[key]; ok {
+			// Duplicated results.
+			return errors.Reason("duplicate test results in request: testID %s, resultID %s", key.testID, key.resultID).Err()
+		}
+		KeySet[key] = struct{}{}
 	}
 	return nil
 }
