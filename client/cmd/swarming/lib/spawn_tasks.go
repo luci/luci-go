@@ -166,14 +166,14 @@ func processTasksStream(tasks io.Reader) ([]*swarming.SwarmingRpcsNewTaskRequest
 	return requests.Requests, nil
 }
 
-func createNewTasks(c context.Context, service swarmingService, requests []*swarming.SwarmingRpcsNewTaskRequest) ([]*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+func createNewTasks(ctx context.Context, service swarmingService, requests []*swarming.SwarmingRpcsNewTaskRequest) ([]*swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	var mu sync.Mutex
 	results := make([]*swarming.SwarmingRpcsTaskRequestMetadata, 0, len(requests))
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {
 		for _, request := range requests {
 			request := request
 			gen <- func() error {
-				result, err := service.NewTask(c, request)
+				result, err := service.NewTask(ctx, request)
 				if err != nil {
 					return err
 				}
