@@ -345,10 +345,15 @@ func (o *Options) FromGAEEnv() {
 	}
 	o.GAE = true
 	o.Prod = true
+	gaeInstance := os.Getenv("GAE_INSTANCE")
 	o.Hostname = fmt.Sprintf("%s-%s-%s",
 		os.Getenv("GAE_SERVICE"),
 		os.Getenv("GAE_DEPLOYMENT_ID"),
-		os.Getenv("GAE_INSTANCE")[:8],
+		// GAE instance is an opaque string to us, but it is not completely random
+		// -- as of June 2020, there appears to be a shared prefix of 10 chars among
+		// instances of the same GAE version.
+		// Since Hostname is used in monitoring, it should be unique.
+		gaeInstance[len(gaeInstance)-8:],
 	)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
 	o.AdminAddr = "-"
