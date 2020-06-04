@@ -453,6 +453,7 @@
         "is_experimental": false,
         "is_luci": true
       },
+      "recipe": "chromium",
       "repository": "https://chromium.googlesource.com/chromium/src.git",
       "buildername": "linux-rel",
       "mastername": "chromium",
@@ -494,10 +495,6 @@
   "infra": {
     "buildbucket": {
       "serviceConfigRevision": "daaff082e95b94bec84fa6e440a8b97677d6f76d"
-    },
-    "recipe": {
-      "name": "chromium",
-      "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
     },
     "swarming": {
       "taskServiceAccount": "chromium-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
