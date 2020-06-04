@@ -231,13 +231,10 @@
           </li>
           <li>Bot: {{ . | botLink }}</li>
         {{ end }}
-
-        {{ with .Recipe }}
-          <li>
-            Recipe: {{ . | recipeLink }}
-          </li>
-        {{ end }}
       {{ end }}
+      <li>
+        Recipe: {{ .BuildPage.RecipeLink.HTML }}
+      </li>
     </ul>
 
     <h2>Steps and Logs</h2>

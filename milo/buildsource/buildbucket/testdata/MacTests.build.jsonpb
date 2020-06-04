@@ -5952,10 +5952,6 @@
             "buildbucket": {
               "serviceConfigRevision": "01134cf47e8a2d5d7cea5ec1232ca64ed2f16a5c"
             },
-            "recipe": {
-              "name": "chromium",
-              "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
-            },
             "swarming": {
               "hostname": "chromium-swarm.appspot.com"
             }
@@ -5986,6 +5982,7 @@
       "parent_got_swarming_client_revision": "0e3e1c4dc4e79f25a5b58fcbc135dc93183c0c54",
       "parent_got_v8_revision_cp": "refs/heads/7.4.32@{#1}",
       "parent_got_revision_cp": "refs/heads/master@{#627439}",
+      "recipe": "chromium",
       "swarm_hashes": {
         "cronet_tests": "b38fff5c2eb81ce866c3e02e94f7a336e457172d",
         "interactive_ui_tests": "bd6c4e3464141c3b9e601cbfd444bdd19837a7cb",
@@ -6161,10 +6158,6 @@
             },
             "swarming": {
               "hostname": "chromium-swarm.appspot.com"
-            },
-            "recipe": {
-              "name": "chromium",
-              "cipdPackage": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build"
             }
           },
           "createdBy": "user:luci-scheduler@appspot.gserviceaccount.com",
