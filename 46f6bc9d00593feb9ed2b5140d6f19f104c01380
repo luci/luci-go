@@ -63,6 +63,30 @@
       "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e692180a_a967febd",
+        "filename": "auth/client/authcli/terminate_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-04T17:43:50Z",
+      "side": 1,
+      "message": "Launching a new console is not an acceptable UX here though. `luci-auth context -- ./tool.exe` should run the tool in the same cmd.exe window.",
+      "parentUuid": "fe7980b7_1bd522d1",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
