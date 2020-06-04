@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "c6a518a9_1fc67d6b",
+        "filename": "auth/client/authcli/authcli.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 656,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-06-04T15:44:55Z",
+      "side": 1,
+      "message": "Takuto, Junji; maybe it should be done in run_isolated/cmdrunner?",
+      "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "08c43b41_49e94822",
         "filename": "auth/client/authcli/terminate_windows.go",
         "patchSetId": 2
@@ -13,6 +30,30 @@
       "writtenOn": "2020-06-04T06:59:18Z",
       "side": 1,
       "message": "this seems to have some insight: https://blog.codetitans.pl/post/sending-ctrl-c-signal-to-another-application-on-windows/",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe7980b7_1bd522d1",
+        "filename": "auth/client/authcli/terminate_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-06-04T15:44:55Z",
+      "side": 1,
+      "message": "The only fool proof way is to start the children process in a separate console. That\u0027s what the Swarming bot does. Anyhow it\u0027s still an improvement.",
+      "parentUuid": "08c43b41_49e94822",
       "range": {
         "startLine": 26,
         "startChar": 0,
