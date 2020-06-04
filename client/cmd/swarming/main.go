@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main is a client to a Swarming server.
+//
+// The reference server python implementation documentation can be found at
+// https://github.com/luci/luci-py/tree/master/appengine/swarming/doc
 package main
 
 import (

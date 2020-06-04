@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main is a .isolate compiler that compiles .isolate files into
+// .isolated files and can also act as a client to an Isolate server.
+//
+// It is designed to be compatible with the reference python implementation at
+// https://github.com/luci/luci-py/tree/master/client.
 package main
 
 import (
