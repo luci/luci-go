@@ -38,36 +38,36 @@ func (s testService) Client() *http.Client {
 	return nil
 }
 
-func (s testService) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-	return s.newTask(c, req)
+func (s testService) NewTask(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+	return s.newTask(ctx, req)
 }
 
-func (s testService) CountTasks(c context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTasksCount, error) {
-	return s.countTasks(c, start, tags...)
+func (s testService) CountTasks(ctx context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTasksCount, error) {
+	return s.countTasks(ctx, start, tags...)
 }
 
-func (s testService) ListTasks(c context.Context, limit int64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
-	return s.listTasks(c, limit, state, tags, fields)
+func (s testService) ListTasks(ctx context.Context, limit int64, state string, tags []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
+	return s.listTasks(ctx, limit, state, tags, fields)
 }
 
-func (s testService) CancelTask(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
-	return s.cancelTask(c, taskID, req)
+func (s testService) CancelTask(ctx context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
+	return s.cancelTask(ctx, taskID, req)
 }
 
-func (s testService) GetTaskRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
-	return s.getTaskRequest(c, taskID)
+func (s testService) GetTaskRequest(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
+	return s.getTaskRequest(ctx, taskID)
 }
 
-func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
-	return s.getTaskResult(c, taskID, perf)
+func (s testService) GetTaskResult(ctx context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
+	return s.getTaskResult(ctx, taskID, perf)
 }
 
-func (s testService) GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
-	return s.getTaskOutput(c, taskID)
+func (s testService) GetTaskOutput(ctx context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
+	return s.getTaskOutput(ctx, taskID)
 }
 
-func (s testService) GetTaskOutputs(c context.Context, taskID, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
-	return s.getTaskOutputs(c, taskID, output, ref)
+func (s testService) GetTaskOutputs(ctx context.Context, taskID, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
+	return s.getTaskOutputs(ctx, taskID, output, ref)
 }
 
 func (s *testService) ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error) {

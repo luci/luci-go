@@ -72,8 +72,6 @@ func (v *Value) Set(key string) error {
 	idx := strings.Index(key, "=")
 	switch {
 	case idx == -1:
-		break
-
 	case idx == 0:
 		return errors.New("cannot have a k=v pair with empty key")
 
