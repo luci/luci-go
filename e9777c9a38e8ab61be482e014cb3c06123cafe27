@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41ae9779_4496554f",
+        "filename": "client/cmd/swarming/lib/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-04T08:28:30Z",
+      "side": 1,
+      "message": "return err when err !\u003d nil",
+      "range": {
+        "startLine": 90,
+        "startChar": 8,
+        "endLine": 90,
+        "endChar": 9
+      },
+      "revId": "e9777c9a38e8ab61be482e014cb3c06123cafe27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
