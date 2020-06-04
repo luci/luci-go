@@ -327,11 +327,13 @@ func (b *bqExporter) queryTestResults(
 
 	rows := make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
+	rowCount := 0
 	err = q.Run(ctx, txn, func(tr testresults.QueryItem) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
 		rows = append(rows, b.generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
 		batchSize += proto.Size(tr)
+		rowCount++
 		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
 			select {
 			case <-ctx.Done():
@@ -356,6 +358,10 @@ func (b *bqExporter) queryTestResults(
 		}
 	}
 
+	// Log the number of fetched rows so that later we can compare it to
+	// the value in QueryTestResultsStatistics. This is to help debugging
+	// crbug.com/1090671.
+	logging.Debugf(ctx, "fetched %d rows for invocations %q", rowCount, q.InvocationIDs)
 	return nil
 }
 
