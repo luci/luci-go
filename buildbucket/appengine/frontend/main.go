@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // isBeefy returns whether the request was intended for the beefy service.
@@ -78,38 +78,48 @@ func main() {
 			req.URL.Host = target.Host
 			req.URL.Path = fmt.Sprintf("%s%s", target.Path, req.URL.Path)
 		}
+		// makeOverride returns a prpc.Override which allows the given percentage of requests
+		// through to this service, proxying the remainder to Python.
+		makeOverride := func(prodPct, devPct int) func(*router.Context) bool {
+			return func(ctx *router.Context) bool {
+				pct := prodPct
+				if isDev(ctx.Request) {
+					pct = devPct
+				}
+				switch val := ctx.Request.Header.Get("Should-Proxy"); val {
+				case "true":
+					pct = 0
+					logging.Debugf(ctx.Context, "request demanded to be proxied")
+				case "false":
+					pct = 100
+					logging.Debugf(ctx.Context, "request demanded not to be proxied")
+				}
+				if mathrand.Intn(ctx.Context, 100) < pct {
+					return false
+				}
+				target := pythonURL
+				if isBeefy(ctx.Request) {
+					target = beefyURL
+				}
+				logging.Debugf(ctx.Context, "proxying request to %s", target)
+				prx.ServeHTTP(ctx.Writer, ctx.Request)
+				return true
+			}
+		}
 
 		srv.PRPC.AccessControl = prpc.AllowOriginAll
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
-		buildbucketpb.RegisterBuildsServer(srv.PRPC, rpc.New())
+		pb.RegisterBuildsServer(srv.PRPC, rpc.New())
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 		srv.PRPC.HackFixFieldMasksForJSON = true
-		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "GetBuild", func(ctx *router.Context) bool {
-			// Allow some requests to hit this service, proxy the rest back to Python.
-			pct := 50
-			if isDev(ctx.Request) {
-				// Dev has a lower volume of traffic and is less critical.
-				pct = 50
-			}
-			switch val := ctx.Request.Header.Get("Should-Proxy"); val {
-			case "true":
-				pct = 0
-				logging.Debugf(ctx.Context, "request demanded to be proxied")
-			case "false":
-				pct = 100
-				logging.Debugf(ctx.Context, "request demanded not to be proxied")
-			}
-			if mathrand.Intn(ctx.Context, 100) < pct {
-				return false
-			}
-			target := pythonURL
-			if isBeefy(ctx.Request) {
-				target = beefyURL
-			}
-			logging.Debugf(ctx.Context, "proxying request to %s", target)
-			prx.ServeHTTP(ctx.Writer, ctx.Request)
-			return true
-		})
+
+		// makeOverride(prod % -> Go, dev % -> Go).
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "Batch", makeOverride(0, 0))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "CancelBuild", makeOverride(0, 0))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "GetBuild", makeOverride(50, 50))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "SearchBuilds", makeOverride(0, 0))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "ScheduleBuild", makeOverride(0, 0))
+		srv.PRPC.RegisterOverride("buildbucket.v2.Builds", "UpdateBuild", makeOverride(0, 0))
 		return nil
 	})
 }
