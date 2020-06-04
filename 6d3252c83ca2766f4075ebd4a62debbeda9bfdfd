@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db3b06d3_98c8797f",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-04T06:43:16Z",
+      "side": 1,
+      "message": "nit\n\n   req.GetBody \u003d func() ...\n   req.Body, _ \u003d req.GetBody()\n\n(So you don\u0027t end up with a mismatch if it changes)",
+      "revId": "6d3252c83ca2766f4075ebd4a62debbeda9bfdfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
