@@ -87,6 +87,30 @@
       "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "213b39c9_7e61e6bb",
+        "filename": "auth/client/authcli/terminate_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-06-04T17:47:32Z",
+      "side": 1,
+      "message": "Oh I know that, so that fine enough for now. We can iterate later.",
+      "parentUuid": "e692180a_a967febd",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "46f6bc9d00593feb9ed2b5140d6f19f104c01380",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
