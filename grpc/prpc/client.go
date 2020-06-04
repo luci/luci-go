@@ -260,6 +260,9 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 
 			// Send the request.
 			req.Body = ioutil.NopCloser(bytes.NewReader(in))
+			req.GetBody = func() (io.ReadCloser, error) {
+				return ioutil.NopCloser(bytes.NewReader(in)), nil
+			}
 			res, err := ctxhttp.Do(ctx, c.getHTTPClient(), req)
 			if res != nil && res.Body != nil {
 				defer res.Body.Close()
