@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e594a09_7f22b1d5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-04T22:45:12Z",
+      "side": 1,
+      "message": "which application stick to GAE 1.9 that is deprecated already\nhttps://cloud.google.com/appengine/docs/standard/go/",
+      "range": {
+        "startLine": 11,
+        "startChar": 19,
+        "endLine": 11,
+        "endChar": 43
+      },
+      "revId": "bc155a79c96e1f6a83a03fdecb56bf3491f7ab0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
