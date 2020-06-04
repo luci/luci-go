@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main is an Isolate server client.
+//
+// It can efficiently download and upload files from/to an Isolate server. It
+// is significantly faster than the original python implementation.
+//
+// The reference server python implementation documentation can be found at
+// https://github.com/luci/luci-py/tree/master/appengine/isolate/doc
 package main
 
 import (
