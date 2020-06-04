@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -29,6 +30,11 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+type TestResultKey struct {
+	testID   string
+	resultID string
+}
 
 func emptyOrEqual(name, actual, expected string) error {
 	switch actual {
@@ -51,6 +57,7 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		return err
 	}
 
+	resultSet := map[TestResultKey]struct{}{}
 	for i, r := range req.Requests {
 		if err := emptyOrEqual("invocation", r.Invocation, req.Invocation); err != nil {
 			return errors.Annotate(err, "requests: %d", i).Err()
@@ -61,6 +68,16 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		if err := pbutil.ValidateTestResult(now, r.TestResult); err != nil {
 			return errors.Annotate(err, "requests: %d: test_result", i).Err()
 		}
+
+		key := TestResultKey{
+			testID:   r.TestResult.TestId,
+			resultID: r.TestResult.ResultId,
+		}
+		if _, ok := resultSet[key]; ok {
+			//Duplicated results.
+			return errors.Annotate(fmt.Errorf("duplicated test results in request"), "requests: %d: test_result", i).Err()
+		}
+		resultSet[key] = struct{}{}
 	}
 	return nil
 }
