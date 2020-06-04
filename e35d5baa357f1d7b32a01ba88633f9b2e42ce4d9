@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e34d190c_db38d7e7",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-04T05:08:01Z",
+      "side": 1,
+      "message": "nit: add one liner to help those tweaking percentages below\n// makeOverride(Prod%, Dev%) controls how much traffic is handled by Go.",
+      "revId": "e35d5baa357f1d7b32a01ba88633f9b2e42ce4d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
