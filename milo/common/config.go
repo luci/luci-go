@@ -76,6 +76,9 @@ type Console struct {
 	Builders []string
 
 	// Def is the actual underlying proto Console definition.
+	// If this console is external (i.e. a reference to a console from
+	// another project), this will contain the resolved Console definition,
+	// but with ExternalId and ExternalProject also set.
 	Def config.Console `gae:",noindex"`
 
 	// _ is a "black hole" which absorbs any extra props found during a
@@ -83,13 +86,26 @@ type Console struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// IsExternal returns true if the console does not belong to its parent project.
+func (c *Console) IsExternal() bool {
+	return c.Def.ExternalId != ""
+}
+
 func (c *Console) ConsoleID() ConsoleID {
-	return ConsoleID{Project: c.ProjectID(), ID: c.ID}
+	id := c.ID
+	if c.IsExternal() {
+		id = c.Def.ExternalId
+	}
+	return ConsoleID{Project: c.ProjectID(), ID: id}
 }
 
 // ProjectID retrieves the project ID string of the console out of the Console's
-// parent key.
+// parent key. If the console is external, it will return the ID of the
+// referenced project instead.
 func (c *Console) ProjectID() string {
+	if c.IsExternal() {
+		return c.Def.ExternalProject
+	}
 	if c.Parent == nil {
 		return ""
 	}
@@ -350,12 +366,13 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	return settings, nil
 }
 
-// updateProjectConsoles updates all of the consoles for a given project,
-// and then returns a set of known console names.
-func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
-	proj := config.Project{}
-	if err := protoutil.UnmarshalTextML(cfg.Content, &proj); err != nil {
-		return nil, errors.Annotate(err, "unmarshalling proto").Err()
+// updateProjectConsoles updates all of the consoles in Datastore for a given
+// project. The consolesByProjectAndId param should contain all consoles from
+// all known configs, and is used to resolve references to external consoles.
+func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config, consolesByProjectAndId map[string]map[string]*config.Console) error {
+	proj, err := parseProject(cfg)
+	if err != nil {
+		return err
 	}
 
 	// Extract the headers into a map for convenience.
@@ -363,27 +380,34 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	for _, header := range proj.Headers {
 		headers[header.Id] = header
 	}
-	// Keep a list of known consoles so we can prune deleted ones later.
-	knownConsoles := stringset.New(len(proj.Consoles))
 	// Save the project into the datastore.
 	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
 	if proj.BuildBugTemplate != nil {
 		project.BuildBugTemplate = *proj.BuildBugTemplate
 	}
 	if err := datastore.Put(c, &project); err != nil {
-		return nil, err
+		return err
 	}
 	parentKey := datastore.KeyForObj(c, &project)
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		toPut := make([]*Console, 0, len(proj.Consoles))
 		for i, pc := range proj.Consoles {
+			// Resolve the console if it refers to one from a different project.
+			if pc.ExternalProject != "" {
+				// If ExternalProject is set, validation ensures ExternalId is also set.
+				externalConsole, ok := consolesByProjectAndId[pc.ExternalProject][pc.ExternalId]
+				if !ok {
+					return fmt.Errorf("external console %s not found at %s:%s", pc.Id, pc.ExternalProject, pc.ExternalId)
+				}
+				// Copy the fields of the external console into this one.
+				proto.Merge(pc, externalConsole)
+			}
 			if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
 				// Inject a header if HeaderId is specified, and it doesn't already have one.
 				pc.Header = header
 			}
-			knownConsoles.Add(pc.Id)
 			con, err := GetConsole(c, projectID, pc.Id)
 			switch {
 			case err == ErrConsoleNotFound:
@@ -410,46 +434,89 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 
 	if err != nil {
 		logging.WithError(err).Errorf(c, "failed to save consoles of project %q at revision %q", projectID, cfg.Revision)
-		return nil, err
+		return err
 	}
 
 	logging.Infof(c, "saved consoles of project %q at revision %q", projectID, cfg.Revision)
 
-	return knownConsoles, nil
+	return nil
 }
 
-// UpdateConsoles updates internal console definitions entities based off luci-config.
+// parseProject parses the provided config proto and returns a *config.Project.
+func parseProject(cfg *configInterface.Config) (*config.Project, error) {
+	proj := config.Project{}
+	if err := protoutil.UnmarshalTextML(cfg.Content, &proj); err != nil {
+		return nil, errors.Annotate(err, "unmarshalling proto failed").Err()
+	}
+	return &proj, nil
+}
+
+// getConsolesByProjectAndId returns a map of maps, indexing config.Console
+// protos by their project ID and console ID. The map does not include external
+// consoles.
+func getConsolesByProjectAndId(configs []configInterface.Config) (map[string]map[string]*config.Console, error) {
+	consolesByProject := make(map[string]map[string]*config.Console)
+	for _, cfg := range configs {
+		projectName := cfg.ConfigSet.Project()
+		if projectName == "" {
+			return nil, fmt.Errorf("invalid config set path %s", cfg.ConfigSet)
+		}
+		// Add the map upfront so that we know the project exists. If there's
+		// a parsing error, this means we won't delete all of this project's
+		// consoles later.
+		consolesByProject[projectName] = make(map[string]*config.Console)
+		proj, err := parseProject(&cfg)
+		if err != nil {
+			continue
+		}
+		for _, pc := range proj.Consoles {
+			// Store any non-external consoles in the map.
+			// This map will be used to resolve external consoles,
+			// and we don't allow them to resolve to other external
+			// consoles.
+			if pc.ExternalId == "" {
+				consolesByProject[projectName][pc.Id] = pc
+			}
+		}
+	}
+	return consolesByProject, nil
+}
+
+// UpdateConsoles updates internal console definition entities based off luci-config.
 func UpdateConsoles(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 
 	logging.Debugf(c, "fetching configs for %s", cfgName)
 	// Acquire the raw config client.
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
-	// Project configs for Milo contains console definitions.
+	// Project configs for Milo contain console definitions.
 	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
 		return errors.Annotate(err, "while fetching project configs").Err()
 	}
 	logging.Infof(c, "got %d project configs", len(configs))
 
+	// Collect a map of consoles by project ID and console ID, so we can use
+	// it to resolve external consoles later.
+	consolesByProjectAndId, err := getConsolesByProjectAndId(configs)
+	if err != nil {
+		return errors.Annotate(err, "error parsing project configs").Err()
+	}
+
 	merr := errors.MultiError{}
-	knownProjects := map[string]stringset.Set{}
 	// Iterate through each project config, extracting the console definition.
 	for _, cfg := range configs {
 		projectName := cfg.ConfigSet.Project()
 		if projectName == "" {
-			return fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
+			return fmt.Errorf("invalid config set path %s", cfg.ConfigSet)
 		}
-		knownProjects[projectName] = nil
-		if kp, err := updateProjectConsoles(c, projectName, &cfg); err != nil {
+		if err := updateProjectConsoles(c, projectName, &cfg, consolesByProjectAndId); err != nil {
 			err = errors.Annotate(err, "processing project %s", projectName).Err()
 			merr = append(merr, err)
-		} else {
-			knownProjects[projectName] = kp
 		}
 	}
 
-	// Delete all the consoles that no longer exists or are part of deleted projects.
+	// Delete all the consoles that no longer exist or are part of deleted projects.
 	toDelete := []*datastore.Key{}
 	err = datastore.Run(c, datastore.NewQuery("Console"), func(key *datastore.Key) error {
 		proj := key.Parent().StringID()
@@ -457,7 +524,7 @@ func UpdateConsoles(c context.Context) error {
 		// If this console is either:
 		// 1. In a project that no longer exists, or
 		// 2. Not in the project, then delete it.
-		knownConsoles, ok := knownProjects[proj]
+		knownConsoles, ok := consolesByProjectAndId[proj]
 		if !ok {
 			logging.Infof(
 				c, "deleting %s/%s because the project no longer exists", proj, id)
@@ -469,7 +536,7 @@ func UpdateConsoles(c context.Context) error {
 			// try again the next cron cycle.
 			return nil
 		}
-		if !knownConsoles.Has(id) {
+		if _, ok := knownConsoles[id]; !ok {
 			logging.Infof(
 				c, "deleting %s/%s because the console no longer exists", proj, id)
 			toDelete = append(toDelete, key)
@@ -484,13 +551,13 @@ func UpdateConsoles(c context.Context) error {
 
 	// Print some stats.
 	processedConsoles := 0
-	for _, cons := range knownProjects {
-		if cons != nil {
-			processedConsoles += cons.Len()
+	for _, consoles := range consolesByProjectAndId {
+		if consoles != nil {
+			processedConsoles += len(consoles)
 		}
 	}
 	logging.Infof(
-		c, "processed %d consoles over %d projects", processedConsoles, len(knownProjects))
+		c, "processed %d consoles over %d projects", processedConsoles, len(consolesByProjectAndId))
 
 	if len(merr) == 0 {
 		return nil
