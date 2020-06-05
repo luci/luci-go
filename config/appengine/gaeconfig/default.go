@@ -18,12 +18,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	"go.chromium.org/luci/appengine/datastorecache"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/appengine/backend/datastore"
 	"go.chromium.org/luci/config/appengine/backend/memcache"
+	"go.chromium.org/luci/config/cfgclient"
+	erroringImpl "go.chromium.org/luci/config/impl/erroring"
 	"go.chromium.org/luci/config/impl/filesystem"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
@@ -31,6 +35,8 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/erroring"
 	"go.chromium.org/luci/config/server/cfgclient/backend/format"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/vars"
+	"go.chromium.org/luci/server/auth"
 	serverCaching "go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
@@ -186,6 +192,12 @@ func UseFlex(c context.Context) context.Context {
 // Lookups move from the bottom of the list up through the top, then to the
 // primary backend service.
 func installConfigBackend(c context.Context, s *Settings, be backend.B, ccfg cacheConfig) context.Context {
+	// Install the new cfgclient implementation into the context. It will
+	// eventually replace everything below.
+	c = cfgclient.Use(c, newClientFromSettings(c, s))
+
+	// Legacy code below.
+
 	if be == nil {
 		// Non-testing, build a Backend.
 		be = getPrimaryBackend(c, s)
@@ -245,6 +257,21 @@ func getPrimaryBackend(c context.Context, settings *Settings) backend.B {
 //
 // See New for details.
 func devServerBackend() backend.B {
+	dir, err := devServerConfigsDir()
+	if err != nil {
+		return erroring.New(err)
+	}
+	fs, err := filesystem.New(dir)
+	if err != nil {
+		return erroring.New(err)
+	}
+	return &client.Backend{&testconfig.Provider{
+		Base: fs,
+	}}
+}
+
+// devServerConfigsDir finds a directory with configs to use on the dev server.
+func devServerConfigsDir() (string, error) {
 	pwd := os.Getenv("PWD") // os.Getwd works funny with symlinks, use PWD
 	candidates := []string{
 		filepath.Join(pwd, devCfgDir),
@@ -252,14 +279,34 @@ func devServerBackend() backend.B {
 	}
 	for _, dir := range candidates {
 		if _, err := os.Stat(dir); err == nil {
-			fs, err := filesystem.New(dir)
-			if err != nil {
-				return erroring.New(err)
-			}
-			return &client.Backend{&testconfig.Provider{
-				Base: fs,
-			}}
+			return dir, nil
 		}
 	}
-	return erroring.New(fmt.Errorf("luci-config: could not find local configs in any of %s", candidates))
+	return "", fmt.Errorf("luci-config: could not find local configs in any of %s", candidates)
+}
+
+func newClientFromSettings(c context.Context, s *Settings) config.Interface {
+	var configsDir string
+	if s.ConfigServiceHost == "" && info.IsDevAppServer(c) {
+		var err error
+		if configsDir, err = devServerConfigsDir(); err != nil {
+			return erroringImpl.New(err)
+		}
+	}
+	client, err := cfgclient.New(cfgclient.Options{
+		Vars:        &vars.Vars,
+		ServiceHost: s.ConfigServiceHost,
+		ConfigsDir:  configsDir,
+		ClientFactory: func(ctx context.Context) (*http.Client, error) {
+			t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+			if err != nil {
+				return nil, err
+			}
+			return &http.Client{Transport: t}, nil
+		},
+	})
+	if err != nil {
+		return erroringImpl.New(err)
+	}
+	return client
 }
