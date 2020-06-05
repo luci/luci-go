@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package deprecated
+package annotee
 
 import (
 	"context"
@@ -30,13 +30,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestAnnotations(t *testing.T) {
+func TestStep(t *testing.T) {
 	t.Parallel()
 
 	Convey("convert", t, func() {
-		basePath := filepath.Join("testdata", "annotations")
-		inputPath := filepath.Join(basePath, "annotations.pb.txt")
-		wantPath := filepath.Join(basePath, "expected_steps.pb.txt")
+		inputPath := filepath.Join("testdata", "steps.pb.txt")
+		wantPath := filepath.Join("testdata", "expected_steps.pb.txt")
 
 		inputFile, err := ioutil.ReadFile(inputPath)
 		So(err, ShouldBeNil)
