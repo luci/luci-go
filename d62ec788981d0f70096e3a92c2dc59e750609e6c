@@ -123,6 +123,24 @@
       "revId": "d62ec788981d0f70096e3a92c2dc59e750609e6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff9204ad_a7e308ac",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1521,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-05T02:05:40Z",
+      "side": 1,
+      "message": "monarch.Acqusitions.Task[\u0027hostname\u0027] is already being used to store the version of the serving binary in gae_ts_mon. It\u0027s definitely bad choice, but that\u0027s the main usage the field.\n\nThe logical meaning of a field for a Target schema should remain the same regardless of the application. If not, then a different schema should be used.\nFor example, monarch.GKE.Task[\u0027hostname\u0027] can have different meaning than monarch.Acqusitions.Task[\u0027hostname\u0027] does.",
+      "parentUuid": "7346a722_5e914c2e",
+      "revId": "d62ec788981d0f70096e3a92c2dc59e750609e6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
