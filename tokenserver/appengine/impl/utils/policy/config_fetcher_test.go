@@ -20,11 +20,10 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -76,7 +75,7 @@ func TestConfigFetcher(t *testing.T) {
 }
 
 func prepareServiceConfig(c context.Context, configs map[string]string) context.Context {
-	return testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
-		config.Set("services/" + info.AppID(c)): configs,
+	return cfgclient.Use(c, memory.New(map[config.Set]memory.Files{
+		"services/${appid}": configs,
 	}))
 }

@@ -24,8 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 )
 
 // luciConfigFetcher implements ConfigFetcher interface via LUCI Config client.
@@ -44,13 +43,12 @@ func (f *luciConfigFetcher) Revision() string {
 }
 
 func (f *luciConfigFetcher) FetchTextProto(c context.Context, path string, out proto.Message) error {
-	configSet := cfgclient.CurrentServiceConfigSet(c)
-	logging.Infof(c, "Reading %q from config set %q", path, configSet)
+	logging.Infof(c, "Reading %q", path)
 	c, cancel := context.WithTimeout(c, 40*time.Second) // URL fetch deadline
 	defer cancel()
 
 	var meta config.Meta
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(out), &meta); err != nil {
+	if err := cfgclient.Get(c, "services/${appid}", path, cfgclient.ProtoText(out), &meta); err != nil {
 		return err
 	}
 

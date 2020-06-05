@@ -17,16 +17,13 @@ package projectscope
 import (
 	"context"
 
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
-
-	"go.chromium.org/luci/config/appengine/gaeconfig"
-
 	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	configset "go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
@@ -76,20 +73,9 @@ func importIdentities(c context.Context, cfg *config.ProjectsCfg) error {
 
 // fetchConfigs loads proto messages with rules from the config.
 func fetchConfigs(c context.Context) (*config.ProjectsCfg, string, error) {
-	// TODO(fmatenaar): Refactor config validation to offer rendering here.
-	// Because projects.cfg is stored part of luci config service and
-	// rendering is not supported outside of validation, we need
-	// to manually resolve the config service name to fetch
-	// project.cfg proto
-	configServiceAppID, err := gaeconfig.GetConfigServiceAppID(c)
-	if err != nil {
-		return nil, "", err
-	}
-	configSet := configset.ServiceSet(configServiceAppID)
 	cfg := &config.ProjectsCfg{}
-
 	var meta configset.Meta
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, projectsCfg, textproto.Message(cfg), &meta); err != nil {
+	if err := cfgclient.Get(c, "services/${config_service_appid}", projectsCfg, cfgclient.ProtoText(cfg), &meta); err != nil {
 		return nil, "", err
 	}
 	return cfg, meta.Revision, nil
