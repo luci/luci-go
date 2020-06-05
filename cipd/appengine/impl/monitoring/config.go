@@ -16,18 +16,13 @@ package monitoring
 
 import (
 	"context"
-	"net/http"
-
-	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/appengine/gaeconfig"
-	"go.chromium.org/luci/config/impl/remote"
-	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/config/v1"
@@ -52,19 +47,15 @@ type clientMonitoringWhitelist struct {
 
 const cfgFile = "monitoring.cfg"
 
-func importConfig(ctx context.Context, cli config.Interface) error {
-	rev := ""
+// ImportConfig is called from a cron to import monitoring.cfg into datastore.
+func ImportConfig(ctx context.Context) error {
 	wl := &api.ClientMonitoringWhitelist{}
-	switch cfg, err := cli.GetConfig(ctx, cfgclient.CurrentServiceConfigSet(ctx), cfgFile, false); {
+	meta := config.Meta{}
+	switch err := cfgclient.Get(ctx, "services/${appid}", cfgFile, cfgclient.ProtoText(wl), &meta); {
 	case err == config.ErrNoConfig:
 		logging.Debugf(ctx, "%q not found; assuming empty", cfgFile)
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch %q", cfgFile).Err()
-	default:
-		rev = cfg.Revision
-		if err := proto.UnmarshalText(cfg.Content, wl); err != nil {
-			return errors.Annotate(err, "failed to parse %q", cfgFile).Err()
-		}
+		return errors.Annotate(err, "failed to import %q", cfgFile).Err()
 	}
 
 	ent := &clientMonitoringWhitelist{
@@ -73,35 +64,20 @@ func importConfig(ctx context.Context, cli config.Interface) error {
 	if err := datastore.Get(ctx, ent); err != nil && err != datastore.ErrNoSuchEntity {
 		return err
 	}
-	if ent.Revision == rev {
+	if ent.Revision == meta.Revision {
 		return nil
 	}
-	logging.Debugf(ctx, "found %q revision %q", cfgFile, rev)
+	logging.Debugf(ctx, "found %q revision %q", cfgFile, meta.Revision)
 	ent = &clientMonitoringWhitelist{
 		ID:       wlID,
 		Entries:  make([]clientMonitoringConfig, len(wl.GetClientMonitoringConfig())),
-		Revision: rev,
+		Revision: meta.Revision,
 	}
 	for i, m := range wl.GetClientMonitoringConfig() {
 		ent.Entries[i].IPWhitelist = m.IpWhitelist
 		ent.Entries[i].Label = m.Label
 	}
 	return datastore.Put(ctx, ent)
-}
-
-func ImportConfig(ctx context.Context) error {
-	s, err := gaeconfig.FetchCachedSettings(ctx)
-	if err != nil {
-		return err
-	}
-	cli := remote.New(s.ConfigServiceHost, false, func(ctx context.Context) (*http.Client, error) {
-		t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-		if err != nil {
-			return nil, err
-		}
-		return &http.Client{Transport: t}, nil
-	})
-	return importConfig(ctx, cli)
 }
 
 // monitoringConfig returns the *clientMonitoringConfig which applies to the
