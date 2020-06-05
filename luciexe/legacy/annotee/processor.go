@@ -32,9 +32,9 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/logdog/client/annotee/annotation"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
 )
 
 const (
