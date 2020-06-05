@@ -21,6 +21,7 @@ import (
 	gae "go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -31,21 +32,22 @@ import (
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
-	ctx := gae.UseWithAppID(context.Background(), "cipd")
+
+	ctx := gae.Use(context.Background())
 
 	Convey("importConfig", t, func() {
 		Convey("invalid", func() {
-			cli := memory.New(map[config.Set]memory.Files{
-				"services/cipd": map[string]string{
+			ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
+				"services/${appid}": map[string]string{
 					cfgFile: "invalid",
 				},
-			})
-			So(importConfig(ctx, cli), ShouldErrLike, "failed to parse")
+			}))
+			So(ImportConfig(ctx), ShouldErrLike, "failed to import")
 		})
 
 		Convey("empty", func() {
-			cli := memory.New(map[config.Set]memory.Files{
-				"services/cipd": map[string]string{
+			ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
+				"services/${appid}": map[string]string{
 					cfgFile: `
 					client_monitoring_config <
 						ip_whitelist: "whitelist-1"
@@ -57,8 +59,8 @@ func TestConfig(t *testing.T) {
 					>
 					`,
 				},
-			})
-			So(importConfig(ctx, cli), ShouldBeNil)
+			}))
+			So(ImportConfig(ctx), ShouldBeNil)
 
 			wl := &clientMonitoringWhitelist{
 				ID: wlID,
