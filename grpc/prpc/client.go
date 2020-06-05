@@ -30,7 +30,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
+	anypb "github.com/golang/protobuf/ptypes/any"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 
 	"golang.org/x/net/context/ctxhttp"
@@ -455,7 +455,7 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 }
 
 // readStatusDetails reads google.rpc.Status.details from the response headers.
-func (c *Client) readStatusDetails(r *http.Response) ([]*any.Any, error) {
+func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 	values := r.Header[HeaderStatusDetail]
 	if len(values) == 0 {
 		return nil, nil
@@ -463,7 +463,7 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*any.Any, error) {
 
 	b64 := base64.StdEncoding
 
-	ret := make([]*any.Any, len(values))
+	ret := make([]*anypb.Any, len(values))
 	var buf []byte
 	for i, v := range values {
 		sz := b64.DecodedLen(len(v))
@@ -476,7 +476,7 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*any.Any, error) {
 			return nil, fmt.Errorf("invalid header %s: %s", HeaderStatusDetail, v)
 		}
 
-		msg := &any.Any{}
+		msg := &anypb.Any{}
 		if err := proto.Unmarshal(buf[:n], msg); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal a status detail: %s", err)
 		}

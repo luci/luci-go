@@ -28,7 +28,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
+	anypb "github.com/golang/protobuf/ptypes/any"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -168,7 +168,7 @@ func errorStatus(err error) (st *status.Status, httpStatus int) {
 	return
 }
 
-func statusDetailsToHeaderValues(details []*any.Any, format Format) ([]string, error) {
+func statusDetailsToHeaderValues(details []*anypb.Any, format Format) ([]string, error) {
 	ret := make([]string, len(details))
 
 	for i, det := range details {

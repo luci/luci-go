@@ -17,8 +17,8 @@ package google
 import (
 	"time"
 
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	durationpb "github.com/golang/protobuf/ptypes/duration"
+	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 )
 
 // NewTimestamp creates a new Timestamp protobuf from a time.Time type.
-func NewTimestamp(v time.Time) *timestamp.Timestamp {
+func NewTimestamp(v time.Time) *timestamppb.Timestamp {
 	return LoadTimestamp(nil, v)
 }
 
@@ -35,13 +35,13 @@ func NewTimestamp(v time.Time) *timestamp.Timestamp {
 //
 // If the supplied Timestamp is nil and the time is non-zero, a new Timestamp
 // will be generated. The populated Timestamp will be returned.
-func LoadTimestamp(t *timestamp.Timestamp, v time.Time) *timestamp.Timestamp {
+func LoadTimestamp(t *timestamppb.Timestamp, v time.Time) *timestamppb.Timestamp {
 	if t == nil {
 		if v.IsZero() {
 			return nil
 		}
 
-		t = &timestamp.Timestamp{}
+		t = &timestamppb.Timestamp{}
 	}
 
 	t.Seconds = v.Unix()
@@ -50,7 +50,7 @@ func LoadTimestamp(t *timestamp.Timestamp, v time.Time) *timestamp.Timestamp {
 }
 
 // TimeFromProto returns the time.Time associated with a Timestamp protobuf.
-func TimeFromProto(t *timestamp.Timestamp) time.Time {
+func TimeFromProto(t *timestamppb.Timestamp) time.Time {
 	if t == nil {
 		return time.Time{}
 	}
@@ -62,7 +62,7 @@ func TimeFromProto(t *timestamp.Timestamp) time.Time {
 }
 
 // NewDuration creates a new Duration protobuf from a time.Duration.
-func NewDuration(v time.Duration) *duration.Duration {
+func NewDuration(v time.Duration) *durationpb.Duration {
 	return LoadDuration(nil, v)
 }
 
@@ -71,13 +71,13 @@ func NewDuration(v time.Duration) *duration.Duration {
 //
 // If the supplied Duration is nil and the value is non-zero, a new Duration
 // will be generated. The populated Duration will be returned.
-func LoadDuration(d *duration.Duration, v time.Duration) *duration.Duration {
+func LoadDuration(d *durationpb.Duration, v time.Duration) *durationpb.Duration {
 	if d == nil {
 		if v == 0 {
 			return nil
 		}
 
-		d = &duration.Duration{}
+		d = &durationpb.Duration{}
 	}
 
 	nanos := v.Nanoseconds()
@@ -89,7 +89,7 @@ func LoadDuration(d *duration.Duration, v time.Duration) *duration.Duration {
 
 // DurationFromProto returns the time.Duration associated with a Duration
 // protobuf.
-func DurationFromProto(d *duration.Duration) time.Duration {
+func DurationFromProto(d *durationpb.Duration) time.Duration {
 	if d == nil {
 		return 0
 	}
