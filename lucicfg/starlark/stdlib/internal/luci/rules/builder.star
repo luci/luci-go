@@ -327,7 +327,7 @@ builder = lucicfg.rule(
         'triggering_policy': schedulerimpl.validate_policy,
         'build_numbers': validate.bool,
         'experimental': validate.bool,
-        'task_template_canary_percentage': lambda attr, val: validate.int(attr, val, min=1, max=100),
+        'task_template_canary_percentage': lambda attr, val: validate.int(attr, val, min=0, max=100),
         'resultdb': resultdb.validate_settings,
     }),
 )
