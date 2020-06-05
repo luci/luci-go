@@ -124,11 +124,13 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("Send update", func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-			_, err := UpdateServiceConfig(c)
-			So(err, ShouldBeNil)
-			// Send update here
-			So(UpdateConsoles(c), ShouldBeNil)
+			c := testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+			So(UpdateProjects(c), ShouldBeNil)
+
+			Convey("Check created Project entities", func() {
+				So(datastore.Get(c, &Project{ID: "foo"}), ShouldBeNil)
+				So(datastore.Get(c, &Project{ID: "bar"}), ShouldBeNil)
+			})
 
 			Convey("Check Console config updated", func() {
 				cs, err := GetConsole(c, "foo", "default")
@@ -148,14 +150,13 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("Check second update reorders", func() {
-				mockedConfigsUpdate["services/luci-milo"] = memcfg.Files{
-					"settings.cfg": settingsCfg,
-				}
-				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
-				_, err = UpdateServiceConfig(c)
-				So(err, ShouldBeNil)
-				// Send update here
-				So(UpdateConsoles(c), ShouldBeNil)
+				c := testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
+				So(UpdateProjects(c), ShouldBeNil)
+
+				Convey("Check deleted stale Project entities", func() {
+					So(datastore.Get(c, &Project{ID: "foo"}), ShouldBeNil)
+					So(datastore.Get(c, &Project{ID: "bar"}), ShouldEqual, datastore.ErrNoSuchEntity)
+				})
 
 				Convey("Check Console config removed", func() {
 					cs, err := GetConsole(c, "foo", "default")
@@ -386,10 +387,14 @@ var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg,
 	},
+	"projects/bar": {
+		"luci-milo.cfg": ``, // empty, but present
+	},
 }
 
 var mockedConfigsUpdate = map[config.Set]memcfg.Files{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg2,
 	},
+	// No projects/bar anymore.
 }

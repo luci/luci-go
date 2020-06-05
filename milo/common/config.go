@@ -350,9 +350,10 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	return settings, nil
 }
 
-// updateProjectConsoles updates all of the consoles for a given project,
-// and then returns a set of known console names.
-func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
+// updateProject ingests configs of a single project.
+//
+// Returns a set of console names defined in the project.
+func updateProject(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
 	proj := config.Project{}
 	if err := protoutil.UnmarshalTextML(cfg.Content, &proj); err != nil {
 		return nil, errors.Annotate(err, "unmarshalling proto").Err()
@@ -363,8 +364,13 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	for _, header := range proj.Headers {
 		headers[header.Id] = header
 	}
+
 	// Keep a list of known consoles so we can prune deleted ones later.
 	knownConsoles := stringset.New(len(proj.Consoles))
+
+	// TODO(vadimsh): Fetch project ACLs from project.cfg and put them into
+	// Project{...} entity.
+
 	// Save the project into the datastore.
 	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
 	if proj.BuildBugTemplate != nil {
@@ -374,6 +380,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 		return nil, err
 	}
 	parentKey := datastore.KeyForObj(c, &project)
+
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
@@ -418,8 +425,9 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	return knownConsoles, nil
 }
 
-// UpdateConsoles updates internal console definitions entities based off luci-config.
-func UpdateConsoles(c context.Context) error {
+// UpdateProjects reads Milo project configs from LUCI Config and updates
+// internal Project and Console entities.
+func UpdateProjects(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 
 	logging.Debugf(c, "fetching configs for %s", cfgName)
@@ -434,14 +442,16 @@ func UpdateConsoles(c context.Context) error {
 
 	merr := errors.MultiError{}
 	knownProjects := map[string]stringset.Set{}
-	// Iterate through each project config, extracting the console definition.
+
+	// Iterate through each project config, extracting the console definitions
+	// and creating/updating Project and Console entities.
 	for _, cfg := range configs {
 		projectName := cfg.ConfigSet.Project()
 		if projectName == "" {
-			return fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
+			return fmt.Errorf("invalid config set path %s", cfg.ConfigSet)
 		}
 		knownProjects[projectName] = nil
-		if kp, err := updateProjectConsoles(c, projectName, &cfg); err != nil {
+		if kp, err := updateProject(c, projectName, &cfg); err != nil {
 			err = errors.Annotate(err, "processing project %s", projectName).Err()
 			merr = append(merr, err)
 		} else {
@@ -449,8 +459,9 @@ func UpdateConsoles(c context.Context) error {
 		}
 	}
 
-	// Delete all the consoles that no longer exists or are part of deleted projects.
 	toDelete := []*datastore.Key{}
+
+	// Find all the consoles that no longer exist or are part of deleted projects.
 	err = datastore.Run(c, datastore.NewQuery("Console"), func(key *datastore.Key) error {
 		proj := key.Parent().StringID()
 		id := key.StringID()
@@ -478,7 +489,23 @@ func UpdateConsoles(c context.Context) error {
 	})
 	if err != nil {
 		merr = append(merr, err)
-	} else if err := datastore.Delete(c, toDelete); err != nil {
+	}
+
+	// Find entities of no longer existing projects.
+	err = datastore.Run(c, datastore.NewQuery("Project"), func(key *datastore.Key) error {
+		proj := key.StringID()
+		if _, hasIt := knownProjects[proj]; !hasIt {
+			logging.Infof(c, "deleting Project entity for %s", proj)
+			toDelete = append(toDelete, key)
+		}
+		return nil
+	})
+	if err != nil {
+		merr = append(merr, err)
+	}
+
+	// Actually delete all stale entities.
+	if err := datastore.Delete(c, toDelete); err != nil {
 		merr = append(merr, err)
 	}
 

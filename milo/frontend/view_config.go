@@ -52,7 +52,7 @@ func UpdateConfigHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
 	// Needed to access the PubSub API
 	c = appengine.WithContext(c, ctx.Request)
-	projErr := common.UpdateConsoles(c)
+	projErr := common.UpdateProjects(c)
 	if projErr != nil {
 		if merr, ok := projErr.(errors.MultiError); ok {
 			for _, ierr := range merr {
