@@ -393,6 +393,24 @@
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c89503b_a8a72704",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-05T23:45:30Z",
+      "side": 1,
+      "message": "No need to explicitly check \"project:*\", just checking HasPermission should be enough. Only project:X identities will have the permission.\n\nI want to see how far we can go with just using HasPermission instead of various adhoc checks.",
+      "parentUuid": "20bdb777_247e2de2",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
