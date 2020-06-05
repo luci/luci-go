@@ -7,7 +7,7 @@ import (
 
 	svcmux "go.chromium.org/luci/server/svcmux"
 
-	google_protobuf "go.chromium.org/luci/common/proto/google"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	sub "go.chromium.org/luci/grpc/internal/svctool/testdata/sub"
 )
 
@@ -54,7 +54,7 @@ func (s *VersionedS2) Set(c context.Context, req *M1) (*Void, error) {
 	return impl.Set(c, req)
 }
 
-func (s *VersionedS2) Imp(c context.Context, req *sub.Sub) (*google_protobuf.Empty, error) {
+func (s *VersionedS2) Imp(c context.Context, req *sub.Sub) (*empty.Empty, error) {
 	ver := svcmux.GetServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
