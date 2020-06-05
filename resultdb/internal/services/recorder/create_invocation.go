@@ -28,19 +28,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-)
-
-var (
-	// trustedInvocationCreators is a CIA group that can create invocations with
-	// custom IDs and specify producer_resource field.
-	trustedInvocationCreators = "luci-resultdb-trusted-invocation-creators"
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
@@ -71,9 +64,6 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	if !trustedCreator {
 		if !strings.HasPrefix(req.InvocationId, "u-") {
 			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`).Err()
-		}
-		if req.GetInvocation().GetProducerResource() != "" {
-			return errors.Reason(`invocation: producer_resource: only trusted systems are allowed to set producer_resource field for now`).Err()
 		}
 	}
 
@@ -115,9 +105,15 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 // CreateInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	now := clock.Now(ctx).UTC()
-
-	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
+	trustedCreator, err := isTrustedCreator(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := validateCreateInvocationsPermission(ctx, []*pb.CreateInvocationRequest{in}); err != nil {
+		return nil, err
+	}
+	if err := validateSetProducerResourcePermission(ctx, []*pb.CreateInvocationRequest{in}); err != nil {
 		return nil, err
 	}
 	if err := validateCreateInvocationRequest(in, now, trustedCreator); err != nil {

@@ -36,7 +36,7 @@ import (
 // are valid, that they match the batch request requestID and that their names
 // are not repeated.
 func validateBatchCreateInvocationsRequest(
-	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string, allowCustomID bool) (invocations.IDSet, error) {
+	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string, trustedCreator bool) (invocations.IDSet, error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
 		return nil, errors.Annotate(err, "request_id").Err()
 	}
@@ -47,7 +47,7 @@ func validateBatchCreateInvocationsRequest(
 
 	idSet := make(invocations.IDSet, len(reqs))
 	for i, req := range reqs {
-		if err := validateCreateInvocationRequest(req, now, allowCustomID); err != nil {
+		if err := validateCreateInvocationRequest(req, now, trustedCreator); err != nil {
 			return nil, errors.Annotate(err, "requests[%d]", i).Err()
 		}
 
@@ -70,8 +70,15 @@ func validateBatchCreateInvocationsRequest(
 func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.BatchCreateInvocationsRequest) (*pb.BatchCreateInvocationsResponse, error) {
 	now := clock.Now(ctx).UTC()
 
-	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
+	trustedCreator, err := isTrustedCreator(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := validateCreateInvocationsPermission(ctx, in.Requests); err != nil {
+		return nil, err
+	}
+	if err := validateSetProducerResourcePermission(ctx, in.Requests); err != nil {
 		return nil, err
 	}
 
@@ -131,6 +138,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 			BigqueryExports:  req.Invocation.GetBigqueryExports(),
 			CreatedBy:        createdBy,
 			ProducerResource: req.Invocation.GetProducerResource(),
+			Realm:            req.Invocation.GetRealm(),
 		}
 
 		// Ensure the invocation has a deadline.

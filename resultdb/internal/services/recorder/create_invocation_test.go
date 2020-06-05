@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
@@ -154,26 +155,6 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
-		Convey(`producer_resource disallowed`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-0",
-				Invocation: &pb.Invocation{
-					ProducerResource: "//builds.example.com/builds/1",
-				},
-			}, now, false)
-			So(err, ShouldErrLike, `invocation: producer_resource: only trusted systems are allowed`)
-		})
-
-		Convey(`producer_resource allowed`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-0",
-				Invocation: &pb.Invocation{
-					ProducerResource: "//builds.example.com/builds/1",
-				},
-			}, now, true)
-			So(err, ShouldBeNil)
-		})
-
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
@@ -185,6 +166,43 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			}, now, false)
 			So(err, ShouldBeNil)
 		})
+		Convey(`test permissions`, func() {
+
+			testAccount := identity.Identity("user:sa@example.com")
+			testRealm := "test-proj:test-realm"
+			Convey(`producer_resource disallowed`, func() {
+				ctx := auth.WithState(context.Background(), &authtest.FakeState{
+					Identity: testAccount,
+				})
+				err := validateSetProducerResourcePermission(ctx, []*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+					InvocationId: "u-abc",
+					Invocation: &pb.Invocation{
+						Realm:            testRealm,
+						ProducerResource: "//builds.example.com/builds/1"},
+				}})
+				So(err, ShouldErrLike, `invocation: producer_resource: caller does not have permission to set the field`)
+			})
+
+			Convey(`producer_resource allowed`, func() {
+				ctx := auth.WithState(context.Background(), &authtest.FakeState{
+					Identity: testAccount,
+					IdentityPermissions: []authtest.RealmPermission{
+						{
+							Realm:      testRealm,
+							Permission: permSetProducerResource,
+						},
+					},
+				})
+				err := validateSetProducerResourcePermission(ctx, []*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+					InvocationId: "u-abc",
+					Invocation: &pb.Invocation{
+						Realm:            testRealm,
+						ProducerResource: "//builds.example.com/builds/1"},
+				}})
+				So(err, ShouldBeNil)
+			})
+		})
+
 	})
 }
 
@@ -195,6 +213,10 @@ func TestCreateInvocation(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{trustedInvocationCreators},
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "chromium:public", Permission: permCreateInvocation},
+				{Realm: "chromium:public", Permission: permSetProducerResource},
+			},
 		})
 
 		start := clock.Now(ctx).UTC()

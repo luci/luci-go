@@ -92,6 +92,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{trustedInvocationCreators},
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "chromium:public", Permission: permCreateInvocation},
+				{Realm: "chromium:public", Permission: permSetProducerResource},
+			},
 		}
 		ctx = auth.WithState(ctx, authState)
 
