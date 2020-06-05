@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cfgmodule provides a server module with a LUCI Config client.
+// Package cfgclient contains glue code to use config.Interface client.
 //
-// It installs a LUCI Config client implementation into the context and
-// registers config validation endpoints.
-package cfgmodule
+// It wraps various config.Interface implementations behind a single API,
+// implements context.Context integration and provides few high-level helper
+// methods to simplify common tasks such as fetching and deserializing
+// individual config files.
+package cfgclient
