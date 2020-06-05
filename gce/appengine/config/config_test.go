@@ -20,6 +20,7 @@ import (
 
 	gae "go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
@@ -35,14 +36,14 @@ func TestDeref(t *testing.T) {
 
 	Convey("deref", t, func() {
 		Convey("empty", func() {
-			c := withInterface(gae.Use(context.Background()), memory.New(nil))
+			c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 			cfg := &Config{}
 			So(deref(c, cfg), ShouldBeNil)
 			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
 		})
 
 		Convey("missing", func() {
-			c := withInterface(gae.Use(context.Background()), memory.New(nil))
+			c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 			cfg := &Config{
 				VMs: &gce.Configs{
 					Vms: []*gce.Config{
@@ -64,8 +65,8 @@ func TestDeref(t *testing.T) {
 		})
 
 		Convey("revision", func() {
-			c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
-				"services/gce": map[string]string{
+			c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
+				"services/${appid}": map[string]string{
 					"file": "val",
 				},
 			}))
@@ -96,8 +97,8 @@ func TestDeref(t *testing.T) {
 		})
 
 		Convey("dereferences", func() {
-			c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
-				"services/gce": map[string]string{
+			c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
+				"services/${appid}": map[string]string{
 					"metadata/file": "val2",
 				},
 			}))
@@ -145,8 +146,8 @@ func TestFetch(t *testing.T) {
 	Convey("fetch", t, func() {
 		Convey("invalid", func() {
 			Convey("projects", func() {
-				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
-					"services/gce": map[string]string{
+				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
+					"services/${appid}": map[string]string{
 						projectsFile: "invalid",
 					},
 				}))
@@ -155,8 +156,8 @@ func TestFetch(t *testing.T) {
 			})
 
 			Convey("vms", func() {
-				c := withInterface(gae.UseWithAppID(context.Background(), "gce"), memory.New(map[config.Set]memory.Files{
-					"services/gce": map[string]string{
+				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
+					"services/${appid}": map[string]string{
 						vmsFile: "invalid",
 					},
 				}))
@@ -167,7 +168,7 @@ func TestFetch(t *testing.T) {
 
 		Convey("empty", func() {
 			Convey("missing", func() {
-				c := withInterface(gae.Use(context.Background()), memory.New(nil))
+				c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
 				So(cfg.Projects, ShouldResemble, &projects.Configs{})
@@ -175,8 +176,8 @@ func TestFetch(t *testing.T) {
 			})
 
 			Convey("implicit", func() {
-				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
-					"services/gce": {},
+				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
+					"services/${appid}": {},
 				}))
 				cfg, err := fetch(c)
 				So(err, ShouldBeNil)
@@ -185,8 +186,8 @@ func TestFetch(t *testing.T) {
 			})
 
 			Convey("explicit", func() {
-				c := withInterface(gae.UseWithAppID(context.Background(), "example.com:gce"), memory.New(map[config.Set]memory.Files{
-					"services/gce": {
+				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
+					"services/${appid}": {
 						projectsFile: "",
 						vmsFile:      "",
 					},
