@@ -20,8 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/dm/api/acls"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -30,13 +29,10 @@ import (
 )
 
 func loadAcls(c context.Context) (ret *acls.Acls, err error) {
-	cSet := cfgclient.CurrentServiceConfigSet(c)
-	file := "acls.cfg"
-
 	ret = &acls.Acls{}
-	if err := cfgclient.Get(c, cfgclient.AsService, cSet, file, textproto.Message(ret), nil); err != nil {
+	if err := cfgclient.Get(c, "services/${appid}", "acls.cfg", cfgclient.ProtoText(ret), nil); err != nil {
 		return nil, errors.Annotate(err, "").Tag(transient.Tag).
-			InternalReason("loading config :: cSet(%v)/file(%v)", cSet, file).Err()
+			InternalReason("loading config :: acls.cfg").Err()
 	}
 	return
 }

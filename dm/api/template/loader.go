@@ -20,8 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/data/text/templateproto"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
@@ -32,7 +31,7 @@ func LoadFile(c context.Context, project, ref string) (file *File, vers string, 
 
 	file = &File{}
 	var meta config.Meta
-	if err = cfgclient.Get(c, cfgclient.AsService, cfgSet, "dm/quest_templates.cfg", textproto.Message(file), &meta); err != nil {
+	if err = cfgclient.Get(c, cfgSet, "dm/quest_templates.cfg", cfgclient.ProtoText(file), &meta); err != nil {
 		return
 	}
 	vers = meta.ContentHash
