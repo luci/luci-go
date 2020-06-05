@@ -23,10 +23,9 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/dm/api/distributor"
-	"go.chromium.org/luci/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"
@@ -135,13 +134,11 @@ func (r *registry) MakeDistributor(c context.Context, cfgName string) (d D, ver 
 // loadConfig loads the named distributor configuration from luci-config,
 // possibly using the in-memory or memcache version.
 func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
-	configSet := cfgclient.CurrentServiceConfigSet(c)
-
 	var (
 		distCfg distributor.Config
 		meta    config.Meta
 	)
-	if err = cfgclient.Get(c, cfgclient.AsService, configSet, "distributors.cfg", textproto.Message(&distCfg), &meta); err != nil {
+	if err = cfgclient.Get(c, "services/${appid}", "distributors.cfg", cfgclient.ProtoText(&distCfg), &meta); err != nil {
 		return
 	}
 
