@@ -23,7 +23,6 @@ import (
 
 	"google.golang.org/api/pubsub/v1"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -32,9 +31,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/impl/resolving"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/config/vars"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -220,7 +221,15 @@ func TestConfigReading(t *testing.T) {
 
 	Convey("with mocked config", t, func() {
 		ctx := testContext()
-		ctx = testconfig.WithCommonClient(ctx, memcfg.New(mockedConfigs))
+
+		// Fetch configs from memory but resolve ${appid} into "app" to make
+		// RevisionURL more realistic.
+		vars := &vars.VarSet{}
+		vars.Register("appid", func(context.Context) (string, error) {
+			return "app", nil
+		})
+		ctx = cfgclient.Use(ctx, resolving.New(vars, memcfg.New(mockedConfigs)))
+
 		cat := New()
 		cat.RegisterTaskManager(fakeTaskManager{
 			name: "noop",
@@ -230,9 +239,6 @@ func TestConfigReading(t *testing.T) {
 			name: "url_fetch",
 			task: &messages.UrlFetchTask{},
 		})
-
-		// mockedConfigs hardcode 'app' as service name. Verify our mocks are up.
-		So(info.TrimmedAppID(ctx), ShouldEqual, "app")
 
 		Convey("GetAllProjects works", func() {
 			projects, err := cat.GetAllProjects(ctx)
