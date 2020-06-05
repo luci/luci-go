@@ -164,6 +164,29 @@
     },
     {
       "key": {
+        "uuid": "119d5412_e014fe4f",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-05T20:08:32Z",
+      "side": 1,
+      "message": "Do we need this part in error message?",
+      "range": {
+        "startLine": 65,
+        "startChar": 52,
+        "endLine": 65,
+        "endChar": 70
+      },
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4badf3f_a51aeaea",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 3
