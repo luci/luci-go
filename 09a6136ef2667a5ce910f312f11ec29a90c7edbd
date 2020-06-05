@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "9757b83d_54de8fe7",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-05T17:20:39Z",
+      "side": 1,
+      "message": "I\u0027m gathering data on how HasPermission is called and then will change it based on that.",
+      "parentUuid": "08875ee5_dd2efaef",
+      "range": {
+        "startLine": 48,
+        "startChar": 38,
+        "endLine": 48,
+        "endChar": 46
+      },
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "515209f3_94eab262",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 3
@@ -289,6 +313,24 @@
       "writtenOn": "2020-06-05T06:11:32Z",
       "side": 1,
       "message": "i read this code and now having doubts that we should have setProducerResource permission. Before this CL, only trusted systems are allowed to set it. We don\u0027t trust LUCI projects \u003d\u003e this should not be configurable \u003d\u003e should not be in realms. Is this right?",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2588d81_e47e08d9",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-05T17:20:39Z",
+      "side": 1,
+      "message": "Wdyt if we just forbid some roles to be used in realms.cfg but still use them internally in LUCI (e.g. in https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/realms/permissions.py#145). I already have such check for \u0027role/luci.internal.*\u0027, I can change it to be \u0027role/*.internal.*\u0027. Then we can rename role/resultdb.trustedInvocationCreator into role/resultdb.internal.trustedInvocationCreator.\n\nThe advantage of this approach is less adhoc ACL checks and groups in the service code. Everything should be checked with HasPermission. For the same reason I think we should replace luci-resultdb-trusted-invocation-creators with a permission check too somehow. I just don\u0027t quite understand the purpose of it and who is supposed to have this access. \"Can create invocations with custom IDs and specify BQ Exports\" looks like two permissions. \"Can create invocations ...\" should probably be part of trustedInvocationCreator and I have no idea who is supposed to be able to \"specify BQ Exports\" and what it means.",
+      "parentUuid": "b92b7289_0ea2b705",
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
