@@ -411,6 +411,24 @@
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18e4eb91_95880d8d",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-05T23:50:41Z",
+      "side": 1,
+      "message": "Re BQ export: thanks.\n\nLooks like we need \"resultdb.invocations.exportToBigQuery\" permission and I think it should not have any special restrictions. Why would it be bad if project owners (if they really want to) grant this permission to some service account (if they create invocations not through Buildbucket)? E.g. why do we think only Buildbucket will need it?",
+      "parentUuid": "1c89503b_a8a72704",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
