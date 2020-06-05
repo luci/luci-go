@@ -19,12 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
 
@@ -112,8 +111,8 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 }
 
 func prepareCfg(c context.Context, configFile string) context.Context {
-	return testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
-		config.Set("services/" + info.AppID(c)): {
+	return cfgclient.Use(c, memory.New(map[config.Set]memory.Files{
+		"services/${appid}": {
 			"service_accounts.cfg": configFile,
 		},
 	}))

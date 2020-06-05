@@ -19,11 +19,10 @@ import (
 	"testing"
 
 	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -329,8 +328,8 @@ PkoYH9WC8tSbqNof3g==
 // prepareCfg injects config.Backend implementation with a bunch of
 // config files.
 func prepareCfg(c context.Context, configFile string) context.Context {
-	return testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
-		config.Set("services/" + info.AppID(c)): {
+	return cfgclient.Use(c, memory.New(map[config.Set]memory.Files{
+		"services/${appid}": {
 			"tokenserver.cfg":           configFile,
 			"certs/fake.ca.crt":         fakeCACrt,
 			"certs/another-fake.ca.crt": anotherFakeCACrt,

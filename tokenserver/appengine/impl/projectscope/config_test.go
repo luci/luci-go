@@ -20,9 +20,8 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	configset "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -88,9 +87,8 @@ func TestRules(t *testing.T) {
 // prepareCfg injects config.Backend implementation with a bunch of
 // config files.
 func prepareCfg(c context.Context, configFile string) context.Context {
-	configServiceAppID, _ := gaeconfig.GetConfigServiceAppID(c)
-	return testconfig.WithCommonClient(c, memory.New(map[configset.Set]memory.Files{
-		configset.ServiceSet(configServiceAppID): {
+	return cfgclient.Use(c, memory.New(map[configset.Set]memory.Files{
+		"services/${config_service_appid}": {
 			"projects.cfg": configFile,
 		},
 	}))
