@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/host"
@@ -148,6 +149,7 @@ func mainImpl() int {
 			{Name: "stderr", Url: "stderr"},
 		},
 	}
+	populateSwarmingInfoFromEnv(input.Build, environ.System())
 
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
