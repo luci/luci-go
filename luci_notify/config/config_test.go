@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
@@ -90,7 +91,7 @@ func TestConfigIngestion(t *testing.T) {
 				"luci-notify/email-templates/b.template": "b\n\nv8",
 			},
 		}
-		c = WithConfigService(c, memory.New(cfg))
+		c = cfgclient.Use(c, memory.New(cfg))
 
 		err := updateProjects(c)
 		So(err, ShouldBeNil)
@@ -202,7 +203,7 @@ func TestConfigIngestion(t *testing.T) {
 			// config, which should be a no-op.
 			cfg["projects/chromium"]["luci-notify.cfg"] += " "
 			cfg["projects/v8"]["luci-notify.cfg"] += " "
-			c := WithConfigService(c, memory.New(cfg))
+			c := cfgclient.Use(c, memory.New(cfg))
 
 			err := updateProjects(c)
 			So(err, ShouldBeNil)

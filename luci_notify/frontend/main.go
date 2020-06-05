@@ -28,9 +28,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/config/appengine/gaeconfig"
-	"go.chromium.org/luci/config/impl/remote"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/luci_notify/config"
@@ -49,7 +46,7 @@ func main() {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	basemw := standard.Base().Extend(withRemoteConfigService)
+	basemw := standard.Base()
 
 	taskDispatcher := tq.Dispatcher{BaseURL: "/internal/tasks/"}
 	notify.InitDispatcher(&taskDispatcher)
@@ -86,24 +83,4 @@ func main() {
 
 	http.Handle("/", r)
 	appengine.Main()
-}
-
-func withRemoteConfigService(c *router.Context, next router.Handler) {
-	s, err := gaeconfig.FetchCachedSettings(c.Context)
-	if err != nil {
-		c.Writer.WriteHeader(http.StatusInternalServerError)
-		logging.WithError(err).Errorf(c.Context, "failure retrieving cached settings")
-		return
-	}
-
-	rInterface := remote.New(s.ConfigServiceHost, false, func(c context.Context) (*http.Client, error) {
-		t, err := auth.GetRPCTransport(c, auth.AsSelf)
-		if err != nil {
-			return nil, err
-		}
-		return &http.Client{Transport: t}, nil
-	})
-	// insert into context
-	c.Context = config.WithConfigService(c.Context, rInterface)
-	next(c)
 }
