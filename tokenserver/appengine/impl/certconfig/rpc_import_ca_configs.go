@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -186,8 +186,7 @@ func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
 
 // fetchConfigFile fetches a file from this services' config set.
 func fetchConfigFile(c context.Context, path string) (string, *config.Meta, error) {
-	configSet := cfgclient.CurrentServiceConfigSet(c)
-	logging.Infof(c, "Reading %q from config set %q", path, configSet)
+	logging.Infof(c, "Reading %q", path)
 	c, cancel := context.WithTimeout(c, 29*time.Second) // URL fetch deadline
 	defer cancel()
 
@@ -195,7 +194,7 @@ func fetchConfigFile(c context.Context, path string) (string, *config.Meta, erro
 		content string
 		meta    config.Meta
 	)
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, path, cfgclient.String(&content), &meta); err != nil {
+	if err := cfgclient.Get(c, "services/${appid}", path, cfgclient.String(&content), &meta); err != nil {
 		return "", nil, err
 	}
 	return content, &meta, nil
