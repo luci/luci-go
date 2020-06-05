@@ -26,13 +26,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/realms"
 
@@ -77,16 +75,10 @@ type Catalog interface {
 	UnmarshalTask(c context.Context, task []byte) (proto.Message, error)
 
 	// GetAllProjects returns a list of all known project ids.
-	//
-	// It assumes there's cfgclient implementation installed in
-	// the context, will panic if it's not there.
 	GetAllProjects(c context.Context) ([]string, error)
 
 	// GetProjectJobs returns a list of scheduler jobs defined within a project or
 	// empty list if no such project.
-	//
-	// It assumes there's cfgclient implementation installed in
-	// the context, will panic if it's not there.
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
 
 	// RegisterConfigRules adds the config validation rules that verify job config
@@ -197,22 +189,7 @@ func (cat *catalog) UnmarshalTask(c context.Context, task []byte) (proto.Message
 }
 
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
-	// Enumerate all projects that have <config>.cfg. Do not fetch actual configs
-	// yet.
-	var metas []*config.Meta
-	if err := cfgclient.Projects(c, cfgclient.AsService, info.TrimmedAppID(c)+".cfg", nil, &metas); err != nil {
-		return nil, err
-	}
-
-	out := make([]string, 0, len(metas))
-	for _, meta := range metas {
-		if projectName := meta.ConfigSet.Project(); projectName != "" {
-			out = append(out, projectName)
-		} else {
-			logging.Warningf(c, "Unexpected ConfigSet: %s", meta.ConfigSet)
-		}
-	}
-	return out, nil
+	return cfgclient.ProjectsWithConfig(c, "${appid}.cfg")
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
@@ -239,7 +216,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		cfg  messages.ProjectConfig
 		meta config.Meta
 	)
-	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, info.TrimmedAppID(c)+".cfg", textproto.Message(&cfg), &meta); err {
+	switch err := cfgclient.Get(c, configSet, "${appid}.cfg", cfgclient.ProtoText(&cfg), &meta); err {
 	case nil:
 		break
 	case config.ErrNoConfig:
