@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/config/vars"
 	"go.chromium.org/luci/server/auth"
@@ -36,7 +37,21 @@ const configValidationAuthScope = "https://www.googleapis.com/auth/userinfo.emai
 
 // ModuleOptions contain configuration of the LUCI Config server module.
 type ModuleOptions struct {
-	ConfigServiceHost string // a hostname of a LUCI Config service to use
+	// ServiceHost is a hostname of a LUCI Config service to use.
+	//
+	// If given, indicates configs should be fetched from the LUCI Config service.
+	// Not compatible with LocalDir.
+	ServiceHost string
+
+	// LocalDir is a file system directory to fetch configs from instead of
+	// a LUCI Config service.
+	//
+	// See https://godoc.org/go.chromium.org/luci/config/impl/filesystem for the
+	// expected layout of this directory.
+	//
+	// Useful when running locally in development mode. Not compatible with
+	// ServiceHost.
+	LocalDir string
 
 	// Vars is a var set to use to render config set names.
 	//
@@ -57,17 +72,21 @@ type ModuleOptions struct {
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.StringVar(
-		&o.ConfigServiceHost,
+		&o.ServiceHost,
 		"config-service-host",
-		o.ConfigServiceHost,
-		`A hostname of a LUCI Config service to use`,
+		o.ServiceHost,
+		`A hostname of a LUCI Config service to use (not compatible with -config-local-dir)`,
+	)
+	f.StringVar(
+		&o.LocalDir,
+		"config-local-dir",
+		o.LocalDir,
+		`A file system directory to fetch configs from (not compatible with -config-service-host)`,
 	)
 }
 
 // NewModule returns a server module that exposes LUCI Config validation
 // endpoints.
-//
-// TODO(vadimsh): Make it also be responsible for fetching configs, somehow.
 func NewModule(opts *ModuleOptions) module.Module {
 	if opts == nil {
 		opts = &ModuleOptions{}
@@ -106,8 +125,28 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	}
 	m.registerVars(opts)
 
-	// Enable authentication and authorization only when running in production
-	// (i.e. not on a developer workstation).
+	// Instantiate an appropriate client based on options.
+	client, err := cfgclient.New(cfgclient.Options{
+		Vars:        m.opts.Vars,
+		ServiceHost: m.opts.ServiceHost,
+		ConfigsDir:  m.opts.LocalDir,
+		ClientFactory: func(ctx context.Context) (*http.Client, error) {
+			t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+			if err != nil {
+				return nil, err
+			}
+			return &http.Client{Transport: t}, nil
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Make it available in the server handlers.
+	ctx = cfgclient.Use(ctx, client)
+
+	// Enable authentication and authorization for the validation endpoint only
+	// when running in production (i.e. not on a developer workstation).
 	middleware := router.MiddlewareChain{}
 	if opts.Prod {
 		middleware = router.NewMiddlewareChain(
@@ -122,18 +161,20 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		)
 	}
 
+	// Install the validation endpoint.
 	InstallHandlers(host.Routes(), middleware, m.opts.Rules)
+
 	return ctx, nil
 }
 
 // configServiceInfo fetches LUCI Config service account name and app ID.
 //
-// Returns an error if ConfigServiceHost is unset.
+// Returns an error if ServiceHost is unset.
 func (m *serverModule) configServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
-	if m.opts.ConfigServiceHost == "" {
+	if m.opts.ServiceHost == "" {
 		return nil, errors.Reason("-config-service-host is not set").Err()
 	}
-	return signing.FetchServiceInfoFromLUCIService(ctx, "https://"+m.opts.ConfigServiceHost)
+	return signing.FetchServiceInfoFromLUCIService(ctx, "https://"+m.opts.ServiceHost)
 }
 
 // registerVars populates the var set with predefined vars that can be used
