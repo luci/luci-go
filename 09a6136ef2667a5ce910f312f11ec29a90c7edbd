@@ -375,6 +375,24 @@
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91a98918_7a98b4ac",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-05T23:44:08Z",
+      "side": 1,
+      "message": "About BQ export, here\u0027s the discussion around it: https://docs.google.com/document/d/1C8P0k4BgiQmuCq19wbXeOW0kQlsJJgSrtE8uzNYHqDg/edit?disco\u003dAAAAD_p4ctY",
+      "parentUuid": "20bdb777_247e2de2",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
