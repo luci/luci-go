@@ -21,8 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 
 	configPB "go.chromium.org/luci/machine-db/api/config/v1"
@@ -40,7 +39,7 @@ const switchMaxPorts = 65535
 func importDatacenters(c context.Context, configSet config.Set, platformIds map[string]int64) error {
 	cfg := &configPB.Datacenters{}
 	metadata := &config.Meta{}
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacentersFilename, textproto.Message(cfg), metadata); err != nil {
+	if err := cfgclient.Get(c, configSet, datacentersFilename, cfgclient.ProtoText(cfg), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", datacentersFilename).Err()
 	}
 	logging.Infof(c, "Found %s revision %q", datacentersFilename, metadata.Revision)
@@ -58,7 +57,7 @@ func importDatacenters(c context.Context, configSet config.Set, platformIds map[
 	datacenters := make([]*configPB.Datacenter, 0, len(cfg.Datacenter))
 	for _, datacenterFile := range cfg.Datacenter {
 		datacenter := &configPB.Datacenter{}
-		if err := cfgclient.Get(c, cfgclient.AsService, configSet, datacenterFile, textproto.Message(datacenter), nil); err != nil {
+		if err := cfgclient.Get(c, configSet, datacenterFile, cfgclient.ProtoText(datacenter), nil); err != nil {
 			return errors.Annotate(err, "failed to load datacenter config %q", datacenterFile).Err()
 		}
 		cfgs[datacenterFile] = datacenter

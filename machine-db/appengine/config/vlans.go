@@ -21,8 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 
 	configPB "go.chromium.org/luci/machine-db/api/config/v1"
@@ -43,7 +42,7 @@ const vlanMinCIDRBlockSuffix = 18
 func importVLANs(c context.Context, configSet config.Set) error {
 	vlan := &configPB.VLANs{}
 	metadata := &config.Meta{}
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, vlansFilename, textproto.Message(vlan), metadata); err != nil {
+	if err := cfgclient.Get(c, configSet, vlansFilename, cfgclient.ProtoText(vlan), metadata); err != nil {
 		return errors.Annotate(err, "failed to load %s", vlansFilename).Err()
 	}
 	logging.Infof(c, "Found %s revision %q", vlansFilename, metadata.Revision)
