@@ -25,11 +25,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/appengine/gaeconfig"
-	"go.chromium.org/luci/config/impl/remote"
-	"go.chromium.org/luci/config/server/cfgclient"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
@@ -48,20 +45,6 @@ type Config struct {
 	revision string
 	Projects *projects.Configs
 	VMs      *gce.Configs
-}
-
-// cfgKey is the key to a config.Interface in the context.
-var cfgKey = "cfg"
-
-// withInterface returns a new context with the given config.Interface
-// installed.
-func withInterface(c context.Context, cfg config.Interface) context.Context {
-	return context.WithValue(c, &cfgKey, cfg)
-}
-
-// getInterface returns the config.Interface installed in the current context.
-func getInterface(c context.Context) config.Interface {
-	return c.Value(&cfgKey).(config.Interface)
 }
 
 // prjKey is the key to a projects.ProjectsServer in the context.
@@ -94,28 +77,12 @@ func getVMsServer(c context.Context) gce.ConfigurationServer {
 	return c.Value(&vmsKey).(gce.ConfigurationServer)
 }
 
-// newInterface returns a new config.Interface. Panics on error.
-func newInterface(c context.Context) config.Interface {
-	s, err := gaeconfig.FetchCachedSettings(c)
-	if err != nil {
-		panic(err)
-	}
-	t, err := auth.GetRPCTransport(c, auth.AsSelf)
-	if err != nil {
-		panic(err)
-	}
-	return remote.New(s.ConfigServiceHost, false, func(c context.Context) (*http.Client, error) {
-		return &http.Client{Transport: t}, nil
-	})
-}
-
 // fetch fetches configs from the config service.
 func fetch(c context.Context) (*Config, error) {
-	cli := getInterface(c)
-	set := cfgclient.CurrentServiceConfigSet(c)
+	cli := cfgclient.Client(c)
 	rev := ""
 	vms := &gce.Configs{}
-	switch vmsCfg, err := cli.GetConfig(c, set, vmsFile, false); {
+	switch vmsCfg, err := cli.GetConfig(c, "services/${appid}", vmsFile, false); {
 	case err == config.ErrNoConfig:
 		logging.Debugf(c, "%q not found", vmsFile)
 	case err != nil:
@@ -128,7 +95,7 @@ func fetch(c context.Context) (*Config, error) {
 		}
 	}
 	prjs := &projects.Configs{}
-	switch prjsCfg, err := cli.GetConfig(c, set, projectsFile, false); {
+	switch prjsCfg, err := cli.GetConfig(c, "services/${appid}", projectsFile, false); {
 	case err == config.ErrNoConfig:
 		logging.Debugf(c, "%q not found", projectsFile)
 	case err != nil:
@@ -163,8 +130,7 @@ func validate(c context.Context, cfg *Config) error {
 func deref(c context.Context, cfg *Config) error {
 	// Cache fetched files.
 	fileMap := make(map[string]string)
-	cli := getInterface(c)
-	set := cfgclient.CurrentServiceConfigSet(c)
+	cli := cfgclient.Client(c)
 	for _, v := range cfg.VMs.GetVms() {
 		for i, m := range v.GetAttributes().Metadata {
 			if m.GetFromFile() != "" {
@@ -174,7 +140,7 @@ func deref(c context.Context, cfg *Config) error {
 				}
 				file := parts[1]
 				if _, ok := fileMap[file]; !ok {
-					fileCfg, err := cli.GetConfig(c, set, file, false)
+					fileCfg, err := cli.GetConfig(c, "services/${appid}", file, false)
 					if err != nil {
 						return errors.Annotate(err, "failed to fetch %q", file).Err()
 					}
@@ -357,8 +323,7 @@ func importHandler(c *router.Context) {
 // InstallHandlers installs HTTP request handlers into the given router.
 func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		// Install the config interface and services.
-		c.Context = withInterface(c.Context, newInterface(c.Context))
+		// Install the services.
 		c.Context = withProjServer(c.Context, &rpc.Projects{})
 		c.Context = withVMsServer(c.Context, &rpc.Config{})
 		next(c)
