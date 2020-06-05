@@ -63,6 +63,30 @@
       "revId": "bfc4cdcad819a95ec7a708f826af27bf8bd0cbca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f77e8e3d_03b23e8e",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-05T04:00:16Z",
+      "side": 1,
+      "message": "imo, 4 bytes of randomness seems enough in situations where total population at any time is below 1k and collisions aren\u0027t particularly costly.\n\nThat said, I chose so far the full sha2 32-byte keyspace for my  transaction task queue lib, even though in theory 64-bit keyspace might suffice (but I think collision prob is too high, and for tranaction tasks you really really want them to be executed).",
+      "parentUuid": "bca06494_c667c0d9",
+      "range": {
+        "startLine": 372,
+        "startChar": 27,
+        "endLine": 372,
+        "endChar": 32
+      },
+      "revId": "bfc4cdcad819a95ec7a708f826af27bf8bd0cbca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
