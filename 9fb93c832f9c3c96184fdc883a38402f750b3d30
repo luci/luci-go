@@ -22,6 +22,30 @@
       "revId": "9fb93c832f9c3c96184fdc883a38402f750b3d30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68ff4371_e9e4210b",
+        "filename": "luciexe/legacy/annotee/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-05T17:45:47Z",
+      "side": 1,
+      "message": "ACK. Will have a follow up CL.",
+      "parentUuid": "ee1eed50_f65a2d97",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 8
+      },
+      "revId": "9fb93c832f9c3c96184fdc883a38402f750b3d30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
