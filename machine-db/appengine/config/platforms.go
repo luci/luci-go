@@ -21,8 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 
 	configPB "go.chromium.org/luci/machine-db/api/config/v1"
@@ -37,7 +36,7 @@ const platformsFilename = "platforms.cfg"
 func importPlatforms(c context.Context, configSet config.Set) (map[string]int64, error) {
 	platform := &configPB.Platforms{}
 	metadata := &config.Meta{}
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, platformsFilename, textproto.Message(platform), metadata); err != nil {
+	if err := cfgclient.Get(c, configSet, platformsFilename, cfgclient.ProtoText(platform), metadata); err != nil {
 		return nil, errors.Annotate(err, "failed to load %s", platformsFilename).Err()
 	}
 	logging.Infof(c, "Found %s revision %q", platformsFilename, metadata.Revision)

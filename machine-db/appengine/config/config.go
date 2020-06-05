@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -39,7 +38,7 @@ func importHandler(c *router.Context) {
 
 // Import fetches, validates, and applies configs from the config service.
 func Import(c context.Context) error {
-	configSet := cfgclient.CurrentServiceConfigSet(c)
+	const configSet = "services/${appid}"
 	if err := importOSes(c, configSet); err != nil {
 		return errors.Annotate(err, "failed to import operating systems").Err()
 	}
