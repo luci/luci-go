@@ -52,6 +52,9 @@ type Project struct {
 	ID               string `gae:"$id"`
 	LogoURL          string
 	BuildBugTemplate config.BugTemplate
+
+	// Tolerate unknown fields when fetching entities.
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // Console is a datastore entity representing a single console.
