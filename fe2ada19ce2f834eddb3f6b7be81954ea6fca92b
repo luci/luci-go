@@ -22,6 +22,30 @@
       "revId": "fe2ada19ce2f834eddb3f6b7be81954ea6fca92b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cccad3f1_c868812f",
+        "filename": "lucicfg/testdata/scheduler/ambiguity_resolution.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-06T21:50:03Z",
+      "side": 1,
+      "message": "Oops. Done.",
+      "parentUuid": "bc52f689_1624dd4f",
+      "range": {
+        "startLine": 16,
+        "startChar": 8,
+        "endLine": 16,
+        "endChar": 11
+      },
+      "revId": "fe2ada19ce2f834eddb3f6b7be81954ea6fca92b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
