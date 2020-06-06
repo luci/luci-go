@@ -27,6 +27,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"github.com/protocolbuffers/txtpbfmt/parser"
 )
 
 // ToTextPB serializes a protobuf message to text proto.
@@ -36,7 +38,11 @@ func ToTextPB(msg *Message) ([]byte, error) {
 		Indent:       "  ",
 		Resolver:     msg.typ.loader.types, // used for google.protobuf.Any fields
 	}
-	return opts.Marshal(msg.ToProto())
+	blob, err := opts.Marshal(msg.ToProto())
+	if err != nil {
+		return nil, err
+	}
+	return parser.Format(blob)
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.
@@ -60,7 +66,7 @@ func ToWirePB(msg *Message) ([]byte, error) {
 
 // FromTextPB deserializes a protobuf message given in text proto form.
 func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
-	pb := dynamicpb.New(typ.desc)
+	pb := dynamicpb.NewMessage(typ.desc)
 	opts := prototext.UnmarshalOptions{
 		AllowPartial: true,
 		Resolver:     typ.loader.types, // used for google.protobuf.Any fields
@@ -73,7 +79,7 @@ func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 
 // FromJSONPB deserializes a protobuf message given as JBONPB string.
 func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
-	pb := dynamicpb.New(typ.desc)
+	pb := dynamicpb.NewMessage(typ.desc)
 	opts := protojson.UnmarshalOptions{
 		AllowPartial:   true,
 		DiscardUnknown: true,
@@ -87,7 +93,7 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 
 // FromWirePB deserializes a protobuf message given as a wire-encoded blob.
 func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
-	pb := dynamicpb.New(typ.desc)
+	pb := dynamicpb.NewMessage(typ.desc)
 	opts := proto.UnmarshalOptions{
 		AllowPartial:   true,
 		DiscardUnknown: true,

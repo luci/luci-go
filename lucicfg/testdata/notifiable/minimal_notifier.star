@@ -72,116 +72,116 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "bucket"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "builder 1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "builder 3"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "builder 4"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "builder 5"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === luci-notify.cfg
-# notifiers: <
-#   notifications: <
+# notifiers: {
+#   notifications: {
 #     on_occurrence: FAILURE
-#     email: <
+#     email: {
 #       recipients: "a@example.com"
-#     >
-#   >
-#   builders: <
+#     }
+#   }
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 1"
-#   >
-# >
-# notifiers: <
-#   notifications: <
+#   }
+# }
+# notifiers: {
+#   notifications: {
 #     on_occurrence: FAILURE
-#     notify_blamelist: <>
-#   >
-#   builders: <
+#     notify_blamelist: {}
+#   }
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 2"
 #     repository: "https://repo.example.com"
-#   >
-# >
-# notifiers: <
-#   notifications: <
+#   }
+# }
+# notifiers: {
+#   notifications: {
 #     on_occurrence: FAILURE
 #     on_occurrence: INFRA_FAILURE
-#     notify_blamelist: <>
-#   >
-#   builders: <
+#     notify_blamelist: {}
+#   }
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 3"
 #     repository: "https://repo.example.com"
-#   >
-# >
-# notifiers: <
-#   notifications: <
+#   }
+# }
+# notifiers: {
+#   notifications: {
 #     on_occurrence: FAILURE
 #     failed_step_regexp: ".*test.*"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 4"
-#   >
-# >
-# notifiers: <
-#   notifications: <
+#   }
+# }
+# notifiers: {
+#   notifications: {
 #     on_occurrence: FAILURE
-#     email: <
+#     email: {
 #       rota_ng_rotations: "sheriff"
-#     >
-#   >
-#   builders: <
+#     }
+#   }
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 5"
-#   >
-# >
+#   }
+# }
 # ===
 #
 # === project.cfg

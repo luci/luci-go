@@ -49,7 +49,7 @@ assert.fails(set_as_msg,
 
 # Serialization works.
 text = proto.to_textpb(testprotos.MessageFields(single=testprotos.Simple(i=999)))
-assert.eq(text, """single: <
+assert.eq(text, """single: {
   i: 999
->
+}
 """)

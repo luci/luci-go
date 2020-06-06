@@ -28,44 +28,44 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "ci"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === luci-scheduler.cfg
-# job: <
+# job: {
 #   id: "builder"
 #   acl_sets: "ci"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "builder"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "poller"
 #   acl_sets: "ci"
 #   triggers: "builder"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
-#   >
-# >
-# acl_sets: <
+#   }
+# }
+# acl_sets: {
 #   name: "ci"
-# >
+# }
 # ===
 #
 # === project.cfg
