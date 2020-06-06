@@ -31,7 +31,7 @@ func TestBuildSet(t *testing.T) {
 	Convey("Gerrit", t, func() {
 		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("patch/gerrit/chromium-review.googlesource.com/678507/3")
-			So(actual, ShouldResemble, &pb.GerritChange{
+			So(actual, ShouldResembleProto, &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
@@ -50,7 +50,7 @@ func TestBuildSet(t *testing.T) {
 	Convey("Gitiles", t, func() {
 		Convey("ParseBuildSet", func() {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			So(actual, ShouldResemble, &pb.GitilesCommit{
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
