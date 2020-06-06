@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2b193323_170ff450",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-06T09:01:24Z",
+      "side": 1,
+      "message": "this is the new proto feature requirement. See LUCI team chat -- by coincidence, I had to dig into this today, too 😊\nGovet is the one noticing this thanks to https://golang.org/issues/8005.\n\nFor future readers, see https://github.com/protocolbuffers/protobuf-go/blob/69839c78c3baff8f1fb37f37b24127ecae185e03/internal/pragma/pragma.go#L24\nand https://github.com/protocolbuffers/protobuf-go/blob/69839c78c3baff8f1fb37f37b24127ecae185e03/internal/impl/message_reflect.go#L269",
+      "parentUuid": "ef5de029_c8849e8a",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 36
+      },
+      "revId": "0198ba5877009fb3b5ba33ba059a8bd3e393a19d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "195e438a_693fd4fe",
         "filename": "milo/common/config.go",
         "patchSetId": 1
