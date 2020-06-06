@@ -15,6 +15,7 @@
 package services
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -59,6 +60,10 @@ func TestTaskQueue(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(len(tasks.Tasks), ShouldEqual, 2)
+			// No order is guaranteed in the returned slice
+			sort.Slice(tasks.Tasks, func(i, j int) bool {
+				return tasks.Tasks[i].Id < tasks.Tasks[j].Id
+			})
 			So(tasks.Tasks[0].Project, ShouldEqual, "foo")
 			So(tasks.Tasks[0].Id, ShouldEqual, "deadbeef1")
 			Convey(`And delete one of the tasks`, func() {
