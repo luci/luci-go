@@ -447,6 +447,24 @@
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c090699d_444bd46d",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-06T17:51:15Z",
+      "side": 1,
+      "message": "\u003e can make resultdb write to any bq table that resultdb has permission to write to\n\nnot exactly. ResultDB uses a project-scoped service account, so it is \"write to any bq table that the LUCI project has permission to write to\". Our job here is to ensure that the instruction \"please export to this table\" are coming from a place that the LUCI project trusts. It is secure for buildbucket because buildbucket reads destination tables from project-level configs. But it is not secure for invocations created by individual developers who intent to just upload test results to ResultDB (without BQ).",
+      "parentUuid": "36943ba6_6235b7b9",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
