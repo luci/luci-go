@@ -17,16 +17,39 @@ package protoutil
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc"
 
-	"github.com/golang/mock/gomock"
+	"go.chromium.org/luci/common/errors"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+type searchStub struct {
+	pb.BuildsClient
+	reqs         []*pb.SearchBuildsRequest
+	mu           sync.Mutex
+	searchBuilds func(context.Context, *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error)
+}
+
+func (c *searchStub) SearchBuilds(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+	c.mu.Lock()
+	c.reqs = append(c.reqs, in)
+	c.mu.Unlock()
+	return c.searchBuilds(ctx, in)
+}
+
+func (c *searchStub) simpleMock(res *pb.SearchBuildsResponse, err error) {
+	c.searchBuilds = func(context.Context, *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
+		return res, err
+	}
+}
 
 func TestSearch(t *testing.T) {
 	t.Parallel()
@@ -34,9 +57,7 @@ func TestSearch(t *testing.T) {
 	Convey("Search", t, func(c C) {
 		ctx := context.Background()
 
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
-		client := pb.NewMockBuildsClient(ctl)
+		client := &searchStub{}
 
 		search := func(requests ...*pb.SearchBuildsRequest) ([]*pb.Build, error) {
 			buildC := make(chan *pb.Build)
@@ -54,33 +75,29 @@ func TestSearch(t *testing.T) {
 		}
 
 		Convey("One page", func() {
-			req := &pb.SearchBuildsRequest{}
 			expectedBuilds := []*pb.Build{{Id: 1}, {Id: 2}}
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), req).
-				Return(&pb.SearchBuildsResponse{Builds: expectedBuilds}, nil)
-
+			client.simpleMock(&pb.SearchBuildsResponse{Builds: expectedBuilds}, nil)
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
 			So(err, ShouldBeNil)
 			So(actualBuilds, ShouldResembleProto, expectedBuilds)
 		})
 
 		Convey("Two pages", func() {
-			firstPage := client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{}).
-				Return(&pb.SearchBuildsResponse{
-					Builds:        []*pb.Build{{Id: 1}, {Id: 2}},
-					NextPageToken: "cursor",
-				}, nil)
-
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{
-					PageToken: "cursor",
-				}).
-				After(firstPage).
-				Return(&pb.SearchBuildsResponse{
-					Builds: []*pb.Build{{Id: 3}},
-				}, nil)
+			client.searchBuilds = func(ctx context.Context, in *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
+				switch in.PageToken {
+				case "":
+					return &pb.SearchBuildsResponse{
+						Builds:        []*pb.Build{{Id: 1}, {Id: 2}},
+						NextPageToken: "token",
+					}, nil
+				case "token":
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{{Id: 3}},
+					}, nil
+				default:
+					return nil, errors.Reason("unexpected request").Err()
+				}
+			}
 
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
 			So(err, ShouldBeNil)
@@ -88,38 +105,30 @@ func TestSearch(t *testing.T) {
 		})
 
 		Convey("Response error", func() {
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{}).
-				Return(nil, fmt.Errorf("request failed"))
-
+			client.simpleMock(nil, fmt.Errorf("request failed"))
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
 			So(err, ShouldErrLike, "request failed")
 			So(actualBuilds, ShouldBeEmpty)
 		})
 
 		Convey("Ensure Required fields", func() {
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{
-					Fields: &field_mask.FieldMask{Paths: []string{"builds.*.created_by", "builds.*.id", "next_page_token"}},
-				}).
-				Return(&pb.SearchBuildsResponse{}, nil)
-
+			client.simpleMock(&pb.SearchBuildsResponse{}, nil)
 			actualBuilds, err := search(&pb.SearchBuildsRequest{
 				Fields: &field_mask.FieldMask{Paths: []string{"builds.*.created_by"}},
 			})
 			So(err, ShouldBeNil)
 			So(actualBuilds, ShouldBeEmpty)
+			So(client.reqs, ShouldHaveLength, 1)
+			So(client.reqs[0].Fields, ShouldResembleProto, &field_mask.FieldMask{Paths: []string{"builds.*.created_by", "builds.*.id", "next_page_token"}})
 		})
 
 		Convey("Interrupt", func() {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{}).
-				Return(&pb.SearchBuildsResponse{
-					Builds: []*pb.Build{{Id: 1}, {Id: 2}, {Id: 3}},
-				}, nil)
+			client.simpleMock(&pb.SearchBuildsResponse{
+				Builds: []*pb.Build{{Id: 1}, {Id: 2}, {Id: 3}},
+			}, nil)
 
 			builds := make(chan *pb.Build)
 			errC := make(chan error)
@@ -171,20 +180,22 @@ func TestSearch(t *testing.T) {
 					buildIDs: []int64{3},
 				},
 			}
-			for _, r := range requests {
-				builds := make([]*pb.Build, len(r.buildIDs))
-				for i, id := range r.buildIDs {
-					builds[i] = &pb.Build{Id: id}
-				}
-				client.EXPECT().
-					SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{
-						Predicate: &pb.BuildPredicate{Status: r.status},
-						PageToken: r.pageToken,
-					}).
-					Return(&pb.SearchBuildsResponse{
+			client.searchBuilds = func(ctx context.Context, in *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
+				for _, r := range requests {
+					if in.PageToken != r.pageToken || in.Predicate.GetStatus() != r.status {
+						continue
+					}
+					builds := make([]*pb.Build, len(r.buildIDs))
+					for i, id := range r.buildIDs {
+						builds[i] = &pb.Build{Id: id}
+					}
+					return &pb.SearchBuildsResponse{
 						Builds:        builds,
 						NextPageToken: r.nextPageToken,
-					}, nil)
+					}, nil
+				}
+
+				return nil, errors.Reason("unexpected request").Err()
 			}
 
 			builds, err := search([]*pb.SearchBuildsRequest{
@@ -193,6 +204,7 @@ func TestSearch(t *testing.T) {
 				{Predicate: &pb.BuildPredicate{Status: pb.Status_INFRA_FAILURE}},
 			}...)
 			So(err, ShouldBeNil)
+
 			So(builds, ShouldResembleProto, []*pb.Build{
 				{Id: 1},
 				{Id: 2},
@@ -208,22 +220,22 @@ func TestSearch(t *testing.T) {
 		})
 
 		Convey("Duplicate build", func() {
-			// First stream, with status filter SUCCESS and two pages.
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{
-					Predicate: &pb.BuildPredicate{Status: pb.Status_SUCCESS},
-				}).
-				Return(&pb.SearchBuildsResponse{
-					Builds: []*pb.Build{{Id: 1}, {Id: 11}, {Id: 21}},
-				}, nil)
-			// Second stream, with status filter FAILURE and two pages.
-			client.EXPECT().
-				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{
-					Predicate: &pb.BuildPredicate{Status: pb.Status_FAILURE},
-				}).
-				Return(&pb.SearchBuildsResponse{
-					Builds: []*pb.Build{{Id: 2}, {Id: 11}, {Id: 22}},
-				}, nil)
+			client.searchBuilds = func(ctx context.Context, in *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error) {
+				switch {
+				case in.Predicate.Status == pb.Status_SUCCESS:
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{{Id: 1}, {Id: 11}, {Id: 21}},
+					}, nil
+
+				case in.Predicate.Status == pb.Status_FAILURE:
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{{Id: 2}, {Id: 11}, {Id: 22}},
+					}, nil
+
+				default:
+					return nil, errors.Reason("unexpected request").Err()
+				}
+			}
 
 			builds, err := search([]*pb.SearchBuildsRequest{
 				{Predicate: &pb.BuildPredicate{Status: pb.Status_SUCCESS}},
