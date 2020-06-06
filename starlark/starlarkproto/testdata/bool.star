@@ -26,7 +26,7 @@ assert.eq(m.b, True)
 assert.eq(proto.to_textpb(m), 'b: true\n')
 m.b = False
 assert.eq(m.b, False)
-assert.eq(proto.to_textpb(m), '\n')  # 'false' is default!
+assert.eq(proto.to_textpb(m), '')  # 'false' is default!
 
 # Setting through constructor works.
 m2 = testprotos.SimpleFields(b=True)
