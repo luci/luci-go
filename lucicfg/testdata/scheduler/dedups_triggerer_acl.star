@@ -35,59 +35,59 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "ci"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "b1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       service_account: "account@example.com"
-#     >
-#     builders: <
+#     }
+#     builders: {
 #       name: "b2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       service_account: "account@example.com"
-#     >
-#     builders: <
+#     }
+#     builders: {
 #       name: "b3"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === luci-scheduler.cfg
-# job: <
+# job: {
 #   id: "b3"
-#   acls: <
+#   acls: {
 #     role: TRIGGERER
 #     granted_to: "account@example.com"
-#   >
+#   }
 #   acl_sets: "ci"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b3"
-#   >
-# >
-# acl_sets: <
+#   }
+# }
+# acl_sets: {
 #   name: "ci"
-# >
+# }
 # ===
 #
 # === project.cfg
