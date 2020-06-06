@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef5de029_c8849e8a",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-06T03:15:11Z",
+      "side": 1,
+      "message": "This is a bug, proto messages should be not passed by value (they carry some not-safely-copyable guts, something related to synchronization). My editor highlighted this issue (have no idea how it does that...).",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 36
+      },
+      "revId": "0198ba5877009fb3b5ba33ba059a8bd3e393a19d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "195e438a_693fd4fe",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 489,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-06T03:15:11Z",
+      "side": 1,
+      "message": "no changed here, extracted from what used to be updateProjectConsoles",
+      "range": {
+        "startLine": 456,
+        "startChar": 0,
+        "endLine": 489,
+        "endChar": 2
+      },
+      "revId": "0198ba5877009fb3b5ba33ba059a8bd3e393a19d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
