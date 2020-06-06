@@ -15,26 +15,23 @@
 package lucicfg
 
 import (
-	"bytes"
-	"compress/gzip"
 	"fmt"
-	"io/ioutil"
 
-	proto_v1 "github.com/golang/protobuf/proto"
-	descpb_v1 "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/proto"
-
-	"go.chromium.org/luci/starlark/protohacks"
+	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
-	_ "github.com/golang/protobuf/ptypes/any"
-	_ "github.com/golang/protobuf/ptypes/duration"
-	_ "github.com/golang/protobuf/ptypes/empty"
-	_ "github.com/golang/protobuf/ptypes/struct"
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-	_ "github.com/golang/protobuf/ptypes/wrappers"
+	_ "google.golang.org/protobuf/types/known/anypb"
+	_ "google.golang.org/protobuf/types/known/durationpb"
+	_ "google.golang.org/protobuf/types/known/emptypb"
+	_ "google.golang.org/protobuf/types/known/structpb"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
+	_ "google.golang.org/protobuf/types/known/wrapperspb"
 
 	_ "google.golang.org/genproto/googleapis/type/calendarperiod"
 	_ "google.golang.org/genproto/googleapis/type/color"
@@ -59,7 +56,8 @@ import (
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 )
 
-// Collection of built-in descriptor sets built from protobuf v1 registry.
+// Collection of built-in descriptor sets built from the protobuf registry
+// embedded into the lucicfg binary.
 var (
 	wellKnownDescSet *starlarkproto.DescriptorSet
 	googTypesDescSet *starlarkproto.DescriptorSet
@@ -68,7 +66,7 @@ var (
 
 // init initializes DescSet global vars.
 //
-// Uses protobuf v1 registry embedded into the binary. It visits imports in
+// Uses the protobuf registry embedded into the binary. It visits imports in
 // topological order, to make sure all cross-file references are correctly
 // resolved. We assume there are no circular dependencies (if there are, they'll
 // be caught by hanging unit tests).
@@ -119,7 +117,7 @@ func init() {
 }
 
 // builtinDescriptorSet assembles a *DescriptorSet from descriptors embedded
-// into the binary in protobuf v1 registry.
+// into the binary in the protobuf registry.
 //
 // Visits 'files' and all their dependencies (not already visited per 'visited'
 // set), adding them in topological order to the new DescriptorSet, updating
@@ -129,13 +127,14 @@ func init() {
 //
 // Panics on errors. Built-in descriptors can't be invalid.
 func builtinDescriptorSet(name string, files []string, visited stringset.Set, deps ...*starlarkproto.DescriptorSet) *starlarkproto.DescriptorSet {
-	list := protohacks.FileDescriptorsList{}
+	var descs []*descriptorpb.FileDescriptorProto
 	for _, f := range files {
-		if err := visitRegistry(&list, f, visited); err != nil {
+		var err error
+		if descs, err = visitRegistry(descs, f, visited); err != nil {
 			panic(fmt.Errorf("%s: %s", f, err))
 		}
 	}
-	ds, err := starlarkproto.NewDescriptorSet(name, list.Descriptors, deps)
+	ds, err := starlarkproto.NewDescriptorSet(name, descs, deps)
 	if err != nil {
 		panic(err)
 	}
@@ -143,48 +142,29 @@ func builtinDescriptorSet(name string, files []string, visited stringset.Set, de
 }
 
 // visitRegistry visits dependencies of 'path', and then 'path' itself.
-func visitRegistry(l *protohacks.FileDescriptorsList, path string, visited stringset.Set) error {
+//
+// Appends discovered file descriptors to fds and returns it.
+func visitRegistry(fds []*descriptorpb.FileDescriptorProto, path string, visited stringset.Set) ([]*descriptorpb.FileDescriptorProto, error) {
 	if !visited.Add(path) {
-		return nil // visited it already
+		return fds, nil // visited it already
 	}
-	raw, err := rawFileDescriptor(path)
+	fd, err := protoregistry.GlobalFiles.FindFileByPath(path)
 	if err != nil {
-		return err
+		return fds, err
 	}
-	fd, err := protohacks.UnmarshalFileDescriptorProto(raw)
-	if err != nil {
-		return err
-	}
-	for _, d := range fd.GetDependency() {
-		if err := visitRegistry(l, d, visited); err != nil {
-			return fmt.Errorf("%s: %s", d, err)
+	fdp := protodesc.ToFileDescriptorProto(fd)
+	for _, d := range fdp.GetDependency() {
+		if fds, err = visitRegistry(fds, d, visited); err != nil {
+			return fds, fmt.Errorf("%s: %s", d, err)
 		}
 	}
-	l.Add(fd)
-	return nil
-}
-
-// rawFileDescriptor extracts raw FileDescriptor from protobuf v1 registry.
-func rawFileDescriptor(path string) ([]byte, error) {
-	gzblob := proto_v1.FileDescriptor(path)
-	if gzblob == nil {
-		return nil, fmt.Errorf("proto %q is not in the registry", path)
-	}
-
-	r, err := gzip.NewReader(bytes.NewReader(gzblob))
-	if err != nil {
-		return nil, fmt.Errorf("failed to open gzip reader for %q - %s", path, err)
-	}
-	defer r.Close()
-
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("failed to uncompress descriptor for %q - %s", path, err)
-	}
-	return b, nil
+	return append(fds, fdp), nil
 }
 
 // protoMessageDoc returns the message name and a link to its schema doc.
+//
+// Extracts it from `option (lucicfg.file_metadata) = {...}` embedded
+// into the file descriptor proto.
 //
 // If there's no documentation, returns two empty strings.
 func protoMessageDoc(msg *starlarkproto.Message) (name, doc string) {
@@ -192,25 +172,11 @@ func protoMessageDoc(msg *starlarkproto.Message) (name, doc string) {
 	if fd == nil {
 		return "", ""
 	}
-	// Try to grab doc_url from `option (lucicfg.file_metadata) = {...}` embedded
-	// into the proto descriptor. Since we still use proto v1 as our *.go code
-	// generator, but proto v2 as our runtime API, there are some interoperability
-	// issues we solve by round-tripping descriptorpb.FileOptions message through
-	// proto serialization (we serialize it as v2 proto, and deserialize it as v1
-	// proto, which allows us to use code-generated proto extensions API).
-	//
-	// If something fails, just give up, it's not a crucial functionality. Note
-	// that unit tests verify the golden path.
-	if blob, _ := protohacks.FileOptions(fd); blob != nil {
-		// TODO(vadimsh): Move this to common/proto.
-		fileOpts := &descpb_v1.FileOptions{}
-		if err := proto_v1.Unmarshal(blob, fileOpts); err == nil {
-			exts, err := proto_v1.GetExtensions(fileOpts, []*proto_v1.ExtensionDesc{proto.E_FileMetadata})
-			if err == nil && exts[0] != nil {
-				if meta := exts[0].(*proto.Metadata); meta.GetDocUrl() != "" {
-					return string(msg.MessageType().Descriptor().Name()), meta.GetDocUrl()
-				}
-			}
+	opts := fd.Options().(*descriptorpb.FileOptions)
+	if opts != nil && proto.HasExtension(opts, luciproto.E_FileMetadata) {
+		meta := proto.GetExtension(opts, luciproto.E_FileMetadata).(*luciproto.Metadata)
+		if meta.GetDocUrl() != "" {
+			return string(msg.MessageType().Descriptor().Name()), meta.GetDocUrl()
 		}
 	}
 	return "", "" // not a public proto
