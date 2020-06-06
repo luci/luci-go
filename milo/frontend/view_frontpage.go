@@ -23,7 +23,7 @@ import (
 )
 
 func frontpageHandler(c *router.Context) {
-	projs, err := common.GetAllProjects(c.Context)
+	projs, err := common.GetVisibleProjects(c.Context)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
