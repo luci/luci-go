@@ -1,0 +1,12 @@
+CREATE TABLE ttq_reminders (
+	ReminderId STRING(MAX) NOT NULL,
+	FreshUntil TIMESTAMP NOT NULL,
+	Payload BYTES(102400) NOT NULL,
+) PRIMARY KEY (ReminderId);
+
+CREATE TABLE ttq_leases (
+	ShardId INT64 NOT NULL,
+	LeaseId STRING(MAX) NOT NULL,
+	Parts ARRAY<STRING(MAX)>,
+	ExpiresAt TIMESTAMP NOT NULL,
+) PRIMARY KEY (ShardId, LeaseId);
