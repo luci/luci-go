@@ -429,6 +429,24 @@
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36943ba6_6235b7b9",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-06T01:27:20Z",
+      "side": 1,
+      "message": "The reasoning is that anybody who has exportToBigQuery permissions can make resultdb write to any bq table that resultdb has permission to write to, unless we keep track of which realms are authorized to be exported to which table, which seems to exceed the scope of realms.\n\nre: internal roles: how do we make sure that the permission inside the internal role is not granted through some custom role for example?",
+      "parentUuid": "18e4eb91_95880d8d",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
