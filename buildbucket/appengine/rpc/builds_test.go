@@ -28,11 +28,11 @@ func TestBuilds(t *testing.T) {
 	t.Parallel()
 
 	Convey("Builds", t, func() {
-		srv := New()
+		srv := NewBuilds()
 		ctx := context.Background()
 
 		Convey("ensure unimplemented", func() {
-			srv = New()
+			srv = NewBuilds()
 
 			Convey("Batch", func() {
 				rsp, err := srv.Batch(ctx, nil)
