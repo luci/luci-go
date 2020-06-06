@@ -187,7 +187,7 @@ func GetBuildAndBucket(ctx context.Context, id int64) (*Build, *Bucket, error) {
 	}
 	bck := &Bucket{
 		ID:     bld.Proto.Builder.Bucket,
-		Parent: datastore.KeyForObj(ctx, &Project{ID: bld.Proto.Builder.Project}),
+		Parent: ProjectKey(ctx, bld.Proto.Builder.Project),
 	}
 	switch err := datastore.Get(ctx, bck); {
 	case err == datastore.ErrNoSuchEntity:
