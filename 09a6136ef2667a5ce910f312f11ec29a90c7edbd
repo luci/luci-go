@@ -465,6 +465,24 @@
       "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "767d3c3b_a7536100",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-06T19:33:03Z",
+      "side": 1,
+      "message": "\u003e But it is not secure for invocations created by individual developers who intent to just upload test results to ResultDB (without BQ).\n\nWhy is it not secure? If a person is granted exportToBigQuery in realms.cfg (a place that \"LUCI project trusts\"), then this person is trusted to export things to whatever BQ table they want. Why do we want to additionally restrict BQ destinations in this case?\n\nRe: internal roles + custom roles. Yeah, good observation. I guess we\u0027ll need internal permissions too.",
+      "parentUuid": "c090699d_444bd46d",
+      "revId": "09a6136ef2667a5ce910f312f11ec29a90c7edbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
