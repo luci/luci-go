@@ -17,6 +17,6 @@ package buildbucketpb
 //go:generate go install go.chromium.org/luci/grpc/cmd/cproto go.chromium.org/luci/grpc/cmd/svcdec
 //go:generate cproto
 //go:generate proto-gae -type Bucket -type Build -type BuildInfra
-//go:generate mockgen -source rpc.pb.go -destination rpc.mock.pb.go -package buildbucketpb -write_package_comment=false
-//go:generate goimports -w rpc.mock.pb.go
-//go:generate svcdec -type BuildsServer
+//go:generate mockgen -source builds_service.pb.go -destination builds_service.mock.pb.go -package buildbucketpb -write_package_comment=false
+//go:generate goimports -w builds_service.mock.pb.go
+//go:generate svcdec -type BuildsServer -type BuildersServer
