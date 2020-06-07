@@ -79,10 +79,8 @@ func TestCancelBuild(t *testing.T) {
 					Identity: identity.Identity("user:user"),
 				})
 				So(datastore.Put(ctx, &model.Bucket{
-					ID: "bucket",
-					Parent: datastore.KeyForObj(ctx, &model.Project{
-						ID: "project",
-					}),
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
 					Proto: pb.Bucket{
 						Acls: []*pb.Acl{
 							{
@@ -116,10 +114,8 @@ func TestCancelBuild(t *testing.T) {
 					Identity: identity.Identity("user:user"),
 				})
 				So(datastore.Put(ctx, &model.Bucket{
-					ID: "bucket",
-					Parent: datastore.KeyForObj(ctx, &model.Project{
-						ID: "project",
-					}),
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
 					Proto: pb.Bucket{
 						Acls: []*pb.Acl{
 							{
