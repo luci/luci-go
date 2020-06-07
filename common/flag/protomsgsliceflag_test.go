@@ -25,6 +25,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // special type that implements proto.Message interface for test purpose
@@ -54,14 +55,14 @@ func TestProtoMessageSliceFlag(t *testing.T) {
 		err = flag.Set("{\"id\": 333333, \"status\": \"CANCELED\"}")
 		So(err, ShouldBeNil)
 
-		So(flag.Get(), ShouldResemble, builds)
+		So(flag.Get(), ShouldResembleProto, builds)
 		So(builds, ShouldHaveLength, 3)
-		So(builds, ShouldContain,
-			&pb.Build{Id: 111111, Status: pb.Status_SUCCESS})
-		So(builds, ShouldContain,
-			&pb.Build{Id: 222222, Status: pb.Status_FAILURE})
-		So(builds, ShouldContain,
-			&pb.Build{Id: 333333, Status: pb.Status_CANCELED})
+		So(builds[0].Id, ShouldEqual, 111111)
+		So(builds[0].Status, ShouldEqual, pb.Status_SUCCESS)
+		So(builds[1].Id, ShouldEqual, 222222)
+		So(builds[1].Status, ShouldEqual, pb.Status_FAILURE)
+		So(builds[2].Id, ShouldEqual, 333333)
+		So(builds[2].Status, ShouldEqual, pb.Status_CANCELED)
 		// Hard to set expectation for JSON string due to indentation
 		// and field order. Therefore, simply check if it's empty or not.
 		So(flag.String(), ShouldNotBeBlank)
