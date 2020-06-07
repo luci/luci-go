@@ -16,6 +16,8 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
@@ -69,6 +71,39 @@ func BucketKey(ctx context.Context, project, bucket string) *datastore.Key {
 		ID:     bucket,
 		Parent: ProjectKey(ctx, project),
 	})
+}
+
+// BucketID returns a canonical string representation of a bucket:
+// "{project}:{bucket}".
+func BucketID(project, bucket string) string {
+	return fmt.Sprintf("%s:%s", project, bucket)
+}
+
+// ParseBucketID parses a string producd by BucketID.
+// Assumes that bucketID is valid.
+func ParseBucketID(bucketID string) (project, bucket string) {
+	parts := strings.Split(bucketID, ":")
+	if len(parts) != 2 {
+		panic("len(parts) != 2")
+	}
+	return parts[0], parts[1]
+}
+
+// GetBucket fetches one bucket.
+// Returns datastore.ErrNoSuchEntity if it is not found.
+func GetBucket(ctx context.Context, project, bucket string) (*Bucket, error) {
+	bck := &Bucket{
+		ID:     bucket,
+		Parent: ProjectKey(ctx, project),
+	}
+	switch err := datastore.Get(ctx, bck); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	case err != nil:
+		return nil, errors.Annotate(err, "error fetching bucket %q", BucketID(project, bucket)).Err()
+	default:
+		return bck, nil
+	}
 }
 
 // NoRole indicates the user has no defined role in a bucket.

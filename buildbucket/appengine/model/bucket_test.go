@@ -176,3 +176,13 @@ func TestBucket(t *testing.T) {
 		})
 	})
 }
+
+func TestBucketID(t *testing.T) {
+	Convey(`BucketID`, t, func() {
+		So(BucketID("project", "bucket"), ShouldEqual, "project:bucket")
+
+		project, bucket := ParseBucketID("project:bucket")
+		So(project, ShouldEqual, "project")
+		So(bucket, ShouldEqual, "bucket")
+	})
+}

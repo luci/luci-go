@@ -87,10 +87,17 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 	return nil
 }
 
+func validatePageSize(pageSize int32) error {
+	if pageSize < 0 {
+		return errors.Reason("page_size cannot be negative").Err()
+	}
+	return nil
+}
+
 // validateSearch validates the given request.
 func validateSearch(req *pb.SearchBuildsRequest) error {
-	if req.GetPageSize() < 0 {
-		return errors.Reason("page_size cannot be negative").Err()
+	if err := validatePageSize(req.GetPageSize()); err != nil {
+		return err
 	}
 	if err := validatePredicate(req.GetPredicate()); err != nil {
 		return errors.Annotate(err, "predicate").Err()
