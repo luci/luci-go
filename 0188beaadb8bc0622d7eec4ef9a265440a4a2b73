@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ecac96f5_ea7095d1",
+        "filename": "starlark/starlarkproto/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-07T21:59:53Z",
+      "side": 1,
+      "message": "Had to add this. See functions.go for where it is called.",
+      "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
