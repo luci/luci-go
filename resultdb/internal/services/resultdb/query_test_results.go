@@ -34,12 +34,18 @@ import (
 
 const maxInvocationGraphSize = 10000
 
-// queryRequest is implemented by *pb.QueryTestResultsRequest and
-// *pb.QueryTestExonerationsRequest.
+// queryRequest is implemented by *pb.QueryTestResultsRequest,
+// *pb.QueryTestExonerationsRequest and *pb.QueryTestResultStatisticsRequest.
 type queryRequest interface {
 	GetInvocations() []string
-	GetPageSize() int32
 	GetMaxStaleness() *durpb.Duration
+}
+
+// queryRequestWithPaging is implemented by *pb.QueryTestResultsRequest and
+// *pb.QueryTestExonerationsRequest.
+type queryRequestWithPaging interface {
+	queryRequest
+	GetPageSize() int32
 }
 
 // validateQueryRequest returns a non-nil error if req is determined to be
@@ -54,16 +60,18 @@ func validateQueryRequest(req queryRequest) error {
 		}
 	}
 
-	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
-	}
-
 	if req.GetMaxStaleness() != nil {
 		if err := pbutil.ValidateMaxStaleness(req.GetMaxStaleness()); err != nil {
 			return errors.Annotate(err, "max_staleness").Err()
 		}
 	}
 
+	if paging, ok := req.(queryRequestWithPaging); ok {
+		// validate paging
+		if err := pagination.ValidatePageSize(paging.GetPageSize()); err != nil {
+			return errors.Annotate(err, "page_size").Err()
+		}
+	}
 	return nil
 }
 
