@@ -21,6 +21,7 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/step.proto";
 import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
@@ -416,16 +417,4 @@ message BuildInfra {
   LogDog logdog = 3;
   Recipe recipe = 4;
   ResultDB resultdb = 5;
-}
-
-// Identifies a builder.
-// Canonical string representation: “{project}/{bucket}/{builder}”.
-message BuilderID {
-  // Project ID, e.g. "chromium". Unique within a LUCI deployment.
-  string project = 1;
-  // Bucket name, e.g. "try". Unique within the project.
-  // Together with project, defines an ACL.
-  string bucket = 2;
-  // Builder name, e.g. "linux-rel". Unique within the bucket.
-  string builder = 3;
 }
