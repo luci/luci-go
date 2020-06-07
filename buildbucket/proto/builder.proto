@@ -1,0 +1,37 @@
+// Copyright 2020 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package buildbucket.v2;
+
+option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
+
+import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
+
+// Identifies a builder.
+// Canonical string representation: "{project}/{bucket}/{builder}".
+message BuilderID {
+  // Project ID, e.g. "chromium". Unique within a LUCI deployment.
+  string project = 1;
+  // Bucket name, e.g. "try". Unique within the project.
+  // Together with project, defines an ACL.
+  string bucket = 2;
+  // Builder name, e.g. "linux-rel". Unique within the bucket.
+  string builder = 3;
+}
+
+// A configured builder.
+//
+// It is called BuilderItem and not Builder because
+// 1) Builder already exists
+// 2) Name "Builder" is incompatible with proto->Java compiler.
+message BuilderItem {
+  // Uniquely identifies the builder in a given Buildbucket instance.
+  BuilderID id = 1;
+
+  // User-supplied configuration after normalization.
+  // Does not refer to mixins and has defaults inlined.
+  Builder config = 2;
+}
