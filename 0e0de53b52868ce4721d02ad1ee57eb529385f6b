@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cef82809_81f55564",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-07T21:02:49Z",
+      "side": 1,
+      "message": "this code did not change",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 0
+      },
+      "revId": "0e0de53b52868ce4721d02ad1ee57eb529385f6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
