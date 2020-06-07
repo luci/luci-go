@@ -69,20 +69,21 @@ func TestBuild(t *testing.T) {
 			}
 			So(datastore.Get(ctx, b), ShouldBeNil)
 			So(b, ShouldResemble, &Build{
-				ID: 1,
-				Proto: pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
+				ID:         1,
+				Proto:      b.Proto, // assert protobufs separately
 				Project:    "project",
 				BucketID:   "project/bucket",
 				BuilderID:  "project/bucket/builder",
 				CreateTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 				Status:     pb.Status_SUCCESS,
+			})
+			So(&b.Proto, ShouldResembleProto, &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
 			})
 		})
 

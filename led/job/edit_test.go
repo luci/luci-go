@@ -439,7 +439,7 @@ func TestGerritChange(t *testing.T) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
 					mkChange("project"),
 				})
 			},
@@ -452,7 +452,7 @@ func TestGerritChange(t *testing.T) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
 					mkChange("project"),
 				})
 				SoHLEdit(jd, func(je HighLevelEditor) {
@@ -470,7 +470,7 @@ func TestGerritChange(t *testing.T) {
 					je.AddGerritChange(mkChange("project"))
 					je.AddGerritChange(mkChange("project"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
 					mkChange("project"),
 				})
 			},
@@ -487,7 +487,7 @@ func TestGerritChange(t *testing.T) {
 					mkChange("b"),
 					mkChange("c"),
 				}
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
 					mkChange("a"),
 					mkChange("b"),
 					mkChange("c"),
@@ -496,7 +496,7 @@ func TestGerritChange(t *testing.T) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
 					je.RemoveGerritChange(mkChange("b"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
 					mkChange("a"),
 					mkChange("c"),
 				})
@@ -512,7 +512,7 @@ func TestGerritChange(t *testing.T) {
 
 					je.RemoveGerritChange(mkChange("b"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
 					mkChange("a"),
 				})
 			},

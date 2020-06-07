@@ -20,10 +20,12 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	. "github.com/smartystreets/goconvey/convey"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
 	api "go.chromium.org/luci/swarming/proto/api"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMakeDimensionEditCommands(t *testing.T) {
@@ -175,19 +177,19 @@ func TestSetDimensions(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResemble, []*api.StringListPair{
+					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
 							Key:    "key",
 							Values: []string{"A", "AA", "B", "C", "Z"},
 						},
 					})
-					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResemble, []*api.StringListPair{
+					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
 							Key:    "key",
 							Values: []string{"B", "C", "Z"},
 						},
 					})
-					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResemble, []*api.StringListPair{
+					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
 							Key:    "key",
 							Values: []string{"C", "Z"},
@@ -195,7 +197,7 @@ func TestSetDimensions(t *testing.T) {
 					})
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
-					So(rdims, ShouldResemble, []*bbpb.RequestedDimension{
+					So(rdims, ShouldResembleProto, []*bbpb.RequestedDimension{
 						{Key: "key", Value: "A", Expiration: ptypes.DurationProto(swSlice1Exp)},
 						{Key: "key", Value: "AA", Expiration: ptypes.DurationProto(swSlice1Exp)},
 						{Key: "key", Value: "B", Expiration: ptypes.DurationProto(swSlice2Exp)},
@@ -322,7 +324,7 @@ func TestEditDimensions(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResemble, []*api.StringListPair{
+					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
 							Key:    "key",
 							Values: []string{"other_value", "value"},
@@ -332,7 +334,7 @@ func TestEditDimensions(t *testing.T) {
 							Values: []string{"else", "everything"},
 						},
 					})
-					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResemble, []*api.StringListPair{
+					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
 							Key:    "key",
 							Values: []string{"other_value"},
@@ -342,7 +344,7 @@ func TestEditDimensions(t *testing.T) {
 							Values: []string{"else", "everything"},
 						},
 					})
-					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResemble, []*api.StringListPair{
+					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*api.StringListPair{
 						{
 							Key:    "key",
 							Values: []string{"other_value"},
@@ -354,7 +356,7 @@ func TestEditDimensions(t *testing.T) {
 					})
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
-					So(rdims, ShouldResemble, []*bbpb.RequestedDimension{
+					So(rdims, ShouldResembleProto, []*bbpb.RequestedDimension{
 						{Key: "key", Value: "other_value", Expiration: ptypes.DurationProto(swSlice3Exp)},
 						{Key: "key", Value: "value", Expiration: ptypes.DurationProto(swSlice1Exp)},
 						{Key: "reset", Value: "else"},
