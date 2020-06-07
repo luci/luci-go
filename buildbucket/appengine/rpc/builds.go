@@ -150,8 +150,8 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// New returns a new pb.BuildsServer.
-func New() pb.BuildsServer {
+// NewBuilds returns a new pb.BuildsServer.
+func NewBuilds() pb.BuildsServer {
 	return &pb.DecoratedBuilds{
 		Prelude:  logDetails,
 		Service:  &Builds{},
