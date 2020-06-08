@@ -16,6 +16,8 @@ package services
 
 import (
 	"context"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -26,8 +28,12 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/taskqueue"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -35,6 +41,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
+// ArchiveQueueName is the taskqueue queue name which contains Archive tasks.
 const ArchiveQueueName = "archiveTasks"
 
 var (
@@ -47,6 +54,17 @@ var (
 		"logdog/archival/delete_task",
 		"Number of delete task request for the archive queue, as seen by the coordinator",
 		nil)
+)
+
+var (
+	taskqueueLeaseRetry = func() retry.Iterator {
+		// very simple retry scheme; we only have 60s to service the entire
+		// request so we can't let this grow too large.
+		return &retry.Limited{
+			Delay:   time.Second,
+			Retries: 3,
+		}
+	}
 )
 
 // TaskArchival tasks an archival of a stream with the given delay.
@@ -129,30 +147,62 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 		return nil, err
 	}
 
+	var tasks []*taskqueue.Task
 	logging.Infof(c, "got request to lease %d tasks for %s", req.MaxTasks, req.GetLeaseTime())
-	tasks, err := taskqueue.Lease(c, int(req.MaxTasks), ArchiveQueueName, duration)
+
+	err = retry.Retry(c, taskqueueLeaseRetry,
+		func() error {
+			var err error
+			tasks, err = taskqueue.Lease(c, int(req.MaxTasks), ArchiveQueueName, duration)
+			// TODO(iannucci): There probably should be a better API for this error
+			// detection stuff, but since taskqueue is deprecated, I don't think it's
+			// worth the effort.
+			ann := errors.Annotate(err, "leasing archive tasks")
+			if err != nil && strings.Contains(err.Error(), "TRANSIENT_ERROR") {
+				ann.Tag(
+					grpcutil.ResourceExhaustedTag, // for HTTP response code 429.
+					transient.Tag,                 // for retry.Retry.
+				)
+			}
+			return ann.Err()
+		},
+		retry.LogCallback(c, "taskqueue.Lease"))
 	if err != nil {
-		logging.WithError(err).Errorf(c, "could not lease %d tasks from queue", req.MaxTasks)
 		return nil, err
 	}
+
+	logging.Infof(c, "got %d raw tasks from taskqueue", len(tasks))
+
+	var archiveTasksL sync.Mutex
 	archiveTasks := make([]*logdog.ArchiveTask, 0, len(tasks))
-	for _, task := range tasks {
-		at, err := archiveTask(task)
-		if err != nil {
-			// Ignore malformed name errors, just log them.
-			logging.WithError(err).Errorf(c, "while leasing task")
-			continue
-		}
-		// Optimization: Delete the task if it's already archived.
-		if isArchived(c, at) {
-			if err := taskqueue.Delete(c, ArchiveQueueName, task); err != nil {
-				logging.WithError(err).Errorf(c, "failed to delete %s/%s (%s)", at.Project, at.Id, task.Name)
+
+	parallel.WorkPool(8, func(ch chan<- func() error) {
+		for _, task := range tasks {
+			task := task
+			at, err := archiveTask(task)
+			if err != nil {
+				// Ignore malformed name errors, just log them.
+				logging.WithError(err).Errorf(c, "while leasing task")
+				continue
 			}
-			continue
+
+			ch <- func() error {
+				// Optimization: Delete the task if it's already archived.
+				if isArchived(c, at) {
+					if err := taskqueue.Delete(c, ArchiveQueueName, task); err != nil {
+						logging.WithError(err).Errorf(c, "failed to delete %s/%s (%s)", at.Project, at.Id, task.Name)
+					}
+				} else {
+					archiveTasksL.Lock()
+					defer archiveTasksL.Unlock()
+					archiveTasks = append(archiveTasks, at)
+					leaseTask.Add(c, 1, task.RetryCount)
+				}
+				return nil
+			}
 		}
-		archiveTasks = append(archiveTasks, at)
-		leaseTask.Add(c, 1, task.RetryCount)
-	}
+	})
+
 	logging.Infof(c, "Leasing %d tasks", len(archiveTasks))
 	return &logdog.LeaseResponse{Tasks: archiveTasks}, nil
 }
