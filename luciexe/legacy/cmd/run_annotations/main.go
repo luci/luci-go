@@ -83,6 +83,9 @@ func main() {
 			buildMU.Lock()
 			defer buildMU.Unlock()
 			build.Steps = steps
+			if build.Output == nil {
+				build.Output = &pb.Build_Output{}
+			}
 			build.Output.Properties = props
 			sendBuild()
 		}
