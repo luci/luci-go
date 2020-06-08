@@ -102,7 +102,9 @@ func (m *Message) FromDict(d starlark.IterableMapping) error {
 // String returns compact text serialization of this message.
 func (m *Message) String() string {
 	raw := m.ToProto().(interface{ String() string }).String()
-	formatted, err := parser.Format([]byte(raw))
+	formatted, err := parser.FormatWithConfig([]byte(raw), parser.Config{
+		SkipAllColons: true,
+	})
 	if err != nil {
 		return fmt.Sprintf("<bad proto: %q>", err)
 	}

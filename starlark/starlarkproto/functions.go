@@ -44,7 +44,9 @@ func ToTextPB(msg *Message) ([]byte, error) {
 	}
 	// prototext randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
-	return parser.Format(blob)
+	return parser.FormatWithConfig(blob, parser.Config{
+		SkipAllColons: true,
+	})
 }
 
 // ToJSONPB serializes a protobuf message to JSONPB string.

@@ -58,54 +58,54 @@ one('builder-a')
 # Expect configs:
 #
 # === commit-queue.cfg
-# config_groups: {
+# config_groups {
 #   name: "cq group"
-#   gerrit: {
+#   gerrit {
 #     url: "https://example-review.googlesource.com"
-#     projects: {
+#     projects {
 #       name: "repo"
 #       ref_regexp: "refs/heads/master"
 #     }
 #   }
-#   verifiers: {
-#     gerrit_cq_ability: {
+#   verifiers {
+#     gerrit_cq_ability {
 #       committer_list: "c"
 #     }
-#     tryjob: {
-#       builders: {
+#     tryjob {
+#       builders {
 #         name: "project/bucket/builder-a"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-b"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-c"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-d"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-e"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-f"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-g"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-h"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-i"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-j"
 #       }
-#       builders: {
+#       builders {
 #         name: "project/bucket/builder-k"
 #       }
-#       retry_config: {
+#       retry_config {
 #         single_quota: 1
 #         global_quota: 2
 #         failure_weight: 100
@@ -118,113 +118,113 @@ one('builder-a')
 # ===
 #
 # === cr-buildbucket.cfg
-# buckets: {
+# buckets {
 #   name: "bucket"
-#   swarming: {
-#     builders: {
+#   swarming {
+#     builders {
 #       name: "builder-a"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-b"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-c"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-d"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-e"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-f"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-g"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-h"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-i"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-j"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "builder-k"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
@@ -236,40 +236,40 @@ one('builder-a')
 # ===
 #
 # === luci-milo.cfg
-# consoles: {
+# consoles {
 #   id: "list view"
 #   name: "list view"
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-k"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-j"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-i"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-h"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-g"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-f"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-e"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-d"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-c"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-b"
 #   }
-#   builders: {
+#   builders {
 #     name: "buildbucket/luci.project.bucket/builder-a"
 #   }
 #   builder_view_only: true

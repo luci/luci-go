@@ -48,33 +48,33 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: {
+# buckets {
 #   name: "ci"
-#   swarming: {
-#     builders: {
+#   swarming {
+#     builders {
 #       name: "b1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop1@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "b2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
 #       }
 #       service_account: "noop2@example.com"
 #     }
-#     builders: {
+#     builders {
 #       name: "b3"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: {
+#       recipe {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
@@ -85,68 +85,68 @@ luci.builder(
 # ===
 #
 # === luci-scheduler.cfg
-# job: {
+# job {
 #   id: "b1"
 #   acl_sets: "ci"
-#   buildbucket: {
+#   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b1"
 #   }
 # }
-# job: {
+# job {
 #   id: "b2"
-#   acls: {
+#   acls {
 #     role: TRIGGERER
 #     granted_to: "noop1@example.com"
 #   }
 #   acl_sets: "ci"
-#   buildbucket: {
+#   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b2"
 #   }
 # }
-# job: {
+# job {
 #   id: "b3"
-#   acls: {
+#   acls {
 #     role: TRIGGERER
 #     granted_to: "noop1@example.com"
 #   }
-#   acls: {
+#   acls {
 #     role: TRIGGERER
 #     granted_to: "noop2@example.com"
 #   }
 #   acl_sets: "ci"
-#   buildbucket: {
+#   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b3"
 #   }
 # }
-# trigger: {
+# trigger {
 #   id: "p1"
 #   acl_sets: "ci"
 #   triggers: "b1"
 #   triggers: "b2"
 #   triggers: "b3"
-#   gitiles: {
+#   gitiles {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
 #   }
 # }
-# trigger: {
+# trigger {
 #   id: "p2"
 #   acl_sets: "ci"
 #   triggers: "b1"
 #   triggers: "b2"
 #   triggers: "b3"
-#   gitiles: {
+#   gitiles {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
 #   }
 # }
-# acl_sets: {
+# acl_sets {
 #   name: "ci"
 # }
 # ===

@@ -11,7 +11,7 @@ luci.milo(
 # Expect configs:
 #
 # === luci-milo.cfg
-# build_bug_template: {
+# build_bug_template {
 #   monorail_project: "project"
 #   components: "A"
 # }
