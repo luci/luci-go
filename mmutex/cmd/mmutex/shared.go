@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"log"
 
 	"github.com/maruel/subcommands"
 
@@ -57,9 +58,11 @@ func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcomm
 // RunShared runs the command with the specified environment while holding a
 // shared mmutex lock.
 func RunShared(ctx context.Context, env subcommands.Env, command []string) error {
+	log.SetPrefix("[mmutex]")
 	ctx, cancel := clock.WithTimeout(ctx, lib.DefaultCommandTimeout)
 	defer cancel()
 
+	log.Print("Running command in SHARED mode: ", command)
 	return lib.RunShared(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
 	})
