@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -72,12 +71,6 @@ func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
 	return mask.FromFieldMask(fields, &pb.Build{}, false, false)
 }
 
-// logDetails logs debug information about the request.
-func logDetails(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
-	logging.Debugf(ctx, "%q called %q with request %s", auth.CurrentIdentity(ctx), methodName, proto.MarshalTextString(req))
-	return ctx, nil
-}
-
 // logAndReturnUnimplemented logs the method called, the proto response, and any
 // error, but returns that the called method was unimplemented. Used to aid in
 // development. Users of this function must ensure called methods do not have
@@ -92,16 +85,6 @@ func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 	return appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
-// notFound returns a generic error message indicating the resource requested
-// was not found with a hint that the user may not have permission to view
-// it. By not differentiating between "not found" and "permission denied"
-// errors, leaking existence of resources a user doesn't have permission to
-// view can be avoided. Should be used everywhere a "not found" or
-// "permission denied" error occurs.
-func notFound(ctx context.Context) error {
-	return appstatus.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", auth.CurrentIdentity(ctx))
 }
 
 // Builds implements pb.BuildsServer.
