@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "527a9a11_cc18caee",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-08T23:43:26Z",
+      "side": 1,
+      "message": "Nit: validateCreateInvocationPermission",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 38
+      },
+      "revId": "f6f1f32dc9101b293aa10c1d4a2fd3ce3a04ea95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "946529f5_e613d217",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 4
@@ -37,6 +60,30 @@
       "side": 1,
       "message": "I don\u0027t know, this is mostly boiler plate, the only reason why I broke these away is because these iterate over a list of reqs, otherwise I think that calling hasPermission() directly is cleaner.",
       "parentUuid": "946529f5_e613d217",
+      "range": {
+        "startLine": 68,
+        "startChar": 5,
+        "endLine": 68,
+        "endChar": 42
+      },
+      "revId": "f6f1f32dc9101b293aa10c1d4a2fd3ce3a04ea95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e809fab_9904aceb",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-08T23:43:26Z",
+      "side": 1,
+      "message": "What confuses me is that why permSetProducerResource is special?\n\nIt looks like only this permission is checked in both BatchCreateInvocations and CreateInvocation.\n\nThe other two are only checked in CreateInvocation.",
+      "parentUuid": "868bdcb3_823bc3c1",
       "range": {
         "startLine": 68,
         "startChar": 5,
