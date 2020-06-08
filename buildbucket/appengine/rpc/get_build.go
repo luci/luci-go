@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // validateGet validates the given request.
@@ -34,7 +35,7 @@ func validateGet(req *pb.GetBuildRequest) error {
 			return errors.Reason("id is mutually exclusive with (builder and build_number)").Err()
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
-		switch err := validateBuilderID(req.Builder); {
+		switch err := protoutil.ValidateBuilderID(req.Builder); {
 		case err != nil:
 			return errors.Annotate(err, "builder").Err()
 		case req.Builder.Bucket == "":

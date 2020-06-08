@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // validateChange validates the given Gerrit change.
@@ -65,7 +66,7 @@ func validateCommit(cm *pb.GitilesCommit) error {
 // validatePredicate validates the given build predicate.
 func validatePredicate(pr *pb.BuildPredicate) error {
 	if b := pr.GetBuilder(); b != nil {
-		if err := validateBuilderID(b); err != nil {
+		if err := protoutil.ValidateBuilderID(b); err != nil {
 			return errors.Annotate(err, "builder").Err()
 		}
 	}
