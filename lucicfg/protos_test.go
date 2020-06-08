@@ -20,7 +20,9 @@ import (
 
 	"go.starlark.net/starlark"
 
-	"go.chromium.org/luci/starlark/protohacks"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -36,8 +38,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	dspb, err := protohacks.UnmarshalFileDescriptorSet(blob)
-	if err != nil {
+	dspb := &descriptorpb.FileDescriptorSet{}
+	if err := proto.Unmarshal(blob, dspb); err != nil {
 		panic(err)
 	}
 	ds, err := starlarkproto.NewDescriptorSet("test", dspb.GetFile(), []*starlarkproto.DescriptorSet{
