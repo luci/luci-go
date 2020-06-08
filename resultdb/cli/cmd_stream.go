@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/user"
 	"regexp"
 	"strings"
@@ -33,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/system/exec2"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/grpc/prpc"
@@ -168,7 +168,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		cancelCmd()
 	})()
 
-	cmd := exec2.CommandContext(cmdCtx, args[0], args[1:]...)
+	cmd := exec.CommandContext(cmdCtx, args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -188,7 +188,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 			return err
 		}
 		defer exported.Close()
-		exported.SetInCmd(cmd.Cmd)
+		exported.SetInCmd(cmd)
 
 		logging.Debugf(ctx, "Starting: %q", cmd.Args)
 		if err := cmd.Start(); err != nil {
