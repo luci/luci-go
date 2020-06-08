@@ -50,10 +50,8 @@ func TestBucket(t *testing.T) {
 
 			Convey("project", func() {
 				b := &Bucket{
-					Parent: datastore.KeyForObj(ctx, &Project{
-						ID: "project",
-					}),
-					Proto: pb.Bucket{},
+					Parent: ProjectKey(ctx, "project"),
+					Proto:  pb.Bucket{},
 				}
 
 				Convey("match", func() {

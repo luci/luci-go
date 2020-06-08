@@ -31,6 +31,11 @@ type Project struct {
 	ID string `gae:"$id"`
 }
 
+// ProjectKey returns a datastore key of a project.
+func ProjectKey(ctx context.Context, project string) *datastore.Key {
+	return datastore.KeyForObj(ctx, &Project{ID: project})
+}
+
 // Bucket is a representation of a bucket in the datastore.
 type Bucket struct {
 	_kind string `gae:"$kind,BucketV2"`
@@ -56,6 +61,14 @@ type Bucket struct {
 	// Schema is this entity's schema version.
 	// TODO(crbug/1042991): Switch to noindex.
 	Schema int32 `gae:"entity_schema_version"`
+}
+
+// BucketKey returns a datastore key of a bucket.
+func BucketKey(ctx context.Context, project, bucket string) *datastore.Key {
+	return datastore.KeyForObj(ctx, &Bucket{
+		ID:     bucket,
+		Parent: ProjectKey(ctx, project),
+	})
 }
 
 // NoRole indicates the user has no defined role in a bucket.
