@@ -17,22 +17,22 @@ luci.gitiles_poller(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: {
+# buckets {
 #   name: "ci"
-#   swarming: {}
+#   swarming {}
 # }
 # ===
 #
 # === luci-scheduler.cfg
-# trigger: {
+# trigger {
 #   id: "poller"
 #   acl_sets: "ci"
-#   gitiles: {
+#   gitiles {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
 #   }
 # }
-# acl_sets: {
+# acl_sets {
 #   name: "ci"
 # }
 # ===

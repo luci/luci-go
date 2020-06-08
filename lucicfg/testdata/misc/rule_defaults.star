@@ -79,17 +79,17 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: {
+# buckets {
 #   name: "ci"
-#   swarming: {
-#     builders: {
+#   swarming {
+#     builders {
 #       name: "b1"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       swarming_tags: "base:tag"
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe: {
+#       recipe {
 #         name: "recipe1"
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
@@ -99,18 +99,18 @@ luci.builder(
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
-#       caches: {
+#       caches {
 #         name: "base"
 #         path: "base"
 #       }
 #       build_numbers: YES
 #       service_account: "default@example.com"
 #       experimental: YES
-#       task_template_canary_percentage: {
+#       task_template_canary_percentage {
 #         value: 90
 #       }
 #     }
-#     builders: {
+#     builders {
 #       name: "b2"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       swarming_tags: "base:tag"
@@ -118,7 +118,7 @@ luci.builder(
 #       dimensions: "base:base val"
 #       dimensions: "overridden:new 1"
 #       dimensions: "overridden:new 2"
-#       recipe: {
+#       recipe {
 #         name: "recipe1"
 #         cipd_package: "cipd/default"
 #         cipd_version: "refs/default"
@@ -129,29 +129,29 @@ luci.builder(
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
-#       caches: {
+#       caches {
 #         name: "base"
 #         path: "base"
 #       }
-#       caches: {
+#       caches {
 #         name: "new"
 #         path: "new"
 #       }
 #       build_numbers: YES
 #       service_account: "default@example.com"
 #       experimental: YES
-#       task_template_canary_percentage: {
+#       task_template_canary_percentage {
 #         value: 90
 #       }
 #     }
-#     builders: {
+#     builders {
 #       name: "b3"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       swarming_tags: "base:tag"
 #       dimensions: "base:base val"
 #       dimensions: "overridden:original 1"
 #       dimensions: "overridden:original 2"
-#       recipe: {
+#       recipe {
 #         name: "recipe2"
 #         cipd_package: "cipd/another"
 #         cipd_version: "refs/another"
@@ -161,60 +161,60 @@ luci.builder(
 #       priority: 1
 #       execution_timeout_secs: 1800
 #       expiration_secs: 1200
-#       caches: {
+#       caches {
 #         name: "base"
 #         path: "base"
 #       }
 #       build_numbers: NO
 #       service_account: "new@example.com"
 #       experimental: NO
-#       task_template_canary_percentage: {}
+#       task_template_canary_percentage {}
 #     }
 #   }
 # }
 # ===
 #
 # === luci-scheduler.cfg
-# job: {
+# job {
 #   id: "b1"
 #   acl_sets: "ci"
-#   triggering_policy: {
+#   triggering_policy {
 #     kind: GREEDY_BATCHING
 #     max_batch_size: 5
 #   }
-#   buildbucket: {
+#   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b1"
 #   }
 # }
-# job: {
+# job {
 #   id: "b2"
 #   acl_sets: "ci"
-#   triggering_policy: {
+#   triggering_policy {
 #     kind: GREEDY_BATCHING
 #     max_batch_size: 5
 #   }
-#   buildbucket: {
+#   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b2"
 #   }
 # }
-# job: {
+# job {
 #   id: "b3"
 #   acl_sets: "ci"
-#   triggering_policy: {
+#   triggering_policy {
 #     kind: GREEDY_BATCHING
 #     max_batch_size: 1
 #   }
-#   buildbucket: {
+#   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.ci"
 #     builder: "b3"
 #   }
 # }
-# acl_sets: {
+# acl_sets {
 #   name: "ci"
 # }
 # ===
