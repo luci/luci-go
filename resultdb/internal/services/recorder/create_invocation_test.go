@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
@@ -71,75 +72,97 @@ func TestValidateInvocationDeadline(t *testing.T) {
 func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
+	ctx := testutil.SpannerTestContext(t)
+	authState := &authtest.FakeState{
+		Identity: "user:someone@example.com",
+		IdentityPermissions: []authtest.RealmPermission{
+			{Realm: "chromium:public", Permission: permCreateInvocation},
+			{Realm: "chromium:public", Permission: permSetProducerResource},
+			{Realm: "chromium:public", Permission: permExportToBigQuery},
+		},
+	}
+	ctx = auth.WithState(ctx, authState)
 	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		Convey(`empty`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now, false)
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{}, now)
 			So(err, ShouldErrLike, `invocation_id: unspecified`)
 		})
 
 		Convey(`invalid id`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "1",
-			}, now, false)
+			}, now)
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
 		Convey(`reserved prefix`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "build:8765432100",
-			}, now, false)
+				Invocation: &pb.Invocation{
+					Realm: "chromium:public",
+				},
+			}, now)
 			So(err, ShouldErrLike, `only invocations created by trusted systems may have id not starting with "u-"`)
 		})
 
 		Convey(`reserved prefix, allowed`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			iCtx := testutil.SpannerTestContext(t)
+			authState := &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:public", Permission: permCreateInvocation},
+					{Realm: "chromium:public", Permission: permCreateWithReservedName},
+				},
+			}
+			iCtx = auth.WithState(iCtx, authState)
+			err := validateCreateInvocationRequest(iCtx, &pb.CreateInvocationRequest{
 				InvocationId: "build:8765432100",
-			}, now, true)
+			}, now)
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`invalid request id`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "u-a",
 				RequestId:    "😃",
-			}, now, false)
+			}, now)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 
 		Convey(`invalid tags`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Tags: pbutil.StringPairs("1", "a"),
 				},
-			}, now, false)
+			}, now)
 			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
 		})
 
 		Convey(`invalid deadline`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 				},
-			}, now, false)
+			}, now)
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
 		Convey(`invalid realm`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Realm: "B@d/f::rm@t",
 				},
-			}, now, false)
+			}, now)
 			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
 		})
 
 		Convey(`invalid bigqueryExports`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
@@ -149,52 +172,74 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 							Project: "project",
 						},
 					},
+					Realm: "chromium:public",
 				},
-			}, now, false)
+			}, now)
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
-		})
-
-		Convey(`producer_resource disallowed`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-0",
-				Invocation: &pb.Invocation{
-					ProducerResource: "//builds.example.com/builds/1",
-				},
-			}, now, false)
-			So(err, ShouldErrLike, `invocation: producer_resource: only trusted systems are allowed`)
-		})
-
-		Convey(`producer_resource allowed`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-0",
-				Invocation: &pb.Invocation{
-					ProducerResource: "//builds.example.com/builds/1",
-				},
-			}, now, true)
-			So(err, ShouldBeNil)
 		})
 
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			err := validateCreateInvocationRequest(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 				},
-			}, now, false)
+			}, now)
 			So(err, ShouldBeNil)
 		})
+		Convey(`test permissions`, func() {
+
+			testAccount := identity.Identity("user:sa@example.com")
+			testRealm := "test-proj:test-realm"
+			Convey(`producer_resource disallowed`, func() {
+				ctx := auth.WithState(context.Background(), &authtest.FakeState{
+					Identity: testAccount,
+				})
+				err := validateSetProducerResourcePermission(ctx, &pb.CreateInvocationRequest{
+					InvocationId: "u-abc",
+					Invocation: &pb.Invocation{
+						Realm:            testRealm,
+						ProducerResource: "//builds.example.com/builds/1"},
+				})
+				So(err, ShouldErrLike, `caller does not have permission to set the field`)
+			})
+
+			Convey(`producer_resource allowed`, func() {
+				ctx := auth.WithState(context.Background(), &authtest.FakeState{
+					Identity: testAccount,
+					IdentityPermissions: []authtest.RealmPermission{
+						{
+							Realm:      testRealm,
+							Permission: permSetProducerResource,
+						},
+					},
+				})
+				err := validateSetProducerResourcePermission(ctx, &pb.CreateInvocationRequest{
+					InvocationId: "u-abc",
+					Invocation: &pb.Invocation{
+						Realm:            testRealm,
+						ProducerResource: "//builds.example.com/builds/1"},
+				})
+				So(err, ShouldBeNil)
+			})
+		})
+
 	})
 }
 
 func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		// Configure mock authentication to allow creation of custom invocation ids.
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{trustedInvocationCreators},
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "chromium:public", Permission: permCreateInvocation},
+				{Realm: "chromium:public", Permission: permCreateWithReservedName},
+				{Realm: "chromium:public", Permission: permSetProducerResource},
+				{Realm: "chromium:public", Permission: permExportToBigQuery},
+			},
 		})
 
 		start := clock.Now(ctx).UTC()

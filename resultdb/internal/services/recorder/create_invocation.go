@@ -28,19 +28,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-)
-
-var (
-	// trustedInvocationCreators is a CIA group that can create invocations with
-	// custom IDs and specify producer_resource field.
-	trustedInvocationCreators = "luci-resultdb-trusted-invocation-creators"
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
@@ -63,17 +56,17 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, trustedCreator bool) error {
+func validateCreateInvocationRequest(ctx context.Context, req *pb.CreateInvocationRequest, now time.Time) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
 	}
-
-	if !trustedCreator {
-		if !strings.HasPrefix(req.InvocationId, "u-") {
-			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`).Err()
+	if !strings.HasPrefix(req.InvocationId, "u-") {
+		allowed, err := hasPermission(ctx, permCreateWithReservedName, req.Invocation)
+		if err != nil {
+			return err
 		}
-		if req.GetInvocation().GetProducerResource() != "" {
-			return errors.Reason(`invocation: producer_resource: only trusted systems are allowed to set producer_resource field for now`).Err()
+		if !allowed {
+			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`).Err()
 		}
 	}
 
@@ -103,6 +96,16 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	if len(inv.GetBigqueryExports()) > 0 {
+		allowed, err := hasPermission(ctx, permExportToBigQuery, inv)
+		if err != nil {
+			return errors.Annotate(err, "bigquery_export").Err()
+		}
+		if !allowed {
+			return errors.Reason(`bigquery_export: creator does not have permission to set bigquery exports in realm %q`, inv.Realm).Err()
+
+		}
+	}
 	for i, bqExport := range inv.GetBigqueryExports() {
 		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
 			return errors.Annotate(err, "bigquery_export[%d]", i).Err()
@@ -116,11 +119,13 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	now := clock.Now(ctx).UTC()
 
-	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
-	if err != nil {
+	if err := validateCreateInvocationPermission(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := validateCreateInvocationRequest(in, now, trustedCreator); err != nil {
+	if err := validateSetProducerResourcePermission(ctx, in); err != nil {
+		return nil, err
+	}
+	if err := validateCreateInvocationRequest(ctx, in, now); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, invocations.NewIDSet(invocations.ID(in.InvocationId)))

@@ -44,40 +44,54 @@ import (
 func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
+	ctx := testutil.SpannerTestContext(t)
+	authState := &authtest.FakeState{
+		Identity: "user:someone@example.com",
+		IdentityPermissions: []authtest.RealmPermission{
+			{Realm: "chromium:public", Permission: permCreateInvocation},
+			{Realm: "chromium:public", Permission: permSetProducerResource},
+		},
+	}
+	ctx = auth.WithState(ctx, authState)
+
 	Convey(`TestValidateBatchCreateInvocationsRequest`, t, func() {
 		Convey(`invalid request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
+				ctx,
 				now,
 				[]*pb.CreateInvocationRequest{{InvocationId: "u-a"}},
 				"😃",
-				false,
 			)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 		Convey(`non-matching request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
+				ctx,
 				now,
 				[]*pb.CreateInvocationRequest{{InvocationId: "u-a", RequestId: "valid, but different"}},
 				"valid",
-				false,
 			)
 			So(err, ShouldErrLike, `request_id: "valid" does not match`)
 		})
 		Convey(`Too many requests`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
+				ctx,
 				now,
 				make([]*pb.CreateInvocationRequest, 1000),
 				"valid",
-				false,
 			)
 			So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
 		})
 		Convey(`valid`, func() {
-			ids, err := validateBatchCreateInvocationsRequest(now,
+			ids, err := validateBatchCreateInvocationsRequest(
+				ctx,
+				now,
 				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u-a",
 					RequestId:    "valid",
-				}}, "valid", false)
+				}},
+				"valid",
+			)
 			So(err, ShouldBeNil)
 			So(ids.Has("u-a"), ShouldBeTrue)
 			So(len(ids), ShouldEqual, 1)
@@ -90,8 +104,12 @@ func TestBatchCreateInvocations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		// Configure mock authentication to allow creation of custom invocation ids.
 		authState := &authtest.FakeState{
-			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{trustedInvocationCreators},
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "chromium:public", Permission: permCreateInvocation},
+				{Realm: "chromium:public", Permission: permSetProducerResource},
+				{Realm: "chromium:public", Permission: permExportToBigQuery},
+			},
 		}
 		ctx = auth.WithState(ctx, authState)
 
