@@ -16,6 +16,69 @@
       "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "932bcbda_9d684047",
+        "filename": "starlark/starlarkproto/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-08T13:25:46Z",
+      "side": 1,
+      "message": "do you have coverage for some large int?",
+      "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67dc0a56_3cd8350e",
+        "filename": "starlark/starlarkproto/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-08T13:25:46Z",
+      "side": 1,
+      "message": "efficiency \u003d 👍",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 2
+      },
+      "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "577c76d4_5b0c1337",
+        "filename": "starlark/starlarkproto/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-08T13:25:46Z",
+      "side": 1,
+      "message": "r",
+      "range": {
+        "startLine": 115,
+        "startChar": 46,
+        "endLine": 115,
+        "endChar": 47
+      },
+      "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
