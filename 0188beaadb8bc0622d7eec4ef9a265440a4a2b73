@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "51b86693_1d04b312",
+        "filename": "starlark/starlarkproto/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-08T18:05:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "932bcbda_9d684047",
+      "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67dc0a56_3cd8350e",
         "filename": "starlark/starlarkproto/json.go",
         "patchSetId": 4
@@ -79,6 +97,30 @@
       "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06bf84ed_93f79f12",
+        "filename": "starlark/starlarkproto/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-08T18:05:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "577c76d4_5b0c1337",
+      "range": {
+        "startLine": 115,
+        "startChar": 46,
+        "endLine": 115,
+        "endChar": 47
+      },
+      "revId": "0188beaadb8bc0622d7eec4ef9a265440a4a2b73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
