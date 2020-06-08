@@ -47,9 +47,6 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid field mask")
 	}
-	bld := &model.Build{
-		ID: req.Id,
-	}
 	bld, bck, err := model.GetBuildAndBucket(ctx, req.Id)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
