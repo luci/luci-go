@@ -2,7 +2,7 @@
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain b copy of the License at
+// You may obtain a copy of the License at
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -276,13 +276,12 @@ func (a *Agent) snapStates() map[string]*buildStateTracker {
 func (a *Agent) sendMerge(_ *buffer.Batch) error {
 	trackers := a.snapStates()
 
-	validStates := make(map[string]*buildState, len(trackers))
+	builds := make(map[string]*bbpb.Build, len(trackers))
 	stepCount := 0
 	for k, v := range trackers {
-		if state := v.getLatest(); !state.invalid {
-			stepCount += len(state.build.GetSteps())
-			validStates[k] = state
-		}
+		build := v.getLatest().build
+		stepCount += len(build.GetSteps())
+		builds[k] = build
 	}
 
 	base := *a.baseBuild // shallow copy; we only assign to top level fields
@@ -293,11 +292,11 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 
 	var insertSteps func(stepNS []string, streamURL string) *bbpb.Build
 	insertSteps = func(stepNS []string, streamURL string) *bbpb.Build {
-		state, ok := validStates[streamURL]
+		build, ok := builds[streamURL]
 		if !ok {
 			return nil
 		}
-		for _, step := range state.build.Steps {
+		for _, step := range build.GetSteps() {
 			isMergeStep := luciexe.IsMergeStep(step)
 			if isMergeStep || len(stepNS) > 0 {
 				// make a shallow copy, much cheaper than proto.Clone
@@ -316,7 +315,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 				updateStepFromBuild(step, subBuild)
 			}
 		}
-		return state.build
+		return build
 	}
 	updateBaseFromUserBuild(&base, insertSteps(nil, a.userRootURL))
 
