@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"log"
 
 	"github.com/maruel/subcommands"
 
@@ -57,10 +58,12 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 // RunExclusive runs the command with the specified context and environment while
 // holding an exclusive mmutex lock.
 func RunExclusive(ctx context.Context, env subcommands.Env, command []string) error {
+	log.SetPrefix("[mmutex]")
 	ctx, cancel := clock.WithTimeout(ctx, lib.DefaultCommandTimeout)
 	defer cancel()
 
+	log.Print("Running command in EXCLUSIVE mode: ", command)
 	return lib.RunExclusive(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
-	})
+  })
 }
