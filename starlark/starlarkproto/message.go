@@ -16,6 +16,7 @@ package starlarkproto
 
 import (
 	"fmt"
+	"strings"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
@@ -23,6 +24,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"github.com/protocolbuffers/txtpbfmt/parser"
 )
 
 // Message is a Starlark value that implements a struct-like type structured
@@ -59,7 +62,7 @@ func (m *Message) MessageType() *MessageType {
 
 // ToProto returns a new populated proto message of an appropriate type.
 func (m *Message) ToProto() proto.Message {
-	msg := dynamicpb.New(m.typ.desc)
+	msg := dynamicpb.NewMessage(m.typ.desc)
 	for k, v := range m.fields {
 		assign(msg, m.typ.fields[k], v)
 	}
@@ -98,7 +101,12 @@ func (m *Message) FromDict(d starlark.IterableMapping) error {
 
 // String returns compact text serialization of this message.
 func (m *Message) String() string {
-	return fmt.Sprintf("%s", m.ToProto())
+	raw := m.ToProto().(interface{ String() string }).String()
+	formatted, err := parser.Format([]byte(raw))
+	if err != nil {
+		return fmt.Sprintf("<bad proto: %q>", err)
+	}
+	return strings.TrimSpace(string(formatted))
 }
 
 // Type returns full proto message name.

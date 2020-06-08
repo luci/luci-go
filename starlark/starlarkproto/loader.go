@@ -60,8 +60,8 @@ var loaderHash uint32 = 1000
 // NewLoader instantiates a new loader with empty proto registry.
 func NewLoader() *Loader {
 	return &Loader{
-		files:   protoregistry.NewFiles(),
-		types:   protoregistry.NewTypes(),
+		files:   &protoregistry.Files{},
+		types:   &protoregistry.Types{},
 		dsets:   make(map[*DescriptorSet]struct{}, 0),
 		mtypes:  make(map[protoreflect.MessageDescriptor]*MessageType, 0),
 		modules: make(map[string]*starlarkstruct.Module, 0),
@@ -144,7 +144,7 @@ func (l *Loader) addDescriptorLocked(fd *descriptorpb.FileDescriptorProto) error
 			fd.GetName(), strings.Join(res.descs, ", "))
 	}
 
-	if err := l.files.Register(f); err != nil {
+	if err := l.files.RegisterFile(f); err != nil {
 		return fmt.Errorf("registering %s: %s", fd.GetName(), err)
 	}
 

@@ -60,114 +60,114 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "b1"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "builder-builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
-# buckets: <
+#       }
+#     }
+#   }
+# }
+# buckets: {
 #   name: "b2"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "builder-builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "poller-builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === luci-scheduler.cfg
-# job: <
+# job: {
 #   id: "b1-builder-builder"
 #   acl_sets: "b1"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.b1"
 #     builder: "builder-builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "b2-builder-builder"
 #   acl_sets: "b2"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.b2"
 #     builder: "builder-builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "b2-poller-builder"
 #   acl_sets: "b2"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.project.b2"
 #     builder: "poller-builder"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "b1-poller"
 #   acl_sets: "b1"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "b1-poller-builder"
 #   acl_sets: "b1"
 #   triggers: "b2-poller-builder"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "b2-poller"
 #   acl_sets: "b2"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "some poller"
 #   acl_sets: "b1"
 #   triggers: "b1-builder-builder"
 #   triggers: "b2-builder-builder"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
-#   >
-# >
-# acl_sets: <
+#   }
+# }
+# acl_sets: {
 #   name: "b1"
-# >
-# acl_sets: <
+# }
+# acl_sets: {
 #   name: "b2"
-# >
+# }
 # ===
 #
 # === project.cfg
