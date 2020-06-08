@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1a19544b_8aa28e68",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-08T23:03:57Z",
+      "side": 1,
+      "message": "(the original plan was to have the swarming process acquire the flock directly so that the OS could clean up in the event of a crash. This is a lot messeier if the lock is held by a subprocess)",
+      "parentUuid": "25535d75_546c735e",
+      "range": {
+        "startLine": 10,
+        "startChar": 153,
+        "endLine": 10,
+        "endChar": 212
+      },
+      "revId": "448d07c92cdf0ce3f8820f8e75a26f2bc30576b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "da44ccf3_db2b9bfe",
         "filename": "mmutex/cmd/mmutex/exclusive.go",
         "patchSetId": 3
