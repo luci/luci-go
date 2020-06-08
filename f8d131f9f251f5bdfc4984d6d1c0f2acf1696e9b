@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d207e9e6_cc4c66f0",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-08T16:46:46Z",
+      "side": 1,
+      "message": "\"at least a reader role\", or \"reader role or higher\", etc.",
+      "revId": "f8d131f9f251f5bdfc4984d6d1c0f2acf1696e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9314976d_283a20b4",
+        "filename": "buildbucket/appengine/rpc/list_builders.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-08T16:46:46Z",
+      "side": 1,
+      "message": "Seems obvious from the name canRead.",
+      "revId": "f8d131f9f251f5bdfc4984d6d1c0f2acf1696e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8460384_27d047db",
+        "filename": "buildbucket/appengine/rpc/list_builders.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-08T16:46:46Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/proto/paged#Query\n\ne.g. https://chromium.googlesource.com/infra/luci/luci-go/+/b648953af9f6275df0db8686a0841e020d758863/gce/appengine/rpc/instances.go#233",
+      "revId": "f8d131f9f251f5bdfc4984d6d1c0f2acf1696e9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
