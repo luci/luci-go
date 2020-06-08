@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "4d1616c8_d7a90656",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-08T23:17:26Z",
+      "side": 1,
+      "message": "That is just a mount instruction to docker to include the folder containing the mmutex lock file. It\u0027s not about this binary.",
+      "parentUuid": "7aa8469e_613003a7",
+      "range": {
+        "startLine": 10,
+        "startChar": 153,
+        "endLine": 10,
+        "endChar": 212
+      },
+      "revId": "448d07c92cdf0ce3f8820f8e75a26f2bc30576b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "da44ccf3_db2b9bfe",
         "filename": "mmutex/cmd/mmutex/exclusive.go",
         "patchSetId": 3
