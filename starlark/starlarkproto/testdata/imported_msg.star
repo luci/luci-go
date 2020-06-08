@@ -20,12 +20,12 @@ m = testprotos.RefsOtherProtos()
 # Indirectly using messages imported from elsewhere works.
 m.another_msg.i = 123
 m.ts.seconds = 456
-assert.eq(proto.to_textpb(m), """another_msg: <
+assert.eq(proto.to_textpb(m), """another_msg: {
   i: 123
->
-ts: <
+}
+ts: {
   seconds: 456
->
+}
 """)
 
 # To instantiate them directly, need to load the corresponding proto module

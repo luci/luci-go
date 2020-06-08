@@ -41,63 +41,63 @@ luci.tree_closer(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "bucket"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "builder 1"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "noop"
 #         cipd_package: "noop"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === luci-notify.cfg
-# notifiers: <
-#   notifications: <
+# notifiers: {
+#   notifications: {
 #     on_occurrence: FAILURE
-#     email: <
+#     email: {
 #       recipients: "a@example.com"
-#     >
-#   >
-#   builders: <
+#     }
+#   }
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 1"
-#   >
-#   tree_closers: <
+#   }
+#   tree_closers: {
 #     tree_status_host: "some-tree.example.com"
 #     failed_step_regexp: "failed-step-regexp"
 #     failed_step_regexp_exclude: "regex1|or maybe regex 2"
 #     template: "tree_status"
-#   >
-# >
-# notifiers: <
-#   builders: <
+#   }
+# }
+# notifiers: {
+#   builders: {
 #     bucket: "bucket"
 #     name: "builder 2"
 #     repository: "https://repo.example.com"
-#   >
-#   tree_closers: <
+#   }
+#   tree_closers: {
 #     tree_status_host: "some-tree.example.com"
 #     failed_step_regexp: "failed-step-regexp"
 #     failed_step_regexp_exclude: "regex1|or maybe regex 2"
 #     template: "tree_status"
-#   >
-# >
+#   }
+# }
 # tree_closing_enabled: true
 # ===
 #

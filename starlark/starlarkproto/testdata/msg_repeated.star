@@ -63,10 +63,10 @@ text = proto.to_textpb(testprotos.MessageFields(
     testprotos.Simple(i=456),
   ],
 ))
-assert.eq(text, """rep: <
+assert.eq(text, """rep: {
   i: 123
->
-rep: <
+}
+rep: {
   i: 456
->
+}
 """)

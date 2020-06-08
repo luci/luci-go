@@ -15,16 +15,19 @@
 l = proto.new_loader(proto.new_descriptor_set(blob=read('./testprotos/all.pb')))
 testprotos = l.module('go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto')
 
-m = testprotos.Simple()
+m = testprotos.SimpleFields()
 
 # Works in general.
-m.i = 123
+m.i64 = 123
+m.b = True
 assert.eq(proto.to_jsonpb(m), """{
-	"i": "123"
+	"i64": "123",
+	"b": true
 }""")
 
 # Omits defaults.
-m.i = 0
+m.i64 = 0
+m.b = False
 assert.eq(proto.to_jsonpb(m), '{}')
 
 # to_jsonpb expects an argument.

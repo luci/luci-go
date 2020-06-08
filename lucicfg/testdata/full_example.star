@@ -477,138 +477,138 @@ lucicfg.emit(
 # === commit-queue.cfg
 # draining_start_time: "2017-12-23T15:47:58Z"
 # cq_status_host: "chromium-cq-status.appspot.com"
-# submit_options: <
+# submit_options: {
 #   max_burst: 10
-#   burst_delay: <
+#   burst_delay: {
 #     seconds: 600
-#   >
-# >
-# config_groups: <
+#   }
+# }
+# config_groups: {
 #   name: "main-cq"
-#   gerrit: <
+#   gerrit: {
 #     url: "https://example-review.googlesource.com"
-#     projects: <
+#     projects: {
 #       name: "repo"
 #       ref_regexp: "refs/heads/master"
-#     >
-#     projects: <
+#     }
+#     projects: {
 #       name: "another/repo"
 #       ref_regexp: "refs/heads/master"
-#     >
-#   >
-#   verifiers: <
-#     gerrit_cq_ability: <
+#     }
+#   }
+#   verifiers: {
+#     gerrit_cq_ability: {
 #       committer_list: "admins"
 #       committer_list: "committers"
 #       dry_run_access_list: "dry-runners"
 #       allow_submit_with_open_deps: true
 #       allow_owner_if_submittable: COMMIT
-#     >
-#     tree_status: <
+#     }
+#     tree_status: {
 #       url: "https://tree-status.example.com"
-#     >
-#     tryjob: <
-#       builders: <
+#     }
+#     tryjob: {
+#       builders: {
 #         name: "another-project/try/yyy"
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "another-project/try/zzz"
 #         includable_only: true
 #         owner_whitelist_group: "another-project-committers"
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "infra/inline/triggered builder"
 #         triggered_by: "infra/inline/triggerer builder"
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "infra/inline/triggerer builder"
 #         experiment_percentage: 50
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "infra/try/generically named builder"
 #         disable_reuse: true
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "infra/try/linux try builder"
 #         result_visibility: COMMENT_LEVEL_RESTRICTED
 #         cancel_stale: NO
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "infra/try/linux try builder 2"
 #         experiment_percentage: 50
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/two.txt"
-#       >
-#       builders: <
+#       }
+#       builders: {
 #         name: "infra/try/main cq builder"
-#         equivalent_to: <
+#         equivalent_to: {
 #           name: "infra/try/equivalent cq builder"
 #           percentage: 60
 #           owner_whitelist_group: "owners"
-#         >
-#       >
-#       retry_config: <
+#         }
+#       }
+#       retry_config: {
 #         single_quota: 1
 #         global_quota: 2
 #         failure_weight: 100
 #         transient_failure_weight: 1
 #         timeout_weight: 100
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "ci"
-#   acls: <
+#   acls: {
 #     role: WRITER
 #     group: "admins"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     group: "all"
-#   >
-#   swarming: <
-#     builders: <
+#   }
+#   swarming: {
+#     builders: {
 #       name: "builder with custom swarming host"
 #       swarming_host: "another-swarming.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "cron builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "generically named executable builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       exe: <
+#       exe: {
 #         cipd_package: "executable/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       properties: "{\"prop1\":\"val1\",\"prop2\":[\"val2\",123]}"
-#     >
-#     builders: <
+#     }
+#     builders: {
 #       name: "linux ci builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       swarming_tags: "tag1:val1"
@@ -617,186 +617,186 @@ lucicfg.emit(
 #       dimensions: "os:Linux"
 #       dimensions: "300:prefer_if_available:first-choice"
 #       dimensions: "prefer_if_available:fallback"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
 #         properties_j: "prop1:\"val1\""
 #         properties_j: "prop2:[\"val2\",123]"
-#       >
+#       }
 #       priority: 80
 #       execution_timeout_secs: 10800
 #       expiration_secs: 3600
-#       caches: <
+#       caches: {
 #         name: "name2"
 #         path: "path2"
-#       >
-#       caches: <
+#       }
+#       caches: {
 #         name: "name3"
 #         path: "path3"
 #         wait_for_warm_cache_secs: 600
-#       >
-#       caches: <
+#       }
+#       caches: {
 #         name: "path1"
 #         path: "path1"
-#       >
+#       }
 #       build_numbers: YES
 #       service_account: "builder@example.com"
-#       resultdb: <
+#       resultdb: {
 #         enable: true
-#         bq_exports: <
+#         bq_exports: {
 #           project: "luci-resultdb"
 #           dataset: "my-awesome-project"
 #           table: "all_test_results"
-#           test_results: <
-#             predicate: <
+#           test_results: {
+#             predicate: {
 #               test_id_regexp: "ninja:.*"
-#               variant: <
-#                 contains: <
-#                   def: <
+#               variant: {
+#                 contains: {
+#                   def: {
 #                     key: "test_suite"
 #                     value: "super_interesting_suite"
-#                   >
-#                 >
-#               >
+#                   }
+#                 }
+#               }
 #               expectancy: VARIANTS_WITH_UNEXPECTED_RESULTS
-#             >
-#           >
-#         >
-#       >
-#     >
-#     builders: <
+#             }
+#           }
+#         }
+#       }
+#     }
+#     builders: {
 #       name: "watched builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
-# buckets: <
+#       }
+#     }
+#   }
+# }
+# buckets: {
 #   name: "inline"
-#   acls: <
+#   acls: {
 #     role: WRITER
 #     group: "admins"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     group: "all"
-#   >
-#   swarming: <
-#     builders: <
+#   }
+#   swarming: {
+#     builders: {
 #       name: "another builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "inline/recipe"
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       service_account: "builder@example.com"
-#     >
-#     builders: <
+#     }
+#     builders: {
 #       name: "another executable builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       exe: <
+#       exe: {
 #         cipd_package: "executable/bundles/inline"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       properties: "{}"
 #       service_account: "builder@example.com"
-#     >
-#     builders: <
+#     }
+#     builders: {
 #       name: "triggered builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "inline/recipe"
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "triggerer builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "inline/recipe"
 #         cipd_package: "recipe/bundles/inline"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       service_account: "builder@example.com"
-#     >
-#   >
-# >
-# buckets: <
+#     }
+#   }
+# }
+# buckets: {
 #   name: "try"
-#   acls: <
+#   acls: {
 #     role: WRITER
 #     group: "admins"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     group: "all"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     role: SCHEDULER
 #     group: "devs"
-#   >
-#   swarming: <
-#     builders: <
+#   }
+#   swarming: {
+#     builders: {
 #       name: "builder with executable"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       exe: <
+#       exe: {
 #         cipd_package: "executable/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       properties: "{}"
-#     >
-#     builders: <
+#     }
+#     builders: {
 #       name: "equivalent cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "generically named builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "linux try builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "linux try builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#     builders: <
+#       }
+#     }
+#     builders: {
 #       name: "main cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === dir/custom.cfg
@@ -809,25 +809,25 @@ lucicfg.emit(
 # ===
 #
 # === luci-milo.cfg
-# consoles: <
+# consoles: {
 #   id: "List view"
 #   name: "List view"
-#   builders: <
+#   builders: {
 #     name: "buildbucket/luci.infra.ci/cron builder"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.infra.ci/generically named builder"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.infra.ci/linux ci builder"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.infra.inline/triggered builder"
-#   >
+#   }
 #   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
 #   builder_view_only: true
-# >
-# consoles: <
+# }
+# consoles: {
 #   id: "Console view"
 #   name: "CI Builders"
 #   repo_url: "https://noop.com"
@@ -835,98 +835,98 @@ lucicfg.emit(
 #   refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #   exclude_ref: "refs/heads/master"
 #   manifest_name: "REVISION"
-#   builders: <
+#   builders: {
 #     name: "buildbucket/luci.infra.ci/linux ci builder"
 #     category: "a|b"
 #     short_name: "lnx"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.infra.ci/cron builder"
 #     category: "cron"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.infra.inline/triggered builder"
-#   >
+#   }
 #   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
-#   header: <
-#     links: <
+#   header: {
+#     links: {
 #       name: "a"
-#       links: <
+#       links: {
 #         text: "a"
-#       >
-#     >
-#     links: <
+#       }
+#     }
+#     links: {
 #       name: "b"
-#       links: <
+#       links: {
 #         text: "b"
-#       >
-#     >
-#   >
+#       }
+#     }
+#   }
 #   include_experimental_builds: true
 #   default_commit_limit: 3
 #   default_expand: true
-# >
-# consoles: <
+# }
+# consoles: {
 #   id: "external-console"
 #   name: "External console"
 #   external_project: "chromium"
 #   external_id: "main"
-# >
+# }
 # logo_url: "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png"
-# build_bug_template: <
+# build_bug_template: {
 #   summary: "Bug summary"
 #   description: "Everything is broken"
 #   monorail_project: "tutu, all aboard"
 #   components: "Stuff>Hard"
-# >
+# }
 # ===
 #
 # === luci-notify.cfg
-# notifiers: <
-#   notifications: <
+# notifiers: {
+#   notifications: {
 #     on_new_status: FAILURE
-#     email: <
+#     email: {
 #       recipients: "someone@example,com"
-#     >
+#     }
 #     template: "notifier_template"
-#     notify_blamelist: <>
-#   >
-#   builders: <
+#     notify_blamelist: {}
+#   }
+#   builders: {
 #     bucket: "ci"
 #     name: "cron builder"
 #     repository: "https://cron.repo.example.com"
-#   >
-# >
-# notifiers: <
-#   notifications: <
+#   }
+# }
+# notifiers: {
+#   notifications: {
 #     on_new_status: FAILURE
-#     email: <
+#     email: {
 #       recipients: "someone@example,com"
-#     >
+#     }
 #     template: "notifier_template"
-#     notify_blamelist: <>
-#   >
-#   builders: <
+#     notify_blamelist: {}
+#   }
+#   builders: {
 #     bucket: "ci"
 #     name: "linux ci builder"
 #     repository: "https://noop.com"
-#   >
-# >
-# notifiers: <
-#   notifications: <
+#   }
+# }
+# notifiers: {
+#   notifications: {
 #     on_new_status: FAILURE
-#     email: <
+#     email: {
 #       recipients: "someone@example,com"
-#     >
+#     }
 #     template: "notifier_template"
-#     notify_blamelist: <>
-#   >
-#   builders: <
+#     notify_blamelist: {}
+#   }
+#   builders: {
 #     bucket: "ci"
 #     name: "watched builder"
 #     repository: "https://custom.example.com/repo"
-#   >
-# >
+#   }
+# }
 # ===
 #
 # === luci-notify/email-templates/another_template.template
@@ -940,154 +940,154 @@ lucicfg.emit(
 # ===
 #
 # === luci-scheduler.cfg
-# job: <
+# job: {
 #   id: "another builder"
 #   acl_sets: "inline"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.inline"
 #     builder: "another builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "another executable builder"
 #   acl_sets: "inline"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.inline"
 #     builder: "another executable builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "cron builder"
 #   schedule: "0 6 * * *"
 #   acl_sets: "ci"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.ci"
 #     builder: "cron builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "generically named builder"
-#   acls: <
+#   acls: {
 #     role: TRIGGERER
 #     granted_to: "builder@example.com"
-#   >
+#   }
 #   acl_sets: "ci"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.ci"
 #     builder: "generically named builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "generically named executable builder"
-#   acls: <
+#   acls: {
 #     role: TRIGGERER
 #     granted_to: "builder@example.com"
-#   >
+#   }
 #   acl_sets: "ci"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.ci"
 #     builder: "generically named executable builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "linux ci builder"
 #   acl_sets: "ci"
-#   triggering_policy: <
+#   triggering_policy: {
 #     kind: GREEDY_BATCHING
 #     max_concurrent_invocations: 5
 #     max_batch_size: 10
-#   >
-#   buildbucket: <
+#   }
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.ci"
 #     builder: "linux ci builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "triggered builder"
-#   acls: <
+#   acls: {
 #     role: TRIGGERER
 #     granted_to: "builder@example.com"
-#   >
+#   }
 #   acl_sets: "inline"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.inline"
 #     builder: "triggered builder"
-#   >
-# >
-# job: <
+#   }
+# }
+# job: {
 #   id: "triggerer builder"
 #   acl_sets: "inline"
-#   buildbucket: <
+#   buildbucket: {
 #     server: "cr-buildbucket.appspot.com"
 #     bucket: "luci.infra.inline"
 #     builder: "triggerer builder"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "inline poller"
 #   schedule: "with 10s interval"
 #   acl_sets: "inline"
 #   triggers: "another builder"
 #   triggers: "another executable builder"
 #   triggers: "triggerer builder"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
 #     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
-#   >
-# >
-# trigger: <
+#   }
+# }
+# trigger: {
 #   id: "master-poller"
 #   schedule: "with 10s interval"
 #   acl_sets: "ci"
 #   triggers: "generically named builder"
 #   triggers: "generically named executable builder"
 #   triggers: "linux ci builder"
-#   gitiles: <
+#   gitiles: {
 #     repo: "https://noop.com"
 #     refs: "regexp:refs/heads/master"
 #     refs: "regexp:refs/tags/blah"
 #     refs: "regexp:refs/branch-heads/\\d+\\.\\d+"
 #     path_regexps: ".*"
 #     path_regexps_exclude: "excluded"
-#   >
-# >
-# acl_sets: <
+#   }
+# }
+# acl_sets: {
 #   name: "ci"
-#   acls: <
+#   acls: {
 #     role: OWNER
 #     granted_to: "group:admins"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     granted_to: "group:all"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     role: TRIGGERER
 #     granted_to: "group:devs"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     role: TRIGGERER
 #     granted_to: "project:some-project"
-#   >
-# >
-# acl_sets: <
+#   }
+# }
+# acl_sets: {
 #   name: "inline"
-#   acls: <
+#   acls: {
 #     role: OWNER
 #     granted_to: "group:admins"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     granted_to: "group:all"
-#   >
-# >
+#   }
+# }
 # ===
 #
 # === project.cfg

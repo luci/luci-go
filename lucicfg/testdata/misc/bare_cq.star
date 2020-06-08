@@ -11,21 +11,21 @@ luci.cq_group(
 # Expect configs:
 #
 # === commit-queue.cfg
-# config_groups: <
+# config_groups: {
 #   name: "first"
-#   gerrit: <
+#   gerrit: {
 #     url: "https://example-review.googlesource.com"
-#     projects: <
+#     projects: {
 #       name: "repo"
 #       ref_regexp: "refs/heads/master"
-#     >
-#   >
-#   verifiers: <
-#     gerrit_cq_ability: <
+#     }
+#   }
+#   verifiers: {
+#     gerrit_cq_ability: {
 #       committer_list: "committers"
-#     >
-#   >
-# >
+#     }
+#   }
+# }
 # ===
 #
 # === project.cfg

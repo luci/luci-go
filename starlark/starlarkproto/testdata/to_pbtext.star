@@ -23,7 +23,7 @@ assert.eq(proto.to_textpb(m), 'i: 123\n')
 
 # Omits defaults.
 m.i = 0
-assert.eq(proto.to_textpb(m), '\n')
+assert.eq(proto.to_textpb(m), '')
 
 # to_textpb expects an argument.
 def to_textpb_no_args():

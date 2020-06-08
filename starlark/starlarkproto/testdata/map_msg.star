@@ -48,16 +48,16 @@ text = proto.to_textpb(testprotos.MapWithMessageType(m={
   'k1': testprotos.Simple(i=1),
   'k2': testprotos.Simple(i=2),
 }))
-assert.eq(text, """m: <
+assert.eq(text, """m: {
   key: "k1"
-  value: <
+  value: {
     i: 1
-  >
->
-m: <
+  }
+}
+m: {
   key: "k2"
-  value: <
+  value: {
     i: 2
-  >
->
+  }
+}
 """)

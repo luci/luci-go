@@ -30,7 +30,8 @@ assert.eq(dir(m), ['i', 'many_i'])
 assert.true(bool(m))
 
 # Stringification works.
-assert.eq(str(testprotos.Simple(i=123)), 'i:123')
+assert.eq(str(testprotos.Simple(i=123)), 'i: 123')
+assert.eq(str(testprotos.Complex(i64=1, msg_val={'i': 1})), 'i64: 1\nmsg_val: { i: 1 }')
 
 # Stringifying the type returns its proto type name.
 assert.eq(str(testprotos.Simple), 'testprotos.Simple')

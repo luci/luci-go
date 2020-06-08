@@ -10,5 +10,5 @@ resultdb.settings(
 #
 # Traceback (most recent call last):
 #   //testdata/errors/short_resultdb_bigquery_table.star: in <toplevel>
-# ... 
+# ...
 # Error: bad "bq_table": "a.b" should match "^([^.]+)\\.([^.]+)\\.([^.]+)$"

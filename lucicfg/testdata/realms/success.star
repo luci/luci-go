@@ -124,10 +124,10 @@ luci.realm(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "bucket"
-#   swarming: <>
-# >
+#   swarming: {}
+# }
 # ===
 #
 # === project.cfg
@@ -135,49 +135,49 @@ luci.realm(
 # ===
 #
 # === realms.cfg
-# realms: <
+# realms: {
 #   name: "@legacy"
-#   bindings: <
+#   bindings: {
 #     role: "role/a"
 #     principals: "user:a@example.com"
-#   >
-# >
-# realms: <
+#   }
+# }
+# realms: {
 #   name: "@root"
-#   bindings: <
+#   bindings: {
 #     role: "role/a"
 #     principals: "group:root"
-#   >
-# >
-# realms: <
+#   }
+# }
+# realms: {
 #   name: "bucket"
-#   bindings: <
+#   bindings: {
 #     role: "role/a"
 #     principals: "group:bucket"
-#   >
-# >
-# realms: <
+#   }
+# }
+# realms: {
 #   name: "custom_roles"
-#   bindings: <
+#   bindings: {
 #     role: "customRole/r1"
 #     principals: "user:a@example.com"
 #     principals: "user:b@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "customRole/r3"
 #     principals: "user:c@example.com"
 #     principals: "user:d@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/a"
 #     principals: "user:b@example.com"
 #     principals: "user:d@example.com"
-#   >
-# >
-# realms: <
+#   }
+# }
+# realms: {
 #   name: "realm1"
 #   extends: "bucket"
-#   bindings: <
+#   bindings: {
 #     role: "role/a"
 #     principals: "group:group-a"
 #     principals: "group:group-b"
@@ -185,8 +185,8 @@ luci.realm(
 #     principals: "project:proj-b"
 #     principals: "user:a@example.com"
 #     principals: "user:b@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/b"
 #     principals: "group:group-a"
 #     principals: "group:group-b"
@@ -194,13 +194,13 @@ luci.realm(
 #     principals: "project:proj-b"
 #     principals: "user:a@example.com"
 #     principals: "user:b@example.com"
-#   >
-# >
-# realms: <
+#   }
+# }
+# realms: {
 #   name: "realm2"
 #   extends: "bucket"
 #   extends: "realm1"
-#   bindings: <
+#   bindings: {
 #     role: "role/a"
 #     principals: "group:group-a"
 #     principals: "group:group-b"
@@ -208,8 +208,8 @@ luci.realm(
 #     principals: "project:proj-b"
 #     principals: "user:a@example.com"
 #     principals: "user:b@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/b"
 #     principals: "group:group-a"
 #     principals: "group:group-b"
@@ -217,27 +217,27 @@ luci.realm(
 #     principals: "project:proj-b"
 #     principals: "user:a@example.com"
 #     principals: "user:b@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/c"
 #     principals: "group:group-c"
 #     principals: "project:proj-c"
 #     principals: "user:c@example.com"
-#   >
-# >
-# custom_roles: <
+#   }
+# }
+# custom_roles: {
 #   name: "customRole/r1"
 #   extends: "customRole/r2"
 #   extends: "role/a"
 #   permissions: "luci.dev.testing1"
-# >
-# custom_roles: <
+# }
+# custom_roles: {
 #   name: "customRole/r2"
 #   extends: "customRole/r3"
 #   permissions: "luci.dev.testing2"
-# >
-# custom_roles: <
+# }
+# custom_roles: {
 #   name: "customRole/r3"
 #   permissions: "luci.dev.testing3"
-# >
+# }
 # ===

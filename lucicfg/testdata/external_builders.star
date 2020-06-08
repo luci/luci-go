@@ -34,37 +34,37 @@ luci.list_view_entry(
 # Expect configs:
 #
 # === cr-buildbucket.cfg
-# buckets: <
+# buckets: {
 #   name: "bucket"
-#   swarming: <
-#     builders: <
+#   swarming: {
+#     builders: {
 #       name: "builder"
 #       swarming_host: "chromium-swarm.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "main/recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
-#     >
-#   >
-# >
+#       }
+#     }
+#   }
+# }
 # ===
 #
 # === luci-milo.cfg
-# consoles: <
+# consoles: {
 #   id: "View"
 #   name: "View"
-#   builders: <
+#   builders: {
 #     name: "buildbucket/luci.project.bucket/builder"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.another-project.bucket/builder"
-#   >
-#   builders: <
+#   }
+#   builders: {
 #     name: "buildbucket/luci.another-project.bucket/builder2"
-#   >
+#   }
 #   builder_view_only: true
-# >
+# }
 # ===
 #
 # === project.cfg

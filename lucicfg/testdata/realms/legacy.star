@@ -74,51 +74,51 @@ luci.builder(
 # Expect configs:
 #
 # === cr-buildbucket-dev.cfg
-# buckets: <
+# buckets: {
 #   name: "bucket"
-#   acls: <
+#   acls: {
 #     role: WRITER
 #     group: "bucket-owner"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     role: WRITER
 #     group: "owners"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     identity: "user:r1@example.com"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     identity: "user:r2@example.com"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     group: "readers1"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     group: "readers2"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     identity: "project:pr1"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     identity: "project:pr2"
-#   >
-#   acls: <
+#   }
+#   acls: {
 #     role: SCHEDULER
 #     group: "triggerers"
-#   >
-#   swarming: <
-#     builders: <
+#   }
+#   swarming: {
+#     builders: {
 #       name: "builder"
 #       swarming_host: "chromium-swarm-dev.appspot.com"
-#       recipe: <
+#       recipe: {
 #         name: "recipe"
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/master"
-#       >
+#       }
 #       service_account: "builder@example.com"
-#     >
-#   >
-# >
+#     }
+#   }
+# }
 # ===
 #
 # === project.cfg
@@ -132,13 +132,13 @@ luci.builder(
 # ===
 #
 # === realms.cfg
-# realms: <
+# realms: {
 #   name: "@root"
-#   bindings: <
+#   bindings: {
 #     role: "role/buildbucket.owner"
 #     principals: "group:owners"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/buildbucket.reader"
 #     principals: "group:readers1"
 #     principals: "group:readers2"
@@ -146,12 +146,12 @@ luci.builder(
 #     principals: "project:pr2"
 #     principals: "user:r1@example.com"
 #     principals: "user:r2@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/buildbucket.triggerer"
 #     principals: "group:triggerers"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/configs.reader"
 #     principals: "group:readers1"
 #     principals: "group:readers2"
@@ -159,28 +159,28 @@ luci.builder(
 #     principals: "project:pr2"
 #     principals: "user:r1@example.com"
 #     principals: "user:r2@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/cq.committer"
 #     principals: "group:committer"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/cq.dryRunner"
 #     principals: "group:dry-runner"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/logdog.reader"
 #     principals: "group:logdog"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/logdog.writer"
 #     principals: "group:logdog"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/scheduler.owner"
 #     principals: "group:owners"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/scheduler.reader"
 #     principals: "group:readers1"
 #     principals: "group:readers2"
@@ -188,21 +188,21 @@ luci.builder(
 #     principals: "project:pr2"
 #     principals: "user:r1@example.com"
 #     principals: "user:r2@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/scheduler.triggerer"
 #     principals: "group:triggerers"
-#   >
-# >
-# realms: <
+#   }
+# }
+# realms: {
 #   name: "bucket"
-#   bindings: <
+#   bindings: {
 #     role: "role/buildbucket.builderServiceAccount"
 #     principals: "user:builder@example.com"
-#   >
-#   bindings: <
+#   }
+#   bindings: {
 #     role: "role/buildbucket.owner"
 #     principals: "group:bucket-owner"
-#   >
-# >
+#   }
+# }
 # ===

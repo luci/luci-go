@@ -60,14 +60,14 @@ text = proto.to_textpb(testprotos.MapWithPrimitiveType(m1={
   'k1': 1,
   'k2': 2,
 }))
-assert.eq(text, """m1: <
+assert.eq(text, """m1: {
   key: "k1"
   value: 1
->
-m1: <
+}
+m1: {
   key: "k2"
   value: 2
->
+}
 """)
 
 # Fields of the exact same type can point to a single object.

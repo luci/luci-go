@@ -23,11 +23,11 @@ assert.eq(m.i, 123)
 # Unrecognized fields are forbidden.
 def unrecognized_field():
   proto.from_textpb(testprotos.Simple, 'unknown: 123')
-assert.fails(unrecognized_field, 'contains unknown field')
+assert.fails(unrecognized_field, 'unknown field')
 
 # Bad text proto. Detailed tests for type conversions are in from_proto.star.
 def from_textpb_bad_proto():
-  proto.from_textpb(testprotos.Simple, 'huh?')
+  proto.from_textpb(testprotos.Simple, '???')
 assert.fails(from_textpb_bad_proto, 'syntax error')
 
 # Too many arguments.
