@@ -17,6 +17,7 @@ package lib
 import (
 	"context"
 	"os"
+	"log"
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
@@ -30,6 +31,7 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		return err
 	}
 
+	log.Print("[mmutex][exclusive] LockFilePath: ", lockFilePath, ". DrainFilePath: ", drainFilePath, ".")
 	if len(lockFilePath) == 0 {
 		return command(ctx)
 	}
@@ -41,9 +43,8 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 	if err = file.Close(); err != nil {
 		return err
 	}
-
 	// Remove the drain file in case the lock can never be acquired.
-	defer os.Remove(drainFilePath)
+	defer RemoveDrainFile(drainFilePath)
 
 	blocker := createLockBlocker(ctx)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
@@ -53,7 +54,13 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		if err := os.Remove(drainFilePath); err != nil {
 			return err
 		}
+		log.Print("[mmutex][exclusive] Lock acquired and drain file removed.")
 
 		return command(ctx)
 	})
+}
+
+func RemoveDrainFile(drainFilePath string){
+	log.Print("[mmutex][exclusive] Trying to removing drain file in case lock is not acquired.")
+	os.Remove(drainFilePath)
 }

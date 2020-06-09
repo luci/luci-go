@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"log"
 
 	"github.com/maruel/subcommands"
 
@@ -60,6 +61,7 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command []string) er
 	ctx, cancel := clock.WithTimeout(ctx, lib.DefaultCommandTimeout)
 	defer cancel()
 
+	log.Print("[mmutex] Running command in EXCLUSIVE mode: ", command)
 	return lib.RunExclusive(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
 	})
