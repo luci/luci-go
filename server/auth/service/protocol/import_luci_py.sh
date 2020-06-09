@@ -55,7 +55,7 @@ cat <<EOF >> generate.go
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -proto-path . components/auth/proto
+//go:generate cproto -disable-grpc -proto-path . components/auth/proto
 
 package protocol
 
