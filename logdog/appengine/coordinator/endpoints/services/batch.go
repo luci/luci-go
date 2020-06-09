@@ -49,7 +49,7 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 	// constraint. If it does, we will refrain from appending it.
 	var respMu sync.Mutex
 	var respSize int64
-	_ = parallel.FanOutIn(func(workC chan<- func() error) {
+	_ = parallel.WorkPool(8, func(workC chan<- func() error) {
 		for i, e := range req.Req {
 			i, e := i, e
 			workC <- func() error {
