@@ -73,7 +73,7 @@ type Cache interface {
 	// GetAdded returns a list of file size added to cache.
 	GetAdded() []int64
 
-	// GetAdded returns a list of file size used from cache.
+	// GetUsed returns a list of file size used from cache.
 	GetUsed() []int64
 }
 
@@ -271,6 +271,9 @@ func (m *memory) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMo
 	}
 	m.mu.Lock()
 	content, ok := m.data[digest]
+	if ok {
+		m.used = append(m.used, int64(len(content)))
+	}
 	m.mu.Unlock()
 	if !ok {
 		return os.ErrNotExist
@@ -306,6 +309,8 @@ type disk struct {
 	// Lock protected.
 	mu  sync.Mutex // This protects modification of cached entries under |path| too.
 	lru lruDict    // Implements LRU based eviction.
+
+	statsMu sync.Mutex // Protects the stats below
 	// TODO(maruel): Add stats about: # removed.
 	// TODO(maruel): stateFile
 	added []int64
@@ -368,6 +373,9 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	e := d.lru.items.entries[digest].Value.(*entry)
+
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
 	d.used = append(d.used, int64(e.value))
 	return f, nil
 }
@@ -419,6 +427,8 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 		d.lru.pop(digest)
 		return err
 	}
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
 	d.added = append(d.added, size)
 	return nil
 }
@@ -465,6 +475,18 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	if err := os.Chmod(dest, perm); err != nil {
 		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
+
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Annotate(err, "failed to call os.Stat(%s)", src).Err()
+	}
+	size := fi.Size()
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	// If this succeeds directly, it means the file is already cached on the
+	// disk, so we put it into LRU.
+	d.used = append(d.used, size)
+
 	return nil
 }
 
@@ -497,14 +519,14 @@ func runOsLink(src, dest string) error {
 }
 
 func (d *disk) GetAdded() []int64 {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
 	return append([]int64{}, d.added...)
 }
 
 func (d *disk) GetUsed() []int64 {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
 	return append([]int64{}, d.used...)
 }
 
