@@ -29,6 +29,24 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// defaultStructValues defaults nil or empty values inside the given
+// structpb.Struct. Needed because structpb.Value cannot be marshaled to JSON
+// unless there is a kind set.
+func defaultStructValues(s *structpb.Struct) {
+	for k, v := range s.GetFields() {
+		switch {
+		case v == nil:
+			s.Fields[k] = &structpb.Value{
+				Kind: &structpb.Value_NullValue{},
+			}
+		case v.Kind == nil:
+			v.Kind = &structpb.Value_NullValue{}
+		case v.GetStructValue() != nil:
+			defaultStructValues(v.GetStructValue())
+		}
+	}
+}
+
 // Ensure DSStruct implements datastore.PropertyConverter.
 var _ datastore.PropertyConverter = &DSStruct{}
 
@@ -42,7 +60,12 @@ type DSStruct struct {
 // FromProperty deserializes structpb.Struct protos from the datastore.
 // Implements datastore.PropertyConverter.
 func (s *DSStruct) FromProperty(p datastore.Property) error {
-	return proto.Unmarshal(p.Value().([]byte), &s.Struct)
+	err := proto.Unmarshal(p.Value().([]byte), &s.Struct)
+	if err != nil {
+		return err
+	}
+	defaultStructValues(&s.Struct)
+	return nil
 }
 
 // ToProperty serializes structpb.Struct protos to datastore format.
