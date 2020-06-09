@@ -103,9 +103,11 @@ func TestBuild(t *testing.T) {
 			So(datastore.Put(ctx, &BuildInfra{
 				ID:    1,
 				Build: key,
-				Proto: pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{
-						Hostname: "example.com",
+				Proto: DSBuildInfra{
+					pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "example.com",
+						},
 					},
 				},
 			}), ShouldBeNil)

@@ -154,7 +154,7 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	if err := GetIgnoreMissing(ctx, dets); err != nil {
 		return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
 	}
-	p.Infra = &inf.Proto
+	p.Infra = &inf.Proto.BuildInfra
 	if p.Input == nil {
 		p.Input = &pb.Build_Input{}
 	}
