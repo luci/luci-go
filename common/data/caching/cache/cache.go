@@ -73,7 +73,7 @@ type Cache interface {
 	// GetAdded returns a list of file size added to cache.
 	GetAdded() []int64
 
-	// GetAdded returns a list of file size used from cache.
+	// GetUsed returns a list of file size used from cache.
 	GetUsed() []int64
 }
 
@@ -271,6 +271,9 @@ func (m *memory) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMo
 	}
 	m.mu.Lock()
 	content, ok := m.data[digest]
+	if ok {
+		m.used = append(m.used, int64(len(content)))
+	}
 	m.mu.Unlock()
 	if !ok {
 		return os.ErrNotExist
@@ -409,7 +412,10 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 	}
 
 	if cb != nil {
-		if err := cb(); err != nil {
+		d.mu.Unlock()
+		err := cb()
+		d.mu.Lock()
+		if err != nil {
 			return err
 		}
 	}
@@ -442,6 +448,10 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		return os.ErrInvalid
 	}
 	src := d.itemPath(digest)
+	fi, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("failed to call os.Stat(%s): %w", src, err)
+	}
 	// - Windows, if dest exists, the call fails. In particular, trying to
 	//   os.Remove() will fail if the file's ReadOnly bit is set. What's worse is
 	//   that the ReadOnly bit is set on the file inode, shared on all hardlinks
@@ -465,6 +475,17 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	if err := os.Chmod(dest, perm); err != nil {
 		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	// If this succeeds directly, it means the file is already cached on the
+	// disk, so we put it into LRU.
+	size := fi.Size()
+	d.lru.pushFront(digest, units.Size(size))
+	if err := d.respectPolicies(); err != nil {
+		d.lru.pop(digest)
+		return err
+	}
+	d.used = append(d.used, size)
 	return nil
 }
 
