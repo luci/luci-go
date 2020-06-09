@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5cfa52c_b8b5afe3",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T20:49:57Z",
+      "side": 1,
+      "message": "earlier we\u0027ve agreed to do permissions check for each invocation (instead of unique realm) for simplicity, but at this point this semantics is no longer simple. I think a mapping from realm (as opposed to request index) would be more intuitive.\n\nif a permissionsSet is already present in the map, we don\u0027t have to call getPermissions again",
+      "range": {
+        "startLine": 75,
+        "startChar": 15,
+        "endLine": 75,
+        "endChar": 17
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "928329ea_9e2bfeeb",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T20:49:57Z",
+      "side": 1,
+      "message": "nit: this list of permissions is repeated in all callsites of getPermissions and this package will not have more callsites of getPermissions. Should we move this list there?",
+      "range": {
+        "startLine": 77,
+        "startChar": 57,
+        "endLine": 77,
+        "endChar": 150
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9f9848e_5ef344ec",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T20:49:57Z",
+      "side": 1,
+      "message": "would passing the set of permissions be easier?",
+      "range": {
+        "startLine": 59,
+        "startChar": 85,
+        "endLine": 59,
+        "endChar": 136
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4de4b1e9_c29234ac",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T20:49:57Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 36,
+        "startChar": 88,
+        "endLine": 36,
+        "endChar": 89
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38cf9d11_df3c2b9b",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T20:49:57Z",
+      "side": 1,
+      "message": "nit: would a set be simpler? struct[realms.Permissoin]struct{}\nCurrently this supports three states per realm: true, false and absent.\n\nalso wondering if it makes sense to have PermissionsSet type in the realms package.",
+      "range": {
+        "startLine": 36,
+        "startChar": 57,
+        "endLine": 36,
+        "endChar": 60
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0adbdcad_8a7fc33e",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T20:49:57Z",
+      "side": 1,
+      "message": "related to my other comment. this func doesn\u0027t actually need the inv, but only its realm. would be simpler to accept realm",
+      "range": {
+        "startLine": 37,
+        "startChar": 41,
+        "endLine": 37,
+        "endChar": 59
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
