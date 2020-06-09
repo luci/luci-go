@@ -237,6 +237,30 @@
       "revId": "448d07c92cdf0ce3f8820f8e75a26f2bc30576b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d5d8e3c_843f9690",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-09T18:24:24Z",
+      "side": 1,
+      "message": "Fwiw, I recommend using the luci logging library anyway, even if you don\u0027t use fields :). It allows per-test sinks for tests and stuff like that too.",
+      "parentUuid": "7eccfeab_bf12b498",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "448d07c92cdf0ce3f8820f8e75a26f2bc30576b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
