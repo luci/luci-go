@@ -46,6 +46,30 @@
       "revId": "e65b29f27c3bc9da8a502a39aa1d3d149f80140a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff0d7931_65b789b3",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-09T01:43:58Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "7fb70e49_c4f10955",
+      "range": {
+        "startLine": 282,
+        "startChar": 29,
+        "endLine": 282,
+        "endChar": 44
+      },
+      "revId": "e65b29f27c3bc9da8a502a39aa1d3d149f80140a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

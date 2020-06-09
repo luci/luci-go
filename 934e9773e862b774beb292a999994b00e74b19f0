@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1ee6ab0d_0abc894b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-09T01:43:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1923427_66077885",
+      "range": {
+        "startLine": 10,
+        "startChar": 12,
+        "endLine": 10,
+        "endChar": 20
+      },
+      "revId": "934e9773e862b774beb292a999994b00e74b19f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad108219_d8f11be5",
         "filename": "luciexe/host/buildmerge/agent.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "934e9773e862b774beb292a999994b00e74b19f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eedfbc20_12612991",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-09T01:43:58Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ad108219_d8f11be5",
+      "range": {
+        "startLine": 5,
+        "startChar": 18,
+        "endLine": 5,
+        "endChar": 19
+      },
+      "revId": "934e9773e862b774beb292a999994b00e74b19f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
