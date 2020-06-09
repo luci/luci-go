@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72ca34de_2ed98f61",
+        "filename": "luciexe/legacy/annotee/step.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-09T23:54:53Z",
+      "side": 1,
+      "message": "imo just don\u0027t have this option",
+      "range": {
+        "startLine": 45,
+        "startChar": 6,
+        "endLine": 45,
+        "endChar": 21
+      },
+      "revId": "c08dbe0a91fe804236fe2a1a67cc71625a6f71e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
