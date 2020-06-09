@@ -42,7 +42,11 @@ var (
 	descFile = flag.String(
 		"desc",
 		"",
-		"Writes a FileDescriptorSet file containing all the the .proto files and their transitive dependencies",
+		"write FileDescriptorSet file containing all the the .proto files and their transitive dependencies",
+	)
+	disableGRPC = flag.Bool(
+		"disable-grpc", false,
+		"disable grpc and prpc stubs generation, implies -discovery=false",
 	)
 )
 
@@ -139,7 +143,9 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 	for k, v := range pathMap {
 		params = append(params, fmt.Sprintf("M%s=%s", k, v))
 	}
-	params = append(params, "plugins=grpc")
+	if !*disableGRPC {
+		params = append(params, "plugins=grpc")
+	}
 	args = append(args, fmt.Sprintf("--go_out=%s:%s", strings.Join(params, ","), goOut))
 
 	for _, f := range protoFiles {
@@ -200,7 +206,11 @@ func run(c context.Context, goPath []string, dir string) error {
 		return err
 	}
 
-	// Transform .go files
+	if *disableGRPC {
+		return nil
+	}
+
+	// Transform .go files by adding pRPC stubs after gPRC stubs.
 	var goPkg, protoPkg string
 	for _, p := range protoFiles {
 		goFile := filepath.Join(outDir, strings.TrimSuffix(p, ".proto")+".pb.go")
