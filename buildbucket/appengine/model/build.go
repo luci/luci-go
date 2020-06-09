@@ -48,6 +48,7 @@ type PubSubCallback struct {
 
 // Build is a representation of a build in the datastore.
 type Build struct {
+	_ datastore.PropertyMap `gae:"-,extra"`
 	_kind string `gae:"$kind,Build"`
 	ID    int64  `gae:"$id"`
 
