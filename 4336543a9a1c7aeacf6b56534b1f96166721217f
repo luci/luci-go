@@ -16,6 +16,24 @@
       "revId": "4336543a9a1c7aeacf6b56534b1f96166721217f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecddb19e_bc43bc79",
+        "filename": "buildbucket/appengine/rpc/list_builders.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T07:27:38Z",
+      "side": 1,
+      "message": "good catch. done",
+      "parentUuid": "8f2a83ac_52332b1d",
+      "revId": "4336543a9a1c7aeacf6b56534b1f96166721217f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
