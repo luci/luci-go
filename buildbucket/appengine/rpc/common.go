@@ -53,8 +53,8 @@ func validatePageSize(pageSize int32) error {
 	return nil
 }
 
-// canRead returns a NotFound error if the requester does not have at least a
-// reader role in the bucket.
+// canRead returns a NotFound error if the requester does not have a reader
+// role in the bucket.
 func canRead(ctx context.Context, project, bucket string) error {
 	bck := &model.Bucket{ID: bucket, Parent: model.ProjectKey(ctx, project)}
 	switch err := datastore.Get(ctx, bck); {
@@ -72,4 +72,19 @@ func canRead(ctx context.Context, project, bucket string) error {
 	default:
 		return nil
 	}
+}
+
+// decodeCursor decodes a datastore cursor from a page token.
+// The returned error may be appstatus-annotated.
+func decodeCursor(ctx context.Context, pageToken string) (datastore.Cursor, error) {
+	if pageToken == "" {
+		return nil, nil
+	}
+
+	cursor, err := datastore.DecodeCursor(ctx, pageToken)
+	if err != nil {
+		return nil, appstatus.Attachf(err, codes.InvalidArgument, "bad cursor")
+	}
+
+	return cursor, nil
 }
