@@ -80,6 +80,11 @@ message Realms {
 // permission name in the service's source code as a constant should look
 // natural.
 //
+// A permission can be marked as "internal". Internal permissions are not
+// allowed to appear in custom roles in user-defined realms.cfg file. They can
+// only be added to predefined roles by the LUCI Auth service itself. They can
+// be used to setup trust for internal interactions between LUCI components.
+//
 // Each individual LUCI service should document what permissions it checks and
 // when. It becomes a part of service's public API. Usually services should
 // check only permissions of resources they own (e.g. "<service>.<subject>.*"),
@@ -94,12 +99,9 @@ message Realms {
 // If a LUCI service checks a permission that is no longer (or not yet) listed
 // in the `permissions` set, the check should succeed with "no permission"
 // result, and produce a warning in service's logs.
-//
-// Note that Permission is a proto message (and not just a string) to allow
-// attaching metadata to permissions in the future (for example "deprecated"
-// flag).
 message Permission {
   string name = 1;  // "<service>.<subject>.<verb>"
+  bool internal = 2; // internal permissions cannot be used in realms.cfg
 }
 
 

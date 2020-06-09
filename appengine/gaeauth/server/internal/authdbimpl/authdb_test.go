@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigureAuthService(t *testing.T) {
@@ -49,7 +50,7 @@ func TestConfigureAuthService(t *testing.T) {
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		snap, err := GetAuthDBSnapshot(ctx, info.GetSnapshotID())
 		So(err, ShouldBeNil)
-		So(snap, ShouldResemble, &protocol.AuthDB{
+		So(snap, ShouldResembleProto, &protocol.AuthDB{
 			OauthClientId:     "client-id-for-rev-123",
 			OauthClientSecret: "secret",
 		})
