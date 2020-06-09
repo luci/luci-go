@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	configInterface "go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/server/router"
@@ -197,7 +197,7 @@ func deleteProject(c context.Context, projectID string) error {
 func updateProjects(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 	logging.Debugf(c, "fetching configs for %s", cfgName)
-	lucicfg := GetConfigService(c)
+	lucicfg := cfgclient.Client(c)
 	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
 		return errors.Annotate(err, "while fetching project configs").Err()
@@ -274,21 +274,6 @@ func updateProjects(c context.Context) error {
 		liveProjects.Add(cfg.ConfigSet.Project())
 	}
 	return clearDeadProjects(c, liveProjects)
-}
-
-var configInterfaceKey = "configInterface"
-
-// WithConfigService sets a luci_notify config interface to be used for all config interaction.
-func WithConfigService(c context.Context, cInterface configInterface.Interface) context.Context {
-	return context.WithValue(c, &configInterfaceKey, cInterface)
-}
-
-// GetConfigService returns an Interface based on the provided context values
-func GetConfigService(c context.Context) configInterface.Interface {
-	if iface, ok := c.Value(&configInterfaceKey).(configInterface.Interface); ok {
-		return iface
-	}
-	return nil
 }
 
 // UpdateHandler is the HTTP router handler for handling cron-triggered
