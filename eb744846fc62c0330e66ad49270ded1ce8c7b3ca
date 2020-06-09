@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86e798f0_fc018d7d",
+        "filename": "milo/frontend/resultui/src/pages/error_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T19:11:02Z",
+      "side": 1,
+      "message": "this seems to be the most useful part of the page. Can we emphasize with css?",
+      "revId": "eb744846fc62c0330e66ad49270ded1ce8c7b3ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "253a9290_68790257",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-09T19:11:02Z",
+      "side": 1,
+      "message": "at some point we will probably have more places in code where we invoke an error page. Then it would make sense to extract the common parts to a common func",
+      "revId": "eb744846fc62c0330e66ad49270ded1ce8c7b3ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
