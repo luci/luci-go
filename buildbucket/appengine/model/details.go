@@ -80,6 +80,26 @@ func (s *DSStruct) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(b, datastore.NoIndex)
 }
 
+// DSBuildInfra is a wrapper around pb.BuildInfra.
+// Although pb.BuildInfra already implements datastore.PropertyConverter,
+// override FromProto to apply defaultStructValues.
+type DSBuildInfra struct {
+	pb.BuildInfra
+}
+
+// FromProperty deserializes pb.BuildInfra protos from the datastore.
+// Implements datastore.PropertyConverter.
+func (b *DSBuildInfra) FromProperty(p datastore.Property) error {
+	err := b.BuildInfra.FromProperty(p)
+	if err != nil {
+		return err
+	}
+	if b.GetBuildbucket() != nil {
+		defaultStructValues(b.Buildbucket.RequestedProperties)
+	}
+	return nil
+}
+
 // BuildInfra is a representation of a build proto's infra field
 // in the datastore.
 type BuildInfra struct {
@@ -89,7 +109,7 @@ type BuildInfra struct {
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the pb.BuildInfra proto representation of the infra field.
-	Proto pb.BuildInfra `gae:"infra,noindex"`
+	Proto DSBuildInfra `gae:"infra,noindex"`
 }
 
 // BuildInputProperties is a representation of a build proto's input field's
