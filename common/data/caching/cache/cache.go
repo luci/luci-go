@@ -73,7 +73,7 @@ type Cache interface {
 	// GetAdded returns a list of file size added to cache.
 	GetAdded() []int64
 
-	// GetAdded returns a list of file size used from cache.
+	// GetUsed returns a list of file size used from cache.
 	GetUsed() []int64
 }
 
@@ -271,6 +271,9 @@ func (m *memory) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMo
 	}
 	m.mu.Lock()
 	content, ok := m.data[digest]
+	if ok {
+		m.used = append(m.used, int64(len(content)))
+	}
 	m.mu.Unlock()
 	if !ok {
 		return os.ErrNotExist
@@ -429,7 +432,7 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 
 func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
 	return d.add(digest, src, func() error {
-		if err := d.Hardlink(digest, dest, perm); err != nil {
+		if err := d.hardlink(digest, dest, perm, true); err != nil {
 			_ = os.Remove(d.itemPath(digest))
 			return fmt.Errorf("failed to call Hardlink(%s, %s): %w", digest, dest, err)
 		}
@@ -438,10 +441,18 @@ func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest st
 }
 
 func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
+	return d.hardlink(digest, dest, perm, false)
+}
+
+func (d *disk) hardlink(digest isolated.HexDigest, dest string, perm os.FileMode, isLocked bool) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
 	src := d.itemPath(digest)
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Annotate(err, "failed to call os.Stat(%s)", src).Err()
+	}
 	// - Windows, if dest exists, the call fails. In particular, trying to
 	//   os.Remove() will fail if the file's ReadOnly bit is set. What's worse is
 	//   that the ReadOnly bit is set on the file inode, shared on all hardlinks
@@ -464,6 +475,21 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 
 	if err := os.Chmod(dest, perm); err != nil {
 		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
+	}
+
+	size := fi.Size()
+	updateUsed := func() {
+		// If this succeeds directly, it means the file is already cached on the
+		// disk, so we put it into LRU.
+		d.used = append(d.used, size)
+	}
+	if !isLocked {
+		d.mu.Lock()
+		defer d.mu.Unlock()
+
+		updateUsed()
+	} else {
+		updateUsed()
 	}
 	return nil
 }
