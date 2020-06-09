@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da93ed81_e1391093",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-09T10:14:55Z",
+      "side": 1,
+      "message": "better to use additional mutext for used?",
+      "range": {
+        "startLine": 484,
+        "startChar": 4,
+        "endLine": 484,
+        "endChar": 8
+      },
+      "revId": "b653d7bf2d52e24c774095be952ce51d219c8951",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6588f210_f87557d0",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-09T10:14:55Z",
+      "side": 1,
+      "message": "you need to create closure",
+      "range": {
+        "startLine": 207,
+        "startChar": 8,
+        "endLine": 207,
+        "endChar": 10
+      },
+      "revId": "b653d7bf2d52e24c774095be952ce51d219c8951",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
