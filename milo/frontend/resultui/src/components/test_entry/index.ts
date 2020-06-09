@@ -25,7 +25,7 @@ import { computed, observable } from 'mobx';
 
 import { ID_SEG_REGEX, ReadonlyTest } from '../../models/test_node';
 import '../copy_to_clipboard';
-import './variant-entry';
+import './variant_entry';
 
 
 /**
