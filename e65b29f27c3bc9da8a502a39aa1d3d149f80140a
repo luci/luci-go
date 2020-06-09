@@ -22,6 +22,30 @@
       "revId": "e65b29f27c3bc9da8a502a39aa1d3d149f80140a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fb70e49_c4f10955",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-09T00:44:43Z",
+      "side": 0,
+      "message": "So I think the thought was that we should avoid sending invalid data to buildbucket; That said, I think the underlying premise of this CL is correct. If there IS invalid data, we should send it up so that there\u0027s actually a chance to debug it. Otherwise you just get \"ur build is invalid ¯\\_(ツ)_/¯\"",
+      "parentUuid": "b2d5a166_098ffaca",
+      "range": {
+        "startLine": 282,
+        "startChar": 29,
+        "endLine": 282,
+        "endChar": 44
+      },
+      "revId": "e65b29f27c3bc9da8a502a39aa1d3d149f80140a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
