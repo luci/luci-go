@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ee4a51b_198e452d",
+        "filename": "buildbucket/appengine/rpc/get_builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-09T07:19:39Z",
+      "side": 1,
+      "message": "Seems obvious. I wouldn\u0027t otherwise insist, but now it\u0027s inconsistent with ListBuilders.",
+      "revId": "933b266d55e245bcaa2b3f8ae4b8dd23afdf38ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1256defd_3f76c3ee",
+        "filename": "buildbucket/appengine/rpc/get_builder.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-09T07:19:39Z",
+      "side": 1,
+      "message": "Maybe this too. Also no longer commented in ListBuilders.",
+      "revId": "933b266d55e245bcaa2b3f8ae4b8dd23afdf38ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
