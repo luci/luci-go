@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/proto/paged"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -47,6 +47,7 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 		return nil, appstatus.Errorf(codes.Unimplemented, "request without bucket is not supported yet")
 	}
 
+	// Check permissions.
 	if err := canRead(ctx, req.Project, req.Bucket); err != nil {
 		return nil, err
 	}
@@ -54,29 +55,64 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 	// Fetch the builders.
 	q := datastore.NewQuery(model.BuilderKind).
 		Ancestor(model.BucketKey(ctx, req.Project, req.Bucket))
-
-	pageSize := req.PageSize
-	switch {
-	case pageSize <= 0:
-		pageSize = 100
-	case pageSize > 1000:
-		pageSize = 1000
+	builders, nextPageToken, err := fetchBuilders(ctx, q, req.PageToken, req.PageSize)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch builders").Err()
 	}
 
-	res := &pb.ListBuildersResponse{}
-	err := paged.Query(ctx, pageSize, req.GetPageToken(), res, q, func(b *model.Builder) error {
-		res.Builders = append(res.Builders, &pb.BuilderItem{
+	// Compose the response.
+	res := &pb.ListBuildersResponse{
+		Builders:      make([]*pb.BuilderItem, len(builders)),
+		NextPageToken: nextPageToken,
+	}
+	for i, b := range builders {
+		res.Builders[i] = &pb.BuilderItem{
 			Id: &pb.BuilderID{
 				Project: req.Project,
 				Bucket:  req.Bucket,
 				Builder: b.ID,
 			},
 			Config: &b.Config,
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		}
 	}
 	return res, nil
+}
+
+// fetchBuilders fetches a page of builders together with a cursor.
+func fetchBuilders(ctx context.Context, q *datastore.Query, pageToken string, pageSize int32) (builders []*model.Builder, nextPageToken string, err error) {
+	// Note: this function is fairly generic, but the only reason it is currently
+	// Builder-specific is because datastore.Run does not accept callback
+	// signature func(interface{}, CursorCB).
+
+	// Respect the page token.
+	cur, err := decodeCursor(ctx, pageToken)
+	if err != nil {
+		return
+	}
+	q = q.Start(cur)
+
+	// Respect the page size.
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+	q = q.Limit(pageSize)
+
+	// Fetch entities and the cursor if needed.
+	var nextCursor datastore.Cursor
+	err = datastore.Run(ctx, q, func(builder *model.Builder, getCursor datastore.CursorCB) error {
+		builders = append(builders, builder)
+		if len(builders) == int(pageSize) {
+			var err error
+			if nextCursor, err = getCursor(); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if nextCursor != nil {
+		nextPageToken = nextCursor.String()
+	}
+	return
 }

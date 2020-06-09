@@ -19,10 +19,7 @@ import (
 )
 
 // Builders implements pb.BuildersServer.
-type Builders struct {
-	// TODO(crbug.com/1091489): remove this.
-	pb.UnimplementedBuildersServer
-}
+type Builders struct{}
 
 // Ensure Builders implements projects.BuildersServer.
 var _ pb.BuildersServer = &Builders{}
