@@ -20,8 +20,8 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import { ReadonlyVariant, VariantStatus } from '../../models/test_node';
-import './exoneration-entry';
-import './result-entry';
+import './exoneration_entry';
+import './result_entry';
 
 
 const STATUS_DISPLAY_MAP = {

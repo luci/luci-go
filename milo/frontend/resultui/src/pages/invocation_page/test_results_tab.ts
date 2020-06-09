@@ -19,7 +19,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { observable, reaction } from 'mobx';
 
 import '../../components/left_panel';
-import '../../components/test-entry';
+import '../../components/test_entry';
 import '../../components/test_filter';
 import { TestFilter } from '../../components/test_filter';
 import '../../components/test_nav_tree';
