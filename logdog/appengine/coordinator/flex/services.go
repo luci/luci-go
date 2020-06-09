@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -216,6 +217,17 @@ func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.
 	if !lst.ArchivalState().Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
 		return noSignedURLStorage{s.btStorage}, nil
+	}
+
+	// Some very old logs have malformed data where they claim to be archived but
+	// have no archive or index URLs.
+	if lst.ArchiveStreamURL == "" {
+		log.Warningf(c, "Log has no archive URL")
+		return nil, errors.New("log has no archive URL", grpcutil.NotFoundTag)
+	}
+	if lst.ArchiveIndexURL == "" {
+		log.Warningf(c, "Log has no index URL")
+		return nil, errors.New("log has no index URL", grpcutil.NotFoundTag)
 	}
 
 	gsClient, err := s.gsClientFactory(c, project)
