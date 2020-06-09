@@ -22,6 +22,30 @@
       "revId": "d1b615122ad0634442a09bfc97c28b559cd4a55b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c37d05f0_1b423830",
+        "filename": "grpc/cmd/cproto/testdata/helloworldNoGRPC/test.pb.golden",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-09T21:25:42Z",
+      "side": 1,
+      "message": "Yes, we build it from source.",
+      "parentUuid": "455d56c9_1499e375",
+      "range": {
+        "startLine": 7,
+        "startChar": 25,
+        "endLine": 7,
+        "endChar": 31
+      },
+      "revId": "d1b615122ad0634442a09bfc97c28b559cd4a55b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
