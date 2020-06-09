@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -proto-path . components/auth/proto
+//go:generate cproto -disable-grpc -proto-path . components/auth/proto
 
 package protocol
 
@@ -21,5 +21,5 @@ package protocol
 //   appengine/components/components/auth/proto/replication.proto
 //   appengine/components/components/auth/proto/security_config.proto
 //
-// Commit: 7ec3aa4ec64b035f5f34e4732477f1ae94a6aeaf
+// Commit: 392c9a2a1ff4ee5b14722464fcf21863a7f27748
 // Modifications: None
