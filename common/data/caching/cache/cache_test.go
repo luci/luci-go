@@ -194,4 +194,28 @@ func TestNewDisk(t *testing.T) {
 
 		So(c.Close(), ShouldBeNil)
 	}))
+
+	Convey(`HardLink will update used`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
+		namespace := isolatedclient.DefaultNamespace
+		h := isolated.GetHash(namespace)
+		onDiskContent := []byte("on disk")
+		onDiskDigest := isolated.HashBytes(h, onDiskContent)
+		notOnDiskContent := []byte("not on disk")
+		notOnDiskDigest := isolated.HashBytes(h, notOnDiskContent)
+
+		c, err := NewDisk(Policies{}, dir, namespace)
+		defer func() { So(c.Close(), ShouldBeNil) }()
+
+		So(err, ShouldBeNil)
+		So(c, ShouldNotBeNil)
+		d := c.(*disk)
+		perm := os.ModePerm
+		So(ioutil.WriteFile(d.itemPath(onDiskDigest), onDiskContent, perm), ShouldBeNil)
+
+		So(d.GetUsed(), ShouldBeEmpty)
+		So(d.Hardlink(notOnDiskDigest, filepath.Join(dir, "not_on_disk"), perm), ShouldNotBeNil)
+		So(d.GetUsed(), ShouldBeEmpty)
+		So(d.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
+		So(d.GetUsed(), ShouldHaveLength, 1)
+	}))
 }
