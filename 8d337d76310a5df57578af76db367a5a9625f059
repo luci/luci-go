@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2221cc11_95550ca1",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-09T23:53:40Z",
+      "side": 1,
+      "message": "probably worth logging if this fails",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 10
+      },
+      "revId": "8d337d76310a5df57578af76db367a5a9625f059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
