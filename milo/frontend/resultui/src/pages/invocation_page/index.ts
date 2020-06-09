@@ -62,7 +62,16 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     ));
     this.disposers.push(when(
       () => this.pageState.invocationReq.state === 'rejected',
-      () => Router.go(router.urlForName('error')),
+      () => {
+        const searchParams = new URLSearchParams({
+          reasonHtml: `<p>error when getting invocation:<br>${this.pageState.invocationReq.value}</p>`,
+          sourceUrl: window.location.toString(),
+        });
+        Router.go({
+          pathname: router.urlForName('error'),
+          search: '?' + searchParams.toString(),
+        });
+      },
     ));
   }
   disconnectedCallback() {
