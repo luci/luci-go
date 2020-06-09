@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "74929b0a_af8f9b11",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-09T10:01:06Z",
+      "side": 1,
+      "message": "I originally had to unlock it because we need the lock under HardLink. Now I\u0027ve added a helper that knows whether it\u0027s called already with a lock.",
+      "parentUuid": "b881ae83_ec1a3034",
+      "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "88552d3d_3d9c7286",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6d18ff3_f6594be3",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-09T10:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88552d3d_3d9c7286",
+      "range": {
+        "startLine": 453,
+        "startChar": 9,
+        "endLine": 453,
+        "endChar": 12
+      },
+      "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "edae0ba3_67aa375b",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-09T10:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0a01e07_90fafa30",
+      "range": {
+        "startLine": 484,
+        "startChar": 0,
+        "endLine": 487,
+        "endChar": 2
+      },
+      "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "249ea6de_06e41795",
         "filename": "common/data/caching/cache/cache_test.go",
         "patchSetId": 1
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "ca8c3bd6_3a486f17",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-09T10:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "249ea6de_06e41795",
+      "range": {
+        "startLine": 217,
+        "startChar": 23,
+        "endLine": 217,
+        "endChar": 34
+      },
+      "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a690980_c815063a",
         "filename": "common/data/caching/cache/cache_test.go",
         "patchSetId": 1
@@ -108,6 +198,30 @@
       "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e675256_008b7682",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-09T10:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a690980_c815063a",
+      "range": {
+        "startLine": 219,
+        "startChar": 2,
+        "endLine": 219,
+        "endChar": 27
+      },
+      "revId": "da71669884e4f8abde2dcc43745a093b51a5587b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
