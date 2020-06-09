@@ -49,7 +49,9 @@ import (
 // Project is a datastore entity representing a single project.  Its children
 // are consoles.
 type Project struct {
-	ID               string `gae:"$id"`
+	ID        string `gae:"$id"`
+	HasConfig bool
+
 	LogoURL          string
 	BuildBugTemplate config.BugTemplate
 
@@ -369,7 +371,7 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	// Keep a list of known consoles so we can prune deleted ones later.
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Save the project into the datastore.
-	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
+	project := Project{ID: projectID, HasConfig: true, LogoURL: proj.LogoUrl}
 	if proj.BuildBugTemplate != nil {
 		project.BuildBugTemplate = *proj.BuildBugTemplate
 	}
