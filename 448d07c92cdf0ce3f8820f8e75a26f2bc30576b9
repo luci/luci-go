@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "653f808c_591326ba",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-06-09T05:25:46Z",
+      "side": 1,
+      "message": "Swarming is expecting the MMUTEX_LOCK_DIR is either \u0027/mmutex\u0027 on non-windows or \u0027C:\\\\mmutex\u0027 on windows, while mmutex try to look for environment variable:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/mmutex/lib/lock_file_helpers.go;l\u003d56\n\nI think swarming should look for environment variable as well, but it is beyond the scope of this CL. Removed my misunderstanding, and filed a bug for the mismatch between two workflow: crbug.com/1092769",
+      "parentUuid": "7daeef95_6529664d",
+      "range": {
+        "startLine": 10,
+        "startChar": 153,
+        "endLine": 10,
+        "endChar": 212
+      },
+      "revId": "448d07c92cdf0ce3f8820f8e75a26f2bc30576b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "da44ccf3_db2b9bfe",
         "filename": "mmutex/cmd/mmutex/exclusive.go",
         "patchSetId": 3
@@ -180,6 +204,30 @@
       "writtenOn": "2020-06-08T23:02:14Z",
       "side": 1,
       "message": "This changes a global variable for the whole program.\n\nInstead, use go.chromium.org/luci/common/logging which allows setting metadata (\"fields\") on the context object which is safe.",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "448d07c92cdf0ce3f8820f8e75a26f2bc30576b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7eccfeab_bf12b498",
+        "filename": "mmutex/cmd/mmutex/exclusive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-06-09T05:25:46Z",
+      "side": 1,
+      "message": "I\u0027ll make it simple to use plain text here.",
+      "parentUuid": "da44ccf3_db2b9bfe",
       "range": {
         "startLine": 61,
         "startChar": 1,
