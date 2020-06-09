@@ -56,13 +56,13 @@ var googlePackages = map[string]string{
 	"google/type/postal_address.proto": "google.golang.org/genproto/googleapis/type/postaladdress",
 	"google/type/timeofday.proto":      "google.golang.org/genproto/googleapis/type/timeofday",
 
-	"google/protobuf/any.proto":        "github.com/golang/protobuf/ptypes/any",
-	"google/protobuf/descriptor.proto": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-	"google/protobuf/duration.proto":   "github.com/golang/protobuf/ptypes/duration",
-	"google/protobuf/empty.proto":      "github.com/golang/protobuf/ptypes/empty",
-	"google/protobuf/struct.proto":     "github.com/golang/protobuf/ptypes/struct",
-	"google/protobuf/timestamp.proto":  "github.com/golang/protobuf/ptypes/timestamp",
-	"google/protobuf/wrappers.proto":   "github.com/golang/protobuf/ptypes/wrappers",
+	"google/protobuf/any.proto":        "google.golang.org/protobuf/types/known/anypb",
+	"google/protobuf/descriptor.proto": "google.golang.org/protobuf/types/descriptorpb",
+	"google/protobuf/duration.proto":   "google.golang.org/protobuf/types/known/durationpb",
+	"google/protobuf/empty.proto":      "google.golang.org/protobuf/types/known/emptypb",
+	"google/protobuf/struct.proto":     "google.golang.org/protobuf/types/known/structpb",
+	"google/protobuf/timestamp.proto":  "google.golang.org/protobuf/types/known/timestamppb",
+	"google/protobuf/wrappers.proto":   "google.golang.org/protobuf/types/known/wrapperspb",
 
 	"google/rpc/code.proto":          "google.golang.org/genproto/googleapis/rpc/code",
 	"google/rpc/error_details.proto": "google.golang.org/genproto/googleapis/rpc/errdetails",
@@ -135,12 +135,15 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 		args = append(args, "--proto_path="+p)
 	}
 
+	// protoc-gen-go parameters, to generate *.pb.go.
 	var params []string
 	for k, v := range pathMap {
 		params = append(params, fmt.Sprintf("M%s=%s", k, v))
 	}
-	params = append(params, "plugins=grpc")
 	args = append(args, fmt.Sprintf("--go_out=%s:%s", strings.Join(params, ","), goOut))
+
+	// protoc-gen-go-grpc parameters, to generate *_grpc.pb.go.
+	args = append(args, fmt.Sprintf("--go-grpc_out=%s", goOut))
 
 	for _, f := range protoFiles {
 		// We must prepend an go-style absolute path to the filename otherwise
@@ -200,10 +203,19 @@ func run(c context.Context, goPath []string, dir string) error {
 		return err
 	}
 
-	// Transform .go files
+	// Transform *_grpc.pb.go files.
 	var goPkg, protoPkg string
 	for _, p := range protoFiles {
-		goFile := filepath.Join(outDir, strings.TrimSuffix(p, ".proto")+".pb.go")
+		goFile := filepath.Join(outDir, strings.TrimSuffix(p, ".proto")+"_grpc.pb.go")
+
+		// Only *.proto file that have service definitions produce *_grpc.pb.go.
+		switch _, err := os.Stat(goFile); {
+		case os.IsNotExist(err):
+			continue
+		case err != nil:
+			return fmt.Errorf("could not check %s: %s", goFile, err)
+		}
+
 		var t transformer
 		if err := t.transformGoFile(goFile); err != nil {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
@@ -224,7 +236,7 @@ func run(c context.Context, goPath []string, dir string) error {
 		}
 	}
 	if *withDiscovery && goPkg != "" && protoPkg != "" {
-		// Generate pb.prpc.go
+		// Generate pb.discovery.go
 		discoveryFile := "pb.discovery.go"
 		if err := genDiscoveryFile(c, filepath.Join(outDir, discoveryFile), descPath, protoPkg, goPkg); err != nil {
 			return err

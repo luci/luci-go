@@ -24,6 +24,7 @@ import (
 	"go/token"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"go.chromium.org/luci/common/logging"
 )
@@ -155,6 +156,12 @@ func (p *parser) resolveService(c context.Context, typeName string) (*Service, e
 		}
 
 		name := m.Names[0].Name
+
+		// Silently skip non-public symbols, we shouldn't decorate them.
+		if unicode.IsLower([]rune(name)[0]) {
+			continue
+		}
+
 		if signature.Params == nil {
 			logging.Warningf(c, "%s.%s: no params", typeName, name)
 			continue
