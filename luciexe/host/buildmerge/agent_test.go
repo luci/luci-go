@@ -284,6 +284,63 @@ func TestAgent(t *testing.T) {
 					So(getFinal(), ShouldResembleProto, &expect)
 				})
 			})
+
+			Convey(`and merge sub-build successfully as it becomes invalid`, func() {
+				// added an invalid step to sub build
+				subTrack.handleNewData(mkDgram(&bbpb.Build{
+					Steps: []*bbpb.Step{
+						{Name: "SubStep"},
+						{
+							Name: "Invalid_SubStep",
+							Logs: []*bbpb.Log{
+								{Url: "emoji 💩 is not a valid url"},
+							},
+						},
+					},
+				}))
+
+				Convey(`and shut down`, func() {
+					merger.Close()
+
+					expect.EndTime = now
+					expect.Status = bbpb.Status_INFRA_FAILURE
+					expect.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
+					expect.Steps = nil
+					expect.Steps = append(expect.Steps,
+						&bbpb.Step{
+							Name:            "Hello",
+							EndTime:         now,
+							Status:          bbpb.Status_CANCELED,
+							SummaryMarkdown: "step was never finalized; did the build crash?",
+						},
+						&bbpb.Step{
+							Name:    "Merge",
+							Status:  bbpb.Status_INFRA_FAILURE,
+							EndTime: now,
+							Logs: []*bbpb.Log{{
+								Name: "$build.proto", Url: "url://u/sub/build.proto",
+							}},
+							SummaryMarkdown: "\n\nError in build protocol: step[\"Invalid_SubStep\"].logs[\"\"].Url = \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
+						},
+						&bbpb.Step{
+							Name:            "Merge|SubStep",
+							EndTime:         now,
+							Status:          bbpb.Status_CANCELED,
+							SummaryMarkdown: "step was never finalized; did the build crash?",
+						},
+						&bbpb.Step{
+							Name:    "Merge|Invalid_SubStep",
+							Status:  bbpb.Status_INFRA_FAILURE,
+							EndTime: now,
+							Logs: []*bbpb.Log{
+								{Url: "emoji 💩 is not a valid url"},
+							},
+							SummaryMarkdown: "bad log url: \"emoji 💩 is not a valid url\"",
+						},
+					)
+					So(getFinal(), ShouldResembleProto, &expect)
+				})
+			})
 		})
 	})
 }
