@@ -66,6 +66,9 @@ func TestMain(t *testing.T) {
 				So(err, ShouldBeNil)
 			}
 
+			// Emulate CLI flag.
+			*disableGRPC = strings.HasSuffix(filepath.Base(sourceDir), "NoGRPC")
+
 			// Run cproto.
 			goPaths := []string{tmpGoPath}
 			goPaths = append(goPaths, strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))...)
