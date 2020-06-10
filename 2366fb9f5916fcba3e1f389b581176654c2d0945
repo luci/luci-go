@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8a24e276_1a2cfbe2",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page/context.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-10T07:02:03Z",
+      "side": 1,
+      "message": "I feel we can define a new set of content types that will be rendered different.\nFor instance, \u0027text/git-diff\u0027, \u0027image/diff\u0027.",
+      "revId": "2366fb9f5916fcba3e1f389b581176654c2d0945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
