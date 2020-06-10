@@ -184,6 +184,24 @@
     },
     {
       "key": {
+        "uuid": "2fa8c5c0_515a3320",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-10T23:11:32Z",
+      "side": 1,
+      "message": "was this addressed?",
+      "parentUuid": "e15bb9f6_f9d77cac",
+      "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "37feda46_8865a18b",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 7
