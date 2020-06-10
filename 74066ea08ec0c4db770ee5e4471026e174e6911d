@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5474fe14_06e88590",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-10T11:34:42Z",
+      "side": 1,
+      "message": "I think worth mentioning that it should be short and plain string (not markdown nor HTML, unless you explicitly want to support say HTML).",
+      "revId": "74066ea08ec0c4db770ee5e4471026e174e6911d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9c6f0aa_24025ecf",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-10T11:34:42Z",
+      "side": 1,
+      "message": "lowercase",
+      "range": {
+        "startLine": 426,
+        "startChar": 9,
+        "endLine": 426,
+        "endChar": 10
+      },
+      "revId": "74066ea08ec0c4db770ee5e4471026e174e6911d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
