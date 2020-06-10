@@ -18,9 +18,11 @@ import (
 	"os"
 
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
-var application = &subcommands.DefaultApplication{
+var application = &cli.Application{
 	Name: "mmutex",
 	Title: `'Maintenance Mutex' - Global mutex to isolate maintenance tasks.
 
@@ -41,6 +43,7 @@ tasks may be run alongside other shared access tasks.
 
 The source for mmutex lives at:
   https://github.com/luci/luci-go/tree/master/mmutex`,
+	Context: gologger.StdConfig.Use,
 	Commands: []*subcommands.Command{
 		cmdExclusive,
 		cmdShared,
