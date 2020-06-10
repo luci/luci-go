@@ -1,0 +1,148 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
+import * as Diff2Html from 'diff2html';
+import { css, customElement, html } from 'lit-element';
+import { computed, observable } from 'mobx';
+import { fromPromise } from 'mobx-utils';
+
+import '../components/status_bar';
+import { AppState, consumeAppState } from '../context/app_state_provider';
+import { sanitizeHTML } from '../libs/sanitize_html';
+
+
+enum ArtifactType {
+  /**
+   * A text diff artifact.
+   */
+  TextDiff,
+  /**
+   * Unsupported artifact type.
+   */
+  Unsupported,
+}
+
+/**
+ * Renders an Artifact.
+ */
+// TODO(weiweilin): improve error handling.
+export class ArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
+  @observable.ref private artifactName!: string;
+  @observable.ref appState!: AppState;
+
+  @computed private get artifactRes() {
+    if (!this.appState.resultDb) {
+      return fromPromise(Promise.race([]));
+    }
+    return fromPromise(this.appState.resultDb.getArtifacts({name: this.artifactName}));
+  }
+  @computed private get artifact() {
+    return this.artifactRes.state === 'fulfilled' ? this.artifactRes.value : null;
+  }
+
+  @computed private get artifactType() {
+    if (!this.artifact) {
+      return null;
+    }
+    if (this.artifact.contentType === 'text/plain' && this.artifact.artifactId.match(/_diff$/)) {
+      return ArtifactType.TextDiff;
+    }
+    return ArtifactType.Unsupported;
+  }
+
+  @computed
+  private get contentRes() {
+    if (!this.appState.resultDb || !this.artifact) {
+      return fromPromise(Promise.race([]));
+    }
+    // TODO(weiweilin): handle refresh.
+    return fromPromise(fetch(this.artifact.fetchUrl!).then((res) => res.text()));
+  }
+  @computed private get content() {
+    return this.contentRes.state === 'fulfilled' ? this.contentRes.value : '';
+  }
+
+  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
+    const artifactName = location.params['artifact_name'];
+    if (typeof artifactName !== 'string') {
+      return cmd.redirect('/not-found');
+    }
+    this.artifactName = artifactName;
+    return;
+  }
+
+  private renderContent() {
+    if (this.artifactType === null) {
+      return 'Loading';
+    }
+    if (this.artifactType === ArtifactType.TextDiff) {
+      return sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false, outputFormat: 'side-by-side'}));
+    }
+    return 'Unsupported artifact type';
+  }
+
+  protected render() {
+    return html`
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+      <div id="artifact-header">
+        <div id="artifact-id">
+          <span id="artifact-id-label">Artifact ID</span>
+          <span>${this.artifact?.artifactId ?? 'loading'}</span>
+        </div>
+      </div>
+      <tr-status-bar
+        .components=${[{color: '#007bff', weight: 1}]}
+        .loading=${this.contentRes.state === 'pending'}
+      ></tr-status-bar>
+      <div id="content">
+        ${this.renderContent()}
+      </div>
+    `;
+  }
+
+  static styles = css`
+    #artifact-header {
+      background-color: rgb(248, 249, 250);
+      padding: 6px 16px;
+      font-family: "Google Sans", "Helvetica Neue", sans-serif;
+      font-size: 14px;
+      display: flex;
+    }
+    #artifact-id {
+      flex: 0 auto;
+    }
+    #artifact-id-label {
+      color: rgb(95, 99, 104);
+    }
+
+    #content {
+      margin: 30px;
+    }
+
+    .d2h-code-linenumber {
+      cursor: default;
+    }
+    .d2h-moved-tag {
+      display: none;
+    }
+  `;
+}
+
+customElement('tr-artifact-page')(
+  consumeAppState(
+    ArtifactPageElement,
+  ),
+);
