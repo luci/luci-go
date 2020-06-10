@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "610fac67_1e6e5c61",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-10T22:28:23Z",
+      "side": 0,
+      "message": "I couldn\u0027t figure out what is \"soft\" about it...",
+      "range": {
+        "startLine": 78,
+        "startChar": 17,
+        "endLine": 78,
+        "endChar": 21
+      },
+      "revId": "58238f1b4656e97fc6e727601373fd5e43ba93ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
