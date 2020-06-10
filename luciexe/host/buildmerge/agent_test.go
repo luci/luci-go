@@ -342,5 +342,56 @@ func TestAgent(t *testing.T) {
 				})
 			})
 		})
+
+		Convey(`can handle missing sub-build`, func() {
+			merger.onNewStream(mkDesc("u/build.proto"))
+			rootTrack, ok := merger.states["url://u/build.proto"]
+			So(ok, ShouldBeTrue)
+
+			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+				Steps: []*bbpb.Step{
+					{Name: "Merge", Logs: []*bbpb.Log{
+						{Name: "$build.proto", Url: "sub/build.proto"},
+					}},
+				},
+			}))
+
+			expect := *base
+			expect.Steps = append(expect.Steps, &bbpb.Step{
+				Name:   "Merge",
+				Status: bbpb.Status_SCHEDULED,
+				Logs: []*bbpb.Log{{
+					Name: "$build.proto", Url: "url://u/sub/build.proto",
+				}},
+				SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" has not registered yet",
+			})
+			expect.UpdateTime = now
+			expect.Output.Logs[0].Url = "url://u/stdout"
+			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+
+			Convey(`and merge properly when sub-build stream is present later`, func() {
+				merger.onNewStream(mkDesc("u/sub/build.proto"))
+				subTrack, ok := merger.states["url://u/sub/build.proto"]
+				So(ok, ShouldBeTrue)
+
+				subTrack.handleNewData(mkDgram(&bbpb.Build{
+					Steps: []*bbpb.Step{
+						{Name: "SubStep"},
+					},
+				}))
+
+				expect.Steps = nil
+				expect.Steps = append(expect.Steps,
+					&bbpb.Step{
+						Name: "Merge",
+						Logs: []*bbpb.Log{{
+							Name: "$build.proto", Url: "url://u/sub/build.proto",
+						}},
+					},
+					&bbpb.Step{Name: "Merge|SubStep"},
+				)
+				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+			})
+		})
 	})
 }
