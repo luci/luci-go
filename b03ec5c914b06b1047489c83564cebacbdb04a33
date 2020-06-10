@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d7f0182_b380daf1",
+        "filename": "milo/frontend/resultui/src/components/test_entry/text_diff_artifacts.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-10T16:19:32Z",
+      "side": 1,
+      "message": "this renders as \"Unexpected text output from ${artifact_id}\".\nWhen I saw this, as a user, I expected to see the raw source, i.e. just text_diff. \nIt is not intuitive that this would give a \"full screen\" view of the view below. How can we communicate that more clearly?\n\nNote that having a raw link is useful because I can e.g. copy it and curl it. Or perhaps I can open it and save locally with browser. Currently I have to go through additional hop. I think we should provide both links, raw and rich.",
+      "range": {
+        "startLine": 56,
+        "startChar": 10,
+        "endLine": 57,
+        "endChar": 121
+      },
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f56dd7b_f44bb9ac",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-10T16:19:32Z",
+      "side": 1,
+      "message": "can we at least add test id and result id. Looking at https://weiweilin-dot-luci-milo-dev.appspot.com/artifact/invocations%2Ftask-chromium-swarm.appspot.com-4c954c450c808c11-batch-3%2Ftests%2Fninja%3A%252F%252F%3Ablink_web_tests%252Fexternal%252Fwpt%252Fservice-workers%252Fservice-worker%252Frequest-end-to-end.https.html%2Fresults%2F8%2Fartifacts%2Ftext_diff\ni wasn able to tell which test this is coming from only based on the contents of the diff (which we don\u0027t control)",
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "272a545b_dc04f0fd",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-10T16:19:32Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 187,
+        "startChar": 19,
+        "endLine": 187,
+        "endChar": 20
+      },
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
