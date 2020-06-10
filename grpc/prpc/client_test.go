@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -39,6 +40,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func sayHello(c C) http.HandlerFunc {
@@ -229,7 +231,8 @@ func TestClient(t *testing.T) {
 				defer cancelFunc()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
+				So(status.Code(err), ShouldEqual, codes.DeadlineExceeded)
+				So(err, ShouldErrLike, "overall deadline exceeded")
 			})
 
 			Convey("With a deadline in the future, sets the deadline header.", func(c C) {
@@ -268,7 +271,9 @@ func TestClient(t *testing.T) {
 				client.Options.PerRPCTimeout = time.Second
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
+				So(status.Code(err), ShouldEqual, codes.DeadlineExceeded)
+				So(err, ShouldErrLike, "overall deadline exceeded")
+
 				So(calls, ShouldEqual, 2)
 			})
 

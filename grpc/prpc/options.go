@@ -47,12 +47,19 @@ type Options struct {
 	// It can be overridden on per-call basis via CallAcceptContentSubtype().
 	AcceptContentSubtype string
 
-	// the rest can be set only using CallOption.
+	// These can be set only using CallOption.
 
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.
 	resTrailerMetadata *metadata.MD // destination for response HTTP trailers.
-	serverDeadline     time.Duration
 	expectedCodes      []codes.Code // list of non-OK grpc codes NOT to log
+
+	// These are used internally.
+
+	host        string // a hostname of a service being called
+	serviceName string // a service being called
+	methodName  string // a method being called
+	inFormat    Format // encoding of the request
+	outFormat   Format // encoding of the response
 }
 
 // DefaultOptions are used if no options are specified in Client.
@@ -69,15 +76,23 @@ func DefaultOptions() *Options {
 	}
 }
 
-func (o *Options) apply(callOptions []grpc.CallOption) error {
+func (o *Options) apply(callOptions []grpc.CallOption) {
 	for _, co := range callOptions {
 		prpcCo, ok := co.(*CallOption)
 		if !ok {
-			return fmt.Errorf("non-pRPC call option %T is used with pRPC client", co)
+			panic(fmt.Sprintf("non-pRPC call option %T is used with pRPC client", co))
 		}
 		prpcCo.apply(o)
 	}
-	return nil
+}
+
+func (o *Options) resetResponseMetadata() {
+	if o.resHeaderMetadata != nil {
+		*o.resHeaderMetadata = nil
+	}
+	if o.resTrailerMetadata != nil {
+		*o.resTrailerMetadata = nil
+	}
 }
 
 // CallOption mutates Options.
