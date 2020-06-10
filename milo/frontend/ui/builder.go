@@ -19,12 +19,13 @@ import (
 	"net/url"
 	"time"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
 )
 
 type BuilderPage struct {
-	BuilderName string
+	Builder *buildbucketpb.BuilderItem
 
 	ScheduledBuilds         []*Build
 	ScheduledBuildsComplete bool
