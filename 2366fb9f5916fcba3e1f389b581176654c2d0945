@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "23bc335b_c9aa615f",
+        "filename": "milo/frontend/resultui/src/components/test_entry/text_diff_artifacts.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-10T12:03:54Z",
+      "side": 1,
+      "message": "Added a link in the artifact page to go back to invocation page.\nAll other links (apart from the feedback link, which looks like a button) open the page at the current browser tab.\nI think we should keep it consistent.\nUsers can ctrl-click it if they want to open it in a new tab.",
+      "parentUuid": "01fcbba2_65105835",
+      "range": {
+        "startLine": 56,
+        "startChar": 38,
+        "endLine": 56,
+        "endChar": 65
+      },
+      "revId": "2366fb9f5916fcba3e1f389b581176654c2d0945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6030dc0_77982fcf",
         "filename": "milo/frontend/resultui/src/pages/artifact_page/content_tab.ts",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "2366fb9f5916fcba3e1f389b581176654c2d0945",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95f50c20_27527206",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page/content_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-10T12:03:54Z",
+      "side": 1,
+      "message": "Planned to add a details tab. But I guess only the fetchUrl is needed. And we can render them in the same tab.\nCombined them into a single page.",
+      "parentUuid": "a6030dc0_77982fcf",
+      "revId": "2366fb9f5916fcba3e1f389b581176654c2d0945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
