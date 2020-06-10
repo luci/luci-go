@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"sync"
@@ -73,8 +72,7 @@ func main() {
 
 		var buildMU sync.Mutex
 		sendAnnotations := func(ann *milo.Step) {
-			fullPrefix := fmt.Sprintf("%s/%s", ldBootstrap.Prefix, ldBootstrap.Namespace)
-			steps, err := annotee.ConvertBuildSteps(ctx, ann.Substep, ldBootstrap.CoordinatorHost, fullPrefix)
+			steps, err := annotee.ConvertBuildSteps(ctx, ann.Substep, false, "", "")
 			check(errors.Annotate(err, "failed to extract steps from annotations").Err())
 
 			props, err := milo.ExtractProperties(ann)
