@@ -98,6 +98,7 @@ luci.gitiles_poller(
 
 luci.builder(
     name = 'linux ci builder',
+    description = 'this is a linux ci builder',
     bucket = 'ci',
     executable = luci.recipe(
         name = 'main/recipe',

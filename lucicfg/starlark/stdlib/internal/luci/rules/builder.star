@@ -30,6 +30,7 @@ def _builder(
       *,
 
       name=None,
+      description=None,
       bucket=None,
       executable=None,
 
@@ -111,6 +112,7 @@ def _builder(
 
   Args:
     name: name of the builder, will show up in UIs and logs. Required.
+    description: a short plain string, will show up in UIs.
     bucket: a bucket the builder is in, see luci.bucket(...) rule. Required.
     executable: an executable to run, e.g. a luci.recipe(...) or
         luci.executable(...). Required.
