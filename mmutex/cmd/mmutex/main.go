@@ -17,10 +17,14 @@ package main
 import (
 	"os"
 
+	"golang.org/x/net/context"
+
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
-var application = &subcommands.DefaultApplication{
+var application = &cli.Application{
 	Name: "mmutex",
 	Title: `'Maintenance Mutex' - Global mutex to isolate maintenance tasks.
 
@@ -41,6 +45,11 @@ tasks may be run alongside other shared access tasks.
 
 The source for mmutex lives at:
   https://github.com/luci/luci-go/tree/master/mmutex`,
+	Context: func(ctx context.Context) context.Context {
+		goLoggerCfg := gologger.LoggerConfig{Out: os.Stdout}
+		goLoggerCfg.Format = "[%{level} %{time}] %{message}"
+		return goLoggerCfg.Use(ctx)
+	},
 	Commands: []*subcommands.Command{
 		cmdExclusive,
 		cmdShared,
