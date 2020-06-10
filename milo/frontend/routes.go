@@ -50,7 +50,8 @@ func Run(templatePath string) {
 		auth.Authenticate(server.CookieAuth, &server.OAuth2Method{Scopes: []string{server.EmailScope}}),
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
-		withBuildbucketClient,
+		withBuildbucketBuildsClient,
+		withBuildbucketBuildersClient,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	xsrfMW := htmlMW.Extend(xsrf.WithTokenCheck)
@@ -58,8 +59,8 @@ func Run(templatePath string) {
 	optionalProjectMW := htmlMW.Extend(buildProjectACLMiddleware(true))
 	backendMW := baseMW.Extend(
 		middleware.WithContextTimeout(10*time.Minute),
-		withBuildbucketClient)
-	cronMW := backendMW.Extend(gaemiddleware.RequireCron, withBuildbucketClient)
+		withBuildbucketBuildsClient)
+	cronMW := backendMW.Extend(gaemiddleware.RequireCron, withBuildbucketBuildsClient)
 
 	r.GET("/", htmlMW, frontpageHandler)
 	r.GET("/p", baseMW, movedPermanently("/"))
