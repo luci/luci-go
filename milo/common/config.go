@@ -24,17 +24,20 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	protoutil "go.chromium.org/luci/common/proto"
+	configpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
+	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
@@ -46,17 +49,31 @@ import (
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
 
-// Project is a datastore entity representing a single project.  Its children
-// are consoles.
+// Project is a datastore entity representing a single project.
+//
+// Its children are consoles. This entity exists even if the project doesn't
+// define milo.cfg config file. It has HasConfig == false in this case. We
+// still need the entity to be able to check project's ACLs when accessing
+// individual build pages.
 type Project struct {
 	ID        string `gae:"$id"`
 	HasConfig bool
+	ACL       ACL `gae:",noindex"`
 
 	LogoURL          string
 	BuildBugTemplate config.BugTemplate
 
 	// Tolerate unknown fields when fetching entities.
 	_ datastore.PropertyMap `gae:"-,extra"`
+}
+
+// ACL lists groups and identities that are allowed to see consoles in
+// a project.
+//
+// Fetched from project.cfg config file in fetchProjectACL.
+type ACL struct {
+	Groups     []string
+	Identities []identity.Identity
 }
 
 // Console is a datastore entity representing a single console.
@@ -192,15 +209,15 @@ func init() {
 	ErrConsoleNotFound = errors.New("console not found", grpcutil.NotFoundTag)
 }
 
-// LuciConfigURL returns a user friendly URL that specifies where to view
+// configURL returns a user friendly URL that specifies where to view
 // this console definition.
-func LuciConfigURL(c context.Context, configSet, path, revision string) string {
+func configURL(c context.Context, meta *configInterface.Meta) string {
 	// TODO(hinoka): This shouldn't be hardcoded, instead we should get the
 	// luci-config instance from the context.  But we only use this instance at
 	// the moment so it is okay for now.
 	// TODO(hinoka): The UI doesn't allow specifying paths and revision yet.  Add
 	// that in when it is supported.
-	return fmt.Sprintf("https://luci-config.appspot.com/newui#/%s", configSet)
+	return fmt.Sprintf("https://luci-config.appspot.com/newui#/%s", meta.ConfigSet)
 }
 
 // ServiceConfigID is the key for the service config entity in datastore.
@@ -355,107 +372,216 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	return settings, nil
 }
 
-// updateProjectConsoles updates all of the consoles for a given project,
-// and then returns a set of known console names.
-func updateProjectConsoles(c context.Context, projectID string, cfg *configInterface.Config) (stringset.Set, error) {
-	proj := config.Project{}
-	if err := protoutil.UnmarshalTextML(cfg.Content, &proj); err != nil {
-		return nil, errors.Annotate(err, "unmarshalling proto").Err()
+// updateProject ingests configs of a single project.
+//
+// As an input takes project.cfg config (**not** milo.cfg) with ACLs. Fetches
+// Milo's config from the same config set. Absence of the Milo config is not an
+// error.
+//
+// Returns a set of console names defined in the project, this is used to
+// cleanup stale console entities in UpdateProjects.
+func updateProject(c context.Context, cfg *configInterface.Config) (stringset.Set, error) {
+	logging.Infof(c, "processing configs from %q", cfg.ConfigSet)
+
+	projectID := cfg.ConfigSet.Project()
+	if projectID == "" {
+		return nil, errors.Reason("bad config set name %q, not a project", cfg.ConfigSet).Err()
 	}
 
-	// Extract the headers into a map for convenience.
-	headers := make(map[string]*config.Header, len(proj.Headers))
-	for _, header := range proj.Headers {
-		headers[header.Id] = header
+	// Deserialize project.cfg and grab an ACL from it.
+	acl, err := parseProjectACL(cfg.Content)
+	if err != nil {
+		return nil, errors.Annotate(err, "parsing project.cfg").Err()
 	}
-	// Keep a list of known consoles so we can prune deleted ones later.
-	knownConsoles := stringset.New(len(proj.Consoles))
-	// Save the project into the datastore.
-	project := Project{ID: projectID, HasConfig: true, LogoURL: proj.LogoUrl}
-	if proj.BuildBugTemplate != nil {
-		project.BuildBugTemplate = *proj.BuildBugTemplate
+
+	// The future project entity.
+	project := Project{
+		ID:  projectID,
+		ACL: acl,
 	}
-	if err := datastore.Put(c, &project); err != nil {
-		return nil, err
+
+	// Load the Milo config (if it exists).
+	miloCfg := config.Project{}
+	miloCfgMeta := configInterface.Meta{}
+	err = cfgclient.Get(c,
+		cfgclient.AsService,
+		cfg.ConfigSet,
+		cfgclient.CurrentServiceName(c)+".cfg",
+		textproto.Message(&miloCfg),
+		&miloCfgMeta,
+	)
+	switch {
+	case err == configInterface.ErrNoConfig:
+		// No Milo config. This is fine, just save Project entity.
+		return nil, errors.Annotate(datastore.Put(c, &project), "when saving Project entity").Err()
+	case err != nil:
+		// Something blew up.
+		return nil, errors.Annotate(err, "when loading Milo config").Err()
 	}
-	parentKey := datastore.KeyForObj(c, &project)
-	// Iterate through all the proto consoles, adding and replacing the
-	// known ones if needed.
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		toPut := make([]*Console, 0, len(proj.Consoles))
-		for i, pc := range proj.Consoles {
-			if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
-				// Inject a header if HeaderId is specified, and it doesn't already have one.
-				pc.Header = header
-			}
-			knownConsoles.Add(pc.Id)
-			con, err := GetConsole(c, projectID, pc.Id)
-			switch {
-			case err == ErrConsoleNotFound:
-				// continue
-			case err != nil:
-				return errors.Annotate(err, "checking %s", pc.Id).Err()
-			case con.ConfigRevision == cfg.Revision && con.Ordinal == i:
-				// Check if revisions match; if so just skip it.
-				// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
-				continue
-			}
-			toPut = append(toPut, &Console{
-				Parent:         parentKey,
-				ID:             pc.Id,
-				Ordinal:        i,
-				ConfigURL:      LuciConfigURL(c, string(cfg.ConfigSet), cfg.Path, cfg.Revision),
-				ConfigRevision: cfg.Revision,
-				Builders:       pc.AllBuilderIDs(),
-				Def:            *pc,
-			})
+
+	// Have the Milo config! Use it to update console entities.
+	project.HasConfig = true
+	project.LogoURL = miloCfg.LogoUrl
+	if miloCfg.BuildBugTemplate != nil {
+		project.BuildBugTemplate = *miloCfg.BuildBugTemplate
+	}
+
+	// Apply all datastore changes in a single transaction.
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		toPut, err := prepareConsolesUpdate(c, &project, &miloCfg, &miloCfgMeta)
+		if err != nil {
+			return err
 		}
+		toPut = append(toPut, &project)
 		return datastore.Put(c, toPut)
 	}, nil)
-
 	if err != nil {
-		logging.WithError(err).Errorf(c, "failed to save consoles of project %q at revision %q", projectID, cfg.Revision)
-		return nil, err
+		return nil, errors.Annotate(err, "when applying config rev %q", miloCfgMeta.Revision).Err()
 	}
 
-	logging.Infof(c, "saved consoles of project %q at revision %q", projectID, cfg.Revision)
-
-	return knownConsoles, nil
+	// Grab a set of known consoles so we can prune deleted ones later.
+	consoles := stringset.New(len(miloCfg.Consoles))
+	for _, pc := range miloCfg.Consoles {
+		consoles.Add(pc.Id)
+	}
+	logging.Infof(c, "saved %d consoles of project %q at revision %q", len(consoles), projectID, miloCfgMeta.Revision)
+	return consoles, nil
 }
 
-// UpdateConsoles updates internal console definitions entities based off luci-config.
-func UpdateConsoles(c context.Context) error {
-	cfgName := info.AppID(c) + ".cfg"
+// prepareConsolesUpdate is called in a transaction to evaluate what Console
+// entities should be updated.
+//
+// Returns a list of entities to store to apply the update.
+func prepareConsolesUpdate(c context.Context, project *Project, cfg *config.Project, meta *configInterface.Meta) ([]interface{}, error) {
+	// Extract the headers into a map for convenience.
+	headers := make(map[string]*config.Header, len(cfg.Headers))
+	for _, header := range cfg.Headers {
+		headers[header.Id] = header
+	}
 
-	logging.Debugf(c, "fetching configs for %s", cfgName)
-	// Acquire the raw config client.
+	// Iterate through all the proto consoles, adding and replacing the
+	// known ones if needed.
+	toPut := make([]interface{}, 0, len(cfg.Consoles))
+	for i, pc := range cfg.Consoles {
+		if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
+			// Inject a header if HeaderId is specified, and it doesn't already have one.
+			pc.Header = header
+		}
+		switch con, err := GetConsole(c, project.ID, pc.Id); {
+		case err == ErrConsoleNotFound:
+			// continue
+		case err != nil:
+			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
+		case con.ConfigRevision == meta.Revision && con.Ordinal == i:
+			// Check if revisions match; if so just skip it.
+			// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
+			continue
+		}
+		toPut = append(toPut, &Console{
+			Parent:         datastore.KeyForObj(c, project),
+			ID:             pc.Id,
+			Ordinal:        i,
+			ConfigURL:      configURL(c, meta),
+			ConfigRevision: meta.Revision,
+			Builders:       pc.AllBuilderIDs(),
+			Def:            *pc,
+		})
+	}
+	return toPut, nil
+}
+
+// parseProjectACL parses project.cfg and extracts project ACL from it.
+func parseProjectACL(projectCfg string) (ACL, error) {
+	var cfg configpb.ProjectCfg
+	if err := protoutil.UnmarshalTextML(projectCfg, &cfg); err != nil {
+		return ACL{}, err
+	}
+
+	// Each entry in cfg.Access is either 'group:xxx', 'user:xxx' or just 'xxx'.
+	// Prefix 'user:' is default.
+	groups := stringset.New(0)
+	idents := stringset.New(0)
+	for _, access := range cfg.Access {
+		if strings.IndexRune(access, ':') < 0 {
+			access = "user:" + access
+		}
+		if strings.HasPrefix(access, "group:") {
+			groups.Add(strings.TrimPrefix(access, "group:"))
+		} else {
+			idents.Add(access)
+		}
+	}
+
+	acl := ACL{
+		Groups:     groups.ToSortedSlice(),
+		Identities: make([]identity.Identity, idents.Len()),
+	}
+	for idx, ident := range idents.ToSortedSlice() {
+		acl.Identities[idx] = identity.Identity(ident)
+	}
+	return acl, nil
+}
+
+// UpdateProjects reads project configs from LUCI Config and updates entities.
+//
+// Visits all LUCI projects (not only ones that have Milo config) to grab
+// their visibility ACL from project.cfg file.
+func UpdateProjects(c context.Context) error {
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
-	// Project configs for Milo contains console definitions.
-	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
+
+	// Fetch project.cfg with ACLs. Every LUCI project has it, so we effectively
+	// enumerate all LUCI projects.
+	logging.Debugf(c, "fetching all project.cfg...")
+	cfgs, err := lucicfg.GetProjectConfigs(c, "project.cfg", false)
 	if err != nil {
 		return errors.Annotate(err, "while fetching project configs").Err()
 	}
-	logging.Infof(c, "got %d project configs", len(configs))
+	logging.Debugf(c, "found %d LUCI projects", len(cfgs))
 
-	merr := errors.MultiError{}
-	knownProjects := map[string]stringset.Set{}
-	// Iterate through each project config, extracting the console definition.
-	for _, cfg := range configs {
-		projectName := cfg.ConfigSet.Project()
-		if projectName == "" {
-			return fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
+	// This will collect results of individual updateProject call. It will receive
+	// exactly len(cfgs) items no matter what.
+	type result struct {
+		project  string
+		consoles stringset.Set
+		err      error
+	}
+	results := make(chan result, len(cfgs))
+
+	// Process projects in parallel to make sure we fit under 10 min cron job
+	// deadline. Each task is simple, but involves a slow RPC to LUCI Config.
+	// We don't want to run all of them sequentially.
+	parallel.WorkPool(8, func(tasks chan<- func() error) {
+		for _, cfg := range cfgs {
+			cfg := cfg
+			tasks <- func() error {
+				consoles, err := updateProject(c, &cfg)
+				results <- result{
+					project:  cfg.ConfigSet.Project(),
+					consoles: consoles,
+					err:      errors.Annotate(err, "processing %q", cfg.ConfigSet).Err(),
+				}
+				return nil
+			}
 		}
-		knownProjects[projectName] = nil
-		if kp, err := updateProjectConsoles(c, projectName, &cfg); err != nil {
-			err = errors.Annotate(err, "processing project %s", projectName).Err()
-			merr = append(merr, err)
-		} else {
-			knownProjects[projectName] = kp
+	})
+
+	// Build a map "project name -> set of consoles in it", gather all errors.
+	knownProjects := map[string]stringset.Set{}
+	merr := errors.MultiError{}
+	for i := 0; i < len(cfgs); i++ {
+		res := <-results
+		if res.project != "" {
+			knownProjects[res.project] = res.consoles // may be nil on errors
+		}
+		if res.err != nil {
+			merr = append(merr, res.err)
 		}
 	}
 
-	// Delete all the consoles that no longer exists or are part of deleted projects.
 	toDelete := []*datastore.Key{}
+
+	// Find all the consoles that no longer exist or are part of deleted projects.
+	logging.Debugf(c, "searching for stale consoles")
 	err = datastore.Run(c, datastore.NewQuery("Console"), func(key *datastore.Key) error {
 		proj := key.Parent().StringID()
 		id := key.StringID()
@@ -483,8 +609,28 @@ func UpdateConsoles(c context.Context) error {
 	})
 	if err != nil {
 		merr = append(merr, err)
-	} else if err := datastore.Delete(c, toDelete); err != nil {
+	}
+
+	// Find entities of no longer existing projects.
+	logging.Debugf(c, "searching for stale projects")
+	err = datastore.Run(c, datastore.NewQuery("Project"), func(key *datastore.Key) error {
+		proj := key.StringID()
+		if _, hasIt := knownProjects[proj]; !hasIt {
+			logging.Infof(c, "deleting Project entity for %s", proj)
+			toDelete = append(toDelete, key)
+		}
+		return nil
+	})
+	if err != nil {
 		merr = append(merr, err)
+	}
+
+	// Actually delete all stale entities.
+	if len(toDelete) != 0 {
+		logging.Debugf(c, "deleting %d stale entities", len(toDelete))
+		if err := datastore.Delete(c, toDelete); err != nil {
+			merr = append(merr, err)
+		}
 	}
 
 	// Print some stats.
@@ -539,15 +685,18 @@ func GetProject(c context.Context, project string) (*Project, error) {
 	return &proj, errors.Annotate(err, "getting project %q", project).Err()
 }
 
-// GetAllProjects returns all projects the current user has access to.
-func GetAllProjects(c context.Context) ([]Project, error) {
-	q := datastore.NewQuery("Project")
-	projs := []Project{}
+// GetVisibleProjects returns all projects with consoles the current user has
+// access to.
+//
+// Skips projects that do not have Milo config file.
+func GetVisibleProjects(c context.Context) ([]*Project, error) {
+	q := datastore.NewQuery("Project").Eq("HasConfig", true)
+	projs := []*Project{}
 
 	if err := datastore.GetAll(c, q, &projs); err != nil {
 		return nil, errors.Annotate(err, "getting projects").Err()
 	}
-	result := []Project{}
+	result := []*Project{}
 	for _, proj := range projs {
 		switch allowed, err := IsAllowed(c, proj.ID); {
 		case err != nil:

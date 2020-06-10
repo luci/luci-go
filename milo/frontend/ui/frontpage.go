@@ -17,5 +17,5 @@ package ui
 import "go.chromium.org/luci/milo/common"
 
 type Frontpage struct {
-	Projects []common.Project
+	Projects []*common.Project
 }

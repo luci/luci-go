@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
@@ -124,11 +125,30 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("Send update", func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-			_, err := UpdateServiceConfig(c)
-			So(err, ShouldBeNil)
-			// Send update here
-			So(UpdateConsoles(c), ShouldBeNil)
+			c := testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+			So(UpdateProjects(c), ShouldBeNil)
+
+			Convey("Check created Project entities", func() {
+				foo := &Project{ID: "foo"}
+				So(datastore.Get(c, foo), ShouldBeNil)
+				So(foo.HasConfig, ShouldBeTrue)
+				So(foo.ACL, ShouldResemble, ACL{
+					Groups:     []string{"a", "b"},
+					Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
+				})
+
+				bar := &Project{ID: "bar"}
+				So(datastore.Get(c, bar), ShouldBeNil)
+				So(bar.HasConfig, ShouldBeTrue)
+				So(bar.ACL, ShouldResemble, ACL{})
+
+				baz := &Project{ID: "baz"}
+				So(datastore.Get(c, baz), ShouldBeNil)
+				So(baz.HasConfig, ShouldBeFalse)
+				So(baz.ACL, ShouldResemble, ACL{
+					Groups: []string{"a"},
+				})
+			})
 
 			Convey("Check Console config updated", func() {
 				cs, err := GetConsole(c, "foo", "default")
@@ -148,14 +168,24 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("Check second update reorders", func() {
-				mockedConfigsUpdate["services/luci-milo"] = memcfg.Files{
-					"settings.cfg": settingsCfg,
-				}
-				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
-				_, err = UpdateServiceConfig(c)
-				So(err, ShouldBeNil)
-				// Send update here
-				So(UpdateConsoles(c), ShouldBeNil)
+				c := testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
+				So(UpdateProjects(c), ShouldBeNil)
+
+				Convey("Check updated Project entities", func() {
+					foo := &Project{ID: "foo"}
+					So(datastore.Get(c, foo), ShouldBeNil)
+					So(foo.HasConfig, ShouldBeTrue)
+					So(foo.ACL, ShouldResemble, ACL{
+						Identities: []identity.Identity{"user:a@example.com"},
+					})
+
+					bar := &Project{ID: "bar"}
+					So(datastore.Get(c, bar), ShouldBeNil)
+					So(bar.HasConfig, ShouldBeFalse)
+					So(bar.ACL, ShouldResemble, ACL{})
+
+					So(datastore.Get(c, &Project{ID: "baz"}), ShouldEqual, datastore.ErrNoSuchEntity)
+				})
 
 				Convey("Check Console config removed", func() {
 					cs, err := GetConsole(c, "foo", "default")
@@ -236,6 +266,19 @@ consoles: {
 	}
 	header_id: "main_header"
 }
+`
+
+var fooProjectCfg = `
+access: "a@example.com"
+access: "user:a@example.com"
+access: "user:b@example.com"
+access: "group:a"
+access: "group:a"
+access: "group:b"
+`
+
+var bazProjectCfg = `
+access: "group:a"
 `
 
 var badCfg = `
@@ -361,6 +404,10 @@ consoles: {
 }
 `
 
+var fooProjectCfg2 = `
+access: "a@example.com"
+`
+
 var badConsoleCfg = `
 consoles: {
 	id: "baz"
@@ -385,11 +432,26 @@ buildbot: {
 var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg,
+		"project.cfg":   fooProjectCfg,
+	},
+	"projects/bar": {
+		"luci-milo.cfg": ``, // empty, but present
+		"project.cfg":   ``,
+	},
+	"projects/baz": {
+		// no Milo config
+		"project.cfg": bazProjectCfg,
 	},
 }
 
 var mockedConfigsUpdate = map[config.Set]memcfg.Files{
 	"projects/foo": {
 		"luci-milo.cfg": fooCfg2,
+		"project.cfg":   fooProjectCfg2,
 	},
+	"projects/bar": {
+		// No milo config any more
+		"project.cfg": ``,
+	},
+	// No project/baz anymore.
 }
