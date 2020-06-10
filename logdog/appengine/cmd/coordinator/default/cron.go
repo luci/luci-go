@@ -57,7 +57,7 @@ var (
 		field.String("archival_state"),
 	)
 
-	totalShards = int64(30)
+	totalShards = int64(64)
 )
 
 type queryStat struct {
@@ -126,7 +126,7 @@ func (r *queryResult) String() string {
 // doShardedQueryStat launches a batch of queries, at different shard indices.
 func doShardedQueryStat(c context.Context, ns string, stat queryStat) error {
 	results := &queryResult{}
-	if err := parallel.FanOutIn(func(ch chan<- func() error) {
+	if err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for i := int64(0); i < totalShards; i++ {
 			i := i
 			ch <- func() error {
