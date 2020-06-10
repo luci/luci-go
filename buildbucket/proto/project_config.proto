@@ -421,6 +421,9 @@ message Builder {
 
   // Used to enable and configure ResultDB integration.
   ResultDB resultdb = 26;
+
+  // Builder description that helps users understand the purpose of the builder.
+  string Description = 27;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
