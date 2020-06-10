@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "575b1462_2776370a",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T22:03:35Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "db99390d_5fcb6f88",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 14
+      },
+      "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea774b5f_dfe75d81",
         "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eecd93d4_6d619049",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T22:03:35Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "ea774b5f_dfe75d81",
+      "range": {
+        "startLine": 90,
+        "startChar": 3,
+        "endLine": 91,
+        "endChar": 8
+      },
+      "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "288459dc_8b9a0ab8",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T22:03:35Z",
+      "side": 1,
+      "message": "Done, I wish I had thought of checking the permissions separately earlier.",
+      "parentUuid": "d17cdaa3_4db169f4",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e15bb9f6_f9d77cac",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 7
@@ -132,6 +204,30 @@
       "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37918e11_c2bb8685",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T22:03:35Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "37feda46_8865a18b",
+      "range": {
+        "startLine": 50,
+        "startChar": 2,
+        "endLine": 56,
+        "endChar": 3
+      },
+      "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -227,6 +323,30 @@
       "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97e55c7f_3e655007",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T22:03:35Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "a1b660a0_4d0cda77",
+      "range": {
+        "startLine": 63,
+        "startChar": 41,
+        "endLine": 63,
+        "endChar": 50
+      },
+      "revId": "18a7e95fa2618a6cdde80e431842611efd190bb5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
