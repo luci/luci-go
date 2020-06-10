@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ff87f1e6_94c5edb0",
+        "filename": "milo/frontend/resultui/src/pages/error_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-10T01:36:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86e798f0_fc018d7d",
+      "revId": "eb744846fc62c0330e66ad49270ded1ce8c7b3ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab895643_a709b7dd",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
         "patchSetId": 3
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "48ed9a46_f2e6f395",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-10T01:36:36Z",
+      "side": 1,
+      "message": "changed to string.\nLines in the string are rendered as \u003cp\u003e...\u003c/p\u003e.",
+      "parentUuid": "ab895643_a709b7dd",
+      "range": {
+        "startLine": 67,
+        "startChar": 23,
+        "endLine": 67,
+        "endChar": 101
+      },
+      "revId": "eb744846fc62c0330e66ad49270ded1ce8c7b3ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "253a9290_68790257",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
         "patchSetId": 3
@@ -53,6 +95,24 @@
       "writtenOn": "2020-06-09T19:11:02Z",
       "side": 1,
       "message": "at some point we will probably have more places in code where we invoke an error page. Then it would make sense to extract the common parts to a common func",
+      "revId": "eb744846fc62c0330e66ad49270ded1ce8c7b3ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "21e21af3_19035a31",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-10T01:36:36Z",
+      "side": 1,
+      "message": "Good point.\nI\u0027ll do that in a separate CL.\nI\u0027m thinking about having a way to catch the error instead of having to pass the string through search params.\nSo we can pass error objects directly and render stack traces.",
+      "parentUuid": "253a9290_68790257",
       "revId": "eb744846fc62c0330e66ad49270ded1ce8c7b3ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
