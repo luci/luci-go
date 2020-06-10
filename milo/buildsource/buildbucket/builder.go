@@ -128,11 +128,13 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 		pageSize = 20
 	}
 
-	result := &ui.BuilderPage{
-		BuilderName: bid.Builder,
-	}
+	result := &ui.BuilderPage{}
 
-	client, err := buildbucketClient(c, host, auth.AsUser)
+	buildsClient, err := buildbucketBuildsClient(c, host, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+	buildersClient, err := buildbucketBuildersClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +152,7 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 		}
 
 		start := clock.Now(c)
-		res, err := client.SearchBuilds(c, req)
+		res, err := buildsClient.SearchBuilds(c, req)
 		if err != nil {
 			err = common.TagGRPC(c, err)
 			return
@@ -193,6 +195,13 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 		work <- func() (err error) {
 			result.EndedBuilds, result.NextPageToken, _, err = fetch(buildbucketpb.Status_ENDED_MASK, pageSize, pageToken)
 			result.PrevPageToken = backPageToken(c, bid, pageSize, pageToken, result.NextPageToken) // Safe to do even with error.
+			return
+		}
+		work <- func() (err error) {
+			req := &buildbucketpb.GetBuilderRequest{
+				Id: bid,
+			}
+			result.Builder, err = buildersClient.GetBuilder(c, req)
 			return
 		}
 	})
