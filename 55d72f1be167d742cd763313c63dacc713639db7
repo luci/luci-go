@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ba3b81a_645b0e00",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-10T07:21:00Z",
+      "side": 1,
+      "message": "Could we include the invocation and test result that this came from in the header here? (and maybe even make the invocation ID a link back to the invocation page?)",
+      "range": {
+        "startLine": 76,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 14
+      },
+      "revId": "55d72f1be167d742cd763313c63dacc713639db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
