@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45f56980_41f3a841",
+        "filename": "mmutex/cmd/mmutex/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-10T04:00:55Z",
+      "side": 1,
+      "message": "this could just be\n\n   ...\n   Context: gologger.StdConfig.Use,\n   ...\n\nI don\u0027t think you need a custom format; the standard one already contains level, time and message.",
+      "range": {
+        "startLine": 49,
+        "startChar": 17,
+        "endLine": 49,
+        "endChar": 25
+      },
+      "revId": "3c1836143e642465f93769afbaef7fa66314861a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b40fbea1_dbb85e1b",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-10T04:00:55Z",
+      "side": 1,
+      "message": "imo don\u0027t stat \u0026\u0026 remove, just look at the error value from Remove. \n\n\n   if _, err :\u003d os.Remove(drainFilePath); err !\u003d nil \u0026\u0026 !os.IsNotExist(err) {\n     logging.Errorf(ctx, \"[mmutex][exclusive] Failed to remove drain file: %s\", err)\n   }",
+      "range": {
+        "startLine": 65,
+        "startChar": 17,
+        "endLine": 65,
+        "endChar": 21
+      },
+      "revId": "3c1836143e642465f93769afbaef7fa66314861a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
