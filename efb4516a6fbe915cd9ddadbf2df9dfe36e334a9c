@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c5a9fc3_ccc72c02",
+        "filename": "mmutex/cmd/mmutex/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-10T20:20:07Z",
+      "side": 1,
+      "message": "this can still just be\n\n   Context: gologger.StdConfig.Use,\n\nwithout any extra callback.",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 8
+      },
+      "revId": "efb4516a6fbe915cd9ddadbf2df9dfe36e334a9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eccb705e_f7b05047",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-10T20:20:07Z",
+      "side": 1,
+      "message": "this is not what I was recommending. I recommend using https://golang.org/pkg/os/#IsNotExist to check if the error is precisely \"file doesn\u0027t exist\". If the error is something else, then log it.",
+      "range": {
+        "startLine": 67,
+        "startChar": 4,
+        "endLine": 67,
+        "endChar": 37
+      },
+      "revId": "efb4516a6fbe915cd9ddadbf2df9dfe36e334a9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
