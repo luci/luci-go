@@ -51,7 +51,7 @@ func TestACL(t *testing.T) {
 
 		Convey("Set up projects", func() {
 			c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
-			err := UpdateConsoles(c)
+			err := UpdateProjects(c)
 			So(err, ShouldBeNil)
 
 			Convey("Anon wants to...", func() {

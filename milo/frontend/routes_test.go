@@ -285,10 +285,11 @@ func Frontpage() []TestBundle {
 			Description: "Basic frontpage",
 			Data: templates.Args{
 				"frontpage": ui.Frontpage{
-					Projects: []common.Project{
+					Projects: []*common.Project{
 						{
-							ID:      "fakeproject",
-							LogoURL: "https://example.com/logo.png",
+							ID:        "fakeproject",
+							HasConfig: true,
+							LogoURL:   "https://example.com/logo.png",
 						},
 					},
 				},
