@@ -13,14 +13,45 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { BeforeEnterObserver, RouterLocation } from '@vaadin/router';
+import { css, customElement, html } from 'lit-element';
 
 
+/**
+ * Renders sourceUrl and reason from search params (if present).
+ */
 @customElement('tr-error-page')
-export class ErrorPageElement extends MobxLitElement {
+export class ErrorPageElement extends MobxLitElement implements BeforeEnterObserver {
+  private sourceUrl = '';
+  private reason = '';
+
+  onBeforeEnter(location: RouterLocation) {
+    const searchParams = new URLSearchParams(location.search);
+    this.sourceUrl = searchParams.get('sourceUrl') ?? '';
+    this.reason = searchParams.get('reason') ?? 'something went wrong';
+  }
+
   protected render() {
     return html`
-      <div>An error occured.<div>
+      <div>
+        ${this.sourceUrl ?
+          html`An error occurred when visiting the following URL:<br><a href=${this.sourceUrl}>${this.sourceUrl}</a>` :
+          'An error occurred:'}
+      </div>
+      <div id="reason">
+        ${this.reason.split('\n').map((line) => html`<p>${line}</p>`)}
+      </div>
     `;
   }
+
+  static styles = css`
+    :host > div {
+      margin: 8px 16px;
+    }
+
+    #reason {
+      background-color: rgb(245, 245, 245);
+      padding: 5px;
+    }
+  `;
 }
