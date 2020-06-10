@@ -98,6 +98,7 @@ luci.gitiles_poller(
 
 luci.builder(
     name = 'linux ci builder',
+    description = 'this is a linux ci builder',
     bucket = 'ci',
     executable = luci.recipe(
         name = 'main/recipe',
@@ -610,6 +611,7 @@ lucicfg.emit(
 #     }
 #     builders {
 #       name: "linux ci builder"
+#       description: "this is a linux ci builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       swarming_tags: "tag1:val1"
 #       swarming_tags: "tag2:val2"

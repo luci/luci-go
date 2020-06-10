@@ -1268,6 +1268,7 @@ luci.builder(
     executable,
 
     # Optional arguments.
+    description = None,
     properties = None,
     service_account = None,
     caches = None,
@@ -1340,6 +1341,7 @@ Buildbucket.
 #### Arguments {#luci.builder-args}
 
 * **name**: name of the builder, will show up in UIs and logs. Required.
+* **description**: a short plain string, will show up in UIs.
 * **bucket**: a bucket the builder is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
 * **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable). Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
