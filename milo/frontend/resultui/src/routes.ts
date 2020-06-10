@@ -86,6 +86,29 @@ router.setRoutes({
                 notFoundRoute,
               ],
             },
+            {
+              path: '/artifact/:artifact_name',
+              name: 'artifact',
+              action: async (_ctx, cmd) => {
+                await import(/* webpackChunkName: "artifact_page" */ './pages/artifact_page');
+                return cmd.component('tr-artifact-page');
+              },
+              children: [
+                {
+                  path: '/',
+                  redirect: '/artifact/:artifact_name/content',
+                },
+                {
+                  path: '/content',
+                  name: 'artifact-content',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "artifact_content_tab" */ './pages/artifact_page/content_tab');
+                    return cmd.component('tr-artifact-content-tab');
+                  },
+                },
+                notFoundRoute,
+              ],
+            },
             notFoundRoute,
           ],
         },
