@@ -42,6 +42,15 @@ const StepSep = "|"
 // be the actual steps of the build, and the Logdog URL for links conversion.
 // The provided context is used only for logging.
 //
+// If constructLogURL is True, all returned steps will have fully-qualified
+// logdog urls (i.e. logdog://host/prefix/+/log_name) and viewer urls will also
+// be populated. Otherwise, the logdog url will simply be the same as log
+// stream name and it is caller's responsibility to calculate the full URL.
+// Values of defaultLogdogHost and defaultLogdogPrefix are only meaningful when
+// constructLogURL is True.
+// TODO(yiwzhang): Remove the option to construct full logdog url after kitchen
+// is deprecated. Currently, this functionality is used in Kitchen.
+//
 // Does not verify that the returned build satisfies all the constraints
 // described in the proto files.
 //
@@ -50,10 +59,11 @@ const StepSep = "|"
 //   * Step.link,
 //   * Link.isolate_object,
 //   * Link.dm_link.
-func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, defaultLogdogHost, defaultLogdogPrefix string) ([]*pb.Step, error) {
+func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, constructLogURL bool, defaultLogdogHost, defaultLogdogPrefix string) ([]*pb.Step, error) {
 	sc := &stepConverter{
 		defaultLogdogHost:   defaultLogdogHost,
 		defaultLogdogPrefix: defaultLogdogPrefix,
+		constructLogURL:     constructLogURL,
 		steps:               map[string]*pb.Step{},
 	}
 
@@ -66,8 +76,8 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, defa
 
 type stepConverter struct {
 	defaultLogdogHost, defaultLogdogPrefix string
-
-	steps map[string]*pb.Step
+	constructLogURL                        bool
+	steps                                  map[string]*pb.Step
 }
 
 // convertSubsteps converts substeps, which we expect to be Steps, not Logdog
@@ -285,13 +295,15 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*p
 				logging.Warningf(c, "step %q: duplicate log name %q", ann.Name, l.Label)
 			} else {
 				logNames.Add(l.Label)
-				bbLogs = append(bbLogs,
-					&pb.Log{
-						Name:    l.Label,
-						ViewUrl: p.convertLogdogLink(l.GetLogdogStream(), true),
-						Url:     p.convertLogdogLink(l.GetLogdogStream(), false),
-					},
-				)
+				bbLog := &pb.Log{
+					Name: l.Label,
+					Url:  l.GetLogdogStream().Name,
+				}
+				if p.constructLogURL {
+					bbLog.ViewUrl = p.constructLogdogLink(l.GetLogdogStream(), true)
+					bbLog.Url = p.constructLogdogLink(l.GetLogdogStream(), false)
+				}
+				bbLogs = append(bbLogs, bbLog)
 			}
 		case l.GetUrl() != "":
 			// Arbitrary links go into the summary.
@@ -311,7 +323,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*p
 	return bbLogs, summary
 }
 
-func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream, viewURL bool) string {
+func (p *stepConverter) constructLogdogLink(log *annotpb.LogdogStream, viewURL bool) string {
 	host, prefix := p.defaultLogdogHost, p.defaultLogdogPrefix
 	if log.GetServer() != "" {
 		host = log.Server
