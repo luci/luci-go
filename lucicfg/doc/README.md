@@ -1268,6 +1268,7 @@ luci.builder(
     executable,
 
     # Optional arguments.
+    description = None,
     properties = None,
     service_account = None,
     caches = None,
@@ -1341,6 +1342,7 @@ Buildbucket.
 
 * **name**: name of the builder, will show up in UIs and logs. Required.
 * **bucket**: a bucket the builder is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
+* **description**: a short plain string, will show up in UIs.
 * **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable). Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
 * **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
