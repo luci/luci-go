@@ -228,6 +228,7 @@ def _builder(
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
       'repo': validate.repo_url('repo', repo, required=False),
       'resultdb': resultdb.validate_settings(resultdb_settings),
+      'description': description,
   }
 
   # Merge explicitly passed properties with the module-scoped defaults.
