@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9e982012_b349dfa1",
+        "filename": "mmutex/cmd/mmutex/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-06-10T07:52:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45f56980_41f3a841",
+      "range": {
+        "startLine": 49,
+        "startChar": 17,
+        "endLine": 49,
+        "endChar": 25
+      },
+      "revId": "3c1836143e642465f93769afbaef7fa66314861a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b40fbea1_dbb85e1b",
         "filename": "mmutex/lib/exclusive.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "3c1836143e642465f93769afbaef7fa66314861a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef85865a_c062832e",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-06-10T07:52:47Z",
+      "side": 1,
+      "message": "Updated to check whether we hit a os.PathError.",
+      "parentUuid": "b40fbea1_dbb85e1b",
+      "range": {
+        "startLine": 65,
+        "startChar": 17,
+        "endLine": 65,
+        "endChar": 21
+      },
+      "revId": "3c1836143e642465f93769afbaef7fa66314861a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
