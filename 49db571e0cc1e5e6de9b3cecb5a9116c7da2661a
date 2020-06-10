@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "1f1a9a5a_2dbc4046",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-10T23:34:30Z",
+      "side": 1,
+      "message": "this expands to \"Remote Procedure Call call\"",
+      "range": {
+        "startLine": 125,
+        "startChar": 20,
+        "endLine": 125,
+        "endChar": 28
+      },
+      "revId": "49db571e0cc1e5e6de9b3cecb5a9116c7da2661a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbd775a1_2f17abe8",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-10T23:34:30Z",
+      "side": 1,
+      "message": "would be good to trace this, in a separate CL",
+      "revId": "49db571e0cc1e5e6de9b3cecb5a9116c7da2661a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3b23fae_b340301d",
         "filename": "grpc/prpc/client.go",
         "patchSetId": 1
