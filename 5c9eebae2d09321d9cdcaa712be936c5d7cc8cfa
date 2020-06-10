@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "017c1c72_3f30ed34",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T00:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5cfa52c_b8b5afe3",
+      "range": {
+        "startLine": 75,
+        "startChar": 15,
+        "endLine": 75,
+        "endChar": 17
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "928329ea_9e2bfeeb",
         "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "7a6eed89_1eeaf4d0",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T00:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "928329ea_9e2bfeeb",
+      "range": {
+        "startLine": 77,
+        "startChar": 57,
+        "endLine": 77,
+        "endChar": 150
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9f9848e_5ef344ec",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ed0de4b_0fd77889",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T00:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9f9848e_5ef344ec",
+      "range": {
+        "startLine": 59,
+        "startChar": 85,
+        "endLine": 59,
+        "endChar": 136
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "ca8d6756_fd7343b9",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T00:35:47Z",
+      "side": 1,
+      "message": "Done. \n\nI am not sure about a naked permissionsset in realms because the absence of a permission from a set does not explain whether the permission was not granted or was not checked, since the permissionset itself does not know what permissions were checked to generate it, permissionset is only meaningful if used closed to where it was generated.",
+      "parentUuid": "38cf9d11_df3c2b9b",
+      "range": {
+        "startLine": 36,
+        "startChar": 57,
+        "endLine": 36,
+        "endChar": 60
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da675a5b_8ab5c022",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T00:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4de4b1e9_c29234ac",
+      "range": {
+        "startLine": 36,
+        "startChar": 88,
+        "endLine": 36,
+        "endChar": 89
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0adbdcad_8a7fc33e",
         "filename": "resultdb/internal/services/recorder/permissions.go",
         "patchSetId": 5
@@ -137,6 +257,30 @@
       "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d00fcbca_b49167a0",
+        "filename": "resultdb/internal/services/recorder/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-10T00:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0adbdcad_8a7fc33e",
+      "range": {
+        "startLine": 37,
+        "startChar": 41,
+        "endLine": 37,
+        "endChar": 59
+      },
+      "revId": "5c9eebae2d09321d9cdcaa712be936c5d7cc8cfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
