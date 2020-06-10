@@ -22,6 +22,30 @@
       "revId": "775aa81587c43311e37efad815ff03fe159f6cda",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c5594ba_ac94993c",
+        "filename": "mmutex/lib/exclusive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-06-10T22:39:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51696e21_364f64c6",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 5
+      },
+      "revId": "775aa81587c43311e37efad815ff03fe159f6cda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
