@@ -36,7 +36,7 @@ import (
 // are valid, that they match the batch request requestID and that their names
 // are not repeated.
 func validateBatchCreateInvocationsRequest(
-	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string, allowCustomID bool) (invocations.IDSet, error) {
+	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string, perms map[string]permissionSet) (invocations.IDSet, error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
 		return nil, errors.Annotate(err, "request_id").Err()
 	}
@@ -47,7 +47,13 @@ func validateBatchCreateInvocationsRequest(
 
 	idSet := make(invocations.IDSet, len(reqs))
 	for i, req := range reqs {
-		if err := validateCreateInvocationRequest(req, now, allowCustomID); err != nil {
+		realm := req.GetInvocation().GetRealm()
+		if realm == "" {
+			// TODO(crbug.com/1013316): Remove this fallback when realm is required in
+			// all invocation creations.
+			realm = "chromium:public"
+		}
+		if err := validateCreateInvocationRequest(req, now, perms[realm]); err != nil {
 			return nil, errors.Annotate(err, "requests[%d]", i).Err()
 		}
 
@@ -70,12 +76,27 @@ func validateBatchCreateInvocationsRequest(
 func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.BatchCreateInvocationsRequest) (*pb.BatchCreateInvocationsResponse, error) {
 	now := clock.Now(ctx).UTC()
 
-	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
-	if err != nil {
-		return nil, err
+	var err error
+	perms := make(map[string]permissionSet)
+	for _, r := range in.Requests {
+		realm := r.GetInvocation().GetRealm()
+		if realm == "" {
+			// TODO(crbug.com/1013316): Remove this fallback when realm is required in
+			// all invocation creations.
+			realm = "chromium:public"
+		}
+		_, exists := perms[realm]
+		if !exists {
+			perms[realm], err = getPermissions(ctx, realm)
+			if err != nil {
+				return nil, err
+			}
+			if !perms[realm].Has(permCreateInvocation) {
+				return nil, appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to create invocations in realm %q`, r.GetInvocation().GetRealm())
+			}
+		}
 	}
-
-	idSet, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId, trustedCreator)
+	idSet, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId, perms)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -131,6 +152,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 			BigqueryExports:  req.Invocation.GetBigqueryExports(),
 			CreatedBy:        createdBy,
 			ProducerResource: req.Invocation.GetProducerResource(),
+			Realm:            req.Invocation.GetRealm(),
 		}
 
 		// Ensure the invocation has a deadline.
