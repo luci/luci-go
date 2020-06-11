@@ -16,6 +16,7 @@ package sink
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
@@ -101,6 +103,14 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		}
 		tr.Variant = &typepb.Variant{Def: def}
 
+		// assign a random, unique ID if resultID omitted.
+		if tr.ResultId == "" {
+			var err error
+			if tr.ResultId, err = genResultID(ctx); err != nil {
+				return nil, status.Errorf(
+					codes.Internal, "failed to generate ResultID: %s", err)
+			}
+		}
 		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
@@ -109,4 +119,19 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
+}
+
+// genResultID generates a resultID, made of the current timestamp in a human-friendly
+// format and a random suffix.
+//
+// This is used to generate a random, unique resultID local to the invocation and test.
+func genResultID(ctx context.Context) (string, error) {
+	bytes := make([]byte, 4)
+	if _, err := mathrand.Read(ctx, bytes); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf(
+		"%s-%s", clock.Now(ctx).UTC().Format("2006-01-02-15-04-05.000"),
+		hex.EncodeToString(bytes)), nil
 }
