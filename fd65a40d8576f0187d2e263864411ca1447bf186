@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "239b93cf_f089558c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-11T04:31:48Z",
+      "side": 1,
+      "message": "Actually I think this CL also fixes https://crbug.com/1068166?",
+      "range": {
+        "startLine": 9,
+        "startChar": 7,
+        "endLine": 9,
+        "endChar": 14
+      },
+      "revId": "fd65a40d8576f0187d2e263864411ca1447bf186",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
