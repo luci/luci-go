@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0b6c0cac_51bde54f",
+        "filename": "milo/buildsource/buildbucket/pools_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T23:53:42Z",
+      "side": 0,
+      "message": "I\u0027m not sure what that was supposed to test. The test mocks configs but then never actually loads them.",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 148,
+        "endChar": 1
+      },
+      "revId": "89562270ddb4896e9479add4792aada9309f861a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
