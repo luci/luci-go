@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "7e04c18e_cea6f67b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-11T07:53:04Z",
+      "side": 1,
+      "message": "it is unlikely that a human will ever see these result ids, so there is not much value in making them human-friendly. I\u0027d rather focus on making them short (since they occupy space, and used in JOINs on the server side). Also \"date\" of all results in this invocation would be the same, so date doesn\u0027t contribute to uniqueness.\n\nI\u0027d also prefer these ids to be designed in such a way, that lexicographical order matches chronological one. Then, when returning results, earlier results would naturally appear before older results (since data is physically sorted lexicographically).\n\nso, I recommend\n- generate a random string (like L129-132) during resultsink startup. Remember it in sinkServer struct.\n- add an `resultCounter int32` in sinkServer struct\n- in ReportTestResult, atomically increment the counter\n- if resultid is empty, then set it to fmt.Sprintf(\"%s-%05d\", counter)",
+      "range": {
+        "startLine": 124,
+        "startChar": 48,
+        "endLine": 125,
+        "endChar": 10
+      },
+      "revId": "59feb9c5e08837ad2cbe2bd073c1f228c7fcc271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72192723_c44ea5b3",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-11T07:53:04Z",
+      "side": 1,
+      "message": "i was told that this basically never fails, so it is safe to panic here. Then we don\u0027t need L110-112",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 16
+      },
+      "revId": "59feb9c5e08837ad2cbe2bd073c1f228c7fcc271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "026e167a_9f2dca1e",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 2
