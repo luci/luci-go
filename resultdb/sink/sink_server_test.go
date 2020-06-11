@@ -33,6 +33,8 @@ import (
 
 func check(ctx context.Context, cfg ServerConfig, tr *sinkpb.TestResult, expected *pb.TestResult) {
 	sink, err := newSinkServer(ctx, cfg)
+	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultIDBase = "foo"
+	sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultCounter = 100
 	So(err, ShouldBeNil)
 
 	req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
@@ -98,6 +100,13 @@ func TestReportTestResults(t *testing.T) {
 					check(ctx, cfg, tr, expected)
 				})
 			})
+		})
+
+		Convey("generates a random ResultID, if omitted", func() {
+
+			tr.ResultId = ""
+			expected.ResultId = "foo-00101"
+			check(ctx, cfg, tr, expected)
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {

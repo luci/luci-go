@@ -30,6 +30,8 @@ message TestResult {
   string test_id = 1;
 
   // Equivalent of luci.resultpb.TestResult.result_id.
+  //
+  // If omitted, a random, unique ID is generated..
   string result_id = 2;
 
   // Equivalent of luci.resultpb.TestResult.variant.

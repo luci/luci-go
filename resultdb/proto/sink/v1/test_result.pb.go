@@ -192,6 +192,8 @@ type TestResult struct {
 	// Equivalent of luci.resultpb.TestResult.TestId.
 	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
 	// Equivalent of luci.resultpb.TestResult.result_id.
+	//
+	// If omitted, a random, unique ID is generated..
 	ResultId string `protobuf:"bytes,2,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
 	// Equivalent of luci.resultpb.TestResult.variant.
 	Variant *_type.Variant `protobuf:"bytes,3,opt,name=variant,proto3" json:"variant,omitempty"`
