@@ -39,11 +39,16 @@ func editCrCLCmd(opts cmdBaseOptions) *subcommands.Command {
 was triggered via Gerrit.
 
 Recognized URLs:
-	https://<gerrit_host>/c/<path/to/project>/+/<issue>/<patchset>
+	https://<gerrit_host>/#/c/<issue>
+	https://<gerrit_host>/#/c/<issue>/<patchset>
+	https://<gerrit_host>/c/<issue>
+	https://<gerrit_host>/c/<issue>/<patchset>
+	https://<gerrit_host>/c/<path/to/project>/+/<issue>
 	https://<gerrit_host>/c/<path/to/project>/+/<issue>/<patchset>
 
-If you provide a CL missing <patchset> and <gerrit_host> has public read access,
-this will fill in the patchset from the latest version of the issue.
+If you provide a CL missing <patchset> AND <gerrit_host> has public read access,
+this will fill in the patchset from the latest version of the issue. Otherwise
+this will fail and ask you to provide the full CL/patchset url.
 
 By default, when adding a CL, this will clear all existing CLs on the job, unless
 you pass -no-implicit-clear. Most jobs (as of 2020Q2) only expect one CL, so we
