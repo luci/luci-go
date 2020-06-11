@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
@@ -59,6 +60,8 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 func RunExclusive(ctx context.Context, env subcommands.Env, command []string) error {
 	ctx, cancel := clock.WithTimeout(ctx, lib.DefaultCommandTimeout)
 	defer cancel()
+
+	logging.Infof(ctx, "[mmutex] Running command in EXCLUSIVE mode: %s", command)
 
 	return lib.RunExclusive(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)

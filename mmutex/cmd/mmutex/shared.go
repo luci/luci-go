@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/mmutex/lib"
 )
@@ -60,6 +61,7 @@ func RunShared(ctx context.Context, env subcommands.Env, command []string) error
 	ctx, cancel := clock.WithTimeout(ctx, lib.DefaultCommandTimeout)
 	defer cancel()
 
+	logging.Infof(ctx, "[mmutex] Running command in SHARED mode: %s", command)
 	return lib.RunShared(ctx, env, func(ctx context.Context) error {
 		return runCommand(ctx, command)
 	})

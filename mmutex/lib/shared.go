@@ -19,6 +19,7 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/common/logging"
 )
 
 // RunShared runs the command with the specified context and environment while
@@ -28,6 +29,8 @@ func RunShared(ctx context.Context, env subcommands.Env, command func(context.Co
 	if err != nil {
 		return err
 	}
+
+	logging.Infof(ctx, "[mmutex][shared] LockFilePath: %s, DrainFilePath: %s.", lockFilePath, drainFilePath)
 	if len(lockFilePath) == 0 {
 		return command(ctx)
 	}
@@ -41,6 +44,7 @@ func RunShared(ctx context.Context, env subcommands.Env, command func(context.Co
 	}
 
 	return fslock.WithSharedBlocking(lockFilePath, blocker, func() error {
+		logging.Infof(ctx, "[mmutex][shared] Lock acquired.")
 		return command(ctx)
 	})
 }

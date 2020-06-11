@@ -20,6 +20,7 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/common/logging"
 )
 
 // RunExclusive runs the command with the specified context and environment while
@@ -30,6 +31,7 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		return err
 	}
 
+	logging.Infof(ctx, "[mmutex][exclusive] LockFilePath: %s, DrainFilePath: %s.", lockFilePath, drainFilePath)
 	if len(lockFilePath) == 0 {
 		return command(ctx)
 	}
@@ -41,9 +43,8 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 	if err = file.Close(); err != nil {
 		return err
 	}
-
 	// Remove the drain file in case the lock can never be acquired.
-	defer os.Remove(drainFilePath)
+	defer RemoveDrainFile(ctx, drainFilePath)
 
 	blocker := createLockBlocker(ctx)
 	return fslock.WithBlocking(lockFilePath, blocker, func() error {
@@ -51,9 +52,17 @@ func RunExclusive(ctx context.Context, env subcommands.Env, command func(context
 		// to decrease the likelihood that a crash occurs, leaving the drain
 		// file sitting around indefinitely.
 		if err := os.Remove(drainFilePath); err != nil {
+			logging.Errorf(ctx, "[mmutex][exclusive] Failed to remove drain file after acquiring the lock: %s", drainFilePath)
 			return err
 		}
+		logging.Infof(ctx, "[mmutex][exclusive] Lock acquired and drain file removed.")
 
 		return command(ctx)
 	})
+}
+
+func RemoveDrainFile(ctx context.Context, drainFilePath string) {
+	if err := os.Remove(drainFilePath); err != nil && !os.IsNotExist(err) {
+		logging.Errorf(ctx, "[mmutex][exclusive] Failed to remove drain file: %s", err)
+	}
 }
