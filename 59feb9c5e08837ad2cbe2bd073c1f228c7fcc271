@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "026e167a_9f2dca1e",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-11T06:29:35Z",
+      "side": 1,
+      "message": "Surprisingly, if the second in this format must be \"05\" to produce correct data.\nIf it\u0027s \"00\", then the generated string always has 00 second, although the last 3 digits (millisecond) has correct data.\n\nAll the time-format constants defined in https://golang.org/pkg/time/#pkg-constants use 05 for the second. I am too lazy to look at the code of time.Format(), but I bet that the following format also needs to be changed\n: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/cmd_stream.go;l\u003d255",
+      "range": {
+        "startLine": 135,
+        "startChar": 57,
+        "endLine": 135,
+        "endChar": 59
+      },
+      "revId": "59feb9c5e08837ad2cbe2bd073c1f228c7fcc271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
