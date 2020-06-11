@@ -21,6 +21,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { sanitizeHTML } from '../../libs/sanitize_html';
+import { router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
 
 /**
@@ -52,8 +53,9 @@ export class TextDiffArtifactElement extends MobxLitElement {
       >
         <mwc-icon class="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <span class="one-line-content">
-          <!-- TODO(weiweilin): add a link to open the artifact in a standalone page. -->
-          Unexpected text output from <i>${this.artifact.artifactId}</i>
+          Unexpected text output from
+          <a href=${router.urlForName('artifact', {'artifact_name': this.artifact.name})} target="_blank">${this.artifact.artifactId}</a>
+          (<a href=${this.artifact.fetchUrl} target="_blank">view raw</a>)
         </span>
       </div>
       <div id="container" style=${styleMap({display: this.expanded ? '' : 'none'})}>
@@ -93,7 +95,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
       margin: 5px;
       position: relative;
       overflow-y: auto;
-      height: 500px;
+      max-height: 500px;
     }
     .d2h-code-linenumber {
       cursor: default;

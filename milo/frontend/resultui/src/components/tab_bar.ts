@@ -57,6 +57,7 @@ export class TabBarElement extends LitElement {
 
   static styles = css`
     :host {
+      display: block;
       margin: 10px;
       margin-bottom: 5px;
     }

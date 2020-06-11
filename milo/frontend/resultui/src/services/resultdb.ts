@@ -110,6 +110,10 @@ export interface ListArtifactsRequest {
   readonly pageToken?: string;
 }
 
+export interface GetArtifactRequest {
+  readonly name: string;
+}
+
 export interface TestResultPredicate {
   readonly testIdRegexp?: string;
   readonly variant?: VariantPredicate;
@@ -178,6 +182,13 @@ export class ResultDb {
       'ListArtifacts',
       req,
     ) as ListArtifactsResponse;
+  }
+
+  async getArtifact(req: GetArtifactRequest) {
+    return await this.call(
+      'GetArtifact',
+      req,
+    ) as Artifact;
   }
 
   private call(method: string, message: object) {
