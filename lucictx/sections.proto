@@ -61,6 +61,14 @@ message LUCIExe {
 }
 
 
+// Realm is a struct that may be used with the "realm" section of
+// LUCI_CONTEXT.
+message Realm {
+  // Realm name of the task.
+  string name = 1 [json_name = "name"]; // e.g. infra:ci
+}
+
+
 // ResultDB is a struct that may be used with the "resultdb" section of
 // LUCI_CONTEXT.
 message ResultDB {
