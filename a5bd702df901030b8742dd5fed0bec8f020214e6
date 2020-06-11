@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab42cb8b_cc0c56c1",
+        "filename": "grpc/prpc/client_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T03:03:51Z",
+      "side": 1,
+      "message": "I could not figure out how else to synchronize handlers without making the test completely useless. Right now this test is close to be \"integration test\". It emulates the real scenario of non-instantaneous RPCs. Suggestions are welcome.",
+      "range": {
+        "startLine": 436,
+        "startChar": 5,
+        "endLine": 442,
+        "endChar": 39
+      },
+      "revId": "a5bd702df901030b8742dd5fed0bec8f020214e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
