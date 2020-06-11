@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
@@ -96,7 +97,7 @@ func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(err)
 	}
 
-	if err := r.initClients(ctx); err != nil {
+	if err := r.initClients(ctx, auth.SilentLogin); err != nil {
 		return r.done(err)
 	}
 

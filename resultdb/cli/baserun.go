@@ -80,13 +80,13 @@ func (r *baseCommandRun) RegisterJSONFlag(usage string) {
 
 // initClients validates -host flag and initializes r.httpClient, r.resultdb
 // r.recorder and r.deriver.
-func (r *baseCommandRun) initClients(ctx context.Context) error {
+func (r *baseCommandRun) initClients(ctx context.Context, loginMode auth.LoginMode) error {
 	// Create HTTP Client.
 	authOpts, err := r.authFlags.Options()
 	if err != nil {
 		return err
 	}
-	r.http, err = auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	r.http, err = auth.NewAuthenticator(ctx, loginMode, authOpts).Client()
 	if err != nil {
 		return err
 	}
