@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "10664a61_899a1711",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T00:02:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f1a9a5a_2dbc4046",
+      "range": {
+        "startLine": 125,
+        "startChar": 20,
+        "endLine": 125,
+        "endChar": 28
+      },
+      "revId": "49db571e0cc1e5e6de9b3cecb5a9116c7da2661a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbd775a1_2f17abe8",
         "filename": "grpc/prpc/client.go",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2020-06-10T23:34:30Z",
       "side": 1,
       "message": "would be good to trace this, in a separate CL",
+      "revId": "49db571e0cc1e5e6de9b3cecb5a9116c7da2661a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e9273db6_a4a9f71d",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T00:02:28Z",
+      "side": 1,
+      "message": "It is already traced when using server.Server (all HTTP calls are), and instrumenting on the client is not very useful since we don\u0027t collect traces there at all.",
+      "parentUuid": "bbd775a1_2f17abe8",
       "revId": "49db571e0cc1e5e6de9b3cecb5a9116c7da2661a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
