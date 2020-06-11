@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "904b54d0_fa097e9b",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T03:55:03Z",
+      "side": 1,
+      "message": "But it is not golang.org! When I remove \\n, \"golang.org/...\" ends up between anypb and spb and my sensitive eyes start to bleed.",
+      "parentUuid": "482c9a73_9c7291ab",
+      "revId": "a5bd702df901030b8742dd5fed0bec8f020214e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab42cb8b_cc0c56c1",
         "filename": "grpc/prpc/client_test.go",
         "patchSetId": 1
