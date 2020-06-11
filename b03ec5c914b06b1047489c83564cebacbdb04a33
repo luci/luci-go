@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "f9f5601e_e0653611",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-11T00:57:41Z",
+      "side": 1,
+      "message": "I\u0027m not a huge fan of this View Invocation link. As in my other comment, suggest having the invocation/test IDs shown in the header and have the invocation ID be a hyperlink (ideally the test ID too, but I know we don\u0027t support deep linking to test results yet).\n\nI\u0027m also wondering if there\u0027s a way we can inline the raw content link (e.g. append \"(view raw)\" to the end of the artifact ID or something), but I\u0027m fine to leave it where it is for now.",
+      "range": {
+        "startLine": 118,
+        "startChar": 8,
+        "endLine": 118,
+        "endChar": 112
+      },
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0f56dd7b_f44bb9ac",
         "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
         "patchSetId": 7

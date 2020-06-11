@@ -46,6 +46,30 @@
       "revId": "55d72f1be167d742cd763313c63dacc713639db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c36b8bc_788d3f0d",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-11T00:57:41Z",
+      "side": 1,
+      "message": "My point was more that the header currently just says: \"Artifact ID text_diff\"\n\nwhich doesn\u0027t uniquely identify this artifact at all. I think the header should show the IDs for the invocation and test the artifact belongs to.",
+      "parentUuid": "9d0ef199_a0c8c1aa",
+      "range": {
+        "startLine": 76,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 14
+      },
+      "revId": "55d72f1be167d742cd763313c63dacc713639db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
