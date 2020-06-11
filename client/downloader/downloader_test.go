@@ -317,8 +317,13 @@ func TestFetchAndMap(t *testing.T) {
 		onePath := filepath.Join("foo", "one.txt")
 		onePathFile := isolated.BasicFile(data1hash, 0664, int64(len(data1)))
 		isolated1 := isolated.New(h)
+
+		tardata := genTar(t)
+		tarhash := server.Inject(namespace, tardata)
+
 		isolated1.Files = map[string]isolated.File{
-			onePath: onePathFile,
+			onePath:   onePathFile,
+			"tar.tar": isolated.TarFile(tarhash, int64(len(tardata))),
 		}
 		isolated1bytes, _ := json.Marshal(&isolated1)
 		isolated1hash := server.Inject(namespace, isolated1bytes)
@@ -328,7 +333,7 @@ func TestFetchAndMap(t *testing.T) {
 		client := isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace))
 
 		policy := cache.Policies{
-			MaxSize:  1024,
+			MaxSize:  1024 * 1024,
 			MaxItems: 1024,
 		}
 		memcache := cache.NewMemory(policy, namespace)
