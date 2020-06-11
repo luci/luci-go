@@ -22,6 +22,30 @@
       "revId": "040bcfa36b7c2bb3ee0da423be50a256601c7c81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54021280_951db7e6",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-11T00:37:02Z",
+      "side": 0,
+      "message": "Yeah I think that was all it was. This way is much cleaner, thanks :)",
+      "parentUuid": "7ff2a2b8_839b599e",
+      "range": {
+        "startLine": 177,
+        "startChar": 62,
+        "endLine": 177,
+        "endChar": 63
+      },
+      "revId": "040bcfa36b7c2bb3ee0da423be50a256601c7c81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

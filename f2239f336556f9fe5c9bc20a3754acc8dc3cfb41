@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63a9a52a_0a2e7d9a",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-11T00:37:02Z",
+      "side": 1,
+      "message": "this list is a weird mix of truncated types (Context) and parameters (userArgs).\n\nMaybe just move this all to MainFn documentation?",
+      "range": {
+        "startLine": 162,
+        "startChar": 6,
+        "endLine": 162,
+        "endChar": 13
+      },
+      "revId": "f2239f336556f9fe5c9bc20a3754acc8dc3cfb41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
