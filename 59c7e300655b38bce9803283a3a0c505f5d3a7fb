@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d3c88a3b_0ce1997f",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-11T04:02:42Z",
+      "side": 1,
+      "message": "nit: just name this maxConcurrentRequests as well?",
+      "range": {
+        "startLine": 130,
+        "startChar": 27,
+        "endLine": 130,
+        "endChar": 44
+      },
+      "revId": "59c7e300655b38bce9803283a3a0c505f5d3a7fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
