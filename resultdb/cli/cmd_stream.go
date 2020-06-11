@@ -28,6 +28,7 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/text"
@@ -111,7 +112,13 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err := r.validate(ctx, args); err != nil {
 		return r.done(err)
 	}
-	if err := r.initClients(ctx); err != nil {
+
+	loginMode := auth.OptionalLogin
+	// login is required only if it creates a new invocation.
+	if r.isNew {
+		loginMode = auth.SilentLogin
+	}
+	if err := r.initClients(ctx, loginMode); err != nil {
 		return r.done(err)
 	}
 
