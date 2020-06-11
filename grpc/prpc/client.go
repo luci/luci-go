@@ -33,7 +33,6 @@ import (
 	anypb "github.com/golang/protobuf/ptypes/any"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 
-	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -75,8 +74,8 @@ var (
 	DefaultUserAgent = "pRPC Client 1.0"
 
 	// ErrResponseTooBig is returned by Call when the Response's body size exceeds
-	// the Client's soft limit, MaxContentLength.
-	ErrResponseTooBig = errors.New("response too big")
+	// the Client's MaxContentLength limit.
+	ErrResponseTooBig = status.Error(codes.Unavailable, "prpc: response too big")
 )
 
 // Client can make pRPC calls.
@@ -104,8 +103,8 @@ type Client struct {
 	testPostHTTP func(context.Context, error) error
 }
 
-// renderOptions copies client options and applies opts.
-func (c *Client) renderOptions(opts []grpc.CallOption) (*Options, error) {
+// prepareOptions copies client options and applies opts.
+func (c *Client) prepareOptions(opts []grpc.CallOption, serviceName, methodName string) *Options {
 	var options *Options
 	if c.Options != nil {
 		cpy := *c.Options
@@ -113,257 +112,275 @@ func (c *Client) renderOptions(opts []grpc.CallOption) (*Options, error) {
 	} else {
 		options = DefaultOptions()
 	}
-	if err := options.apply(opts); err != nil {
-		return nil, err
+	options.apply(opts)
+	options.host = c.Host
+	options.serviceName = serviceName
+	options.methodName = methodName
+	if options.UserAgent == "" {
+		options.UserAgent = DefaultUserAgent
 	}
-	return options, nil
+	return options
 }
 
-func (c *Client) getHTTPClient() *http.Client {
-	if c.C == nil {
-		return http.DefaultClient
-	}
-	return c.C
-}
-
-// Call makes an RPC.
-// Retries on transient errors according to retry options.
-// Logs HTTP errors.
+// Call performs a remote procedure call.
 //
-// opts must be created by this package.
-// Calling from multiple goroutines concurrently is safe, unless Client is mutated.
-// Called from generated code.
+// Used by the generated code. Calling from multiple goroutines concurrently
+// is safe.
 //
-// If there is a Deadline applied to the Context, it will be forwarded to the
-// server using the HeaderTimeout header.
+// `opts` must be created by this package. Options from google.golang.org/grpc
+// package are not supported. Panics if they are used.
+//
+// Propagates outgoing gRPC metadata provided via metadata.NewOutgoingContext.
+// It will be available via metadata.FromIncomingContext on the other side.
+// Similarly, if there is a deadline in the Context, it is be propagated
+// to the server and applied to the context of the request handler there.
+//
+// Retries on internal transient errors and on gRPC codes considered transient
+// by grpcutil.IsTransientCode. Logs unexpected errors (see ExpectedCode call
+// option).
+//
+// Returns gRPC errors, perhaps with extra structured details if the server
+// provided them. Context errors are converted into gRPC errors as well.
+// See google.golang.org/grpc/status package.
 func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, out proto.Message, opts ...grpc.CallOption) error {
-	options, err := c.renderOptions(opts)
-	if err != nil {
-		return err
-	}
+	options := c.prepareOptions(opts, serviceName, methodName)
 
 	// Due to https://github.com/golang/protobuf/issues/745 bug
 	// in jsonpb handling of FieldMask, which are typically present in the
 	// request, not the response, do request via binary format.
-	inFormat := FormatBinary
+	options.inFormat = FormatBinary
 	reqBody, err := proto.Marshal(in)
 	if err != nil {
-		return err
+		return status.Errorf(codes.Internal, "prpc: failed to marshal the request: %s", err)
 	}
 
-	var outFormat Format
 	switch options.AcceptContentSubtype {
 	case "", mtPRPCEncodingBinary:
-		outFormat = FormatBinary
+		options.outFormat = FormatBinary
 	case mtPRPCEncodingJSONPB:
-		outFormat = FormatJSONPB
+		options.outFormat = FormatJSONPB
 	case mtPRPCEncodingText:
-		return errors.New("text encoding for pRPC calls is not implemented")
+		return status.Errorf(codes.Internal, "prpc: text encoding for pRPC calls is not implemented")
 	default:
-		return fmt.Errorf("unrecognized contentSubtype %q of CallAcceptContentSubtype", options.AcceptContentSubtype)
+		return status.Errorf(codes.Internal, "prpc: unrecognized contentSubtype %q of CallAcceptContentSubtype", options.AcceptContentSubtype)
 	}
 
-	resp, err := c.call(ctx, serviceName, methodName, reqBody, inFormat, outFormat, options)
+	resp, err := c.call(ctx, options, reqBody)
 	if err != nil {
 		return err
 	}
 
-	switch outFormat {
+	switch options.outFormat {
 	case FormatBinary:
-		return proto.Unmarshal(resp, out)
+		err = proto.Unmarshal(resp, out)
 	case FormatJSONPB:
-		return jsonpb.UnmarshalString(string(resp), out)
+		err = jsonpb.UnmarshalString(string(resp), out)
 	default:
-		return errors.New("unreachable")
+		panic("impossible")
 	}
-}
-
-// CallWithFormats makes an RPC, sending and returning the raw data without
-// unmarshalling it.
-// Retries on transient errors according to retry options.
-// Logs HTTP errors.
-// Trims JSONPBPrefix.
-//
-// opts must be created by this package.
-// Calling from multiple goroutines concurrently is safe, unless Client is mutated.
-//
-// If there is a Deadline applied to the Context, it will be forwarded to the
-// server using the HeaderTimeout header.
-func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format,
-	opts ...grpc.CallOption) ([]byte, error) {
-	options, err := c.renderOptions(opts)
 	if err != nil {
-		return nil, err
+		return status.Errorf(codes.Internal, "prpc: failed to unmarshal the response: %s", err)
 	}
-	if options.AcceptContentSubtype != "" {
-		return nil, errors.New("prpc.CallAcceptContentSubtype call option not allowed with `CallWithFormats`" +
-			" because input/output formats are already specified")
-	}
-	return c.call(ctx, serviceName, methodName, in, inf, outf, options)
+
+	return nil
 }
 
-func (c *Client) call(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format,
-	options *Options) ([]byte, error) {
+// CallWithFormats is like Call, but sends and returns raw data without
+// marshaling it.
+//
+// Trims JSONPBPrefix from the response if necessary.
+func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format, opts ...grpc.CallOption) ([]byte, error) {
+	options := c.prepareOptions(opts, serviceName, methodName)
+	if options.AcceptContentSubtype != "" {
+		return nil, status.Errorf(codes.Internal,
+			"prpc: CallAcceptContentSubtype option is not allowed with CallWithFormats "+
+				"because input/output formats are already specified")
+	}
+	options.inFormat = inf
+	options.outFormat = outf
+	return c.call(ctx, options, in)
+}
 
+// call implements Call and CallWithFormats.
+func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte, error) {
 	md, _ := metadata.FromOutgoingContext(ctx)
-	req := prepareRequest(c.Host, serviceName, methodName, md, len(in), inf, outf, options)
+	req := prepareRequest(options, md, in)
 	ctx = logging.SetFields(ctx, logging.Fields{
-		"host":    c.Host,
-		"service": serviceName,
-		"method":  methodName,
+		"host":    options.host,
+		"service": options.serviceName,
+		"method":  options.methodName,
 	})
 
-	// Send the request in a retry loop.
+	// These are populated below based on the response.
 	buf := &bytes.Buffer{}
-	var contentType string
-	err := retry.Retry(
-		ctx,
-		transient.Only(options.Retry),
-		func() error {
-			ctx := ctx
+	contentType := ""
 
-			// If there is a deadline on our Context, set the timeout header on the
-			// request.
-			now := clock.Now(ctx)
-			var requestDeadline time.Time
-			if options.PerRPCTimeout > 0 {
-				requestDeadline = now.Add(options.PerRPCTimeout)
-			}
+	// Send the request in a retry loop. Use transient.Tag to propagate the retry
+	// signal from the loop body.
+	err := retry.Retry(ctx, transient.Only(options.Retry), func() (err error) {
+		contentType, err = c.attemptCall(ctx, options, req, buf)
+		return
+	}, func(err error, sleepTime time.Duration) {
+		logging.Fields{
+			logging.ErrorKey: err,
+			"sleepTime":      sleepTime,
+		}.Warningf(ctx, "RPC failed transiently. Will retry in %s", sleepTime)
+	})
 
-			// Does our parent Context have a deadline?
-			if deadline, ok := ctx.Deadline(); ok && (requestDeadline.IsZero() || deadline.Before(requestDeadline)) {
-				// Outer Context has a shorter deadline than our per-RPC deadline, so
-				// use it.
-				requestDeadline = deadline
-			} else if !requestDeadline.IsZero() {
-				// We have a shorter request deadline. Create a derivative Context for
-				// this request round.
-				var cancelFunc context.CancelFunc
-				ctx, cancelFunc = clock.WithDeadline(ctx, requestDeadline)
-				defer cancelFunc()
-			}
-
-			// If we have a request deadline, apply it to our header.
-			if !requestDeadline.IsZero() {
-				delta := requestDeadline.Sub(now)
-				logging.Debugf(ctx, "RPC %s/%s.%s [deadline %s]", c.Host, serviceName, methodName, delta)
-				if delta <= 0 {
-					// The request has already expired. This will likely never happen,
-					// since the outer Retry loop will have expired, but there is a very
-					// slight possibility of a race.
-					return context.DeadlineExceeded
-				}
-				req.Header.Set(HeaderTimeout, EncodeTimeout(delta))
-			} else {
-				logging.Debugf(ctx, "RPC %s/%s.%s", c.Host, serviceName, methodName)
-			}
-
-			// Send the request.
-			req.GetBody = func() (io.ReadCloser, error) {
-				return ioutil.NopCloser(bytes.NewReader(in)), nil
-			}
-			req.Body, _ = req.GetBody()
-			res, err := ctxhttp.Do(ctx, c.getHTTPClient(), req)
-			if res != nil && res.Body != nil {
-				defer res.Body.Close()
-			}
-			if c.testPostHTTP != nil {
-				err = c.testPostHTTP(ctx, err)
-			}
-			if err != nil {
-				// Treat all errors here as transient.
-				return errors.Annotate(err, "failed to send request").Tag(transient.Tag).Err()
-			}
-
-			if options.resHeaderMetadata != nil {
-				*options.resHeaderMetadata = metadataFromHeaders(res.Header)
-			}
-			contentType = res.Header.Get("Content-Type")
-
-			// Read the response body.
-			buf.Reset()
-			if err := c.readResponseBody(ctx, buf, res); err != nil {
-				return err
-			}
-
-			if options.resTrailerMetadata != nil {
-				*options.resTrailerMetadata = metadataFromHeaders(res.Trailer)
-			}
-
-			// Read status. If it is not OK, return an error.
-			switch st, err := c.readStatus(res, buf); {
-			case err != nil:
-				return err
-
-			case st != nil:
-				err := st.Err()
-				if grpcutil.IsTransientCode(st.Code()) {
-					err = transient.Tag.Apply(err)
-				}
-				return err
-
-			default:
-				return nil
-			}
-		},
-		func(err error, sleepTime time.Duration) {
-			logging.Fields{
-				logging.ErrorKey: err,
-				"sleepTime":      sleepTime,
-			}.Warningf(ctx, "RPC failed transiently. Will retry in %s", sleepTime)
-		},
-	)
-
-	// We have to unwrap gRPC errors because grpc.Code and grpc.ErrorDesc
-	// functions do not work with error wrappers.
-	// https://github.com/grpc/grpc-go/issues/494
-	if err != nil {
-		innerErr := errors.Unwrap(err)
-		code := grpc.Code(innerErr)
-
-		// Log only unexpected codes.
-		ignore := innerErr == context.Canceled
-		for _, expected := range options.expectedCodes {
-			if code == expected {
-				ignore = true
-				break
-			}
+	// Parse the response content type, verify it is what we expect.
+	if err == nil {
+		switch f, formatErr := FormatFromContentType(contentType); {
+		case formatErr != nil:
+			err = status.Errorf(codes.Internal, "prpc: bad response content type %q: %s", contentType, formatErr)
+		case f != options.outFormat:
+			err = status.Errorf(codes.Internal, "prpc: output format (%q) doesn't match expected format (%q)",
+				f.MediaType(), options.outFormat.MediaType())
 		}
-		if !ignore {
-			logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
-		}
-
-		return nil, innerErr
 	}
 
-	// Parse the response content type.
-	f, err := FormatFromContentType(contentType)
 	if err != nil {
+		// The context error is more interesting if it is present.
+		switch cerr := ctx.Err(); {
+		case cerr == context.DeadlineExceeded:
+			err = status.Error(codes.DeadlineExceeded, "prpc: overall deadline exceeded")
+		case cerr == context.Canceled:
+			err = status.Error(codes.Canceled, "prpc: call canceled")
+		case cerr != nil:
+			err = status.Error(codes.Unknown, cerr.Error())
+		}
+
+		// Unwrap the error since we wrap it in attemptCall exclusively to attach
+		// a retry signal. call(...) **must** return standard unwrapped gRPC errors.
+		err = errors.Unwrap(err)
+
+		// Convert the error into status.Error if it wasn't a status before.
+		if status.Code(err) == codes.Unknown {
+			err = status.Convert(err).Err()
+		}
+
+		// Log only on unexpected codes.
+		if code := grpc.Code(err); code != codes.Canceled {
+			ignore := false
+			for _, expected := range options.expectedCodes {
+				if code == expected {
+					ignore = true
+					break
+				}
+			}
+			if !ignore {
+				logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
+			}
+		}
+
+		// Do not return metadata from failed attempts.
+		options.resetResponseMetadata()
 		return nil, err
-	}
-	if f != outf {
-		return nil, fmt.Errorf("output format (%s) doesn't match expected format (%s)", f.MediaType(), outf.MediaType())
 	}
 
 	out := buf.Bytes()
-	if outf == FormatJSONPB {
+	if options.outFormat == FormatJSONPB {
 		out = bytes.TrimPrefix(out, bytesJSONPBPrefix)
 	}
 	return out, nil
 }
 
-// readResponseBody reads the response body to dest.
+// attemptCall makes one attempt at performing an RPC.
+//
+// Writes the raw response to the provided buffer, returns its content type.
+//
+// Returns gRPC errors. They may be wrapped and tagged with transient.Tag if
+// they should be retried.
+func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Request, buf *bytes.Buffer) (contentType string, err error) {
+	// Respect PerRPCTimeout option.
+	now := clock.Now(ctx)
+	var requestDeadline time.Time
+	if options.PerRPCTimeout > 0 {
+		requestDeadline = now.Add(options.PerRPCTimeout)
+	}
+
+	// Does our parent Context have a deadline?
+	if deadline, ok := ctx.Deadline(); ok && (requestDeadline.IsZero() || deadline.Before(requestDeadline)) {
+		// Outer Context has a shorter deadline than our per-RPC deadline, so
+		// use it.
+		requestDeadline = deadline
+	} else if !requestDeadline.IsZero() {
+		// We have a shorter request deadline. Create a context for this attempt.
+		var cancel context.CancelFunc
+		ctx, cancel = clock.WithDeadline(ctx, requestDeadline)
+		defer cancel()
+	}
+
+	// If we have a request deadline, propagate it to the server.
+	if !requestDeadline.IsZero() {
+		delta := requestDeadline.Sub(now)
+		if delta <= 0 {
+			// The request has already expired. This will likely never happen, since
+			// the outer Retry loop will have expired, but there is a very slight
+			// possibility of a race. No need to tag as transient, there's no time
+			// left to retry it.
+			return "", status.Error(codes.DeadlineExceeded, "prpc: overall deadline exceeded")
+		}
+		logging.Debugf(ctx, "RPC %s/%s.%s [deadline %s]", options.host, options.serviceName, options.methodName, delta)
+		req.Header.Set(HeaderTimeout, EncodeTimeout(delta))
+	} else {
+		logging.Debugf(ctx, "RPC %s/%s.%s", options.host, options.serviceName, options.methodName)
+		req.Header.Del(HeaderTimeout)
+	}
+
+	client := c.C
+	if client == nil {
+		client = http.DefaultClient
+	}
+
+	// Send the request.
+	req.Body, _ = req.GetBody()
+	res, err := client.Do(req.WithContext(ctx))
+	if res != nil && res.Body != nil {
+		// TODO(vadimsh): Maybe we should drain the body first to enable the
+		// connection reuse. Mostly relevant for RPCs aborted via the context
+		// cancelation.
+		defer res.Body.Close()
+	}
+	if c.testPostHTTP != nil {
+		err = c.testPostHTTP(ctx, err)
+	}
+	if err != nil {
+		return "", transientHTTPError(err, "when sending request")
+	}
+
+	if options.resHeaderMetadata != nil {
+		*options.resHeaderMetadata = metadataFromHeaders(res.Header)
+	}
+	if err := c.readResponseBody(ctx, buf, res); err != nil {
+		return "", err
+	}
+	if options.resTrailerMetadata != nil {
+		*options.resTrailerMetadata = metadataFromHeaders(res.Trailer)
+	}
+
+	// Read the RPC status (perhaps with details). This is nil on success.
+	err = c.readStatus(res, buf)
+	if grpcutil.IsTransientCode(status.Code(err)) {
+		err = transient.Tag.Apply(err)
+	}
+	return res.Header.Get("Content-Type"), err
+}
+
+// readResponseBody copies the response body into dest.
+//
 // If the response body size exceeds the limits or the declared size, returns
-// a non-nil error.
+// ErrResponseTooBig. All other errors (including context errors) when reading
+// the body are tagged as transient.
 func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *http.Response) error {
 	limit := c.MaxContentLength
 	if limit <= 0 {
 		limit = DefaultMaxContentLength
 	}
 
+	dest.Reset()
 	if l := r.ContentLength; l > 0 {
 		if l > int64(limit) {
-			logging.Errorf(ctx, "ContentLength header exceeds soft response body limit: %d > %d.", l, limit)
+			logging.Errorf(ctx, "ContentLength header exceeds response body limit: %d > %d.", l, limit)
 			return ErrResponseTooBig
 		}
 		limit = int(l)
@@ -372,23 +389,24 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 
 	limitedBody := io.LimitReader(r.Body, int64(limit))
 	if _, err := dest.ReadFrom(limitedBody); err != nil {
-		return fmt.Errorf("failed to read response body: %s", err)
+		return transientHTTPError(err, "when reading response")
 	}
 
 	// If there is more data in the body Reader, it means that the response
 	// size has exceeded our limit.
 	var probeB [1]byte
 	if n, err := r.Body.Read(probeB[:]); n > 0 || err != io.EOF {
-		logging.Errorf(ctx, "Soft response body limit %d exceeded.", limit)
+		logging.Errorf(ctx, "Response body limit %d exceeded.", limit)
 		return ErrResponseTooBig
 	}
 
 	return nil
 }
 
-// readStatus retrieves the status from the response.
-// Returns (nil, nil) if status is OK.
-func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) (*status.Status, error) {
+// readStatus retrieves the detailed status from the response.
+//
+// Puts it into a status.New(...).Err() error.
+func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) error {
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
 		if r.StatusCode >= 500 {
@@ -400,21 +418,22 @@ func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) (*status.St
 			if r.StatusCode == http.StatusServiceUnavailable {
 				code = codes.Unavailable
 			}
-			return status.New(code, c.readErrorMessage(bodyBuf)), nil
+			return status.New(code, c.readErrorMessage(bodyBuf)).Err()
 		}
 
 		// Not a valid pRPC response.
-		return nil, fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, c.readErrorMessage(bodyBuf))
+		return status.Errorf(codes.Internal,
+			"prpc: no %s header, HTTP status %d, body: %q",
+			HeaderGRPCCode, r.StatusCode, c.readErrorMessage(bodyBuf))
 	}
 
 	code, err := strconv.Atoi(codeHeader)
 	if err != nil {
-		// Not a valid pRPC response.
-		return nil, fmt.Errorf("invalid grpc code %q: %s", codeHeader, err)
+		return status.Errorf(codes.Internal, "prpc: invalid %s header value %q", HeaderGRPCCode, codeHeader)
 	}
 
 	if codes.Code(code) == codes.OK {
-		return nil, nil
+		return nil
 	}
 
 	sp := &spb.Status{
@@ -422,15 +441,15 @@ func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) (*status.St
 		Message: strings.TrimSuffix(c.readErrorMessage(bodyBuf), "\n"),
 	}
 	if sp.Details, err = c.readStatusDetails(r); err != nil {
-		return nil, err
+		return err
 	}
-	return status.FromProto(sp), nil
+	return status.FromProto(sp).Err()
 }
 
 // readErrorMessage reads an error message from a body buffer.
-// Respects c.ErrBodySize.
 //
-// If the error message is too long, trims it and appends "...".
+// Respects c.ErrBodySize. If the error message is too long, trims it and
+// appends "...".
 func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 	ret := bodyBuf.Bytes()
 
@@ -455,30 +474,30 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 }
 
 // readStatusDetails reads google.rpc.Status.details from the response headers.
+//
+// Returns gRPC errors.
 func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 	values := r.Header[HeaderStatusDetail]
 	if len(values) == 0 {
 		return nil, nil
 	}
 
-	b64 := base64.StdEncoding
-
 	ret := make([]*anypb.Any, len(values))
 	var buf []byte
 	for i, v := range values {
-		sz := b64.DecodedLen(len(v))
+		sz := base64.StdEncoding.DecodedLen(len(v))
 		if cap(buf) < sz {
 			buf = make([]byte, sz)
 		}
 
-		n, err := b64.Decode(buf[:sz], []byte(v))
+		n, err := base64.StdEncoding.Decode(buf[:sz], []byte(v))
 		if err != nil {
-			return nil, fmt.Errorf("invalid header %s: %s", HeaderStatusDetail, v)
+			return nil, status.Errorf(codes.Internal, "prpc: invalid header %s: %q", HeaderStatusDetail, v)
 		}
 
 		msg := &anypb.Any{}
 		if err := proto.Unmarshal(buf[:n], msg); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal a status detail: %s", err)
+			return nil, status.Errorf(codes.Internal, "prpc: failed to unmarshal status detail: %s", err)
 		}
 		ret[i] = msg
 	}
@@ -486,16 +505,15 @@ func (c *Client) readStatusDetails(r *http.Response) ([]*anypb.Any, error) {
 	return ret, nil
 }
 
-// prepareRequest creates an HTTP request for an RPC,
-// except it does not set the request body.
-func prepareRequest(host, serviceName, methodName string, md metadata.MD, contentLength int, inf, outf Format, options *Options) *http.Request {
-	if host == "" {
-		panic("Host is not set")
-	}
-
+// prepareRequest creates an HTTP request for an RPC.
+//
+// Initializes GetBody, so that the request can be resent multiple times when
+// retrying.
+func prepareRequest(options *Options, md metadata.MD, body []byte) *http.Request {
 	// Convert headers to HTTP canonical form (i.e. Title-Case). Extract Host
-	// header, it is special and must be passed via http.Request.Host.
-	headers := make(http.Header, len(md))
+	// header, it is special and must be passed via http.Request.Host. Preallocate
+	// 5 more slots (for 4 headers below and for the RPC deadline header).
+	headers := make(http.Header, len(md)+5)
 	hostHdr := ""
 	for key, vals := range md {
 		if len(vals) == 0 {
@@ -509,32 +527,32 @@ func prepareRequest(host, serviceName, methodName string, md metadata.MD, conten
 		}
 	}
 
-	req := &http.Request{
-		Method: "POST",
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   host,
-			Path:   fmt.Sprintf("/prpc/%s/%s", serviceName, methodName),
-		},
-		Host:   hostHdr,
-		Header: headers,
-	}
+	// Add protocol-related headers.
+	headers.Set("Content-Type", options.inFormat.MediaType())
+	headers.Set("Accept", options.outFormat.MediaType())
+	headers.Set("User-Agent", options.UserAgent)
+	headers.Set("Content-Length", strconv.Itoa(len(body)))
+	// TODO(nodir): add "Accept-Encoding: gzip" when pRPC server supports it.
+
+	scheme := "https"
 	if options.Insecure {
-		req.URL.Scheme = "http"
+		scheme = "http"
 	}
 
-	// Set headers.
-	req.Header.Set("Content-Type", inf.MediaType())
-	req.Header.Set("Accept", outf.MediaType())
-	userAgent := options.UserAgent
-	if userAgent == "" {
-		userAgent = DefaultUserAgent
+	return &http.Request{
+		Method: "POST",
+		URL: &url.URL{
+			Scheme: scheme,
+			Host:   options.host,
+			Path:   fmt.Sprintf("/prpc/%s/%s", options.serviceName, options.methodName),
+		},
+		Host:          hostHdr,
+		Header:        headers,
+		ContentLength: int64(len(body)),
+		GetBody: func() (io.ReadCloser, error) {
+			return ioutil.NopCloser(bytes.NewReader(body)), nil
+		},
 	}
-	req.Header.Set("User-Agent", userAgent)
-	req.ContentLength = int64(contentLength)
-	req.Header.Set("Content-Length", strconv.Itoa(contentLength))
-	// TODO(nodir): add "Accept-Encoding: gzip" when pRPC server supports it.
-	return req
 }
 
 // metadataFromHeaders copies an http.Header object into a metadata.MD map.
@@ -552,4 +570,19 @@ func metadataFromHeaders(h http.Header) metadata.MD {
 		md[strings.ToLower(k)] = v
 	}
 	return md
+}
+
+// transientHTTPError transforms and annotates errors from http.Client.
+//
+// Tries to recognize context errors.
+func transientHTTPError(err error, msg string) error {
+	switch errors.Unwrap(err) {
+	case context.DeadlineExceeded:
+		err = status.Errorf(codes.DeadlineExceeded, "prpc: %s: attempt deadline exceeded", msg)
+	case context.Canceled:
+		err = status.Errorf(codes.Canceled, "prpc: %s: attempt canceled", msg)
+	default:
+		err = status.Errorf(codes.Internal, "prpc: %s: %s", msg, err)
+	}
+	return transient.Tag.Apply(err)
 }

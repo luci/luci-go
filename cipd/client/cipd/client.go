@@ -55,7 +55,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -639,7 +638,7 @@ func (client *clientImpl) ModifyACL(ctx context.Context, prefix string, changes 
 	meta, err := client.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
-	if code := grpc.Code(err); code != codes.OK && code != codes.NotFound {
+	if code := status.Code(err); code != codes.OK && code != codes.NotFound {
 		return client.humanErr(err)
 	}
 
@@ -1011,7 +1010,7 @@ func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeo
 			UploadOperationId: opID,
 		})
 		switch {
-		case err == context.DeadlineExceeded:
+		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case err != nil:
 			return client.humanErr(err)
@@ -1156,9 +1155,9 @@ func (client *clientImpl) retryUntilReady(ctx context.Context, timeout time.Dura
 		switch err := cb(ctx); {
 		case err == nil:
 			return nil
-		case err == context.DeadlineExceeded:
+		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
-		case grpc.Code(err) == codes.FailedPrecondition: // the instance is not ready
+		case status.Code(err) == codes.FailedPrecondition: // the instance is not ready
 			logging.Warningf(ctx, "cipd: %s", client.humanErr(err))
 			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay).Incomplete() {
 				return ErrProcessingTimeout
@@ -1672,6 +1671,7 @@ func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin
 var expectedCodes = prpc.ExpectedCode(
 	codes.Aborted,
 	codes.AlreadyExists,
+	codes.Canceled,
 	codes.FailedPrecondition,
 	codes.NotFound,
 	codes.PermissionDenied,

@@ -105,6 +105,9 @@ func (q *queryResults) queryResponses(ctx context.Context, batchC chan<- []proto
 		var err error
 		batch, token, err = q.call(ctx, token)
 		if err != nil || len(batch) == 0 {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			return err
 		}
 
