@@ -698,7 +698,7 @@ func GetVisibleProjects(c context.Context) ([]*Project, error) {
 	}
 	result := []*Project{}
 	for _, proj := range projs {
-		switch allowed, err := IsAllowed(c, proj.ID); {
+		switch allowed, err := CheckACL(c, proj.ACL); {
 		case err != nil:
 			return nil, err
 		case allowed:
