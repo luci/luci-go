@@ -22,6 +22,8 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -415,6 +417,56 @@ func TestClient(t *testing.T) {
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(grpc.Code(err), ShouldEqual, codes.Canceled)
+			})
+
+			Convey("Concurrency limit", func(c C) {
+				const (
+					maxConcurrentRequests = 3
+					totalRequests         = 10
+				)
+
+				cur := int64(0)
+				reports := make(chan int64, totalRequests)
+
+				// For each request record how many parallel requests were running at
+				// the same time.
+				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
+					reports <- atomic.AddInt64(&cur, 1)
+					defer atomic.AddInt64(&cur, -1)
+					// Note: dependence on the real clock is racy, but in the worse case
+					// (if client.Call guts are extremely slow) we'll get a false positive
+					// result. In other words, if the code under test is correct (and it
+					// is right now), the test will always succeed no matter what. If the
+					// code under test is not correct (i.e. regresses), we'll start seeing
+					// test errors most of the time, with occasional false successes.
+					time.Sleep(200 * time.Millisecond)
+					sayHello(c)(w, r)
+				})
+				defer server.Close()
+
+				client.MaxConcurrentRequests = maxConcurrentRequests
+
+				// Execute a bunch of requests concurrently.
+				wg := sync.WaitGroup{}
+				for i := 0; i < totalRequests; i++ {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						err := client.Call(ctx, "prpc.Greeter", "SayHello", &HelloRequest{Name: "John"}, &HelloReply{})
+						c.So(err, ShouldBeNil)
+					}()
+				}
+				wg.Wait()
+
+				// Make sure concurrency limit wasn't violated.
+				for i := 0; i < totalRequests; i++ {
+					select {
+					case concur := <-reports:
+						So(concur, ShouldBeLessThanOrEqualTo, maxConcurrentRequests)
+					default:
+						t.Fatal("Some requests didn't execute")
+					}
+				}
 			})
 		})
 	})

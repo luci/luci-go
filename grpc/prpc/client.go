@@ -25,8 +25,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
+
+	"golang.org/x/sync/semaphore"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -79,8 +82,12 @@ var (
 )
 
 // Client can make pRPC calls.
+//
+// Changing fields after the first Call(...) is undefined behavior.
 type Client struct {
-	C *http.Client // if nil, uses http.DefaultClient
+	C       *http.Client // if nil, uses http.DefaultClient
+	Host    string       // host and optionally a port number of the target server
+	Options *Options     // if nil, DefaultOptions() are used
 
 	// ErrBodySize is the number of bytes to truncate error messages from HTTP
 	// responses to.
@@ -95,8 +102,22 @@ type Client struct {
 	// If <= 0, DefaultMaxContentLength will be used.
 	MaxContentLength int
 
-	Host    string   // host and optionally a port number of the target server.
-	Options *Options // if nil, DefaultOptions() are used.
+	// MaxConcurrentRequests, if > 0, limits how many requests to the server can
+	// execute at the same time. If 0 (default), there's no limit.
+	//
+	// If there are more concurrent Call(...) calls than the limit, excessive ones
+	// will block until there are execution "slots" available or the context is
+	// canceled. This waiting does not count towards PerRPCTimeout.
+	//
+	// The primary purpose of this mechanism is to reduce strain on the local
+	// network resources such as number of HTTP connections and HTTP2 streams.
+	// Note that it will not help with OOM problems, since blocked calls (and
+	// their bodies) all queue up in memory anyway.
+	MaxConcurrentRequests int
+
+	// Semaphore to limit concurrency, initialized in concurrencySem().
+	semOnce sync.Once
+	sem     *semaphore.Weighted
 
 	// testPostHTTP is a test-installed callback that is invoked after an HTTP
 	// request finishes.
@@ -284,6 +305,17 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 	return out, nil
 }
 
+// concurrencySem returns a semaphore to use to limit concurrency or nil if
+// the concurrency is unlimited.
+func (c *Client) concurrencySem() *semaphore.Weighted {
+	c.semOnce.Do(func() {
+		if c.MaxConcurrentRequests > 0 {
+			c.sem = semaphore.NewWeighted(int64(c.MaxConcurrentRequests))
+		}
+	})
+	return c.sem
+}
+
 // attemptCall makes one attempt at performing an RPC.
 //
 // Writes the raw response to the provided buffer, returns its content type.
@@ -291,6 +323,14 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 // Returns gRPC errors. They may be wrapped and tagged with transient.Tag if
 // they should be retried.
 func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Request, buf *bytes.Buffer) (contentType string, err error) {
+	// Wait until there's an execution slot available.
+	if sem := c.concurrencySem(); sem != nil {
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return "", status.FromContextError(err).Err()
+		}
+		defer sem.Release(1)
+	}
+
 	// Respect PerRPCTimeout option.
 	now := clock.Now(ctx)
 	var requestDeadline time.Time
