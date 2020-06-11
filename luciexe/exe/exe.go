@@ -38,8 +38,9 @@ import (
 )
 
 const (
-	// ArgsDelim separates the args for this luciexe client from the args for
-	// user program.
+	// ArgsDelim separates args for user program from the args needed by this
+	// luciexe wrapper (e.g. `--output` flag). All args provided after the
+	// first ArgsDelim will passed to user program.
 	ArgsDelim = "--"
 )
 
@@ -167,10 +168,10 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootst
 //   for protecting it if it can be modified from multiple goroutines.
 //  - userArgs: All command line arguments supplied after first `--`.
 //  - BuildSender: A sender func which should be called after modifying the
-//    provided *Build. The BuildSender is synchronous and locked; it may only
-//    be called once at a time. It will marshal the current *Build, then send
-//    it. Writes to the *Build should be synchronized with calls to the
-//    BuildSender.
+//   provided *Build. The BuildSender is synchronous and locked; it may only
+//   be called once at a time. It will marshal the current *Build, then send
+//   it. Writes to the *Build should be synchronized with calls to the
+//   BuildSender.
 //
 // This calls os.Exit on completion of `main`, or panics if something went
 // wrong. If main panics, this is converted to an INFRA_FAILURE. If main returns
