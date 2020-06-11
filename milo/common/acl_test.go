@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -44,11 +44,11 @@ func TestACL(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test Environment", t, func() {
-		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
+		c := memory.Use(context.Background())
 		c = gologger.StdConfig.Use(c)
 
 		Convey("Set up projects", func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+			c = cfgclient.Use(c, memcfg.New(aclConfgs))
 			err := UpdateProjects(c)
 			So(err, ShouldBeNil)
 
