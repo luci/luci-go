@@ -43,11 +43,12 @@ const ExitCodeCommandFailure = 1001
 // All rdb subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
 	subcommands.CommandRunBase
-	authFlags     authcli.Flags
-	host          string
-	json          bool
-	forceInsecure bool
-	fallbackHost  string
+	authFlags         authcli.Flags
+	host              string
+	json              bool
+	forceInsecure     bool
+	fallbackHost      string
+	maxConcurrentRPCs int
 
 	http        *http.Client
 	prpcClient  *prpc.Client
@@ -63,6 +64,9 @@ func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
 	`))
 	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, text.Doc(`
 		Force HTTP, as opposed to HTTPS.
+	`))
+	r.Flags.IntVar(&r.maxConcurrentRPCs, "max-concurrent-rpcs", 20, text.Doc(`
+		Max concurrent RPCs to the resultdb instance (0 for unlimited).
 	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
 	// Copy the given default to the struct s.t. initClients
@@ -107,6 +111,10 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return fmt.Errorf("invalid host %q", r.host)
 	}
 
+	if r.maxConcurrentRPCs < 0 {
+		return fmt.Errorf("invalid -max-concurrent-rpcs %d", r.maxConcurrentRPCs)
+	}
+
 	// Create clients.
 	rpcOpts := prpc.DefaultOptions()
 	rpcOpts.Insecure = r.forceInsecure || lhttp.IsLocalHost(r.host)
@@ -116,9 +124,10 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("resultdb CLI, instanceID=%q", info.InstanceID)
 	r.prpcClient = &prpc.Client{
-		C:       r.http,
-		Host:    r.host,
-		Options: rpcOpts,
+		C:                     r.http,
+		Host:                  r.host,
+		Options:               rpcOpts,
+		MaxConcurrentRequests: r.maxConcurrentRPCs,
 	}
 	r.resultdb = pb.NewResultDBPRPCClient(r.prpcClient)
 	r.recorder = pb.NewRecorderPRPCClient(r.prpcClient)
