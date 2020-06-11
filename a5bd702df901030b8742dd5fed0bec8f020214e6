@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "482c9a73_9c7291ab",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-11T03:47:19Z",
+      "side": 1,
+      "message": "nit: remove. there is google.golang.org in L37",
+      "revId": "a5bd702df901030b8742dd5fed0bec8f020214e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ab42cb8b_cc0c56c1",
         "filename": "grpc/prpc/client_test.go",
         "patchSetId": 1
