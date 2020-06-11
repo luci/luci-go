@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "29492994_a80b4a27",
+        "filename": "resultdb/proto/sink/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-11T18:06:17Z",
+      "side": 1,
+      "message": "i think this might make little sense to the reader, since we never return TsetResult message.\n\nmaybe just \"is generated\"",
+      "range": {
+        "startLine": 34,
+        "startChar": 40,
+        "endLine": 34,
+        "endChar": 62
+      },
+      "revId": "77c12150cc8eb6fc71843d4d7c2edff918e2facc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
