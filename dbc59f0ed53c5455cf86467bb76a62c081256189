@@ -16,6 +16,24 @@
       "revId": "dbc59f0ed53c5455cf86467bb76a62c081256189",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb3ae40e_e1d0e886",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-11T04:32:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24701f98_2be1f404",
+      "revId": "dbc59f0ed53c5455cf86467bb76a62c081256189",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
