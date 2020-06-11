@@ -25,6 +25,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
@@ -85,7 +86,7 @@ func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(err)
 	}
 
-	if err := r.initClients(ctx); err != nil {
+	if err := r.initClients(ctx, auth.SilentLogin); err != nil {
 		return r.done(err)
 	}
 
