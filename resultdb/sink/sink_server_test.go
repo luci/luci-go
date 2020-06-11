@@ -16,14 +16,18 @@ package sink
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
@@ -98,6 +102,21 @@ func TestReportTestResults(t *testing.T) {
 					check(ctx, cfg, tr, expected)
 				})
 			})
+		})
+
+		Convey("generates a random ResultID, if omitted", func() {
+			now := time.Date(2000, time.May, 2, 3, 4, 5, 0, time.UTC)
+			ctx, _ = testclock.UseTime(ctx, now)
+			ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
+
+			// update the start time to avoid a validation error with
+			// "StartTime cannot be future."
+			tr.StartTime, _ = ptypes.TimestampProto(now.Add(-2 * time.Minute))
+			expected.StartTime = tr.StartTime
+
+			tr.ResultId = ""
+			expected.ResultId = "2000-05-02-03-04-05.000-1ae96956"
+			check(ctx, cfg, tr, expected)
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
