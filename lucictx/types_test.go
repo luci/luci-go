@@ -73,5 +73,17 @@ func TestPredefinedTypes(t *testing.T) {
 
 			So(GetResultDB(c), ShouldResembleProto, resultdb)
 		})
+
+		Convey("realm", func() {
+			So(GetRealm(c), ShouldBeNil)
+
+			r := &Realm{
+				Name: "test:realm",
+			}
+			c = SetRealm(c, r)
+			data, _ := getCurrent(c).sections["realm"]
+			So(string(*data), ShouldEqual, `{"name":"test:realm"}`)
+			So(GetRealm(c), ShouldResembleProto, r)
+		})
 	})
 }
