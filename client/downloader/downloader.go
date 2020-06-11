@@ -517,11 +517,26 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 	})
 }
 
-func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) {
-	hash := details.Digest
+func (d *Downloader) loadOrAddToCache(hash isolated.HexDigest) (*bytes.Buffer, error) {
+	var buf bytes.Buffer
+	var cacheHit bool
+	if d.options.Cache != nil {
+		if r, err := d.options.Cache.Read(hash); err == nil {
+			err := func() error {
+				defer r.Close()
+				if _, err := io.Copy(&buf, r); err != nil {
+					return errors.Annotate(err, "failed to call io.Copy").Err()
+				}
+				return nil
+			}()
+			if err != nil {
+				return nil, err
+			}
+			cacheHit = true
+		}
+	}
 
-	d.pool.Schedule(tarType.Priority(), func() {
-		var buf bytes.Buffer
+	if !cacheHit {
 		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 			buf.Reset()
 			if err := d.c.Fetch(d.ctx, hash, d.track(&buf)); err != nil {
@@ -532,11 +547,32 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 			}
 			return nil
 		}, nil); err != nil {
+			return nil, err
+		}
+
+		if d.options.Cache != nil {
+			if err := d.options.Cache.Add(hash, bytes.NewReader(buf.Bytes())); err != nil {
+				return nil, err
+			}
+		}
+
+	}
+
+	return &buf, nil
+}
+
+func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) {
+	hash := details.Digest
+
+	d.pool.Schedule(tarType.Priority(), func() {
+		buf, err := d.loadOrAddToCache(hash)
+
+		if err != nil {
 			d.addError(tarType, string(hash), err)
 			return
 		}
 
-		tf := tar.NewReader(&buf)
+		tf := tar.NewReader(buf)
 	loop:
 		for {
 			hdr, err := tf.Next()
