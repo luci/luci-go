@@ -16,7 +16,9 @@ package sink
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
@@ -24,6 +26,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
@@ -32,15 +35,24 @@ import (
 
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
-	cfg   ServerConfig
-	rdbCh rdbChannel
+	cfg           ServerConfig
+	rdbCh         rdbChannel
+	resultIDBase  string
+	resultCounter uint32
 }
 
 func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
-	ss := &sinkServer{cfg: cfg}
+	// random bytes to generate a ResultID when ResultID unspecified in
+	// a TestResult.
+	bytes := make([]byte, 4)
+	if _, err := mathrand.Read(ctx, bytes); err != nil {
+		return nil, err
+	}
+	ss := &sinkServer{cfg: cfg, resultIDBase: hex.EncodeToString(bytes)}
 	if err := ss.rdbCh.init(ctx, cfg); err != nil {
 		return nil, err
 	}
+
 	return &sinkpb.DecoratedSink{
 		Service: ss,
 		Prelude: authTokenPrelude(cfg.AuthToken),
@@ -100,6 +112,12 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			def[k] = v
 		}
 		tr.Variant = &typepb.Variant{Def: def}
+
+		// assign a random, unique ID if resultID omitted.
+		if tr.ResultId == "" {
+			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase,
+				atomic.AddUint32(&s.resultCounter, 1))
+		}
 
 		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
