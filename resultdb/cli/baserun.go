@@ -82,7 +82,7 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r.http, err = auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	r.http, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 	if err != nil {
 		return err
 	}
