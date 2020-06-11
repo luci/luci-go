@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10082107_dada810a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T22:52:21Z",
+      "side": 1,
+      "message": "I\u0027m not sure it was actually leaky, but the code had\n\n\tswitch {\n\tcase err \u003d\u003d nil:\n\t\treturn true, nil\n\tcase err \u003d\u003d access.ErrNoAccess:\n\t\treturn false, nil\n\tcase innerError \u003d\u003d config.ErrNoConfig:\n\t\treturn false, grpcutil.NotFoundTag.Apply(err)\n\tdefault:\n\t\treturn false, err\n\t}\n\nSo there were cases when it returned 404. I don\u0027t quite understand err vs innerError business though.",
+      "range": {
+        "startLine": 11,
+        "startChar": 26,
+        "endLine": 12,
+        "endChar": 42
+      },
+      "revId": "ce22f4f74012e03142f9dd7a7a5167b7b73f78d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
