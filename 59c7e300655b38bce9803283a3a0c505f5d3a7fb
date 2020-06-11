@@ -22,6 +22,30 @@
       "revId": "59c7e300655b38bce9803283a3a0c505f5d3a7fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc62712a_901c7969",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-11T04:57:57Z",
+      "side": 1,
+      "message": "I want to keep the flag name as -max-concurrent-rpcs. The variable is named after the flag.",
+      "parentUuid": "d3c88a3b_0ce1997f",
+      "range": {
+        "startLine": 130,
+        "startChar": 27,
+        "endLine": 130,
+        "endChar": 44
+      },
+      "revId": "59c7e300655b38bce9803283a3a0c505f5d3a7fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
