@@ -346,11 +346,13 @@ func TestFetchAndMap(t *testing.T) {
 		})
 
 		So(stats.Duration, ShouldBeGreaterThan, 0)
-		So(stats.ItemsCold, ShouldResemble, []byte{120, 156, 226, 1, 4, 0, 0, 255, 255, 0, 13, 0, 13})
+		So(stats.ItemsCold, ShouldResemble, []byte{120, 156, 226, 249, 162, 15, 8, 0, 0, 255, 255, 2, 62, 1, 48})
 		So(stats.ItemsHot, ShouldResemble, []byte(nil))
 
 		buf, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
 		So(err, ShouldBeNil)
 		So(buf, ShouldResemble, data1)
+
+		So(memcache.Touch(tarhash), ShouldBeTrue)
 	})
 }
