@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6cc31dfc_b667d804",
+        "filename": "milo/frontend/resultui/src/components/test_entry/text_diff_artifacts.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-11T03:02:24Z",
+      "side": 1,
+      "message": "thanks for the advice. added a view raw link.",
+      "parentUuid": "2d7f0182_b380daf1",
+      "range": {
+        "startLine": 56,
+        "startChar": 10,
+        "endLine": 57,
+        "endChar": 121
+      },
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9f5601e_e0653611",
         "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "b20e1cb3_0677e354",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-11T03:02:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9f5601e_e0653611",
+      "range": {
+        "startLine": 118,
+        "startChar": 8,
+        "endLine": 118,
+        "endChar": 112
+      },
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0f56dd7b_f44bb9ac",
         "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
         "patchSetId": 7
@@ -62,6 +110,24 @@
       "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84fad50d_11fcae82",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-11T03:02:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f56dd7b_f44bb9ac",
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +151,30 @@
       "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40ee735e_9f8a11cd",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-11T03:02:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "272a545b_dc04f0fd",
+      "range": {
+        "startLine": 187,
+        "startChar": 19,
+        "endLine": 187,
+        "endChar": 20
+      },
+      "revId": "b03ec5c914b06b1047489c83564cebacbdb04a33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

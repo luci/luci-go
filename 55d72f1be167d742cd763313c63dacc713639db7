@@ -70,6 +70,30 @@
       "revId": "55d72f1be167d742cd763313c63dacc713639db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89d314ea_0e463a6b",
+        "filename": "milo/frontend/resultui/src/pages/artifact_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-11T03:02:24Z",
+      "side": 1,
+      "message": "Make sense. Added other IDs.\nRemoved \u0027ID\u0027 in \u0027Artifact ID\u0027 because it\u0027s a bit repetitive.",
+      "parentUuid": "9c36b8bc_788d3f0d",
+      "range": {
+        "startLine": 76,
+        "startChar": 8,
+        "endLine": 79,
+        "endChar": 14
+      },
+      "revId": "55d72f1be167d742cd763313c63dacc713639db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

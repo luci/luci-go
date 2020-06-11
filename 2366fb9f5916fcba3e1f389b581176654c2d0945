@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "66b04dce_29abe46d",
+        "filename": "milo/frontend/resultui/src/components/test_entry/text_diff_artifacts.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-11T03:02:24Z",
+      "side": 1,
+      "message": "we have links to included invocations too.\nChanged to open in a new tab.\nI\u0027ll convert other links in a separate CL.",
+      "parentUuid": "ae7fb3cf_53b1f615",
+      "range": {
+        "startLine": 56,
+        "startChar": 38,
+        "endLine": 56,
+        "endChar": 65
+      },
+      "revId": "2366fb9f5916fcba3e1f389b581176654c2d0945",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6030dc0_77982fcf",
         "filename": "milo/frontend/resultui/src/pages/artifact_page/content_tab.ts",
         "patchSetId": 4
