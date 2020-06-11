@@ -522,18 +522,51 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 
 	d.pool.Schedule(tarType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
-			buf.Reset()
-			if err := d.c.Fetch(d.ctx, hash, d.track(&buf)); err != nil {
-				return err
+		var cacheHit bool
+		if d.options.Cache != nil {
+			r, err := d.options.Cache.Read(hash)
+			if err != nil {
+				goto download
 			}
-			if got, want := isolated.HashBytes(d.c.Hash(), buf.Bytes()), hash; got != want {
-				return errors.Reason("digest missmatch got %s, want %s", got, want).Tag(transient.Tag).Err()
+
+			err = func() error {
+				defer r.Close()
+				if _, err := io.Copy(&buf, r); err != nil {
+					return errors.Annotate(err, "failed to call io.Copy").Err()
+				}
+				return nil
+			}()
+			if err != nil {
+				d.addError(tarType, string(hash), err)
+				return
 			}
-			return nil
-		}, nil); err != nil {
-			d.addError(tarType, string(hash), err)
-			return
+
+			cacheHit = true
+		}
+
+	download:
+		if !cacheHit {
+			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
+				buf.Reset()
+				if err := d.c.Fetch(d.ctx, hash, d.track(&buf)); err != nil {
+					return err
+				}
+				if got, want := isolated.HashBytes(d.c.Hash(), buf.Bytes()), hash; got != want {
+					return errors.Reason("digest missmatch got %s, want %s", got, want).Tag(transient.Tag).Err()
+				}
+				return nil
+			}, nil); err != nil {
+				d.addError(tarType, string(hash), err)
+				return
+			}
+
+			if d.options.Cache != nil {
+				if err := d.options.Cache.Add(hash, bytes.NewReader(buf.Bytes())); err != nil {
+					d.addError(tarType, string(hash), err)
+					return
+				}
+			}
+
 		}
 
 		tf := tar.NewReader(&buf)
