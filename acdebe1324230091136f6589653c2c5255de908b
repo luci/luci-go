@@ -39,6 +39,30 @@
       "revId": "acdebe1324230091136f6589653c2c5255de908b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f4531ed_8f84c1bc",
+        "filename": "led/ledcli/edit_cr_cl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-12T21:13:15Z",
+      "side": 1,
+      "message": "oh, super. I\u0027ll do that. This code is old :)",
+      "parentUuid": "78413c1e_cf34a688",
+      "range": {
+        "startLine": 150,
+        "startChar": 12,
+        "endLine": 150,
+        "endChar": 50
+      },
+      "revId": "acdebe1324230091136f6589653c2c5255de908b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
