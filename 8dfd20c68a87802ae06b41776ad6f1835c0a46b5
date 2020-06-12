@@ -22,6 +22,30 @@
       "revId": "8dfd20c68a87802ae06b41776ad6f1835c0a46b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6bf0eb0_6a924880",
+        "filename": "config/server/cfgcache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-12T23:00:17Z",
+      "side": 1,
+      "message": "It it documented as \"during init time only\", which implies it should be called serially. Mutexes are usually added to objects that explicitly support concurrent access.",
+      "parentUuid": "ea466aa6_0c684338",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 42
+      },
+      "revId": "8dfd20c68a87802ae06b41776ad6f1835c0a46b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
