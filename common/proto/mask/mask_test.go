@@ -160,22 +160,22 @@ func TestTrim(t *testing.T) {
 		Convey("trim scalar field", func() {
 			msg := &testMsg{Num: 1}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResemble, &testMsg{})
+			So(msg, ShouldResembleProto, &testMsg{})
 		})
 		Convey("keep scalar field", func() {
 			msg := &testMsg{Num: 1}
 			testTrim([]string{"num"}, msg)
-			So(msg, ShouldResemble, &testMsg{Num: 1})
+			So(msg, ShouldResembleProto, &testMsg{Num: 1})
 		})
 		Convey("trim repeated scalar field", func() {
 			msg := &testMsg{Nums: []int32{1, 2}}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResemble, &testMsg{})
+			So(msg, ShouldResembleProto, &testMsg{})
 		})
 		Convey("keep repeated scalar field", func() {
 			msg := &testMsg{Nums: []int32{1, 2}}
 			testTrim([]string{"nums"}, msg)
-			So(msg, ShouldResemble, &testMsg{Nums: []int32{1, 2}})
+			So(msg, ShouldResembleProto, &testMsg{Nums: []int32{1, 2}})
 		})
 		Convey("trim submessage", func() {
 			msg := &testMsg{
@@ -184,7 +184,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResemble, &testMsg{})
+			So(msg, ShouldResembleProto, &testMsg{})
 		})
 		Convey("keep submessage entirely", func() {
 			msg := &testMsg{
@@ -194,7 +194,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msg"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "abc",
@@ -209,7 +209,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msg.str"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				Msg: &testMsg{
 					Str: "abc",
 				},
@@ -223,7 +223,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResemble, &testMsg{})
+			So(msg, ShouldResembleProto, &testMsg{})
 		})
 		Convey("keep subfield of repeated message field entirely", func() {
 			msg := &testMsg{
@@ -233,7 +233,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msgs"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				Msgs: []*testMsg{
 					&testMsg{Num: 1, Str: "abc"},
 					&testMsg{Num: 2, Str: "bcd"},
@@ -248,7 +248,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msgs.*.str"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				Msgs: []*testMsg{
 					&testMsg{Str: "abc"},
 					&testMsg{Str: "bcd"},
@@ -260,7 +260,7 @@ func TestTrim(t *testing.T) {
 				MapStrNum: map[string]int32{"a": 1},
 			}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResemble, &testMsg{})
+			So(msg, ShouldResembleProto, &testMsg{})
 		})
 		Convey("trim map (scalar value)", func() {
 			msg := &testMsg{
@@ -270,7 +270,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_num.a"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				MapStrNum: map[string]int32{
 					"a": 1,
 				},
@@ -284,7 +284,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.a"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": &testMsg{Num: 1},
 				},
@@ -298,7 +298,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.a.num"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": &testMsg{Num: 1},
 				},
@@ -312,7 +312,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.*.num"}, msg)
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": &testMsg{Num: 1},
 					"b": &testMsg{Num: 2},
@@ -328,7 +328,7 @@ func TestTrim(t *testing.T) {
 			}
 			testTrim([]string{"map_str_msg.*.num", "map_str_msg.a"}, msg)
 			// expect keep "a" entirely and "b" partially
-			So(msg, ShouldResemble, &testMsg{
+			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": &testMsg{Num: 1, Str: "abc"},
 					"b": &testMsg{Num: 2},
@@ -338,7 +338,7 @@ func TestTrim(t *testing.T) {
 		Convey("No-op for empty mask trim", func() {
 			m, msg := Mask{}, &testMsg{Num: 1}
 			m.Trim(msg)
-			So(msg, ShouldResemble, &testMsg{Num: 1})
+			So(msg, ShouldResembleProto, &testMsg{Num: 1})
 		})
 		Convey("Error when trim nil message", func() {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)

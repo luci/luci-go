@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package internal.testing;
 
-option go_package = "testingpb";
+option go_package = "go.chromium.org/luci/common/proto/internal/testingpb;testingpb";
 
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
