@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f16acebb_3371b8c1",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-12T07:11:13Z",
+      "side": 1,
+      "message": "bump",
+      "range": {
+        "startLine": 78,
+        "startChar": 13,
+        "endLine": 78,
+        "endChar": 15
+      },
+      "revId": "f5903485f59d4ae3fd59885c83428e3304d35473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "feed2457_673318fe",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-12T07:11:13Z",
+      "side": 1,
+      "message": "add it here, and then follow where this is used (say by `git grep service_account`) and stick into resulting proto.",
+      "revId": "f5903485f59d4ae3fd59885c83428e3304d35473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3f61668_f8b5e197",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-12T07:11:13Z",
+      "side": 1,
+      "message": "in the same file, there is expectation for what gets generated. It should change to actually this string.",
+      "revId": "f5903485f59d4ae3fd59885c83428e3304d35473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
