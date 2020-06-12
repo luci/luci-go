@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aaac57cc_b23bd0a5",
+        "filename": "led/ledcli/edit_cr_cl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-12T00:01:16Z",
+      "side": 1,
+      "message": "btw, it appears we have two parser for these -- in bb tool and in led.",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 63
+      },
+      "revId": "923b8dc27ae4916bfa3e11039e95dd6d19681107",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
