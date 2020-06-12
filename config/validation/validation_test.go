@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -57,6 +59,11 @@ func TestValidation(t *testing.T) {
 		severity, ok := SeverityTag.In(singleErr)
 		So(ok, ShouldBeTrue)
 		So(severity, ShouldEqual, Blocking)
+
+		blocking := err.(*Error).WithSeverity(Blocking)
+		So(blocking.(errors.MultiError), ShouldHaveLength, 1)
+		warns := err.(*Error).WithSeverity(Warning)
+		So(warns, ShouldBeNil)
 	})
 
 	Convey("One simple warning", t, func() {
@@ -70,6 +77,11 @@ func TestValidation(t *testing.T) {
 		severity, ok := SeverityTag.In(singleErr)
 		So(ok, ShouldBeTrue)
 		So(severity, ShouldEqual, Warning)
+
+		blocking := err.(*Error).WithSeverity(Blocking)
+		So(blocking, ShouldBeNil)
+		warns := err.(*Error).WithSeverity(Warning)
+		So(warns.(errors.MultiError), ShouldHaveLength, 1)
 	})
 
 	Convey("Regular usage", t, func() {
@@ -112,5 +124,10 @@ func TestValidation(t *testing.T) {
 			`in "file_1.cfg" (p 1): zzz 3`,
 			`in "file_2.cfg": zzz 4`,
 		})
+
+		blocking := err.(*Error).WithSeverity(Blocking)
+		So(blocking.(errors.MultiError), ShouldHaveLength, 7)
+		warns := err.(*Error).WithSeverity(Warning)
+		So(warns.(errors.MultiError), ShouldHaveLength, 1)
 	})
 }
