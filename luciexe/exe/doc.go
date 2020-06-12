@@ -25,7 +25,7 @@
 //   )
 //
 //   func main() {
-//     exe.Run(func(ctx context.Context, input *bbpb.Build, send exe.BuildSender) error {
+//     exe.Run(func(ctx context.Context, input *bbpb.Build, userArgs []string, send exe.BuildSender) error {
 //       ... do whatever you want here ...
 //       return nil // nil error indicates successful build.
 //     })

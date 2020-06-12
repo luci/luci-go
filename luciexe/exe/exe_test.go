@@ -91,7 +91,7 @@ func TestExe(t *testing.T) {
 
 		Convey(`basic`, func() {
 			Convey(`success`, func() {
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return nil
 				})
 				So(exitCode, ShouldEqual, 0)
@@ -101,7 +101,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`failure`, func() {
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return errors.New("bad stuff")
 				})
 				So(exitCode, ShouldEqual, 1)
@@ -112,7 +112,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`infra failure`, func() {
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return errors.New("bad stuff", InfraErrorTag)
 				})
 				So(exitCode, ShouldEqual, 1)
@@ -123,7 +123,7 @@ func TestExe(t *testing.T) {
 			})
 
 			Convey(`panic`, func() {
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					panic(errors.New("bad stuff"))
 				})
 				So(exitCode, ShouldEqual, 2)
@@ -135,7 +135,7 @@ func TestExe(t *testing.T) {
 		})
 
 		Convey(`send`, func() {
-			exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+			exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 				build.SummaryMarkdown = "Hi. I did stuff."
 				bs()
 				return errors.New("oh no i failed")
@@ -153,7 +153,7 @@ func TestExe(t *testing.T) {
 		})
 
 		Convey(`send (zlib)`, func() {
-			exitCode := runCtx(ctx, &args, bootstrapGet, []Option{WithZlibCompression(5)}, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+			exitCode := runCtx(ctx, args, bootstrapGet, []Option{WithZlibCompression(5)}, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 				build.SummaryMarkdown = "Hi. I did stuff."
 				bs()
 				return errors.New("oh no i failed")
@@ -178,12 +178,11 @@ func TestExe(t *testing.T) {
 			Convey(`binary`, func() {
 				outFile := filepath.Join(tdir, "out.pb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
 				So(exitCode, ShouldEqual, 0)
-				So(args, ShouldResemble, []string{"fake_test_executable"})
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
@@ -196,12 +195,11 @@ func TestExe(t *testing.T) {
 			Convey(`textpb`, func() {
 				outFile := filepath.Join(tdir, "out.textpb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
 				So(exitCode, ShouldEqual, 0)
-				So(args, ShouldResemble, []string{"fake_test_executable"})
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
@@ -215,12 +213,11 @@ func TestExe(t *testing.T) {
 			Convey(`jsonpb`, func() {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
-				exitCode := runCtx(ctx, &args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, bs BuildSender) error {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
 				So(exitCode, ShouldEqual, 0)
-				So(args, ShouldResemble, []string{"fake_test_executable"})
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
@@ -229,6 +226,32 @@ func TestExe(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
 					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\"\n}")
+			})
+
+			Convey(`pass through user args`, func() {
+				// Delimiter inside user args should also be passed through
+				expectedUserArgs := []string{"foo", "bar", ArgsDelim, "baz"}
+				Convey(`when output is not specified`, func() {
+					args = append(args, ArgsDelim)
+					args = append(args, expectedUserArgs...)
+					exitcode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+						So(userArgs, ShouldResemble, expectedUserArgs)
+						return nil
+					})
+					So(exitcode, ShouldEqual, 0)
+				})
+				Convey(`when output is specified`, func() {
+					tdir, err := ioutil.TempDir("", "luciexe-exe-test")
+					So(err, ShouldBeNil)
+					defer os.RemoveAll(tdir)
+					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), ArgsDelim)
+					args = append(args, expectedUserArgs...)
+					exitcode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+						So(userArgs, ShouldResemble, expectedUserArgs)
+						return nil
+					})
+					So(exitcode, ShouldEqual, 0)
+				})
 			})
 		})
 	})
