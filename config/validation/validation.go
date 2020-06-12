@@ -36,8 +36,22 @@ type Error struct {
 }
 
 // Error makes *Error implement 'error' interface.
-func (v *Error) Error() string {
-	return v.Errors.Error()
+func (e *Error) Error() string {
+	return e.Errors.Error()
+}
+
+// WithSeverity returns a multi-error with errors of a given severity only.
+func (e *Error) WithSeverity(s Severity) error {
+	var filtered errors.MultiError
+	for _, valErr := range e.Errors {
+		if severity, ok := SeverityTag.In(valErr); ok && severity == s {
+			filtered = append(filtered, valErr)
+		}
+	}
+	if len(filtered) != 0 {
+		return filtered
+	}
+	return nil
 }
 
 // Context is an accumulator for validation errors.
