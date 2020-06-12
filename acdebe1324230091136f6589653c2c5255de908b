@@ -63,6 +63,30 @@
       "revId": "acdebe1324230091136f6589653c2c5255de908b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dfa351aa_89cfac6d",
+        "filename": "led/ledcli/edit_cr_cl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-12T21:15:48Z",
+      "side": 1,
+      "message": "updated to the new client, but didn\u0027t add authentication; TBH I\u0027d rather just have users provide the patchset directly, then this would be entirely an offline operation.",
+      "parentUuid": "5f4531ed_8f84c1bc",
+      "range": {
+        "startLine": 150,
+        "startChar": 12,
+        "endLine": 150,
+        "endChar": 50
+      },
+      "revId": "acdebe1324230091136f6589653c2c5255de908b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
