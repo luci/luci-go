@@ -55,13 +55,19 @@ func checkStillInitTime() {
 // method to access an actual LRU cache associated with this handle.
 //
 // The cache itself lives inside a context. See WithProcessCacheData.
-type LRUHandle int
+type LRUHandle struct{ h int }
+
+// Valid returns true if h was initialized.
+func (h LRUHandle) Valid() bool { return h.h != 0 }
 
 // LRU returns global lru.Cache referenced by this handle.
 //
 // If the context doesn't have ProcessCacheData installed, this will panic.
 func (h LRUHandle) LRU(c context.Context) *lru.Cache {
-	return c.Value(&processCacheKey).(*ProcessCacheData).caches[int(h)]
+	if h.h == 0 {
+		panic("calling LRU on a uninitialized LRUHandle")
+	}
+	return c.Value(&processCacheKey).(*ProcessCacheData).caches[h.h-1]
 }
 
 // RegisterLRUCache is used during init time to declare an intent that a package
@@ -72,7 +78,7 @@ func (h LRUHandle) LRU(c context.Context) *lru.Cache {
 func RegisterLRUCache(capacity int) LRUHandle {
 	checkStillInitTime()
 	registeredCaches = append(registeredCaches, registeredCache{capacity})
-	return LRUHandle(len(registeredCaches) - 1)
+	return LRUHandle{len(registeredCaches)}
 }
 
 // SlotHandle is indirect pointer to a registered process cache slot.
@@ -84,7 +90,10 @@ func RegisterLRUCache(capacity int) LRUHandle {
 // method to access the value, potentially refreshing it, if necessary.
 //
 // The value itself lives inside a context. See WithProcessCacheData.
-type SlotHandle int
+type SlotHandle struct{ h uint32 }
+
+// Valid returns true if h was initialized.
+func (h SlotHandle) Valid() bool { return h.h != 0 }
 
 // FetchCallback knows how to grab a new value for the cache slot (if prev is
 // nil) or refresh the known one (if prev is not nil).
@@ -99,7 +108,10 @@ type FetchCallback func(prev interface{}) (updated interface{}, exp time.Duratio
 //
 // If the context doesn't have ProcessCacheData installed, this will panic.
 func (h SlotHandle) Fetch(c context.Context, cb FetchCallback) (interface{}, error) {
-	return c.Value(&processCacheKey).(*ProcessCacheData).slots[int(h)].Get(c, lazyslot.Fetcher(cb))
+	if h.h == 0 {
+		panic("calling Fetch on a uninitialized SlotHandle")
+	}
+	return c.Value(&processCacheKey).(*ProcessCacheData).slots[h.h-1].Get(c, lazyslot.Fetcher(cb))
 }
 
 // RegisterCacheSlot is used during init time to preallocate a place for the
@@ -108,7 +120,7 @@ func (h SlotHandle) Fetch(c context.Context, cb FetchCallback) (interface{}, err
 // The actual cache itself will be stored in ProcessCacheData inside a context.
 func RegisterCacheSlot() SlotHandle {
 	checkStillInitTime()
-	return SlotHandle(atomic.AddUint32(&registeredSlots, 1) - 1)
+	return SlotHandle{atomic.AddUint32(&registeredSlots, 1)}
 }
 
 // ProcessCacheData holds all process-cached data (internally).
