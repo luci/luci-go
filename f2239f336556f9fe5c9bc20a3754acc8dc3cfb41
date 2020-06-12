@@ -22,6 +22,30 @@
       "revId": "f2239f336556f9fe5c9bc20a3754acc8dc3cfb41",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da5c6009_8aa0d2a6",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-12T03:41:29Z",
+      "side": 1,
+      "message": "Done and used parameter name only now as reader can see the type of the arguments from function signature.",
+      "parentUuid": "63a9a52a_0a2e7d9a",
+      "range": {
+        "startLine": 162,
+        "startChar": 6,
+        "endLine": 162,
+        "endChar": 13
+      },
+      "revId": "f2239f336556f9fe5c9bc20a3754acc8dc3cfb41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
