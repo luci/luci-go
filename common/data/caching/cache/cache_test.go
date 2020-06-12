@@ -154,7 +154,11 @@ func TestNewDisk(t *testing.T) {
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
 
-		_, err = NewDisk(pol, "non absolute path", namespace)
+		cwd, err := os.Getwd()
+		So(err, ShouldBeNil)
+		rel, err := filepath.Rel(td, cwd)
+		So(err, ShouldBeNil)
+		_, err = NewDisk(pol, rel, namespace)
 		So(err, ShouldBeNil)
 	})
 
