@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,6 +35,13 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
+)
+
+const (
+	// ArgsDelim separates args for user program from the args needed by this
+	// luciexe wrapper (e.g. `--output` flag). All args provided after the
+	// first ArgsDelim will passed to user program.
+	ArgsDelim = "--"
 )
 
 // BuildSender is a function which may be called within the callback of Run to
@@ -57,28 +65,39 @@ var InfraErrorTag = errors.BoolTag{Key: errors.NewTagKey("infra_error")}
 type bsg func() (*bootstrap.Bootstrap, error)
 
 // MainFn is the function signature you must implement in your callback to Run.
-type MainFn func(ctx context.Context, input *bbpb.Build, send BuildSender) error
+//
+// Args:
+//  - ctx: The context will be canceled when the program receives the os
+//   Interrupt or SIGTERM (on unix) signal. The context also has standard go
+//   logging setup.
+//  - input: The initial Build state, as read from stdin. The build is not
+//   protected by a mutex of any sort, so the `MainFn` is responsible
+//   for protecting it if it can be modified from multiple goroutines.
+//  - userArgs: All command line arguments supplied after first `ArgsDelim`.
+//  - send: A send func which should be called after modifying the provided
+//   build. The BuildSender is synchronous and locked; it may only be called
+//   once at a time. It will marshal the current build, then send it. Writes
+//   to the build should be synchronized with calls to the BuildSender.
+type MainFn func(ctx context.Context, input *bbpb.Build, userargs []string, send BuildSender) error
 
-func mkOutputHandler(args *[]string, build *bbpb.Build) func() {
-	var output string
-	for i, arg := range *args {
-		if arg == luciexe.OutputCLIArg {
-			output = (*args)[i+1] // let it panic
-			*args = append((*args)[:i], (*args)[i+2:]...)
-			break
+func splitArgs(args []string) ([]string, []string) {
+	for i, arg := range args {
+		if arg == ArgsDelim {
+			return args[:i], args[i+1:]
 		}
 	}
+	return args, nil
+}
 
-	codec, err := luciexe.BuildFileCodecForPath(output)
-	if err != nil {
-		panic(errors.Annotate(err, "%s", luciexe.OutputCLIArg).Err())
-	}
-	if codec.IsNoop() {
+func mkOutputHandler(exeArgs []string, build *bbpb.Build) func() {
+	fs := flag.NewFlagSet(exeArgs[0], flag.ExitOnError)
+	outputFlag := luciexe.AddOutputFlagToSet(fs)
+	fs.Parse(exeArgs[1:])
+	if outputFlag.Codec.IsNoop() {
 		return nil
 	}
-
 	return func() {
-		if err := luciexe.WriteBuildFile(output, build); err != nil {
+		if err := outputFlag.Write(build); err != nil {
 			panic(errors.Annotate(err, "writing final build").Err())
 		}
 	}
@@ -153,28 +172,12 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootst
 
 // Run executes the `main` callback with a basic Context.
 //
-// The context will be canceled when the program receives the os.Interrupt or
-// SIGTERM (on unix) signal.
-//
-// The context has standard go logging setup.
-//
-// The main function is also given a *Build (the initial Build state, as read
-// from stdin), and a BuildSender (which should be called after modifying the
-// provided *Build).
-//
-// The *Build is not protected by a mutex of any sort, so the `main` function is
-// responsible for protecting it if it can be modified from multiple goroutines.
-//
-// The BuildSender is synchronous and locked; it may only be called once at
-// a time. It will marshal the current *Build, then send it. Writes to the
-// *Build should be synchronized with calls to the BuildSender.
-//
 // This calls os.Exit on completion of `main`, or panics if something went
 // wrong. If main panics, this is converted to an INFRA_FAILURE. If main returns
 // a non-nil error, this is converted to FAILURE, unless the InfraErrorTag is
 // set on the error (in which case it's converted to INFRA_FAILURE).
 func Run(main MainFn, options ...Option) {
-	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), &os.Args, bootstrap.Get, options, main))
+	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), os.Args, bootstrap.Get, options, main))
 }
 
 func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
@@ -184,16 +187,17 @@ func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
 	build.SummaryMarkdown += fmt.Sprintf("Final %s: %s", flavor, errlike)
 }
 
-func runCtx(ctx context.Context, args *[]string, bootstrapGet bsg, opts []Option, main MainFn) int {
+func runCtx(ctx context.Context, args []string, bootstrapGet bsg, opts []Option, main MainFn) int {
 	cfg := &config{}
 	for _, o := range opts {
 		if o != nil {
 			o(cfg)
 		}
 	}
+	exeArgs, userArgs := splitArgs(args)
 
 	build := &bbpb.Build{}
-	if handleFn := mkOutputHandler(args, build); handleFn != nil {
+	if handleFn := mkOutputHandler(exeArgs, build); handleFn != nil {
 		defer handleFn()
 	}
 
@@ -206,12 +210,12 @@ func runCtx(ctx context.Context, args *[]string, bootstrapGet bsg, opts []Option
 	}()
 	defer sendBuild()
 
-	return runUserCode(ctx, build, sendBuild, main)
+	return runUserCode(ctx, build, userArgs, sendBuild, main)
 }
 
 // runUserCode should convert all user code errors/panic's into non-panicing
 // state in `build`.
-func runUserCode(ctx context.Context, build *bbpb.Build, sendBuild BuildSender, main MainFn) (retcode int) {
+func runUserCode(ctx context.Context, build *bbpb.Build, userArgs []string, sendBuild BuildSender, main MainFn) (retcode int) {
 	defer func() {
 		if errI := recover(); errI != nil {
 			retcode = 2
@@ -227,7 +231,7 @@ func runUserCode(ctx context.Context, build *bbpb.Build, sendBuild BuildSender, 
 	cCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	signals.HandleInterrupt(cancel)
-	if err := main(cCtx, build, sendBuild); err != nil {
+	if err := main(cCtx, build, userArgs, sendBuild); err != nil {
 		if InfraErrorTag.In(err) {
 			build.Status = bbpb.Status_INFRA_FAILURE
 			appendError(build, "infra error", err)

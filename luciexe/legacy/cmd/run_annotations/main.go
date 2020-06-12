@@ -41,7 +41,7 @@ func check(err error) {
 }
 
 func main() {
-	exe.Run(func(ctx context.Context, build *pb.Build, sendBuild exe.BuildSender) error {
+	exe.Run(func(ctx context.Context, build *pb.Build, userArgs []string, sendBuild exe.BuildSender) error {
 		opts := struct {
 			Args []string `json:"args"`
 		}{}
