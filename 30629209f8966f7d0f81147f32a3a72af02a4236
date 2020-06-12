@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d9971ad_25b3bd35",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-12T07:12:11Z",
+      "side": 1,
+      "message": "is escaping automatic? (i can never remember)",
+      "revId": "30629209f8966f7d0f81147f32a3a72af02a4236",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
