@@ -22,6 +22,30 @@
       "revId": "9b03d0a3d12383c2afd86903cb56ea0d9cc06c8c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbceb471_daea2f69",
+        "filename": "server/caching/process.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-12T20:25:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ace64f1_736ce026",
+      "range": {
+        "startLine": 61,
+        "startChar": 19,
+        "endLine": 61,
+        "endChar": 25
+      },
+      "revId": "9b03d0a3d12383c2afd86903cb56ea0d9cc06c8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
