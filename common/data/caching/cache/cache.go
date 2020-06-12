@@ -367,13 +367,15 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	e := d.lru.items.entries[digest].Value.(*entry)
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, errors.Annotate(err, "failed to get stat for %s", digest).Err()
+	}
 
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
-	d.used = append(d.used, int64(e.value))
+	d.used = append(d.used, fi.Size())
 	return f, nil
 }
 
