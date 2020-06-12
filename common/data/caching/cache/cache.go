@@ -362,10 +362,15 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	if !digest.Validate(d.h) {
 		return nil, os.ErrInvalid
 	}
+
+	d.mu.Lock()
 	f, err := os.Open(d.itemPath(digest))
 	if err != nil {
+		d.mu.Unlock()
 		return nil, err
 	}
+	d.lru.touch(digest)
+	d.mu.Unlock()
 
 	fi, err := f.Stat()
 	if err != nil {
