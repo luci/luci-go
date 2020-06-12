@@ -21,12 +21,15 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
-	"github.com/andygrunwald/go-gerrit"
 	"github.com/maruel/subcommands"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	gerritapi "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/led/job"
 )
 
@@ -39,15 +42,11 @@ func editCrCLCmd(opts cmdBaseOptions) *subcommands.Command {
 was triggered via Gerrit.
 
 Recognized URLs:
-	https://<gerrit_host>/#/c/<issue>
-	https://<gerrit_host>/#/c/<issue>/<patchset>
-	https://<gerrit_host>/c/<issue>
-	https://<gerrit_host>/c/<issue>/<patchset>
-	https://<gerrit_host>/c/<path/to/project>/+/<issue>
-	https://<gerrit_host>/c/<path/to/project>/+/<issue>/<patchset>
+	https://<gerrit_host>/c/<path/to/project>/+/<change>
+	https://<gerrit_host>/c/<path/to/project>/+/<change>/<patchset>
 
 If you provide a CL missing <patchset> AND <gerrit_host> has public read access,
-this will fill in the patchset from the latest version of the issue. Otherwise
+this will fill in the patchset from the latest version of the change. Otherwise
 this will fail and ask you to provide the full CL/patchset url.
 
 By default, when adding a CL, this will clear all existing CLs on the job, unless
@@ -81,13 +80,15 @@ func (c *cmdEditCl) initFlags(opts cmdBaseOptions) {
 func (c *cmdEditCl) jobInput() bool                  { return true }
 func (c *cmdEditCl) positionalRange() (min, max int) { return 1, 1 }
 
-func parseCrChangeListURL(clURL string) (*bbpb.GerritChange, error) {
+type patchsetResolver func(host string, change int64) (ps int64, err error)
+
+func parseCrChangeListURL(clURL string, resolvePatchset patchsetResolver) (*bbpb.GerritChange, error) {
 	p, err := url.Parse(clURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "URL_TO_CHANGELIST is invalid").Err()
+		return nil, errors.Annotate(err, "URL_TO_CHANGELIST").Err()
 	}
 	if !strings.HasSuffix(p.Hostname(), "-review.googlesource.com") {
-		return nil, errors.Annotate(err, "Only *-review.googlesource.com URLs are supported.").Err()
+		return nil, errors.New("only *-review.googlesource.com URLs are supported")
 	}
 
 	var toks []string
@@ -96,25 +97,25 @@ func parseCrChangeListURL(clURL string) (*bbpb.GerritChange, error) {
 	}
 
 	if len(toks) == 0 {
-		// https://<gerrit_host>/#/c/<issue>
-		// https://<gerrit_host>/#/c/<issue>/<patchset>
-		return nil, errors.Reason("old gerrit URL: %q", clURL).Err()
+		// https://<gerrit_host>/#/c/<change>
+		// https://<gerrit_host>/#/c/<change>/<patchset>
+		return nil, errors.Reason("old/empty gerrit URL: %q", clURL).Err()
 	} else if toks[0] != "c" {
 		return nil, errors.Reason("Unknown changelist URL format: %q", clURL).Err()
 	}
 	toks = toks[1:] // remove "c"
 
 	// toks ==                 v --------------------------------v
-	// https://<gerrit_host>/c/<issue>
-	// https://<gerrit_host>/c/<issue>/<patchset>
-	// https://<gerrit_host>/c/<project/path>/+/<issue>
-	// https://<gerrit_host>/c/<project/path>/+/<issue>/<patchset>
+	// https://<gerrit_host>/c/<change>
+	// https://<gerrit_host>/c/<change>/<patchset>
+	// https://<gerrit_host>/c/<project/path>/+/<change>
+	// https://<gerrit_host>/c/<project/path>/+/<change>/<patchset>
 
 	var projectToks []string
-	var issuePatchsetToks []string
+	var changePatchsetToks []string
 	for i, tok := range toks {
 		if tok == "+" {
-			projectToks, issuePatchsetToks = toks[:i], toks[i+1:]
+			projectToks, changePatchsetToks = toks[:i], toks[i+1:]
 			break
 		}
 	}
@@ -122,49 +123,64 @@ func parseCrChangeListURL(clURL string) (*bbpb.GerritChange, error) {
 	if len(projectToks) == 0 {
 		return nil, errors.Reason("gerrit URL missing project: %q", clURL).Err()
 	}
-	if len(issuePatchsetToks) == 0 {
-		return nil, errors.Reason("gerrit URL missing issue/patchset: %q", clURL).Err()
+	if len(changePatchsetToks) == 0 {
+		return nil, errors.Reason("gerrit URL missing change/patchset: %q", clURL).Err()
 	}
 
 	ret := &bbpb.GerritChange{
 		Host:    p.Hostname(),
 		Project: strings.Join(projectToks, "/"),
 	}
-	ret.Change, err = strconv.ParseInt(issuePatchsetToks[0], 10, 64)
+	ret.Change, err = strconv.ParseInt(changePatchsetToks[0], 10, 64)
 	if err != nil {
-		return nil, errors.Reason("gerrit URL parsing issue %q from %q", issuePatchsetToks[0], clURL).Err()
+		return nil, errors.Reason("gerrit URL parsing change %q from %q", changePatchsetToks[0], clURL).Err()
 	}
-	if len(issuePatchsetToks) > 1 {
-		ret.Patchset, err = strconv.ParseInt(issuePatchsetToks[1], 10, 64)
+	if len(changePatchsetToks) > 1 {
+		ret.Patchset, err = strconv.ParseInt(changePatchsetToks[1], 10, 64)
 		if err != nil {
-			return nil, errors.Reason("gerrit URL parsing patchset %q from %q", issuePatchsetToks[1], clURL).Err()
+			return nil, errors.Reason("gerrit URL parsing patchset %q from %q", changePatchsetToks[1], clURL).Err()
 		}
 	} else {
-		gc, err := gerrit.NewClient("https://"+ret.Host, nil)
+		ret.Patchset, err = resolvePatchset(ret.Host, ret.Change)
 		if err != nil {
-			return nil, errors.Annotate(err, "creating new gerrit client").Err()
+			return nil, errors.Annotate(
+				err, "resolving patchset from Gerrit Url %q", clURL).Err()
 		}
+	}
 
-		ci, rsp, err := gc.Changes.GetChangeDetail(strconv.FormatInt(ret.Change, 10), &gerrit.ChangeOptions{
-			AdditionalFields: []string{"CURRENT_REVISION"}})
-		if rsp != nil && rsp.StatusCode == http.StatusUnauthorized {
-			return nil, errors.Annotate(err,
-				"Gerrit host %q requires authentication and no patchset was provided in CL URL %q. "+
-					"Please include the patchset you want in your URL (or `0` to ignore this).",
-				ret.Host, clURL,
+	return ret, nil
+}
+
+func gerritResolver(ctx context.Context) patchsetResolver {
+	return func(host string, change int64) (int64, error) {
+		// TODO(iannucci): allow authentication for internal hosts.
+		gc, err := gerritapi.NewRESTClient(http.DefaultClient, host, false)
+		if err != nil {
+			return 0, errors.Annotate(err, "creating new gerrit client").Err()
+		}
+		ci, err := gc.GetChange(ctx, &gerrit.GetChangeRequest{
+			Number: change,
+			Options: []gerrit.QueryOption{
+				gerrit.QueryOption_CURRENT_REVISION,
+			},
+		})
+		if grpc.Code(err) == codes.Unauthenticated {
+			return 0, errors.Annotate(err,
+				"Gerrit host %q requires authentication and no patchset was provided. "+
+					"Please include the patchset you want in your URL (or add a patchset "+
+					"`0` to ignore this).", host,
 			).Err()
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "GetChangeDetail").Err()
+			return 0, errors.Annotate(err, "GetChange").Err()
 		}
 
 		// There's only one.
 		for _, rd := range ci.Revisions {
-			ret.Patchset = int64(rd.Number)
-			break
+			return int64(rd.Number), nil
 		}
+		panic("impossible")
 	}
-	return ret, nil
 }
 
 func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ subcommands.Env) (err error) {
@@ -172,7 +188,7 @@ func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ s
 		return errors.New("cannot specify both -remove and -no-implicit-clear")
 	}
 
-	c.gerritChange, err = parseCrChangeListURL(positionals[0])
+	c.gerritChange, err = parseCrChangeListURL(positionals[0], gerritResolver(ctx))
 	return errors.Annotate(err, "invalid URL_TO_CHANGESET").Err()
 }
 
