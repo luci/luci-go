@@ -42,16 +42,7 @@ func check(err error) {
 
 func main() {
 	exe.Run(func(ctx context.Context, build *pb.Build, userArgs []string, sendBuild exe.BuildSender) error {
-		opts := struct {
-			Args []string `json:"args"`
-		}{}
-		err := exe.ParseProperties(build.Input.Properties, map[string]interface{}{
-			"run_annotations": &opts,
-		})
-		check(err)
-
-		args := opts.Args
-		if len(args) == 0 {
+		if len(userArgs) == 0 {
 			return errors.New("No arguments were provided")
 		}
 
@@ -59,7 +50,7 @@ func main() {
 		check(err)
 
 		// Start the subprocess.
-		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		cmd := exec.CommandContext(ctx, userArgs[0], userArgs[1:]...)
 		stdout, err := cmd.StdoutPipe()
 		check(err)
 		stderr, err := cmd.StderrPipe()
@@ -93,7 +84,7 @@ func main() {
 		// they are all consumed.
 		processor := annotee.New(ctx, annotee.Options{
 			Client:                 ldBootstrap.Client,
-			Execution:              annotation.ProbeExecution(os.Args, os.Environ(), cwd),
+			Execution:              annotation.ProbeExecution(userArgs, os.Environ(), cwd),
 			MetadataUpdateInterval: 30 * time.Second,
 			Offline:                false,
 			CloseSteps:             true,
