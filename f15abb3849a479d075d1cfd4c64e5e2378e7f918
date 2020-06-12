@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a223095a_2dffa348",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-12T17:11:53Z",
+      "side": 1,
+      "message": "Bug is not public the way this CL is, please explain it here since it doesn\u0027t contain any sensitive rationale. Though in the bug you seem unsure, I imagine you\u0027re sure now? Since you can just compile bb with this patch and see if it repros.",
+      "revId": "f15abb3849a479d075d1cfd4c64e5e2378e7f918",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
