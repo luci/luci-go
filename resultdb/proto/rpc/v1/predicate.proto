@@ -16,8 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.rpc.v1;
 
-import "google/api/field_behavior.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 
@@ -76,9 +75,9 @@ message TestExonerationPredicate {
 message VariantPredicate {
   oneof predicate {
     // A variant must be equal this definition exactly.
-    luci.resultdb.type.Variant equals = 1;
+    Variant equals = 1;
 
     // A variant's key-value pairs must contain those in this one.
-    luci.resultdb.type.Variant contains = 2;
+    Variant contains = 2;
   }
 }

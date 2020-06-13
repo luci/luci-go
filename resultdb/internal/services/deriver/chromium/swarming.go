@@ -49,7 +49,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/util"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -155,15 +154,15 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 }
 
 type parsedSwarmingTags struct {
-	baseVariant  *typepb.Variant
+	baseVariant  *pb.Variant
 	testIDPrefix string
-	tags         []*typepb.StringPair
+	tags         []*pb.StringPair
 }
 
 func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingTags {
 	ninjaTarget := ""
 	ret := parsedSwarmingTags{
-		baseVariant: &typepb.Variant{Def: make(map[string]string, 3)},
+		baseVariant: &pb.Variant{Def: make(map[string]string, 3)},
 	}
 	for _, t := range task.Tags {
 		switch k, v := strpair.Parse(t); k {

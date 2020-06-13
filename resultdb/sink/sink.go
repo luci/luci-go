@@ -33,7 +33,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -78,7 +77,7 @@ type ServerConfig struct {
 
 	// BaseVariant will be added to the variant of each TestResult. If there are duplicate
 	// keys, the variant value given by the test command always wins.
-	BaseVariant *typepb.Variant
+	BaseVariant *pb.Variant
 
 	// Listener for tests
 	testListener net.Listener

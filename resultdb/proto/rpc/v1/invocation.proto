@@ -19,7 +19,7 @@ package luci.resultdb.rpc.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
 
@@ -69,7 +69,7 @@ message Invocation {
 
   // Invocation-level string key-value pairs.
   // A key can be repeated.
-  repeated luci.resultdb.type.StringPair tags = 5;
+  repeated StringPair tags = 5;
 
   // == Finalization ===========================================================
 
