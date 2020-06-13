@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 const (
@@ -123,24 +122,6 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	}
-	return err
-}
-
-// ValidateSinkTestResult returns a non-nil error if msg is invalid.
-func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
-	ec := checker{&err}
-	switch {
-	case msg == nil:
-		return unspecified()
-	case ec.isErr(ValidateTestID(msg.TestId), "test_id"):
-	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
-	// skip `Expected`
-	case ec.isErr(ValidateEnum(int32(msg.Status), pb.TestStatus_name), "status"):
-	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
-	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
-	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	case ec.isErr(ValidateSinkArtifacts(msg.Artifacts), "artifacts"):
 	}
 	return err
 }
