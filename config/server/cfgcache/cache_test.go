@@ -81,6 +81,11 @@ func TestProtoReflection(t *testing.T) {
 	})
 
 	Convey("With mocks", t, func() {
+		const (
+			rev1 = "1704e5202d83e699573530524b078a03a160979f"
+			rev2 = "407a70a0258bccc412a570f069c14caa64fab3bb"
+		)
+
 		configs := map[config.Set]cfgmem.Files{
 			serviceConfigSet: {testEntry.Path: `seconds: 1`},
 		}
@@ -90,20 +95,22 @@ func TestProtoReflection(t *testing.T) {
 		ctx = cfgclient.Use(ctx, cfgmem.New(configs))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("Empty cache", func() {
-			_, err := testEntry.Fetch(ctx, nil)
-			So(err, ShouldErrLike, "no such entity")
+		Convey("Eager update success", func() {
+			meta := config.Meta{}
 
-			_, err = testEntry.Get(ctx, nil)
+			pb, err := testEntry.Get(ctx, &meta)
+			So(err, ShouldBeNil)
+			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
+			So(meta.Revision, ShouldEqual, rev1)
+		})
+
+		Convey("Eager update fail", func() {
+			configs[serviceConfigSet][testEntry.Path] = `broken`
+			_, err := testEntry.Get(ctx, nil)
 			So(err, ShouldErrLike, "no such entity")
 		})
 
 		Convey("Update works", func() {
-			const (
-				rev1 = "1704e5202d83e699573530524b078a03a160979f"
-				rev2 = "407a70a0258bccc412a570f069c14caa64fab3bb"
-			)
-
 			meta := config.Meta{}
 
 			// Initial update.
