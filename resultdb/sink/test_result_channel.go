@@ -67,6 +67,7 @@ func (c *testResultChannel) init(ctx context.Context) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, c.cfg.UpdateToken)
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
 		req := c.prepareReportTestResultsRequest(ctx, b)
+		// TODO(1017288) - send upload tasks to artifactChannel
 		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
