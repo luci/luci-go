@@ -51,7 +51,7 @@ func TestOperation(t *testing.T) {
 			}
 
 			// No Object when in UPLOADING.
-			So(op.ToProto("wrappedID"), ShouldResemble, &api.UploadOperation{
+			So(op.ToProto("wrappedID"), ShouldResembleProto, &api.UploadOperation{
 				OperationId:  "wrappedID",
 				UploadUrl:    "http://upload-url.example.com",
 				Status:       api.UploadStatus_UPLOADING,
@@ -60,7 +60,7 @@ func TestOperation(t *testing.T) {
 
 			// With Object when in PUBLISHED.
 			op.Status = api.UploadStatus_PUBLISHED
-			So(op.ToProto("wrappedID"), ShouldResemble, &api.UploadOperation{
+			So(op.ToProto("wrappedID"), ShouldResembleProto, &api.UploadOperation{
 				OperationId: "wrappedID",
 				UploadUrl:   "http://upload-url.example.com",
 				Status:      api.UploadStatus_PUBLISHED,

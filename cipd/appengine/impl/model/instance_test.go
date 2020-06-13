@@ -57,7 +57,7 @@ func TestRegisterInstance(t *testing.T) {
 		}
 
 		Convey("To proto", func() {
-			So(inst.Proto(), ShouldResemble, &api.Instance{
+			So(inst.Proto(), ShouldResembleProto, &api.Instance{
 				Package: "a/b/c",
 				Instance: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA1,

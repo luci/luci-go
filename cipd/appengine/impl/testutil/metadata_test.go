@@ -21,6 +21,7 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMetadataStore(t *testing.T) {
@@ -87,15 +88,15 @@ func TestMetadataStore(t *testing.T) {
 			Fingerprint: "ccAI44xVAoO3SUzK2x6b0wZMD00",
 			UpdateUser:  "user:a@example.com",
 		}
-		So(meta, ShouldResemble, expected_a)
+		So(meta, ShouldResembleProto, expected_a)
 
 		// Again, sees the updated metadata now.
 		meta, err = s.UpdateMetadata(ctx, "a/", func(m *api.PrefixMetadata) error {
-			So(m, ShouldResemble, expected_a)
+			So(m, ShouldResembleProto, expected_a)
 			return nil
 		})
 		So(err, ShouldBeNil)
-		So(meta, ShouldResemble, expected_a)
+		So(meta, ShouldResembleProto, expected_a)
 
 		// Create metadata for 'a/b/c'.
 		meta, err = s.UpdateMetadata(ctx, "a/b/c", func(m *api.PrefixMetadata) error {
@@ -109,7 +110,7 @@ func TestMetadataStore(t *testing.T) {
 			Fingerprint: "HZozZp-6ZMi8lZp11-w54xJBjhA",
 			UpdateUser:  "user:abc@example.com",
 		}
-		So(meta, ShouldResemble, expected_abc)
+		So(meta, ShouldResembleProto, expected_abc)
 
 		// Create metadata for 'a/b/d' (sibling), to make sure it will not appear
 		// in responses below.
@@ -122,7 +123,7 @@ func TestMetadataStore(t *testing.T) {
 		// Fetching 'a' returns only 'a'.
 		metas, err = s.GetMetadata(ctx, "a")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a})
 
 		// Prefix matches respects '/'.
 		metas, err = s.GetMetadata(ctx, "ab")
@@ -132,17 +133,17 @@ func TestMetadataStore(t *testing.T) {
 		// Still only 'a'.
 		metas, err = s.GetMetadata(ctx, "a/b")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a})
 
 		// And now we also see 'a/b/c'.
 		metas, err = s.GetMetadata(ctx, "a/b/c")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a, expected_abc})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a, expected_abc})
 
 		// And that's all we can ever see, even if we do deeper.
 		metas, err = s.GetMetadata(ctx, "a/b/c/d/e/f")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a, expected_abc})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{expected_a, expected_abc})
 	})
 
 	Convey("Root metadata", t, func() {
@@ -155,7 +156,7 @@ func TestMetadataStore(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		So(rootMeta, ShouldResemble, &api.PrefixMetadata{
+		So(rootMeta, ShouldResembleProto, &api.PrefixMetadata{
 			Fingerprint: "a7QYP7C3AXksn_pfotXl2OwBevc",
 			UpdateUser:  "user:root@example.com",
 		})
@@ -163,16 +164,16 @@ func TestMetadataStore(t *testing.T) {
 		// Fetchable now.
 		metas, err := s.GetMetadata(ctx, "")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 
 		// "/" is also accepted.
 		metas, err = s.GetMetadata(ctx, "/")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 
 		// Make sure UpdateMetadata see the root metadata too.
 		_, err = s.UpdateMetadata(ctx, "", func(m *api.PrefixMetadata) error {
-			So(m, ShouldResemble, rootMeta)
+			So(m, ShouldResembleProto, rootMeta)
 			return nil
 		})
 		So(err, ShouldBeNil)
@@ -187,10 +188,10 @@ func TestMetadataStore(t *testing.T) {
 		// Fetching meta for prefixes picks up root metadata too.
 		metas, err = s.GetMetadata(ctx, "a")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 		metas, err = s.GetMetadata(ctx, "a/b/c")
 		So(err, ShouldBeNil)
-		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta, abMeta})
+		So(metas, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, abMeta})
 	})
 
 	Convey("GetMetadata filters by prefix correctly", t, func() {

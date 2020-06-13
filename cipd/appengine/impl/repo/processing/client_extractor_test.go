@@ -266,12 +266,12 @@ func TestGetResult(t *testing.T) {
 
 			ref, err := out.ToObjectRef()
 			So(err, ShouldBeNil)
-			So(ref, ShouldResemble, &api.ObjectRef{
+			So(ref, ShouldResembleProto, &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: res.ClientBinary.HashDigest,
 			})
 
-			So(out.ObjectRefAliases(), ShouldResemble, []*api.ObjectRef{
+			So(out.ObjectRefAliases(), ShouldResembleProto, []*api.ObjectRef{
 				{HashAlgo: api.HashAlgo_SHA1, HexDigest: phonyHexDigest(api.HashAlgo_SHA1, "c")},
 				{HashAlgo: api.HashAlgo_SHA256, HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "b")},
 			})
@@ -284,12 +284,12 @@ func TestGetResult(t *testing.T) {
 
 			ref, err := res.ToObjectRef()
 			So(err, ShouldBeNil)
-			So(ref, ShouldResemble, &api.ObjectRef{
+			So(ref, ShouldResembleProto, &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: res.ClientBinary.HashDigest,
 			})
 
-			So(res.ObjectRefAliases(), ShouldResemble, []*api.ObjectRef{
+			So(res.ObjectRefAliases(), ShouldResembleProto, []*api.ObjectRef{
 				{HashAlgo: api.HashAlgo_SHA1, HexDigest: res.ClientBinary.HashDigest},
 			})
 		})

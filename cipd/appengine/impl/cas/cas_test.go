@@ -127,7 +127,7 @@ func TestGetObjectURL(t *testing.T) {
 			DownloadFilename: "file.name",
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &api.ObjectURL{
+		So(resp, ShouldResembleProto, &api.ObjectURL{
 			SignedUrl: "http//signed.example.com/bucket/path/SHA256/" +
 				strings.Repeat("a", 64) + "?f=file.name",
 		})
@@ -275,7 +275,7 @@ func TestBeginUpload(t *testing.T) {
 
 			// Rest of the response looks OK too.
 			resp.OperationId = ""
-			So(resp, ShouldResemble, &api.UploadOperation{
+			So(resp, ShouldResembleProto, &api.UploadOperation{
 				UploadUrl: "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				Status:    api.UploadStatus_UPLOADING,
 			})
@@ -309,7 +309,7 @@ func TestBeginUpload(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			resp.OperationId = ""
-			So(resp, ShouldResemble, &api.UploadOperation{
+			So(resp, ShouldResembleProto, &api.UploadOperation{
 				UploadUrl: "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				Status:    api.UploadStatus_UPLOADING,
 			})
@@ -417,7 +417,7 @@ func TestFinishUpload(t *testing.T) {
 				HashAlgo: api.HashAlgo_SHA256,
 			})
 			So(err, ShouldBeNil)
-			So(op, ShouldResemble, &api.UploadOperation{
+			So(op, ShouldResembleProto, &api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -435,7 +435,7 @@ func TestFinishUpload(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -483,7 +483,7 @@ func TestFinishUpload(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId:  op.OperationId,
 					Status:       api.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -498,7 +498,7 @@ func TestFinishUpload(t *testing.T) {
 				HashAlgo: api.HashAlgo_SHA256,
 			})
 			So(err, ShouldBeNil)
-			So(op, ShouldResemble, &api.UploadOperation{
+			So(op, ShouldResembleProto, &api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -512,7 +512,7 @@ func TestFinishUpload(t *testing.T) {
 				UploadOperationId: op.OperationId,
 			})
 			So(err, ShouldBeNil)
-			So(op, ShouldResemble, &api.UploadOperation{
+			So(op, ShouldResembleProto, &api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_VERIFYING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -521,7 +521,7 @@ func TestFinishUpload(t *testing.T) {
 			// Posted the verification task.
 			t := tq.GetScheduledTasks()
 			So(len(t), ShouldEqual, 1)
-			So(t[0].Payload, ShouldResemble, &tasks.VerifyUpload{UploadOperationId: 1})
+			So(t[0].Payload, ShouldResembleProto, &tasks.VerifyUpload{UploadOperationId: 1})
 
 			Convey("Retrying FinishUpload does nothing", func() {
 				// Retrying the call does nothing.
@@ -555,7 +555,7 @@ func TestFinishUpload(t *testing.T) {
 					UploadOperationId: op.OperationId,
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -581,7 +581,7 @@ func TestFinishUpload(t *testing.T) {
 					UploadOperationId: op.OperationId,
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_VERIFYING,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -604,7 +604,7 @@ func TestFinishUpload(t *testing.T) {
 					UploadOperationId: op.OperationId,
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId:  op.OperationId,
 					Status:       api.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -622,7 +622,7 @@ func TestFinishUpload(t *testing.T) {
 				},
 			})
 			So(err, ShouldBeNil)
-			So(op, ShouldResemble, &api.UploadOperation{
+			So(op, ShouldResembleProto, &api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -636,7 +636,7 @@ func TestFinishUpload(t *testing.T) {
 				UploadOperationId: op.OperationId,
 			})
 			So(err, ShouldBeNil)
-			So(op, ShouldResemble, &api.UploadOperation{
+			So(op, ShouldResembleProto, &api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_VERIFYING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -645,7 +645,7 @@ func TestFinishUpload(t *testing.T) {
 			// Posted the verification task.
 			t := tq.GetScheduledTasks()
 			So(len(t), ShouldEqual, 1)
-			So(t[0].Payload, ShouldResemble, &tasks.VerifyUpload{UploadOperationId: 1})
+			So(t[0].Payload, ShouldResembleProto, &tasks.VerifyUpload{UploadOperationId: 1})
 
 			Convey("Successful verification", func() {
 				// Execute the pending verification task.
@@ -666,7 +666,7 @@ func TestFinishUpload(t *testing.T) {
 					UploadOperationId: op.OperationId,
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -693,7 +693,7 @@ func TestFinishUpload(t *testing.T) {
 					UploadOperationId: op.OperationId,
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_ERRORED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -719,7 +719,7 @@ func TestFinishUpload(t *testing.T) {
 					UploadOperationId: op.OperationId,
 				})
 				So(err, ShouldBeNil)
-				So(op, ShouldResemble, &api.UploadOperation{
+				So(op, ShouldResembleProto, &api.UploadOperation{
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
@@ -767,7 +767,7 @@ func TestCancelUpload(t *testing.T) {
 			HashAlgo: api.HashAlgo_SHA256,
 		})
 		So(err, ShouldBeNil)
-		So(op, ShouldResemble, &api.UploadOperation{
+		So(op, ShouldResembleProto, &api.UploadOperation{
 			OperationId: op.OperationId,
 			Status:      api.UploadStatus_UPLOADING,
 			UploadUrl:   uploadURL,
@@ -778,7 +778,7 @@ func TestCancelUpload(t *testing.T) {
 				UploadOperationId: op.OperationId,
 			})
 			So(err, ShouldBeNil)
-			So(op, ShouldResemble, &api.UploadOperation{
+			So(op, ShouldResembleProto, &api.UploadOperation{
 				OperationId: op.OperationId,
 				Status:      api.UploadStatus_CANCELED,
 				UploadUrl:   uploadURL,
@@ -787,7 +787,7 @@ func TestCancelUpload(t *testing.T) {
 			// Should create the TQ task to cleanup.
 			t := tq.GetScheduledTasks()
 			So(t, ShouldHaveLength, 1)
-			So(t[0].Payload, ShouldResemble, &tasks.CleanupUpload{
+			So(t[0].Payload, ShouldResembleProto, &tasks.CleanupUpload{
 				UploadOperationId: 1,
 				UploadUrl:         uploadURL,
 				PathToCleanup:     tempGSPath,
@@ -798,7 +798,7 @@ func TestCancelUpload(t *testing.T) {
 				UploadOperationId: op.OperationId,
 			})
 			So(err, ShouldBeNil)
-			So(op2, ShouldResemble, op)
+			So(op2, ShouldResembleProto, op)
 			So(tq.GetScheduledTasks(), ShouldHaveLength, 1)
 
 			// Execute the pending task.

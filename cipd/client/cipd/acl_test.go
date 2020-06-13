@@ -157,7 +157,7 @@ func TestGrantRevokeRole(t *testing.T) {
 		So(grantRole(m, api.Role_READER, "group:a"), ShouldBeFalse)
 		So(grantRole(m, api.Role_WRITER, "group:a"), ShouldBeTrue)
 
-		So(m, ShouldResemble, &api.PrefixMetadata{
+		So(m, ShouldResembleProto, &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:a", "group:b"}},
 				{Role: api.Role_WRITER, Principals: []string{"group:a"}},
@@ -178,6 +178,6 @@ func TestGrantRevokeRole(t *testing.T) {
 		So(revokeRole(m, api.Role_READER, "group:a"), ShouldBeFalse)
 		So(revokeRole(m, api.Role_WRITER, "group:a"), ShouldBeTrue)
 
-		So(m, ShouldResemble, &api.PrefixMetadata{})
+		So(m, ShouldResembleProto, &api.PrefixMetadata{})
 	})
 }

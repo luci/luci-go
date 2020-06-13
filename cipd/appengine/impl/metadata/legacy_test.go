@@ -255,7 +255,7 @@ func TestLegacyMetadata(t *testing.T) {
 
 		Convey("UpdateMetadata noop call with missing metadata", func() {
 			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
-				So(md, ShouldResemble, &api.PrefixMetadata{Prefix: "z"})
+				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
 				return nil
 			})
 			So(err, ShouldBeNil)
@@ -269,7 +269,7 @@ func TestLegacyMetadata(t *testing.T) {
 
 		Convey("UpdateMetadata creates new metadata", func() {
 			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
-				So(md, ShouldResemble, &api.PrefixMetadata{Prefix: "z"})
+				So(md, ShouldResembleProto, &api.PrefixMetadata{Prefix: "z"})
 				md.UpdateTime = google.NewTimestamp(ts)
 				md.UpdateUser = "user:updater@example.com"
 				md.Acls = []*api.PrefixMetadata_ACL{

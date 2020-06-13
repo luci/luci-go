@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package tasks;
 
+option go_package = "go.chromium.org/luci/cipd/appengine/impl/repo/tasks";
+
 import "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto";
 
 // RunProcessors task runs a processing step on an uploaded package instance.

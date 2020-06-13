@@ -108,21 +108,21 @@ func TestParseInstanceTag(t *testing.T) {
 	Convey("ParseInstanceTag works", t, func() {
 		t, err := ParseInstanceTag("good:tag")
 		So(err, ShouldBeNil)
-		So(t, ShouldResemble, &api.Tag{
+		So(t, ShouldResembleProto, &api.Tag{
 			Key:   "good",
 			Value: "tag",
 		})
 
 		t, err = ParseInstanceTag("good:tag:blah")
 		So(err, ShouldBeNil)
-		So(t, ShouldResemble, &api.Tag{
+		So(t, ShouldResembleProto, &api.Tag{
 			Key:   "good",
 			Value: "tag:blah",
 		})
 
 		t, err = ParseInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~")
 		So(err, ShouldBeNil)
-		So(t, ShouldResemble, &api.Tag{
+		So(t, ShouldResembleProto, &api.Tag{
 			Key:   "good_tag",
 			Value: "A a0$()*+,-./:;<=>@\\_{}~",
 		})
@@ -270,7 +270,7 @@ func TestNormalizePrefixMetadata(t *testing.T) {
 			},
 		}
 		So(NormalizePrefixMetadata(m), ShouldBeNil)
-		So(m, ShouldResemble, &api.PrefixMetadata{
+		So(m, ShouldResembleProto, &api.PrefixMetadata{
 			Prefix: "abc",
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:z"}},

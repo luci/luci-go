@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package messages;
 
+option go_package = "go.chromium.org/luci/cipd/client/cipd/internal/messages";
+
 import "google/protobuf/timestamp.proto";
 
 // BlobWithSHA256 is a wrapper around a binary blob with SHA256 hash to verify
