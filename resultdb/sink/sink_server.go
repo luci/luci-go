@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // sinkServer implements sinkpb.SinkServer.
@@ -37,8 +36,11 @@ type sinkServer struct {
 }
 
 func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
-	ss := &sinkServer{cfg: cfg}
-	if err := ss.rdbCh.init(ctx, cfg); err != nil {
+	ss := &sinkServer{
+		cfg:   cfg,
+		rdbCh: rdbChannel{cfg: cfg},
+	}
+	if err := ss.rdbCh.init(ctx); err != nil {
 		return nil, err
 	}
 	return &sinkpb.DecoratedSink{
@@ -90,16 +92,6 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 	for _, tr := range in.TestResults {
 		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
-
-		// merge the test variants with base variants.
-		def := make(map[string]string, len(s.cfg.BaseVariant.GetDef())+len(tr.Variant.GetDef()))
-		for k, v := range s.cfg.BaseVariant.GetDef() {
-			def[k] = v
-		}
-		for k, v := range tr.Variant.GetDef() {
-			def[k] = v
-		}
-		tr.Variant = &typepb.Variant{Def: def}
 
 		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
