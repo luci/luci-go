@@ -23,9 +23,6 @@ import (
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	sv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/config"
-	memcfg "go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
@@ -41,7 +38,6 @@ func TestPools(t *testing.T) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
 		c, _ = testclock.UseTime(c, RefTime)
-		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		c = auth.WithState(c, &authtest.FakeState{
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
@@ -132,17 +128,4 @@ func TestPools(t *testing.T) {
 			})
 		})
 	})
-}
-
-var bktConfig = `
-buildbucket: {
-	host: "debug"
-	project: "debug"
-}
-`
-
-var bktConfigFull = map[config.Set]memcfg.Files{
-	"services/luci-milo-dev": {
-		"settings.cfg": bktConfig,
-	},
 }

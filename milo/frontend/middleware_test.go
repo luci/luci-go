@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
@@ -107,7 +107,7 @@ func TestFuncs(t *testing.T) {
 			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
 			// Create fake internal project named "secret".
-			c = testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+			c = cfgclient.Use(c, memory.New(map[config.Set]memory.Files{
 				"projects/secret": {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
@@ -137,7 +137,7 @@ func TestFuncs(t *testing.T) {
 			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity, IdentityGroups: []string{"all"}})
 
 			// Create fake public project named "public".
-			c = testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+			c = cfgclient.Use(c, memory.New(map[config.Set]memory.Files{
 				"projects/public": {
 					"project.cfg": "name: \"public\"\naccess: \"group:all\"",
 				},
@@ -171,7 +171,7 @@ func TestFuncs(t *testing.T) {
 			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
 			// Create fake internal project named "secret".
-			c = testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+			c = cfgclient.Use(c, memory.New(map[config.Set]memory.Files{
 				"projects/secret": {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},

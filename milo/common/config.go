@@ -35,9 +35,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	configInterface "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/backend"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
@@ -316,24 +314,32 @@ const globalConfigFilename = "settings.cfg"
 // UpdateServiceConfig fetches the service config from luci-config
 // and then stores a snapshot of the configuration in datastore.
 func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
-	// Load the settings from luci-config.
-	cs := cfgclient.CurrentServiceConfigSet(c)
 	// Acquire the raw config client.
-	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
-	cfg, err := lucicfg.GetConfig(c, cs, globalConfigFilename, false)
+	content := ""
+	meta := configInterface.Meta{}
+	err := cfgclient.Get(c,
+		"services/${appid}",
+		globalConfigFilename,
+		cfgclient.String(&content),
+		&meta,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not load %s from luci-config: %s", globalConfigFilename, err)
 	}
+
+	// Reserialize it into a binary proto to make sure older/newer Milo versions
+	// can safely use the entity when some fields are added/deleted. Text protos
+	// do not guarantee that.
 	settings := &config.Settings{}
-	err = protoutil.UnmarshalTextML(cfg.Content, settings)
+	err = protoutil.UnmarshalTextML(content, settings)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"could not unmarshal proto from luci-config:\n%s", cfg.Content)
+			"could not unmarshal proto from luci-config:\n%s", content)
 	}
 	newConfig := ServiceConfig{
 		ID:          ServiceConfigID,
-		Text:        cfg.Content,
-		Revision:    cfg.Revision,
+		Text:        content,
+		Revision:    meta.Revision,
 		LastUpdated: time.Now().UTC(),
 	}
 	newConfig.Data, err = proto.Marshal(settings)
@@ -404,10 +410,9 @@ func updateProject(c context.Context, cfg *configInterface.Config) (stringset.Se
 	miloCfg := config.Project{}
 	miloCfgMeta := configInterface.Meta{}
 	err = cfgclient.Get(c,
-		cfgclient.AsService,
 		cfg.ConfigSet,
-		cfgclient.CurrentServiceName(c)+".cfg",
-		textproto.Message(&miloCfg),
+		"${appid}.cfg",
+		cfgclient.ProtoText(&miloCfg),
 		&miloCfgMeta,
 	)
 	switch {
@@ -527,7 +532,7 @@ func parseProjectACL(projectCfg string) (ACL, error) {
 // Visits all LUCI projects (not only ones that have Milo config) to grab
 // their visibility ACL from project.cfg file.
 func UpdateProjects(c context.Context) error {
-	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
+	lucicfg := cfgclient.Client(c)
 
 	// Fetch project.cfg with ACLs. Every LUCI project has it, so we effectively
 	// enumerate all LUCI projects.
