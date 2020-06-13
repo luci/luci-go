@@ -24,6 +24,7 @@ package cfgcache
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	protov1 "github.com/golang/protobuf/proto"
@@ -74,6 +75,10 @@ type Entry struct {
 
 	// cacheSlot holds in-process cache of the config.
 	cacheSlot caching.SlotHandle
+
+	// See comments for Fetch.
+	eagerUpdateOnce sync.Once
+	eagerUpdateOK   bool
 }
 
 // Register registers the process cache slot and the validation hook.
@@ -172,7 +177,9 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 // Get returns the cached config.
 //
 // Uses in-memory cache to avoid hitting datastore all the time. As a result it
-// may keep returning a stale config up to 1 min after the Update call.
+// may keep returning a stale config up to 1 min after the Update call. Uses
+// Fetch to fetch the config if the in-memory cache is stale, see Fetch doc
+// to learn its caveats, they apply to Get as well.
 //
 // Panics if the entry wasn't registered in the process cache via Register.
 //
@@ -203,10 +210,23 @@ func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, erro
 //
 // Prefer to use Get if possible.
 //
+// To simplify deploying code that uses new configs, Fetch will call Update
+// itself if it notices there's no cached config in the datastore. To avoid
+// overloading LUCI Config, it will do it under the lock and exactly once. If
+// this attempt fails, for whatever reason, it will not be retried. Callers of
+// Fetch will have to wait until the cache is explicitly updated by Update. If
+// you can't risk this situation, deploy code that calls Update before deploying
+// code that uses Get or Fetch.
+//
 // If `meta` is non-nil, it will receive the config metadata.
 func (e *Entry) Fetch(ctx context.Context, meta *config.Meta) (proto.Message, error) {
 	cached := cachedConfig{ID: e.entityID()}
-	if err := datastore.Get(ctx, &cached); err != nil {
+
+	err := datastore.Get(ctx, &cached)
+	if err == datastore.ErrNoSuchEntity && e.attemptEagerUpdate(ctx) {
+		err = datastore.Get(ctx, &cached)
+	}
+	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch cached config").Err()
 	}
 
@@ -265,4 +285,26 @@ func (e *Entry) validate(ctx *validation.Context, content string) (proto.Message
 		}
 	}
 	return msg, nil
+}
+
+// attemptEagerUpdate is called from Fetch if there's no cached config entry.
+//
+// Will attempt to update the cache exactly once. Returns true if the update
+// happened (now or previously) and finished successfully.
+func (e *Entry) attemptEagerUpdate(ctx context.Context) bool {
+	e.eagerUpdateOnce.Do(func() {
+		id := e.entityID()
+		meta := config.Meta{}
+
+		logging.Infof(ctx, "Attempting to bootstrap config cache %s", id)
+		_, err := e.Update(ctx, &meta)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to bootstrap config cache %s: %s", id, err)
+		} else {
+			logging.Infof(ctx, "Successfully bootstrapped config cache %s at rev %s", id, meta.Revision)
+		}
+
+		e.eagerUpdateOK = err == nil
+	})
+	return e.eagerUpdateOK
 }
