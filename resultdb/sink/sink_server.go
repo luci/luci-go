@@ -35,7 +35,7 @@ import (
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
 	cfg           ServerConfig
-	rdbCh         rdbChannel
+	trChan        trChan
 	resultIDBase  string
 	resultCounter uint32
 }
@@ -49,10 +49,10 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	}
 	ss := &sinkServer{
 		cfg:          cfg,
-		rdbCh:        rdbChannel{cfg: cfg},
+		trChan:       trChan{cfg: cfg},
 		resultIDBase: hex.EncodeToString(bytes),
 	}
-	if err := ss.rdbCh.init(ctx); err != nil {
+	if err := ss.trChan.init(ctx); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 // or the context is cancelled.
 func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	ss := s.(*sinkpb.DecoratedSink).Service.(*sinkServer)
-	ss.rdbCh.closeAndDrain(ctx)
+	ss.trChan.closeAndDrain(ctx)
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
@@ -115,7 +115,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
-	s.rdbCh.reportTestResults(in.TestResults)
+	s.trChan.reportTestResults(in.TestResults)
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
