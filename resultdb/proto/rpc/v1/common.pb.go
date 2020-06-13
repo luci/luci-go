@@ -42,8 +42,7 @@ const _ = proto.ProtoPackageIsVersion4
 // A key-value map describing one variant of a test case.
 //
 // The same test case can be executed in different ways, for example on
-// different OS, GPUs, with different compile options, runtime flags or even
-// with different values of the test parameter (for parameterized tests).
+// different OS, GPUs, with different compile options or runtime flags.
 // A variant definition captures one variant.
 // A test case with a specific variant definition is called test variant.
 //
