@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // Row size limit is 1Mib according to
@@ -33,7 +32,7 @@ import (
 // limit.
 const maxSummaryLength = 6e5
 
-// StringPair is a copy of typepb.StringPair, suitable for representing a
+// StringPair is a copy of pb.StringPair, suitable for representing a
 // key:value pair in a BQ table.
 // Inferred to be a field of type RECORD with Key and Value string fields.
 type StringPair struct {
@@ -117,8 +116,8 @@ func (tr *TestResultRow) Name() string {
 	return pbutil.TestResultName(tr.ParentInvocation.ID, tr.TestID, tr.ResultID)
 }
 
-// stringPairProtosToStringPairs returns a slice of StringPair derived from *typepb.StringPair.
-func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []StringPair {
+// stringPairProtosToStringPairs returns a slice of StringPair derived from *pb.StringPair.
+func stringPairProtosToStringPairs(pairs []*pb.StringPair) []StringPair {
 	if len(pairs) == 0 {
 		return nil
 	}
@@ -133,8 +132,8 @@ func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []StringPair {
 	return sp
 }
 
-// variantToStringPairs returns a slice of StringPair derived from *typepb.Variant.
-func variantToStringPairs(vr *typepb.Variant) []StringPair {
+// variantToStringPairs returns a slice of StringPair derived from *pb.Variant.
+func variantToStringPairs(vr *pb.Variant) []StringPair {
 	defMap := vr.GetDef()
 	if len(defMap) == 0 {
 		return nil

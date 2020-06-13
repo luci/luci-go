@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -82,7 +81,7 @@ func Inclusion(including, included invocations.ID) *spanner.Mutation {
 }
 
 // TestResults returns spanner mutations to insert test results
-func TestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
+func TestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
 	return TestResultMessages(MakeTestResults(invID, testID, v, statuses...))
 }
 
@@ -112,7 +111,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 }
 
 // TestExonerations returns Spanner mutations to insert test exonerations.
-func TestExonerations(invID invocations.ID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
+func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
 		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
@@ -139,7 +138,7 @@ func Artifact(invID invocations.ID, parentID, artID string, extraValues map[stri
 }
 
 // MakeTestResults creates test results.
-func MakeTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
+func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)

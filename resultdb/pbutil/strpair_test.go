@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/data/strpair"
 
-	typepb "go.chromium.org/luci/resultdb/proto/type"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,7 +30,7 @@ import (
 func TestStringPairs(t *testing.T) {
 	t.Parallel()
 	Convey(`Works`, t, func() {
-		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*typepb.StringPair{
+		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*pb.StringPair{
 			{Key: "k1", Value: "v1"},
 			{Key: "k2", Value: "v2"},
 		})
@@ -44,7 +44,7 @@ func TestStringPairs(t *testing.T) {
 		Convey(`when provided key:val string`, func() {
 			pair, err := StringPairFromString("key/k:v")
 			So(err, ShouldBeNil)
-			So(pair, ShouldResembleProto, &typepb.StringPair{Key: "key/k", Value: "v"})
+			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
 		})
 	})
 }

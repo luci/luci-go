@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -185,7 +184,7 @@ func TestValidateTestResult(t *testing.T) {
 		})
 
 		Convey("with invalid Variant", func() {
-			badInputs := []*typepb.Variant{
+			badInputs := []*pb.Variant{
 				Variant("", ""),
 				Variant("", "val"),
 			}

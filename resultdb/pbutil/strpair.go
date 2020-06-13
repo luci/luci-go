@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 
-	typepb "go.chromium.org/luci/resultdb/proto/type"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 const maxStringPairKeyLength = 64
@@ -32,20 +32,20 @@ const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
 var stringPairKeyRe = regexpf(`^%s$`, stringPairKeyPattern)
 var stringPairRe = regexpf("^(%s):(.*)$", stringPairKeyPattern)
 
-// StringPair creates a typepb.StringPair with the given strings as key/value field values.
-func StringPair(k, v string) *typepb.StringPair {
-	return &typepb.StringPair{Key: k, Value: v}
+// StringPair creates a pb.StringPair with the given strings as key/value field values.
+func StringPair(k, v string) *pb.StringPair {
+	return &pb.StringPair{Key: k, Value: v}
 }
 
-// StringPairs creates a slice of typepb.StringPair from a list of strings alternating key/value.
+// StringPairs creates a slice of pb.StringPair from a list of strings alternating key/value.
 //
 // Panics if an odd number of tokens is passed.
-func StringPairs(pairs ...string) []*typepb.StringPair {
+func StringPairs(pairs ...string) []*pb.StringPair {
 	if len(pairs)%2 != 0 {
 		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
 	}
 
-	strpairs := make([]*typepb.StringPair, len(pairs)/2)
+	strpairs := make([]*pb.StringPair, len(pairs)/2)
 	for i := range strpairs {
 		strpairs[i] = StringPair(pairs[2*i], pairs[2*i+1])
 	}
@@ -53,7 +53,7 @@ func StringPairs(pairs ...string) []*typepb.StringPair {
 }
 
 // StringPairsContain checks if item is present in pairs.
-func StringPairsContain(pairs []*typepb.StringPair, item *typepb.StringPair) bool {
+func StringPairsContain(pairs []*pb.StringPair, item *pb.StringPair) bool {
 	for _, p := range pairs {
 		if p.Key == item.Key && p.Value == item.Value {
 			return true
@@ -63,7 +63,7 @@ func StringPairsContain(pairs []*typepb.StringPair, item *typepb.StringPair) boo
 }
 
 // sortStringPairs sorts in-place the tags slice lexicographically by key, then value.
-func sortStringPairs(tags []*typepb.StringPair) {
+func sortStringPairs(tags []*pb.StringPair) {
 	sort.Slice(tags, func(i, j int) bool {
 		if tags[i].Key != tags[j].Key {
 			return tags[i].Key < tags[j].Key
@@ -73,7 +73,7 @@ func sortStringPairs(tags []*typepb.StringPair) {
 }
 
 // ValidateStringPair returns an error if p is invalid.
-func ValidateStringPair(p *typepb.StringPair) error {
+func ValidateStringPair(p *pb.StringPair) error {
 	if err := validateWithRe(stringPairKeyRe, p.Key); err != nil {
 		return errors.Annotate(err, "key").Err()
 	}
@@ -87,7 +87,7 @@ func ValidateStringPair(p *typepb.StringPair) error {
 }
 
 // ValidateStringPairs returns an error if any of the pairs is invalid.
-func ValidateStringPairs(pairs []*typepb.StringPair) error {
+func ValidateStringPairs(pairs []*pb.StringPair) error {
 	for _, p := range pairs {
 		if err := ValidateStringPair(p); err != nil {
 			return errors.Annotate(err, "%q:%q", p.Key, p.Value).Err()
@@ -96,8 +96,8 @@ func ValidateStringPairs(pairs []*typepb.StringPair) error {
 	return nil
 }
 
-// StringPairFromString creates a typepb.StringPair from the given key:val string.
-func StringPairFromString(s string) (*typepb.StringPair, error) {
+// StringPairFromString creates a pb.StringPair from the given key:val string.
+func StringPairFromString(s string) (*pb.StringPair, error) {
 	m := stringPairRe.FindStringSubmatch(s)
 	if m == nil {
 		return nil, doesNotMatch(stringPairRe)
@@ -106,13 +106,13 @@ func StringPairFromString(s string) (*typepb.StringPair, error) {
 }
 
 // StringPairToString converts a StringPair to a key:val string.
-func StringPairToString(pair *typepb.StringPair) string {
+func StringPairToString(pair *pb.StringPair) string {
 	return fmt.Sprintf("%s:%s", pair.Key, pair.Value)
 }
 
 // StringPairsToStrings converts pairs to a slice of "{key}:{value}" strings
 // in the same order.
-func StringPairsToStrings(pairs ...*typepb.StringPair) []string {
+func StringPairsToStrings(pairs ...*pb.StringPair) []string {
 	ret := make([]string, len(pairs))
 	for i, p := range pairs {
 		ret[i] = StringPairToString(p)
@@ -121,8 +121,8 @@ func StringPairsToStrings(pairs ...*typepb.StringPair) []string {
 }
 
 // FromStrpairMap converts a strpair.Map to []*pb.StringPair.
-func FromStrpairMap(m strpair.Map) []*typepb.StringPair {
-	ret := make([]*typepb.StringPair, 0, len(m))
+func FromStrpairMap(m strpair.Map) []*pb.StringPair {
+	ret := make([]*pb.StringPair, 0, len(m))
 	for k, vs := range m {
 		for _, v := range vs {
 			ret = append(ret, StringPair(k, v))

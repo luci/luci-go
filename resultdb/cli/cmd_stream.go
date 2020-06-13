@@ -43,7 +43,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 	"go.chromium.org/luci/resultdb/sink"
 )
 
@@ -100,7 +99,7 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
 		return errors.Reason("missing a test command to run").Err()
 	}
-	if err := pbutil.ValidateVariant(&typepb.Variant{Def: r.vars}); err != nil {
+	if err := pbutil.ValidateVariant(&pb.Variant{Def: r.vars}); err != nil {
 		return errors.Annotate(err, "invalid variant").Err()
 	}
 	return nil
@@ -187,7 +186,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		Invocation:   r.invocation.Name,
 		UpdateToken:  r.invocation.UpdateToken,
 		TestIDPrefix: r.testIDPrefix,
-		BaseVariant:  &typepb.Variant{Def: r.vars},
+		BaseVariant:  &pb.Variant{Def: r.vars},
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)

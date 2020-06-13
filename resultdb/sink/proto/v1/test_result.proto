@@ -18,7 +18,8 @@ package luci.resultsink.v1;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 
@@ -38,7 +39,7 @@ message TestResult {
   bool expected = 3;
 
   // Equivalent of luci.resultpb.TestResult.status.
-  TestStatus status = 4;
+  luci.resultdb.rpc.v1.TestStatus status = 4;
 
   // Equivalent of luci.resultpb.TestResult.summary_html.
   string summary_html = 5;
@@ -50,7 +51,7 @@ message TestResult {
   google.protobuf.Duration duration = 7;
 
   // Equivalent of luci.resultpb.TestResult.tags.
-  repeated luci.resultdb.type.StringPair tags = 8;
+  repeated luci.resultdb.rpc.v1.StringPair tags = 8;
 
   // Artifacts to upload and associate with this test result.
   // The map key is an artifact id.
@@ -103,41 +104,4 @@ message TestResultFile {
 
   // Format of the file.
   Format format = 2;
-}
-
-// Machine-readable status of a test result.
-//
-// This is a copy of luci.resultdb.rpc.v1.TestStatus in
-// ../../rpc/v1/test_result.proto, because of https://aip.dev/215.
-enum TestStatus {
-  // Status was not specified.
-  // Not to be used in actual test results; serves as a default value for an
-  // unset field.
-  STATUS_UNSPECIFIED = 0;
-
-  // The test case has passed.
-  PASS = 1;
-
-  // The test case has failed.
-  // Suggests that the code under test is incorrect, but it is also possible
-  // that the test is incorrect or it is a flake.
-  FAIL = 2;
-
-  // The test case has crashed during execution.
-  // The outcome is inconclusive: the code under test might or might not be
-  // correct, but the test+code is incorrect.
-  CRASH = 3;
-
-  // The test case has started, but was aborted before finishing.
-  // A common reason: timeout.
-  ABORT = 4;
-
-  // The test case did not execute.
-  // Examples:
-  // - The execution of the collection of test cases, such as a test
-  //   binary, was aborted prematurely and execution of some test cases was
-  //   skipped.
-  // - The test harness configuration specified that the test case MUST be
-  //   skipped.
-  SKIP = 5;
 }
