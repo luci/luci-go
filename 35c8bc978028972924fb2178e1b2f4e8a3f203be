@@ -108,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "f3ce6a5c_9ec5f7fa",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T20:28:23Z",
+      "side": 1,
+      "message": "Even with old Go channel, we need to maintain a worker pool to maintain the concurrency level. If we implement the worker pool with an old Go channel, wouldn\u0027t it be similar to sync/parallel?\n\nWith MaxLeases\u003d4, BatchSize\u003d1, buffer.BlockNewItems{MaxItems: 2000}, there can be at most 4 active leases, each is handled by 4 different workers in parallel.",
+      "parentUuid": "2625e040_8be1b6df",
+      "range": {
+        "startLine": 50,
+        "startChar": 18,
+        "endLine": 50,
+        "endChar": 19
+      },
+      "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "967d8953_bdfa1bc3",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7
