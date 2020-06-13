@@ -18,12 +18,12 @@ package luci.resultdb.rpc.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/artifact.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // Service to read test results.
 service ResultDB {

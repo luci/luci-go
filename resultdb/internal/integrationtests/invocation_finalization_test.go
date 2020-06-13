@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

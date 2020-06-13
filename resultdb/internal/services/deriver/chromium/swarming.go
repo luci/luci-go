@@ -48,7 +48,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/util"
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (
