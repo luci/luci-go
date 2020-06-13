@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4ccf6efd_ae7193fd",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T20:19:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3beba4b6_a7ea0d78",
+      "range": {
+        "startLine": 112,
+        "startChar": 18,
+        "endLine": 118,
+        "endChar": 4
+      },
+      "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09afee0d_c03a840e",
         "filename": "resultdb/sink/artifact_channel.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "fd415337_722d3afb",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T20:19:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09afee0d_c03a840e",
+      "range": {
+        "startLine": 119,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 34
+      },
+      "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b6fd37a_6fbab401",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 6
@@ -68,6 +116,30 @@
       "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36616b79_5ba8be3e",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T20:19:32Z",
+      "side": 1,
+      "message": "Done. sink_server enqueues upload tasks to artifact_channel directly.",
+      "parentUuid": "9b6fd37a_6fbab401",
+      "range": {
+        "startLine": 64,
+        "startChar": 11,
+        "endLine": 64,
+        "endChar": 18
+      },
+      "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
