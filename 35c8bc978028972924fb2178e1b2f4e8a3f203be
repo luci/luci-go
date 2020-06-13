@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "2625e040_8be1b6df",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T19:50:30Z",
+      "side": 1,
+      "message": "i was comparing dispatcher to plain old Go channel `artifactChan chan uploadArtifact`.\ndispatcher is very useful when we process batches, but here all batches are size 1 (i.e. no batching), so it defeats the purpose, it seems",
+      "parentUuid": "8fc388b1_b0505f14",
+      "range": {
+        "startLine": 50,
+        "startChar": 18,
+        "endLine": 50,
+        "endChar": 19
+      },
+      "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "967d8953_bdfa1bc3",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7
