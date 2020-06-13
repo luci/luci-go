@@ -19,8 +19,6 @@ import (
 	"net/url"
 
 	"go.chromium.org/luci/common/errors"
-
-	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 const (
@@ -94,30 +92,4 @@ func InvocationArtifactName(invocationID, artifactID string) string {
 // ValidateResultID and ValidateArtifactID.
 func TestResultArtifactName(invocationID, testID, resulID, artifactID string) string {
 	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, artifactID)
-}
-
-// ValidateSinkArtifact returns a non-nil error if art is invalid.
-func ValidateSinkArtifact(art *sinkpb.Artifact) error {
-	if art.GetFilePath() == "" && art.GetContents() == nil {
-		return errors.Reason("body: either file_path or contents must be provided").Err()
-	}
-	// TODO(1017288) - validate content_type
-	// skip `ContentType`
-	return nil
-}
-
-// ValidateSinkArtifacts returns a non-nil error if any element of arts is invalid.
-func ValidateSinkArtifacts(arts map[string]*sinkpb.Artifact) error {
-	for id, art := range arts {
-		if art == nil {
-			return errors.Reason("%s: %s", id, unspecified()).Err()
-		}
-		if err := ValidateArtifactID(id); err != nil {
-			return errors.Annotate(err, "%s", id).Err()
-		}
-		if err := ValidateSinkArtifact(art); err != nil {
-			return errors.Annotate(err, "%s", id).Err()
-		}
-	}
-	return nil
 }
