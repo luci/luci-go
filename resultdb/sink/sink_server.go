@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/resultdb/pbutil"
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 // sinkServer implements sinkpb.SinkServer.

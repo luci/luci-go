@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 const (

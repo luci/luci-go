@@ -33,7 +33,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 type trChan struct {

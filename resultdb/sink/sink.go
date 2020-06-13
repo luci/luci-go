@@ -33,8 +33,8 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 const (

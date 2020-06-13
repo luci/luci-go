@@ -16,5 +16,3 @@ package sinkpb
 
 //go:generate cproto
 //go:generate svcdec -type SinkServer
-//go:generate mockgen -source sink.pb.go -destination sink.mock.pb.go -package sinkpb -write_package_comment=false
-//go:generate goimports -w sink.mock.pb.go

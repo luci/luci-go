@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/lucictx"
 
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
