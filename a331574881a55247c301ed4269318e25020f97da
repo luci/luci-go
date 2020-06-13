@@ -22,6 +22,30 @@
       "revId": "a331574881a55247c301ed4269318e25020f97da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f864dd9f_3c0a1a8a",
+        "filename": "resultdb/proto/rpc/v1/predicate.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T06:55:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a719b71c_87944654",
+      "range": {
+        "startLine": 18,
+        "startChar": 19,
+        "endLine": 18,
+        "endChar": 25
+      },
+      "revId": "a331574881a55247c301ed4269318e25020f97da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

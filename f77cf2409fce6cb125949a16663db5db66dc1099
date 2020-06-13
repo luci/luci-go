@@ -22,6 +22,30 @@
       "revId": "f77cf2409fce6cb125949a16663db5db66dc1099",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cc73e77_47a37f93",
+        "filename": "resultdb/sink/proto/v1/sink.pb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T06:55:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5f66d1e_bda47dfb",
+      "range": {
+        "startLine": 19,
+        "startChar": 8,
+        "endLine": 19,
+        "endChar": 21
+      },
+      "revId": "f77cf2409fce6cb125949a16663db5db66dc1099",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
