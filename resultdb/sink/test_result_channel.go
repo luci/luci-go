@@ -16,9 +16,6 @@ package sink
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -27,7 +24,6 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -47,14 +43,13 @@ type testResultChannel struct {
 	// closeAndDrain closes and drains the channel.
 	wgActive sync.WaitGroup
 
-	// 1 indicates that rdb started the process of closing and draining the channel. 0,
-	// otherwise.
+	// 1 indicates that testResultChannel started the process of closing and draining
+	// the channel. 0, otherwise.
 	closed int32
 }
 
 func (c *testResultChannel) init(ctx context.Context, ac *artifactChannel) error {
-	// install a dispatcher channel for pb.TestResult
-	rdopts := &dispatcher.Options{
+	chOpts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
 			BatchSize:     400,
@@ -65,9 +60,8 @@ func (c *testResultChannel) init(ctx context.Context, ac *artifactChannel) error
 	}
 
 	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, c.cfg.UpdateToken)
-	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
-		req := c.prepareReportTestResultsRequest(ctx, b)
-		// TODO(1017288) - send upload tasks to artifactChannel
+	ch, err := dispatcher.NewChannel(ctx, chOpts, func(b *buffer.Batch) error {
+		req := c.prepare(ctx, b, ac)
 		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
@@ -100,7 +94,7 @@ func (c *testResultChannel) reportTestResults(trs []*sinkpb.TestResult) {
 	}
 }
 
-func (c *testResultChannel) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func (c *testResultChannel) prepare(ctx context.Context, b *buffer.Batch, ac *artifactChannel) *pb.BatchCreateTestResultsRequest {
 	// retried batch?
 	if b.Meta != nil {
 		return b.Meta.(*pb.BatchCreateTestResultsRequest)
@@ -124,38 +118,9 @@ func (c *testResultChannel) prepareReportTestResultsRequest(ctx context.Context,
 				Tags:        tr.GetTags(),
 			},
 		})
+		ac.scheduleUploads(tr)
 	}
+
 	b.Meta = req
 	return req
-}
-
-func sinkArtsToRPCArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
-	for name, sart := range sArts {
-		var size int64 = -1
-		switch {
-		case sart.GetFilePath() != "":
-			if info, err := os.Stat(sart.GetFilePath()); err == nil {
-				size = info.Size()
-			} else {
-				logging.Errorf(ctx, "artifact %q: %q - %s", name, sart.GetFilePath(), err)
-			}
-		case sart.GetContents() != nil:
-			size = int64(len(sart.GetContents()))
-		default:
-			// This should never be reached. pbutil.ValidateSinkArtifact() should
-			// filter out invalid artifacts.
-			panic(fmt.Sprintf("%s: neither file_path nor contents were given", name))
-		}
-
-		rArts = append(rArts, &pb.Artifact{
-			Name: name,
-			// TODO(ddoman): set fetch_url and fetch_url_expiration
-			ContentType: sart.GetContentType(),
-			SizeBytes:   size,
-		})
-	}
-	sort.Slice(rArts, func(i, j int) bool {
-		return rArts[i].Name < rArts[j].Name
-	})
-	return
 }
