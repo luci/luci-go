@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 

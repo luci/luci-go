@@ -20,7 +20,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // Query queries for results continuously, sending individual items to

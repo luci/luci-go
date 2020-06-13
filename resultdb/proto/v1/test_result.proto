@@ -19,7 +19,9 @@ package luci.resultdb.rpc.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // A result of a functional test case.
 // Often a single test case is executed multiple times and has multiple results,
