@@ -213,17 +213,19 @@ func (q *Query) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 
 // PopulateVariantParams populates variantHashEquals and variantContains
 // parameters based on the predicate.
-func PopulateVariantParams(st *spanner.Statement, variantPredicate *pb.VariantPredicate) {
+func PopulateVariantParams(st *spanner.Statement, pred *pb.VariantPredicate) {
 	st.Params["variantHashEquals"] = spanner.NullString{}
 	st.Params["variantContains"] = []string(nil)
-	switch p := variantPredicate.GetPredicate().(type) {
-	case *pb.VariantPredicate_Equals:
-		st.Params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
-	case *pb.VariantPredicate_Contains:
-		st.Params["variantContains"] = pbutil.VariantToStrings(p.Contains)
-	case nil:
-		// No filter.
+	if pred == nil {
+		return
+	}
+
+	switch pred.Op {
+	case pb.VariantPredicate_EQUALS:
+		st.Params["variantHashEquals"] = pbutil.VariantHash(pred.Value)
+	case pb.VariantPredicate_CONTAINS:
+		st.Params["variantContains"] = pbutil.VariantToStrings(pred.Value)
 	default:
-		panic(errors.Reason("unexpected variant predicate %q", variantPredicate).Err())
+		panic(errors.Reason("unexpected variant op %d", pred.Op).Err())
 	}
 }

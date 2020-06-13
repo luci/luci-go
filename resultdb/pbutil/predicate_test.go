@@ -66,39 +66,27 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 				})
 			}
 
-			Convey(`Equals`, func() {
-				Convey(`Valid`, func() {
-					err := validate(&pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Equals{Equals: validVariant},
-					})
-					So(err, ShouldBeNil)
+			Convey(`Valid`, func() {
+				err := validate(&pb.VariantPredicate{
+					Value: validVariant,
+					Op:    pb.VariantPredicate_EQUALS,
 				})
-				Convey(`Invalid`, func() {
-					err := validate(&pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Equals{Equals: invalidVariant},
-					})
-					So(err, ShouldErrLike, `variant: equals: "":"": key: unspecified`)
-				})
+				So(err, ShouldBeNil)
 			})
 
-			Convey(`Contains`, func() {
-				Convey(`Valid`, func() {
-					err := validate(&pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Contains{Contains: validVariant},
-					})
-					So(err, ShouldBeNil)
+			Convey(`Invalid value`, func() {
+				err := validate(&pb.VariantPredicate{
+					Value: invalidVariant,
 				})
-				Convey(`Invalid`, func() {
-					err := validate(&pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Contains{Contains: invalidVariant},
-					})
-					So(err, ShouldErrLike, `variant: contains: "":"": key: unspecified`)
-				})
+				So(err, ShouldErrLike, `variant: value: "":"": key: unspecified`)
 			})
 
-			Convey(`Unspecified`, func() {
-				err := validate(&pb.VariantPredicate{})
-				So(err, ShouldErrLike, `variant: unspecified`)
+			Convey(`Invalid op`, func() {
+				err := validate(&pb.VariantPredicate{
+					Value: validVariant,
+					Op:    999,
+				})
+				So(err, ShouldErrLike, `variant: op: invalid value 999`)
 			})
 		})
 	})

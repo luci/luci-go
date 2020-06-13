@@ -96,6 +96,55 @@ func (TestResultPredicate_Expectancy) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDescGZIP(), []int{0, 0}
 }
 
+// Op is the operator for variant comparison.
+type VariantPredicate_Op int32
+
+const (
+	// The subject variant must be equal value exactly.
+	VariantPredicate_EQUALS VariantPredicate_Op = 0
+	// The subject variant's key-value pairs must contain those in value.
+	VariantPredicate_CONTAINS VariantPredicate_Op = 1
+)
+
+// Enum value maps for VariantPredicate_Op.
+var (
+	VariantPredicate_Op_name = map[int32]string{
+		0: "EQUALS",
+		1: "CONTAINS",
+	}
+	VariantPredicate_Op_value = map[string]int32{
+		"EQUALS":   0,
+		"CONTAINS": 1,
+	}
+)
+
+func (x VariantPredicate_Op) Enum() *VariantPredicate_Op {
+	p := new(VariantPredicate_Op)
+	*p = x
+	return p
+}
+
+func (x VariantPredicate_Op) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VariantPredicate_Op) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_enumTypes[1].Descriptor()
+}
+
+func (VariantPredicate_Op) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_enumTypes[1]
+}
+
+func (x VariantPredicate_Op) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VariantPredicate_Op.Descriptor instead.
+func (VariantPredicate_Op) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDescGZIP(), []int{2, 0}
+}
+
 // Represents a function TestResult -> bool.
 // Empty message matches all test results.
 //
@@ -236,10 +285,9 @@ type VariantPredicate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Types that are assignable to Predicate:
-	//	*VariantPredicate_Equals
-	//	*VariantPredicate_Contains
-	Predicate isVariantPredicate_Predicate `protobuf_oneof:"predicate"`
+	// A variant to compare to.
+	Value *Variant            `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Op    VariantPredicate_Op `protobuf:"varint,2,opt,name=op,proto3,enum=luci.resultdb.rpc.v1.VariantPredicate_Op" json:"op,omitempty"`
 }
 
 func (x *VariantPredicate) Reset() {
@@ -274,44 +322,19 @@ func (*VariantPredicate) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDescGZIP(), []int{2}
 }
 
-func (m *VariantPredicate) GetPredicate() isVariantPredicate_Predicate {
-	if m != nil {
-		return m.Predicate
+func (x *VariantPredicate) GetValue() *Variant {
+	if x != nil {
+		return x.Value
 	}
 	return nil
 }
 
-func (x *VariantPredicate) GetEquals() *Variant {
-	if x, ok := x.GetPredicate().(*VariantPredicate_Equals); ok {
-		return x.Equals
+func (x *VariantPredicate) GetOp() VariantPredicate_Op {
+	if x != nil {
+		return x.Op
 	}
-	return nil
+	return VariantPredicate_EQUALS
 }
-
-func (x *VariantPredicate) GetContains() *Variant {
-	if x, ok := x.GetPredicate().(*VariantPredicate_Contains); ok {
-		return x.Contains
-	}
-	return nil
-}
-
-type isVariantPredicate_Predicate interface {
-	isVariantPredicate_Predicate()
-}
-
-type VariantPredicate_Equals struct {
-	// A variant must be equal this definition exactly.
-	Equals *Variant `protobuf:"bytes,1,opt,name=equals,proto3,oneof"`
-}
-
-type VariantPredicate_Contains struct {
-	// A variant's key-value pairs must contain those in this one.
-	Contains *Variant `protobuf:"bytes,2,opt,name=contains,proto3,oneof"`
-}
-
-func (*VariantPredicate_Equals) isVariantPredicate_Predicate() {}
-
-func (*VariantPredicate_Contains) isVariantPredicate_Predicate() {}
 
 var File_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto protoreflect.FileDescriptor
 
@@ -350,20 +373,21 @@ var file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDesc = []
 	0x28, 0x0b, 0x32, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
 	0x64, 0x62, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
 	0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x07, 0x76, 0x61, 0x72, 0x69,
-	0x61, 0x6e, 0x74, 0x22, 0x95, 0x01, 0x0a, 0x10, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x50,
-	0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x37, 0x0a, 0x06, 0x65, 0x71, 0x75, 0x61,
-	0x6c, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x76, 0x31, 0x2e,
-	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x48, 0x00, 0x52, 0x06, 0x65, 0x71, 0x75, 0x61, 0x6c,
-	0x73, 0x12, 0x3b, 0x0a, 0x08, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
-	0x74, 0x64, 0x62, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x72, 0x69, 0x61,
-	0x6e, 0x74, 0x48, 0x00, 0x52, 0x08, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x42, 0x0b,
-	0x0a, 0x09, 0x70, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x42, 0x35, 0x5a, 0x33, 0x67,
-	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
-	0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x72, 0x70, 0x63, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x6e, 0x74, 0x22, 0xa2, 0x01, 0x0a, 0x10, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x50,
+	0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x33, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x76, 0x31, 0x2e, 0x56,
+	0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x39, 0x0a,
+	0x02, 0x6f, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x29, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x72, 0x70, 0x63, 0x2e, 0x76, 0x31,
+	0x2e, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74,
+	0x65, 0x2e, 0x4f, 0x70, 0x52, 0x02, 0x6f, 0x70, 0x22, 0x1e, 0x0a, 0x02, 0x4f, 0x70, 0x12, 0x0a,
+	0x0a, 0x06, 0x45, 0x51, 0x55, 0x41, 0x4c, 0x53, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x4f,
+	0x4e, 0x54, 0x41, 0x49, 0x4e, 0x53, 0x10, 0x01, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
+	0x72, 0x70, 0x63, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -378,21 +402,22 @@ func file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDescGZIP
 	return file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_goTypes = []interface{}{
 	(TestResultPredicate_Expectancy)(0), // 0: luci.resultdb.rpc.v1.TestResultPredicate.Expectancy
-	(*TestResultPredicate)(nil),         // 1: luci.resultdb.rpc.v1.TestResultPredicate
-	(*TestExonerationPredicate)(nil),    // 2: luci.resultdb.rpc.v1.TestExonerationPredicate
-	(*VariantPredicate)(nil),            // 3: luci.resultdb.rpc.v1.VariantPredicate
-	(*Variant)(nil),                     // 4: luci.resultdb.rpc.v1.Variant
+	(VariantPredicate_Op)(0),            // 1: luci.resultdb.rpc.v1.VariantPredicate.Op
+	(*TestResultPredicate)(nil),         // 2: luci.resultdb.rpc.v1.TestResultPredicate
+	(*TestExonerationPredicate)(nil),    // 3: luci.resultdb.rpc.v1.TestExonerationPredicate
+	(*VariantPredicate)(nil),            // 4: luci.resultdb.rpc.v1.VariantPredicate
+	(*Variant)(nil),                     // 5: luci.resultdb.rpc.v1.Variant
 }
 var file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_depIdxs = []int32{
-	3, // 0: luci.resultdb.rpc.v1.TestResultPredicate.variant:type_name -> luci.resultdb.rpc.v1.VariantPredicate
+	4, // 0: luci.resultdb.rpc.v1.TestResultPredicate.variant:type_name -> luci.resultdb.rpc.v1.VariantPredicate
 	0, // 1: luci.resultdb.rpc.v1.TestResultPredicate.expectancy:type_name -> luci.resultdb.rpc.v1.TestResultPredicate.Expectancy
-	3, // 2: luci.resultdb.rpc.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.rpc.v1.VariantPredicate
-	4, // 3: luci.resultdb.rpc.v1.VariantPredicate.equals:type_name -> luci.resultdb.rpc.v1.Variant
-	4, // 4: luci.resultdb.rpc.v1.VariantPredicate.contains:type_name -> luci.resultdb.rpc.v1.Variant
+	4, // 2: luci.resultdb.rpc.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.rpc.v1.VariantPredicate
+	5, // 3: luci.resultdb.rpc.v1.VariantPredicate.value:type_name -> luci.resultdb.rpc.v1.Variant
+	1, // 4: luci.resultdb.rpc.v1.VariantPredicate.op:type_name -> luci.resultdb.rpc.v1.VariantPredicate.Op
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -444,16 +469,12 @@ func file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_init() {
 			}
 		}
 	}
-	file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_msgTypes[2].OneofWrappers = []interface{}{
-		(*VariantPredicate_Equals)(nil),
-		(*VariantPredicate_Contains)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_rpc_v1_predicate_proto_rawDesc,
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,

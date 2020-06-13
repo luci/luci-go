@@ -84,14 +84,12 @@ func validateRegexp(re string) error {
 // ValidateVariantPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateVariantPredicate(p *pb.VariantPredicate) error {
-	switch pr := p.Predicate.(type) {
-	case *pb.VariantPredicate_Equals:
-		return errors.Annotate(ValidateVariant(pr.Equals), "equals").Err()
-	case *pb.VariantPredicate_Contains:
-		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
-	case nil:
-		return unspecified()
-	default:
-		panic("impossible")
+	if err := ValidateVariant(p.GetValue()); err != nil {
+		return errors.Annotate(err, "value").Err()
 	}
+	if err := ValidateEnum(int32(p.GetOp()), pb.VariantPredicate_Op_name); err != nil {
+		return errors.Annotate(err, "op").Err()
+	}
+
+	return nil
 }

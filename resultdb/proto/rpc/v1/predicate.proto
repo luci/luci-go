@@ -73,11 +73,16 @@ message TestExonerationPredicate {
 
 // Represents a function Variant -> bool.
 message VariantPredicate {
-  oneof predicate {
-    // A variant must be equal this definition exactly.
-    Variant equals = 1;
+  // A variant to compare to.
+  Variant value = 1;
 
-    // A variant's key-value pairs must contain those in this one.
-    Variant contains = 2;
+  // Op is the operator for variant comparison.
+  enum Op {
+    // The subject variant must be equal value exactly.
+    EQUALS = 0;
+
+    // The subject variant's key-value pairs must contain those in value.
+    CONTAINS = 1;
   }
+  Op op = 2;
 }

@@ -225,7 +225,7 @@ func TestQuery(t *testing.T) {
 			)...)
 
 			q.TestResultPredicate.Variant = &pb.VariantPredicate{
-				Predicate: &pb.VariantPredicate_Equals{Equals: v2},
+				Value: v2,
 			}
 			So(mustFetchNames(q), ShouldResemble, []string{
 				"invocations/inv1/artifacts/a",
@@ -259,7 +259,7 @@ func TestQuery(t *testing.T) {
 
 			Convey(`Empty`, func() {
 				q.TestResultPredicate.Variant = &pb.VariantPredicate{
-					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
+					Op: pb.VariantPredicate_CONTAINS,
 				}
 				So(mustFetchNames(q), ShouldResemble, []string{
 					"invocations/inv1/artifacts/a",
@@ -278,7 +278,8 @@ func TestQuery(t *testing.T) {
 
 			Convey(`Non-empty`, func() {
 				q.TestResultPredicate.Variant = &pb.VariantPredicate{
-					Predicate: &pb.VariantPredicate_Contains{Contains: v00},
+					Value: v00,
+					Op:    pb.VariantPredicate_CONTAINS,
 				}
 				So(mustFetchNames(q), ShouldResemble, []string{
 					"invocations/inv1/artifacts/a",
