@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // Value can be converted to a Spanner value.
@@ -54,8 +53,8 @@ type Ptr interface {
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
-//   - typepb.Variant
-//   - typepb.StringPair
+//   - pb.Variant
+//   - pb.StringPair
 //   - proto.Message
 // TODO(nodir): move to buffer.go
 type Buffer struct {
@@ -104,9 +103,9 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.Int64
 	case *pb.Invocation_State:
 		spanPtr = &b.Int64
-	case **typepb.Variant:
+	case **pb.Variant:
 		spanPtr = &b.StringSlice
-	case *[]*typepb.StringPair:
+	case *[]*pb.StringPair:
 		spanPtr = &b.StringSlice
 	case proto.Message:
 		spanPtr = &b.ByteSlice
@@ -147,14 +146,14 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 	case *pb.TestStatus:
 		*goPtr = pb.TestStatus(b.Int64)
 
-	case **typepb.Variant:
+	case **pb.Variant:
 		if *goPtr, err = pbutil.VariantFromStrings(b.StringSlice); err != nil {
 			// If it was written to Spanner, it should have been validated.
 			panic(err)
 		}
 
-	case *[]*typepb.StringPair:
-		*goPtr = make([]*typepb.StringPair, len(b.StringSlice))
+	case *[]*pb.StringPair:
+		*goPtr = make([]*pb.StringPair, len(b.StringSlice))
 		for i, p := range b.StringSlice {
 			if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
 				// If it was written to Spanner, it should have been validated.
@@ -209,10 +208,10 @@ func ToSpanner(v interface{}) interface{} {
 	case pb.TestStatus:
 		return int64(v)
 
-	case *typepb.Variant:
+	case *pb.Variant:
 		return pbutil.VariantToStrings(v)
 
-	case []*typepb.StringPair:
+	case []*pb.StringPair:
 		return pbutil.StringPairsToStrings(v...)
 
 	case proto.Message:

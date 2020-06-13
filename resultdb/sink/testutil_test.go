@@ -101,7 +101,7 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		TestId:      "this is testID",
 		ResultId:    "result_id1",
 		Expected:    true,
-		Status:      sinkpb.TestStatus_PASS,
+		Status:      pb.TestStatus_PASS,
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
 		Duration:    ptypes.DurationProto(time.Minute),

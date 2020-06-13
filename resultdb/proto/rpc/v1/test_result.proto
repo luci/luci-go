@@ -19,7 +19,7 @@ package luci.resultdb.rpc.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
 
 // A result of a functional test case.
 // Often a single test case is executed multiple times and has multiple results,
@@ -70,7 +70,7 @@ message TestResult {
 
   // Description of one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
-  luci.resultdb.type.Variant variant = 4
+  Variant variant = 4
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Whether the result of test case execution is expected.
@@ -104,7 +104,7 @@ message TestResult {
 
   // Metadata for this test result.
   // It might describe this particular execution or the test case.
-  repeated luci.resultdb.type.StringPair tags = 10
+  repeated StringPair tags = 10
       [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
@@ -164,7 +164,7 @@ message TestExoneration {
   // Description of the variant of the test, see Variant type.
   // Unlike TestResult.extra_variant_pairs, this one must be a full definition
   // of the variant, i.e. it is not combined with Invocation.base_test_variant.
-  luci.resultdb.type.Variant variant = 3;
+  Variant variant = 3;
 
   // Identifies an exoneration in a given invocation and test id.
   // It is server-generated.
