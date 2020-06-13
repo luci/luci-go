@@ -34,7 +34,7 @@ import (
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
 	cfg           ServerConfig
-	trChan        trChan
+	trChan        testResultChannel
 	resultIDBase  string
 	resultCounter uint32
 }
@@ -48,7 +48,7 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	}
 	ss := &sinkServer{
 		cfg:          cfg,
-		trChan:       trChan{cfg: cfg},
+		trChan:       testResultChannel{cfg: cfg},
 		resultIDBase: hex.EncodeToString(bytes),
 	}
 	if err := ss.trChan.init(ctx); err != nil {
