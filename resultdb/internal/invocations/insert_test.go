@@ -19,7 +19,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/resultdb/internal/span"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func insertInvocation(id ID, extraValues map[string]interface{}) *spanner.Mutation {
