@@ -156,7 +156,14 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		}
 	}()
 
-	err := r.runTestCmd(ctx, args)
+	invID, err := pbutil.ParseInvocationName(r.invocation.Name)
+	if err != nil {
+		logging.Errorf(ctx, "invalid invocation name was given: %s", err)
+		return r.done(err)
+	}
+	fmt.Fprintf(os.Stderr, "invocation: https://ci.chromium.org/inv/%s\n", invID)
+
+	err = r.runTestCmd(ctx, args)
 	ec, ok := exitcode.Get(err)
 	if !ok {
 		return r.done(err)
@@ -226,7 +233,6 @@ func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.ResultDBI
 	}
 
 	ret = lucictx.ResultDBInvocation{Name: resp.Name, UpdateToken: tks[0]}
-	fmt.Fprintf(os.Stderr, "created invocation: https://ci.chromium.org/inv/%s\n", invID)
 	return
 }
 
