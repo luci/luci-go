@@ -24,6 +24,8 @@ import (
 
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"go.chromium.org/luci/resultdb/pbutil"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 type artifactChannel struct {
@@ -40,6 +42,18 @@ type artifactChannel struct {
 	// 1 indicates that artifactChannel started the process of closing and draining
 	// the channel. 0, otherwise.
 	closed int32
+
+	// used to mock artifactChannel.upload in tests
+	testUpload (func(context.Context, *buffer.Batch) error)
+}
+
+type uploadTask struct {
+	artName string
+	art     *sinkpb.Artifact
+
+	contentType string
+	contentHash string
+	contentSize int64
 }
 
 func (c *artifactChannel) init(ctx context.Context) error {
@@ -54,9 +68,12 @@ func (c *artifactChannel) init(ctx context.Context) error {
 		},
 	}
 
+	upload := c.upload
+	if c.testUpload != nil {
+		upload = c.testUpload
+	}
 	ch, err := dispatcher.NewChannel(ctx, chOpts, func(b *buffer.Batch) error {
-		// TODO(crbug/1087955) - process
-		return nil
+		return upload(ctx, b)
 	})
 	if err != nil {
 		return err
@@ -73,4 +90,26 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
 	c.ch.CloseAndDrain(ctx)
+}
+
+func (c *artifactChannel) upload(ctx context.Context, b *buffer.Batch) error {
+	// TODO(crbug/1087955) - upload the artifact to ResultDB.
+	return nil
+}
+
+func (c *artifactChannel) scheduleUploads(tr *sinkpb.TestResult) {
+	c.wgActive.Add(1)
+	defer c.wgActive.Done()
+	// if the channel already has been closed, drop the test results.
+	if atomic.LoadInt32(&c.closed) == 1 {
+		return
+	}
+
+	for id, art := range tr.GetArtifacts() {
+		c.ch.C <- &uploadTask{
+			artName: pbutil.TestResultArtifactName(
+				c.cfg.invocationID, tr.TestId, tr.ResultId, id),
+			art: art,
+		}
+	}
 }

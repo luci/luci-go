@@ -119,6 +119,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if err := validateTestResult(now, tr); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
+		s.ac.scheduleUploads(tr)
 	}
 	s.tc.reportTestResults(in.TestResults)
 
