@@ -34,7 +34,8 @@ import (
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
 	cfg           ServerConfig
-	trChan        trChan
+	ac            artifactChannel
+	tc            testResultChannel
 	resultIDBase  string
 	resultCounter uint32
 }
@@ -48,10 +49,14 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	}
 	ss := &sinkServer{
 		cfg:          cfg,
-		trChan:       trChan{cfg: cfg},
+		ac:           artifactChannel{cfg: cfg},
+		tc:           testResultChannel{cfg: cfg},
 		resultIDBase: hex.EncodeToString(bytes),
 	}
-	if err := ss.trChan.init(ctx); err != nil {
+	if err := ss.ac.init(ctx); err != nil {
+		return nil, err
+	}
+	if err := ss.tc.init(ctx, &ss.ac); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +70,8 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 // or the context is cancelled.
 func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	ss := s.(*sinkpb.DecoratedSink).Service.(*sinkServer)
-	ss.trChan.closeAndDrain(ctx)
+	ss.tc.closeAndDrain(ctx)
+	ss.ac.closeAndDrain(ctx)
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
@@ -114,7 +120,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
-	s.trChan.reportTestResults(in.TestResults)
+	s.tc.reportTestResults(in.TestResults)
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
