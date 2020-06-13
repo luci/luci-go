@@ -36,7 +36,7 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
-type trChan struct {
+type testResultChannel struct {
 	ch  *dispatcher.Channel
 	cfg ServerConfig
 
@@ -52,7 +52,7 @@ type trChan struct {
 	closed int32
 }
 
-func (c *trChan) init(ctx context.Context) error {
+func (c *testResultChannel) init(ctx context.Context, ac *artifactChannel) error {
 	// install a dispatcher channel for pb.TestResult
 	rdopts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
@@ -67,6 +67,7 @@ func (c *trChan) init(ctx context.Context) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, c.cfg.UpdateToken)
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
 		req := c.prepareReportTestResultsRequest(ctx, b)
+		// TODO(1017288) - send upload tasks to artifactChannel
 		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
@@ -77,7 +78,7 @@ func (c *trChan) init(ctx context.Context) error {
 	return nil
 }
 
-func (c *trChan) closeAndDrain(ctx context.Context) {
+func (c *testResultChannel) closeAndDrain(ctx context.Context) {
 	// annonuce that it is in the process of closeAndDrain.
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
@@ -87,7 +88,7 @@ func (c *trChan) closeAndDrain(ctx context.Context) {
 	c.ch.CloseAndDrain(ctx)
 }
 
-func (c *trChan) reportTestResults(trs []*sinkpb.TestResult) {
+func (c *testResultChannel) reportTestResults(trs []*sinkpb.TestResult) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
@@ -99,7 +100,7 @@ func (c *trChan) reportTestResults(trs []*sinkpb.TestResult) {
 	}
 }
 
-func (c *trChan) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func (c *testResultChannel) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
 	// retried batch?
 	if b.Meta != nil {
 		return b.Meta.(*pb.BatchCreateTestResultsRequest)
