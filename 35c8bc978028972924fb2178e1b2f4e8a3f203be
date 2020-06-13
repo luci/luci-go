@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "350c8698_dc581986",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T19:39:16Z",
+      "side": 1,
+      "message": "Done with https://crrev.com/c/2244844",
+      "parentUuid": "5f6a6761_5a1d91ee",
+      "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4e6300f_c97e2ea7",
         "filename": "resultdb/sink/artifact_channel.go",
         "patchSetId": 7
@@ -30,6 +48,30 @@
       "writtenOn": "2020-06-13T17:46:43Z",
       "side": 1,
       "message": "FWIU batchSize\u003d1 is equivalent to use a plain old Go channel. \nIn other words, I don\u0027t see the value of usine dispatcher package here. +Robbie to confirm",
+      "range": {
+        "startLine": 50,
+        "startChar": 18,
+        "endLine": 50,
+        "endChar": 19
+      },
+      "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fc388b1_b0505f14",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T19:39:16Z",
+      "side": 1,
+      "message": "I believe that we are comparing common/sync/parallel and common/sync/dispatcher here. To me, they provide similar functionalities, but I still prefer dispatcher over parallel because it supports better retry mechanism. It retries failed tasks with tunable exponential backoff and  provides a storage, b.Meta, which can be used to share data between retry attempts.",
+      "parentUuid": "a4e6300f_c97e2ea7",
       "range": {
         "startLine": 50,
         "startChar": 18,
@@ -62,6 +104,30 @@
       "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5b5695a_4380975d",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T19:39:16Z",
+      "side": 1,
+      "message": "Good point. Done. In the follow-up CL, sinkServer.ReportTestResults will send artifacts to the channel directly",
+      "parentUuid": "967d8953_bdfa1bc3",
+      "range": {
+        "startLine": 55,
+        "startChar": 58,
+        "endLine": 55,
+        "endChar": 73
+      },
+      "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
