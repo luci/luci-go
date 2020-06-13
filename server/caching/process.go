@@ -16,11 +16,21 @@ package caching
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/data/caching/lru"
+)
+
+var (
+	// ErrNoProcessCache is returned by Fetch if the context doesn't have
+	// ProcessCacheData.
+	//
+	// This usually happens in tests. Use WithEmptyProcessCache to prepare the
+	// context.
+	ErrNoProcessCache = errors.New("no process cache is installed in the context, use WithEmptyProcessCache")
 )
 
 type registeredCache struct {
@@ -62,12 +72,16 @@ func (h LRUHandle) Valid() bool { return h.h != 0 }
 
 // LRU returns global lru.Cache referenced by this handle.
 //
-// If the context doesn't have ProcessCacheData installed, this will panic.
-func (h LRUHandle) LRU(c context.Context) *lru.Cache {
+// Returns nil if the context doesn't have ProcessCacheData.
+func (h LRUHandle) LRU(ctx context.Context) *lru.Cache {
 	if h.h == 0 {
 		panic("calling LRU on a uninitialized LRUHandle")
 	}
-	return c.Value(&processCacheKey).(*ProcessCacheData).caches[h.h-1]
+	pcd, _ := ctx.Value(&processCacheKey).(*ProcessCacheData)
+	if pcd == nil {
+		return nil
+	}
+	return pcd.caches[h.h-1]
 }
 
 // RegisterLRUCache is used during init time to declare an intent that a package
@@ -106,12 +120,16 @@ type FetchCallback func(prev interface{}) (updated interface{}, exp time.Duratio
 // Fetch returns the cached data, if it is available and fresh, or attempts to
 // refresh it by calling the given callback.
 //
-// If the context doesn't have ProcessCacheData installed, this will panic.
-func (h SlotHandle) Fetch(c context.Context, cb FetchCallback) (interface{}, error) {
+// Returns ErrNoProcessCache if the context doesn't have ProcessCacheData.
+func (h SlotHandle) Fetch(ctx context.Context, cb FetchCallback) (interface{}, error) {
 	if h.h == 0 {
 		panic("calling Fetch on a uninitialized SlotHandle")
 	}
-	return c.Value(&processCacheKey).(*ProcessCacheData).slots[h.h-1].Get(c, lazyslot.Fetcher(cb))
+	pcd, _ := ctx.Value(&processCacheKey).(*ProcessCacheData)
+	if pcd == nil {
+		return nil, ErrNoProcessCache
+	}
+	return pcd.slots[h.h-1].Get(ctx, lazyslot.Fetcher(cb))
 }
 
 // RegisterCacheSlot is used during init time to preallocate a place for the
@@ -170,17 +188,17 @@ func NewProcessCacheData() *ProcessCacheData {
 // makes no sense, since each request will get its own cache. Instead allocate
 // the storage cache area via NewProcessCacheData(), retain it in some global
 // variable and install into per-request context via WithProcessCacheData.
-func WithEmptyProcessCache(c context.Context) context.Context {
-	return WithProcessCacheData(c, NewProcessCacheData())
+func WithEmptyProcessCache(ctx context.Context) context.Context {
+	return WithProcessCacheData(ctx, NewProcessCacheData())
 }
 
 // WithProcessCacheData installs an existing process-global cache storage into
 // the supplied context.
 //
 // It must be allocated via NewProcessCacheData().
-func WithProcessCacheData(c context.Context, data *ProcessCacheData) context.Context {
+func WithProcessCacheData(ctx context.Context, data *ProcessCacheData) context.Context {
 	if data.caches == nil {
 		panic("use NewProcessCacheData to allocate ProcessCacheData")
 	}
-	return context.WithValue(c, &processCacheKey, data)
+	return context.WithValue(ctx, &processCacheKey, data)
 }
