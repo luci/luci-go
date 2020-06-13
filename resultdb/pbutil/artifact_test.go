@@ -17,8 +17,6 @@ package pbutil
 import (
 	"testing"
 
-	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
-
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -98,48 +96,6 @@ func TestValidateArtifactName(t *testing.T) {
 		Convey(`Invalid`, func() {
 			err := ValidateArtifactName("abc")
 			So(err, ShouldErrLike, "does not match")
-		})
-	})
-}
-
-func TestValidateSinkArtifacts(t *testing.T) {
-	t.Parallel()
-	// valid artifacts
-	validArts := map[string]*sinkpb.Artifact{
-		"art1": {
-			Body:        &sinkpb.Artifact_FilePath{"/tmp/foo"},
-			ContentType: "text/plain",
-		},
-		"art2": {
-			Body:        &sinkpb.Artifact_Contents{[]byte("contents")},
-			ContentType: "text/plain",
-		},
-	}
-	// invalid artifacts
-	invalidArts := map[string]*sinkpb.Artifact{
-		"art1": {ContentType: "text/plain"},
-	}
-
-	Convey("Succeeds", t, func() {
-		Convey("with no artifact", func() {
-			So(ValidateSinkArtifacts(nil), ShouldBeNil)
-		})
-
-		Convey("with valid artifacts", func() {
-			So(ValidateSinkArtifacts(validArts), ShouldBeNil)
-		})
-	})
-
-	Convey("Fails", t, func() {
-		expected := "body: either file_path or contents must be provided"
-
-		Convey("with invalid artifacts", func() {
-			So(ValidateSinkArtifacts(invalidArts), ShouldErrLike, expected)
-		})
-
-		Convey("with a mix of valid and invalid artifacts", func() {
-			invalidArts["art2"] = validArts["art2"]
-			So(ValidateSinkArtifacts(invalidArts), ShouldErrLike, expected)
 		})
 	})
 }
