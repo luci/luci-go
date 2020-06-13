@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afcbb233_7413b81c",
+        "filename": "resultdb/proto/rpc/v1/predicate.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-13T06:13:08Z",
+      "side": 1,
+      "message": "is this intended downgrading from 3.12.1 to 3.6.1?",
+      "range": {
+        "startLine": 18,
+        "startChar": 21,
+        "endLine": 18,
+        "endChar": 23
+      },
+      "revId": "5db7991a6142ada352848552c0850b10cd4d102b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
