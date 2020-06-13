@@ -36,9 +36,9 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
-type rdbChannel struct {
-	testResultCh *dispatcher.Channel
-	cfg          ServerConfig
+type trChan struct {
+	ch  *dispatcher.Channel
+	cfg ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
 	//
@@ -52,7 +52,7 @@ type rdbChannel struct {
 	closed int32
 }
 
-func (rdbc *rdbChannel) init(ctx context.Context) error {
+func (c *trChan) init(ctx context.Context) error {
 	// install a dispatcher channel for pb.TestResult
 	rdopts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
@@ -64,48 +64,48 @@ func (rdbc *rdbChannel) init(ctx context.Context) error {
 		},
 	}
 
-	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, rdbc.cfg.UpdateToken)
+	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, c.cfg.UpdateToken)
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
-		req := rdbc.prepareReportTestResultsRequest(ctx, b)
-		_, err := rdbc.cfg.Recorder.BatchCreateTestResults(ctx, req)
+		req := c.prepareReportTestResultsRequest(ctx, b)
+		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
 	if err != nil {
 		return err
 	}
-	rdbc.testResultCh = &ch
+	c.ch = &ch
 	return nil
 }
 
-func (rdbc *rdbChannel) closeAndDrain(ctx context.Context) {
+func (c *trChan) closeAndDrain(ctx context.Context) {
 	// annonuce that it is in the process of closeAndDrain.
-	if !atomic.CompareAndSwapInt32(&rdbc.closed, 0, 1) {
+	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}
 	// wait for all the active sessions to finish enquing tests results to the channel
-	rdbc.wgActive.Wait()
-	rdbc.testResultCh.CloseAndDrain(ctx)
+	c.wgActive.Wait()
+	c.ch.CloseAndDrain(ctx)
 }
 
-func (rdbc *rdbChannel) reportTestResults(trs []*sinkpb.TestResult) {
-	rdbc.wgActive.Add(1)
-	defer rdbc.wgActive.Done()
+func (c *trChan) reportTestResults(trs []*sinkpb.TestResult) {
+	c.wgActive.Add(1)
+	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
-	if atomic.LoadInt32(&rdbc.closed) == 1 {
+	if atomic.LoadInt32(&c.closed) == 1 {
 		return
 	}
 	for _, tr := range trs {
-		rdbc.testResultCh.C <- tr
+		c.ch.C <- tr
 	}
 }
 
-func (rdbc *rdbChannel) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func (c *trChan) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
 	// retried batch?
 	if b.Meta != nil {
 		return b.Meta.(*pb.BatchCreateTestResultsRequest)
 	}
 	req := &pb.BatchCreateTestResultsRequest{
-		Invocation: rdbc.cfg.Invocation,
+		Invocation: c.cfg.Invocation,
 		// a random UUID
 		RequestId: uuid.New().String(),
 	}
@@ -115,7 +115,7 @@ func (rdbc *rdbChannel) prepareReportTestResultsRequest(ctx context.Context, b *
 			TestResult: &pb.TestResult{
 				TestId:      tr.GetTestId(),
 				ResultId:    tr.GetResultId(),
-				Variant:     rdbc.cfg.BaseVariant,
+				Variant:     c.cfg.BaseVariant,
 				Expected:    tr.GetExpected(),
 				SummaryHtml: tr.GetSummaryHtml(),
 				StartTime:   tr.GetStartTime(),
