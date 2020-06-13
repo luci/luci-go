@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c60361d7_4c064beb",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:13:53Z",
+      "side": 1,
+      "message": "a batch always contains only one item. Should we extract the item before calling testUpload? then this could we be covered by tests",
+      "range": {
+        "startLine": 47,
+        "startChar": 34,
+        "endLine": 47,
+        "endChar": 48
+      },
+      "revId": "27e26fb533d601fee2d51ce61c6165a2d28d8506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7160b50f_3ffaefef",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:13:53Z",
+      "side": 1,
+      "message": "unused. do we really need it in the task def?",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 18
+      },
+      "revId": "27e26fb533d601fee2d51ce61c6165a2d28d8506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f021d94_d3c585d0",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:13:53Z",
+      "side": 1,
+      "message": "nit: i think it would be more readable if these two lines were joined. Go is OK with \u003e80col lines",
+      "range": {
+        "startLine": 110,
+        "startChar": 42,
+        "endLine": 111,
+        "endChar": 44
+      },
+      "revId": "27e26fb533d601fee2d51ce61c6165a2d28d8506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d35b3ec_cb7266c6",
+        "filename": "resultdb/sink/artifact_channel_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:13:53Z",
+      "side": 1,
+      "message": "i think the test should wait for its goroutines to exit",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 4
+      },
+      "revId": "27e26fb533d601fee2d51ce61c6165a2d28d8506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccf20b01_726d8fa5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:13:53Z",
+      "side": 1,
+      "message": "please add a comment that this is cached ID from `Invocation`",
+      "revId": "27e26fb533d601fee2d51ce61c6165a2d28d8506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
