@@ -132,6 +132,30 @@
     },
     {
       "key": {
+        "uuid": "0357e308_bc038044",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:04:21Z",
+      "side": 1,
+      "message": "yes, and I meant that maintaining a worker pool with N goroutines seems simpler than sync/parallel because we need them to run in the background (parallel.WorkGroup blocks, so we\u0027d need a separate goroutine just for WorkGroup call). My understanding is that this can be just\n\n  uploadC :\u003d make(chan uploadTask, 2000)\n\n  ...\n\n  for i :\u003d 0; i \u003c 4; i++ {\n    wg.Add(1)\n    go func() {\n      defer wg.Done()\n      for task :\u003d range uploadC {\n         // upload Art\n      }\n    }()\n  }\n\n\n  \n  // closeAndDrain\n  c.wgActive.Wait()\n  close(uploadC)\n\n\n--------\n\nhowever, having written this, this seems more code and nuances than dispatcher, so i guess dispatcher is ok",
+      "parentUuid": "f3ce6a5c_9ec5f7fa",
+      "range": {
+        "startLine": 50,
+        "startChar": 18,
+        "endLine": 50,
+        "endChar": 19
+      },
+      "revId": "35c8bc978028972924fb2178e1b2f4e8a3f203be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "967d8953_bdfa1bc3",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7

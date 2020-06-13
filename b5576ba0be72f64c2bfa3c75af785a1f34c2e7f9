@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58bdab3d_daf2ec3b",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:04:21Z",
+      "side": 1,
+      "message": "this is noop with batchSize\u003d1, right?",
+      "range": {
+        "startLine": 52,
+        "startChar": 3,
+        "endLine": 52,
+        "endChar": 35
+      },
+      "revId": "b5576ba0be72f64c2bfa3c75af785a1f34c2e7f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b9a4bf2_fc0e042d",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T23:04:21Z",
+      "side": 1,
+      "message": "FWIU this must never happen. this would mean that our opts are incorrect, which are hardcoded here, so they cannot be incorrect. Should we panic? Then init() won\u0027t have to return an error and its callsite would get simpler too",
+      "range": {
+        "startLine": 62,
+        "startChar": 9,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "b5576ba0be72f64c2bfa3c75af785a1f34c2e7f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
