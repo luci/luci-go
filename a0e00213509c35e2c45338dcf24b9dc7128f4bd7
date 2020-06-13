@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3beba4b6_a7ea0d78",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T17:50:42Z",
+      "side": 1,
+      "message": "pbutil.TestResultArtifactName",
+      "range": {
+        "startLine": 112,
+        "startChar": 18,
+        "endLine": 118,
+        "endChar": 4
+      },
+      "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09afee0d_c03a840e",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T17:50:42Z",
+      "side": 1,
+      "message": "why not pass art itself? then we don\u0027t have to mirror artifact fields here and in uploadTask def",
+      "range": {
+        "startLine": 119,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 34
+      },
+      "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b6fd37a_6fbab401",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-13T17:50:42Z",
+      "side": 1,
+      "message": "this call blocks on enqueueing into the artifactChannel, so we have processing of one queue blocked on enqueuing into another queue. I find this a bit complicated and I think it could be avoided.",
+      "range": {
+        "startLine": 64,
+        "startChar": 11,
+        "endLine": 64,
+        "endChar": 18
+      },
+      "revId": "a0e00213509c35e2c45338dcf24b9dc7128f4bd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
