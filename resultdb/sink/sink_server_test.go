@@ -69,7 +69,6 @@ func TestReportTestResults(t *testing.T) {
 			TestId:      tr.TestId,
 			ResultId:    tr.ResultId,
 			Expected:    tr.Expected,
-			Variant:     tr.Variant,
 			SummaryHtml: tr.SummaryHtml,
 			StartTime:   tr.StartTime,
 			Duration:    tr.Duration,
@@ -88,17 +87,8 @@ func TestReportTestResults(t *testing.T) {
 				base := []string{"bucket", "try", "builder", "linux-rel"}
 				cfg.BaseVariant = pbutil.Variant(base...)
 
-				Convey("with nil variant", func() {
-					tr.Variant = nil
-					expected.Variant = pbutil.Variant(base...)
-					check(ctx, cfg, tr, expected)
-				})
-
-				Convey("with non-nil variant", func() {
-					tr.Variant = pbutil.Variant("test_suite", "browser_tests")
-					expected.Variant = pbutil.Variant(append(base, "test_suite", "browser_tests")...)
-					check(ctx, cfg, tr, expected)
-				})
+				expected.Variant = pbutil.Variant(base...)
+				check(ctx, cfg, tr, expected)
 			})
 		})
 

@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // sinkServer implements sinkpb.SinkServer.
@@ -48,8 +47,12 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	if _, err := mathrand.Read(ctx, bytes); err != nil {
 		return nil, err
 	}
-	ss := &sinkServer{cfg: cfg, resultIDBase: hex.EncodeToString(bytes)}
-	if err := ss.rdbCh.init(ctx, cfg); err != nil {
+	ss := &sinkServer{
+		cfg:          cfg,
+		rdbCh:        rdbChannel{cfg: cfg},
+		resultIDBase: hex.EncodeToString(bytes),
+	}
+	if err := ss.rdbCh.init(ctx); err != nil {
 		return nil, err
 	}
 
@@ -103,20 +106,9 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 	for _, tr := range in.TestResults {
 		tr.TestId = s.cfg.TestIDPrefix + tr.GetTestId()
 
-		// merge the test variants with base variants.
-		def := make(map[string]string, len(s.cfg.BaseVariant.GetDef())+len(tr.Variant.GetDef()))
-		for k, v := range s.cfg.BaseVariant.GetDef() {
-			def[k] = v
-		}
-		for k, v := range tr.Variant.GetDef() {
-			def[k] = v
-		}
-		tr.Variant = &typepb.Variant{Def: def}
-
 		// assign a random, unique ID if resultID omitted.
 		if tr.ResultId == "" {
-			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase,
-				atomic.AddUint32(&s.resultCounter, 1))
+			tr.ResultId = fmt.Sprintf("%s-%.5d", s.resultIDBase, atomic.AddUint32(&s.resultCounter, 1))
 		}
 
 		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {

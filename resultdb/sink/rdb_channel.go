@@ -38,6 +38,7 @@ import (
 
 type rdbChannel struct {
 	testResultCh *dispatcher.Channel
+	cfg          ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
 	//
@@ -51,7 +52,7 @@ type rdbChannel struct {
 	closed int32
 }
 
-func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
+func (rdbc *rdbChannel) init(ctx context.Context) error {
 	// install a dispatcher channel for pb.TestResult
 	rdopts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
@@ -63,10 +64,10 @@ func (rdbc *rdbChannel) init(ctx context.Context, cfg ServerConfig) error {
 		},
 	}
 
-	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
+	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, rdbc.cfg.UpdateToken)
 	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
-		req := prepareReportTestResultsRequest(ctx, &cfg, b)
-		_, err := cfg.Recorder.BatchCreateTestResults(ctx, req)
+		req := rdbc.prepareReportTestResultsRequest(ctx, b)
+		_, err := rdbc.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
 	if err != nil {
@@ -98,13 +99,13 @@ func (rdbc *rdbChannel) reportTestResults(trs []*sinkpb.TestResult) {
 	}
 }
 
-func prepareReportTestResultsRequest(ctx context.Context, cfg *ServerConfig, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func (rdbc *rdbChannel) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
 	// retried batch?
 	if b.Meta != nil {
 		return b.Meta.(*pb.BatchCreateTestResultsRequest)
 	}
 	req := &pb.BatchCreateTestResultsRequest{
-		Invocation: cfg.Invocation,
+		Invocation: rdbc.cfg.Invocation,
 		// a random UUID
 		RequestId: uuid.New().String(),
 	}
@@ -114,7 +115,7 @@ func prepareReportTestResultsRequest(ctx context.Context, cfg *ServerConfig, b *
 			TestResult: &pb.TestResult{
 				TestId:      tr.GetTestId(),
 				ResultId:    tr.GetResultId(),
-				Variant:     tr.GetVariant(),
+				Variant:     rdbc.cfg.BaseVariant,
 				Expected:    tr.GetExpected(),
 				SummaryHtml: tr.GetSummaryHtml(),
 				StartTime:   tr.GetStartTime(),

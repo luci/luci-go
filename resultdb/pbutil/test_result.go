@@ -135,7 +135,6 @@ func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 		return unspecified()
 	case ec.isErr(ValidateTestID(msg.TestId), "test_id"):
 	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
-	case ec.isErr(ValidateVariant(msg.Variant), "variant"):
 	// skip `Expected`
 	case ec.isErr(ValidateEnum(int32(msg.Status), pb.TestStatus_name), "status"):
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):

@@ -34,30 +34,27 @@ message TestResult {
   // If omitted, a random, unique ID is generated..
   string result_id = 2;
 
-  // Equivalent of luci.resultpb.TestResult.variant.
-  luci.resultdb.type.Variant variant = 3;
-
   // Equivalent of luci.resultpb.TestResult.expected.
-  bool expected = 4;
+  bool expected = 3;
 
   // Equivalent of luci.resultpb.TestResult.status.
-  TestStatus status = 5;
+  TestStatus status = 4;
 
   // Equivalent of luci.resultpb.TestResult.summary_html.
-  string summary_html = 6;
+  string summary_html = 5;
 
   // Equivalent of luci.resultpb.TestResult.start_time.
-  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp start_time = 6;
 
   // Equivalent of luci.resultpb.TestResult.duration.
-  google.protobuf.Duration duration = 8;
+  google.protobuf.Duration duration = 7;
 
   // Equivalent of luci.resultpb.TestResult.tags.
-  repeated luci.resultdb.type.StringPair tags = 9;
+  repeated luci.resultdb.type.StringPair tags = 8;
 
   // Artifacts to upload and associate with this test result.
   // The map key is an artifact id.
-  map<string, Artifact> artifacts = 10;
+  map<string, Artifact> artifacts = 9;
 }
 
 // A local equivalent of luci.resultdb.Artifact message

@@ -100,7 +100,6 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 	return &sinkpb.TestResult{
 		TestId:      "this is testID",
 		ResultId:    "result_id1",
-		Variant:     pbutil.Variant("a", "b"),
 		Expected:    true,
 		Status:      sinkpb.TestStatus_PASS,
 		SummaryHtml: "HTML summary",
