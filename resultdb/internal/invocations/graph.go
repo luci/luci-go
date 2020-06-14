@@ -29,6 +29,10 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 )
 
+// GraphSizeLimit is the maximum graph size (in terms of nodes) that ResultDB
+// can operate on.
+const GraphSizeLimit = 10000
+
 // InclusionKey returns a spanner key for an Inclusion row.
 func InclusionKey(including, included ID) spanner.Key {
 	return spanner.Key{including.RowID(), included.RowID()}
@@ -63,10 +67,7 @@ var TooManyTag = errors.BoolTag{
 
 // Reachable returns a transitive closure of roots.
 // If the returned error is non-nil, it is annotated with a gRPC code.
-//
-// limit must be positive. If the size of the transitive closure exceeds the
-// limit, returns an error tagged with TooManyTag.
-func Reachable(ctx context.Context, txn span.Txn, limit int, roots IDSet) (reachable IDSet, err error) {
+func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readReachableInvocations")
 	defer func() { ts.End(err) }()
 
@@ -75,12 +76,6 @@ func Reachable(ctx context.Context, txn span.Txn, limit int, roots IDSet) (reach
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	if limit <= 0 {
-		panic("limit <= 0")
-	}
-	if len(roots) > limit {
-		panic("len(roots) > limit")
-	}
 
 	reachable = make(IDSet, len(roots))
 	var mu sync.Mutex
@@ -97,9 +92,9 @@ func Reachable(ctx context.Context, txn span.Txn, limit int, roots IDSet) (reach
 		}
 
 		// Consider fetching a new invocation.
-		if len(reachable) == limit {
+		if len(reachable) == GraphSizeLimit {
 			cancel()
-			return errors.Reason("more than %d invocations match", limit).Tag(TooManyTag).Err()
+			return errors.Reason("more than %d invocations match", GraphSizeLimit).Tag(TooManyTag).Err()
 		}
 
 		// Mark the invocation as being processed.
