@@ -258,10 +258,7 @@ func ensureFinalizing(ctx context.Context, txn span.Txn, invID invocations.ID) e
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check once again if the invocation is still not finalized.
-		switch err := ensureFinalizing(ctx, txn, invID); {
-		case err == errAlreadyFinalized:
-			return nil
-		case err != nil:
+		if err := ensureFinalizing(ctx, txn, invID); err != nil {
 			return err
 		}
 
@@ -284,7 +281,10 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			}),
 		})
 	})
-	return err
+	if err != nil && err != errAlreadyFinalized {
+		return err
+	}
+	return nil
 }
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly
