@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f1e33d14_b0950a91",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-14T22:18:26Z",
+      "side": 1,
+      "message": "I think I\u0027ve seen this before; Should this functionality be added to dispatcher.Channel instead?",
+      "range": {
+        "startLine": 67,
+        "startChar": 12,
+        "endLine": 67,
+        "endChar": 31
+      },
+      "revId": "d8c8e37f1ab804bcc05e123403137f6d44e4b1fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3dad196f_e24408cf",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-14T22:18:26Z",
+      "side": 1,
+      "message": "yeah, this is where I\u0027ve seen it :). do you think you can file a bug about the missing functionality in dispatcher.Channel so we can integrate it there?",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 7
+      },
+      "revId": "d8c8e37f1ab804bcc05e123403137f6d44e4b1fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
