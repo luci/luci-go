@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server"
 
@@ -256,18 +257,31 @@ func ensureFinalizing(ctx context.Context, txn span.Txn, invID invocations.ID) e
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
+	var reach invocations.IDSet
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		// Check once again if the invocation is still not finalized.
-		if err := ensureFinalizing(ctx, txn, invID); err != nil {
-			return err
-		}
+		err := parallel.FanOutIn(func(work chan<- func() error) {
+			work <- func() error {
+				return ensureFinalizing(ctx, txn, invID)
+			}
 
-		// Enqueue tasks to try to finalize invocations that include ours.
-		if err := insertNextFinalizationTasks(ctx, txn, invID); err != nil {
+			// Read all reachable invocations to cache them after the transaction.
+			work <- func() (err error) {
+				reach, err = invocations.Reachable(ctx, txn, invocations.NewIDSet(invID))
+				return
+			}
+
+			// Enqueue tasks to try to finalize invocations that include ours.
+			work <- func() error {
+				return insertNextFinalizationTasks(ctx, txn, invID)
+			}
+		})
+		if err != nil {
 			return err
 		}
 
 		// Enqueue tasks to export the invocation to BigQuery.
+		// Note: this cannot be done in parallel with insertNextFinalizationTasks
+		// because a Spanner session can process only one query at a time.
 		if err := insertBigQueryTasks(ctx, txn, invID); err != nil {
 			return err
 		}
@@ -281,10 +295,16 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			}),
 		})
 	})
-	if err != nil && err != errAlreadyFinalized {
+	switch {
+	case err == errAlreadyFinalized:
+		return nil
+	case err != nil:
 		return err
+	default:
+		// Cache the reachable invocations.
+		invocations.ReachCache(invID).TryWrite(ctx, reach)
+		return nil
 	}
-	return nil
 }
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly
