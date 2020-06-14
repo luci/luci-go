@@ -97,13 +97,13 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	client := span.Client(ctx)
 
 	// Check if we need to write this invocation.
-	switch doWrite, err := shouldWriteInvocation(ctx, client.Single(), invID); {
-	case err != nil:
-		return nil, err
-	case !doWrite:
+	switch err := shouldWriteInvocation(ctx, client.Single(), invID); {
+	case err == errAlreadyExists:
 		readTxn := client.ReadOnlyTransaction()
 		defer readTxn.Close()
 		return invocations.Read(ctx, readTxn, invID)
+	case err != nil:
+		return nil, err
 	}
 
 	inv, err := chromium.DeriveChromiumInvocation(task, in)
@@ -130,40 +130,48 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 		}),
 	}
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		switch doWrite, err := shouldWriteInvocation(ctx, txn, invID); {
-		case err != nil:
+		if err := shouldWriteInvocation(ctx, txn, invID); err != nil {
 			return err
-		case !doWrite:
-			return nil
-		default:
-			return txn.BufferWrite(invMs)
 		}
+		return txn.BufferWrite(invMs)
 	})
-	if err != nil {
+	switch {
+	case err == errAlreadyExists:
+		// Pass.
+	case err != nil:
 		return nil, err
+	default:
+		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	}
-	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+
 	return inv, nil
 }
 
-func shouldWriteInvocation(ctx context.Context, txn span.Txn, id invocations.ID) (bool, error) {
+// errAlreadyExists is returned by shouldWriteInvocation if the invocation
+// already exists.
+var errAlreadyExists = fmt.Errorf("already exists")
+
+// shouldWriteInvocation returns errAlreadyExists if the invocation already
+// exists and should not be re-written.
+func shouldWriteInvocation(ctx context.Context, txn span.Txn, id invocations.ID) error {
 	state, err := invocations.ReadState(ctx, txn, id)
 	s, _ := appstatus.Get(err)
 	switch {
 	case s.Code() == codes.NotFound:
 		// No such invocation found means we may have to write it, so proceed.
-		return true, nil
+		return nil
 
 	case err != nil:
-		return false, err
+		return err
 
 	case state != pb.Invocation_FINALIZED:
-		return false, errors.Reason(
+		return errors.Reason(
 			"attempting to derive an existing non-finalized invocation").Err()
-	}
 
-	// The invocation exists and is finalized, so no need to write it.
-	return false, nil
+	default:
+		// The invocation exists and is finalized, so no need to write it.
+		return errAlreadyExists
+	}
 }
 
 // deriveInvocationForOriginTask derives an invocation and test results
@@ -179,13 +187,13 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 	originInvID := chromium.GetInvocationID(originTask, in)
 
 	// Check if we need to write origin invocation.
-	switch doWrite, err := shouldWriteInvocation(ctx, client.Single(), originInvID); {
+	switch err := shouldWriteInvocation(ctx, client.Single(), originInvID); {
+	case err == errAlreadyExists:
+		txn := client.ReadOnlyTransaction()
+		defer txn.Close()
+		return invocations.Read(ctx, txn, originInvID)
 	case err != nil:
 		return nil, err
-	case !doWrite: // Origin invocation is already in Spanner. Return it.
-		readTxn := client.ReadOnlyTransaction()
-		defer readTxn.Close()
-		return invocations.Read(ctx, readTxn, originInvID)
 	}
 	originInv, err := chromium.DeriveChromiumInvocation(originTask, in)
 	if err != nil {
@@ -222,20 +230,20 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check origin invocation state again.
-		switch doWrite, err := shouldWriteInvocation(ctx, txn, originInvID); {
-		case err != nil:
+		if err := shouldWriteInvocation(ctx, txn, originInvID); err != nil {
 			return err
-		case !doWrite:
-			return nil
-		default:
-			return txn.BufferWrite(ms)
 		}
+		return txn.BufferWrite(ms)
 	})
-	if err != nil {
+	switch {
+	case err == errAlreadyExists:
+		// Pass.
+	case err != nil:
 		return nil, err
+	default:
+		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	}
 
-	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	return originInv, nil
 }
 
