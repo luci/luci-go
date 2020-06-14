@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -40,10 +41,13 @@ const (
 // Main runs a service.
 //
 // Registers -spanner-database flag and initializes a Spanner client.
+//
+// Registers flags for Redis connection.
 func Main(init func(srv *server.Server) error) {
 	modules := []module.Module{
 		limiter.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
 	}
 
 	spannerDB := flag.String("spanner-database", "", "Name of the spanner database to connect to")
