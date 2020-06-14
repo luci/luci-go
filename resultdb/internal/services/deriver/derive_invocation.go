@@ -235,6 +235,9 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 		return nil, err
 	}
 
+	// Cache the included invocations.
+	invocations.ReachCache(originInvID).TryWrite(ctx, batchInvs)
+
 	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	return originInv, nil
 }
@@ -283,6 +286,9 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 			if _, err := client.Apply(ctx, ms); err != nil {
 				return err
 			}
+
+			// Memorize that this invocation does not include anything.
+			invocations.ReachCache(batchID).TryWrite(ctx, nil)
 
 			span.IncRowCount(ctx, len(batch), span.TestResults, span.Inserted)
 			span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
