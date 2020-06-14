@@ -240,7 +240,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			invIDs, err := invocations.Reachable(ctx, txn, 100, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
 			So(err, ShouldBeNil)
 
 			trNum, err := invocations.ReadTestResultCount(ctx, txn, invIDs)
@@ -291,7 +291,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			invIDs, err := invocations.Reachable(ctx, txn, 100, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
 			So(err, ShouldBeNil)
 			So(len(invIDs), ShouldEqual, 3)
 
