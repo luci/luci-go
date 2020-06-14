@@ -106,15 +106,13 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {
-				doWrite, err := shouldWriteInvocation(ctx, span.Client(ctx).Single(), "inserted")
-				So(err, ShouldBeNil)
-				So(doWrite, ShouldBeFalse)
+				err := shouldWriteInvocation(ctx, span.Client(ctx).Single(), "inserted")
+				So(err, ShouldEqual, errAlreadyExists)
 			})
 
 			Convey(`if we don't yet have the invocation written`, func() {
-				doWrite, err := shouldWriteInvocation(ctx, span.Client(ctx).Single(), "another")
+				err := shouldWriteInvocation(ctx, span.Client(ctx).Single(), "another")
 				So(err, ShouldBeNil)
-				So(doWrite, ShouldBeTrue)
 			})
 		})
 
