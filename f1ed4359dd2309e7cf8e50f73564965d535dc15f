@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81f796b8_eb7b4282",
+        "filename": "cipd/appengine/backend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-14T22:25:45Z",
+      "side": 1,
+      "message": "hm... what\u0027s the rationale for dropping the ISE?",
+      "range": {
+        "startLine": 52,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 10
+      },
+      "revId": "f1ed4359dd2309e7cf8e50f73564965d535dc15f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
