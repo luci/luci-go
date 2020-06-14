@@ -16,15 +16,18 @@ package invocations
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"cloud.google.com/go/spanner"
+	"github.com/gomodule/redigo/redis"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/server/redisconn"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -81,7 +84,8 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 	var mu sync.Mutex
 	var visit func(id ID) error
 
-	sem := semaphore.NewWeighted(64)
+	spanSem := semaphore.NewWeighted(64) // limits Spanner RPC concurrency.
+
 	visit = func(id ID) error {
 		mu.Lock()
 		defer mu.Unlock()
@@ -102,11 +106,26 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
+			// First check the cache.
+			switch ids, err := ReachCache(id).Read(ctx); {
+			case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
+				// Ignore this error.
+			case err != nil:
+				logging.Warningf(ctx, "ReachCache: failed to read %s: %s", id, err)
+			default:
+				// Cache hit. Copy the results to `reachable` and exit without
+				// recursion.
+				mu.Lock()
+				defer mu.Unlock()
+				reachable.Union(ids)
+				return nil
+			}
+
+			if err := spanSem.Acquire(ctx, 1); err != nil {
 				return err
 			}
 			included, err := ReadIncluded(ctx, txn, id)
-			sem.Release(1)
+			spanSem.Release(1)
 			if err != nil {
 				return err
 			}
@@ -134,4 +153,98 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 	}
 	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable), roots.Names())
 	return reachable, nil
+}
+
+// ReachCache is a cache of all invocations reachable from the given
+// invocation, stored in Redis. The cached set is either correct or absent.
+//
+// The cache must be written only after the set of reachable invocations
+// becomes immutable, i.e. when the including invocation is finalized.
+// This is important to be able to tolerate transient Redis failures
+// and avoid a situation where we failed to update the currently stored set,
+// ignored the failure and then, after Redis came back online, read the
+// stale set.
+type ReachCache ID
+
+// key returns the Redis key.
+func (c ReachCache) key() string {
+	return fmt.Sprintf("reach:%s", c)
+}
+
+// ErrUnknownReach is returned by ReachCache.Read if the cached value is absent.
+var ErrUnknownReach = fmt.Errorf("the reachable set is unknown")
+
+// Read reads the current value.
+// Returns ErrUnknownReach if the value is absent.
+func (c ReachCache) Read(ctx context.Context) (ids IDSet, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.read")
+	ts.Attribute("id", string(c))
+	defer func() { ts.End(err) }()
+
+	conn, err := redisconn.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	key := c.key()
+
+	// Transactionally, check if the key exists and read the set members.
+	conn.Send("MULTI")
+	conn.Send("EXISTS", key)
+	conn.Send("SMEMBERS", key)
+	vs, err := redis.Values(conn.Do("EXEC"))
+	if err != nil {
+		return nil, err
+	}
+	if exists := vs[0].(int64); exists == 0 {
+		return nil, ErrUnknownReach
+	}
+
+	members := vs[1].([]interface{})
+	ids = make(IDSet, len(ids))
+	for _, id := range members {
+		ids.Add(ID(id.([]byte)))
+	}
+	ts.Attribute("size", len(ids))
+	return ids, nil
+}
+
+// Write writes the new value.
+func (c ReachCache) Write(ctx context.Context, value IDSet) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.write")
+	ts.Attribute("id", string(c))
+	ts.Attribute("size", len(value))
+	defer func() { ts.End(err) }()
+
+	conn, err := redisconn.Get(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	key := c.key()
+	addArgs := make(redis.Args, 0, 1+len(value)).
+		Add(key).
+		AddFlat(value.Strings())
+
+	// Transactionally, clear the key and add all IDs in value.
+	conn.Send("MULTI")
+	conn.Send("DEL", key)
+	// Calling SADD without new members is an error.
+	if len(value) > 0 {
+		conn.Send("SADD", addArgs...)
+	}
+	_, err = conn.Do("EXEC")
+	return err
+}
+
+// TryWrite tries to write the new value. On failure, logs the error.
+func (c ReachCache) TryWrite(ctx context.Context, value IDSet) {
+	switch err := c.Write(ctx, value); {
+	case err == redisconn.ErrNotConfigured:
+
+	case err != nil:
+		logging.Warningf(ctx, "ReachCache: failed to write %s: %s", c, err)
+	}
 }
