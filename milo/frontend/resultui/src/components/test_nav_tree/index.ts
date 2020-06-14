@@ -53,8 +53,22 @@ export class TestNavTreeElement extends MobxLitElement {
     this.disposer();
   }
 
+  private async loadNextPage() {
+    try {
+      await this.testLoader.loadNextPage();
+      throw new Error('good');
+    } catch (e) {
+      this.dispatchEvent(new ErrorEvent('error', {
+        error: e,
+        message: e.toString(),
+        composed: true,
+        bubbles: true,
+      }));
+    }
+  }
+
   protected render() {
-    const root = this.testLoader?.node!;
+    const root = this.testLoader?.node;
 
     return html`
       <div id="container">
@@ -70,7 +84,7 @@ export class TestNavTreeElement extends MobxLitElement {
           <mwc-button
             id="load-more-btn"
             unelevated dense
-            @click=${() => this.testLoader.loadNextPage()}
+            @click=${this.loadNextPage}
             ?disabled=${this.testLoader.done || this.testLoader.isLoading}
           >
             ${this.testLoader.isLoading ?

@@ -59,7 +59,6 @@ export class TestLoader {
       return this.loadPromise;
     }
     this.loadingReqCount++;
-    // TODO(weiweilin): better error handling.
     this.loadPromise = this.loadPromise.then(() => this.loadNextPageInternal());
     return this.loadPromise.then(() => this.loadingReqCount--);
   }
