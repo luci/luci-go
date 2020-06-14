@@ -25,13 +25,11 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
-	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
-	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
@@ -47,14 +45,14 @@ type testResultChannel struct {
 	// closeAndDrain closes and drains the channel.
 	wgActive sync.WaitGroup
 
-	// 1 indicates that rdb started the process of closing and draining the channel. 0,
-	// otherwise.
+	// 1 indicates that testResultChannel started the process of closing and draining
+	// the channel. 0, otherwise.
 	closed int32
 }
 
-func (c *testResultChannel) init(ctx context.Context) error {
+func (c *testResultChannel) init(ctx context.Context) {
 	// install a dispatcher channel for pb.TestResult
-	rdopts := &dispatcher.Options{
+	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
 			BatchSize:     400,
@@ -63,18 +61,15 @@ func (c *testResultChannel) init(ctx context.Context) error {
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
 		},
 	}
-
-	ctx = metadata.AppendToOutgoingContext(ctx, recorder.UpdateTokenMetadataKey, c.cfg.UpdateToken)
-	ch, err := dispatcher.NewChannel(ctx, rdopts, func(b *buffer.Batch) error {
+	ch, err := dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
 		req := c.prepareReportTestResultsRequest(ctx, b)
 		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
 	})
 	if err != nil {
-		return err
+		panic(fmt.Sprintf("failed to create a channel for TestResult: %s", err))
 	}
 	c.ch = &ch
-	return nil
 }
 
 func (c *testResultChannel) closeAndDrain(ctx context.Context) {
