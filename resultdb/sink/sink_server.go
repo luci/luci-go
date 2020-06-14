@@ -28,13 +28,15 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
+	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
 	cfg           ServerConfig
-	trChan        testResultChannel
+	ac            artifactChannel
+	tc            testResultChannel
 	resultIDBase  string
 	resultCounter uint32
 }
@@ -46,14 +48,17 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	if _, err := mathrand.Read(ctx, bytes); err != nil {
 		return nil, err
 	}
+
+	ctx = metadata.AppendToOutgoingContext(
+		ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ss := &sinkServer{
 		cfg:          cfg,
-		trChan:       testResultChannel{cfg: cfg},
+		ac:           artifactChannel{cfg: cfg},
+		tc:           testResultChannel{cfg: cfg},
 		resultIDBase: hex.EncodeToString(bytes),
 	}
-	if err := ss.trChan.init(ctx); err != nil {
-		return nil, err
-	}
+	ss.ac.init(ctx)
+	ss.tc.init(ctx)
 
 	return &sinkpb.DecoratedSink{
 		Service: ss,
@@ -65,7 +70,8 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 // or the context is cancelled.
 func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	ss := s.(*sinkpb.DecoratedSink).Service.(*sinkServer)
-	ss.trChan.closeAndDrain(ctx)
+	ss.tc.closeAndDrain(ctx)
+	ss.ac.closeAndDrain(ctx)
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
@@ -114,7 +120,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
-	s.trChan.reportTestResults(in.TestResults)
+	s.tc.reportTestResults(in.TestResults)
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
