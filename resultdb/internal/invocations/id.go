@@ -103,6 +103,13 @@ func (s IDSet) Add(id ID) {
 	s[id] = struct{}{}
 }
 
+// Union adds other ids.
+func (s IDSet) Union(other IDSet) {
+	for id := range other {
+		s.Add(id)
+	}
+}
+
 // Remove removes id from the set if it was present.
 func (s IDSet) Remove(id ID) {
 	delete(s, id)
@@ -112,6 +119,18 @@ func (s IDSet) Remove(id ID) {
 func (s IDSet) Has(id ID) bool {
 	_, ok := s[id]
 	return ok
+}
+
+// Strings returns string IDs in arbitrary order.
+func (s IDSet) Strings() []string {
+	if len(s) == 0 {
+		return nil
+	}
+	ret := make([]string, 0, len(s))
+	for id := range s {
+		ret = append(ret, string(id))
+	}
+	return ret
 }
 
 // String implements fmt.Stringer.
