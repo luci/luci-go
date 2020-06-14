@@ -36,7 +36,7 @@ import (
 
 type testResultChannel struct {
 	ch  *dispatcher.Channel
-	cfg ServerConfig
+	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
 	//

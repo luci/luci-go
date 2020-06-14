@@ -21,14 +21,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-	"golang.org/x/time/rate"
 )
 
 type artifactChannel struct {
 	ch  *dispatcher.Channel
-	cfg ServerConfig
+	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
 	//

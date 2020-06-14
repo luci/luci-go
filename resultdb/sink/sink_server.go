@@ -53,8 +53,8 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 		ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ss := &sinkServer{
 		cfg:          cfg,
-		ac:           artifactChannel{cfg: cfg},
-		tc:           testResultChannel{cfg: cfg},
+		ac:           artifactChannel{cfg: &cfg},
+		tc:           testResultChannel{cfg: &cfg},
 		resultIDBase: hex.EncodeToString(bytes),
 	}
 	ss.ac.init(ctx)
