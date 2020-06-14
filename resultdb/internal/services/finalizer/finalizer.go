@@ -256,6 +256,7 @@ func ensureFinalizing(ctx context.Context, txn span.Txn, invID invocations.ID) e
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
+	var reachable invocations.IDSet
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check once again if the invocation is still not finalized.
 		switch err := ensureFinalizing(ctx, txn, invID); {
@@ -275,6 +276,12 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			return err
 		}
 
+		// Read all reachable invocations to cache them after the transaction.
+		var err error
+		if reachable, err = invocations.Reachable(ctx, txn, invocations.NewIDSet(invID)); err != nil {
+			return errors.Annotate(err, "failed to read invocations reachable from %s", invID).Err()
+		}
+
 		// Update the invocation state.
 		return txn.BufferWrite([]*spanner.Mutation{
 			span.UpdateMap("Invocations", map[string]interface{}{
@@ -284,7 +291,14 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			}),
 		})
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Cache the reachable invocations.
+	invocations.ReachCache(invID).TryWrite(ctx, reachable)
+
+	return nil
 }
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly
