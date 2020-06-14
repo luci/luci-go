@@ -12,7 +12,7 @@
 
 LUCI Go GAE adaptor code is meant to be worked on from an Chromium
 [infra.git](https://chromium.googlesource.com/infra/infra.git) checkout, which
-enforces packages versions and Go toolchain version. First get fetch via
+enforces packages versions and Go toolchain version. First get `fetch` via
 [depot_tools.git](https://chromium.googlesource.com/chromium/tools/depot_tools.git)
 then run:
 
