@@ -59,10 +59,13 @@ export class InvocationDetailsTabElement extends MobxLitElement {
       >Included Invocations:
         <ul>
         ${invocation.includedInvocations.map((invName) => stripInvocationPrefix(invName)).map((invId) => html`
-          <li><a href=${router.urlForName(
-            'invocation',
-            {'invocation_id': invId},
-          )}>${invId}</a></li>
+          <li><a
+            href=${router.urlForName(
+              'invocation',
+              {'invocation_id': invId},
+            )}
+            target="_blank"
+          >${invId}</a></li>
         `)}
         </ul>
       </div>
