@@ -35,8 +35,8 @@ import (
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
 	cfg           ServerConfig
-	ac            artifactChannel
-	tc            testResultChannel
+	ac            *artifactChannel
+	tc            *testResultChannel
 	resultIDBase  string
 	resultCounter uint32
 }
@@ -53,12 +53,10 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 		ctx, recorder.UpdateTokenMetadataKey, cfg.UpdateToken)
 	ss := &sinkServer{
 		cfg:          cfg,
-		ac:           artifactChannel{cfg: &cfg},
-		tc:           testResultChannel{cfg: &cfg},
+		ac:           newArtifactChannel(ctx, &cfg),
+		tc:           newTestResultChannel(ctx, &cfg),
 		resultIDBase: hex.EncodeToString(bytes),
 	}
-	ss.ac.init(ctx)
-	ss.tc.init(ctx)
 
 	return &sinkpb.DecoratedSink{
 		Service: ss,

@@ -28,7 +28,7 @@ import (
 )
 
 type artifactChannel struct {
-	ch  *dispatcher.Channel
+	ch  dispatcher.Channel
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
@@ -43,7 +43,9 @@ type artifactChannel struct {
 	closed int32
 }
 
-func (c *artifactChannel) init(ctx context.Context) {
+func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
+	var err error
+	c := &artifactChannel{cfg: cfg}
 	opts := &dispatcher.Options{
 		// TODO(1087955) - tune QPSLimit and MaxLeases
 		QPSLimit: rate.NewLimiter(rate.Every(100*time.Millisecond), 4),
@@ -53,14 +55,14 @@ func (c *artifactChannel) init(ctx context.Context) {
 			FullBehavior: &buffer.BlockNewItems{MaxItems: 2000},
 		},
 	}
-	ch, err := dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
+	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
 		// TODO(crbug/1087955) - process
 		return nil
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for artifact uploads: %s", err))
 	}
-	c.ch = &ch
+	return c
 }
 
 func (c *artifactChannel) closeAndDrain(ctx context.Context) {

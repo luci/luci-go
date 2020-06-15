@@ -35,7 +35,7 @@ import (
 )
 
 type testResultChannel struct {
-	ch  *dispatcher.Channel
+	ch  dispatcher.Channel
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestResults.
@@ -50,8 +50,9 @@ type testResultChannel struct {
 	closed int32
 }
 
-func (c *testResultChannel) init(ctx context.Context) {
-	// install a dispatcher channel for pb.TestResult
+func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultChannel {
+	var err error
+	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
@@ -61,7 +62,7 @@ func (c *testResultChannel) init(ctx context.Context) {
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
 		},
 	}
-	ch, err := dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
+	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
 		req := c.prepareReportTestResultsRequest(ctx, b)
 		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
 		return err
@@ -69,7 +70,7 @@ func (c *testResultChannel) init(ctx context.Context) {
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for TestResult: %s", err))
 	}
-	c.ch = &ch
+	return c
 }
 
 func (c *testResultChannel) closeAndDrain(ctx context.Context) {
