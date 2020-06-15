@@ -50,8 +50,6 @@ func main() {
 		func(c *router.Context) {
 			if err := monitoring.ImportConfig(c.Context); err != nil {
 				errors.Log(c.Context, err)
-				c.Writer.WriteHeader(http.StatusInternalServerError)
-				return
 			}
 			c.Writer.WriteHeader(http.StatusOK)
 		},

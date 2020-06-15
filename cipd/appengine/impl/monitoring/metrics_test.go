@@ -20,30 +20,31 @@ import (
 	"time"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
+
+	api "go.chromium.org/luci/cipd/api/config/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMetrics(t *testing.T) {
 	t.Parallel()
+
 	ctx, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
+	ctx = caching.WithEmptyProcessCache(ctx)
+
 	s := tsmon.Store(ctx)
 	fields := []interface{}{"bots", "anonymous:anonymous", "GCS"}
 
 	Convey("FileSize", t, func() {
-		So(datastore.Put(ctx, &clientMonitoringWhitelist{
-			ID: wlID,
-			Entries: []clientMonitoringConfig{
-				{
-					IPWhitelist: "bots",
-					Label:       "bots",
-				},
+		So(cachedCfg.Set(ctx, &api.ClientMonitoringWhitelist{
+			ClientMonitoringConfig: []*api.ClientMonitoringConfig{
+				{IpWhitelist: "bots", Label: "bots"},
 			},
-		}), ShouldBeNil)
+		}, nil), ShouldBeNil)
 
 		Convey("not configured", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{})
