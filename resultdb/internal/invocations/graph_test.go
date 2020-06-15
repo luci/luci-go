@@ -32,21 +32,21 @@ func TestReachable(t *testing.T) {
 
 		node := insertInvocationIncluding
 
-		read := func(limit int, roots ...ID) (IDSet, error) {
+		read := func(roots ...ID) (IDSet, error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
-			return Reachable(ctx, txn, limit, NewIDSet(roots...))
+			return Reachable(ctx, txn, NewIDSet(roots...))
 		}
 
-		mustReadIDs := func(limit int, roots ...ID) IDSet {
-			invs, err := read(limit, roots...)
+		mustReadIDs := func(roots ...ID) IDSet {
+			invs, err := read(roots...)
 			So(err, ShouldBeNil)
 			return invs
 		}
 
 		Convey(`a -> []`, func() {
 			testutil.MustApply(ctx, node("a")...)
-			So(mustReadIDs(100, "a"), ShouldResemble, NewIDSet("a"))
+			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a"))
 		})
 
 		Convey(`a -> [b, c]`, func() {
@@ -55,7 +55,7 @@ func TestReachable(t *testing.T) {
 				node("b"),
 				node("c"),
 			)...)
-			So(mustReadIDs(100, "a"), ShouldResemble, NewIDSet("a", "b", "c"))
+			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a", "b", "c"))
 		})
 
 		Convey(`a -> b -> c`, func() {
@@ -64,18 +64,7 @@ func TestReachable(t *testing.T) {
 				node("b", "c"),
 				node("c"),
 			)...)
-			So(mustReadIDs(100, "a"), ShouldResemble, NewIDSet("a", "b", "c"))
-		})
-
-		Convey(`limit`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				node("a", "b"),
-				node("b", "c"),
-				node("c"),
-			)...)
-			_, err := read(1, "a")
-			So(err, ShouldNotBeNil)
-			So(TooManyTag.In(err), ShouldBeTrue)
+			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a", "b", "c"))
 		})
 	})
 }
@@ -106,7 +95,7 @@ func BenchmarkChainFetch(b *testing.B) {
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
 
-		if _, err := Reachable(ctx, txn, 100, NewIDSet(prev)); err != nil {
+		if _, err := Reachable(ctx, txn, NewIDSet(prev)); err != nil {
 			b.Fatal(err)
 		}
 	}

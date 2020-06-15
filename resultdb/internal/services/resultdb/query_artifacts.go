@@ -55,7 +55,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	}
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, txn, maxInvocationGraphSize, invocations.MustParseNames(in.Invocations))
+	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}

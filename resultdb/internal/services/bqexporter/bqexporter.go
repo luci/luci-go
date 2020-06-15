@@ -45,10 +45,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const (
-	maxInvocationGraphSize  = 10000
-	partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
-)
+const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
 var bqTableCache = caching.RegisterLRUCache(50)
 
@@ -441,7 +438,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 
 	// Get the invocation set.
-	invIDs, err := invocations.Reachable(ctx, txn, maxInvocationGraphSize, invocations.NewIDSet(invID))
+	invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invID))
 	if err != nil {
 		if invocations.TooManyTag.In(err) {
 			err = tasks.PermanentFailure.Apply(err)

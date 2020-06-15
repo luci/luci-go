@@ -42,7 +42,7 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 	}
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, txn, maxInvocationGraphSize, invocations.MustParseNames(in.Invocations))
+	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}

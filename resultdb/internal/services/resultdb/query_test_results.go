@@ -32,8 +32,6 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const maxInvocationGraphSize = 10000
-
 // queryRequest is implemented by *pb.QueryTestResultsRequest,
 // *pb.QueryTestExonerationsRequest and *pb.QueryTestResultStatisticsRequest.
 type queryRequest interface {
@@ -100,7 +98,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, txn, maxInvocationGraphSize, invocations.MustParseNames(in.Invocations))
+	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
