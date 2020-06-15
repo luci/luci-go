@@ -227,6 +227,10 @@ func (e *Entry) Set(ctx context.Context, cfg proto.Message, meta *config.Meta) e
 // Fetch to fetch the config if the in-memory cache is stale, see Fetch doc
 // to learn its caveats, they apply to Get as well.
 //
+// If there's no in-memory cache available in the context, falls back to Fetch.
+// This happens in tests that don't call caching.WithEmptyProcessCache to setup
+// the cache.
+//
 // Panics if the entry wasn't registered in the process cache via Register.
 //
 // If `meta` is non-nil, it will receive the config metadata.
@@ -238,15 +242,21 @@ func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, erro
 		}
 		return &pc, time.Minute, nil
 	})
-	if err != nil {
+	switch {
+	case err == caching.ErrNoProcessCache:
+		// A fallback useful in unit tests that may not have the process cache
+		// available. Production environments usually to have the cache installed
+		// by the framework code that initializes the root context.
+		return e.Fetch(ctx, meta)
+	case err != nil:
 		return nil, err
+	default:
+		pc := val.(*procCache)
+		if meta != nil {
+			*meta = pc.Meta
+		}
+		return pc.Config, nil
 	}
-
-	pc := val.(*procCache)
-	if meta != nil {
-		*meta = pc.Meta
-	}
-	return pc.Config, nil
 }
 
 // Fetch fetches the config from the datastore cache.
