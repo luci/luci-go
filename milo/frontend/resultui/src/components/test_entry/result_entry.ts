@@ -118,7 +118,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   private renderArtifacts() {
-    if (this.artifacts.length == 0) {
+    if (this.artifacts.length === 0) {
       return html``;
     }
 
