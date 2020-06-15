@@ -16,13 +16,12 @@ package config
 
 import (
 	"context"
-	"net/url"
 
 	"go.chromium.org/luci/common/errors"
-	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
+
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 )
 
@@ -31,56 +30,27 @@ var (
 	ErrInvalidConfig = errors.New("invalid configuration")
 )
 
-// Config is the LogDog Coordinator service configuration.
-type Config struct {
-	svcconfig.Config
-
-	// ConfigServiceURL is the config service's URL.
-	ConfigServiceURL url.URL `json:"-"`
-	// ConfigSet is the name of the service config set that is being used.
-	ConfigSet config.Set `json:"-"`
-	// ServiceConfigPath is the path within ConfigSet of the service
-	// configuration.
-	ServiceConfigPath string `json:"-"`
-}
-
-// Load loads the service configuration. This includes:
-//	- The config service settings.
-//	- The service configuration, loaded from the config service.
+// Load loads the service configuration.
 //
 // The service config is minimally validated prior to being returned.
-func Load(c context.Context) (*Config, error) {
-	// Unmarshal the config into service configuration.
-	cfg := Config{
-		ConfigServiceURL: cfgclient.ServiceURL(c),
-	}
-	cfg.ConfigSet = cfgclient.CurrentServiceConfigSet(c)
-	cfg.ServiceConfigPath = "services.cfg"
-
-	// Load our service-level config.
+func Load(ctx context.Context) (*svcconfig.Config, error) {
+	var cfg svcconfig.Config
 	err := cfgclient.Get(
-		c,
+		ctx,
 		cfgclient.AsService,
-		cfg.ConfigSet,
-		cfg.ServiceConfigPath,
-		textproto.Message(&cfg.Config),
+		cfgclient.CurrentServiceConfigSet(ctx),
+		"services.cfg",
+		textproto.Message(&cfg),
 		nil,
 	)
 	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"configSet":  cfg.ConfigSet,
-			"configPath": cfg.ServiceConfigPath,
-		}.Errorf(c, "Failed to load configuration from config service.")
+		logging.Errorf(ctx, "Failed to load configuration from config service: %s", err)
 		return nil, err
 	}
-
-	// Validate the configuration.
-	if err := validateServiceConfig(&cfg.Config); err != nil {
-		log.WithError(err).Errorf(c, "Invalid Coordinator configuration.")
+	if err := validateServiceConfig(&cfg); err != nil {
+		logging.Errorf(ctx, "Invalid Coordinator configuration: %s", err)
 		return nil, ErrInvalidConfig
 	}
-
 	return &cfg, nil
 }
 

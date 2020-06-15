@@ -38,7 +38,7 @@ type testConfigProvider struct {
 	configs map[string]*svcconfig.ProjectConfig
 }
 
-func (s *testConfigProvider) Config(ctx context.Context) (*config.Config, error) {
+func (s *testConfigProvider) Config(ctx context.Context) (*svcconfig.Config, error) {
 	panic("not implemented")
 }
 

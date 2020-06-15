@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -37,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
+	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/sdlogger"
 	"go.chromium.org/luci/common/logging/teelogger"
@@ -360,34 +360,10 @@ func (s *Service) initConfig(c *context.Context) error {
 		if err != nil {
 			return err
 		}
-
-		// Determine our config service host.
-		//
-		// Older Coordinator instances may provide the full URL instead of the host,
-		// in which case we will extract the host from the URL.
-		host := ccfg.ConfigServiceHost
-		if host == "" {
-			if ccfg.ConfigServiceUrl == "" {
-				return errors.New("coordinator does not specify a config service")
-			}
-			u, err := url.Parse(ccfg.ConfigServiceUrl)
-			if err != nil {
-				return errors.Annotate(err, "failed to parse config service URL").Err()
-			}
-			host = u.Host
-		}
-
-		if ccfg.ConfigSet == "" {
-			return errors.New("coordinator does not specify a config set")
-		}
-
-		log.Fields{
-			"host": host,
-		}.Debugf(*c, "Using remote configuration service client.")
+		logging.Debugf(*c, "Using remote configuration service client: %s", ccfg.ConfigServiceHost)
 		p = &client.RemoteProvider{
-			Host: host,
+			Host: ccfg.ConfigServiceHost,
 		}
-
 		// If using a remote config provider, enable datastore access and caching.
 		opts.DatastoreCacheAvailable = s.hasDatastore
 	} else {

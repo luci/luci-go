@@ -29,7 +29,7 @@ import (
 type Services struct {
 	// C, if not nil, will be used to get the return values for Config, overriding
 	// local static members.
-	C func() (*config.Config, error)
+	C func() (*svcconfig.Config, error)
 
 	// PC, if not nil, will be used to get the return values for ProjectConfig,
 	// overriding local static members.
@@ -50,7 +50,7 @@ var _ endpoints.Services = (*Services)(nil)
 var _ flex.Services = (*Services)(nil)
 
 // Config implements coordinator.Services.
-func (s *Services) Config(c context.Context) (*config.Config, error) {
+func (s *Services) Config(c context.Context) (*svcconfig.Config, error) {
 	if s.C != nil {
 		return s.C()
 	}
