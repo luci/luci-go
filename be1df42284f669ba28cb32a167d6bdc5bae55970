@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41a1b2d0_0d0bdb9c",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:16:53Z",
+      "side": 1,
+      "message": "nit: one line would be more readable. Its OK to have long lines in Go",
+      "range": {
+        "startLine": 122,
+        "startChar": 49,
+        "endLine": 123,
+        "endChar": 50
+      },
+      "revId": "be1df42284f669ba28cb32a167d6bdc5bae55970",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
