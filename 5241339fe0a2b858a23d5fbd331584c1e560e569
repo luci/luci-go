@@ -22,6 +22,30 @@
       "revId": "5241339fe0a2b858a23d5fbd331584c1e560e569",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a363ced_75aace93",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-15T02:23:30Z",
+      "side": 1,
+      "message": "I\u0027m fine to show the URL in swarming UI.\nBut \"Rich Output\" is used for milo, so want to have the link in other place.\nCould you file a bug?",
+      "parentUuid": "56fc3712_4d255269",
+      "range": {
+        "startLine": 10,
+        "startChar": 32,
+        "endLine": 10,
+        "endChar": 47
+      },
+      "revId": "5241339fe0a2b858a23d5fbd331584c1e560e569",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
