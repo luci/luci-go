@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22cb7fec_2f322e97",
+        "filename": "logdog/appengine/coordinator/endpoints/services/registerStream_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-15T20:50:10Z",
+      "side": 0,
+      "message": "I can\u0027t explain this spooky change. I also suspect 12 sec was used here randomly \"to make the test pass\". So I\u0027ll removing it now \"to make the test pass\" too.",
+      "range": {
+        "startLine": 174,
+        "startChar": 36,
+        "endLine": 174,
+        "endChar": 57
+      },
+      "revId": "5e74bc5e0d9b7f881f706e62140f8464d27460be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
