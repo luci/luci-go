@@ -66,9 +66,11 @@ type ServerConfig struct {
 	// the default address.
 	Address string
 
-	// Invocation is the name of the invocation that test results should append
-	// to.
+	// Invocation is the name of the invocation that test results should append to.
 	Invocation string
+	// invocationID is a cached copy of the ID extracted from `Invocation`.
+	invocationID string
+
 	// UpdateToken is the token that allows writes to Invocation.
 	UpdateToken string
 
@@ -127,6 +129,9 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
 	}
+	// extract the invocation ID from cfg.Invocation so that other modules don't need to
+	// parse the name to extract ID repeatedly.
+	cfg.invocationID, _ = pbutil.ParseInvocationName(cfg.Invocation)
 
 	// set the default values for the optional config fields missing.
 	if cfg.Address == "" {

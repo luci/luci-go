@@ -17,8 +17,6 @@ package sink
 import (
 	"context"
 	"fmt"
-	"os"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -26,7 +24,6 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -81,7 +78,7 @@ func (c *testResultChannel) closeAndDrain(ctx context.Context) {
 	c.ch.CloseAndDrain(ctx)
 }
 
-func (c *testResultChannel) schedule(trs []*sinkpb.TestResult) {
+func (c *testResultChannel) schedule(trs ...*sinkpb.TestResult) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
@@ -121,35 +118,4 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 	}
 	_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, b.Meta.(*pb.BatchCreateTestResultsRequest))
 	return err
-}
-
-func sinkArtsToRPCArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {
-	for name, sart := range sArts {
-		var size int64 = -1
-		switch {
-		case sart.GetFilePath() != "":
-			if info, err := os.Stat(sart.GetFilePath()); err == nil {
-				size = info.Size()
-			} else {
-				logging.Errorf(ctx, "artifact %q: %q - %s", name, sart.GetFilePath(), err)
-			}
-		case sart.GetContents() != nil:
-			size = int64(len(sart.GetContents()))
-		default:
-			// This should never be reached. pbutil.ValidateSinkArtifact() should
-			// filter out invalid artifacts.
-			panic(fmt.Sprintf("%s: neither file_path nor contents were given", name))
-		}
-
-		rArts = append(rArts, &pb.Artifact{
-			Name: name,
-			// TODO(ddoman): set fetch_url and fetch_url_expiration
-			ContentType: sart.GetContentType(),
-			SizeBytes:   size,
-		})
-	}
-	sort.Slice(rArts, func(i, j int) bool {
-		return rArts[i].Name < rArts[j].Name
-	})
-	return
 }

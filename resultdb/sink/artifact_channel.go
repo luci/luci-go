@@ -25,6 +25,9 @@ import (
 
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+
+	"go.chromium.org/luci/resultdb/pbutil"
+	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
 type artifactChannel struct {
@@ -43,6 +46,11 @@ type artifactChannel struct {
 	closed int32
 }
 
+type uploadTask struct {
+	artName string
+	art     *sinkpb.Artifact
+}
+
 func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel {
 	var err error
 	c := &artifactChannel{cfg: cfg}
@@ -56,8 +64,7 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
-		// TODO(crbug/1087955) - process
-		return nil
+		return c.upload(ctx, b.Data[0].(*uploadTask))
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for artifact uploads: %s", err))
@@ -73,4 +80,27 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
 	c.ch.CloseAndDrain(ctx)
+}
+
+func (c *artifactChannel) upload(ctx context.Context, t *uploadTask) error {
+	// TODO(crbug/1087955) - upload the artifact to ResultDB.
+	return nil
+}
+
+func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
+	c.wgActive.Add(1)
+	defer c.wgActive.Done()
+	// if the channel already has been closed, drop the test results.
+	if atomic.LoadInt32(&c.closed) == 1 {
+		return
+	}
+
+	for _, tr := range trs {
+		for id, art := range tr.GetArtifacts() {
+			c.ch.C <- &uploadTask{
+				artName: pbutil.TestResultArtifactName(c.cfg.invocationID, tr.TestId, tr.ResultId, id),
+				art:     art,
+			}
+		}
+	}
 }
