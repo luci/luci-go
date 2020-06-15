@@ -22,8 +22,8 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,7 +34,7 @@ func TestConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test Environment", t, func() {
-		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
+		c := gaetesting.TestingContext()
 		datastore.GetTestable(c).Consistent(true)
 
 		Convey("Validation tests", func() {
@@ -42,7 +42,7 @@ func TestConfig(t *testing.T) {
 				Context: c,
 			}
 			configSet := "projects/foobar"
-			path := "luci-milo.cfg"
+			path := "${appid}.cfg"
 			Convey("Load a bad config", func() {
 				content := []byte(badCfg)
 				validateProjectCfg(ctx, configSet, path, content)
@@ -105,17 +105,17 @@ func TestConfig(t *testing.T) {
 
 		Convey("Tests about global configs", func() {
 			Convey("Read a config before anything is set", func() {
-				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+				c = cfgclient.Use(c, memcfg.New(mockedConfigs))
 				_, err := UpdateServiceConfig(c)
 				So(err.Error(), ShouldResemble, "could not load settings.cfg from luci-config: no such config")
 				settings := GetSettings(c)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "")
 			})
 			Convey("Read a config", func() {
-				mockedConfigs["services/luci-milo"] = memcfg.Files{
+				mockedConfigs["services/${appid}"] = memcfg.Files{
 					"settings.cfg": settingsCfg,
 				}
-				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+				c = cfgclient.Use(c, memcfg.New(mockedConfigs))
 				rSettings, err := UpdateServiceConfig(c)
 				So(err, ShouldBeNil)
 				settings := GetSettings(c)
@@ -125,7 +125,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("Send update", func() {
-			c := testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+			c := cfgclient.Use(c, memcfg.New(mockedConfigs))
 			So(UpdateProjects(c), ShouldBeNil)
 
 			Convey("Check created Project entities", func() {
@@ -168,7 +168,7 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("Check second update reorders", func() {
-				c := testconfig.WithCommonClient(c, memcfg.New(mockedConfigsUpdate))
+				c := cfgclient.Use(c, memcfg.New(mockedConfigsUpdate))
 				So(UpdateProjects(c), ShouldBeNil)
 
 				Convey("Check updated Project entities", func() {
@@ -431,12 +431,12 @@ buildbot: {
 
 var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/foo": {
-		"luci-milo.cfg": fooCfg,
-		"project.cfg":   fooProjectCfg,
+		"${appid}.cfg": fooCfg,
+		"project.cfg":  fooProjectCfg,
 	},
 	"projects/bar": {
-		"luci-milo.cfg": ``, // empty, but present
-		"project.cfg":   ``,
+		"${appid}.cfg": ``, // empty, but present
+		"project.cfg":  ``,
 	},
 	"projects/baz": {
 		// no Milo config
@@ -446,8 +446,8 @@ var mockedConfigs = map[config.Set]memcfg.Files{
 
 var mockedConfigsUpdate = map[config.Set]memcfg.Files{
 	"projects/foo": {
-		"luci-milo.cfg": fooCfg2,
-		"project.cfg":   fooProjectCfg2,
+		"${appid}.cfg": fooCfg2,
+		"project.cfg":  fooProjectCfg2,
 	},
 	"projects/bar": {
 		// No milo config any more
