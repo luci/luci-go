@@ -1,0 +1,47 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultsink.v1;
+
+import "go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
+
+// Service to report test results.
+//
+// Note that clients need to add the auth token in the HTTP header when invoking
+// the RPCs of this service, or Unauthenticated error will be returned.
+// i.e., Authorization: ResultSink <auth-token>
+//
+// The auth token is available via resultdb.resultsink.auth_token LUCI_CONTEXT
+// value. For more information, visit
+// https://github.com/luci/luci-py/blob/master/client/LUCI_CONTEXT.md
+service Sink {
+  // Reports test results.
+  rpc ReportTestResults(ReportTestResultsRequest)
+      returns (ReportTestResultsResponse) {};
+}
+
+message ReportTestResultsRequest {
+  // Test results to report.
+  repeated TestResult test_results = 1;
+}
+
+message ReportTestResultsResponse {
+  // List of unique identifiers that can be used to link to these results
+  // or requested via luci.resultdb.rpc.v1.ResultDB service.
+  repeated string test_result_names = 1;
+}
