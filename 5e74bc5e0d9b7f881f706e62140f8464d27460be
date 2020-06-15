@@ -46,6 +46,30 @@
       "revId": "5e74bc5e0d9b7f881f706e62140f8464d27460be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c07afd16_d6fb257a",
+        "filename": "logdog/appengine/coordinator/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-15T21:45:12Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "b4d5e616_73917166",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 39
+      },
+      "revId": "5e74bc5e0d9b7f881f706e62140f8464d27460be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
