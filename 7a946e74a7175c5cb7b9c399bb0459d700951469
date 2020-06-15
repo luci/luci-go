@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa320da9_43a3bd1b",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-15T23:56:54Z",
+      "side": 1,
+      "message": "Mostly just merge test_entry/index.ts and variant_entry.ts together.",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd109350_2858cf5f",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-15T23:56:54Z",
+      "side": 1,
+      "message": "Render variant def as an expandable header.\nWe don\u0027t need it to be expandable. But this make the items in a test look more consistent",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9dabe77_f8f82377",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-15T23:56:54Z",
+      "side": 1,
+      "message": "Not having a label is weird.\nWe can change the label to something else.",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
