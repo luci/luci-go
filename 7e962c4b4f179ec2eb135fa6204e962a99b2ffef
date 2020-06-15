@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "afea3bda_06519faf",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-15T22:43:18Z",
+      "side": 1,
+      "message": "It\u0027s line 112. After patchset 10 it is closer to the clause that needs to be removed.",
+      "parentUuid": "e7ef3e01_92fb9ea6",
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d03aac46_5af2f6a5",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 9
@@ -33,6 +51,24 @@
       "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6b00ddb_812b21e2",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-15T22:43:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d03aac46_5af2f6a5",
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "eb4472c4_9c59a5b0",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-15T22:43:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4339815_ac4a3401",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 123,
+        "endChar": 7
+      },
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "210aa9f0_9579bc1e",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 9
@@ -73,6 +133,24 @@
       "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37052c74_3797388f",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-06-15T22:43:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "210aa9f0_9579bc1e",
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
