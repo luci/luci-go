@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d58eace_98f07822",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T07:08:10Z",
+      "side": 1,
+      "message": "from https://golang.org/pkg/context/\n\n\u003e Do not store Contexts inside a struct type; instead, pass a Context explicitly to each function that needs it. The Context should be the first parameter, typically named ctx:\n\nshould we avoid this? otherwise a future programmer might accidentally use this context in a wrong place",
+      "revId": "a29003e3c149585e0d07e79497c8db1e7d05905a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac4d230d_bfa8ed33",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T07:08:10Z",
+      "side": 1,
+      "message": "would it be simpler to do\n\n  if b.Meta \u003d\u003d nil {\n     b.Meta \u003d ...\n  }\n  _, err :\u003d c.cfg.Recorder.BatchCreateTestResults(c.ctx, b.Meta.(*pb.BatchCreateTestResultsRequest))\n\ni suspect it would be less code",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 9
+      },
+      "revId": "a29003e3c149585e0d07e79497c8db1e7d05905a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
