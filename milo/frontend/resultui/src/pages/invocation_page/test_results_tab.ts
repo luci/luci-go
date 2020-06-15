@@ -35,6 +35,19 @@ export class TestResultsTabElement extends MobxLitElement {
   @observable.ref pageState!: InvocationPageState;
 
   private disposers: Array<() => void> = [];
+  private async loadNextPage() {
+    try {
+      await this.pageState.testLoader.loadNextPage();
+    } catch (e) {
+      this.dispatchEvent(new ErrorEvent('error', {
+        error: e,
+        message: e.toString(),
+        composed: true,
+        bubbles: true,
+      }));
+    }
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.pageState.selectedTabId = 'test-results';
@@ -44,7 +57,7 @@ export class TestResultsTabElement extends MobxLitElement {
     this.disposers.push(reaction(
       () => this.pageState.testLoader,
       (testLoader) => {
-        testLoader.loadNextPage();
+        this.loadNextPage();
         this.pageState.selectedNode = testLoader.node;
       },
       {fireImmediately: true},
@@ -92,7 +105,7 @@ export class TestResultsTabElement extends MobxLitElement {
               <span
                 id="load-more"
                 style=${styleMap({'display': state.testLoader.isLoading ? 'none' : ''})}
-                @click=${() => state.testLoader.loadNextPage()}
+                @click=${this.loadNextPage}
               >
                 Load More
               </span>
