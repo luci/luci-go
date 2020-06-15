@@ -49,9 +49,6 @@ func TestGetConfig(t *testing.T) {
 			cr, err := svr.GetConfig(c, nil)
 			So(err, ShouldBeRPCOK)
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
-				ConfigServiceUrl:  "test://example.com",
-				ConfigSet:         "services/app",
-				ServiceConfigPath: "services.cfg",
 				ConfigServiceHost: "example.com",
 			})
 		})
