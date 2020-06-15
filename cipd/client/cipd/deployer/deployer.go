@@ -845,7 +845,8 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	}
 
 	// Now we have to find a suitable index folder for it.
-	waiter := retry.Waiter(ctx, "Collision when picking an index", time.Minute)
+	waiter, cancel := retry.Waiter(ctx, "Collision when picking an index", time.Minute)
+	defer cancel()
 	for {
 		// Pick the next possible candidate by enumerating them until there's an
 		// empty "slot" or we discover an existing directory with our package.
@@ -915,10 +916,9 @@ func (d *deployerImpl) lockPkg(ctx context.Context, pkgPath string) (unlock func
 	if lockFS == nil {
 		return func() {}, nil
 	}
-	unlocker, err := lockFS(
-		filepath.Join(pkgPath, fsLockName),
-		retry.Waiter(ctx, "Could not acquire FS lock", fsLockGiveUpDuration),
-	)
+	waiter, cancel := retry.Waiter(ctx, "Could not acquire FS lock", fsLockGiveUpDuration)
+	defer cancel()
+	unlocker, err := lockFS(filepath.Join(pkgPath, fsLockName), waiter)
 	if err != nil {
 		return nil, err
 	}

@@ -492,7 +492,8 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	// We launch a retry loop in case there are multiple concurrent processes
 	// fighting for 'newpath'. We want to be the winner (i.e. the last), so we let
 	// them finish first by waiting a bit, and then replacing whatever they left.
-	waiter := retry.Waiter(ctx, "fs: lost a race when renaming", 10*time.Second)
+	waiter, cancel := retry.Waiter(ctx, "fs: lost a race when renaming", 10*time.Second)
+	defer cancel()
 	for {
 		// Try to move existing path away into the trash directory. If this fails
 		// in a weird way, mostlyAtomicRename most probably will also fail in a
