@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7ef3e01_92fb9ea6",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:27:36Z",
+      "side": 1,
+      "message": "please add a TODO to remove this code. FWIU it should be gone soon (matter of days/weeks)",
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d03aac46_5af2f6a5",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:27:36Z",
+      "side": 1,
+      "message": "nit: please move closer to the usage, L128",
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4339815_ac4a3401",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:27:36Z",
+      "side": 1,
+      "message": "nit: combine?",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 123,
+        "endChar": 7
+      },
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "210aa9f0_9579bc1e",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:27:36Z",
+      "side": 1,
+      "message": "why don\u0027t we simply return nil here without repeating \"!legacyTrustedCreator\" check for each permission below?",
+      "revId": "7e962c4b4f179ec2eb135fa6204e962a99b2ffef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
