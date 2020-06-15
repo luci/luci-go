@@ -24,12 +24,10 @@ import (
 
 	"google.golang.org/appengine"
 
-	adminPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/admin"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/discovery"
@@ -59,7 +57,6 @@ func main() {
 	logsPb.RegisterLogsServer(svr, dummyLogsService)
 	registrationPb.RegisterRegistrationServer(svr, dummyRegistrationService)
 	servicesPb.RegisterServicesServer(svr, dummyServicesService)
-	adminPb.RegisterAdminServer(svr, admin.New())
 	discovery.Enable(svr)
 
 	base := standard.Base().Extend(ps.Base)

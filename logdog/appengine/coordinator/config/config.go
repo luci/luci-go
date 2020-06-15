@@ -34,8 +34,6 @@ var (
 // Config is the LogDog Coordinator service configuration.
 type Config struct {
 	svcconfig.Config
-	// Settings are per-instance settings.
-	Settings Settings
 
 	// ConfigServiceURL is the config service's URL.
 	ConfigServiceURL url.URL `json:"-"`
@@ -49,7 +47,6 @@ type Config struct {
 // Load loads the service configuration. This includes:
 //	- The config service settings.
 //	- The service configuration, loaded from the config service.
-//	- Additional Settings data from datastore via settings.
 //
 // The service config is minimally validated prior to being returned.
 func Load(c context.Context) (*Config, error) {
@@ -81,12 +78,6 @@ func Load(c context.Context) (*Config, error) {
 	// Validate the configuration.
 	if err := validateServiceConfig(&cfg.Config); err != nil {
 		log.WithError(err).Errorf(c, "Invalid Coordinator configuration.")
-		return nil, ErrInvalidConfig
-	}
-
-	// Load our settings.
-	if err := cfg.Settings.Load(c); err != nil {
-		log.WithError(err).Errorf(c, "Failed to load settings.")
 		return nil, ErrInvalidConfig
 	}
 

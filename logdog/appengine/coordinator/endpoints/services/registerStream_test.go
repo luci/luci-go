@@ -171,7 +171,7 @@ func TestRegisterStream(t *testing.T) {
 						env.Clock.Add(3 * time.Second)
 					})
 					prefixCreated := ds.RoundTime(env.Clock.Now())
-					streamCreated := prefixCreated.Add(12 * time.Second)
+					streamCreated := prefixCreated // same time as the prefix
 					req.TerminalIndex = 1337
 					expResp.State.TerminalIndex = 1337
 
