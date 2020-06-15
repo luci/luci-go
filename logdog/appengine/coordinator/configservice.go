@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/server/config"
 )
 
 // ConfigProvider is a set of support services used by Coordinator to fetch
