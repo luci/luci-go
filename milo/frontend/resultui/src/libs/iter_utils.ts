@@ -41,11 +41,29 @@ export function* withPrev<T>(iter: Iterable<T>): IterableIterator<[T, T | null]>
 }
 
 /**
+ * A map utility for iterators.
+ */
+export function* map<V, T>(iter: Iterable<V>, mapFn: (v: V) => T): IterableIterator<T> {
+  for (const item of iter) {
+    yield mapFn(item);
+  }
+}
+
+/**
  * A map utility for async iterators.
  */
 export async function* mapAsync<V, T>(iter: AsyncIterable<V>, mapFn: (v: V) => T): AsyncIterableIterator<T> {
   for await (const item of iter) {
     yield mapFn(item);
+  }
+}
+
+/**
+ * A flatten utility for iterators.
+ */
+export function* flatten<T>(iter: Iterable<readonly T[]>): IterableIterator<T> {
+  for (const item of iter) {
+    yield *item;
   }
 }
 
