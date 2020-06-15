@@ -36,7 +36,7 @@ type ConfigProvider interface {
 	//
 	// The production instance will cache the results for the duration of the
 	// request.
-	Config(context.Context) (*config.Config, error)
+	Config(context.Context) (*svcconfig.Config, error)
 
 	// ProjectConfig returns the project configuration for the named project.
 	//
@@ -53,13 +53,13 @@ type LUCIConfigProvider struct {
 	lock sync.Mutex
 
 	// gcfg is the cached global configuration.
-	gcfg *config.Config
+	gcfg *svcconfig.Config
 	// project -> *cachedProjectConfig
 	projectConfigs map[string]*cachedProjectConfig
 }
 
 // Config implements ConfigProvider.
-func (s *LUCIConfigProvider) Config(c context.Context) (*config.Config, error) {
+func (s *LUCIConfigProvider) Config(c context.Context) (*svcconfig.Config, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

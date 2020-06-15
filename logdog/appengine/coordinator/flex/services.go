@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
@@ -111,14 +111,14 @@ func NewGlobalServices(c context.Context) (*GlobalServices, error) {
 		return nil, errors.Annotate(err, "failed to connect BigTable client").Err()
 	}
 
-	if err := s.createGoogleStorageClientFactory(c, cfg); err != nil {
+	if err := s.createGoogleStorageClientFactory(c); err != nil {
 		return nil, errors.Annotate(err, "failed to connect Google Storage client").Err()
 	}
 
 	return &s, nil
 }
 
-func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *config.Config) error {
+func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *svcconfig.Config) error {
 	// Is BigTable configured?
 	if cfg.Storage == nil {
 		return errors.New("no storage configuration")
@@ -169,7 +169,7 @@ func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *config
 	return nil
 }
 
-func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context, cfg *config.Config) error {
+func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context) error {
 	gsvc.gsClientFactory = func(c context.Context, project string) (client gs.Client, e error) {
 		// TODO(vadimsh): Switch to AsProject + WithProject(project.String()) once
 		// we are ready to roll out project scoped service accounts in Logdog.
