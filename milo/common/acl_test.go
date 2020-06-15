@@ -27,10 +27,8 @@ import (
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -69,7 +67,6 @@ func TestACL(t *testing.T) {
 					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})
-
 			})
 
 			Convey("admin@google.com wants to...", func() {
@@ -84,7 +81,7 @@ func TestACL(t *testing.T) {
 				})
 				Convey("Read un/misconfigured project", func() {
 					ok, err := IsAllowed(c, "misconfigured")
-					So(ok, ShouldEqual, true)
+					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -102,8 +99,7 @@ func TestACL(t *testing.T) {
 				Convey("Read un/misconfigured project", func() {
 					ok, err := IsAllowed(c, "misconfigured")
 					So(ok, ShouldEqual, false)
-					So(err, ShouldNotBeNil)
-					So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+					So(err, ShouldBeNil)
 				})
 			})
 

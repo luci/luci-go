@@ -26,10 +26,11 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/milo/git"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -111,6 +112,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
 			}))
+			So(common.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
 				Context: c,
@@ -140,6 +142,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"public\"\naccess: \"group:all\"",
 				},
 			}))
+			So(common.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
 				Context: c,
@@ -148,7 +151,7 @@ func TestFuncs(t *testing.T) {
 				Params:  httprouter.Params{{Key: "project", Value: "public"}},
 			}
 			nextCalled := false
-			next := func (*router.Context) {
+			next := func(*router.Context) {
 				nextCalled = true
 			}
 			optionalProjectACLMiddleware(ctx, next)
@@ -173,6 +176,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
 			}))
+			So(common.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
 				Context: c,
@@ -181,7 +185,7 @@ func TestFuncs(t *testing.T) {
 				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
 			}
 			nextCalled := false
-			next := func (*router.Context) {
+			next := func(*router.Context) {
 				nextCalled = true
 			}
 			optionalProjectACLMiddleware(ctx, next)

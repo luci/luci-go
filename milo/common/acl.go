@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
 
@@ -26,9 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	accessProto "go.chromium.org/luci/common/proto/access"
-	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgclient/access"
-	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
@@ -37,34 +35,46 @@ import (
 
 // IsAllowed checks to see if the user in the context is allowed to access
 // the given project.
+//
+// Returns false for unknown projects. Returns an internal error if the check
+// itself fails.
 func IsAllowed(c context.Context, project string) (bool, error) {
-	switch admin, err := IsAdmin(c); {
-	case err != nil:
-		return false, err
-	case admin:
-		return true, nil
-	}
-
-	// Get the project, because that's where the ACLs lie.
-	err := access.Check(c, backend.AsUser, config.ProjectSet(project))
-	innerError := errors.Unwrap(err)
-
-	switch {
-	case err == nil:
-		return true, nil
-	case err == access.ErrNoAccess:
+	proj := Project{ID: project}
+	switch err := datastore.Get(c, &proj); {
+	case err == datastore.ErrNoSuchEntity:
 		return false, nil
-	case innerError == config.ErrNoConfig:
-		return false, grpcutil.NotFoundTag.Apply(err)
+	case err != nil:
+		// Do not leak internal error details to unauthorized users.
+		return false, errors.Reason("internal server error").
+			Tag(grpcutil.InternalTag).
+			InternalReason("datastore error when fetching project %q: %s", project, err).Err()
 	default:
-		return false, err
+		return CheckACL(c, proj.ACL)
 	}
 }
 
-// IsAdmin returns true if the current identity is an administrator.
-func IsAdmin(c context.Context) (bool, error) {
+// CheckACL returns true if the caller is in the ACL.
+//
+// Returns an internal error if the check itself fails.
+func CheckACL(c context.Context, acl ACL) (bool, error) {
+	// Try to find a direct hit first, it is cheaper.
+	caller := auth.CurrentIdentity(c)
+	for _, ident := range acl.Identities {
+		if caller == ident {
+			return true, nil
+		}
+	}
+	// More expensive groups check comes second. Note that admins implicitly have
+	// access to all projects.
 	// TODO(nodir): unhardcode group name to config file if there is a need
-	return auth.IsMember(c, "administrators")
+	yes, err := auth.IsMember(c, append(acl.Groups, "administrators")...)
+	if err != nil {
+		// Do not leak internal error details to unauthorized users.
+		return false, errors.Reason("internal server error").
+			Tag(grpcutil.InternalTag).
+			InternalReason("error when checking ACL: %s", err).Err()
+	}
+	return yes, nil
 }
 
 var accessClientKey = "access client key"
