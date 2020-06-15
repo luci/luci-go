@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e34d281_432077c9",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T07:01:45Z",
+      "side": 1,
+      "message": "in Go, such functions usually start with \"new\" https://golang.org/doc/effective_go.html#composite_literals",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 11
+      },
+      "revId": "82949407c458ca573c67b2f84347c5131a9762c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a141577f_32daaa71",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T07:01:45Z",
+      "side": 1,
+      "message": "nit: not very readable when if statements\u0027s init+cond spans multiple lines.\nalso inconsistent with artifact_channel.go",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 5
+      },
+      "revId": "82949407c458ca573c67b2f84347c5131a9762c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
