@@ -19,9 +19,9 @@ import (
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
+	"go.chromium.org/luci/logdog/server/config"
 )
 
 // Services is a testing stub for a coordinator.Services instance that allows
