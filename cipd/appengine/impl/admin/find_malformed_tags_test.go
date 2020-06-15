@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFixMalformedTags(t *testing.T) {
@@ -93,7 +94,7 @@ func TestFixMalformedTags(t *testing.T) {
 		sort.Slice(report, func(i, j int) bool {
 			return report[i].BrokenTag < report[j].BrokenTag
 		})
-		So(report, ShouldResemble, []*api.TagFixReport_Tag{
+		So(report, ShouldResembleProto, []*api.TagFixReport_Tag{
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:", FixedTag: ""},
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:fixable\n", FixedTag: "bad_a:fixable"},
 			{Pkg: "b", Instance: iid, BrokenTag: "bad_b:", FixedTag: ""},

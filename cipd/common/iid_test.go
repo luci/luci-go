@@ -152,7 +152,7 @@ func TestRefIIDConversion(t *testing.T) {
 			HexDigest: sha1hex,
 		}), ShouldEqual, sha1iid)
 
-		So(InstanceIDToObjectRef(sha1iid), ShouldResemble, &api.ObjectRef{
+		So(InstanceIDToObjectRef(sha1iid), ShouldResembleProto, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: sha1hex,
 		})
@@ -167,7 +167,7 @@ func TestRefIIDConversion(t *testing.T) {
 			HexDigest: sha256hex,
 		}), ShouldEqual, sha256iid)
 
-		So(InstanceIDToObjectRef(sha256iid), ShouldResemble, &api.ObjectRef{
+		So(InstanceIDToObjectRef(sha256iid), ShouldResembleProto, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: sha256hex,
 		})
@@ -182,7 +182,7 @@ func TestRefIIDConversion(t *testing.T) {
 			HexDigest: hex,
 		}), ShouldEqual, iid)
 
-		So(InstanceIDToObjectRef(iid), ShouldResemble, &api.ObjectRef{
+		So(InstanceIDToObjectRef(iid), ShouldResembleProto, &api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: hex,
 		})
