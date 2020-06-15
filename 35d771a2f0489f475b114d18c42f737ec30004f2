@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0d60559d_a9171b8b",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:23:30Z",
+      "side": 1,
+      "message": "nit: I still think this extracting the single artifact from the batch is the responsibility of the caller.\nhttps://en.wikipedia.org/wiki/Single-responsibility_principle\n\nthe comment says \"the artifact\" as if there is one artifact \u003d\u003e it has to assume there is one. In contrast, the caller doesn\u0027t have to assume because \"BatchSize: 1\" is there too",
+      "range": {
+        "startLine": 85,
+        "startChar": 54,
+        "endLine": 85,
+        "endChar": 69
+      },
+      "revId": "35d771a2f0489f475b114d18c42f737ec30004f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79558346_5d1727e4",
+        "filename": "resultdb/sink/artifact_channel_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-15T22:23:30Z",
+      "side": 1,
+      "message": "should ac.schedule be variadic?",
+      "range": {
+        "startLine": 39,
+        "startChar": 14,
+        "endLine": 39,
+        "endChar": 17
+      },
+      "revId": "35d771a2f0489f475b114d18c42f737ec30004f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
