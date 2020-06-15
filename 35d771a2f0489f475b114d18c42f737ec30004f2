@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "22c67236_7b81bebb",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-15T23:40:24Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "0d60559d_a9171b8b",
+      "range": {
+        "startLine": 85,
+        "startChar": 54,
+        "endLine": 85,
+        "endChar": 69
+      },
+      "revId": "35d771a2f0489f475b114d18c42f737ec30004f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79558346_5d1727e4",
         "filename": "resultdb/sink/artifact_channel_test.go",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "35d771a2f0489f475b114d18c42f737ec30004f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f99a2a5a_3aa13877",
+        "filename": "resultdb/sink/artifact_channel_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-15T23:40:24Z",
+      "side": 1,
+      "message": "done.",
+      "parentUuid": "79558346_5d1727e4",
+      "range": {
+        "startLine": 39,
+        "startChar": 14,
+        "endLine": 39,
+        "endChar": 17
+      },
+      "revId": "35d771a2f0489f475b114d18c42f737ec30004f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
