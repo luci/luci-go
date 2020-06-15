@@ -22,6 +22,30 @@
       "revId": "5e74bc5e0d9b7f881f706e62140f8464d27460be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4d5e616_73917166",
+        "filename": "logdog/appengine/coordinator/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-15T21:32:42Z",
+      "side": 1,
+      "message": "Eh, didn\u0027t notice during refactoring. Either way these fields are deleted in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2246649 so I\u0027ll land this CL as is to avoid dealing with merges and rebasing.",
+      "parentUuid": "7f3f4155_b723d42b",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 39
+      },
+      "revId": "5e74bc5e0d9b7f881f706e62140f8464d27460be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
