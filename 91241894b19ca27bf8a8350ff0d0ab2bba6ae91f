@@ -22,6 +22,30 @@
       "revId": "91241894b19ca27bf8a8350ff0d0ab2bba6ae91f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9effe02f_009e04f8",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-15T02:11:55Z",
+      "side": 1,
+      "message": "My bad. It\u0027s just something I forgot to delete when I unstash my changes.",
+      "parentUuid": "7bcdfc79_4df369c9",
+      "range": {
+        "startLine": 59,
+        "startChar": 6,
+        "endLine": 59,
+        "endChar": 30
+      },
+      "revId": "91241894b19ca27bf8a8350ff0d0ab2bba6ae91f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
