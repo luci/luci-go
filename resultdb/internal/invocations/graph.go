@@ -16,15 +16,19 @@ package invocations
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/gomodule/redigo/redis"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/server/redisconn"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -32,6 +36,12 @@ import (
 // MaxNodes is the maximum number of invocation nodes that ResultDB
 // can operate on at a time.
 const MaxNodes = 10000
+
+// reachCacheExpiration is expiration duration of ReachCache.
+// It is more important to have *some* expiration; the value itself matters less
+// because Redis evicts LRU keys only with *some* expiration set,
+// see volatile-lru policy: https://redis.io/topics/lru-cache
+const reachCacheExpiration = 30 * 24 * time.Hour // 30 days
 
 // InclusionKey returns a spanner key for an Inclusion row.
 func InclusionKey(including, included ID) spanner.Key {
@@ -76,12 +86,17 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	tooMany := func() error {
+		cancel()
+		return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+	}
 
 	reachable = make(IDSet, len(roots))
 	var mu sync.Mutex
 	var visit func(id ID) error
 
-	sem := semaphore.NewWeighted(64)
+	spanSem := semaphore.NewWeighted(64) // limits Spanner RPC concurrency.
+
 	visit = func(id ID) error {
 		mu.Lock()
 		defer mu.Unlock()
@@ -93,8 +108,7 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 
 		// Consider fetching a new invocation.
 		if len(reachable) == MaxNodes {
-			cancel()
-			return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+			return tooMany()
 		}
 
 		// Mark the invocation as being processed.
@@ -102,11 +116,34 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
+			// First check the cache.
+			switch ids, err := ReachCache(id).Read(ctx); {
+			case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
+				// Ignore this error.
+			case err != nil:
+				logging.Warningf(ctx, "ReachCache: failed to read %s: %s", id, err)
+			default:
+				// Cache hit. Copy the results to `reachable` and exit without
+				// recursion.
+				mu.Lock()
+				defer mu.Unlock()
+				reachable.Union(ids)
+				if len(reachable) > MaxNodes {
+					return tooMany()
+				}
+				return nil
+			}
+
+			// Cache miss. => Read from Spanner.
+			if err := spanSem.Acquire(ctx, 1); err != nil {
 				return err
 			}
 			included, err := ReadIncluded(ctx, txn, id)
-			sem.Release(1)
+			spanSem.Release(1)
 			if err != nil {
 				return err
 			}
@@ -134,4 +171,103 @@ func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet,
 	}
 	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable), roots.Names())
 	return reachable, nil
+}
+
+// ReachCache is a cache of all invocations reachable from the given
+// invocation, stored in Redis. The cached set is either correct or absent.
+//
+// The cache must be written only after the set of reachable invocations
+// becomes immutable, i.e. when the including invocation is finalized.
+// This is important to be able to tolerate transient Redis failures
+// and avoid a situation where we failed to update the currently stored set,
+// ignored the failure and then, after Redis came back online, read the
+// stale set.
+type ReachCache ID
+
+// key returns the Redis key.
+func (c ReachCache) key() string {
+	return fmt.Sprintf("reach:%s", c)
+}
+
+// ErrUnknownReach is returned by ReachCache.Read if the cached value is absent.
+var ErrUnknownReach = fmt.Errorf("the reachable set is unknown")
+
+// Read reads the current value.
+// Returns ErrUnknownReach if the value is absent.
+func (c ReachCache) Read(ctx context.Context) (ids IDSet, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.read")
+	ts.Attribute("id", string(c))
+	defer func() { ts.End(err) }()
+
+	conn, err := redisconn.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	members, err := redis.Strings(conn.Do("SMEMBERS", c.key()))
+	switch {
+	case err != nil:
+		return nil, err
+	case len(members) == 0:
+		return nil, ErrUnknownReach
+	}
+
+	ts.Attribute("size", len(members))
+	ids = make(IDSet, len(members)+1)
+	ids.Add(ID(c)) // A node is always reachable from itself.
+	for _, id := range members {
+		if id != "" {
+			ids.Add(ID(id))
+		}
+	}
+	return ids, nil
+}
+
+// Write writes the new value.
+func (c ReachCache) Write(ctx context.Context, value IDSet) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.write")
+	ts.Attribute("id", string(c))
+	defer func() { ts.End(err) }()
+
+	conn, err := redisconn.Get(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	key := c.key()
+
+	addArgs := make(redis.Args, 0, 2+len(value))
+	addArgs = addArgs.Add(key)
+	if len(value) == 0 {
+		// Store at least an empty string because Redis does not support empty sets.
+		addArgs = addArgs.Add("")
+	} else {
+		for id := range value {
+			// Do not store itself: any node reaches itself.
+			if id != ID(c) {
+				addArgs = addArgs.Add(string(id))
+			}
+		}
+	}
+	ts.Attribute("size", len(addArgs)-1)
+
+	// Transactionally, clear the key and add all IDs in value.
+	conn.Send("MULTI")
+	conn.Send("DEL", key)
+	conn.Send("SADD", addArgs...)
+	conn.Send("EXPIRE", key, int(reachCacheExpiration.Seconds()))
+	_, err = conn.Do("EXEC")
+	return err
+}
+
+// TryWrite tries to write the new value. On failure, logs the error.
+func (c ReachCache) TryWrite(ctx context.Context, value IDSet) {
+	switch err := c.Write(ctx, value); {
+	case err == redisconn.ErrNotConfigured:
+
+	case err != nil:
+		logging.Warningf(ctx, "ReachCache: failed to write %s: %s", c, err)
+	}
 }
