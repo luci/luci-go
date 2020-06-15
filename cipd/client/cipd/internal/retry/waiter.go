@@ -26,10 +26,12 @@ import (
 
 // Waiter returns a stateful callback which sleeps a bit on each invocation
 // until reaching a deadline.
-func Waiter(ctx context.Context, why string, d time.Duration) func() error {
+//
+// It also returns a cancel function which must be called when abandoning
+// the waiter to disarm any pending timers.
+func Waiter(ctx context.Context, why string, d time.Duration) (sleep func() error, cancel func()) {
 	var attempt int32
-	// TODO(crbug/1006920): Do not leak the cancel context.
-	ctx, _ = clock.WithTimeout(ctx, d)
+	ctx, cancel = clock.WithTimeout(ctx, d)
 	return func() error {
 		if attempt++; attempt > 50 {
 			attempt = 50 // cap sleeping time at max 5 sec
@@ -42,5 +44,5 @@ func Waiter(ctx context.Context, why string, d time.Duration) func() error {
 		}
 		tr := clock.Sleep(ctx, delay)
 		return tr.Err
-	}
+	}, cancel
 }
