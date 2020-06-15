@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "33b22931_047655f5",
+        "filename": "logdog/appengine/coordinator/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-15T22:00:01Z",
+      "side": 1,
+      "message": "nit: remove? it duplicates the previous import.",
+      "revId": "2e78caf21a91dc775a6045b75cdffdfda2a1d578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
