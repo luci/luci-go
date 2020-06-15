@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -112,8 +113,8 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	}
 
 	// Derive the origin invocation and results.
-	var originInv *pb.Invocation
-	switch originInv, err = s.deriveInvocationForOriginTask(ctx, in, task, swarmSvc, client); {
+	originInv, reach, err := s.deriveInvocationForOriginTask(ctx, in, task, swarmSvc, client)
+	switch {
 	case err != nil:
 		return nil, err
 	case inv.Name == originInv.Name: // origin task is the task itself, we're done.
@@ -121,12 +122,13 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	}
 
 	// Include originInv into inv.
+	originInvID := invocations.MustParseName(originInv.Name)
 	inv.IncludedInvocations = []string{originInv.Name}
 	invMs := []*spanner.Mutation{
 		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", 0)),
 		span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
-			"IncludedInvocationId": invocations.MustParseName(originInv.Name),
+			"IncludedInvocationId": originInvID,
 		}),
 	}
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -137,14 +139,17 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	})
 	switch {
 	case err == errAlreadyExists:
-		// Pass.
+		return inv, nil
 	case err != nil:
 		return nil, err
 	default:
 		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
-	}
 
-	return inv, nil
+		// Cache the set of all invocations reachable from invID.
+		reach.Add(originInvID)
+		invocations.ReachCache(invID).TryWrite(ctx, reach)
+		return inv, nil
+	}
 }
 
 // errAlreadyExists is returned by shouldWriteInvocation if the invocation
@@ -176,12 +181,18 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id invocations.ID)
 
 // deriveInvocationForOriginTask derives an invocation and test results
 // from a given task and returns derived origin invocation.
-func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *pb.DeriveChromiumInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, client *spanner.Client) (*pb.Invocation, error) {
+//
+// reach is all invocations reachable from originInv.
+func (s *deriverServer) deriveInvocationForOriginTask(
+	ctx context.Context, in *pb.DeriveChromiumInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult,
+	swarmSvc *swarmingAPI.Service, client *spanner.Client) (
+	originInv *pb.Invocation, reach invocations.IDSet, err error) {
+
 	// Get the origin task that the task is deduped against. Or the task
 	// itself if it's not deduped.
 	originTask, err := chromium.GetOriginTask(ctx, task, swarmSvc)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting origin for swarming task %q on %q",
+		return nil, nil, errors.Annotate(err, "getting origin for swarming task %q on %q",
 			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
 	}
 	originInvID := chromium.GetInvocationID(originTask, in)
@@ -191,20 +202,20 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 	case err == errAlreadyExists:
 		txn := client.ReadOnlyTransaction()
 		defer txn.Close()
-		return invocations.Read(ctx, txn, originInvID)
+		return readExistingInv(ctx, txn, originInvID)
 	case err != nil:
-		return nil, err
+		return nil, nil, err
 	}
-	originInv, err := chromium.DeriveChromiumInvocation(originTask, in)
-	if err != nil {
-		return nil, err
+
+	if originInv, err = chromium.DeriveChromiumInvocation(originTask, in); err != nil {
+		return nil, nil, err
 	}
 
 	// Get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", originTask.TaskId, in.SwarmingTask.Hostname)
 	results, err := chromium.DeriveTestResults(ctx, originTask, in, originInv)
 	if err != nil {
-		return nil, errors.Annotate(err,
+		return nil, nil, errors.Annotate(err,
 			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, originTask.Name).Err()
 	}
 	// TODO(jchinlee): Validate invocation and results.
@@ -213,7 +224,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 	// that will be included.
 	batchInvs, err := s.batchInsertTestResults(ctx, originInv, results, testResultBatchSizeMax)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	originInv.IncludedInvocations = batchInvs.Names()
 
@@ -235,16 +246,34 @@ func (s *deriverServer) deriveInvocationForOriginTask(ctx context.Context, in *p
 		}
 		return txn.BufferWrite(ms)
 	})
+
 	switch {
 	case err == errAlreadyExists:
-		// Pass.
+		return originInv, batchInvs, nil
 	case err != nil:
-		return nil, err
+		return nil, nil, err
 	default:
 		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+		// Cache the included invocations.
+		invocations.ReachCache(originInvID).TryWrite(ctx, batchInvs)
+		return originInv, batchInvs, nil
 	}
+}
 
-	return originInv, nil
+// readExistingInv reads an invocation and IDs of all invocations it can reach.
+func readExistingInv(ctx context.Context, txn span.Txn, id invocations.ID) (inv *pb.Invocation, reach invocations.IDSet, err error) {
+	err = parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			inv, err = invocations.Read(ctx, txn, id)
+			return
+		}
+		work <- func() (err error) {
+			reach, err = invocations.Reachable(ctx, txn, invocations.NewIDSet(id))
+			return
+		}
+	})
+	return
+
 }
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
@@ -291,6 +320,9 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 			if _, err := client.Apply(ctx, ms); err != nil {
 				return err
 			}
+
+			// Memorize that this invocation does not include anything.
+			invocations.ReachCache(batchID).TryWrite(ctx, nil)
 
 			span.IncRowCount(ctx, len(batch), span.TestResults, span.Inserted)
 			span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
