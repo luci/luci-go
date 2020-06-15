@@ -116,14 +116,13 @@ func (e *Environment) LeaveAllGroups() {
 // ClearCoordinatorConfig removes the Coordinator configuration entry,
 // simulating a missing config.
 func (e *Environment) ClearCoordinatorConfig(c context.Context) {
-	configSet, _ := coordcfg.ServiceConfigPath(c)
-	delete(e.Config, configSet)
+	delete(e.Config, cfgclient.CurrentServiceConfigSet(c))
 }
 
 // ModServiceConfig loads the current service configuration, invokes the
 // callback with its contents, and writes the result back to config.
 func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Config)) {
-	configSet, configPath := coordcfg.ServiceConfigPath(c)
+	configSet, configPath := cfgclient.CurrentServiceConfigSet(c), "services.cfg"
 
 	var cfg svcconfig.Config
 	e.modTextProtobuf(c, configSet, configPath, &cfg, func() {
@@ -243,7 +242,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		})
 
 		var pcfg configPB.ProjectCfg
-		e.modTextProtobuf(c, config.ProjectSet(project), cfgclient.ProjectConfigPath, &pcfg, func() {
+		e.modTextProtobuf(c, config.ProjectSet(project), "project.cfg", &pcfg, func() {
 			pcfg = configPB.ProjectCfg{
 				Name:   project,
 				Access: projectAccesses,
