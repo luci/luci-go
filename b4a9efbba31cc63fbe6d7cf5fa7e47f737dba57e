@@ -22,6 +22,30 @@
       "revId": "b4a9efbba31cc63fbe6d7cf5fa7e47f737dba57e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "055660a3_0de42670",
+        "filename": "config/server/cfgcache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-15T01:08:33Z",
+      "side": 1,
+      "message": "This is complicated and depends on the environment. server.Server sets it up in New(...), GAE sets it up in the root middleware. Added a vague comment and changed \"guaranteed\" to \"usually\".",
+      "parentUuid": "a67b2fb0_ff103cfb",
+      "range": {
+        "startLine": 223,
+        "startChar": 44,
+        "endLine": 223,
+        "endChar": 54
+      },
+      "revId": "b4a9efbba31cc63fbe6d7cf5fa7e47f737dba57e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
