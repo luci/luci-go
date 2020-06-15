@@ -30,7 +30,7 @@ import (
 //
 // A given project's configuration is named after the current App ID.
 func ProjectConfigPath(c context.Context) string {
-	return svcconfig.ProjectConfigPath(cfgclient.CurrentServiceName(c))
+	return cfgclient.CurrentServiceName(c) + ".cfg"
 }
 
 // ProjectConfig loads the project config protobuf from the config service.
@@ -64,13 +64,15 @@ func ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig,
 	return &pcfg, nil
 }
 
-// ProjectNames returns a sorted list of the names of all of the projects
-// that the supplied authority can view.
-func ProjectNames(c context.Context, a cfgclient.Authority) ([]string, error) {
+// ActiveProjects returns a full list of all config service projects with
+// LogDog project configurations.
+//
+// The list will be alphabetically sorted.
+func ActiveProjects(c context.Context) ([]string, error) {
 	configPath := ProjectConfigPath(c)
 
 	var metas []*config.Meta
-	if err := cfgclient.Projects(c, a, configPath, nil, &metas); err != nil {
+	if err := cfgclient.Projects(c, cfgclient.AsService, configPath, nil, &metas); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configs.")
 		return nil, err
 	}
@@ -84,20 +86,4 @@ func ProjectNames(c context.Context, a cfgclient.Authority) ([]string, error) {
 	}
 	sort.Strings(projects)
 	return projects, nil
-}
-
-// ActiveProjects returns a full list of all config service projects with
-// LogDog project configurations.
-//
-// The list will be alphabetically sorted.
-func ActiveProjects(c context.Context) ([]string, error) {
-	return ProjectNames(c, cfgclient.AsService)
-}
-
-// ActiveUserProjects returns a full list of all config service projects with
-// LogDog project configurations that the current user can see.
-//
-// The list will be alphabetically sorted.
-func ActiveUserProjects(c context.Context) ([]string, error) {
-	return ProjectNames(c, cfgclient.AsUser)
 }
