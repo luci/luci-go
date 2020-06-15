@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bec9d2dc_4265cdfa",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 7
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-15T18:35:07Z",
+      "side": 1,
+      "message": "validate.string(\u0027description\u0027, description, required\u003dFalse)",
+      "range": {
+        "startLine": 214,
+        "startChar": 21,
+        "endLine": 214,
+        "endChar": 32
+      },
+      "revId": "65a69e1a47516ffe08428f76758c17591e9a15cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
