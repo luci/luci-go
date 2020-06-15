@@ -19,12 +19,12 @@ import (
 	"testing"
 
 	gae "go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -33,79 +33,58 @@ import (
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	ctx := gae.Use(context.Background())
+	Convey("With mocks", t, func() {
+		configs := map[config.Set]memory.Files{
+			"services/${appid}": map[string]string{},
+		}
+		mockConfig := func(body string) {
+			configs["services/${appid}"][cachedCfg.Path] = body
+		}
 
-	Convey("importConfig", t, func() {
-		Convey("invalid", func() {
-			ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
-				"services/${appid}": map[string]string{
-					cfgFile: "invalid",
-				},
-			}))
-			So(ImportConfig(ctx), ShouldErrLike, "failed to import")
-		})
+		ctx := gae.Use(context.Background())
+		ctx = cfgclient.Use(ctx, memory.New(configs))
+		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("empty", func() {
-			ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
-				"services/${appid}": map[string]string{
-					cfgFile: `
-					client_monitoring_config <
-						ip_whitelist: "whitelist-1"
-						label: "label-1"
-					>
-					client_monitoring_config <
-						ip_whitelist: "whitelist-2"
-						label: "label-2"
-					>
-					`,
-				},
-			}))
-			So(ImportConfig(ctx), ShouldBeNil)
+		Convey("No config", func() {
+			So(ImportConfig(ctx), ShouldErrLike, "no such config")
 
-			wl := &clientMonitoringWhitelist{
-				ID: wlID,
-			}
-			So(datastore.Get(ctx, wl), ShouldBeNil)
-			So(wl.Entries, ShouldResemble, []clientMonitoringConfig{
-				{
-					IPWhitelist: "whitelist-1",
-					Label:       "label-1",
-				},
-				{
-					IPWhitelist: "whitelist-2",
-					Label:       "label-2",
-				},
-			})
-		})
-	})
-
-	Convey("monitoringConfig", t, func() {
-		So(datastore.Put(ctx, &clientMonitoringWhitelist{
-			ID: wlID,
-			Entries: []clientMonitoringConfig{
-				{
-					IPWhitelist: "bots",
-					Label:       "bots",
-				},
-			},
-		}), ShouldBeNil)
-
-		Convey("not configured", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{})
 			cfg, err := monitoringConfig(ctx)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldBeNil)
 		})
 
-		Convey("configured", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				PeerIPWhitelists: []string{"bots"},
+		Convey("Broken config", func() {
+			mockConfig("broken")
+			So(ImportConfig(ctx), ShouldErrLike, "validation errors")
+		})
+
+		Convey("Good config", func() {
+			mockConfig(`
+				client_monitoring_config {
+					ip_whitelist: "ignored"
+					label: "ignored-label"
+				}
+				client_monitoring_config {
+					ip_whitelist: "bots"
+					label: "bots-label"
+				}
+			`)
+			So(ImportConfig(ctx), ShouldBeNil)
+
+			Convey("Has matching entry", func() {
+				e, err := monitoringConfig(auth.WithState(ctx, &authtest.FakeState{
+					PeerIPWhitelists: []string{"bots"},
+				}))
+				So(err, ShouldBeNil)
+				So(e.Label, ShouldEqual, "bots-label")
 			})
-			cfg, err := monitoringConfig(ctx)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &clientMonitoringConfig{
-				IPWhitelist: "bots",
-				Label:       "bots",
+
+			Convey("No matching entry", func() {
+				e, err := monitoringConfig(auth.WithState(ctx, &authtest.FakeState{
+					PeerIPWhitelists: []string{"something-else"},
+				}))
+				So(err, ShouldBeNil)
+				So(e, ShouldBeNil)
 			})
 		})
 	})
