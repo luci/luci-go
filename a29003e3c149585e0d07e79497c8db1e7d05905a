@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5e76877e_1a44e290",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-15T20:22:18Z",
+      "side": 1,
+      "message": "Removed. The benefit of keeping the ctx inside this struct is not huge. It just saves one line.",
+      "parentUuid": "5d58eace_98f07822",
+      "revId": "a29003e3c149585e0d07e79497c8db1e7d05905a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac4d230d_bfa8ed33",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "a29003e3c149585e0d07e79497c8db1e7d05905a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08ff9721_19e44a8a",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-15T20:22:18Z",
+      "side": 1,
+      "message": "Good idea. PTAL",
+      "parentUuid": "ac4d230d_bfa8ed33",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 9
+      },
+      "revId": "a29003e3c149585e0d07e79497c8db1e7d05905a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
