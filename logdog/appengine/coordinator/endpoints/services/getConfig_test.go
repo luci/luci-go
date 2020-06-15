@@ -18,8 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/config/appengine/gaeconfig"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -52,7 +51,7 @@ func TestGetConfig(t *testing.T) {
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
 				ConfigServiceUrl:  "test://example.com",
 				ConfigSet:         "services/app",
-				ServiceConfigPath: svcconfig.ServiceConfigPath,
+				ServiceConfigPath: "services.cfg",
 				ConfigServiceHost: "example.com",
 			})
 		})
