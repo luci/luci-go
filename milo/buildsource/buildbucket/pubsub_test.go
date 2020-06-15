@@ -32,8 +32,6 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	memcfg "go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
@@ -83,7 +81,6 @@ func TestPubSub(t *testing.T) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		datastore.GetTestable(c).Consistent(true)
 		c, _ = testclock.UseTime(c, RefTime)
-		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		c = auth.WithState(c, &authtest.FakeState{
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
