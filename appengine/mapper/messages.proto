@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package appengine.mapper.messages;
 
-option go_package = "mapper";
+option go_package = "go.chromium.org/luci/appengine/mapper";
 
 import "google/protobuf/timestamp.proto";
 

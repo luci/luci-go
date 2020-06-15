@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/appengine/mapper/splitter"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -416,7 +417,7 @@ func TestController(t *testing.T) {
 				So(job.State, ShouldEqual, State_ABORTED) // aborted right away
 
 				// Didn't actually launch any shards.
-				So(spinUntilDone(false), ShouldResemble, []proto.Message{
+				So(spinUntilDone(false), ShouldResembleProto, []proto.Message{
 					&tasks.SplitAndLaunch{JobId: int64(jobID)},
 				})
 			})

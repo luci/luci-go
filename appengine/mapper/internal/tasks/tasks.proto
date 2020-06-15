@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package appengine.mapper.internal.tasks;
 
-option go_package = "tasks";
+option go_package = "go.chromium.org/luci/appengine/mapper/internal/tasks";
 
 
 // SplitAndLaunch task splits the key range into shards and kicks off processing
