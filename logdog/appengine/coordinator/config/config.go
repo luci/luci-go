@@ -46,12 +46,6 @@ type Config struct {
 	ServiceConfigPath string `json:"-"`
 }
 
-// ServiceConfigPath returns the config set and path for this application's
-// service configuration.
-func ServiceConfigPath(c context.Context) (config.Set, string) {
-	return cfgclient.CurrentServiceConfigSet(c), svcconfig.ServiceConfigPath
-}
-
 // Load loads the service configuration. This includes:
 //	- The config service settings.
 //	- The service configuration, loaded from the config service.
@@ -63,12 +57,19 @@ func Load(c context.Context) (*Config, error) {
 	cfg := Config{
 		ConfigServiceURL: cfgclient.ServiceURL(c),
 	}
-	cfg.ConfigSet, cfg.ServiceConfigPath = ServiceConfigPath(c)
+	cfg.ConfigSet = cfgclient.CurrentServiceConfigSet(c)
+	cfg.ServiceConfigPath = "services.cfg"
 
 	// Load our service-level config.
-	if err := cfgclient.Get(c, cfgclient.AsService, cfg.ConfigSet, cfg.ServiceConfigPath,
-		textproto.Message(&cfg.Config), nil); err != nil {
-
+	err := cfgclient.Get(
+		c,
+		cfgclient.AsService,
+		cfg.ConfigSet,
+		cfg.ServiceConfigPath,
+		textproto.Message(&cfg.Config),
+		nil,
+	)
+	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"configSet":  cfg.ConfigSet,

@@ -406,8 +406,14 @@ func (s *Service) initConfig(c *context.Context) error {
 
 	// Load our service configuration.
 	var meta cfglib.Meta
-	cset, path := s.ServiceConfigPath()
-	if err := cfgclient.Get(*c, cfgclient.AsService, cset, path, textproto.Message(&s.serviceConfig), &meta); err != nil {
+	err := cfgclient.Get(
+		*c, cfgclient.AsService,
+		cfglib.ServiceSet(s.serviceID),
+		"services.cfg",
+		textproto.Message(&s.serviceConfig),
+		&meta,
+	)
+	if err != nil {
 		return errors.Annotate(err, "failed to load service config").Err()
 	}
 
@@ -416,8 +422,8 @@ func (s *Service) initConfig(c *context.Context) error {
 		pollerC, pollerCancelFunc := context.WithCancel(*c)
 
 		poller := config.ChangePoller{
-			ConfigSet: cset,
-			Path:      path,
+			ConfigSet: cfglib.ServiceSet(s.serviceID),
+			Path:      "services.cfg",
 			Period:    time.Duration(s.killCheckInterval),
 			OnChange: func() {
 				// When a configuration change is detected, stop future polling and call
@@ -432,29 +438,20 @@ func (s *Service) initConfig(c *context.Context) error {
 	return nil
 }
 
-// ServiceConfigPath returns the ConfigSet and path to the current service's
-// configuration.
-func (s *Service) ServiceConfigPath() (cfglib.Set, string) {
-	return cfglib.ServiceSet(s.serviceID), svcconfig.ServiceConfigPath
-}
-
 // ServiceConfig returns the configuration data for the current service.
 func (s *Service) ServiceConfig() *svcconfig.Config { return &s.serviceConfig }
 
-// ProjectConfigPath returns the ConfigSet and path to the current service's
-// project configuration for project.
-func (s *Service) ProjectConfigPath(project string) (cfglib.Set, string) {
-	return cfglib.ProjectSet(project), svcconfig.ProjectConfigPath(s.serviceID)
-}
-
 // ProjectConfig returns the current service's project configuration for project.
 func (s *Service) ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
-	cset, path := s.ProjectConfigPath(project)
-
 	var pcfg svcconfig.ProjectConfig
-	msg, err := s.configCache.Get(c, cset, path, &pcfg)
+	msg, err := s.configCache.Get(
+		c,
+		cfglib.ProjectSet(project),
+		s.serviceID+".cfg",
+		&pcfg,
+	)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to load project config from %s.%s", cset, path).Err()
+		return nil, errors.Annotate(err, "failed to load project config from").Err()
 	}
 	return msg.(*svcconfig.ProjectConfig), nil
 }
