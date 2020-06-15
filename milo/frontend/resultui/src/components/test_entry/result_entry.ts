@@ -86,7 +86,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   private renderTags() {
-    if (this.testResult.tags.length === 0) {
+    if ((this.testResult.tags || []).length === 0) {
       return html``;
     }
 
@@ -99,7 +99,7 @@ export class ResultEntryElement extends MobxLitElement {
         <span class="one-line-content">
           Tags:
           <span class="light" style=${styleMap({display: this.tagExpanded ? 'none': ''})}>
-            ${this.testResult.tags.map((tag) => html`
+            ${this.testResult.tags?.map((tag) => html`
             <span class="kv-key">${tag.key}</span>
             <span class="kv-value">${tag.value}</span>
             `)}
@@ -107,7 +107,7 @@ export class ResultEntryElement extends MobxLitElement {
         </span>
       </div>
       <table id="tag-table" border="0" style=${styleMap({display: this.tagExpanded ? '': 'none'})}>
-        ${this.testResult.tags.map((tag) => html`
+        ${this.testResult.tags?.map((tag) => html`
         <tr>
           <td>${tag.key}:</td>
           <td>${tag.value}</td>

@@ -32,11 +32,11 @@ export class InvocationDetailsTabElement extends MobxLitElement {
 
   @computed
   private get hasIncludedInvocations() {
-    return this.pageState.invocation!.includedInvocations.length > 0;
+    return (this.pageState.invocation!.includedInvocations || []).length > 0;
   }
   @computed
   private get hasTags() {
-    return this.pageState.invocation!.tags.length > 0;
+    return (this.pageState.invocation!.tags || []).length > 0;
   }
 
   connectedCallback() {
@@ -58,7 +58,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
         style=${styleMap({'display': this.hasIncludedInvocations ? '' : 'none'})}
       >Included Invocations:
         <ul>
-        ${invocation.includedInvocations.map((invName) => stripInvocationPrefix(invName)).map((invId) => html`
+        ${invocation.includedInvocations?.map((invName) => stripInvocationPrefix(invName)).map((invId) => html`
           <li><a
             href=${router.urlForName(
               'invocation',
@@ -71,7 +71,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
       </div>
       <div style=${styleMap({'display': this.hasTags ? '' : 'none'})}>Tags:
         <table id="tag-table" border="0">
-        ${invocation.tags.map((tag) => html`
+        ${invocation.tags?.map((tag) => html`
           <tr>
             <td>${tag.key}:</td>
             <td>${tag.value}</td>

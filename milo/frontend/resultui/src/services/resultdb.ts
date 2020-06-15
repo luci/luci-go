@@ -43,8 +43,8 @@ export interface Invocation {
   readonly createTime: string;
   readonly finalizeTime: string;
   readonly deadline: string;
-  readonly includedInvocations: string[];
-  readonly tags: Array<{key: string, value: string}>;
+  readonly includedInvocations?: string[];
+  readonly tags?: Tag[];
 }
 
 export interface TestResult {
@@ -57,7 +57,7 @@ export interface TestResult {
   readonly summaryHtml: string;
   readonly startTime: string;
   readonly duration: string;
-  readonly tags: Tag[];
+  readonly tags?: Tag[];
 }
 
 export interface TestExoneration {
