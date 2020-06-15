@@ -171,5 +171,19 @@ func TestProtoReflection(t *testing.T) {
 			_, err := testEntry.Update(ctx, nil)
 			So(err, ShouldErrLike, "validation errors")
 		})
+
+		Convey("Set works", func() {
+			err := testEntry.Set(ctx, &durationpb.Duration{Seconds: 666}, &config.Meta{
+				Revision: "123",
+			})
+			So(err, ShouldBeNil)
+
+			var meta config.Meta
+
+			pb, err := testEntry.Get(ctx, &meta)
+			So(err, ShouldBeNil)
+			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 666)
+			So(meta.Revision, ShouldEqual, "123")
+		})
 	})
 }

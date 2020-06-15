@@ -192,6 +192,31 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 	return msg, nil
 }
 
+// Set overrides the cached config in the datastore.
+//
+// Primarily intended for tests to mock the cached config in the datastore.
+func (e *Entry) Set(ctx context.Context, cfg proto.Message, meta *config.Meta) error {
+	if cfg.ProtoReflect().Descriptor() != e.Type.ProtoReflect().Descriptor() {
+		panic(fmt.Sprintf("got %s, want %s", cfg.ProtoReflect().Descriptor(), e.Type.ProtoReflect().Descriptor()))
+	}
+
+	blob, err := proto.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	var m config.Meta
+	if meta != nil {
+		m = *meta
+	}
+
+	return datastore.Put(ctx, &cachedConfig{
+		ID:     e.entityID(),
+		Config: blob,
+		Meta:   m,
+	})
+}
+
 // Get returns the cached config.
 //
 // Note: you **must** setup periodical calls to Update to use Get or Fetch. They
