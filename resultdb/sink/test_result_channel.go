@@ -63,9 +63,7 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
-		req := c.prepareReportTestResultsRequest(ctx, b)
-		_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, req)
-		return err
+		return c.report(ctx, b)
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for TestResult: %s", err))
@@ -83,7 +81,7 @@ func (c *testResultChannel) closeAndDrain(ctx context.Context) {
 	c.ch.CloseAndDrain(ctx)
 }
 
-func (c *testResultChannel) reportTestResults(trs []*sinkpb.TestResult) {
+func (c *testResultChannel) schedule(trs []*sinkpb.TestResult) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test results.
@@ -95,33 +93,34 @@ func (c *testResultChannel) reportTestResults(trs []*sinkpb.TestResult) {
 	}
 }
 
-func (c *testResultChannel) prepareReportTestResultsRequest(ctx context.Context, b *buffer.Batch) *pb.BatchCreateTestResultsRequest {
+func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 	// retried batch?
-	if b.Meta != nil {
-		return b.Meta.(*pb.BatchCreateTestResultsRequest)
+	if b.Meta == nil {
+		reqs := make([]*pb.CreateTestResultRequest, len(b.Data))
+		for i, d := range b.Data {
+			tr := d.(*sinkpb.TestResult)
+			reqs[i] = &pb.CreateTestResultRequest{
+				TestResult: &pb.TestResult{
+					TestId:      tr.GetTestId(),
+					ResultId:    tr.GetResultId(),
+					Variant:     c.cfg.BaseVariant,
+					Expected:    tr.GetExpected(),
+					SummaryHtml: tr.GetSummaryHtml(),
+					StartTime:   tr.GetStartTime(),
+					Duration:    tr.GetDuration(),
+					Tags:        tr.GetTags(),
+				},
+			}
+		}
+		b.Meta = &pb.BatchCreateTestResultsRequest{
+			Invocation: c.cfg.Invocation,
+			// a random UUID
+			RequestId: uuid.New().String(),
+			Requests:  reqs,
+		}
 	}
-	req := &pb.BatchCreateTestResultsRequest{
-		Invocation: c.cfg.Invocation,
-		// a random UUID
-		RequestId: uuid.New().String(),
-	}
-	for _, d := range b.Data {
-		tr := d.(*sinkpb.TestResult)
-		req.Requests = append(req.Requests, &pb.CreateTestResultRequest{
-			TestResult: &pb.TestResult{
-				TestId:      tr.GetTestId(),
-				ResultId:    tr.GetResultId(),
-				Variant:     c.cfg.BaseVariant,
-				Expected:    tr.GetExpected(),
-				SummaryHtml: tr.GetSummaryHtml(),
-				StartTime:   tr.GetStartTime(),
-				Duration:    tr.GetDuration(),
-				Tags:        tr.GetTags(),
-			},
-		})
-	}
-	b.Meta = req
-	return req
+	_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, b.Meta.(*pb.BatchCreateTestResultsRequest))
+	return err
 }
 
 func sinkArtsToRPCArts(ctx context.Context, sArts map[string]*sinkpb.Artifact) (rArts []*pb.Artifact) {

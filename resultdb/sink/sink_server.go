@@ -118,7 +118,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
-	s.tc.reportTestResults(in.TestResults)
+	s.tc.schedule(in.TestResults)
 
 	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
