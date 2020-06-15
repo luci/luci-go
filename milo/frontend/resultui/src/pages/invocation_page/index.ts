@@ -14,7 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
-import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
+import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html, property } from 'lit-element';
 import { autorun, computed, observable, when } from 'mobx';
 
@@ -62,16 +62,11 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     ));
     this.disposers.push(when(
       () => this.pageState.invocationReq.state === 'rejected',
-      () => {
-        const searchParams = new URLSearchParams({
-          reason: `${this.pageState.invocationReq.value}`,
-          sourceUrl: window.location.toString(),
-        });
-        Router.go({
-          pathname: router.urlForName('error'),
-          search: '?' + searchParams.toString(),
-        });
-      },
+      () => this.dispatchEvent(new ErrorEvent('error', {
+        message: this.pageState.invocationReq.value.toString(),
+        composed: true,
+        bubbles: true,
+      })),
     ));
   }
   disconnectedCallback() {

@@ -26,7 +26,8 @@ const notFoundRoute: Route = {
   },
 };
 
-export const router = new Router(document.getElementById('app-root'));
+const appRoot = document.getElementById('app-root')!;
+export const router = new Router(appRoot);
 router.setRoutes({
   path: '/',
   component: 'tr-app-config-provider',
@@ -101,4 +102,15 @@ router.setRoutes({
       ],
     },
   ],
+});
+
+appRoot.addEventListener('error', (event) => {
+  const searchParams = new URLSearchParams({
+    reason: event.message,
+    sourceUrl: window.location.toString(),
+  });
+  Router.go({
+    pathname: router.urlForName('error'),
+    search: '?' + searchParams.toString(),
+  });
 });
