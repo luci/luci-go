@@ -25,7 +25,7 @@ import (
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	"go.chromium.org/luci/server/router"
@@ -33,8 +33,6 @@ import (
 
 // Run installs and executes this site.
 func main() {
-	ps := endpoints.ProdService{}
-
 	r := router.New()
 
 	// Setup Cloud Endpoints.
@@ -45,7 +43,7 @@ func main() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	base := standard.Base().Extend(ps.Base)
+	base := standard.Base().Extend(coordinator.ConfigProviderMiddleware)
 	svr.InstallHandlers(r, base)
 	standard.InstallHandlers(r)
 

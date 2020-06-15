@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
+	"go.chromium.org/luci/server/router"
 )
 
 // ConfigProvider is a set of support services used by Coordinator to fetch
@@ -118,4 +119,10 @@ func (s *LUCIConfigProvider) getOrCreateCachedProjectConfig(project string) *cac
 // ProjectConfig implements ConfigProvider.
 func (s *LUCIConfigProvider) ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
 	return s.getOrCreateCachedProjectConfig(project).resolve(c)
+}
+
+// ConfigProviderMiddleware installs a LUCIConfigProvider into the Context.
+func ConfigProviderMiddleware(c *router.Context, next router.Handler) {
+	c.Context = WithConfigProvider(c.Context, &LUCIConfigProvider{})
+	next(c)
 }

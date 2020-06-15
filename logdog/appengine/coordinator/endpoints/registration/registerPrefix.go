@@ -26,7 +26,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
@@ -36,8 +36,7 @@ import (
 
 func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest) (pubsub.Topic, time.Duration, error) {
 	// Load our service and project configurations.
-	svcs := endpoints.GetServices(c)
-	cfg, err := svcs.Config(c)
+	cfg, err := coordinator.GetConfigProvider(c).Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load service configuration.")
 		return "", 0, grpcutil.Internal

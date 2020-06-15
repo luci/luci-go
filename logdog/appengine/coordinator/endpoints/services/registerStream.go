@@ -102,7 +102,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	prefix, _ := path.Split()
 
 	// Load our service and project configs.
-	cfg, err := endpoints.GetServices(c).Config(c)
+	cfg, err := coordinator.GetConfigProvider(c).Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal

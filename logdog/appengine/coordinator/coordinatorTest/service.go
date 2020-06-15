@@ -19,7 +19,6 @@ import (
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/server/config"
 )
@@ -46,7 +45,6 @@ type Services struct {
 	ST func(*coordinator.LogStreamState) (coordinator.SigningStorage, error)
 }
 
-var _ endpoints.Services = (*Services)(nil)
 var _ flex.Services = (*Services)(nil)
 
 // Config implements coordinator.Services.
