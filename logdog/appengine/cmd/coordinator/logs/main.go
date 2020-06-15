@@ -19,9 +19,9 @@ import (
 	"net/http"
 
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
+	"go.chromium.org/luci/logdog/server/config"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	flexMW "go.chromium.org/luci/appengine/gaemiddleware/flex"

@@ -25,8 +25,8 @@ import (
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 
 	"google.golang.org/grpc/codes"
