@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/types"
@@ -96,7 +96,7 @@ func TestRegisterPrefix(t *testing.T) {
 			resp, err := svr.RegisterPrefix(c, &req)
 			So(err, ShouldBeNil)
 			So(resp, ShouldResemble, &logdog.RegisterPrefixResponse{
-				LogBundleTopic: "projects/app/topics/test-topic",
+				LogBundleTopic: "projects/logdog-app-id/topics/test-topic",
 				Secret:         randSecret,
 			})
 
@@ -126,7 +126,7 @@ func TestRegisterPrefix(t *testing.T) {
 				resp, err := svr.RegisterPrefix(c, &req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.RegisterPrefixResponse{
-					LogBundleTopic: "projects/app/topics/test-topic",
+					LogBundleTopic: "projects/logdog-app-id/topics/test-topic",
 					Secret:         randSecret,
 				})
 			})

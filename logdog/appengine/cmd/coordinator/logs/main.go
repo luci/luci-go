@@ -95,7 +95,7 @@ func main() {
 }
 
 func accessControl(c context.Context, origin string) bool {
-	cfg, err := config.Load(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to get config for access control check.")
 		return false

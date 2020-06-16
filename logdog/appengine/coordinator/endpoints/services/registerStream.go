@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/server/config"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
@@ -102,7 +103,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	prefix, _ := path.Split()
 
 	// Load our service and project configs.
-	cfg, err := coordinator.GetConfigProvider(c).Config(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal
