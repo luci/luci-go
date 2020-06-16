@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "36a34a44_df05f540",
+        "filename": "common/errors/walk.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-16T17:44:03Z",
+      "side": 1,
+      "message": "I think your suggestion below of renaming InnerError is the closest to what I had in mind then.",
+      "parentUuid": "a282f105_9e598104",
+      "range": {
+        "startLine": 59,
+        "startChar": 6,
+        "endLine": 59,
+        "endChar": 13
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac4f9163_a4223703",
         "filename": "common/errors/walk.go",
         "patchSetId": 6
