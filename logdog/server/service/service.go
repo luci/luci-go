@@ -116,8 +116,6 @@ type Service struct {
 
 	coordinatorHost     string
 	coordinatorInsecure bool
-	useDatastoreConfig  bool
-	hasDatastore        bool
 
 	// killCheckInterval is the amount of time in between service configuration
 	// checks. If set, this service will periodically reload its service
@@ -158,7 +156,6 @@ func (s *Service) Run(c context.Context, f func(context.Context) error) {
 	if s.Name == "" {
 		s.Name = filepath.Base(os.Args[0])
 	}
-	s.useDatastoreConfig = true // If available, use datastore config.
 
 	rc := 0
 	if err := s.runImpl(c, f); err != nil {
@@ -196,23 +193,14 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	// Install our authentication service.
 	c = s.withAuthService(c)
 
-	// Install a cloud datastore client. This is non-fatal if it fails.
+	// Install a cloud datastore client.
 	dsClient, err := s.initDatastoreClient(c)
-	if err == nil {
-		defer dsClient.Close()
-
-		ccfg := cloud.Config{
-			DS:        dsClient,
-			ProjectID: s.serviceID,
-		}
-		c = ccfg.Use(c, nil)
-		c = settings.Use(c, settings.New(gaesettings.Storage{}))
-
-		s.hasDatastore = s.useDatastoreConfig
-		log.Debugf(c, "Enabled cloud datastore access.")
-	} else {
-		log.WithError(err).Warningf(c, "Failed to create cloud datastore client.")
+	if err != nil {
+		return errors.Annotate(err, "failed to initialize datastore client").Err()
 	}
+	defer dsClient.Close()
+	c = (&cloud.Config{DS: dsClient, ProjectID: s.serviceID}).Use(c, nil)
+	c = settings.Use(c, settings.New(gaesettings.Storage{}))
 
 	// Install process-wide cache.
 	c = serverCaching.WithEmptyProcessCache(c)
@@ -254,15 +242,13 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 
 	// Initialize our Client instantiations.
 	if s.coord, err = s.initCoordinatorClient(c); err != nil {
-		log.WithError(err).Errorf(c, "Failed to setup Coordinator client.")
-		return err
+		return errors.Annotate(err, "failed to setup Coordinator client").Err()
 	}
 
 	// Initialize and install our config service and caching layers, and load our
 	// initial service config.
 	if err := s.initConfig(&c); err != nil {
-		log.WithError(err).Errorf(c, "Failed to setup configuration.")
-		return err
+		return errors.Annotate(err, "failed to setup configuration").Err()
 	}
 
 	// Clear our shutdown function on termination.
@@ -302,8 +288,6 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"If non-zero, poll for configuration changes and kill the application if one is detected.")
 	fs.StringVar(&s.testConfigFilePath, "test-config-file-path", s.testConfigFilePath,
 		"(Testing) If set, load configuration from a local filesystem rooted here.")
-	fs.BoolVar(&s.useDatastoreConfig, "use-datastore-config", s.useDatastoreConfig,
-		"Enable/Disable loading configuration directly from datastore cache.")
 }
 
 func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
@@ -366,8 +350,8 @@ func (s *Service) initConfig(c *context.Context) error {
 		p = &client.RemoteProvider{
 			Host: ccfg.ConfigServiceHost,
 		}
-		// If using a remote config provider, enable datastore access and caching.
-		opts.DatastoreCacheAvailable = s.hasDatastore
+		// Enable datastore access and caching.
+		opts.DatastoreCacheAvailable = true
 	} else {
 		// Test / Local: use filesystem config path.
 		ci, err := filesystem.New(s.testConfigFilePath)
