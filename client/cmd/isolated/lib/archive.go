@@ -25,7 +25,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/data/text/units"
@@ -33,7 +32,7 @@ import (
 )
 
 // CmdArchive returns an object for the `archive` subcommand.
-func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+func CmdArchive(options CommandOptions) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>...",
 		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server",
@@ -51,7 +50,7 @@ Note that '.' may be omitted in general, so to upload 'foo' from the current
 working directory, '-files :foo' is sufficient.`,
 		CommandRun: func() subcommands.CommandRun {
 			c := archiveRun{}
-			c.commonFlags.Init(defaultAuthOpts)
+			c.commonFlags.Init(options.DefaultAuthOpts)
 			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
 			c.Flags.StringVar(&c.dumpHash, "dump-hash", "",
