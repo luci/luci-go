@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"

@@ -24,7 +24,7 @@ import "google/protobuf/wrappers.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/common/proto/options.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/projects:buildbucket.cfg";
