@@ -69,6 +69,24 @@
       "revId": "62c99ebf7ed01f7b542f7816098567ee38d28602",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5c39dd8_a2f2dd17",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-16T10:05:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "133d7f91_93971c8a",
+      "revId": "62c99ebf7ed01f7b542f7816098567ee38d28602",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
