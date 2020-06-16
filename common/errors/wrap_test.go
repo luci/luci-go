@@ -32,7 +32,7 @@ func (w *testWrapped) Error() string {
 	return fmt.Sprintf("wrapped: %v", w.error.Error())
 }
 
-func (w *testWrapped) InnerError() error {
+func (w *testWrapped) Unwrap() error {
 	return w.error
 }
 

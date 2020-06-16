@@ -138,7 +138,7 @@ func TestPubSub(t *testing.T) {
 				errNotReg := errors.New("The supplied HTTP URL is not registered")
 				miloClient.createdSubsErr["buildbucket"] = errNotReg
 				err := ensureBuildbucketSubscribed(c, proj)
-				So((err.(errors.Wrapped)).InnerError(), ShouldEqual, errNotReg)
+				So((err.(errors.Wrapped)).Unwrap(), ShouldEqual, errNotReg)
 			})
 			Convey("Create subscription", func() {
 				miloClient.createdSubsErr["buildbucket"] = nil

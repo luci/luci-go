@@ -168,7 +168,7 @@ var _ interface {
 
 func (e *annotatedError) Error() string              { return e.ctx.renderPublic(e.inner) }
 func (e *annotatedError) stackContext() stackContext { return e.ctx }
-func (e *annotatedError) InnerError() error          { return e.inner }
+func (e *annotatedError) Unwrap() error          { return e.inner }
 
 // Annotator is a builder for annotating errors. Obtain one by calling Annotate
 // on an existing error or using Reason.
@@ -489,7 +489,7 @@ func renderStack(err error) *renderedError {
 			// twice (once in its stackContext method, and again here).
 			err = x.First()
 		case Wrapped:
-			err = x.InnerError()
+			err = x.Unwrap()
 		default:
 			ret.originalError = err.Error()
 			err = nil
@@ -507,7 +507,7 @@ func renderStack(err error) *renderedError {
 // If this is passed nil, it will return a no-op Annotator whose .Err() function
 // will also return nil.
 //
-// The original error may be recovered by using Wrapped.InnerError on the
+// The original error may be recovered by using Wrapped.Unwrap on the
 // returned error.
 //
 // Rendering the derived error with Error() will render a summary version of all

@@ -16,14 +16,14 @@ package errors
 
 // Wrapped indicates an error that wraps another error.
 type Wrapped interface {
-	// InnerError returns the wrapped error.
-	InnerError() error
+	// Unwrap returns the wrapped error.
+	Unwrap() error
 }
 
 // Unwrap unwraps a wrapped error recursively, returning its inner error.
 //
 // If the supplied error is not nil, Unwrap will never return nil. If a
-// wrapped error reports that its InnerError is nil, that error will be
+// wrapped error reports that its Unwrap is nil, that error will be
 // returned.
 func Unwrap(err error) error {
 	for {
@@ -32,7 +32,7 @@ func Unwrap(err error) error {
 			return err
 		}
 
-		inner := wrap.InnerError()
+		inner := wrap.Unwrap()
 		if inner == nil {
 			break
 		}
