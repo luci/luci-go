@@ -258,13 +258,8 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
-	cfg := a.ServiceConfig()
-
-	coordCfg, acfg := cfg.GetCoordinator(), cfg.GetArchivist()
+	acfg := a.ServiceConfig.GetArchivist()
 	switch {
-	case coordCfg == nil:
-		fallthrough
-
 	case acfg == nil:
 		return errors.New("missing required config: archivist")
 	case acfg.GsStagingBucket == "":
@@ -291,7 +286,7 @@ func (a *application) runArchivist(c context.Context) error {
 
 	// Initialize a Coordinator client that bundles requests together.
 	coordClient := &bundleServicesClient.Client{
-		ServicesClient:       a.Coordinator(),
+		ServicesClient:       a.Coordinator,
 		DelayThreshold:       time.Second,
 		BundleCountThreshold: 100,
 	}
@@ -299,7 +294,7 @@ func (a *application) runArchivist(c context.Context) error {
 
 	ar := archivist.Archivist{
 		Service:         coordClient,
-		SettingsLoader:  a.GetSettingsLoader(acfg),
+		SettingsLoader:  GetSettingsLoader(a.ServiceID, acfg),
 		Storage:         st,
 		GSClientFactory: gsClientFactory,
 	}

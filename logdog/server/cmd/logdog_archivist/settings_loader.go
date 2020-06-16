@@ -21,18 +21,17 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/archivist"
+	"go.chromium.org/luci/logdog/server/config"
 )
 
 // GetSettingsLoader is an archivist.SettingsLoader implementation that merges
 // global and project-specific settings.
 //
 // The resulting settings object will be verified by the Archivist.
-func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.SettingsLoader {
-	serviceID := a.ServiceID()
-
+func GetSettingsLoader(serviceID string, acfg *svcconfig.Archivist) archivist.SettingsLoader {
 	return func(c context.Context, project string) (*archivist.Settings, error) {
 		// Fold in our project-specific configuration, if valid.
-		pcfg, err := a.ProjectConfig(c, project)
+		pcfg, err := config.ProjectConfig(c, project)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
