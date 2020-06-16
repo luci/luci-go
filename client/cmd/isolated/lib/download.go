@@ -27,7 +27,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/text/units"
@@ -44,7 +43,7 @@ const cacheMaxSizeDefault = math.MaxInt64
 const cacheMaxItemsDefault = maxInt
 
 // CmdDownload returns an object for the `download` subcommand.
-func CmdDownload(authOpts auth.Options) *subcommands.Command {
+func CmdDownload(options CommandOptions) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "download <options>...",
 		ShortDesc: "downloads a file or a .isolated tree from an isolate server.",
@@ -53,7 +52,7 @@ func CmdDownload(authOpts auth.Options) *subcommands.Command {
 Files are referenced by their hash`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
-			c.commonFlags.Init(authOpts)
+			c.commonFlags.Init(options.DefaultAuthOpts)
 			// TODO(mknyszek): Add support for downloading individual files.
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
 			c.Flags.StringVar(&c.outputFiles, "output-files", "", "File into which the full list of downloaded files is written to.")
