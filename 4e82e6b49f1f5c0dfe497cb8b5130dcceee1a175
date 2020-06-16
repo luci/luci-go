@@ -22,6 +22,30 @@
       "revId": "4e82e6b49f1f5c0dfe497cb8b5130dcceee1a175",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e47acde_9a4fb8b2",
+        "filename": "logdog/appengine/coordinator/endpoints/services/getConfig.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-16T07:03:02Z",
+      "side": 1,
+      "message": "Turns it the config service host is not used there at all. They just fetch shit from cfgclient\u0027s datastore cache never really falling back to LUCI Config. It is accounted for in some later CL. I\u0027ll remove this RPC after redeploying services not to use it.",
+      "parentUuid": "d61758ea_9df74749",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 69
+      },
+      "revId": "4e82e6b49f1f5c0dfe497cb8b5130dcceee1a175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
