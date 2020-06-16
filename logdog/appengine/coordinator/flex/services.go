@@ -186,11 +186,7 @@ func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context) 
 //
 // It installs a production Services instance into the Context.
 func (gsvc *GlobalServices) Base(c *router.Context, next router.Handler) {
-	// TODO(vadimsh): Collapse this indirection, it is useless.
-	services := flexServicesInst{
-		GlobalServices: gsvc,
-	}
-	c.Context = WithServices(c.Context, &services)
+	c.Context = WithServices(c.Context, gsvc)
 	next(c)
 }
 
@@ -199,19 +195,15 @@ func (gsvc *GlobalServices) Close() error {
 	return nil
 }
 
-// flexServicesInst is a Service exposing production faciliites for the
-// AppEngine Flex environment. A unique instance is bound to each each request.
-type flexServicesInst struct {
-	// GlobalServices is the base services singleton.
-	*GlobalServices
-}
-
-func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project string) (
+// Storage returns a Storage instance for the supplied log stream.
+//
+// The caller must close the returned instance if successful.
+func (gsvc *GlobalServices) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project string) (
 	coordinator.SigningStorage, error) {
 
 	if !lst.ArchivalState().Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
-		return noSignedURLStorage{s.btStorage}, nil
+		return noSignedURLStorage{gsvc.btStorage}, nil
 	}
 
 	// Some very old logs have malformed data where they claim to be archived but
@@ -225,7 +217,7 @@ func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.
 		return nil, errors.New("log has no index URL", grpcutil.NotFoundTag)
 	}
 
-	gsClient, err := s.gsClientFactory(c, project)
+	gsClient, err := gsvc.gsClientFactory(c, project)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
 		return nil, err
@@ -240,7 +232,7 @@ func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.
 	st, err := archive.New(archive.Options{
 		Index:  gs.Path(lst.ArchiveIndexURL),
 		Stream: gs.Path(lst.ArchiveStreamURL),
-		Cache:  s.storageCache,
+		Cache:  gsvc.storageCache,
 		Client: gsClient,
 	})
 	if err != nil {
@@ -250,7 +242,7 @@ func (s *flexServicesInst) StorageForStream(c context.Context, lst *coordinator.
 
 	rv := &googleStorage{
 		Storage: st,
-		svc:     s,
+		svc:     gsvc,
 		gs:      gsClient,
 		stream:  gs.Path(lst.ArchiveStreamURL),
 		index:   gs.Path(lst.ArchiveIndexURL),
@@ -274,7 +266,7 @@ type googleStorage struct {
 	// Storage is the base storage.Storage instance.
 	storage.Storage
 	// svc is the services instance that created this.
-	svc *flexServicesInst
+	svc *GlobalServices
 
 	// ctx is the Context that was bound at the time of of creation.
 	ctx context.Context
