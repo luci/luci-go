@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2611175a_b34c3093",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-16T08:58:12Z",
+      "side": 1,
+      "message": "I\u0027m not sure this is in a good shape only with this.\nCould you show later CLs me too?",
+      "revId": "62c99ebf7ed01f7b542f7816098567ee38d28602",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
