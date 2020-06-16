@@ -210,7 +210,7 @@
 // (binary, json or text protobuf). The luciexe MUST write it's final Build
 // message to this file in the correct format. If `--output` is specified,
 // but no Build message (or an invalid/improperly formatted Build message)
-// is written, the caller MUST interpret this as an INFRA_FAILURE status.
+// is written, the caller SHOULD interpret this as an INFRA_FAILURE status.
 //
 //   NOTE: JSON outputs SHOULD be written with the original proto field names,
 //   not the lowerCamelCase names; downstream users may not be using jsonpb
@@ -223,16 +223,19 @@
 // Steps from the child luciexe show in the parent's Build updates. This is one
 // of the responsibilities of the Host Application.
 //
-// The parent can achieve this by recording a Step (with no children), and
+// The parent can achieve this by recording a Step S (with no children), and
 // a Step.Log named "$build.proto" which points to a "build.proto" stream (see
-// "Updating the Build State"). If the step has multiple logs, the
+// "Updating the Build State"). If step S has multiple logs, the
 // "$build.proto" log must be the first one. This is called a "Merge Step", and
 // is a directive for the host to merge the Build message located in the
 // "$build.proto" log here.
 //
-// The steps from the child build.proto stream will appear as substeps of step
-// S in the parent. The following fields of the child Build will be copied to
-// the equivalent fields of step S in the parent:
+// The Host Application MUST append all steps from the child build.proto
+// stream to the parent build as substeps of step S and copy following
+// fields of the child build to the equivalent fields of step S if step S
+// has *non-final* status. It is the responsibility of the invoker in parent
+// LUCI executable to populate rest of the fields of step S if it explicitly
+// mark the step status as final.
 //
 //  SummaryMarkdown
 //  Status
