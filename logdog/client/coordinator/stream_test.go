@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 
 	"google.golang.org/grpc/codes"
@@ -74,22 +74,31 @@ func genDG(idx int64, content ...string) []*logpb.LogEntry {
 	return logs
 }
 
+func assertLogStream(a, b *LogStream) {
+	// Compare proto parts separately.
+	So(&a.Desc, ShouldResembleProto, &b.Desc)
+	a.Desc = logpb.LogStreamDescriptor{}
+	b.Desc = logpb.LogStreamDescriptor{}
+	// The rest is handled by ShouldResemble.
+	So(a, ShouldResemble, b)
+}
+
 // testStreamLogsService implements just the Get and Tail endpoints,
 // instrumented for testing.
 type testStreamLogsService struct {
 	testLogsServiceBase
 
 	// Get
-	GR logdog.GetRequest
+	GR *logdog.GetRequest
 	GH func(*logdog.GetRequest) (*logdog.GetResponse, error)
 
 	// Tail
-	TR logdog.TailRequest
+	TR *logdog.TailRequest
 	TH func(*logdog.TailRequest) (*logdog.GetResponse, error)
 }
 
 func (s *testStreamLogsService) Get(c context.Context, req *logdog.GetRequest) (*logdog.GetResponse, error) {
-	s.GR = *req
+	s.GR = req
 	if h := s.GH; h != nil {
 		return s.GH(req)
 	}
@@ -97,7 +106,7 @@ func (s *testStreamLogsService) Get(c context.Context, req *logdog.GetRequest) (
 }
 
 func (s *testStreamLogsService) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetResponse, error) {
-	s.TR = *req
+	s.TR = req
 	if h := s.TH; h != nil {
 		return s.TH(req)
 	}
@@ -143,10 +152,10 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c)
 					So(err, ShouldBeNil)
-					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
+					So(l, ShouldResembleProto, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResemble, logdog.GetRequest{
+					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
 						Project: "myproj",
 						Path:    "test/+/a",
 					})
@@ -162,7 +171,7 @@ func TestStreamGet(t *testing.T) {
 					So(l, ShouldBeNil)
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResemble, logdog.GetRequest{
+					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
 						Project:       "myproj",
 						Path:          "test/+/a",
 						NonContiguous: true,
@@ -181,10 +190,10 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c, LimitCount(64), LimitBytes(32))
 					So(err, ShouldBeNil)
-					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "ohai")})
+					So(l, ShouldResembleProto, []*logpb.LogEntry{genLog(1337, "ohai")})
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResemble, logdog.GetRequest{
+					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
 						Project:   "myproj",
 						Path:      "test/+/a",
 						LogCount:  64,
@@ -217,8 +226,8 @@ func TestStreamGet(t *testing.T) {
 					var ls LogStream
 					l, err := s.Get(c, WithState(&ls))
 					So(err, ShouldBeNil)
-					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "kthxbye")})
-					So(ls, ShouldResemble, LogStream{
+					So(l, ShouldResembleProto, []*logpb.LogEntry{genLog(1337, "kthxbye")})
+					assertLogStream(&ls, &LogStream{
 						Path: "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
 							Prefix:     "test",
@@ -281,7 +290,7 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.State(c)
 					So(err, ShouldBeNil)
-					So(l, ShouldResemble, &LogStream{
+					assertLogStream(l, &LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -295,7 +304,7 @@ func TestStreamGet(t *testing.T) {
 					})
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResemble, logdog.GetRequest{
+					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
 						Project:  "myproj",
 						Path:     "test/+/a",
 						LogCount: -1,
@@ -355,15 +364,15 @@ func TestStreamGet(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Validate the HTTP request that we made.
-					So(svc.TR, ShouldResemble, logdog.TailRequest{
+					So(svc.TR, ShouldResembleProto, &logdog.TailRequest{
 						Project: "myproj",
 						Path:    "test/+/a",
 						State:   true,
 					})
 
 					// Validate that the log and state were returned.
-					So(l, ShouldResemble, genLog(1337, "kthxbye"))
-					So(ls, ShouldResemble, LogStream{
+					So(l, ShouldResembleProto, genLog(1337, "kthxbye"))
+					assertLogStream(&ls, &LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -396,7 +405,7 @@ func TestStreamGet(t *testing.T) {
 					l, err := s.Tail(c, WithState(&ls))
 					So(err, ShouldBeNil)
 					So(l, ShouldBeNil)
-					So(ls, ShouldResemble, LogStream{
+					assertLogStream(&ls, &LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -546,7 +555,7 @@ func TestStreamGet(t *testing.T) {
 							So(le.GetDatagram().Partial, ShouldBeNil)
 							So(le.GetDatagram().Data, ShouldResemble, []byte("foobarbazkthxbye"))
 
-							So(ls, ShouldResemble, LogStream{
+							assertLogStream(&ls, &LogStream{
 								Path: "test/+/a",
 								Desc: logpb.LogStreamDescriptor{
 									Prefix:     "test",

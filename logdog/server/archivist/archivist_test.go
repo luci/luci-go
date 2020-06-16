@@ -361,7 +361,7 @@ func TestHandleArchive(t *testing.T) {
 
 				So(hasStreams(true, true, true), ShouldBeTrue)
 
-				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+				So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 					Project:       project,
 					Id:            task.Id,
 					LogEntryCount: 4,
@@ -393,7 +393,7 @@ func TestHandleArchive(t *testing.T) {
 					So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
 					So(st.Count(project, desc.Path()), ShouldEqual, 5)
 
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archive failure error",
@@ -404,7 +404,7 @@ func TestHandleArchive(t *testing.T) {
 					So(st.Count(project, desc.Path()), ShouldEqual, 5)
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 					So(st.Count(project, desc.Path()), ShouldEqual, 0)
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archive failure error",
@@ -415,7 +415,7 @@ func TestHandleArchive(t *testing.T) {
 					archiveErr = errors.New("")
 
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archival error",
@@ -432,7 +432,7 @@ func TestHandleArchive(t *testing.T) {
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 
 					So(hasStreams(true, true, false), ShouldBeTrue)
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 0,
@@ -451,7 +451,7 @@ func TestHandleArchive(t *testing.T) {
 					So(st.Count(project, desc.Path()), ShouldEqual, 0)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 4,
@@ -470,7 +470,7 @@ func TestHandleArchive(t *testing.T) {
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 
 					So(hasStreams(true, true, false), ShouldBeTrue)
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 0,
@@ -489,7 +489,7 @@ func TestHandleArchive(t *testing.T) {
 					So(st.Count(project, desc.Path()), ShouldEqual, 0)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
-					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 3,

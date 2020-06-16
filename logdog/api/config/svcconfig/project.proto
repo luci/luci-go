@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package svcconfig;
 
+option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
+
 import "google/protobuf/duration.proto";
 
 import "go.chromium.org/luci/common/proto/options.proto";

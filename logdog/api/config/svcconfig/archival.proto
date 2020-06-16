@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package svcconfig;
 
+option go_package = "go.chromium.org/luci/logdog/api/config/svcconfig";
+
 // ArchiveIndexConfig specifies how archive indexes should be generated.
 //
 // By default, each log entry will be present in the index. This is generally

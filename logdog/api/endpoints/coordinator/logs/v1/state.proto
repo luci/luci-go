@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package logdog;
 
+option go_package = "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1;logdog";
+
 import "google/protobuf/timestamp.proto";
 
 // LogStreamState is a bidirectional state value used in UpdateStream calls.
@@ -36,7 +38,7 @@ message LogStreamState {
     // intermediate storage when the archival interval expired.
     bool complete = 4;
 
-    // The number of log 
+    // The number of log
     int64 log_entry_count = 5;
   }
   // If non-nil, the log stream is archived, and this field contains archival

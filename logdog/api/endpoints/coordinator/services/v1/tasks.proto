@@ -6,8 +6,7 @@ syntax = "proto3";
 
 package logdog;
 
-import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
+option go_package = "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1;logdog";
 
 // ArchiveTask is a task queue task description for the archival of a single
 // log stream.
