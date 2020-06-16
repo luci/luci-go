@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d942ed74_fc4ac8a5",
+        "filename": "common/errors/walk.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-16T17:35:28Z",
+      "side": 1,
+      "message": "IMO we should remove this Wrapped interface and use the stdlib one instead. It\u0027s the same thing, just with a different function name.",
+      "range": {
+        "startLine": 59,
+        "startChar": 6,
+        "endLine": 59,
+        "endChar": 13
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
