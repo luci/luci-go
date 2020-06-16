@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "0eaf056f_78f503dc",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-16T01:55:57Z",
+      "side": 1,
+      "message": "I think my opinion is that this shouldn\u0027t be expandable. If there\u0027s only one variant of a test, the def isn\u0027t important; so we should visually de-emphasise it.\n\nThe expando button adds visual clutter and makes it harder for the user to know what\u0027s actually useful to expand. In this case, expanding the def gives no extra information to the user, so I recommend removing it.",
+      "parentUuid": "dd109350_2858cf5f",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d9dabe77_f8f82377",
         "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
         "patchSetId": 3
@@ -47,6 +65,47 @@
       "writtenOn": "2020-06-15T23:56:54Z",
       "side": 1,
       "message": "Not having a label is weird.\nWe can change the label to something else.",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f45e36c3_94009fc3",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-16T01:55:57Z",
+      "side": 1,
+      "message": "Suggestion: we could keep the \"unexpected result | \" prefix that was there before, but just not have it be expandable.",
+      "parentUuid": "d9dabe77_f8f82377",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f37998d1_8a1d02a8",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-16T01:55:57Z",
+      "side": 1,
+      "message": "Complexity can mean multiple things... suggest something like \"runtime should be low\" or \"this operation should be fast\"",
+      "range": {
+        "startLine": 53,
+        "startChar": 7,
+        "endLine": 53,
+        "endChar": 35
+      },
       "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
