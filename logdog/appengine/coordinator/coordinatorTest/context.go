@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
@@ -311,7 +310,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		},
 	}
 	c = coordinator.WithConfigProvider(c, &e.Services)
-	c = endpoints.WithServices(c, &e.Services)
 	c = flex.WithServices(c, &e.Services)
 
 	return cacheContext.Wrap(c), &e

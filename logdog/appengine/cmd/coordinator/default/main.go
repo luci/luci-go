@@ -27,7 +27,7 @@ import (
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/discovery"
@@ -38,8 +38,6 @@ import (
 
 // Run installs and executes this site.
 func main() {
-	ps := endpoints.ProdService{}
-
 	r := router.New()
 
 	// Standard HTTP endpoints.
@@ -59,7 +57,7 @@ func main() {
 	servicesPb.RegisterServicesServer(svr, dummyServicesService)
 	discovery.Enable(svr)
 
-	base := standard.Base().Extend(ps.Base)
+	base := standard.Base().Extend(coordinator.ConfigProviderMiddleware)
 	svr.InstallHandlers(r, base)
 
 	r.POST("/admin/cron/stats/:stat/:namespace", base, cronStatsNSHandler)
