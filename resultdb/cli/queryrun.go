@@ -51,9 +51,9 @@ func (r *queryRunBase) registerFlags(p Params) {
 		Print results in JSON format separated by newline.
 		One result takes exactly one line. Result object properties are invocationId
 		and one of
-		  testResult: luci.resultdb.rpc.v1.TestResult message.
-			testExoneration: luci.resultdb.rpc.v1.TestExoneration message.
-			invocation: luci.resultdb.rpc.v1.Invocation message.
+		  testResult: luci.resultdb.v1.TestResult message.
+			testExoneration: luci.resultdb.v1.TestExoneration message.
+			invocation: luci.resultdb.v1.Invocation message.
 	`))
 
 	r.Flags.IntVar(&r.limit, "n", 0, text.Doc(`

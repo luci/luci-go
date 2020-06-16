@@ -190,7 +190,7 @@ message Builder {
     // Configuration for exporting test results to BigQuery.
     // This can have multiple values to export results to multiple BigQuery
     // tables, or to support multiple test result predicates.
-    repeated luci.resultdb.rpc.v1.BigQueryExport bq_exports = 2;
+    repeated luci.resultdb.v1.BigQueryExport bq_exports = 2;
   }
 
   // Name of the builder or builder mixin.

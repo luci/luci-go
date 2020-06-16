@@ -42,6 +42,6 @@ message ReportTestResultsRequest {
 
 message ReportTestResultsResponse {
   // List of unique identifiers that can be used to link to these results
-  // or requested via luci.resultdb.rpc.v1.ResultDB service.
+  // or requested via luci.resultdb.v1.ResultDB service.
   repeated string test_result_names = 1;
 }

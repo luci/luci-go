@@ -39,7 +39,7 @@ func cmdRPC(p Params) *subcommands.Command {
 		LongDesc: text.Doc(`
 			Make a ResultDB RPC.
 
-			SERVICE must be the full name of a service, e.g. "luci.resultdb.rpc.v1.ResultDB"".
+			SERVICE must be the full name of a service, e.g. "luci.resultdb.v1.ResultDB"".
 			METHOD is the name of the method, e.g. "GetInvocation"
 
 			The request message is read from stdin, in JSON format.

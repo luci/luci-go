@@ -66,7 +66,7 @@ CREATE TABLE Invocations (
 
   -- Requests to export the invocation to BigQuery, see also
   -- Invocation.bigquery_exports in invocation.proto.
-  -- Each array element is a binary-encoded luci.resultdb.rpc.v1.BigQueryExport
+  -- Each array element is a binary-encoded luci.resultdb.v1.BigQueryExport
   -- message.
   BigQueryExports ARRAY<BYTES(MAX)>,
 

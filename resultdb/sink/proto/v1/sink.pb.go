@@ -99,7 +99,7 @@ type ReportTestResultsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// List of unique identifiers that can be used to link to these results
-	// or requested via luci.resultdb.rpc.v1.ResultDB service.
+	// or requested via luci.resultdb.v1.ResultDB service.
 	TestResultNames []string `protobuf:"bytes,1,rep,name=test_result_names,json=testResultNames,proto3" json:"test_result_names,omitempty"`
 }
 
