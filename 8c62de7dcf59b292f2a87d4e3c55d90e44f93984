@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a282f105_9e598104",
+        "filename": "common/errors/walk.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-16T17:37:08Z",
+      "side": 1,
+      "message": "There\u0027s no interface in stdlib for it. Also it is thin ice, since errors.Is/errors.As is not available in go1.11 that we still run in a lots of places.",
+      "parentUuid": "d942ed74_fc4ac8a5",
+      "range": {
+        "startLine": 59,
+        "startChar": 6,
+        "endLine": 59,
+        "endChar": 13
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ac4f9163_a4223703",
         "filename": "common/errors/walk.go",
         "patchSetId": 6
