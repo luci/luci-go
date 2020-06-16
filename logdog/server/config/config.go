@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 
@@ -30,15 +31,19 @@ var (
 	ErrInvalidConfig = errors.New("invalid configuration")
 )
 
-// Load loads the service configuration.
+// Config loads and returns the service configuration.
 //
 // The service config is minimally validated prior to being returned.
-func Load(ctx context.Context) (*svcconfig.Config, error) {
+func Config(ctx context.Context) (*svcconfig.Config, error) {
+	store := store(ctx)
+
+	// TODO(vadimsh): Really add caching.
+
 	var cfg svcconfig.Config
 	err := cfgclient.Get(
 		ctx,
 		cfgclient.AsService,
-		cfgclient.CurrentServiceConfigSet(ctx),
+		config.ServiceSet(store.serviceID),
 		"services.cfg",
 		textproto.Message(&cfg),
 		nil,

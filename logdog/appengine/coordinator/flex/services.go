@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
+	"go.chromium.org/luci/logdog/server/config"
 
 	gcbt "cloud.google.com/go/bigtable"
 	gcst "cloud.google.com/go/storage"
@@ -54,8 +55,6 @@ const (
 //
 // Services methods are goroutine-safe.
 type Services interface {
-	coordinator.ConfigProvider
-
 	// Storage returns a Storage instance for the supplied log stream.
 	//
 	// The caller must close the returned instance if successful.
@@ -67,9 +66,6 @@ type Services interface {
 //
 // It is applied to each Flex HTTP request using its Base() middleware method.
 type GlobalServices struct {
-	// LUCIConfigProvider satisfies the ConfigProvider interface requirement.
-	coordinator.LUCIConfigProvider
-
 	// Signer is the signer instance to use.
 	Signer gaesigner.Signer
 
@@ -101,7 +97,7 @@ func NewGlobalServices(c context.Context) (*GlobalServices, error) {
 	}
 
 	// Load our service configuration.
-	cfg, err := s.Config(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get service configuration").Err()
 	}
@@ -190,11 +186,10 @@ func (gsvc *GlobalServices) createGoogleStorageClientFactory(c context.Context) 
 //
 // It installs a production Services instance into the Context.
 func (gsvc *GlobalServices) Base(c *router.Context, next router.Handler) {
+	// TODO(vadimsh): Collapse this indirection, it is useless.
 	services := flexServicesInst{
 		GlobalServices: gsvc,
 	}
-
-	c.Context = coordinator.WithConfigProvider(c.Context, &services)
 	c.Context = WithServices(c.Context, &services)
 	next(c)
 }

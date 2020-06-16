@@ -35,15 +35,13 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	coordcfg "go.chromium.org/luci/logdog/server/config"
+	logdogcfg "go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -51,7 +49,6 @@ import (
 
 	gaeMemory "go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/info"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -70,6 +67,9 @@ func init() {
 // Environment contains all of the testing facilities that are installed into
 // the Context.
 type Environment struct {
+	// ServiceID is LogDog's service ID for tests.
+	ServiceID string
+
 	// Clock is the installed test clock instance.
 	Clock testclock.TestClock
 
@@ -115,16 +115,14 @@ func (e *Environment) LeaveAllGroups() {
 // ClearCoordinatorConfig removes the Coordinator configuration entry,
 // simulating a missing config.
 func (e *Environment) ClearCoordinatorConfig(c context.Context) {
-	delete(e.Config, cfgclient.CurrentServiceConfigSet(c))
+	delete(e.Config, config.ServiceSet(e.ServiceID))
 }
 
 // ModServiceConfig loads the current service configuration, invokes the
 // callback with its contents, and writes the result back to config.
 func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Config)) {
-	configSet, configPath := cfgclient.CurrentServiceConfigSet(c), "services.cfg"
-
 	var cfg svcconfig.Config
-	e.modTextProtobuf(c, configSet, configPath, &cfg, func() {
+	e.modTextProtobuf(c, config.ServiceSet(e.ServiceID), "services.cfg", &cfg, func() {
 		fn(&cfg)
 	})
 }
@@ -132,24 +130,20 @@ func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Con
 // ModProjectConfig loads the current configuration for the named project,
 // invokes the callback with its contents, and writes the result back to config.
 func (e *Environment) ModProjectConfig(c context.Context, project string, fn func(*svcconfig.ProjectConfig)) {
-	configSet, configPath := config.ProjectSet(project), coordcfg.ProjectConfigPath(c)
-
 	var pcfg svcconfig.ProjectConfig
-	e.modTextProtobuf(c, configSet, configPath, &pcfg, func() {
+	e.modTextProtobuf(c, config.ProjectSet(project), e.ServiceID+".cfg", &pcfg, func() {
 		fn(&pcfg)
 	})
 }
 
 func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, path string,
 	msg proto.Message, fn func()) {
-
-	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(msg), nil); err {
-	case nil, config.ErrNoConfig:
-		break
-	default:
-		panic(err)
+	existing := e.Config[configSet][path]
+	if existing != "" {
+		if err := proto.UnmarshalText(existing, msg); err != nil {
+			panic(err)
+		}
 	}
-
 	fn()
 	e.addConfigEntry(configSet, path, proto.MarshalTextString(msg))
 }
@@ -172,8 +166,9 @@ func (e *Environment) addConfigEntry(configSet config.Set, path, content string)
 // indexing functionality.
 func Install(useRealIndex bool) (context.Context, *Environment) {
 	e := Environment{
-		Config:   make(map[config.Set]memory.Files),
-		GSClient: GSClient{},
+		ServiceID: "logdog-app-id",
+		Config:    make(map[config.Set]memory.Files),
+		GSClient:  GSClient{},
 		StorageCache: StorageCache{
 			Base: &flex.StorageCache{},
 		},
@@ -181,7 +176,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Get our starting context. This installs, among other things, in-memory
 	// gae, settings, and logger.
-	c := gaeMemory.Use(memlogger.Use(context.Background()))
+	c := gaeMemory.UseWithAppID(memlogger.Use(context.Background()), e.ServiceID)
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC.Round(time.Millisecond))
 	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 	c = cryptorand.MockForTest(c, 765589025) // as chosen by fair dice roll
@@ -214,9 +209,12 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Setup luci-config configuration.
 	c = testconfig.WithCommonClient(c, memory.New(e.Config))
+	c = logdogcfg.WithStore(c, &logdogcfg.Store{
+		ServiceID: func(context.Context) string { return e.ServiceID },
+		NoCache:   true,
+	})
 
 	// luci-config: Projects.
-	projectName := info.AppID(c)
 	addProjectConfig := func(project string, access ...string) {
 		projectAccesses := make([]string, len(access))
 
@@ -255,15 +253,15 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	// Add a project without a LogDog project config.
 	e.addConfigEntry("projects/proj-unconfigured", "not-logdog.cfg", "junk")
 
-	configSet, configPath := config.ProjectSet("proj-malformed"), coordcfg.ProjectConfigPath(c)
-	e.addConfigEntry(configSet, configPath, "!!! not a text protobuf !!!")
+	// Add a project with malformed configs.
+	e.addConfigEntry(config.ProjectSet("proj-malformed"), e.ServiceID+".cfg", "!!! not a text protobuf !!!")
 
 	// luci-config: Coordinator Defaults
 	e.ModServiceConfig(c, func(cfg *svcconfig.Config) {
 		cfg.Transport = &svcconfig.Transport{
 			Type: &svcconfig.Transport_Pubsub{
 				Pubsub: &svcconfig.Transport_PubSub{
-					Project: projectName,
+					Project: e.ServiceID,
 					Topic:   "test-topic",
 				},
 			},
@@ -309,7 +307,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 			}, nil
 		},
 	}
-	c = coordinator.WithConfigProvider(c, &e.Services)
 	c = flex.WithServices(c, &e.Services)
 
 	return cacheContext.Wrap(c), &e

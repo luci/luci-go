@@ -30,13 +30,14 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/server/config"
 
 	"google.golang.org/grpc/codes"
 )
 
 func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest) (pubsub.Topic, time.Duration, error) {
 	// Load our service and project configurations.
-	cfg, err := coordinator.GetConfigProvider(c).Config(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load service configuration.")
 		return "", 0, grpcutil.Internal

@@ -57,24 +57,6 @@ const (
 	NamespaceAccessWRITE
 )
 
-var (
-	configProviderKey = "LogDog ConfigProvider"
-)
-
-// WithConfigProvider installs the supplied ConfigProvider instance into a
-// Context.
-func WithConfigProvider(c context.Context, s ConfigProvider) context.Context {
-	return context.WithValue(c, &configProviderKey, s)
-}
-
-// GetConfigProvider gets the ConfigProvider instance installed in the supplied
-// Context.
-//
-// If no Services has been installed, it will panic.
-func GetConfigProvider(c context.Context) ConfigProvider {
-	return c.Value(&configProviderKey).(ConfigProvider)
-}
-
 // WithStream performs all ACL checks on a stream, including:
 //
 //	- Project Namespace check
@@ -145,7 +127,7 @@ func WithProjectNamespace(c *context.Context, project string, at NamespaceAccess
 	// Returns the project config, or "read denied" error if the project does not
 	// exist.
 	getProjectConfig := func() (*svcconfig.ProjectConfig, error) {
-		pcfg, err := GetConfigProvider(ctx).ProjectConfig(ctx, project)
+		pcfg, err := config.ProjectConfig(ctx, project)
 		switch err {
 		case nil:
 			// Successfully loaded project config.

@@ -19,17 +19,23 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
+	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/router"
 )
+
+// Cache for configs.
+var configStore = config.Store{
+	ServiceID: info.AppID,
+}
 
 // Run installs and executes this site.
 func main() {
@@ -43,7 +49,7 @@ func main() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	base := standard.Base().Extend(coordinator.ConfigProviderMiddleware)
+	base := standard.Base().Extend(config.Middleware(&configStore))
 	svr.InstallHandlers(r, base)
 	standard.InstallHandlers(r)
 

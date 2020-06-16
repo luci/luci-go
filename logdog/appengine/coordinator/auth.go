@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -31,7 +32,7 @@ import (
 //
 // If the user is not, a MembershipError will be returned.
 func IsAdminUser(c context.Context) error {
-	cfg, err := GetConfigProvider(c).Config(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		return err
 	}
@@ -43,7 +44,7 @@ func IsAdminUser(c context.Context) error {
 //
 // If the user is not, a MembershipError will be returned.
 func IsServiceUser(c context.Context) error {
-	cfg, err := GetConfigProvider(c).Config(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		return err
 	}

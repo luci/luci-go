@@ -344,6 +344,8 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 }
 
 func (s *Service) initConfig(c *context.Context) error {
+	// TODO(vadimsh): Use logdog/server/config package.
+
 	// Set up our in-memory config object cache.
 	s.configCache.Lifetime = projectConfigCacheDuration
 

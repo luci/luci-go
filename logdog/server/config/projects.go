@@ -18,66 +18,62 @@ import (
 	"context"
 	"sort"
 
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 )
 
-// ProjectConfigPath returns the path of the project-specific configuration.
-// This path should be used with a project config set.
-//
-// A given project's configuration is named after the current App ID.
-func ProjectConfigPath(c context.Context) string {
-	return cfgclient.CurrentServiceName(c) + ".cfg"
-}
-
 // ProjectConfig loads the project config protobuf from the config service.
 //
-// This function will return:
+// This function will return following errors:
 //	- nil, if the project exists and the configuration successfully loaded
 //	- config.ErrNoConfig if the project configuration was not present.
 //	- ErrInvalidConfig if the project configuration was present, but could not
 //	  be loaded.
 //	- Some other error if an error occurred that does not fit one of the
 //	  previous categories.
-func ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
+func ProjectConfig(ctx context.Context, project string) (*svcconfig.ProjectConfig, error) {
+	store := store(ctx)
+
+	// TODO(vadimsh): Really add caching.
+
 	if project == "" {
 		return nil, config.ErrNoConfig
 	}
 
-	// Get the config from the config service. If the configuration doesn't exist,
-	// this will return config.ErrNoConfig.
-	configSet, configPath := config.ProjectSet(project), ProjectConfigPath(c)
-
 	var pcfg svcconfig.ProjectConfig
-	if err := cfgclient.Get(c, cfgclient.AsService, configSet, configPath, textproto.Message(&pcfg), nil); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    project,
-			"configSet":  configSet,
-			"configPath": configPath,
-		}.Errorf(c, "Failed to load project configuration content.")
+	err := cfgclient.Get(
+		ctx,
+		cfgclient.AsService,
+		config.ProjectSet(project),
+		store.serviceID+".cfg",
+		textproto.Message(&pcfg),
+		nil,
+	)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to load config for project %q: %s", project, err)
 		return nil, err
 	}
+
 	return &pcfg, nil
 }
 
-// ActiveProjects returns a full list of all config service projects with
-// LogDog project configurations.
+// ActiveProjects returns a list of all projects with LogDog project configs.
 //
 // The list will be alphabetically sorted.
-func ActiveProjects(c context.Context) ([]string, error) {
-	configPath := ProjectConfigPath(c)
+func ActiveProjects(ctx context.Context) ([]string, error) {
+	store := store(ctx)
+
+	// TODO(vadimsh): Really add caching.
 
 	var metas []*config.Meta
-	if err := cfgclient.Projects(c, cfgclient.AsService, configPath, nil, &metas); err != nil {
-		log.WithError(err).Errorf(c, "Failed to load project configs.")
+	if err := cfgclient.Projects(ctx, cfgclient.AsService, store.serviceID+".cfg", nil, &metas); err != nil {
+		logging.Errorf(ctx, "Failed to load project configs: %s", err)
 		return nil, err
 	}
 
-	// Iterate through our Metas and extract the project names.
 	projects := make([]string, 0, len(metas))
 	for _, meta := range metas {
 		if projectName := meta.ConfigSet.Project(); projectName != "" {

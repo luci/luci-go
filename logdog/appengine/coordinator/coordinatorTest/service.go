@@ -17,23 +17,13 @@ package coordinatorTest
 import (
 	"context"
 
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
-	"go.chromium.org/luci/logdog/server/config"
 )
 
 // Services is a testing stub for a coordinator.Services instance that allows
 // the user to configure the various services that are returned.
 type Services struct {
-	// C, if not nil, will be used to get the return values for Config, overriding
-	// local static members.
-	C func() (*svcconfig.Config, error)
-
-	// PC, if not nil, will be used to get the return values for ProjectConfig,
-	// overriding local static members.
-	PC func() (*svcconfig.ProjectConfig, error)
-
 	// Storage returns an intermediate storage instance for use by this service.
 	//
 	// The caller must close the returned instance if successful.
@@ -46,22 +36,6 @@ type Services struct {
 }
 
 var _ flex.Services = (*Services)(nil)
-
-// Config implements coordinator.Services.
-func (s *Services) Config(c context.Context) (*svcconfig.Config, error) {
-	if s.C != nil {
-		return s.C()
-	}
-	return config.Load(c)
-}
-
-// ProjectConfig implements coordinator.Services.
-func (s *Services) ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
-	if s.PC != nil {
-		return s.PC()
-	}
-	return config.ProjectConfig(c, project)
-}
 
 // StorageForStream implements coordinator.Services.
 func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState, project string) (coordinator.SigningStorage, error) {
