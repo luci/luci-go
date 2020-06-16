@@ -16,13 +16,13 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable, reaction } from 'mobx';
+import { computed, observable, reaction } from 'mobx';
 
 import '../../components/left_panel';
-import '../../components/test_entry';
 import '../../components/test_filter';
 import { TestFilter } from '../../components/test_filter';
 import '../../components/test_nav_tree';
+import '../../components/variant_entry';
 import { consumeContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { TestNode } from '../../models/test_node';
@@ -46,6 +46,13 @@ export class TestResultsTabElement extends MobxLitElement {
         bubbles: true,
       }));
     }
+  }
+
+  @computed
+  private get hasSingleVariant() {
+    // this operation should be fast since the iterator is executed only when
+    // there's only one test.
+    return this.pageState.selectedNode.testCount === 1 && [...this.pageState.selectedNode.tests()].length === 1;
   }
 
   connectedCallback() {
@@ -89,12 +96,12 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-nav-tree>
         </tr-left-panel>
         <div id="test-result-view">
-          ${repeat(iter.withPrev(state.selectedNode.tests()), ([t]) => t.id, ([t, prev]) => html`
-          <tr-test-entry
-            .test=${t}
-            .prevTestId=${(prev?.id || '')}
-            .expanded=${state.selectedNode.testCount === 1}
-          ></tr-test-entry>
+          ${repeat(iter.withPrev(iter.flatten(iter.map(state.selectedNode.tests(), (t) => t.variants))), ([v]) => `${v.testId} ${v.variantKey}`, ([v, prev]) => html`
+          <tr-variant-entry
+            .variant=${v}
+            .prevTestId=${(prev?.testId || '')}
+            .expanded=${this.hasSingleVariant}
+          ></tr-variant-entry>
           `)}
           <div id="list-tail">
             <span>Showing ${state.selectedNode.testCount} tests.</span>
