@@ -480,9 +480,9 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
 
-	fi, err := os.Stat(src)
+	fi, err := os.Stat(dest)
 	if err != nil {
-		return errors.Annotate(err, "failed to call os.Stat(%s)", src).Err()
+		return errors.Annotate(err, "failed to call os.Stat(%s)", dest).Err()
 	}
 	size := fi.Size()
 	d.statsMu.Lock()
