@@ -164,6 +164,30 @@
       "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66c5dab4_6437a47b",
+        "filename": "lucicfg/starlark_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-16T21:16:53Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5dbb2bf8_18e1d4b9",
+      "range": {
+        "startLine": 154,
+        "startChar": 5,
+        "endLine": 154,
+        "endChar": 16
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
