@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // ExitCodeCommandFailure indicates that a given command failed due to internal errors

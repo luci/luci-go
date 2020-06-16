@@ -15,7 +15,7 @@
 package pbutil
 
 import (
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const invocationIDPattern = `[a-z][a-z0-9_\-:.]{0,99}`

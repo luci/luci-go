@@ -16,8 +16,9 @@ syntax = "proto3";
 
 package luci.resultdb.rpc.v1;
 
-import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // A file produced during a build/test, typically a test artifact.
 // The parent resource is either a TestResult or an Invocation.

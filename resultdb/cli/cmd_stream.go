@@ -42,7 +42,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/sink"
 )
 

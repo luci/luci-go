@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const deriveUsage = `chromium-derive [flags] SWARMING_HOST TASK_ID [TASK_ID]...`

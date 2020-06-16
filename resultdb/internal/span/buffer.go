@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // Value can be converted to a Spanner value.

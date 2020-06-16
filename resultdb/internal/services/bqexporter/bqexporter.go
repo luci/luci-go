@@ -42,7 +42,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y

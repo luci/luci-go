@@ -21,7 +21,7 @@ import (
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (

@@ -19,7 +19,7 @@ import (
 	"path"
 	"strings"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // IsolatedFilesToString returns a string describing isolated files so we can track those that need

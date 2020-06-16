@@ -17,7 +17,7 @@ package pbutil
 import (
 	"go.chromium.org/luci/common/errors"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // ValidateBigQueryExport returns a non-nil error if bq_export is determined to

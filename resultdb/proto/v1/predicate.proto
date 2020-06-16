@@ -16,9 +16,9 @@ syntax = "proto3";
 
 package luci.resultdb.rpc.v1;
 
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultpb";
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
 // Represents a function TestResult -> bool.
 // Empty message matches all test results.
