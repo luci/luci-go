@@ -44,6 +44,10 @@ func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 		return false
 	}
 
+	if u, ok := err.(interface{ Unwrap() error }); ok {
+		return walkVisit(u.Unwrap(), fn, leavesOnly)
+	}
+
 	switch t := err.(type) {
 	case MultiError:
 		for _, e := range t {

@@ -132,9 +132,21 @@ func TestAllStarlark(t *testing.T) {
 			// an expected way.
 			if expectErrExct != "" || expectErrLike != "" {
 				allErrs := strings.Builder{}
-				errors.WalkLeaves(err, func(err error) bool {
+				var skip bool
+				errors.Walk(err, func(err error) bool {
+					if skip {
+						skip = false
+						return true
+					}
+					switch err.(type) {
+					case errors.MultiError, errors.Wrapped:
+						return true
+					}
+
 					if bt, ok := err.(BacktracableError); ok {
 						allErrs.WriteString(bt.Backtrace())
+						// We need to skip Unwrap from starlark.EvalError
+						_, skip = err.(*starlark.EvalError)
 					} else {
 						allErrs.WriteString(err.Error())
 					}
