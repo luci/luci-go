@@ -53,7 +53,7 @@ func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 		}
 
 	case Wrapped:
-		return walkVisit(t.InnerError(), fn, leavesOnly)
+		return walkVisit(t.Unwrap(), fn, leavesOnly)
 
 	default:
 		if leavesOnly {

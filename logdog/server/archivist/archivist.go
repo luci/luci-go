@@ -710,7 +710,7 @@ func (e *statusErrorWrapper) Error() string {
 	return ""
 }
 
-func (e *statusErrorWrapper) InnerError() error {
+func (e *statusErrorWrapper) Unwrap() error {
 	return e.inner
 }
 
