@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "3164feb9_bf9dc348",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-16T04:49:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0eaf056f_78f503dc",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9dabe77_f8f82377",
         "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
         "patchSetId": 3
@@ -89,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "b209bbd3_9d687c68",
+        "filename": "milo/frontend/resultui/src/components/variant_entry/index.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-16T04:49:42Z",
+      "side": 1,
+      "message": "changed to \"unexpected result | \"",
+      "parentUuid": "f45e36c3_94009fc3",
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f37998d1_8a1d02a8",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
         "patchSetId": 3
@@ -109,6 +145,30 @@
       "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddedda36_f800ff14",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-16T04:49:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f37998d1_8a1d02a8",
+      "range": {
+        "startLine": 53,
+        "startChar": 7,
+        "endLine": 53,
+        "endChar": 35
+      },
+      "revId": "7a946e74a7175c5cb7b9c399bb0459d700951469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
