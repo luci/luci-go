@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8031d8c8_1ebe64ee",
+        "filename": "client/cmd/isolated/lib/download.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-16T09:45:27Z",
+      "side": 1,
+      "message": "this makes L173 nil.",
+      "range": {
+        "startLine": 178,
+        "startChar": 17,
+        "endLine": 178,
+        "endChar": 18
+      },
+      "revId": "d4df95b794e04586eca199412d8b12f80e3476a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
