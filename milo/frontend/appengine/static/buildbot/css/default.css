@@ -13,16 +13,20 @@
  * limitations under the License.
  */
 
-body.interface {
+ body.interface {
+  margin: 0px;
+  font-family: Verdana, sans-serif;
+  font-size: 10px;
+  background-color: #fff;
+  color: #333;
+}
+
+#main {
   margin-left: 30px;
   margin-right: 30px;
   margin-top: 20px;
   margin-bottom: 50px;
   padding: 0;
-  font-family: Verdana, sans-serif;
-  font-size: 10px;
-  background-color: #fff;
-  color: #333;
 }
 
 header {

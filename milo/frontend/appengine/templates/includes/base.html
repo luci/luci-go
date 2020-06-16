@@ -26,39 +26,44 @@ that can be found in the LICENSE file. -->
 {{- block "head" .}}{{ end }}
 
 <body class="interface">
-  <header>
-    <div>
-      <a href="/" aria-label="Home page">Home</a> |
-      <a href="/search" aria-label="Search page">Search</a>
-      {{- range .Navi }}
-        | <strong>{{ .Name.HTML }}</strong> {{ range .Links }}
-          - {{ .HTML }}
-        {{ end }}
-      {{ end }}
-    </div>
-    <div>
-      {{ if .IsAnonymous }}
-        <a href="{{.LoginURL}}" alt="Login">Login</a>
-      {{ else }}
-        {{ if .User.Picture }}
-          <img class="account-picture" src="{{.User.Picture}}" alt="Account Icon">
-        {{ end }}
-        {{ .User.Email }} |
-        <a href="{{.LogoutURL}}" alt="Logout">Logout</a>
-      {{ end }}
-    </div>
-  </header>
-  <hr>
-  {{template "body" .}}
-  <footer>
-    <hr>
-      <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
+  {{ if .BannerHTML }}
+    {{ .BannerHTML }}
+  {{ end }}
+  <div id="main">
+    <header>
       <div>
-        <a href="https://chromium.googlesource.com/infra/luci">LUCI</a><br>
-        built: <b>{{.CurrentTime | localTime "" }}</b><br>
-        version: <b>{{.AppVersion}}</b><br>
+        <a href="/" aria-label="Home page">Home</a> |
+        <a href="/search" aria-label="Search page">Search</a>
+        {{- range .Navi }}
+          | <strong>{{ .Name.HTML }}</strong> {{ range .Links }}
+            - {{ .HTML }}
+          {{ end }}
+        {{ end }}
       </div>
-  </footer>
+      <div>
+        {{ if .IsAnonymous }}
+          <a href="{{.LoginURL}}" alt="Login">Login</a>
+        {{ else }}
+          {{ if .User.Picture }}
+            <img class="account-picture" src="{{.User.Picture}}" alt="Account Icon">
+          {{ end }}
+          {{ .User.Email }} |
+          <a href="{{.LogoutURL}}" alt="Logout">Logout</a>
+        {{ end }}
+      </div>
+    </header>
+    <hr>
+    {{template "body" .}}
+    <footer>
+      <hr>
+        <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
+        <div>
+          <a href="https://chromium.googlesource.com/infra/luci">LUCI</a><br>
+          built: <b>{{.CurrentTime | localTime "" }}</b><br>
+          version: <b>{{.AppVersion}}</b><br>
+        </div>
+    </footer>
+  </div>
 </body>
 <script>
 $(function () {
