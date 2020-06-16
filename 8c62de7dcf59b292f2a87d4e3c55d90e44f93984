@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "a22df001_cf893247",
+        "filename": "common/errors/walk.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-16T21:14:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac4f9163_a4223703",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 50
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63c8a335_663217ab",
         "filename": "lucicfg/starlark_test.go",
         "patchSetId": 6
@@ -107,6 +131,30 @@
       "writtenOn": "2020-06-16T17:35:59Z",
       "side": 1,
       "message": "will this work:\n\n  errors.Walk(err, func(err error) bool {\n    switch err.(type) {\n      case errors.MultiError, errors.Wrapped:\n        return true\n    }\n    ...\n    _, skip :\u003d err.(*starlark.EvalError)\n    return !skip\n  })\n\n(i.e. just don\u0027t recurse into EvalError)\n\n?",
+      "range": {
+        "startLine": 154,
+        "startChar": 5,
+        "endLine": 154,
+        "endChar": 16
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dbb2bf8_18e1d4b9",
+        "filename": "lucicfg/starlark_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-16T21:14:27Z",
+      "side": 1,
+      "message": "No, Walk stops traversiong entirely instead of stop traversing subtree if given function returns false.",
+      "parentUuid": "63c8a335_663217ab",
       "range": {
         "startLine": 154,
         "startChar": 5,
