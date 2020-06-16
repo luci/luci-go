@@ -22,6 +22,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/luciexe"
 )
 
 // setErrorOnBuild modifies `build` so that it's SummaryMarkdown contains `err`
@@ -64,6 +65,13 @@ func processFinalBuild(now *timestamp.Timestamp, build *bbpb.Build) {
 			continue
 		}
 
+		if luciexe.IsMergeStep(s) {
+			// It is okay merge step has a non-terminal status at this moment.
+			// The final merge will make sure this merge step is updated with
+			// the final state of sub build in the final build.
+			continue
+		}
+
 		// maybe make a copy of the Steps slice
 		if !copiedSteps {
 			copiedSteps = true
@@ -91,9 +99,13 @@ func processFinalBuild(now *timestamp.Timestamp, build *bbpb.Build) {
 }
 
 // updateStepFromBuild adjusts `step` (presumably a "merge step") from the given
-// build; this overwrites the step's SummaryMarkdown, Status and EndTime to
-// match that of `build`, and appends any Output.Logs from `build` to step.Log.
+// build if the step status is not terminal; this overwrites the step's
+// SummaryMarkdown, Status and EndTime to match that of `build`, and appends
+// any Output.Logs from `build` to step.Log.
 func updateStepFromBuild(step *bbpb.Step, build *bbpb.Build) {
+	if protoutil.IsEnded(step.Status) {
+		return
+	}
 	step.SummaryMarkdown = build.SummaryMarkdown
 	step.Status = build.Status
 	step.EndTime = build.EndTime

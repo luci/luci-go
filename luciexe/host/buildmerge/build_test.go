@@ -146,6 +146,30 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				},
 			})
 		})
+		Convey(`step status terminal`, func() {
+			step := &bbpb.Step{
+				Status:          bbpb.Status_INFRA_FAILURE,
+				SummaryMarkdown: "hi step",
+				EndTime:         now,
+				Logs:            []*bbpb.Log{{Name: "step something"}},
+			}
+			build := &bbpb.Build{
+				SummaryMarkdown: "hi sub build",
+				Status:          bbpb.Status_FAILURE,
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{{Name: "build other"}},
+				},
+			}
+			updateStepFromBuild(step, build)
+			So(step, ShouldResembleProto, &bbpb.Step{
+				SummaryMarkdown: "hi step",
+				Status:          bbpb.Status_INFRA_FAILURE,
+				EndTime:         now,
+				Logs: []*bbpb.Log{
+					{Name: "step something"},
+				},
+			})
+		})
 	})
 }
 
