@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f86a808_ff03c1db",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 676,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-16T05:46:46Z",
+      "side": 1,
+      "message": "b.GetInfra().GetResultdb().GetInvocation() \u003d\u003d \"\"",
+      "range": {
+        "startLine": 676,
+        "startChar": 4,
+        "endLine": 676,
+        "endChar": 45
+      },
+      "revId": "bcfcb8624ae9703afd7835b97d807b96c3f17981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0c37d6b_27b428df",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 679,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-16T05:46:46Z",
+      "side": 1,
+      "message": "strings.TrimPrefix(b.Infra.Resultdb.Invocation, \"invocations/\")",
+      "range": {
+        "startLine": 679,
+        "startChar": 10,
+        "endLine": 679,
+        "endChar": 59
+      },
+      "revId": "bcfcb8624ae9703afd7835b97d807b96c3f17981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
