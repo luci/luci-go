@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package logdog;
 
+option go_package = "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1;logdog";
+
 import "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/state.proto";
 import "go.chromium.org/luci/logdog/api/logpb/log.proto";
 import "google/protobuf/timestamp.proto";
