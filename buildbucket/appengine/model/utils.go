@@ -16,9 +16,18 @@ package model
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+)
+
+const (
+	// BeginningOfTheWorld is a unix time for 2010-01-01 00:00:00 +0000 UTC.
+	BeginningOfTheWorld = int64(1262304000)
+
+	timeResolution   = time.Millisecond * 1
+	buildIDSuffixLen = 20
 )
 
 // GetIgnoreMissing fetches the given entities from the datastore,
@@ -37,4 +46,23 @@ func GetIgnoreMissing(ctx context.Context, dst ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// BuildIDRange converts a creation time range to build id range.
+// Low/high bounds are inclusive/exclusive respectively
+// for both time and id ranges
+func BuildIDRange(timeLow time.Time, timeHigh time.Time) (int64, int64) {
+	// convert inclusive to exclusive
+	idHigh := idTimeSegment(timeLow.Add(-timeResolution))
+	// convert exclusive to inclusive
+	idLow := idTimeSegment(timeHigh.Add(-timeResolution))
+	return idLow, idHigh
+}
+
+func idTimeSegment(dtime time.Time) int64 {
+	delta := dtime.Sub(time.Unix(BeginningOfTheWorld, 0)).Milliseconds()
+	if delta < 0 {
+		return 0
+	}
+	return (^delta & ((1 << 43) - 1)) << 20
 }
