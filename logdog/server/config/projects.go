@@ -16,7 +16,7 @@ package config
 
 import (
 	"context"
-	"sort"
+	"time"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
@@ -24,6 +24,16 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 )
+
+// missingProjectMarker is cached instead of *svcconfig.ProjectConfig if the
+// project is missing to avoid hitting cfgclient all the time when accessing
+// missing projects.
+//
+// Note: strictly speaking caching all missing projects forever in
+// Store.projects introduces a DoS attack vector. But this code is scheduled for
+// removal when Logdog is integrated with LUCI Realms, so it's fine to ignore
+// this problem for now.
+var missingProjectMarker = "missing project"
 
 // ProjectConfig loads the project config protobuf from the config service.
 //
@@ -34,52 +44,45 @@ import (
 //	  be loaded.
 //	- Some other error if an error occurred that does not fit one of the
 //	  previous categories.
-func ProjectConfig(ctx context.Context, project string) (*svcconfig.ProjectConfig, error) {
+func ProjectConfig(ctx context.Context, projectID string) (*svcconfig.ProjectConfig, error) {
 	store := store(ctx)
-
-	// TODO(vadimsh): Really add caching.
-
-	if project == "" {
+	if projectID == "" {
 		return nil, config.ErrNoConfig
 	}
+	if store.NoCache {
+		return fetchProjectConfig(ctx, projectID, store.serviceID)
+	}
+	cached, err := store.projectCacheSlot(projectID).Get(ctx, func(prev interface{}) (val interface{}, exp time.Duration, err error) {
+		logging.Infof(ctx, "Cache miss for %q project config, fetching it...", projectID)
+		cfg, err := fetchProjectConfig(ctx, projectID, store.serviceID)
+		if err == config.ErrNoConfig {
+			return &missingProjectMarker, time.Minute, nil
+		}
+		return cfg, 5 * time.Minute, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	if cached == &missingProjectMarker {
+		return nil, config.ErrNoConfig
+	}
+	return cached.(*svcconfig.ProjectConfig), nil
+}
 
+// fetchProjectConfig fetches a project config from the storage.
+func fetchProjectConfig(ctx context.Context, projectID, serviceID string) (*svcconfig.ProjectConfig, error) {
 	var pcfg svcconfig.ProjectConfig
 	err := cfgclient.Get(
 		ctx,
 		cfgclient.AsService,
-		config.ProjectSet(project),
-		store.serviceID+".cfg",
+		config.ProjectSet(projectID),
+		serviceID+".cfg",
 		textproto.Message(&pcfg),
 		nil,
 	)
 	if err != nil {
-		logging.Errorf(ctx, "Failed to load config for project %q: %s", project, err)
+		logging.Errorf(ctx, "Failed to load config for project %q: %s", projectID, err)
 		return nil, err
 	}
-
 	return &pcfg, nil
-}
-
-// ActiveProjects returns a list of all projects with LogDog project configs.
-//
-// The list will be alphabetically sorted.
-func ActiveProjects(ctx context.Context) ([]string, error) {
-	store := store(ctx)
-
-	// TODO(vadimsh): Really add caching.
-
-	var metas []*config.Meta
-	if err := cfgclient.Projects(ctx, cfgclient.AsService, store.serviceID+".cfg", nil, &metas); err != nil {
-		logging.Errorf(ctx, "Failed to load project configs: %s", err)
-		return nil, err
-	}
-
-	projects := make([]string, 0, len(metas))
-	for _, meta := range metas {
-		if projectName := meta.ConfigSet.Project(); projectName != "" {
-			projects = append(projects, projectName)
-		}
-	}
-	sort.Strings(projects)
-	return projects, nil
 }

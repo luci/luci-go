@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -36,14 +37,27 @@ var (
 // The service config is minimally validated prior to being returned.
 func Config(ctx context.Context) (*svcconfig.Config, error) {
 	store := store(ctx)
+	if store.NoCache {
+		return fetchServiceConfig(ctx, store.serviceID)
+	}
+	cached, err := store.service.Get(ctx, func(prev interface{}) (val interface{}, exp time.Duration, err error) {
+		logging.Infof(ctx, "Cache miss for services.cfg, fetching it...")
+		cfg, err := fetchServiceConfig(ctx, store.serviceID)
+		return cfg, 5 * time.Minute, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return cached.(*svcconfig.Config), nil
+}
 
-	// TODO(vadimsh): Really add caching.
-
+// fetchServiceConfig fetches the service config from the storage.
+func fetchServiceConfig(ctx context.Context, serviceID string) (*svcconfig.Config, error) {
 	var cfg svcconfig.Config
 	err := cfgclient.Get(
 		ctx,
 		cfgclient.AsService,
-		config.ServiceSet(store.serviceID),
+		config.ServiceSet(serviceID),
 		"services.cfg",
 		textproto.Message(&cfg),
 		nil,

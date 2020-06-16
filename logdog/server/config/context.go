@@ -21,14 +21,13 @@
 //
 // Implements in-memory caching logic itself, so server/cfgclient doesn't need
 // to have this layer of the cache enabled.
-//
-// TODO(vadimsh): Implement caching.
 package config
 
 import (
 	"context"
 	"sync"
 
+	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -43,6 +42,36 @@ type Store struct {
 
 	once      sync.Once
 	serviceID string // cached result of ServiceID(...)
+
+	service lazyslot.Slot // caches the main service config
+
+	m        sync.RWMutex              // protects 'projects'
+	projects map[string]*lazyslot.Slot // caches project configs
+}
+
+// projectCacheSlot returns a slot with a project config cache.
+func (s *Store) projectCacheSlot(projectID string) *lazyslot.Slot {
+	s.m.RLock()
+	slot, _ := s.projects[projectID]
+	s.m.RUnlock()
+	if slot != nil {
+		return slot
+	}
+
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	if slot, _ = s.projects[projectID]; slot != nil {
+		return slot
+	}
+	slot = &lazyslot.Slot{}
+
+	if s.projects == nil {
+		s.projects = make(map[string]*lazyslot.Slot, 1)
+	}
+	s.projects[projectID] = slot
+
+	return slot
 }
 
 var storeKey = "LogDog config.Store"
