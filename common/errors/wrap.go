@@ -27,6 +27,15 @@ type Wrapped interface {
 // returned.
 func Unwrap(err error) error {
 	for {
+		if u, ok := err.(interface{ Unwrap() error }); ok {
+			inner := u.Unwrap()
+			if inner == nil {
+				break
+			}
+			err = inner
+			continue
+		}
+
 		wrap, ok := err.(Wrapped)
 		if !ok {
 			return err
