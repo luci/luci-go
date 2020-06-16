@@ -72,13 +72,12 @@ type application struct {
 
 // run is the main execution function.
 func (a *application) runCollector(c context.Context) error {
-	cfg := a.ServiceConfig()
-	ccfg := cfg.GetCollector()
+	ccfg := a.ServiceConfig.GetCollector()
 	if ccfg == nil {
 		return errors.New("no collector configuration")
 	}
 
-	pscfg := cfg.GetTransport().GetPubsub()
+	pscfg := a.ServiceConfig.GetTransport().GetPubsub()
 	if pscfg == nil {
 		return errors.New("missing Pub/Sub configuration")
 	}
@@ -132,7 +131,7 @@ func (a *application) runCollector(c context.Context) error {
 
 	// Initialize a Coordinator client that bundles requests together.
 	coordClient := &bundleServicesClient.Client{
-		ServicesClient:       a.Coordinator(),
+		ServicesClient:       a.Coordinator,
 		DelayThreshold:       time.Second,
 		BundleCountThreshold: 100,
 	}
