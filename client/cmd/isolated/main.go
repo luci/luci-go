@@ -37,13 +37,17 @@ import (
 )
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+	cmdOptions := lib.CommandOptions{
+		DefaultAuthOpts: defaultAuthOpts,
+	}
 	return &subcommands.DefaultApplication{
 		Name:  "isolated",
 		Title: "isolateserver.py but faster",
 		// Keep in alphabetical order of their name.
+
 		Commands: []*subcommands.Command{
-			lib.CmdArchive(defaultAuthOpts),
-			lib.CmdDownload(defaultAuthOpts),
+			lib.CmdArchive(cmdOptions),
+			lib.CmdDownload(cmdOptions),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
