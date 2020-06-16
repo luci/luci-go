@@ -63,8 +63,7 @@ func main() {
 
 	// Standard HTTP endpoints using flex LogDog services singleton.
 	r := router.NewWithRootContext(c)
-	mw := flexMW.ReadOnlyFlex
-	mw.InstallHandlers(r)
+	flexMW.ReadOnlyFlex.InstallHandlers(r)
 
 	// Setup the global services, such as auth, luci-config.
 	c = flexMW.WithGlobal(c)
@@ -75,7 +74,10 @@ func main() {
 		panic(err)
 	}
 	defer gsvc.Close()
-	baseMW := mw.Base().Extend(gsvc.Base)
+	baseMW := flexMW.ReadOnlyFlex.Base().Extend(
+		config.Middleware(&configStore),
+		gsvc.Base,
+	)
 
 	// Set up PRPC server.
 	svr := &prpc.Server{
