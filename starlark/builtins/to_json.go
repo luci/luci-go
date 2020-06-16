@@ -42,6 +42,7 @@ var ToJSON = starlark.NewBuiltin("to_json", func(_ *starlark.Thread, fn *starlar
 		return nil, err
 	}
 	obj, err := ToGoNative(v)
+	// panic(err)
 	if err != nil {
 		return nil, err
 	}

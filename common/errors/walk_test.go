@@ -48,9 +48,20 @@ func TestWalk(t *testing.T) {
 			So(count, ShouldEqual, 2)
 		})
 
+		Convey(`Will unwrap a Unwrappable error.`, func() {
+			Walk(testNewUnwrappable(New("sup")), walkFn)
+			So(count, ShouldEqual, 2)
+		})
+
 		Convey(`Will short-circuit if the walk function returns false.`, func() {
 			keepWalking = false
 			Walk(testWrap(New("sup")), walkFn)
+			So(count, ShouldEqual, 1)
+		})
+
+		Convey(`Will short-circuit if the walk function returns false for Unwrappable.`, func() {
+			keepWalking = false
+			Walk(testNewUnwrappable(New("sup")), walkFn)
 			So(count, ShouldEqual, 1)
 		})
 	})
@@ -78,9 +89,20 @@ func TestWalk(t *testing.T) {
 			So(count, ShouldEqual, 1)
 		})
 
+		Convey(`Will unwrap a Unwrappable error.`, func() {
+			WalkLeaves(testNewUnwrappable(New("sup")), walkFn)
+			So(count, ShouldEqual, 1)
+		})
+
 		Convey(`Will short-circuit if the walk function returns false.`, func() {
 			keepWalking = false
 			WalkLeaves(MultiError{testWrap(New("sup")), New("foo")}, walkFn)
+			So(count, ShouldEqual, 1)
+		})
+
+		Convey(`Will short-circuit if the walk function returns false for Unwrappable.`, func() {
+			keepWalking = false
+			WalkLeaves(MultiError{testNewUnwrappable(New("sup")), New("foo")}, walkFn)
 			So(count, ShouldEqual, 1)
 		})
 	})
