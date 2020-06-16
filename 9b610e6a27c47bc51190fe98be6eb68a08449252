@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7c54375_f8d22bf4",
+        "filename": "luciexe/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-16T22:59:38Z",
+      "side": 1,
+      "message": "nit: copy _the_ following",
+      "range": {
+        "startLine": 234,
+        "startChar": 61,
+        "endLine": 234,
+        "endChar": 70
+      },
+      "revId": "9b610e6a27c47bc51190fe98be6eb68a08449252",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
