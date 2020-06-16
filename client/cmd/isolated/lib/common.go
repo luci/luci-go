@@ -76,5 +76,6 @@ func (c *commonFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.
 
 // CommandOptions is used to initialize an isolated command.
 type CommandOptions struct {
+	AuthClient      *http.Client
 	DefaultAuthOpts auth.Options
 }

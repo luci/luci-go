@@ -49,7 +49,9 @@ under 'foo/bar' in the desired directory.
 Note that '.' may be omitted in general, so to upload 'foo' from the current
 working directory, '-files :foo' is sufficient.`,
 		CommandRun: func() subcommands.CommandRun {
-			c := archiveRun{}
+			c := archiveRun{
+				authClient: options.AuthClient,
+			}
 			c.commonFlags.Init(options.DefaultAuthOpts)
 			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
@@ -64,10 +66,11 @@ working directory, '-files :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	dirs     isolated.ScatterGather
-	files    isolated.ScatterGather
-	dumpHash string
-	isolated string
+	dirs       isolated.ScatterGather
+	files      isolated.ScatterGather
+	dumpHash   string
+	isolated   string
+	authClient *http.Client
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -87,9 +90,13 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	signals.HandleInterrupt(cancel)
 
 	var authClient *http.Client
-	authClient, err = c.createAuthClient(ctx)
-	if err != nil {
-		return
+	if c.authClient != nil {
+		authClient = c.authClient
+	} else {
+		authClient, err = c.createAuthClient(ctx)
+		if err != nil {
+			return
+		}
 	}
 	isolatedClient := c.createIsolatedClient(authClient)
 

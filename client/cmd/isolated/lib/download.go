@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"net/http"
 	"os"
 	"runtime/pprof"
 	"strings"
@@ -51,7 +52,9 @@ func CmdDownload(options CommandOptions) *subcommands.Command {
 
 Files are referenced by their hash`,
 		CommandRun: func() subcommands.CommandRun {
-			c := downloadRun{}
+			c := downloadRun{
+				authClient: options.AuthClient,
+			}
 			c.commonFlags.Init(options.DefaultAuthOpts)
 			// TODO(mknyszek): Add support for downloading individual files.
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
@@ -81,6 +84,8 @@ type downloadRun struct {
 	maxSize      int64
 	maxItems     int
 	minFreeSpace int64
+
+	authClient *http.Client
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
@@ -151,9 +156,15 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, args []string) error {
-	authClient, err := c.createAuthClient(ctx)
-	if err != nil {
-		return err
+	var authClient *http.Client
+	if c.authClient != nil {
+		authClient = c.authClient
+	} else {
+		acl, err := c.createAuthClient(ctx)
+		if err != nil {
+			return err
+		}
+		authClient = acl
 	}
 	client := c.createIsolatedClient(authClient)
 	var filesMu sync.Mutex
@@ -164,7 +175,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 		if err := os.MkdirAll(c.cacheDir, os.ModePerm); err != nil {
 			return errors.Annotate(err, "failed to create cache dir: %s", c.cacheDir).Err()
 		}
-		diskCache, err = cache.NewDisk(cache.Policies{
+		diskCache, err := cache.NewDisk(cache.Policies{
 			MaxSize:      units.Size(c.maxSize),
 			MaxItems:     c.maxItems,
 			MinFreeSpace: units.Size(c.minFreeSpace),
