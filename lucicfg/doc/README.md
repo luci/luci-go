@@ -2481,7 +2481,7 @@ A populated predicate_pb.TestResultPredicate() proto.
 ### resultdb.validate_settings {#resultdb.validate_settings}
 
 ```python
-resultdb.validate_settings(settings = None)
+resultdb.validate_settings(attr, settings = None)
 ```
 
 
@@ -2490,6 +2490,7 @@ Validates the type of a ResultDB settings proto.
 
 #### Arguments {#resultdb.validate_settings-args}
 
+* **attr**: field name with settings, for error messages. Required.
 * **settings**: A proto such as the one returned by [resultdb.settings(...)](#resultdb.settings).
 
 
