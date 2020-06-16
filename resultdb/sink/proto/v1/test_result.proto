@@ -27,31 +27,31 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 // in ../../v1/test_result.proto.
 // See its comments for details.
 message TestResult {
-  // Equivalent of luci.resultpb.TestResult.TestId.
+  // Equivalent of luci.resultdb.v1.TestResult.TestId.
   string test_id = 1;
 
-  // Equivalent of luci.resultpb.TestResult.result_id.
+  // Equivalent of luci.resultdb.v1.TestResult.result_id.
   //
   // If omitted, a random, unique ID is generated..
   string result_id = 2;
 
-  // Equivalent of luci.resultpb.TestResult.expected.
+  // Equivalent of luci.resultdb.v1.TestResult.expected.
   bool expected = 3;
 
-  // Equivalent of luci.resultpb.TestResult.status.
-  luci.resultdb.rpc.v1.TestStatus status = 4;
+  // Equivalent of luci.resultdb.v1.TestResult.status.
+  luci.resultdb.v1.TestStatus status = 4;
 
-  // Equivalent of luci.resultpb.TestResult.summary_html.
+  // Equivalent of luci.resultdb.v1.TestResult.summary_html.
   string summary_html = 5;
 
-  // Equivalent of luci.resultpb.TestResult.start_time.
+  // Equivalent of luci.resultdb.v1.TestResult.start_time.
   google.protobuf.Timestamp start_time = 6;
 
-  // Equivalent of luci.resultpb.TestResult.duration.
+  // Equivalent of luci.resultdb.v1.TestResult.duration.
   google.protobuf.Duration duration = 7;
 
-  // Equivalent of luci.resultpb.TestResult.tags.
-  repeated luci.resultdb.rpc.v1.StringPair tags = 8;
+  // Equivalent of luci.resultdb.v1.TestResult.tags.
+  repeated luci.resultdb.v1.StringPair tags = 8;
 
   // Artifacts to upload and associate with this test result.
   // The map key is an artifact id.
@@ -75,7 +75,7 @@ message Artifact {
     bytes contents = 2;
   }
 
-  // Equivalent of luci.resultpb.Artifact.content_type.
+  // Equivalent of luci.resultdb.v1.Artifact.content_type.
   string content_type = 3;
 }
 

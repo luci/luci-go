@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package recorder implements a binary that hosts luci.resultdb.rpc.v1.Recorder
+// Package recorder implements a binary that hosts luci.resultdb.v1.Recorder
 // service.
 package recorder
