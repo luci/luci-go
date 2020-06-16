@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77471691_be93791d",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-16T02:59:49Z",
+      "side": 1,
+      "message": "counterpart in Python: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/test/model_test.py;l\u003d44",
+      "revId": "0ff9631cee19e7bde7a8a9aa6679faede92641ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
