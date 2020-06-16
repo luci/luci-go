@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/logdog/server/config"
 )
 
 const (
@@ -64,5 +65,5 @@ func CurrentProject(ctx context.Context) string {
 // If there is no current project namespace, or if the current project has no
 // configuration, config.ErrInvalidConfig will be returned.
 func CurrentProjectConfig(ctx context.Context) (*svcconfig.ProjectConfig, error) {
-	return GetConfigProvider(ctx).ProjectConfig(ctx, CurrentProject(ctx))
+	return config.ProjectConfig(ctx, CurrentProject(ctx))
 }

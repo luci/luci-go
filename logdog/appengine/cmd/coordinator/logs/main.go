@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"go.chromium.org/gae/service/info"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
@@ -34,6 +35,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
+
+// Cache for configs.
+var configStore = config.Store{
+	ServiceID: info.AppID,
+}
 
 // Run installs and executes this site.
 func main() {
@@ -61,7 +67,9 @@ func main() {
 	mw.InstallHandlers(r)
 
 	// Setup the global services, such as auth, luci-config.
-	gsvc, err := flex.NewGlobalServices(flexMW.WithGlobal(c))
+	c = flexMW.WithGlobal(c)
+	c = config.WithStore(c, &configStore)
+	gsvc, err := flex.NewGlobalServices(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to setup Flex services.")
 		panic(err)
@@ -95,7 +103,7 @@ func main() {
 }
 
 func accessControl(c context.Context, origin string) bool {
-	cfg, err := config.Load(c)
+	cfg, err := config.Config(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to get config for access control check.")
 		return false
