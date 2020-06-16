@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/appengine/gaesettings"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	montypes "go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/server/settings"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/archivist"
@@ -258,13 +260,11 @@ func runForever(ctx context.Context, taskConcurrency int, ar archivist.Archivist
 
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
-	cfg := a.ServiceConfig()
+	// Archivist loads its loop parameters from gaesettings, see loop_params.go.
+	c = settings.Use(c, settings.New(gaesettings.Storage{}))
 
-	coordCfg, acfg := cfg.GetCoordinator(), cfg.GetArchivist()
+	acfg := a.ServiceConfig.GetArchivist()
 	switch {
-	case coordCfg == nil:
-		fallthrough
-
 	case acfg == nil:
 		return errors.New("missing required config: archivist")
 	case acfg.GsStagingBucket == "":
@@ -291,7 +291,7 @@ func (a *application) runArchivist(c context.Context) error {
 
 	// Initialize a Coordinator client that bundles requests together.
 	coordClient := &bundleServicesClient.Client{
-		ServicesClient:       a.Coordinator(),
+		ServicesClient:       a.Coordinator,
 		DelayThreshold:       time.Second,
 		BundleCountThreshold: 100,
 	}
@@ -299,7 +299,7 @@ func (a *application) runArchivist(c context.Context) error {
 
 	ar := archivist.Archivist{
 		Service:         coordClient,
-		SettingsLoader:  a.GetSettingsLoader(acfg),
+		SettingsLoader:  GetSettingsLoader(a.ServiceID, acfg),
 		Storage:         st,
 		GSClientFactory: gsClientFactory,
 	}

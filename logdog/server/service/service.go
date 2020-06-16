@@ -27,11 +27,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
-	"go.chromium.org/luci/appengine/gaesettings"
 	commonAuth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -44,21 +42,14 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
-	cfglib "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/impl/filesystem"
-	"go.chromium.org/luci/config/server/cfgclient"
-	"go.chromium.org/luci/config/server/cfgclient/backend/client"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
-	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/logdog/server/service/config"
+	"go.chromium.org/luci/logdog/server/config"
 	serverAuth "go.chromium.org/luci/server/auth"
-	serverCaching "go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/settings"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/gae/impl/cloud"
 
@@ -66,6 +57,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 )
@@ -82,11 +74,7 @@ var (
 	}
 )
 
-// projectConfigCacheDuration is the amount of time to cache a project's
-// configuration before reloading.
 const (
-	projectConfigCacheDuration = 30 * time.Minute
-
 	// minAuthTokenLifetime is the amount of time that an access token has before
 	// expiring.
 	minAuthTokenLifetime = 2 * time.Minute
@@ -107,6 +95,17 @@ type Service struct {
 	// Flags is the set of flags that will be used by the Service.
 	Flags flag.FlagSet
 
+	// ServiceID is the cloud project ID specified via -service-id flag.
+	//
+	// This is synonymous with the cloud "project ID" and the AppEngine "app ID".
+	ServiceID string
+
+	// ServiceConfig is services.cfg at the moment the process started.
+	ServiceConfig *svcconfig.Config
+
+	// Coordinator is the cached Coordinator client.
+	Coordinator logdog.ServicesClient
+
 	shutdownFunc atomic.Value
 
 	loggingFlags log.Config
@@ -123,20 +122,17 @@ type Service struct {
 	// itself.
 	//
 	// Since, in production, this is running under an execution harness such as
-	// Kubernetes, the service will restart and load the new configuration. This
-	// is easier than implementing in-process configuration updating.
+	// Kubernetes, the service processes will **all** restart at once to load the
+	// new configuration, simulating a mini outage. This is apparently easier than
+	// implementing in-process configuration updating.
 	killCheckInterval clockflag.Duration
+
 	// testConfigFilePath is the path to a local configuration service filesystem
 	// (impl/filesystem) root. This is used for testing.
 	testConfigFilePath string
-	// serviceConfig is the cached service configuration.
-	serviceConfig svcconfig.Config
-	configCache   config.MessageCache
 
-	// serviceID is the cloud project ID specified via -service-id flag.
-	serviceID string
-
-	coord logdog.ServicesClient
+	// configStore caches configs in local memory.
+	configStore config.Store
 
 	// authCache is a cache of instantiated Authenticator instances, keyed on
 	// sorted NULL-delimited scope strings (see authenticatorForScopes).
@@ -186,7 +182,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	defer cancelFunc()
 
 	// Validate the runtime environment.
-	if s.serviceID == "" {
+	if s.ServiceID == "" {
 		return errors.New("no service ID was configured (-service-id)")
 	}
 
@@ -199,11 +195,10 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 		return errors.Annotate(err, "failed to initialize datastore client").Err()
 	}
 	defer dsClient.Close()
-	c = (&cloud.Config{DS: dsClient, ProjectID: s.serviceID}).Use(c, nil)
-	c = settings.Use(c, settings.New(gaesettings.Storage{}))
+	c = (&cloud.Config{DS: dsClient, ProjectID: s.ServiceID}).Use(c, nil)
 
-	// Install process-wide cache.
-	c = serverCaching.WithEmptyProcessCache(c)
+	// Install a process-wide cache.
+	c = caching.WithEmptyProcessCache(c)
 
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
@@ -232,7 +227,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 
 	// Initialize our tsmon library.
 	if s.tsMonFlags.Target.TaskServiceName == "" {
-		s.tsMonFlags.Target.TaskServiceName = s.serviceID
+		s.tsMonFlags.Target.TaskServiceName = s.ServiceID
 	}
 	c = tsmon.WithState(c, tsmon.NewState())
 	if err := tsmon.InitializeFromFlags(c, &s.tsMonFlags); err != nil {
@@ -241,14 +236,14 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	defer tsmon.Shutdown(c)
 
 	// Initialize our Client instantiations.
-	if s.coord, err = s.initCoordinatorClient(c); err != nil {
+	if s.Coordinator, err = s.initCoordinatorClient(c); err != nil {
 		return errors.Annotate(err, "failed to setup Coordinator client").Err()
 	}
 
-	// Initialize and install our config service and caching layers, and load our
-	// initial service config.
-	if err := s.initConfig(&c); err != nil {
-		return errors.Annotate(err, "failed to setup configuration").Err()
+	// Initialize and install our config service client, and load our initial
+	// service config.
+	if c, err = s.initConfig(c); err != nil {
+		return errors.Annotate(err, "failed to setup config client").Err()
 	}
 
 	// Clear our shutdown function on termination.
@@ -277,7 +272,7 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	// Initialize profiling flags.
 	s.profiler.AddFlags(fs)
 
-	fs.StringVar(&s.serviceID, "service-id", s.serviceID,
+	fs.StringVar(&s.ServiceID, "service-id", s.ServiceID,
 		"Specify the service ID that this instance is supporting. This should match the "+
 			"App ID of the Coordinator.")
 	fs.StringVar(&s.coordinatorHost, "coordinator", s.coordinatorHost,
@@ -297,7 +292,7 @@ func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, err
 	if err != nil {
 		return nil, err
 	}
-	return datastore.NewClient(c, s.serviceID,
+	return datastore.NewClient(c, s.ServiceID,
 		option.WithUserAgent(s.getUserAgent()),
 		option.WithTokenSource(ts))
 }
@@ -327,95 +322,52 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 	return logdog.NewServicesPRPCClient(&prpcClient), nil
 }
 
-func (s *Service) initConfig(c *context.Context) error {
-	// TODO(vadimsh): Use logdog/server/config package.
-
-	// Set up our in-memory config object cache.
-	s.configCache.Lifetime = projectConfigCacheDuration
-
-	// Start to build our backend caching options.
-	opts := config.CacheOptions{
-		CacheExpiration: projectConfigCacheDuration,
+func (s *Service) initConfig(ctx context.Context) (context.Context, error) {
+	// Initialize server/cfgclient library.
+	ctx, err := setupCfgClient(ctx, s.testConfigFilePath)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to setup cfgclient library").Err()
 	}
 
-	// If a testConfigFilePath was specified, use a mock configuration service
-	// that loads from a local file.
-	var p client.Provider
-	if s.testConfigFilePath == "" {
-		ccfg, err := s.coord.GetConfig(*c, &empty.Empty{})
-		if err != nil {
-			return err
-		}
-		logging.Debugf(*c, "Using remote configuration service client: %s", ccfg.ConfigServiceHost)
-		p = &client.RemoteProvider{
-			Host: ccfg.ConfigServiceHost,
-		}
-		// Enable datastore access and caching.
-		opts.DatastoreCacheAvailable = true
-	} else {
-		// Test / Local: use filesystem config path.
-		ci, err := filesystem.New(s.testConfigFilePath)
-		if err != nil {
-			return err
-		}
-		p = &testconfig.Provider{Base: ci}
-	}
-
-	// Add config caching layers.
-	*c = opts.WrapBackend(*c, &client.Backend{
-		Provider: p,
-	})
+	// Add a in-memory caching layer to avoid hitting datastore all the time.
+	s.configStore.ServiceID = func(context.Context) string { return s.ServiceID }
+	ctx = config.WithStore(ctx, &s.configStore)
 
 	// Load our service configuration.
-	var meta cfglib.Meta
-	err := cfgclient.Get(
-		*c, cfgclient.AsService,
-		cfglib.ServiceSet(s.serviceID),
-		"services.cfg",
-		textproto.Message(&s.serviceConfig),
-		&meta,
-	)
+	s.ServiceConfig, err = config.Config(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to load service config").Err()
+		return nil, errors.Annotate(err, "failed to load service config").Err()
 	}
 
-	// Create a poller for our service config.
+	// Create a poller that kills the process when the service config changes.
+	// See comments for killCheckInterval.
 	if s.killCheckInterval > 0 {
-		pollerC, pollerCancelFunc := context.WithCancel(*c)
+		pctx, cancel := context.WithCancel(ctx)
+		go func() {
+			for {
+				if clock.Sleep(pctx, time.Duration(s.killCheckInterval)).Incomplete() {
+					return // context canceled
+				}
 
-		poller := config.ChangePoller{
-			ConfigSet: cfglib.ServiceSet(s.serviceID),
-			Path:      "services.cfg",
-			Period:    time.Duration(s.killCheckInterval),
-			OnChange: func() {
+				fresh, err := config.Config(pctx)
+				if err != nil {
+					logging.Errorf(pctx, "Error when loading service config to check if it has changed: %s", err)
+					continue // just skip this cycle
+				}
+
 				// When a configuration change is detected, stop future polling and call
 				// our shutdown function.
-				pollerCancelFunc()
-				s.shutdown()
-			},
-			ContentHash: meta.ContentHash,
-		}
-		go poller.Run(pollerC)
+				if !proto.Equal(s.ServiceConfig, fresh) {
+					logging.Warningf(pctx, "New service config detected")
+					cancel()
+					s.shutdown()
+					return
+				}
+			}
+		}()
 	}
-	return nil
-}
 
-// ServiceConfig returns the configuration data for the current service.
-func (s *Service) ServiceConfig() *svcconfig.Config { return &s.serviceConfig }
-
-// ProjectConfig returns the current service's project configuration for project.
-func (s *Service) ProjectConfig(c context.Context, project string) (*svcconfig.ProjectConfig, error) {
-	var pcfg svcconfig.ProjectConfig
-	msg, err := s.configCache.Get(
-		c,
-		cfglib.ProjectSet(project),
-		s.serviceID+".cfg",
-		&pcfg,
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to load project config from").Err()
-	}
-	return msg.(*svcconfig.ProjectConfig), nil
+	return ctx, nil
 }
 
 // SetShutdownFunc sets the service shutdown function.
@@ -436,31 +388,19 @@ func (s *Service) shutdownImmediately() {
 	os.Exit(1)
 }
 
-// Coordinator returns the cached Coordinator client.
-func (s *Service) Coordinator() logdog.ServicesClient {
-	return s.coord
-}
-
-// ServiceID returns the service ID.
-//
-// This is synonymous with the cloud "project ID" and the AppEngine "app ID".
-func (s *Service) ServiceID() string {
-	return s.serviceID
-}
-
 // IntermediateStorage instantiates the configured intermediate Storage
 // instance.
 //
 // If "rw" is true, Read/Write access will be requested. Otherwise, read-only
 // access will be requested.
 func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Storage, error) {
-	cfg := s.ServiceConfig()
-	if cfg.GetStorage() == nil {
+	storageCfg := s.ServiceConfig.GetStorage()
+	if storageCfg == nil {
 		log.Errorf(c, "Missing storage configuration.")
 		return nil, ErrInvalidConfig
 	}
 
-	btcfg := cfg.GetStorage().GetBigtable()
+	btcfg := storageCfg.GetBigtable()
 	if btcfg == nil {
 		log.Errorf(c, "Missing BigTable storage configuration")
 		return nil, ErrInvalidConfig
@@ -527,7 +467,7 @@ func (s *Service) unauthenticatedTransport() http.RoundTripper {
 	return smt.roundTripper(nil)
 }
 
-func (s *Service) getUserAgent() string { return s.Name + " / " + s.serviceID }
+func (s *Service) getUserAgent() string { return s.Name + " / " + s.ServiceID }
 
 // withAuthService configures service-wide authentication and installs it into
 // the supplied Context.
