@@ -235,6 +235,9 @@
       <li>
         Recipe: {{ .BuildPage.RecipeLink.HTML }}
       </li>
+      {{ if .BuildPage.TestResultsLink }}
+        <li>Test Results: {{ .BuildPage.TestResultsLink.HTML }}</li>
+      {{ end }}
     </ul>
 
     <h2>Steps and Logs</h2>

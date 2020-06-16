@@ -445,6 +445,19 @@ func (b *Build) Banners() (result []Logo) {
 	}}
 }
 
+// TestResultsLink returns a link to the test results page of the build.
+func (b *Build) TestResultsLink() *Link {
+	if b.Infra == nil || b.Infra.Resultdb == nil {
+		return nil
+	}
+	invID := b.Infra.Resultdb.Invocation[len("invocations/"):]
+	return NewLink(
+		invID,
+		fmt.Sprintf("/inv/%s", invID),
+		fmt.Sprintf("Test results of invocation %s", invID),
+	)
+}
+
 // StepDisplayPref is the display preference for the steps.
 type StepDisplayPref string
 
@@ -634,6 +647,9 @@ var (
 					`{{ if gt $i 0 }} {{ end }}` +
 					`{{ $link.HTML }}` +
 					`{{ end }}`))
+	optInTemplate = template.Must(
+		template.New("optIn").
+			Parse(`<div id="opt-in-banner">Try the new test result page <a href="{{ .URL }}">here</a>!</div>`))
 )
 
 // HTML renders this Link as HTML.
@@ -663,6 +679,19 @@ func (l LinkSet) HTML() template.HTML {
 	}
 	buf := bytes.Buffer{}
 	if err := linkifySetTemplate.Execute(&buf, l); err != nil {
+		panic(err)
+	}
+	return template.HTML(buf.Bytes())
+}
+
+// TestResultsOptInHTML returns a link to the test results page of the build.
+func (b *Build) TestResultsOptInHTML() template.HTML {
+	link := b.TestResultsLink()
+	if link == nil {
+		return ""
+	}
+	buf := bytes.Buffer{}
+	if err := optInTemplate.Execute(&buf, link); err != nil {
 		panic(err)
 	}
 	return template.HTML(buf.Bytes())
