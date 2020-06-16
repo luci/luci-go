@@ -15,6 +15,7 @@
 package errors
 
 import (
+	stderrors "errors"
 	"fmt"
 	"testing"
 
@@ -40,6 +41,18 @@ func testWrap(err error) error {
 	return &testWrapped{err}
 }
 
+type testUnwrappable struct {
+	error
+}
+
+func (u *testUnwrappable) Unwrap() error {
+	return u.error
+}
+
+func testNewUnwrappable(err error) error {
+	return &testUnwrappable{err}
+}
+
 func TestWrapped(t *testing.T) {
 	t.Parallel()
 
@@ -54,6 +67,11 @@ func TestWrapped(t *testing.T) {
 			Convey(`When wrapped, does not unwrap to nil.`, func() {
 				So(Unwrap(testWrap(err)), ShouldNotBeNil)
 			})
+
+			Convey(`When unwrappalbe, does not unwrap to nil.`, func() {
+				So(Unwrap(testNewUnwrappable(err)), ShouldNotBeNil)
+				So(stderrors.Unwrap(testNewUnwrappable(err)), ShouldBeNil)
+			})
 		})
 
 		Convey(`A non-wrapped error.`, func() {
@@ -67,8 +85,16 @@ func TestWrapped(t *testing.T) {
 				So(Unwrap(testWrap(err)), ShouldEqual, err)
 			})
 
+			Convey(`When unwrappable, unwraps to itself.`, func() {
+				So(Unwrap(testNewUnwrappable(err)), ShouldEqual, err)
+			})
+
 			Convey(`When double-wrapped, unwraps to itself.`, func() {
 				So(Unwrap(testWrap(testWrap(err))), ShouldEqual, err)
+			})
+
+			Convey(`When double-unwrappable, unwraps to itself.`, func() {
+				So(Unwrap(testNewUnwrappable(testNewUnwrappable(err))), ShouldEqual, err)
 			})
 		})
 	})
