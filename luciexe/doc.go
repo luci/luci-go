@@ -231,11 +231,11 @@
 // "$build.proto" log here.
 //
 // The Host Application MUST append all steps from the child build.proto
-// stream to the parent build as substeps of step S and copy following
+// stream to the parent build as substeps of step S and copy the following
 // fields of the child Build to the equivalent fields of step S *only if*
 // step S has *non-final* status. It is the caller's responsibility to populate
 // rest of the fields of step S if the caller explicitly marks the step
-// status as final
+// status as final.
 //
 //  SummaryMarkdown
 //  Status
