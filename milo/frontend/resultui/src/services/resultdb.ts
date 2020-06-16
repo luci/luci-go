@@ -147,7 +147,7 @@ export interface ListArtifactsResponse {
   readonly nextPageToken?: string;
 }
 
-const SERVICE = 'luci.resultdb.rpc.v1.ResultDB';
+const SERVICE = 'luci.resultdb.v1.ResultDB';
 
 export class ResultDb {
   private prpcClient: PrpcClient;
