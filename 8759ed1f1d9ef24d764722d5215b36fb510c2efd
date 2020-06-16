@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "e847786c_ec08e1e3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Unpinned links will become invalid eventually (esp. since we know code will be deleted).",
+      "range": {
+        "startLine": 13,
+        "startChar": 51,
+        "endLine": 13,
+        "endChar": 57
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "215d897f_4833e269",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -13,6 +36,24 @@
       "writtenOn": "2020-06-16T03:34:05Z",
       "side": 1,
       "message": "can you add explanation from https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/model.py;l\u003d94 somewhere around here?\n\nThinking of which, I think it makes sense to encapsulate all BuildID computation in a separate internal/buildid package. Then godoc is more focused:\n\n// Package buildid \u003ccopy doc from model.py\u003e\n// ... long .... doc ...\npackage buildid\n\nfunc IdRange(low, high...)\nfunc NewIds(tstamp, count) []int64",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8968568a_88f474e2",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Even if you copy the package doc, I\u0027d still add as a const-scoped comment that this is the earliest valid time encoded by build IDs.",
+      "parentUuid": "215d897f_4833e269",
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -111,6 +152,40 @@
     },
     {
       "key": {
+        "uuid": "d2976a40_013caa2e",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "If the lower bound is before BeginningOfTheWorld you get a range from 0 to the upper bound which essentially means \"all builds until\". It seems like this could be an intentional feature of this function for searching, do you know if that\u0027s the case? Maybe document it here.",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dff49bcc_b78ba379",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Add period at the end here so the generated doc reads like a sentence. Inner comments are fine however (but I\u0027d match style elsewhere in the file or package).",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7fa9a87e_a40a3893",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -127,6 +202,87 @@
         "startChar": 18,
         "endLine": 54,
         "endChar": 55
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a57596b_7cc28aba",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "IMO \"low, high time.Time\". You don\u0027t need this sort of Hungarian notation where the variable name includes its type. But either way yes, per tandrii\u0027s suggestion please omit the first \" time.Time\".",
+      "parentUuid": "7fa9a87e_a40a3893",
+      "range": {
+        "startLine": 54,
+        "startChar": 18,
+        "endLine": 54,
+        "endChar": 55
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66f175d0_b4144353",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand the need for these conversions. The function is documented as having [low, high) for both input and output but here you\u0027re claiming that the input was actually (low, high]?",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c84fc8c_79288564",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Reading the function doc and the BuildID format spec, doesn\u0027t the upper bound need to have all 1s in the lower 20 bits? Although as it is you match the Python code...",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "873418dd_3448bd26",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "It seems that this name is because the expected type in Python was DateTime, but that\u0027s not true here. Consider \"t\" or something.",
+      "range": {
+        "startLine": 62,
+        "startChar": 19,
+        "endLine": 62,
+        "endChar": 24
       },
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -157,6 +313,80 @@
     },
     {
       "key": {
+        "uuid": "b07c41fd_3d46ae45",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Consider either returning an error or documenting that the function clips times before BeginningOfTheWorld to BeginningOfTheWorld.",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76608777_cf523331",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "You declared buildIDSuffixLen but you aren\u0027t leveraging it here. Either remove the const or replace this \"20\" with it.",
+      "range": {
+        "startLine": 67,
+        "startChar": 38,
+        "endLine": 67,
+        "endChar": 40
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c09f3af4_8a14e4f9",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Can you explain this in a comment? godoc is optional for unexported functions but there\u0027s nothing preventing you from adding one. Interior comment is fine too.",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77867d40_d22ff721",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "I\u0027d test idTimeSegment separately too.",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a6c757b4_891e46b4",
         "filename": "buildbucket/appengine/model/utils_test.go",
         "patchSetId": 4
@@ -174,6 +404,23 @@
         "endLine": 27,
         "endChar": 33
       },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a69df781_222f7c08",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-16T09:56:26Z",
+      "side": 1,
+      "message": "Personally I don\u0027t like when tests have their own helper functions. Here you\u0027re assuming that inRange works correctly even though inRange itself has no tests. In this case inRange is fairly simple, so I\u0027m leaving this as a general comment.",
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
