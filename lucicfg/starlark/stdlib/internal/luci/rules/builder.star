@@ -225,7 +225,7 @@ def _builder(
       'experimental': validate.bool('experimental', experimental, required=False),
       'task_template_canary_percentage': validate.int('task_template_canary_percentage', task_template_canary_percentage, min=0, max=100, required=False),
       'repo': validate.repo_url('repo', repo, required=False),
-      'resultdb': resultdb.validate_settings(resultdb_settings),
+      'resultdb': resultdb.validate_settings('settings', resultdb_settings),
   }
 
   # Merge explicitly passed properties with the module-scoped defaults.

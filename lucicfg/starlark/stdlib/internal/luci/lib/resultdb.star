@@ -124,17 +124,18 @@ def _test_result_predicate(
   return ret
 
 
-def _validate_settings(settings):
+def _validate_settings(attr, settings):
   """Validates the type of a ResultDB settings proto.
 
   Args:
+    attr: field name with settings, for error messages. Required.
     settings: A proto such as the one returned by resultdb.settings(...).
 
   Returns:
     A validated proto, if it's the correct type.
   """
   return validate.type(
-      'settings',
+      attr,
       settings,
       buildbucket_pb.Builder.ResultDB(),
       required=False,
