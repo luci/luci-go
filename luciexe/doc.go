@@ -223,16 +223,19 @@
 // Steps from the child luciexe show in the parent's Build updates. This is one
 // of the responsibilities of the Host Application.
 //
-// The parent can achieve this by recording a Step (with no children), and
+// The parent can achieve this by recording a Step S (with no children), and
 // a Step.Log named "$build.proto" which points to a "build.proto" stream (see
-// "Updating the Build State"). If the step has multiple logs, the
+// "Updating the Build State"). If step S has multiple logs, the
 // "$build.proto" log must be the first one. This is called a "Merge Step", and
 // is a directive for the host to merge the Build message located in the
 // "$build.proto" log here.
 //
-// The steps from the child build.proto stream will appear as substeps of step
-// S in the parent. The following fields of the child Build will be copied to
-// the equivalent fields of step S in the parent:
+// The Host Application MUST append all steps from the child build.proto
+// stream to the parent build as substeps of step S and copy following
+// fields of the child Build to the equivalent fields of step S *only if*
+// step S has *non-final* status. It is the caller's responsibility to populate
+// rest of the fields of step S if the caller explicitly marks the step
+// status as final
 //
 //  SummaryMarkdown
 //  Status

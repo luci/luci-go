@@ -251,10 +251,7 @@ func TestBuildState(t *testing.T) {
 								{Name: "Parent|Child", EndTime: now, Status: bbpb.Status_CANCELED,
 									SummaryMarkdown: "step was never finalized; did the build crash?"},
 								{
-									Name:            "Parent|Merge",
-									EndTime:         now,
-									Status:          bbpb.Status_CANCELED,
-									SummaryMarkdown: "step was never finalized; did the build crash?",
+									Name: "Parent|Merge",
 									Logs: []*bbpb.Log{{
 										Name:    "$build.proto",
 										Url:     "url://ns/Parent/Merge/build.proto",
@@ -285,10 +282,7 @@ func TestBuildState(t *testing.T) {
 								{Name: "Parent|Child", EndTime: now, Status: bbpb.Status_CANCELED,
 									SummaryMarkdown: "step was never finalized; did the build crash?"},
 								{
-									Name:            "Parent|Merge",
-									EndTime:         now,
-									Status:          bbpb.Status_CANCELED,
-									SummaryMarkdown: "step was never finalized; did the build crash?",
+									Name: "Parent|Merge",
 									Logs: []*bbpb.Log{{
 										Name:    "$build.proto",
 										Url:     "url://ns/Parent/Merge/build.proto",
