@@ -22,6 +22,52 @@
       "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac4f9163_a4223703",
+        "filename": "common/errors/walk.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-16T17:35:59Z",
+      "side": 1,
+      "message": "I think we should just rename InnerError() in Wrapped interface to Unwrap(), there aren\u0027t many usages: https://source.chromium.org/search?q\u003d%22InnerError%22%20lang:go\u0026sq\u003d\u0026ss\u003dchromium\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F (~2, the rest is in errors package itself).",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 50
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63c8a335_663217ab",
+        "filename": "lucicfg/starlark_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-16T17:35:59Z",
+      "side": 1,
+      "message": "will this work:\n\n  errors.Walk(err, func(err error) bool {\n    switch err.(type) {\n      case errors.MultiError, errors.Wrapped:\n        return true\n    }\n    ...\n    _, skip :\u003d err.(*starlark.EvalError)\n    return !skip\n  })\n\n(i.e. just don\u0027t recurse into EvalError)\n\n?",
+      "range": {
+        "startLine": 154,
+        "startChar": 5,
+        "endLine": 154,
+        "endChar": 16
+      },
+      "revId": "8c62de7dcf59b292f2a87d4e3c55d90e44f93984",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
