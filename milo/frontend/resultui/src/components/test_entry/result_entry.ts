@@ -168,8 +168,8 @@ export class ResultEntryElement extends MobxLitElement {
             <tr-text-diff-artifact .artifact=${artifact}>
             </tr-text-diff-artifact>
             `)}
-            ${this.renderTags()}
             ${this.renderArtifacts()}
+            ${this.renderTags()}
           </div>
         </div>
       </div>
