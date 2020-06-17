@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c664c36c_b36dca62",
+        "filename": "client/cmd/isolated/lib/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-17T05:09:54Z",
+      "side": 1,
+      "message": "I don\u0027t really like what\u0027s been done here, but I cannot think of a better way... I think if NewClient returns a builder, then it\u0027s easier to conditionally set AnonClient. Any suggestions?",
+      "range": {
+        "startLine": 80,
+        "startChar": 116,
+        "endLine": 80,
+        "endChar": 148
+      },
+      "revId": "795c7936825976827b633d9088d4abcf2f7e75a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
