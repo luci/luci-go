@@ -27,23 +27,6 @@ message Error {
   string msg = 3;
 }
 
-// GetConfigResponse is the response structure for the user
-// "GetConfig" endpoint.
-message GetConfigResponse {
-  // The API URL of the base "luci-config" service. If empty, the default
-  // service URL will be used.
-  string config_service_url = 1;
-
-  // The name of the configuration set to load from.
-  string config_set = 2;
-  // The path of the text-serialized service configuration protobuf.
-  string service_config_path = 3;
-
-  // The host name of the configuration service. This is preferred to
-  // "config_service_url".
-  string config_service_host = 4;
-}
-
 // RegisterStreamRequest is the set of caller-supplied data for the
 // RegisterStream Coordinator service endpoint.
 message RegisterStreamRequest {
@@ -203,10 +186,6 @@ message DeleteRequest {
 // Services service is a LogDog Coordinator endpoint that interfaces with
 // LogDog processing services.
 service Services {
-  // GetConfig allows a service to retrieve the current service configuration
-  // parameters.
-  rpc GetConfig(google.protobuf.Empty) returns (GetConfigResponse);
-
   // RegisterStream is an idempotent stream state register operation.
   rpc RegisterStream(RegisterStreamRequest) returns (RegisterStreamResponse);
 
