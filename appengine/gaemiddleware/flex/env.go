@@ -142,7 +142,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		}
 		return globalFlexConfig.Use(ctx, globalFlex.Request(ctx, req))
 	},
-	WithConfig: gaeconfig.UseFlex,
+	WithConfig: gaeconfig.Use,
 	WithAuth: func(ctx context.Context) context.Context {
 		return auth.Initialize(ctx, &globalAuthConfig)
 	},

@@ -94,10 +94,6 @@
 //     url: /internal/cron/ts_mon/housekeeping
 //     schedule: every 1 minutes
 //
-//   - description: "LUCI Config datastore cache periodic refresh"
-//     url: /admin/config/cache/manager
-//     schedule: every 10 mins
-//
 // See https://cloud.google.com/appengine/docs/standard/go/config/cronref for
 // more information about cron.yaml.
 package gaemiddleware

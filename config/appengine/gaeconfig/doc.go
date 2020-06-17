@@ -15,7 +15,11 @@
 // Package gaeconfig implements LUCI-config service bindings backed by AppEngine
 // storage and caching.
 //
-// Importing this module registers ${appid} variable in config validation rules.
+// Importing this module registers ${appid} and ${config_service_appid} config
+// placeholder variables, see go.chromium.org/luci/config/vars.
 //
-// DEPRECATED.
+// DEPRECATED!
+//
+// Do not use outside of GAEv1. Use go.chromium.org/luci/config/server/cfgmodule
+// on GAEv2 and GKE instead.
 package gaeconfig
