@@ -46,6 +46,30 @@
       "revId": "795c7936825976827b633d9088d4abcf2f7e75a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70f6a0f3_63c9577f",
+        "filename": "client/cmd/isolated/lib/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-17T05:14:54Z",
+      "side": 1,
+      "message": "How about I turn this options into a slice, then pass to NewClient()?",
+      "parentUuid": "c664c36c_b36dca62",
+      "range": {
+        "startLine": 80,
+        "startChar": 116,
+        "endLine": 80,
+        "endChar": 148
+      },
+      "revId": "795c7936825976827b633d9088d4abcf2f7e75a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
