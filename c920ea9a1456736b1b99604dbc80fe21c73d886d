@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91eb049b_fe4a0c8d",
+        "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 1,
+      "message": ":-/ will fix my dyslexia",
+      "range": {
+        "startLine": 217,
+        "startChar": 21,
+        "endLine": 218,
+        "endChar": 46
+      },
+      "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "503f1002_190bc99c",
+        "filename": "logdog/server/config/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 1,
+      "message": "Moved from config.go, it\u0027s no so grand to have its own *.go file. No changes.",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 118,
+        "endChar": 1
+      },
+      "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ce759e6e_485f6a40",
+        "filename": "logdog/server/config/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 1,
+      "message": "This is new. Previously it was using server/cfgclient.Get(...).",
+      "range": {
+        "startLine": 121,
+        "startChar": 5,
+        "endLine": 121,
+        "endChar": 23
+      },
+      "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "94b292b7_72122204",
+        "filename": "logdog/server/config/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 1,
+      "message": "Moved from project.cfg, no changes.",
+      "range": {
+        "startLine": 135,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 0
+      },
+      "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "383d3917_a46433b8",
+        "filename": "logdog/server/config/datastore.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 1,
+      "message": "Logdog is known to use namespaces and I have no confidence it doesn\u0027t use namespaced (or transactional) contexts when calling config.Project(...) or config.Config(...). So I added this line to be safe.",
+      "range": {
+        "startLine": 227,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 64
+      },
+      "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

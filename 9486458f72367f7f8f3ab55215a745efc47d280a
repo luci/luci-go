@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e3616b55_31cdb90d",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 0,
+      "message": "Install(...) does it itself. These extra Consistent(true) scattered in random subset of tests confused me, so I removed them.",
+      "range": {
+        "startLine": 253,
+        "startChar": 1,
+        "endLine": 253,
+        "endChar": 44
+      },
+      "revId": "9486458f72367f7f8f3ab55215a745efc47d280a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0f2638cc_77511610",
+        "filename": "logdog/appengine/cmd/coordinator/default/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 0,
+      "message": "The role of this thing is now implemented by the \"${appid}.cfg\" thing in config/cfgclient library. Also config.Store does\u0027t really need it anymore at all, it just reads whatever is in datastore.",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 23
+      },
+      "revId": "9486458f72367f7f8f3ab55215a745efc47d280a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b3ebb460_cd2f6045",
+        "filename": "logdog/appengine/coordinator/context_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 0,
+      "message": "This is no longer possible, config service errors happen in Sync(...).",
+      "range": {
+        "startLine": 153,
+        "startChar": 4,
+        "endLine": 161,
+        "endChar": 6
+      },
+      "revId": "9486458f72367f7f8f3ab55215a745efc47d280a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a81875fd_0d57aeb9",
+        "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T05:32:30Z",
+      "side": 0,
+      "message": "This is also not really possible. Once we imported a services.cfg, it won\u0027t ever be removed from the datastore.",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 1
+      },
+      "revId": "9486458f72367f7f8f3ab55215a745efc47d280a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
