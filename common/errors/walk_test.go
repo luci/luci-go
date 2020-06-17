@@ -86,6 +86,19 @@ func TestWalk(t *testing.T) {
 	})
 }
 
+type intError int
+
+func (i *intError) Is(err error) bool {
+	if e, ok := err.(*intError); ok {
+		return int(*i)/2 == int(*e)/2
+	}
+	return false
+}
+
+func (i *intError) Error() string {
+	return fmt.Sprintf("%d", int(*i))
+}
+
 func TestAny(t *testing.T) {
 	t.Parallel()
 
@@ -140,5 +153,15 @@ func TestContains(t *testing.T) {
 				So(Contains(err, testErr), ShouldBeTrue)
 			})
 		}
+
+		Convey(`Support Is`, func() {
+			e0 := intError(0)
+			e1 := intError(1)
+			e2 := intError(2)
+			wrapped0 := testWrap(&e0)
+			So(Contains(wrapped0, &e0), ShouldBeTrue)
+			So(Contains(wrapped0, &e1), ShouldBeTrue)
+			So(Contains(wrapped0, &e2), ShouldBeFalse)
+		})
 	})
 }
