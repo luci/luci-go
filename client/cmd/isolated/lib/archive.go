@@ -16,7 +16,6 @@ package lib
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -75,7 +75,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.New("position arguments not expected")
+		return errors.Reason("position arguments not expected").Err()
 	}
 	return nil
 }
