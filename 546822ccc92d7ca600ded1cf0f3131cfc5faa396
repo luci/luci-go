@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8eb57935_568cb581",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T21:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5df210d4_628601f8",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 4
+      },
+      "revId": "546822ccc92d7ca600ded1cf0f3131cfc5faa396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "223ba201_3860cb5c",
         "filename": "buildbucket/appengine/internal/buildid/buildid.go",
         "patchSetId": 9
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "34c5e090_d3b76872",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T21:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "223ba201_3860cb5c",
+      "range": {
+        "startLine": 66,
+        "startChar": 26,
+        "endLine": 66,
+        "endChar": 27
+      },
+      "revId": "546822ccc92d7ca600ded1cf0f3131cfc5faa396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe23fed9_c826ff30",
         "filename": "buildbucket/appengine/internal/buildid/buildid_test.go",
         "patchSetId": 9
@@ -68,6 +116,30 @@
       "revId": "546822ccc92d7ca600ded1cf0f3131cfc5faa396",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4592bea3_8c7dca35",
+        "filename": "buildbucket/appengine/internal/buildid/buildid_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T21:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe23fed9_c826ff30",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 68,
+        "endChar": 57
+      },
+      "revId": "546822ccc92d7ca600ded1cf0f3131cfc5faa396",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
