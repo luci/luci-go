@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "ec1f19dc_9c554f53",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_MacTests.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 11692,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T03:45:44Z",
+      "side": 1,
+      "message": "Also trailing spaces in this file",
+      "range": {
+        "startLine": 11692,
+        "startChar": 0,
+        "endLine": 11692,
+        "endChar": 4
+      },
+      "revId": "b3a3f010850dcae88c8ea9950291fbbbf5fa1783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01065138_b0f583d9",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 1345,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T03:45:44Z",
+      "side": 1,
+      "message": "nit: trailing spaces",
+      "range": {
+        "startLine": 1345,
+        "startChar": 0,
+        "endLine": 1345,
+        "endChar": 5
+      },
+      "revId": "b3a3f010850dcae88c8ea9950291fbbbf5fa1783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28268105_6184d499",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 3
