@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59ab4b1d_67b66a23",
+        "filename": "logdog/server/config/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-17T06:29:33Z",
+      "side": 1,
+      "message": "so IIUC, there\u0027s a 5m cron to pull from luci-config, and then each instance will reload from datastore every ~5m.\n\nLatency meh.\n\n(don\u0027t have anything constructive, just expressing meh)",
+      "range": {
+        "startLine": 112,
+        "startChar": 14,
+        "endLine": 112,
+        "endChar": 29
+      },
+      "revId": "cbf64783ef176c81fcdb3906961f778f0f573482",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "79216f8e_14b5c606",
+        "filename": "logdog/server/config/datastore.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-17T06:29:33Z",
+      "side": 1,
+      "message": "may be worth a comment here though (i.e. \"if you can prove that ctx is clean then feel free to remove this\")",
+      "range": {
+        "startLine": 227,
+        "startChar": 17,
+        "endLine": 227,
+        "endChar": 35
+      },
+      "revId": "cbf64783ef176c81fcdb3906961f778f0f573482",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
