@@ -2971,7 +2971,7 @@ func GetApplication(params Parameters) *cli.Application {
 
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
-			versioncli.CmdVersion(cipd.UserAgent),
+			versioncli.CmdVersion(cipd.AppName, cipd.Version),
 
 			// Authentication related commands.
 			{}, // These are spacers so that the commands appear in groups.

@@ -32,7 +32,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Commands: []*subcommands.Command{
 			cmdRunTask,
 			subcommands.CmdHelp,
-			versioncli.CmdVersion(version),
+			versioncli.CmdVersion("swarmbot", version),
 		},
 	}
 }

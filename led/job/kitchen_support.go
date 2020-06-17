@@ -33,18 +33,16 @@ type KitchenSupport interface {
 	GenerateCommand(ctx context.Context, bb *Buildbucket) ([]string, error)
 }
 
-// NoKitchenSupport returns a null implementation of KitchenSupport which always
+// NullKitchenSupport is a null implementation of KitchenSupport which always
 // returns errors if it ends up processing a kitchen job.
-func NoKitchenSupport() KitchenSupport {
-	return nullKitchenSupport{}
-}
+type NullKitchenSupport struct{}
 
-type nullKitchenSupport struct{}
-
-func (nullKitchenSupport) FromSwarming(context.Context, *swarming.SwarmingRpcsNewTaskRequest, *Buildbucket) error {
+// FromSwarming implements KitchenSupport by returning an error.
+func (NullKitchenSupport) FromSwarming(context.Context, *swarming.SwarmingRpcsNewTaskRequest, *Buildbucket) error {
 	return errors.New("kitchen job Definitions not supported by this binary")
 }
 
-func (nullKitchenSupport) GenerateCommand(context.Context, *Buildbucket) ([]string, error) {
+// GenerateCommand implements KitchenSupport by returning an error.
+func (NullKitchenSupport) GenerateCommand(context.Context, *Buildbucket) ([]string, error) {
 	return nil, errors.New("kitchen job Definitions not supported by this binary")
 }

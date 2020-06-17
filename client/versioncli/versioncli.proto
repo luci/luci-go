@@ -1,0 +1,44 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package versioncli;
+
+option go_package = "go.chromium.org/luci/client/versioncli;versioncli";
+
+message VersionData {
+  // The 'name' of the application.
+  //
+  // Usually a short name like "led" or "cipd".
+  string app_name = 1 [json_name = "app_name"];
+
+  // (optional) The symver (`MAJOR[.MINOR[.PATCH]]`) of the application.
+  string symver = 2 [json_name = "symver"];
+
+  message CIPDVersionInfo {
+    // The CIPD package name (e.g. "name/of/package/linux-amd64")
+    string cipd_package = 1 [json_name = "cipd_package"];
+
+    // The CIPD instance id (i.e. the sha256 of the installed application)
+    string cipd_instance_id = 2 [json_name = "cipd_instance_id"];
+  }
+  // (optional) If this executable was installed as part of a CIPD package which
+  // contains a version manifest, that information will be recorded here.
+  CIPDVersionInfo cipd_info = 3 [json_name = "cipd_info"];
+
+  // Contains mapping of feature name to a boolean indicating if the feature is
+  // enabled.
+  map<string, bool> features = 4 [json_name = "features"];
+}

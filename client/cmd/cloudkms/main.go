@@ -53,7 +53,7 @@ func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
-			versioncli.CmdVersion(version),
+			versioncli.CmdVersion("cloudkms", version),
 		},
 	}
 }

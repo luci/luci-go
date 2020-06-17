@@ -44,7 +44,7 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
-			versioncli.CmdVersion("luci-auth v" + Version),
+			versioncli.CmdVersion("luci-auth", Version),
 
 			authcli.SubcommandLoginWithParams(authcli.CommandParams{
 				Name:          "login",

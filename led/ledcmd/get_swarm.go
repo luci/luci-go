@@ -56,7 +56,7 @@ type GetFromSwarmingTaskOpts struct {
 // swarming task, printing it to stdout and returning an error.
 func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetFromSwarmingTaskOpts) (*job.Definition, error) {
 	if opts.KitchenSupport == nil {
-		opts.KitchenSupport = job.NoKitchenSupport()
+		opts.KitchenSupport = job.NullKitchenSupport{}
 	}
 
 	logging.Infof(ctx, "getting task definition: %q %q", opts.SwarmingHost, opts.TaskID)

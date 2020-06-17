@@ -21,13 +21,16 @@ import (
 )
 
 const (
+	// AppName is the cli tool name.
+	AppName = "lucicfg"
+
 	// Version is the version of lucicfg tool.
 	//
 	// It ends up in CLI output and in User-Agent headers.
 	Version = "1.15.0"
 
 	// UserAgent is used for User-Agent header in HTTP requests from lucicfg.
-	UserAgent = "lucicfg v" + Version
+	UserAgent = AppName + " v" + Version
 )
 
 func init() {
