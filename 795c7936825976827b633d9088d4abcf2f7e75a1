@@ -22,6 +22,30 @@
       "revId": "795c7936825976827b633d9088d4abcf2f7e75a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82bf5d01_9aa4b984",
+        "filename": "client/cmd/isolated/lib/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-17T05:14:21Z",
+      "side": 1,
+      "message": "Consider do like\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/logdog/appengine/coordinator/flex/services.go?l\u003d154-155\u0026rcl\u003d34dd37734506da16b4798634065b56ade69dbf33\n?",
+      "parentUuid": "c664c36c_b36dca62",
+      "range": {
+        "startLine": 80,
+        "startChar": 116,
+        "endLine": 80,
+        "endChar": 148
+      },
+      "revId": "795c7936825976827b633d9088d4abcf2f7e75a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
