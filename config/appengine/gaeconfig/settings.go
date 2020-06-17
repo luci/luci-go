@@ -16,40 +16,16 @@ package gaeconfig
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"html"
 	"html/template"
 	"net/url"
-	"strconv"
 	"strings"
-	"time"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
 )
-
-// DefaultExpire is a reasonable default expiration value to use on prod GAE.
-const DefaultExpire = 10 * time.Minute
-
-// DSCacheMode is the datastore cache mode.
-type DSCacheMode string
-
-const (
-	// DSCacheDisabled means that the datastore cache is disabled.
-	DSCacheDisabled DSCacheMode = ""
-	// DSCacheEnabled means that the datastore cache is enabled.
-	//
-	// When enabled, all requests that have cached entries will hit the cache,
-	// regardless of whether the cache is stale or not. If the cache is stale,
-	// a warning will be printed during fetch.
-	DSCacheEnabled DSCacheMode = "Enabled"
-)
-
-// dsCacheDisabledSetting is the user-visible value for the "disabled" cache
-// mode.
-const dsCacheDisabledSetting = "Disabled"
 
 // configServiceAdmins is the default value for settings.AdministratorsGroup
 // config setting below.
@@ -63,12 +39,6 @@ type Settings struct {
 	// For legacy reasons, the JSON value is "config_service_url".
 	ConfigServiceHost string `json:"config_service_url"`
 
-	// CacheExpirationSec is how long to hold configs in local cache.
-	CacheExpirationSec int `json:"cache_expiration_sec"`
-
-	// DatastoreCacheMode is the datastore caching mode.
-	DatastoreCacheMode DSCacheMode `json:"datastore_enabled"`
-
 	// Administrators is the auth group of users that can call the validation
 	// endpoint.
 	AdministratorsGroup string `json:"administrators_group"`
@@ -78,16 +48,6 @@ type Settings struct {
 // settings value.
 func (s *Settings) SetIfChanged(c context.Context, who, why string) error {
 	return settings.SetIfChanged(c, settingsKey, s, who, why)
-}
-
-// CacheExpiration returns a Duration representing the configured cache
-// expiration. If the cache expiration is not configured, CacheExpiration
-// will return 0.
-func (s *Settings) CacheExpiration() time.Duration {
-	if s.CacheExpirationSec > 0 {
-		return time.Second * time.Duration(s.CacheExpirationSec)
-	}
-	return 0
 }
 
 // FetchCachedSettings fetches Settings from the settings store.
@@ -123,18 +83,7 @@ func mustFetchCachedSettings(c context.Context) *Settings {
 
 // DefaultSettings returns Settings to use if setting store is empty.
 func DefaultSettings(c context.Context) Settings {
-	// Disable local cache on devserver by default to allows changes to local
-	// configs to propagate instantly. This is usually preferred when developing
-	// locally.
-	exp := 0
-	if !info.IsDevAppServer(c) {
-		exp = int(DefaultExpire.Seconds())
-	}
-	return Settings{
-		CacheExpirationSec:  exp,
-		DatastoreCacheMode:  DSCacheDisabled,
-		AdministratorsGroup: configServiceAdmins,
-	}
+	return Settings{AdministratorsGroup: configServiceAdmins}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -197,36 +146,6 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 			Help: `<p>Host name (e.g., "luci-config.appspot.com") of a config service to fetch configuration files from.</p>`,
 		},
 		{
-			ID:    "CacheExpirationSec",
-			Title: "Cache expiration, sec",
-			Type:  portal.FieldText,
-			Validator: func(v string) error {
-				if i, err := strconv.Atoi(v); err != nil || i < 0 {
-					return errors.New("expecting a non-negative integer")
-				}
-				return nil
-			},
-			Help: `<p>For better performance configuration files fetched from remote
-service are cached in memcache for specified amount of time. Set it to 0 to
-disable local cache.</p>`,
-		},
-		{
-			ID:    "DatastoreCacheMode",
-			Title: "Datastore caching",
-			Type:  portal.FieldChoice,
-			ChoiceVariants: []string{
-				dsCacheDisabledSetting,
-				string(DSCacheEnabled),
-			},
-			Help: `<p>For better performance and resilience against configuration
-service outages, the local datastore can be used as a backing cache. When
-enabled, all configuration requests will be made against a cached configuration
-in the datastore. This configuration will be updated periodically by an
-independent cron job out of band with any user requests. See
-<a href="https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware/#hdr-Cron_setup">gaemiddleware</a>
-package doc for instructions how to setup this cron job.</p>`,
-		},
-		{
 			ID:    "AdministratorsGroup",
 			Title: "Administrator group",
 			Type:  portal.FieldText,
@@ -249,56 +168,17 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	if err != nil && err != settings.ErrNoSettings {
 		return nil, err
 	}
-
-	// Translate the DSCacheMode into a user-readable string.
-	var cacheModeString string
-	switch s.DatastoreCacheMode {
-	// Recognized modes.
-	case DSCacheEnabled:
-		cacheModeString = string(s.DatastoreCacheMode)
-
-		// Any unrecognized mode translates to "disabled".
-	case DSCacheDisabled:
-		fallthrough
-	default:
-		cacheModeString = dsCacheDisabledSetting
-	}
-
 	return map[string]string{
 		"ConfigServiceHost":   s.ConfigServiceHost,
-		"CacheExpirationSec":  strconv.Itoa(s.CacheExpirationSec),
-		"DatastoreCacheMode":  cacheModeString,
 		"AdministratorsGroup": s.AdministratorsGroup,
 	}, nil
 }
 
 func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	dsMode := DSCacheMode(values["DatastoreCacheMode"])
-	switch dsMode {
-	case DSCacheEnabled: // Valid.
-
-	// Any unrecognized mode translates to disabled.
-	case dsCacheDisabledSetting:
-		fallthrough
-	default:
-		dsMode = DSCacheDisabled
-	}
-
 	modified := Settings{
-		ConfigServiceHost:   values["ConfigServiceHost"],
-		DatastoreCacheMode:  dsMode,
+		ConfigServiceHost:   translateConfigURLToHost(values["ConfigServiceHost"]),
 		AdministratorsGroup: values["AdministratorsGroup"],
 	}
-
-	var err error
-	modified.CacheExpirationSec, err = strconv.Atoi(values["CacheExpirationSec"])
-	if err != nil {
-		return err
-	}
-
-	// Backwards-compatibility with full URL: translate to host.
-	modified.ConfigServiceHost = translateConfigURLToHost(modified.ConfigServiceHost)
-
 	return modified.SetIfChanged(c, who, why)
 }
 

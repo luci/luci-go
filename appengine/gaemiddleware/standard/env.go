@@ -115,7 +115,6 @@ var classicEnv = gaemiddleware.Environment{
 		gaeauth.InstallHandlers(r, base)
 		gaetsmon.InstallHandlers(r, base)
 		portal.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
-		gaeconfig.InstallCacheCronHandler(r, base.Extend(gaemiddleware.RequireCron))
 		gaeconfig.InstallValidationHandlers(r, base, &validation.Rules)
 		pprof.InstallHandlers(r, base)
 	},
