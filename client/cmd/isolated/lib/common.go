@@ -77,12 +77,20 @@ func (c *commonFlags) createIsolatedClient(ctx context.Context, opts CommandOpti
 	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
 		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
 	}
-	isolCl = c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent(userAgent))
+	isolOpts := []isolatedclient.Option{
+		isolatedclient.WithAuthClient(authCl),
+		isolatedclient.WithUserAgent(userAgent),
+	}
+	if opts.AnonClient != nil {
+		isolOpts = append(isolOpts, isolatedclient.WithAnonymousClient(opts.AnonClient))
+	}
+	isolCl = c.isolatedFlags.NewClient(isolOpts...)
 	return
 }
 
 // CommandOptions is used to initialize an isolated command.
 type CommandOptions struct {
 	AuthClient      *http.Client
+	AnonClient      *http.Client
 	DefaultAuthOpts auth.Options
 }
