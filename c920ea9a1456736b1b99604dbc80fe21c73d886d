@@ -114,6 +114,30 @@
       "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3c2454d5_0b21e0b6",
+        "filename": "logdog/server/config/datastore.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-17T06:36:58Z",
+      "side": 1,
+      "message": "This is a good thought; It isn\u0027t disciplined with context usage (lots of context-embedded-in-struct stuff).",
+      "parentUuid": "383d3917_a46433b8",
+      "range": {
+        "startLine": 227,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 64
+      },
+      "revId": "c920ea9a1456736b1b99604dbc80fe21c73d886d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
