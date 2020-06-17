@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"go.chromium.org/gae/service/info"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -38,5 +39,6 @@ func (s *server) GetConfig(c context.Context, req *empty.Empty) (*logdog.GetConf
 	}
 	return &logdog.GetConfigResponse{
 		ConfigServiceHost: settings.ConfigServiceHost,
+		ConfigSet:         "services/" + info.AppID(c), // this is actually unused
 	}, nil
 }
