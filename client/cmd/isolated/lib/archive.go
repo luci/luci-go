@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"time"
 
@@ -49,7 +48,9 @@ under 'foo/bar' in the desired directory.
 Note that '.' may be omitted in general, so to upload 'foo' from the current
 working directory, '-files :foo' is sufficient.`,
 		CommandRun: func() subcommands.CommandRun {
-			c := archiveRun{}
+			c := archiveRun{
+				CommandOptions: options,
+			}
 			c.commonFlags.Init(options.DefaultAuthOpts)
 			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
@@ -64,6 +65,7 @@ working directory, '-files :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
+	CommandOptions
 	dirs     isolated.ScatterGather
 	files    isolated.ScatterGather
 	dumpHash string
@@ -86,12 +88,11 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
 
-	var authClient *http.Client
-	authClient, err = c.createAuthClient(ctx)
-	if err != nil {
+	isolatedClient, isolErr := c.createIsolatedClient(ctx, c.CommandOptions)
+	if isolErr != nil {
+		err = errors.Annotate(isolErr, "failed to create isolated client").Err()
 		return
 	}
-	isolatedClient := c.createIsolatedClient(authClient)
 
 	arch := archiver.New(ctx, isolatedClient, out)
 	defer func() {

@@ -51,7 +51,9 @@ func CmdDownload(options CommandOptions) *subcommands.Command {
 
 Files are referenced by their hash`,
 		CommandRun: func() subcommands.CommandRun {
-			c := downloadRun{}
+			c := downloadRun{
+				CommandOptions: options,
+			}
 			c.commonFlags.Init(options.DefaultAuthOpts)
 			// TODO(mknyszek): Add support for downloading individual files.
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
@@ -71,6 +73,7 @@ Files are referenced by their hash`,
 
 type downloadRun struct {
 	commonFlags
+	CommandOptions
 	outputDir   string
 	outputFiles string
 	isolated    string
@@ -151,11 +154,10 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, args []string) error {
-	authClient, err := c.createAuthClient(ctx)
+	client, err := c.createIsolatedClient(ctx, c.CommandOptions)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to create isolated client").Err()
 	}
-	client := c.createIsolatedClient(authClient)
 	var filesMu sync.Mutex
 	var files []string
 

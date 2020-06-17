@@ -60,21 +60,29 @@ func (c *commonFlags) Parse() error {
 	return err
 }
 
-func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
-	// Don't enforce authentication by using OptionalLogin mode. This is needed
-	// for IP whitelisted bots: they have NO credentials to send.
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
-}
+func (c *commonFlags) createIsolatedClient(ctx context.Context, opts CommandOptions) (isolCl *isolatedclient.Client, err error) {
+	var authCl *http.Client
+	if opts.AuthClient != nil {
+		authCl = opts.AuthClient
+	} else {
+		// Don't enforce authentication by using OptionalLogin mode. This is
+		// needed for IP whitelisted bots: they have NO credentials to send.
+		authCl, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
+		if err != nil {
+			return
+		}
+	}
 
-func (c *commonFlags) createIsolatedClient(authCl *http.Client) *isolatedclient.Client {
 	userAgent := "isolated-go/" + IsolatedVersion
 	if ver, err := version.GetStartupVersion(); err == nil && ver.InstanceID != "" {
 		userAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
 	}
-	return c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent(userAgent))
+	isolCl = c.isolatedFlags.NewClient(isolatedclient.WithAuthClient(authCl), isolatedclient.WithUserAgent(userAgent))
+	return
 }
 
 // CommandOptions is used to initialize an isolated command.
 type CommandOptions struct {
+	AuthClient      *http.Client
 	DefaultAuthOpts auth.Options
 }
