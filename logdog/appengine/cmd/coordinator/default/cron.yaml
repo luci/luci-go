@@ -19,7 +19,14 @@ cron:
   schedule: "every 1 minutes"
   target: default
 
+- description: "Syncing configs in datastore with LUCI Config"
+  url: "/admin/cron/sync-configs"
+  schedule: "every 5 minutes"
+  target: default
+
 # This cron task supports the refresh of the datastore cache every 10 minutes.
+#
+# TODO(vadimsh): Delete once off server/cfgclient.
 - description: "LUCI Config datastore cache periodic refresh"
   url: "/admin/config/cache/manager"
   schedule: "every 10 minutes"

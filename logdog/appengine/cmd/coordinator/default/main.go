@@ -66,6 +66,10 @@ func main() {
 	base := standard.Base().Extend(config.Middleware(&configStore))
 	svr.InstallHandlers(r, base)
 
+	r.GET("/admin/cron/sync-configs", base, func(c *router.Context) {
+		config.Sync(c.Context)
+	})
+
 	r.POST("/admin/cron/stats/:stat/:namespace", base, cronStatsNSHandler)
 	r.GET("/admin/cron/stats", base, cronStatsHandler)
 
