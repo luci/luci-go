@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "643bf4e9_dede74f1",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-17T17:11:45Z",
+      "side": 1,
+      "message": "just a question.\ni noticed that JS developers often use forEach function instead of for-of loop. The latter seems faster because it is a part of the language.\nis this just a habit because JS didn\u0027t have for-of loop for a long time?",
+      "range": {
+        "startLine": 62,
+        "startChar": 7,
+        "endLine": 62,
+        "endChar": 14
+      },
+      "revId": "e4e6d72c0866e4f06a63b14126c959d1616a1240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
