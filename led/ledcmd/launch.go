@@ -44,7 +44,7 @@ type LaunchSwarmingOpts struct {
 
 	// If launched from within a swarming task, this will be the current swarming
 	// task's task id to be attached as the parent of the launched task.
-	ParentTaskId string
+	ParentTaskID string
 
 	// A path, relative to ${ISOLATED_OUTDIR} of where to place the final
 	// build.proto from this build. If omitted, the build.proto will not be
@@ -78,14 +78,14 @@ func GetUID(ctx context.Context, authenticator *auth.Authenticator) (string, err
 // NewTaskRequest launched, as well as the launch metadata.
 func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Definition, opts LaunchSwarmingOpts) (*swarming.SwarmingRpcsNewTaskRequest, *swarming.SwarmingRpcsTaskRequestMetadata, error) {
 	if opts.KitchenSupport == nil {
-		opts.KitchenSupport = job.NoKitchenSupport()
+		opts.KitchenSupport = job.NullKitchenSupport{}
 	}
 	if opts.UserID == "" {
 		return nil, nil, errors.New("opts.UserID is empty")
 	}
 
 	logging.Infof(ctx, "building swarming task")
-	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskId, opts.KitchenSupport); err != nil {
+	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskID, opts.KitchenSupport); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to flatten job definition to swarming").Err()
 	}
 

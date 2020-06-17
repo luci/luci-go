@@ -49,7 +49,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
-			versioncli.CmdVersion(lib.SwarmingVersion),
+			versioncli.CmdVersion("swarming", lib.SwarmingVersion),
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{

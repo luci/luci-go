@@ -129,8 +129,12 @@ var (
 var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
+
+	AppName = "cipd"
+	Version = "2.4.0"
+
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.4.0"
+	UserAgent = fmt.Sprintf("%s %s", AppName, Version)
 )
 
 func init() {

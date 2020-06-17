@@ -83,7 +83,7 @@ func GetApplication(params base.Parameters) *cli.Application {
 
 			subcommands.Section("Misc\n"),
 			subcommands.CmdHelp,
-			versioncli.CmdVersion(lucicfg.UserAgent),
+			versioncli.CmdVersion(lucicfg.AppName, lucicfg.Version),
 		},
 	}
 }

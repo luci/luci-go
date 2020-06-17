@@ -16,6 +16,7 @@ package job
 
 import (
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
@@ -116,8 +117,7 @@ func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
 	if changes := b.GetBbagentArgs().GetBuild().GetInput().GetGerritChanges(); len(changes) > 0 {
 		ret = make([]*bbpb.GerritChange, len(changes))
 		for i, change := range changes {
-			toAdd := *change
-			ret[i] = &toAdd
+			ret[i] = proto.Clone(change).(*bbpb.GerritChange)
 		}
 	}
 	return
@@ -125,8 +125,7 @@ func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
 
 func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
 	if gc := b.GetBbagentArgs().GetBuild().GetInput().GetGitilesCommit(); gc != nil {
-		toRet := *gc
-		ret = &toRet
+		ret = proto.Clone(gc).(*bbpb.GitilesCommit)
 	}
 	return
 }

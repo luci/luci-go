@@ -42,7 +42,7 @@ type GetBuildersOpts struct {
 // GetBuilder retrieves a new job Definition from a Buildbucket builder.
 func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOpts) (*job.Definition, error) {
 	if opts.KitchenSupport == nil {
-		opts.KitchenSupport = job.NoKitchenSupport()
+		opts.KitchenSupport = job.NullKitchenSupport{}
 	}
 
 	sbucket := newSwarmbucketClient(authClient, opts.BuildbucketHost)
