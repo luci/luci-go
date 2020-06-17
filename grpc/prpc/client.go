@@ -280,7 +280,7 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 		}
 
 		// Log only on unexpected codes.
-		if code := grpc.Code(err); code != codes.Canceled {
+		if code := status.Code(err); code != codes.Canceled {
 			ignore := false
 			for _, expected := range options.expectedCodes {
 				if code == expected {
