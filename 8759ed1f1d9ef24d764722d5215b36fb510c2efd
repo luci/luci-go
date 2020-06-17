@@ -60,6 +60,24 @@
     },
     {
       "key": {
+        "uuid": "db602906_e6ffc313",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Moved to internal/buildid and added both package level and const level documentation.",
+      "parentUuid": "8968568a_88f474e2",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "963024ae_74b8a62d",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -106,6 +124,54 @@
     },
     {
       "key": {
+        "uuid": "a8494c06_9ba72e34",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "No, I make it private now.",
+      "parentUuid": "ef1a80ee_a6e183b3",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 20
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e5666b31_3e629895",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "963024ae_74b8a62d",
+      "range": {
+        "startLine": 27,
+        "startChar": 29,
+        "endLine": 27,
+        "endChar": 39
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a67727ea_700fa2fe",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -126,6 +192,30 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1997630_ce8a6d3c",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a67727ea_700fa2fe",
+      "range": {
+        "startLine": 29,
+        "startChar": 37,
+        "endLine": 29,
+        "endChar": 40
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -152,6 +242,30 @@
     },
     {
       "key": {
+        "uuid": "1943b379_fcc21966",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a83046d_3ac4019a",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 8
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d2976a40_013caa2e",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -169,6 +283,24 @@
     },
     {
       "key": {
+        "uuid": "7cf975bc_a5673e1c",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Yes, it\u0027s intentional. Ideally, the database query should search idLow\u003c\u003dq\u003cidHigh.\nI would use the returned id to decide how to construct query. If the idLow is 0, it will only construct the query: q\u003cidHigh.\n\nAdded a comment in idTimeSegment funciton.",
+      "parentUuid": "d2976a40_013caa2e",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dff49bcc_b78ba379",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -183,6 +315,24 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5c62446_8312d612",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dff49bcc_b78ba379",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -233,6 +383,30 @@
     },
     {
       "key": {
+        "uuid": "bf6672d4_92059484",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a57596b_7cc28aba",
+      "range": {
+        "startLine": 54,
+        "startChar": 18,
+        "endLine": 54,
+        "endChar": 55
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "66f175d0_b4144353",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -250,6 +424,24 @@
     },
     {
       "key": {
+        "uuid": "e5f63f5e_2f178233",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "The comments are copied from python but doesn\u0027t very make sense to readers. \nBut these comments are necessary to understand the logic. So I rephrased it in new patchset.\n\nIt still converts the [low, high) to [low, high). Explanation see below.",
+      "parentUuid": "66f175d0_b4144353",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c84fc8c_79288564",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -264,6 +456,24 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af4bae0d_adede346",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "No need to have all 1s in the lower 20bits. The logic is really complex and tricky which took me huge efforts to understand.\n\n\nThe build id is monotonically decreasing. The lowTime will generate highId and highTime will generate lowId. Meanwhile, we also need to make sure [lowTime, highTime) to [lowId, highId).\n\n\u003d\u003d\u003d\nLet’s say \nlowTime - 1h0min0ms.\nidTimeSegment(lowTime) -\u003e  id1:  0xFE0000 (the trailing four 0s are the lower 20 bits.)\n\nhighTime - 2h0min0ms\nidTimeSegment(highTime) -\u003e  id2:  0x8E0000\n\nIf we directly return [0x8E0000,  0xFE0000) which will lead to incorrect answer as user is unable to fetch those build ids 0xFE0000, 0xFE0011 etc..\nTherefore, we need to subtract 1ms from low and high time in IdRange function, so that \n\nidTimeSegment(lowTime.Add(-timeResolution)) -\u003e id1_1: 0xFF0000\nidTimeSegment(highTime.Add(-timeResolution)) -\u003e id2_1: 0x8F0000\n\nthen we get the correct range [0x8F0000, 0xFF0000).\n\u003d\u003d\u003d\n\nThose part are difficult so I also added more detailed comments in corresponding places.",
+      "parentUuid": "9c84fc8c_79288564",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -290,6 +500,30 @@
     },
     {
       "key": {
+        "uuid": "629bf5d4_295fb5be",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "873418dd_3448bd26",
+      "range": {
+        "startLine": 62,
+        "startChar": 19,
+        "endLine": 62,
+        "endChar": 24
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aef44d14_a29fe031",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -313,6 +547,30 @@
     },
     {
       "key": {
+        "uuid": "a943dfcc_25a28b1f",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Constant in go doesn\u0027t allow the function calls.\nI found the explanation in https://stackoverflow.com/questions/49028654/initialize-const-variable",
+      "parentUuid": "aef44d14_a29fe031",
+      "range": {
+        "startLine": 63,
+        "startChar": 20,
+        "endLine": 63,
+        "endChar": 53
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b07c41fd_3d46ae45",
         "filename": "buildbucket/appengine/model/utils.go",
         "patchSetId": 4
@@ -327,6 +585,24 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89848c8f_cb155348",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Add a function comment to explain.",
+      "parentUuid": "b07c41fd_3d46ae45",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -370,6 +646,48 @@
     },
     {
       "key": {
+        "uuid": "19742b21_8842df8f",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c09f3af4_8a14e4f9",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "96047b8d_e4f84205",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76608777_cf523331",
+      "range": {
+        "startLine": 67,
+        "startChar": 38,
+        "endLine": 67,
+        "endChar": 40
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77867d40_d22ff721",
         "filename": "buildbucket/appengine/model/utils_test.go",
         "patchSetId": 4
@@ -384,6 +702,24 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0487799_2e708992",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77867d40_d22ff721",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -410,6 +746,30 @@
     },
     {
       "key": {
+        "uuid": "865e65b0_8028ecf0",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6c757b4_891e46b4",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 33
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a69df781_222f7c08",
         "filename": "buildbucket/appengine/model/utils_test.go",
         "patchSetId": 4
@@ -427,6 +787,24 @@
     },
     {
       "key": {
+        "uuid": "a2bde081_432d1aeb",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a69df781_222f7c08",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e152986_303698ab",
         "filename": "buildbucket/appengine/model/utils_test.go",
         "patchSetId": 4
@@ -441,6 +819,24 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35be9cb2_fc22b7b8",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2e152986_303698ab",
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -467,6 +863,30 @@
     },
     {
       "key": {
+        "uuid": "59101842_73fa4bf3",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "548550b3_37b9257e",
+      "range": {
+        "startLine": 37,
+        "startChar": 4,
+        "endLine": 37,
+        "endChar": 26
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "60362438_37142258",
         "filename": "buildbucket/appengine/model/utils_test.go",
         "patchSetId": 4
@@ -487,6 +907,30 @@
       "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e72e77a9_e8a0f71d",
+        "filename": "buildbucket/appengine/model/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-17T01:12:00Z",
+      "side": 1,
+      "message": "The size of the generic int type is platform dependent. Most our platforms are 64-bit. It would think it as int64 by default. But to be safe, I change it to int64 (also change the shifting statement in idTimeSegemnt function.)",
+      "parentUuid": "60362438_37142258",
+      "range": {
+        "startLine": 38,
+        "startChar": 19,
+        "endLine": 38,
+        "endChar": 40
+      },
+      "revId": "8759ed1f1d9ef24d764722d5215b36fb510c2efd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
