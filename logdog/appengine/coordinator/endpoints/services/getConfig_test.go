@@ -50,6 +50,7 @@ func TestGetConfig(t *testing.T) {
 			So(err, ShouldBeRPCOK)
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
 				ConfigServiceHost: "example.com",
+				ConfigSet:         "services/logdog-app-id",
 			})
 		})
 	})
