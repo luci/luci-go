@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84ba63dc_607cb4c6",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T06:57:50Z",
+      "side": 1,
+      "message": "Question: mu.Lock() is already called at L103, how will this mu.Lock() work?",
+      "range": {
+        "startLine": 134,
+        "startChar": 4,
+        "endLine": 134,
+        "endChar": 13
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "226adc43_e94e442b",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T06:57:50Z",
+      "side": 1,
+      "message": "Based on L215, c is definitely not included, right?",
+      "range": {
+        "startLine": 195,
+        "startChar": 13,
+        "endLine": 195,
+        "endChar": 29
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46b8b5b1_78cd52da",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T06:57:50Z",
+      "side": 1,
+      "message": "nit: finalizes",
+      "range": {
+        "startLine": 263,
+        "startChar": 5,
+        "endLine": 263,
+        "endChar": 11
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b2eb264_70919269",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T06:57:50Z",
+      "side": 1,
+      "message": "invocations.Reachable can also run a query, right? Then why it can be done in parallel?\n\nOr do you mean a Spanner session can process only one query to write?",
+      "range": {
+        "startLine": 282,
+        "startChar": 7,
+        "endLine": 282,
+        "endChar": 70
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0185bff1_bfb702ba",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-17T06:57:50Z",
+      "side": 1,
+      "message": "Why public?",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
