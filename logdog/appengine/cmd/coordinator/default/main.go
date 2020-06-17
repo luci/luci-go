@@ -24,7 +24,6 @@ import (
 
 	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/info"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -36,11 +35,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 )
-
-// Cache for configs.
-var configStore = config.Store{
-	ServiceID: info.AppID,
-}
 
 // Run installs and executes this site.
 func main() {
@@ -63,7 +57,7 @@ func main() {
 	servicesPb.RegisterServicesServer(svr, dummyServicesService)
 	discovery.Enable(svr)
 
-	base := standard.Base().Extend(config.Middleware(&configStore))
+	base := standard.Base().Extend(config.Middleware(&config.Store{}))
 	svr.InstallHandlers(r, base)
 
 	r.GET("/admin/cron/sync-configs", base, func(c *router.Context) {

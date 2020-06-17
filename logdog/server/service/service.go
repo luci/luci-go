@@ -127,10 +127,6 @@ type Service struct {
 	// implementing in-process configuration updating.
 	killCheckInterval clockflag.Duration
 
-	// testConfigFilePath is the path to a local configuration service filesystem
-	// (impl/filesystem) root. This is used for testing.
-	testConfigFilePath string
-
 	// configStore caches configs in local memory.
 	configStore config.Store
 
@@ -281,8 +277,6 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"Connect to Coordinator over HTTP (instead of HTTPS).")
 	fs.Var(&s.killCheckInterval, "config-kill-interval",
 		"If non-zero, poll for configuration changes and kill the application if one is detected.")
-	fs.StringVar(&s.testConfigFilePath, "test-config-file-path", s.testConfigFilePath,
-		"(Testing) If set, load configuration from a local filesystem rooted here.")
 }
 
 func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
@@ -323,17 +317,11 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 }
 
 func (s *Service) initConfig(ctx context.Context) (context.Context, error) {
-	// Initialize server/cfgclient library.
-	ctx, err := setupCfgClient(ctx, s.testConfigFilePath)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to setup cfgclient library").Err()
-	}
-
 	// Add a in-memory caching layer to avoid hitting datastore all the time.
-	s.configStore.ServiceID = func(context.Context) string { return s.ServiceID }
 	ctx = config.WithStore(ctx, &s.configStore)
 
 	// Load our service configuration.
+	var err error
 	s.ServiceConfig, err = config.Config(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to load service config").Err()

@@ -21,9 +21,11 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 
@@ -218,11 +220,18 @@ func syncServiceConfig(ctx context.Context) error {
 
 // fromDatastore fetches the config from datastore and deserializes it.
 //
-// Returns datastore.ErrNoSuchEntity if the config doesn't exist.
+// Returns datastore.ErrNoSuchEntity if the config doesn't exist, a transient
+// error if the operation fails or a fatal error if the proto can't be
+// deserialized.
 func fromDatastore(ctx context.Context, kind, id string, msg proto.Message) error {
+	ctx = datastore.WithoutTransaction(info.MustNamespace(ctx, ""))
 	ent := cachedConfig{Kind: kind, ID: id}
-	if err := datastore.Get(ctx, &ent); err != nil {
+	switch err := datastore.Get(ctx, &ent); {
+	case err == datastore.ErrNoSuchEntity:
 		return err
+	case err != nil:
+		return errors.Annotate(err, "failed to access datastore").Tag(transient.Tag).Err()
+	default:
+		return proto.Unmarshal(ent.Config, msg)
 	}
-	return proto.Unmarshal(ent.Config, msg)
 }

@@ -19,10 +19,12 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/cfgclient"
+	cfgmem "go.chromium.org/luci/config/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -31,28 +33,35 @@ func TestCache(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		configs := map[config.Set]memory.Files{
-			"services/app-id": {
+		configs := map[config.Set]cfgmem.Files{
+			"services/${appid}": {
 				"services.cfg": `coordinator { admin_auth_group: "a" }`,
 			},
 			"projects/a": {
-				"app-id.cfg": `archive_gs_bucket: "a"`,
+				"${appid}.cfg": `archive_gs_bucket: "a"`,
 			},
 		}
 
 		ctx := context.Background()
+		ctx = memory.Use(ctx)
 		ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
-		ctx = testconfig.WithCommonClient(ctx, memory.New(configs))
-		ctx = WithStore(ctx, &Store{
-			ServiceID: func(context.Context) string { return "app-id" },
-		})
+		ctx = cfgclient.Use(ctx, cfgmem.New(configs))
+		ctx = WithStore(ctx, &Store{})
+
+		sync := func() {
+			So(Sync(ctx), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+		}
+
+		sync()
 
 		Convey("Service config cache", func() {
 			cfg, err := Config(ctx)
 			So(err, ShouldBeNil)
 			So(cfg.Coordinator.AdminAuthGroup, ShouldEqual, "a")
 
-			configs["services/app-id"]["services.cfg"] = `coordinator { admin_auth_group: "b" }`
+			configs["services/${appid}"]["services.cfg"] = `coordinator { admin_auth_group: "b" }`
+			sync()
 
 			// Still seeing the cached config.
 			cfg, err = Config(ctx)
@@ -72,7 +81,8 @@ func TestCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
 
-			configs["projects/a"]["app-id.cfg"] = `archive_gs_bucket: "b"`
+			configs["projects/a"]["${appid}.cfg"] = `archive_gs_bucket: "b"`
+			sync()
 
 			// Still seeing the cached config.
 			cfg, err = ProjectConfig(ctx, "a")
@@ -93,9 +103,10 @@ func TestCache(t *testing.T) {
 			So(err, ShouldEqual, config.ErrNoConfig)
 
 			// Appears.
-			configs["projects/new"] = memory.Files{
-				"app-id.cfg": `archive_gs_bucket: "a"`,
+			configs["projects/new"] = cfgmem.Files{
+				"${appid}.cfg": `archive_gs_bucket: "a"`,
 			}
+			sync()
 
 			// Its absence is still cached.
 			_, err = ProjectConfig(ctx, "new")
@@ -116,6 +127,7 @@ func TestCache(t *testing.T) {
 
 			// Gone.
 			delete(configs, "projects/a")
+			sync()
 
 			// Old config is still cached.
 			cfg, err = ProjectConfig(ctx, "a")

@@ -24,7 +24,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
@@ -250,7 +249,6 @@ func (s storageclient) GetSignedURLs(context.Context, *coordinator.URLSigningReq
 // behave like the real thing.
 func NewClient() *Client {
 	ctx, env := coordinatorTest.Install(false)
-	datastore.GetTestable(ctx).Consistent(true)
 	env.LogIn()
 	env.AuthState.IdentityGroups = []string{"admin", "all", "auth", "services"}
 
