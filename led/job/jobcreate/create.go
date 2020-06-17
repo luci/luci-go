@@ -118,6 +118,12 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 
 		dropRecipePackage(&bb.CipdPackages, bb.BbagentArgs.PayloadPath)
 
+		props := bb.BbagentArgs.GetBuild().GetInput().GetProperties()
+		// everything in here is reflected elsewhere in the Build and will be
+		// re-synthesized by kitchen support or the recipe engine itself, depending
+		// on the final kitchen/bbagent execution mode.
+		delete(props.GetFields(), "$recipe_engine/runtime")
+
 		// drop legacy recipe fields
 		if recipe := bb.BbagentArgs.Build.Infra.Recipe; recipe != nil {
 			bb.BbagentArgs.Build.Infra.Recipe = nil
