@@ -24,14 +24,6 @@ cron:
   schedule: "every 5 minutes"
   target: default
 
-# This cron task supports the refresh of the datastore cache every 10 minutes.
-#
-# TODO(vadimsh): Delete once off server/cfgclient.
-- description: "LUCI Config datastore cache periodic refresh"
-  url: "/admin/config/cache/manager"
-  schedule: "every 10 minutes"
-  target: default
-
 # Update critical stats.
 - description: "Stats updater"
   url: "/admin/cron/stats"

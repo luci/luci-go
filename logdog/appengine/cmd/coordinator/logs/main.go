@@ -18,7 +18,6 @@ import (
 	"context"
 	"net/http"
 
-	"go.chromium.org/gae/service/info"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
@@ -36,11 +35,6 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// Cache for configs.
-var configStore = config.Store{
-	ServiceID: info.AppID,
-}
-
 // Run installs and executes this site.
 func main() {
 	mathrand.SeedRandomly()
@@ -48,6 +42,9 @@ func main() {
 	// Setup process global Context.
 	c := context.Background()
 	c = gologger.StdConfig.Use(c) // Log to STDERR.
+
+	// Cache for configs.
+	configStore := config.Store{}
 
 	// TODO(dnj): We currently instantiate global instances of several services,
 	// with the current service configuration paramers (e.g., name of BigTable

@@ -16,19 +16,16 @@ package coordinator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	cfglib "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/impl/erroring"
+	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
@@ -38,23 +35,15 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-const logdogAppID = "logdog-app-id"
-
 func TestWithProjectNamespace(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A testing environment`, t, func() {
 		ctx := context.Background()
-		ctx = memory.UseWithAppID(ctx, logdogAppID)
+		ctx = memory.Use(ctx)
 
-		// Fake authentication state.
-		as := authtest.FakeState{
-			IdentityGroups: []string{"all"},
-		}
-		ctx = auth.WithState(ctx, &as)
-
-		// Fake project configs.
-		ctx = testconfig.WithCommonClient(ctx, projectConfigs(map[string]*svcconfig.ProjectConfig{
+		// Load fake project configs into the datastore cache.
+		ctx = cfgclient.Use(ctx, projectConfigs(map[string]*svcconfig.ProjectConfig{
 			"all-access": {
 				ReaderAuthGroups: []string{"all"},
 				WriterAuthGroups: []string{"all"},
@@ -64,10 +53,16 @@ func TestWithProjectNamespace(t *testing.T) {
 				WriterAuthGroups: []string{"auth"},
 			},
 		}))
-		ctx = config.WithStore(ctx, &config.Store{
-			ServiceID: info.AppID,
-			NoCache:   true,
-		})
+		config.Sync(ctx)
+
+		// Make them available to handlers.
+		ctx = config.WithStore(ctx, &config.Store{NoCache: true})
+
+		// Fake authentication state.
+		as := authtest.FakeState{
+			IdentityGroups: []string{"all"},
+		}
+		ctx = auth.WithState(ctx, &as)
 
 		Convey(`When using NamespaceAccessNoAuth with anonymous identity`, func() {
 			So(auth.CurrentIdentity(ctx).Kind(), ShouldEqual, identity.Anonymous)
@@ -149,16 +144,6 @@ func TestWithProjectNamespace(t *testing.T) {
 				Convey(`Will fail to access non-existent project with Unauthenticated.`, func() {
 					So(WithProjectNamespace(&ctx, "does-not-exist", tc.access), ShouldBeRPCUnauthenticated)
 				})
-
-				Convey(`When config service returns an unexpected error`, func() {
-					ctx = testconfig.WithCommonClient(ctx, erroring.New(errors.New("misc")))
-
-					for _, proj := range []string{"all-access", "exclusive-access", "does-not-exist"} {
-						Convey(fmt.Sprintf(`Will fail to access %q with Internal.`, proj), func() {
-							So(WithProjectNamespace(&ctx, "all-access", tc.access), ShouldBeRPCInternal)
-						})
-					}
-				})
 			})
 		}
 	})
@@ -168,7 +153,7 @@ func projectConfigs(p map[string]*svcconfig.ProjectConfig) cfglib.Interface {
 	configs := make(map[cfglib.Set]cfgmem.Files, len(p))
 	for projectID, cfg := range p {
 		configs[cfglib.ProjectSet(projectID)] = cfgmem.Files{
-			logdogAppID + ".cfg": proto.MarshalTextString(cfg),
+			"${appid}.cfg": proto.MarshalTextString(cfg),
 		}
 	}
 	return cfgmem.New(configs)

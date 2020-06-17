@@ -17,7 +17,7 @@ package services
 import (
 	"testing"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/server/auth"
 
@@ -32,13 +32,6 @@ func TestServiceAuth(t *testing.T) {
 		c, env := ct.Install(true)
 
 		svr := New().(*logdog.DecoratedServices)
-
-		Convey(`Will reject all traffic if no configuration is present.`, func() {
-			env.ClearCoordinatorConfig(c)
-
-			_, err := svr.Prelude(c, "test", nil)
-			So(err, ShouldBeRPCInternal)
-		})
 
 		Convey(`With an application config installed`, func() {
 			Convey(`Will reject users if there is an authentication error (no state).`, func() {
