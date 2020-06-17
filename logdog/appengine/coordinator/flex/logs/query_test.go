@@ -70,8 +70,6 @@ func TestQuery(t *testing.T) {
 		c, env := ct.Install(true)
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
-		ds.GetTestable(c).Consistent(true)
-
 		var svrBase server
 		svr := newService(&svrBase)
 

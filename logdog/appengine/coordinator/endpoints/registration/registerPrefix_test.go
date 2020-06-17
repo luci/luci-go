@@ -41,7 +41,6 @@ func TestRegisterPrefix(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
 		c, fb := featureBreaker.FilterRDS(c, nil)
-		ds.GetTestable(c).Consistent(true)
 
 		// Mock random number generator so we can predict secrets.
 		c = cryptorand.MockForTest(c, 0)

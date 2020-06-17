@@ -34,8 +34,10 @@ import (
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/config/impl/resolving"
+	"go.chromium.org/luci/config/vars"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
@@ -76,9 +78,6 @@ type Environment struct {
 	// AuthState is the fake authentication state.
 	AuthState authtest.FakeState
 
-	// Config is the luci-config configuration map that is installed.
-	Config map[config.Set]memory.Files
-
 	// Services is the set of installed Coordinator services.
 	Services Services
 
@@ -90,6 +89,11 @@ type Environment struct {
 
 	// StorageCache is the default storage cache instance.
 	StorageCache StorageCache
+
+	// config is the luci-config configuration map that is installed.
+	config map[config.Set]memory.Files
+	// syncConfig moves configs in `config` into the datastore.
+	syncConfig func()
 }
 
 // LogIn installs an testing identity into the testing auth state.
@@ -112,12 +116,6 @@ func (e *Environment) LeaveAllGroups() {
 	e.AuthState.IdentityGroups = nil
 }
 
-// ClearCoordinatorConfig removes the Coordinator configuration entry,
-// simulating a missing config.
-func (e *Environment) ClearCoordinatorConfig(c context.Context) {
-	delete(e.Config, config.ServiceSet(e.ServiceID))
-}
-
 // ModServiceConfig loads the current service configuration, invokes the
 // callback with its contents, and writes the result back to config.
 func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Config)) {
@@ -138,7 +136,7 @@ func (e *Environment) ModProjectConfig(c context.Context, project string, fn fun
 
 func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, path string,
 	msg proto.Message, fn func()) {
-	existing := e.Config[configSet][path]
+	existing := e.config[configSet][path]
 	if existing != "" {
 		if err := proto.UnmarshalText(existing, msg); err != nil {
 			panic(err)
@@ -149,12 +147,13 @@ func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, p
 }
 
 func (e *Environment) addConfigEntry(configSet config.Set, path, content string) {
-	cset := e.Config[configSet]
+	cset := e.config[configSet]
 	if cset == nil {
 		cset = make(memory.Files)
-		e.Config[configSet] = cset
+		e.config[configSet] = cset
 	}
 	cset[path] = content
+	e.syncConfig()
 }
 
 // Install creates a testing Context and installs common test facilities into
@@ -167,11 +166,11 @@ func (e *Environment) addConfigEntry(configSet config.Set, path, content string)
 func Install(useRealIndex bool) (context.Context, *Environment) {
 	e := Environment{
 		ServiceID: "logdog-app-id",
-		Config:    make(map[config.Set]memory.Files),
 		GSClient:  GSClient{},
 		StorageCache: StorageCache{
 			Base: &flex.StorageCache{},
 		},
+		config: make(map[config.Set]memory.Files),
 	}
 
 	// Get our starting context. This installs, among other things, in-memory
@@ -208,11 +207,19 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
 	// Setup luci-config configuration.
-	c = testconfig.WithCommonClient(c, memory.New(e.Config))
-	c = logdogcfg.WithStore(c, &logdogcfg.Store{
-		ServiceID: func(context.Context) string { return e.ServiceID },
-		NoCache:   true,
+	varz := vars.VarSet{}
+	varz.Register("appid", func(context.Context) (string, error) {
+		return e.ServiceID, nil
 	})
+	c = cfgclient.Use(c, resolving.New(&varz, memory.New(e.config)))
+
+	// Capture the context while it doesn't have a lot of other stuff to use it
+	// for Sync. We do it to simulate a sync done from the cron. The context
+	// doesn't have a lot of stuff there.
+	syncCtx := c
+	e.syncConfig = func() { logdogcfg.Sync(syncCtx) }
+
+	c = logdogcfg.WithStore(c, &logdogcfg.Store{NoCache: true})
 
 	// luci-config: Projects.
 	addProjectConfig := func(project string, access ...string) {
