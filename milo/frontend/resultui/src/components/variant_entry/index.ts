@@ -96,7 +96,7 @@ export class VariantEntryElement extends MobxLitElement {
   @computed
   private get variantDef() {
     const def = this.variant!.variant.def;
-    const res = [];
+    const res: Array<[string, string]> = [];
     const seen = new Set();
     for (const key of ORDERED_VARIANT_DEF_KEYS) {
       if (def.hasOwnProperty(key)) {
@@ -142,7 +142,7 @@ export class VariantEntryElement extends MobxLitElement {
               <span
                 class=${STATUS_CLASS_MAP[this.variant.status]}
               >${STATUS_DISPLAY_MAP[this.variant.status]} result</span>
-              |
+              ${this.variantDef.length === 0 ? '' : '|'}
               <span class="light">
                 ${this.variantDef.map(([k, v]) => html`
                 <span class="kv-key">${k}</span>
