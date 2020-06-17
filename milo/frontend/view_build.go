@@ -84,6 +84,7 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 		"BuildPage":      bp,
 		"RetryRequestID": rand.Int31(),
 		"XsrfTokenField": xsrf.TokenField(c.Context),
+		"BannerHTML":     bp.TestResultsOptInHTML(),
 	})
 	return nil
 }
