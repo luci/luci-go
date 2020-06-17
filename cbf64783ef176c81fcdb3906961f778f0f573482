@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "8549473e_b9b72952",
+        "filename": "logdog/server/config/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-17T06:39:55Z",
+      "side": 1,
+      "message": "I\u0027ll reduce it in a separate CL. 5 min is indeed a bit too aggressive, I just want O(1) config fetch rate compared to QPS. 1 min is probably good enough.",
+      "parentUuid": "325f893f_fe3644c5",
+      "range": {
+        "startLine": 112,
+        "startChar": 14,
+        "endLine": 112,
+        "endChar": 29
+      },
+      "revId": "cbf64783ef176c81fcdb3906961f778f0f573482",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79216f8e_14b5c606",
         "filename": "logdog/server/config/datastore.go",
         "patchSetId": 2
