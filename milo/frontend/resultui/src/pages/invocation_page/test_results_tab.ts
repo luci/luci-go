@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
@@ -23,6 +24,7 @@ import '../../components/test_filter';
 import { TestFilter } from '../../components/test_filter';
 import '../../components/test_nav_tree';
 import '../../components/variant_entry';
+import { VariantEntryElement } from '../../components/variant_entry';
 import { consumeContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { TestNode } from '../../models/test_node';
@@ -55,6 +57,11 @@ export class TestResultsTabElement extends MobxLitElement {
     return this.pageState.selectedNode.testCount === 1 && [...this.pageState.selectedNode.tests()].length === 1;
   }
 
+  private toggleAllVariants(expand: boolean) {
+    this.shadowRoot!.querySelectorAll<VariantEntryElement>('tr-variant-entry')
+      .forEach((e) => e.expanded = expand);
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.pageState.selectedTabId = 'test-results';
@@ -80,14 +87,26 @@ export class TestResultsTabElement extends MobxLitElement {
   protected render() {
     const state = this.pageState;
     return html`
-      <tr-test-filter
-        .onFilterChanged=${(filter: TestFilter) => {
-          this.pageState.showExonerated = filter.showExonerated;
-          this.pageState.showExpected = filter.showExpected;
-          this.pageState.showFlaky = filter.showFlaky;
-        }}
-      >
-      </tr-test-filter>
+      <div id="header">
+        <tr-test-filter
+          .onFilterChanged=${(filter: TestFilter) => {
+            this.pageState.showExonerated = filter.showExonerated;
+            this.pageState.showExpected = filter.showExpected;
+            this.pageState.showFlaky = filter.showFlaky;
+          }}
+        >
+        </tr-test-filter>
+        <mwc-button
+          class="action-button"
+          dense unelevated
+          @click=${() => this.toggleAllVariants(true)}
+        >Expand All</mwc-button>
+        <mwc-button
+          class="action-button"
+          dense unelevated
+          @click=${() => this.toggleAllVariants(false)}
+        >Collapse All</mwc-button>
+      </div>
       <div id="main">
         <tr-left-panel>
           <tr-test-nav-tree
@@ -133,6 +152,16 @@ export class TestResultsTabElement extends MobxLitElement {
       display: grid;
       grid-template-rows: auto 1fr;
       overflow-y: hidden;
+    }
+
+    #header {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+    }
+
+    .action-button {
+      margin: 0 5px;
+      --mdc-theme-primary: rgb(0, 123, 255);
     }
 
     #main {
