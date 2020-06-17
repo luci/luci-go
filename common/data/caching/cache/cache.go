@@ -143,13 +143,13 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 		// crbug.com/932396#c123
 		files, err := ioutil.ReadDir(path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to call ioutil.ReadDir(%s): %w", path, err)
+			return nil, errors.Annotate(err, "failed to call ioutil.ReadDir(%s)", path).Err()
 		}
 
 		for _, file := range files {
 			p := filepath.Join(path, file.Name())
 			if err := os.RemoveAll(p); err != nil {
-				return nil, fmt.Errorf("failed to call os.RemoveAll(%s): %w", p, err)
+				return nil, errors.Annotate(err, "failed to call os.RemoveAll(%s)", p).Err()
 			}
 		}
 
@@ -445,7 +445,7 @@ func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest st
 	return d.add(digest, src, func() error {
 		if err := d.Hardlink(digest, dest, perm); err != nil {
 			_ = os.Remove(d.itemPath(digest))
-			return fmt.Errorf("failed to call Hardlink(%s, %s): %w", digest, dest, err)
+			return errors.Annotate(err, "failed to call Hardlink(%s, %s)", digest, dest).Err()
 		}
 		return nil
 	})
@@ -473,11 +473,11 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	if err := os.Link(src, dest); err != nil {
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
-		return fmt.Errorf("failed to call os.Link(%s, %s): %w\n%s", src, dest, err, debugInfo)
+		return errors.Annotate(err, "failed to call os.Link(%s, %s)\n%s", src, dest, debugInfo).Err()
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
-		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
+		return errors.Annotate(err, "failed to call os.Chmod(%s, %#o)", dest, perm).Err()
 	}
 
 	fi, err := os.Stat(dest)
@@ -519,13 +519,13 @@ func (d *disk) respectPolicies() error {
 	for {
 		freeSpace, err := filesystem.GetFreeSpace(d.path)
 		if err != nil {
-			return fmt.Errorf("couldn't estimate the free space at %s: %w", d.path, err)
+			return errors.Annotate(err, "couldn't estimate the free space at %s", d.path).Err()
 		}
 		if d.lru.length() <= d.policies.MaxItems && d.lru.sum <= d.policies.MaxSize && freeSpace >= minFreeSpaceWanted {
 			break
 		}
 		if d.lru.length() == 0 {
-			return fmt.Errorf("no more space to free: current free space=%d policies.MinFreeSpace=%d", freeSpace, minFreeSpaceWanted)
+			return errors.Reason("no more space to free: current free space=%d policies.MinFreeSpace=%d", freeSpace, minFreeSpaceWanted).Err()
 		}
 		k, _ := d.lru.popOldest()
 		_ = os.Remove(d.itemPath(k))
