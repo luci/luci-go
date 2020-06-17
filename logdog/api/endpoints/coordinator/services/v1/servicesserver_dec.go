@@ -25,23 +25,6 @@ type DecoratedServices struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedServices) GetConfig(ctx context.Context, req *empty.Empty) (rsp *GetConfigResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "GetConfig", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.GetConfig(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "GetConfig", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedServices) RegisterStream(ctx context.Context, req *RegisterStreamRequest) (rsp *RegisterStreamResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
