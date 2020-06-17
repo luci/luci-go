@@ -109,7 +109,7 @@ func Config(ctx context.Context) (*svcconfig.Config, error) {
 	cached, err := store.service.Get(ctx, func(prev interface{}) (val interface{}, exp time.Duration, err error) {
 		logging.Infof(ctx, "Cache miss for services.cfg, fetching it from datastore...")
 		cfg, err := fetchServiceConfig(ctx)
-		return cfg, 5 * time.Minute, err
+		return cfg, time.Minute, err
 	})
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func fetchServiceConfig(ctx context.Context) (*svcconfig.Config, error) {
 }
 
 // missingProjectMarker is cached instead of *svcconfig.ProjectConfig if the
-// project is missing to avoid hitting cfgclient all the time when accessing
+// project is missing to avoid hitting datastore all the time when accessing
 // missing projects.
 //
 // Note: strictly speaking caching all missing projects forever in
@@ -166,7 +166,7 @@ func ProjectConfig(ctx context.Context, projectID string) (*svcconfig.ProjectCon
 		if err == config.ErrNoConfig {
 			return &missingProjectMarker, time.Minute, nil
 		}
-		return cfg, 5 * time.Minute, err
+		return cfg, time.Minute, err
 	})
 	if err != nil {
 		return nil, err

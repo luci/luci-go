@@ -68,7 +68,7 @@ func TestCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg.Coordinator.AdminAuthGroup, ShouldEqual, "a")
 
-			tc.Add(6 * time.Minute)
+			tc.Add(2 * time.Minute)
 
 			// The cache expired and we loaded a newer config.
 			cfg, err = Config(ctx)
@@ -89,7 +89,7 @@ func TestCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
 
-			tc.Add(6 * time.Minute)
+			tc.Add(2 * time.Minute)
 
 			// The cache expired and we loaded a newer config.
 			cfg, err = ProjectConfig(ctx, "a")
@@ -134,7 +134,7 @@ func TestCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
 
-			tc.Add(6 * time.Minute)
+			tc.Add(2 * time.Minute)
 
 			// Gone now.
 			_, err = ProjectConfig(ctx, "a")

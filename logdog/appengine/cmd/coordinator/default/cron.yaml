@@ -21,7 +21,7 @@ cron:
 
 - description: "Syncing configs in datastore with LUCI Config"
   url: "/admin/cron/sync-configs"
-  schedule: "every 5 minutes"
+  schedule: "every 1 minutes"
   target: default
 
 # Update critical stats.
