@@ -48,6 +48,9 @@ func handleInterruption(ctx context.Context) context.Context {
 	return ctx
 }
 
+// LedVersion is the current 'symver' of the core led library.
+const LedVersion = "2.0.0"
+
 // Main executes the entire 'led' command line program, including argument
 // parsing and exiting the binary.
 //
@@ -57,8 +60,14 @@ func handleInterruption(ctx context.Context) context.Context {
 func Main(ks job.KitchenSupport) {
 	mathrand.SeedRandomly()
 
+	var legacyKitchen bool
 	if ks == nil {
-		ks = job.NoKitchenSupport()
+		legacyKitchen = false
+		ks = job.NullKitchenSupport{}
+	} else {
+		// In case the caller passed NullKitchenSupport explicitly.
+		_, isNullSupport := ks.(job.NullKitchenSupport)
+		legacyKitchen = !isNullSupport
 	}
 
 	defaults := cmdBaseOptions{
@@ -145,7 +154,9 @@ The spec (as it is) for JobDefinition is at:
 			{}, // spacer
 
 			subcommands.CmdHelp,
-			versioncli.CmdVersion("led"),
+			versioncli.CmdVersion(
+				"led", LedVersion, versioncli.WithFeature(
+					"legacy_kitchen", legacyKitchen)),
 
 			{}, // spacer
 
