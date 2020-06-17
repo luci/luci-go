@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "79bacef3_e95d3b79",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-17T07:05:12Z",
+      "side": 1,
+      "message": "L103 is in a different func. This line belongs to a func that starts in L120",
+      "parentUuid": "84ba63dc_607cb4c6",
+      "range": {
+        "startLine": 134,
+        "startChar": 4,
+        "endLine": 134,
+        "endChar": 13
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "226adc43_e94e442b",
         "filename": "resultdb/internal/invocations/graph.go",
         "patchSetId": 20
@@ -36,6 +60,30 @@
       "writtenOn": "2020-06-17T06:57:50Z",
       "side": 1,
       "message": "Based on L215, c is definitely not included, right?",
+      "range": {
+        "startLine": 195,
+        "startChar": 13,
+        "endLine": 195,
+        "endChar": 29
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de6b411e_0e397598",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-17T07:05:12Z",
+      "side": 1,
+      "message": "c is definitely not included in Redis. \n\nthe intention here is to explain to the readers/callers that they don\u0027t have to include c in `value`. Without this comment, one might think that they must include c because any node is reachable from itself.",
+      "parentUuid": "226adc43_e94e442b",
       "range": {
         "startLine": 195,
         "startChar": 13,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b3f872d8_b2f31bfe",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-17T07:05:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46b8b5b1_78cd52da",
+      "range": {
+        "startLine": 263,
+        "startChar": 5,
+        "endLine": 263,
+        "endChar": 11
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b2eb264_70919269",
         "filename": "resultdb/internal/services/finalizer/finalizer.go",
         "patchSetId": 20
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "7a3592ef_b3903bfd",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-17T07:05:12Z",
+      "side": 1,
+      "message": "yeah, specified that this is about *DML* queries",
+      "parentUuid": "3b2eb264_70919269",
+      "range": {
+        "startLine": 282,
+        "startChar": 7,
+        "endLine": 282,
+        "endChar": 70
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0185bff1_bfb702ba",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 20
@@ -114,6 +210,30 @@
       "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2d6e036_d4b53147",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-17T07:05:12Z",
+      "side": 1,
+      "message": "for consistency with RunIntegrationTests().\nBut that one does not have to be public either, so made both internal",
+      "parentUuid": "0185bff1_bfb702ba",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "5e1b91157ccd47eba3623fdd94fab2a3769c85dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
