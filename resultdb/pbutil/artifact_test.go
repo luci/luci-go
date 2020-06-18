@@ -35,7 +35,7 @@ func TestParseArtifactName(t *testing.T) {
 			})
 
 			Convey(`With a slash`, func() {
-				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/artifacts/a/b")
+				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/artifacts/a%2Fb")
 				So(err, ShouldBeNil)
 				So(artifactID, ShouldEqual, "a/b")
 			})
@@ -58,7 +58,7 @@ func TestParseArtifactName(t *testing.T) {
 			})
 
 			Convey(`With a slash`, func() {
-				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/tests/t/results/r/artifacts/a/b")
+				_, _, _, artifactID, err := ParseArtifactName("invocations/inv/tests/t/results/r/artifacts/a%2Fb")
 				So(err, ShouldBeNil)
 				So(artifactID, ShouldEqual, "a/b")
 			})
@@ -71,13 +71,25 @@ func TestArtifactName(t *testing.T) {
 	Convey(`ArtifactName`, t, func() {
 
 		Convey(`Invocation level`, func() {
-			name := InvocationArtifactName("inv", "a")
-			So(name, ShouldEqual, "invocations/inv/artifacts/a")
+			Convey(`Success`, func() {
+				name := InvocationArtifactName("inv", "a")
+				So(name, ShouldEqual, "invocations/inv/artifacts/a")
+			})
+			Convey(`With a slash`, func() {
+				name := InvocationArtifactName("inv", "a/b")
+				So(name, ShouldEqual, "invocations/inv/artifacts/a%2Fb")
+			})
 		})
 
 		Convey(`Test result level`, func() {
-			name := TestResultArtifactName("inv", "t r", "r", "a")
-			So(name, ShouldEqual, "invocations/inv/tests/t%20r/results/r/artifacts/a")
+			Convey(`Success`, func() {
+				name := TestResultArtifactName("inv", "t r", "r", "a")
+				So(name, ShouldEqual, "invocations/inv/tests/t%20r/results/r/artifacts/a")
+			})
+			Convey(`With a slash`, func() {
+				name := TestResultArtifactName("inv", "t r", "r", "a/b")
+				So(name, ShouldEqual, "invocations/inv/tests/t%20r/results/r/artifacts/a%2Fb")
+			})
 		})
 	})
 }
