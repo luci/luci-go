@@ -55,7 +55,7 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 		Buffer: buffer.Options{
 			BatchSize:     400,
 			MaxLeases:     4,
-			BatchDuration: 10 * time.Second,
+			BatchDuration: time.Second,
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
 		},
 	}
