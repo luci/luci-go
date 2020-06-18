@@ -22,6 +22,30 @@
       "revId": "b7a959c36a24fe7c96601deb180574da32e45a29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cafd0cb1_f5b41f90",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T05:36:25Z",
+      "side": 1,
+      "message": "I\u0027d follow the AIP since the cost of following this is small. Here, we still need to validate the upper value, so checking min value is cheap.",
+      "parentUuid": "b44dfce9_a448d5e6",
+      "range": {
+        "startLine": 501,
+        "startChar": 14,
+        "endLine": 501,
+        "endChar": 20
+      },
+      "revId": "b7a959c36a24fe7c96601deb180574da32e45a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
