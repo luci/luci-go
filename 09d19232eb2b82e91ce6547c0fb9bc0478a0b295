@@ -52,6 +52,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad86e0f4_ef7dd91f",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-18T23:43:18Z",
+      "side": 1,
+      "message": "err nvm, datastore only supports \"AND\" in repeated fields.",
+      "parentUuid": "ea78c585_7eb7c4ed",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
