@@ -34,6 +34,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea78c585_7eb7c4ed",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-18T23:37:21Z",
+      "side": 1,
+      "message": "yes, perf reasons:\nCL: https://chromium-review.googlesource.com/c/infra/infra/+/1682910\nbug: crbug.com/970053\nbut isn\u0027t clear how much it helped at the time.\n\n\u003e given DS filtering capabilities\n\nby this I meant that, FWIU, DS does not support \"AND\" operator in repeated fields, while the semantics here implies conjunction",
+      "parentUuid": "403fd1c5_dcac45b0",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
