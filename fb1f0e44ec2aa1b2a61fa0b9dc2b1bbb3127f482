@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5c49e2e_eb77717c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T21:18:24Z",
+      "side": 1,
+      "message": "In LUCI scheduler and ~all new code I review from Vadim, he usually also does\n\n else {\n   tag as transient\n }\n\nwhich is useful in task/cron handlers which would be retried, but where random datastore noise shouldn\u0027t be alerted on.",
+      "range": {
+        "startLine": 298,
+        "startChar": 2,
+        "endLine": 298,
+        "endChar": 3
+      },
+      "revId": "fb1f0e44ec2aa1b2a61fa0b9dc2b1bbb3127f482",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
