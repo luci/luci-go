@@ -124,6 +124,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96a2bd2a_71afbcd3",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-18T23:56:21Z",
+      "side": 1,
+      "message": "i suspect that python code will never actually execute in production\ni think its ok to simply return NotImplemented in Python",
+      "parentUuid": "b61124c5_c28005f8",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
