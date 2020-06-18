@@ -17,6 +17,7 @@ package pbutil
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -27,8 +28,8 @@ const (
 
 var (
 	artifactIDRe                  = regexpf("^%s$", artifactIDPattern)
-	invocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(%s)", invocationIDPattern, artifactIDPattern)
-	testResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(%s)", invocationIDPattern, resultIDPattern, artifactIDPattern)
+	invocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(.+)", invocationIDPattern)
+	testResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)", invocationIDPattern, resultIDPattern)
 	invocationArtifactNameRe      = regexpf("^%s$", invocationArtifactNamePattern)
 	testResultArtifactNameRe      = regexpf("^%s$", testResultArtifactNamePattern)
 	artifactNameRe                = regexpf("^%s|%s$", testResultArtifactNamePattern, invocationArtifactNamePattern)
@@ -53,27 +54,35 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 		return
 	}
 
+	unescape := func(escaped string, re *regexp.Regexp) (string, error) {
+		unescaped, err := url.PathUnescape(escaped)
+		if err != nil {
+			return "", errors.Annotate(err, "%q", escaped).Err()
+		}
+
+		if err := validateWithRe(re, unescaped); err != nil {
+			return "", errors.Annotate(err, "%q", unescaped).Err()
+		}
+
+		return unescaped, nil
+	}
+
 	if m := invocationArtifactNameRe.FindStringSubmatch(name); m != nil {
 		invocationID = m[1]
-		artifactID = m[2]
+		artifactID, err = unescape(m[2], artifactIDRe)
+		err = errors.Annotate(err, "artifact ID").Err()
 		return
 	}
 
 	if m := testResultArtifactNameRe.FindStringSubmatch(name); m != nil {
-		testID, err = url.PathUnescape(m[2])
-		if err != nil {
-			err = errors.Annotate(err, "test id %q", m[2]).Err()
-			return
-		}
-
-		if ve := validateWithRe(testIDRe, testID); ve != nil {
-			err = errors.Annotate(ve, "test id %q", testID).Err()
-			return
-		}
-
 		invocationID = m[1]
+		if testID, err = unescape(m[2], testIDRe); err != nil {
+			err = errors.Annotate(err, "test ID").Err()
+			return
+		}
 		resultID = m[3]
-		artifactID = m[4]
+		artifactID, err = unescape(m[4], artifactIDRe)
+		err = errors.Annotate(err, "artifact ID").Err()
 		return
 	}
 
@@ -84,12 +93,12 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 // InvocationArtifactName synthesizes a name of an invocation-level artifact.
 // Does not validate IDs, use ValidateInvocationID and ValidateArtifactID.
 func InvocationArtifactName(invocationID, artifactID string) string {
-	return fmt.Sprintf("invocations/%s/artifacts/%s", invocationID, artifactID)
+	return fmt.Sprintf("invocations/%s/artifacts/%s", invocationID, url.PathEscape(artifactID))
 }
 
 // TestResultArtifactName synthesizes a name of an test-result-level artifact.
 // Does not validate IDs, use ValidateInvocationID, ValidateTestID,
 // ValidateResultID and ValidateArtifactID.
 func TestResultArtifactName(invocationID, testID, resulID, artifactID string) string {
-	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, artifactID)
+	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, url.PathEscape(artifactID))
 }
