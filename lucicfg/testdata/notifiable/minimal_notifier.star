@@ -62,9 +62,9 @@ luci.builder(
     executable = 'noop',
     notifies = [
         luci.notifier(
-            name = 'notifier with rotang rotations',
+            name = 'notifier with rotations',
             on_occurrence = ['FAILURE'],
-            notify_rotang_rotations = ['sheriff'],
+            notify_rotation_urls = ['https://rota-ng.appspot.com/legacy/sheriff.json'],
         ),
     ],
 )
@@ -174,7 +174,7 @@ luci.builder(
 #   notifications {
 #     on_occurrence: FAILURE
 #     email {
-#       rota_ng_rotations: "sheriff"
+#       rotation_urls: "https://rota-ng.appspot.com/legacy/sheriff.json"
 #     }
 #   }
 #   builders {
