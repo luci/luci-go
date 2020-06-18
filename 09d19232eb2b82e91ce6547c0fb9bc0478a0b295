@@ -88,6 +88,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d084a6cf_1f7ef643",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T23:46:56Z",
+      "side": 1,
+      "message": "let me elaborate: the SearchBuild is being rewritten to Go by Yuanjun. If this requires substantial changes of Py handler, can we dedicate the time to do it in Go only? The negative effect is longer detail until new Search functionality will be released.",
+      "parentUuid": "2d434622_3b6a8069",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
