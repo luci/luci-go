@@ -160,7 +160,7 @@ type TestResult struct {
 	// LUCI does not interpret test ids in any other way.
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
 	// Identifies a test result in a given invocation and test id.
-	// Regex: ^[[:ascii:]]{1,32}$
+	// Regex: ^[a-z0-9\-_.]{1,32}$
 	ResultId string `protobuf:"bytes,3,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
 	// Description of one specific way of running the test,
 	// e.g. a specific bucket, builder and a test suite.
