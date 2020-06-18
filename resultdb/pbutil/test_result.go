@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	resultIDPattern   = `[[:ascii:]]{1,32}`
+	resultIDPattern   = `[a-z0-9\-_.]{1,32}`
 	maxLenSummaryHTML = 4 * 1024
 )
 
