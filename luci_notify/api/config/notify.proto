@@ -70,7 +70,9 @@ message Notification {
 
     // A list of rotations, for each of which we should notify the currently
     // active member.
-    repeated string rota_ng_rotations = 2;
+    repeated string rotation_urls = 3;
+
+    reserved 2;
   }
 
   // Blamelist is a message representing configuration for notifying the

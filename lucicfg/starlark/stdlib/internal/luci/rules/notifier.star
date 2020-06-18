@@ -41,7 +41,7 @@ def _notifier(
 
       # Who to notify.
       notify_emails=None,
-      notify_rotang_rotations=None,
+      notify_rotation_urls=None,
       notify_blamelist=None,
 
       # Tweaks.
@@ -105,9 +105,10 @@ def _notifier(
         Mutually exclusive with `on_new_status`.
 
     notify_emails: an optional list of emails to send notifications to.
-    notify_rotang_rotations: an optional list of Rota-NG rotations. For each
-        rotation, an email will be sent to the currently active member of that
-        rotation.
+    notify_rotation_urls: an optional list of URLs from which to fetch rotation
+        members. For each URL, an email will be sent to the currently active
+	member of that rotation. The URL must contain a JSON object, with a
+	field named 'emails' containing a list of email address strings.
     notify_blamelist: if True, send notifications to everyone in the computed
         blamelist for the build. Works only if the builder has a repository
         associated with it, see `repo` field in luci.builder(...). Default is
@@ -148,10 +149,10 @@ def _notifier(
   for e in notify_emails:
     validate.string('notify_emails', e)
 
-  notify_rotang_rotations = validate.list(
-      'notify_rotang_rotations', notify_rotang_rotations, required=False)
-  for r in notify_rotang_rotations:
-    validate.string('notify_rotang_rotations', r)
+  notify_rotation_urls = validate.list(
+      'notify_rotation_urls', notify_rotation_urls, required=False)
+  for r in notify_rotation_urls:
+    validate.string('notify_rotation_urls', r)
 
   notify_blamelist = validate.bool('notify_blamelist', notify_blamelist, required=False)
   blamelist_repos_whitelist = validate.list('blamelist_repos_whitelist', blamelist_repos_whitelist)
@@ -178,7 +179,7 @@ def _notifier(
           'failed_step_regexp_exclude': failed_step_regexp_exclude,
 
           'notify_emails': notify_emails,
-          'notify_rotang_rotations': notify_rotang_rotations,
+          'notify_rotation_urls': notify_rotation_urls,
           'notify_blamelist': notify_blamelist,
           'blamelist_repos_whitelist': blamelist_repos_whitelist,
       },
