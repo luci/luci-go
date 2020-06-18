@@ -1,6 +1,4 @@
 dispatch:
-  - url: "*/rpcexplorer/*"
-    module: static
   - url: "*/static/*"
     module: static
   - url: "*/internal/tq/*"

@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
 	pubapi "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -41,6 +42,9 @@ func main() {
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
+
+	// RPC Explorer UI.
+	rpcexplorer.Install(r)
 
 	// Register non-pRPC routes, such as the client bootstrap handler and routes
 	// to support minimal subset of legacy API required to let old CIPD clients
