@@ -16,6 +16,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "403fd1c5_dcac45b0",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-18T23:15:53Z",
+      "side": 1,
+      "message": "Is this done for performance reasons? I was planning on having a repeated field and doing equality filtering on that.",
+      "parentUuid": "2df7f18b_d9dfd401",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
