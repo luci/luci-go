@@ -293,6 +293,9 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 
 	logStream := &coordinator.LogStream{ID: coordinator.LogStreamID(data.options.path)}
 	if err = ds.Get(c, logStream); err != nil {
+		if ds.IsErrNoSuchEntity(err) {
+			err = grpcutil.NotFoundTag.Apply(err)
+		}
 		return
 	}
 	if data.logDesc, err = logStream.DescriptorProto(); err != nil {
