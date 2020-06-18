@@ -318,7 +318,7 @@ func getFieldTypes(t reflect.Type) map[string]reflect.Type {
 	}
 
 	for _, of := range props.OneofTypes {
-		addFieldType(of.Prop, of.Type.Elem().Field(of.Field).Type)
+		addFieldType(of.Prop, of.Type.Elem().Field(0).Type)
 	}
 
 	fieldTypeCache.Lock()
