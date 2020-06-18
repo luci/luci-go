@@ -62,6 +62,7 @@ func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 	return ServerConfig{
 		Address:      addr,
 		AuthToken:    tk,
+		Uploader:     NewArtifactUploader(&mockHTTPClient{}, "example.org"),
 		Recorder:     pb.NewMockRecorderClient(ctl),
 		Invocation:   "invocations/u-foo-1587421194_893166206",
 		invocationID: "u-foo-1587421194_893166206",
