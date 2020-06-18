@@ -481,7 +481,7 @@ func TestComputeRecipients(t *testing.T) {
 					"sheriff6@google.com"
 				]
 			}`,
-			"https://rota-ng.appspot.com/legacy/bad.json": "@!(*",
+			"https://rotations.site/bad.json": "@!(*",
 		}
 		fetch := func(_ context.Context, url string) ([]byte, error) {
 			if s, e := oncallers[url]; e {
@@ -497,7 +497,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"sheriff"},
+							RotationUrls: []string{"https://rota-ng.appspot.com/legacy/sheriff.json"},
 						},
 					},
 				},
@@ -505,7 +505,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "sheriff_ios_template",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"sheriff_ios"},
+							RotationUrls: []string{"https://rota-ng.appspot.com/legacy/sheriff_ios.json"},
 						},
 					},
 				},
@@ -552,7 +552,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"sheriff"},
+							RotationUrls: []string{"https://rota-ng.appspot.com/legacy/sheriff.json"},
 						},
 					},
 				},
@@ -560,7 +560,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "what",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"huh"},
+							RotationUrls: []string{"https://somerandom.url/huh.json"},
 						},
 					},
 				},
@@ -599,7 +599,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"sheriff"},
+							RotationUrls: []string{"https://rota-ng.appspot.com/legacy/sheriff.json"},
 						},
 					},
 				},
@@ -650,7 +650,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"sheriff"},
+							RotationUrls: []string{"https://rota-ng.appspot.com/legacy/sheriff.json"},
 						},
 					},
 				},
@@ -658,7 +658,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "bad JSON",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"bad"},
+							RotationUrls: []string{"https://rotations.site/bad.json"},
 						},
 					},
 				},
@@ -707,7 +707,7 @@ func TestComputeRecipients(t *testing.T) {
 					Notification: &notifypb.Notification{
 						Template: "sheriff_template",
 						Email: &notifypb.Notification_Email{
-							RotaNgRotations: []string{"sheriff"},
+							RotationUrls: []string{"https://rota-ng.appspot.com/legacy/sheriff.json"},
 						},
 					},
 					MatchingSteps: sheriffSteps,

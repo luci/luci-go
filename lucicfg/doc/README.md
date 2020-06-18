@@ -1852,68 +1852,85 @@ Defines configuration of the LUCI-Notify service for this project.
 ### luci.notifier {#luci.notifier}
 
 ```python
-luci.notifier(
-    # Required arguments.
-    name,
-
-    # Optional arguments.
-    on_occurrence = None,
-    on_new_status = None,
-    on_failure = None,
-    on_new_failure = None,
-    on_status_change = None,
-    on_success = None,
-    failed_step_regexp = None,
-    failed_step_regexp_exclude = None,
-    notify_emails = None,
-    notify_rotang_rotations = None,
-    notify_blamelist = None,
-    blamelist_repos_whitelist = None,
-    template = None,
-    notified_by = None,
-)
+luci.notifier()
 ```
 
 
 
 Defines a notifier that sends notifications on events from builders.
 
-A notifier contains a set of conditions specifying what events are considered
-interesting (e.g. a previously green builder has failed), and a set of
-recipients to notify when an interesting event happens. The conditions are
-specified via `on_*` fields, and recipients are specified via `notify_*`
-fields.
+ A notifier contains a set of conditions specifying what events are considered
+ interesting (e.g. a previously green builder has failed), and a set of
+ recipients to notify when an interesting event happens. The conditions are
+ specified via `on_*` fields, and recipients are specified via `notify_*`
+ fields.
 
-The set of builders that are being observed is defined through `notified_by`
-field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
-finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) objects subscribed to
-it, and in turn each notifier filters and forwards this event to corresponding
-recipients.
+ The set of builders that are being observed is defined through `notified_by`
+ field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
+ finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) objects subscribed to
+ it, and in turn each notifier filters and forwards this event to corresponding
+ recipients.
 
-Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
-a `luci.notifiable` object, i.e. both are something that "can be notified"
-when a build finishes. They both are valid targets for `notifies` field in
-[luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
-not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
-the same name.
+ Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
+ a `luci.notifiable` object, i.e. both are something that "can be notified"
+ when a build finishes. They both are valid targets for `notifies` field in
+ [luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
+ not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
+ the same name.
 
-#### Arguments {#luci.notifier-args}
+ Args:
+   name: name of this notifier to reference it from other rules. Required.
 
-* **name**: name of this notifier to reference it from other rules. Required.
-* **on_occurrence**: a list specifying which build statuses to notify for. Notifies for every build status specified. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
-* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
-* **on_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
-* **on_new_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead.  If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
-* **on_status_change**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
-* **on_success**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build success. Default is False.
-* **failed_step_regexp**: an optional regex or list of regexes, which is matched against the names of failed steps. Only build failures containing failed steps matching this regex will cause a notification to be sent. Mutually exclusive with `on_new_status`.
-* **failed_step_regexp_exclude**: an optional regex or list of regexes, which has the same function as `failed_step_regexp`, but negated - this regex must *not* match any failed steps for a notification to be sent. Mutually exclusive with `on_new_status`.
-* **notify_emails**: an optional list of emails to send notifications to.
-* **notify_rotang_rotations**: an optional list of Rota-NG rotations. For each rotation, an email will be sent to the currently active member of that rotation.
-* **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
-* **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
-* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template `default` is defined in the project somewhere, it is used implicitly by the notifier.
-* **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
+   on_occurrence: a list specifying which build statuses to notify for.
+       Notifies for every build status specified. Valid values are string
+       literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+   on_new_status: a list specifying which new build statuses to notify for.
+       Notifies for each build status specified unless the previous build
+       was the same status. Valid values are string literals `SUCCESS`,
+       `FAILURE`, and `INFRA_FAILURE`. Default is None.
+   on_failure: Deprecated. Please use `on_new_status` or `on_occurrence`
+       instead. If True, notify on each build failure. Ignores transient (aka
+       "infra") failures. Default is False.
+   on_new_failure: Deprecated. Please use `on_new_status` or `on_occurrence`
+       instead.  If True, notify on a build failure unless the previous build
+       was a failure too. Ignores transient (aka "infra") failures. Default is
+       False.
+   on_status_change: Deprecated. Please use `on_new_status` or `on_occurrence`
+       instead. If True, notify on each change to a build status (e.g.
+       a green build becoming red and vice versa). Default is False.
+   on_success: Deprecated. Please use `on_new_status` or `on_occurrence`
+       instead. If True, notify on each build success. Default is False.
+
+   failed_step_regexp: an optional regex or list of regexes, which is matched
+       against the names of failed steps. Only build failures containing
+       failed steps matching this regex will cause a notification to be sent.
+       Mutually exclusive with `on_new_status`.
+   failed_step_regexp_exclude: an optional regex or list of regexes, which has
+       the same function as `failed_step_regexp`, but negated - this regex
+       must *not* match any failed steps for a notification to be sent.
+       Mutually exclusive with `on_new_status`.
+
+   notify_emails: an optional list of emails to send notifications to.
+   notify_rotation_urls: an optional list of URLs from which to fetch rotation
+       members. For each URL, an email will be sent to the currently active
+member of that rotation. The URL must contain a JSON object, with a
+field named 'emails' containing a list of email address strings.
+   notify_blamelist: if True, send notifications to everyone in the computed
+       blamelist for the build. Works only if the builder has a repository
+       associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is
+       False.
+
+   blamelist_repos_whitelist: an optional list of repository URLs (e.g.
+       `https://host/repo`) to restrict the blamelist calculation to. If empty
+       (default), only the primary repository associated with the builder is
+       considered, see `repo` field in [luci.builder(...)](#luci.builder).
+   template: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification
+       emails. If not specified, and a template `default` is defined in the
+       project somewhere, it is used implicitly by the notifier.
+
+   notified_by: builders to receive status notifications from. This relation
+       can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
+
 
 
 
