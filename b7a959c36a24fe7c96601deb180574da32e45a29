@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b44dfce9_a448d5e6",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-18T05:22:33Z",
+      "side": 1,
+      "message": "recently i learned that uint32 are not recommended (or rather prohibited) because turns some languages do not support them. do we care? should we ignore this AIP? https://google.aip.dev/141",
+      "range": {
+        "startLine": 501,
+        "startChar": 14,
+        "endLine": 501,
+        "endChar": 20
+      },
+      "revId": "b7a959c36a24fe7c96601deb180574da32e45a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
