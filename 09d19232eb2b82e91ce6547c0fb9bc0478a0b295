@@ -106,6 +106,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b61124c5_c28005f8",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-18T23:52:36Z",
+      "side": 1,
+      "message": "No, I don\u0027t expect substantial changes (should take ~day to implement+deploy in python). If there\u0027s Go code I can update as well, I can do that, too, though, even if it\u0027s WIP.\n\nWDYT?",
+      "parentUuid": "d084a6cf_1f7ef643",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
