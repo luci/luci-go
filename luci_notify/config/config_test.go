@@ -108,39 +108,43 @@ func TestConfigIngestion(t *testing.T) {
 
 		var builders []*Builder
 		So(datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), ShouldBeNil)
-		So(builders, ShouldResemble, []*Builder{
-			{
-				ProjectKey: datastore.MakeKey(c, "Project", "chromium"),
-				ID:         "ci/linux",
-				Repository: "https://chromium.googlesource.com/chromium/src",
-				Notifications: notifypb.Notifications{
-					Notifications: []*notifypb.Notification{
-						{
-							OnOccurrence: []buildbucketpb.Status{
-								buildbucketpb.Status_SUCCESS,
-							},
-							Email: &notifypb.Notification_Email{
-								Recipients: []string{"johndoe@chromium.org", "janedoe@chromium.org"},
-							},
-						},
+
+		// Can't test 'builders' using ShouldResembleProto, as the base object
+		// isn't a proto, it just contains one. Can't test it using
+		// ShouldResemble either, as it has a bug where it doesn't terminate
+		// for protos. So we have to manually pull out the elements of the
+		// array and test the different parts individually.
+		So(builders, ShouldHaveLength, 2)
+		b := builders[0]
+		So(b.ProjectKey, ShouldResemble, datastore.MakeKey(c, "Project", "chromium"))
+		So(b.ID, ShouldEqual, "ci/linux")
+		So(b.Repository, ShouldEqual, "https://chromium.googlesource.com/chromium/src")
+		So(&b.Notifications, ShouldResembleProto, &notifypb.Notifications{
+			Notifications: []*notifypb.Notification{
+				{
+					OnOccurrence: []buildbucketpb.Status{
+						buildbucketpb.Status_SUCCESS,
+					},
+					Email: &notifypb.Notification_Email{
+						Recipients: []string{"johndoe@chromium.org", "janedoe@chromium.org"},
 					},
 				},
 			},
-			{
-				ProjectKey: datastore.MakeKey(c, "Project", "v8"),
-				ID:         "ci/win",
-				Notifications: notifypb.Notifications{
-					Notifications: []*notifypb.Notification{
-						{
-							OnNewStatus: []buildbucketpb.Status{
-								buildbucketpb.Status_SUCCESS,
-								buildbucketpb.Status_FAILURE,
-								buildbucketpb.Status_INFRA_FAILURE,
-							},
-							Email: &notifypb.Notification_Email{
-								Recipients: []string{"johndoe@v8.org", "janedoe@v8.org"},
-							},
-						},
+		})
+
+		b = builders[1]
+		So(b.ProjectKey, ShouldResemble, datastore.MakeKey(c, "Project", "v8"))
+		So(b.ID, ShouldEqual, "ci/win")
+		So(&b.Notifications, ShouldResembleProto, &notifypb.Notifications{
+			Notifications: []*notifypb.Notification{
+				{
+					OnNewStatus: []buildbucketpb.Status{
+						buildbucketpb.Status_SUCCESS,
+						buildbucketpb.Status_FAILURE,
+						buildbucketpb.Status_INFRA_FAILURE,
+					},
+					Email: &notifypb.Notification_Email{
+						Recipients: []string{"johndoe@v8.org", "janedoe@v8.org"},
 					},
 				},
 			},
@@ -181,18 +185,17 @@ func TestConfigIngestion(t *testing.T) {
 
 		var treeClosers []*TreeCloser
 		So(datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), ShouldBeNil)
-		So(treeClosers, ShouldResemble, []*TreeCloser{
-			{
-				BuilderKey:     datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux"),
-				TreeStatusHost: "chromium-status.appspot.com",
-				TreeCloser: notifypb.TreeCloser{
-					TreeStatusHost:          "chromium-status.appspot.com",
-					FailedStepRegexp:        "test",
-					FailedStepRegexpExclude: "experimental_test",
-				},
-				Status: Open,
-				// We don't care what value the "Timestamp" field has.
-			},
+
+		// As above, can't use ShouldResemble or ShouldResembleProto directly.
+		So(treeClosers, ShouldHaveLength, 1)
+		t := treeClosers[0]
+		So(t.BuilderKey, ShouldResemble, datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux"))
+		So(t.TreeStatusHost, ShouldEqual, "chromium-status.appspot.com")
+		So(t.Status, ShouldEqual, Open)
+		So(&t.TreeCloser, ShouldResembleProto, &notifypb.TreeCloser{
+			TreeStatusHost:          "chromium-status.appspot.com",
+			FailedStepRegexp:        "test",
+			FailedStepRegexpExclude: "experimental_test",
 		})
 
 		// Regression test for a bug where we would incorrectly delete entities
