@@ -16,6 +16,24 @@
       "revId": "2a3207bd82c580b8d8320238df04234121da38e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce80b1c8_406c5402",
+        "filename": "gce/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-18T16:01:36Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware recommends to install them first. The order doesn\u0027t really matter. Most apps install them first, to be done with boilerplate part before doing app-specific part.",
+      "parentUuid": "a2281bbe_32056e1a",
+      "revId": "2a3207bd82c580b8d8320238df04234121da38e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
