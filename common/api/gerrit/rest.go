@@ -67,13 +67,9 @@ const (
 // RPC methods of the returned client return an error if a grpc.CallOption is
 // passed.
 func NewRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.GerritClient, error) {
-	switch {
-	case strings.Contains(host, "/"):
+	if strings.Contains(host, "/") {
 		return nil, errors.Reason("invalid host %q", host).Err()
-	case !strings.HasSuffix(host, "-review.googlesource.com"):
-		return nil, errors.New("Gerrit at googlesource subdomains end with '-review'")
 	}
-
 	baseURL := "https://" + host
 	if auth {
 		baseURL += "/a"
