@@ -1147,10 +1147,10 @@ def _notify_notification_pb(node):
       on_new_failure = node.props.on_new_failure,
       on_success = node.props.on_success,
   )
-  if node.props.notify_emails or node.props.notify_rotang_rotations:
+  if node.props.notify_emails or node.props.notify_rotation_urls:
     pb.email = notify_pb.Notification.Email(
         recipients=node.props.notify_emails,
-        rota_ng_rotations=node.props.notify_rotang_rotations,
+        rotation_urls=node.props.notify_rotation_urls,
     )
   if node.props.notify_blamelist:
     pb.notify_blamelist = notify_pb.Notification.Blamelist(

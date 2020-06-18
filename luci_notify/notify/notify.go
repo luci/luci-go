@@ -23,7 +23,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -227,10 +226,10 @@ func computeRecipientsInternal(c context.Context, notifications []ToNotify, inpu
 		for _, toNotify := range notifications {
 			template := toNotify.Notification.Template
 			steps := toNotify.MatchingSteps
-			for _, rotation := range toNotify.Notification.GetEmail().GetRotaNgRotations() {
-				rotation := rotation
+			for _, rotationURL := range toNotify.Notification.GetEmail().GetRotationUrls() {
+				rotationURL := rotationURL
 				ch <- func() error {
-					return fetchRotaOncallers(c, rotation, template, steps, fetchFunc, &recipients, &mRecipients)
+					return fetchOncallers(c, rotationURL, template, steps, fetchFunc, &recipients, &mRecipients)
 				}
 			}
 		}
@@ -239,17 +238,16 @@ func computeRecipientsInternal(c context.Context, notifications []ToNotify, inpu
 	if err != nil {
 		// Just log the error and continue. Nothing much else we can do, and it's possible that we only failed
 		// to fetch some of the recipients, so we can at least return the ones we were able to compute.
-		logging.Errorf(c, "failed to fetch some or all Rota-NG oncallers: %s", err)
+		logging.Errorf(c, "failed to fetch some or all oncallers: %s", err)
 	}
 
 	return recipients
 }
 
-func fetchRotaOncallers(c context.Context, rotation, template string, matchingSteps []*buildbucketpb.Step, fetchFunc func(context.Context, string) ([]byte, error), recipients *[]EmailNotify, mRecipients *sync.Mutex) error {
-	address := "https://rota-ng.appspot.com/legacy/" + url.PathEscape(rotation) + ".json"
-	resp, err := fetchFunc(c, address)
+func fetchOncallers(c context.Context, rotationURL, template string, matchingSteps []*buildbucketpb.Step, fetchFunc func(context.Context, string) ([]byte, error), recipients *[]EmailNotify, mRecipients *sync.Mutex) error {
+	resp, err := fetchFunc(c, rotationURL)
 	if err != nil {
-		err = errors.Annotate(err, "failed to fetch address %q", address).Err()
+		err = errors.Annotate(err, "failed to fetch rotation URL: %s", rotationURL).Err()
 		return err
 	}
 
