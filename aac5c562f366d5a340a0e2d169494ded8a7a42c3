@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9181c6e6_b8bd294e",
+        "filename": "cipd/appengine/frontend/templates/includes/base.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T23:57:05Z",
+      "side": 1,
+      "message": "wow.Curious, why do you want these to be different?",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 0
+      },
+      "revId": "aac5c562f366d5a340a0e2d169494ded8a7a42c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "543d10f6_7694a682",
+        "filename": "cipd/appengine/static/jquery/jquery.min.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T23:57:05Z",
+      "side": 1,
+      "message": "so was this some leftover baggage from before?",
+      "revId": "aac5c562f366d5a340a0e2d169494ded8a7a42c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
