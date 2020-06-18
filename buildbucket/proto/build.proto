@@ -72,13 +72,17 @@ message Build {
     // tag that starts with "patch/gerrit/".
     repeated GerritChange gerrit_changes = 3;
 
-    // If true, the build does not affect prod. In recipe land, runtime.is_experimental will
-    // return true and recipes should not make prod-visible side effects.
-    // By default, experimental builds are not surfaced in RPCs, PubSub
-    // notifications (unless it is callback), and reported in metrics / BigQuery tables
-    // under a different name.
-    // See also include_experimental fields to in request messages.
+    // DEPRECATED
+    //
+    // Equivalent to `"luci.non_production" in experiments`.
+    //
+    // See `Builder.experiments` for well-known experiments.
     bool experimental = 5;
+
+    // The sorted list of experiments enabled on this build.
+    //
+    // See `Builder.experiments` for well-known experiments.
+    repeated string experiments = 6;
   }
 
   // Result of the build executable.
@@ -226,7 +230,11 @@ message Build {
   // What to run when the build is ready to start.
   Executable exe = 24;
 
-  // If true, use the canary build infrastructure.
+  // DEPRECATED
+  //
+  // Equivalent to `"luci.buildbucket.canary_software" in input.experiments`.
+  //
+  // See `Builder.experiments` for well-known experiments.
   bool canary = 25;
 
   // Maximum build pending time.
