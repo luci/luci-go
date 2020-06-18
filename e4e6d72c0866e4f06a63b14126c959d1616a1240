@@ -22,6 +22,30 @@
       "revId": "e4e6d72c0866e4f06a63b14126c959d1616a1240",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd615306_4deaec81",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-18T00:46:06Z",
+      "side": 1,
+      "message": "I had that question when I first started using JS as well. But overtime I get used to it.\n\nMy thought process usually goes like this:\n1. I want to do something with the array (types the array down)\n2. Ah, I want to loop over it. (proceed to type .forEach, without the need of moving cursor back and forth).\n\nI\u0027d imagine the compiler would optimise that so there\u0027s no different in performance?",
+      "parentUuid": "643bf4e9_dede74f1",
+      "range": {
+        "startLine": 62,
+        "startChar": 7,
+        "endLine": 62,
+        "endChar": 14
+      },
+      "revId": "e4e6d72c0866e4f06a63b14126c959d1616a1240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
