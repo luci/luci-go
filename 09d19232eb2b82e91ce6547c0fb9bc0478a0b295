@@ -70,6 +70,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2d434622_3b6a8069",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T23:45:21Z",
+      "side": 1,
+      "message": "+Yuanjun \n\n\nShall this be implemented just in Go then?",
+      "parentUuid": "ad86e0f4_ef7dd91f",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
