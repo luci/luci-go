@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "157c9e1b_078ff9e5",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-18T22:17:08Z",
+      "side": 1,
+      "message": "\u003e oh yep! I need to update this.\n\nPTAL at latest patchset which incorporates this into BuildPredicate.",
+      "parentUuid": "133bbbe6_4fe037af",
+      "range": {
+        "startLine": 390,
+        "startChar": 0,
+        "endLine": 393,
+        "endChar": 32
+      },
+      "revId": "b7a959c36a24fe7c96601deb180574da32e45a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "34cd755f_e6304900",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 6
