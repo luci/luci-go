@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	server "go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/instances/v1"
@@ -45,11 +46,15 @@ func main() {
 	discovery.Enable(&api)
 
 	r := router.New()
+
+	standard.InstallHandlers(r)
+	rpcexplorer.Install(r)
+
 	mw := standard.Base()
 	api.InstallHandlers(r, mw.Extend(vmtoken.Middleware))
 	backend.InstallHandlers(r, mw)
 	config.InstallHandlers(r, mw)
+
 	http.DefaultServeMux.Handle("/", r)
-	standard.InstallHandlers(r)
 	appengine.Main()
 }
