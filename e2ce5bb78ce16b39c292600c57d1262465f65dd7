@@ -46,6 +46,30 @@
       "revId": "e2ce5bb78ce16b39c292600c57d1262465f65dd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe358720_b7710a7b",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-18T06:13:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "56bbec02_3ee2e50a",
+      "range": {
+        "startLine": 34,
+        "startChar": 23,
+        "endLine": 34,
+        "endChar": 33
+      },
+      "revId": "e2ce5bb78ce16b39c292600c57d1262465f65dd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
