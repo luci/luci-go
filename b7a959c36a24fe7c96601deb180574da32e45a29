@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "9cd85bb9_95db9a86",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T05:41:42Z",
+      "side": 1,
+      "message": "what about this one? should we allow searching for an arbitrary experiment or just the special luci.non_production?",
+      "range": {
+        "startLine": 390,
+        "startChar": 0,
+        "endLine": 393,
+        "endChar": 32
+      },
+      "revId": "b7a959c36a24fe7c96601deb180574da32e45a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34cd755f_e6304900",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-18T05:41:42Z",
+      "side": 1,
+      "message": "I\u0027d recommend referencing a bug number in the experiment for future cleanup like \"my_project.use_mysoftware_v2_crbug_999999\"",
+      "range": {
+        "startLine": 435,
+        "startChar": 0,
+        "endLine": 440,
+        "endChar": 63
+      },
+      "revId": "b7a959c36a24fe7c96601deb180574da32e45a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b44dfce9_a448d5e6",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 6
