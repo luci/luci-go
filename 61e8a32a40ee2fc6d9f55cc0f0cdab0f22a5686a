@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7f850eab_6668bb20",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T22:22:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "716de96b_43c02693",
+      "range": {
+        "startLine": 38,
+        "startChar": 11,
+        "endLine": 38,
+        "endChar": 19
+      },
+      "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5bf8a3a_c54a6eb8",
         "filename": "lucicfg/cli/cmds/fmt/fmt.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a2caa67f_bbe58139",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T22:22:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5bf8a3a_c54a6eb8",
+      "range": {
+        "startLine": 163,
+        "startChar": 21,
+        "endLine": 163,
+        "endChar": 29
+      },
+      "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9da99efa_045a743a",
         "filename": "lucicfg/cli/cmds/fmt/fmt.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "382adf9b_31c01726",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T22:22:50Z",
+      "side": 1,
+      "message": "It will result in parser error. If it is a valid Starlark file, it will be formatted regardless of extension.",
+      "parentUuid": "9da99efa_045a743a",
+      "range": {
+        "startLine": 172,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 27
+      },
+      "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
