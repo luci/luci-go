@@ -45,6 +45,30 @@
       "revId": "4a3e913c69e1f2f6189f1c9fd75e709a7af1a2e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd06a640_a39d9c67",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T22:24:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6287f7f0_3c931402",
+      "range": {
+        "startLine": 54,
+        "startChar": 32,
+        "endLine": 54,
+        "endChar": 41
+      },
+      "revId": "4a3e913c69e1f2f6189f1c9fd75e709a7af1a2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
