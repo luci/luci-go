@@ -200,7 +200,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 16.
+// Next ID: 17.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -218,17 +218,26 @@ message ScheduleBuildRequest {
   // Required, unless template_build_id is specified.
   BuilderID builder = 3;
 
-  // If specified, overrides server-defined value of
-  // Build.infra.buildbucket.canary.
-  // Otherwise the value is computed based on the builder config.
-  // See Swarming.task_template_canary_percentage in
-  // ./config/project_config.proto.
+  // DEPRECATED
+  //
+  // Set "luci.buildbucket.canary_software" in `experiments` instead.
+  //
+  // YES sets "luci.buildbucket.canary_software" to true in `experiments`.
+  // NO sets "luci.buildbucket.canary_software" to false in `experiments`.
   Trinary canary = 4;
 
-  // If specified, overrides server-defined value of Build.input.experimental.
-  // Otherwise the value is computed based on the builder config.
-  // See Builder.experimental in ./config/project_config.proto.
+  // DEPRECATED
+  //
+  // Set "luci.non_production" in `experiments` instead.
+  //
+  // YES sets "luci.non_production" to true in `experiments`.
+  // NO sets "luci.non_production" to false in `experiments`.
   Trinary experimental = 5;
+
+  // Sets (or prevents) these experiments on the scheduled build.
+  //
+  // See `Builder.experiments` for well-known experiments.
+  map<string, bool> experiments = 16;
 
   // Properties to include in Build.input.properties.
   //
@@ -379,8 +388,15 @@ message BuildPredicate {
   // Both boundaries are optional.
   TimeRange create_time = 7;
 
-  // If false (default), a build must be non-experimental.
-  // Otherwise it may be experimental or non-experimental.
+  // DEPRECATED
+  //
+  // If false (the default), equivalent to filtering by experiment
+  // "-luci.non_production".
+  //
+  // If true, has no effect (both production and non_production builds will be
+  // returned).
+  //
+  // See `Builder.experiments` for well-known experiments.
   bool include_experimental = 8;
 
   // A build must be in this build range.
@@ -388,8 +404,28 @@ message BuildPredicate {
   // SearchBuildsRequest.page_size=1 can be used to find the previous build.
   BuildRange build = 9;
 
-  // A build must have a matching value of Build.infra.buildbucket.canary.
+  // DEPRECATED
+  //
+  // If YES, equivalent to filtering by experiment
+  // "+luci.buildbucket.canary_software".
+  //
+  // If NO, equivalent to filtering by experiment
+  // "-luci.buildbucket.canary_software".
+  //
+  // See `Builder.experiments` for well-known experiments.
   Trinary canary = 10;
+
+  // A list of experiments to include or exclude from the search results.
+  //
+  // Each entry should look like "[-+]$experiment_name".
+  //
+  // A "+" prefix means that returned builds MUST have that experiment set.
+  // A "-" prefix means that returned builds MUST NOT have that experiment set
+  //   AND that experiment was known for the builder at the time the build
+  //   was scheduled (either via `Builder.experiments` or via
+  //   `ScheduleBuildRequest.experiments`). Well-known experiments are always
+  //   considered to be available.
+  repeated string experiments = 11;
 }
 
 // Half-open build range.

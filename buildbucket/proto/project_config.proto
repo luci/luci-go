@@ -75,7 +75,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 28.
+// Next tag: 29.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -394,11 +394,16 @@ message Builder {
   // but are currently against complicating config with this.
   Toggle auto_builder_dimension = 17;
 
-  // If YES, by default a new build in this builder will be marked as
-  // experimental.
+  // DEPRECATED
   //
-  // This is useful for inherently experimental builders that use production
-  // recipes.
+  // Set the "luci.non_production" experiment in the 'experiments' field below,
+  // instead.
+  //
+  // If YES, sets the "luci.non_production" experiment to 100% for
+  // builds on this builder.
+  //
+  // See the documentation on `experiments` for more details about the
+  // "luci.non_production" experiment.
   Toggle experimental = 18;
 
   // DEPRECATED
@@ -407,10 +412,93 @@ message Builder {
   // remove it from your config and you should be good to go :).
   string luci_migration_host = 19;
 
+  // DEPRECATED
+  //
+  // Set the "luci.buildbucket.canary_software" experiment in the 'experiments'
+  // field below, instead.
+  //
   // Percentage of builds that should use a canary swarming task template.
   // A value from 0 to 100.
   // If omitted, a global server-defined default percentage is used.
   google.protobuf.UInt32Value task_template_canary_percentage = 22;
+
+  // A mapping of experiment name to the percentage chance (0-100) that it will
+  // apply to builds generated from this builder. Experiments are simply strings
+  // which various parts of the stack (from LUCI services down to your build
+  // scripts) may react to in order to enable certain functionality.
+  //
+  // You may set any experiments you like, but experiments beginning with
+  // "luci." are reserved. Experiment names must conform to
+  //
+  //    [a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*
+  //
+  // Any experiments which are selected for a build show up in
+  // `Build.input.experiments`.
+  //
+  // Its recommended that you confine your experiments to smaller, more explicit
+  // targets. For example, prefer the experiment named
+  // "my_project.use_mysoftware_v2_crbug_999999" rather than "use_next_gen".
+  //
+  // It is NOT recommended to 'piggy-back' on top of existing experiment names
+  // for a different purpose. However if you want to, you can have your build
+  // treat the presence of ANY experiment as equivalent to "luci.non_production"
+  // being set for your build (i.e. "if any experiment is set, don't affect
+  // production"). This is ulimately up to you, however.
+  //
+  // Well-known experiments
+  //
+  // # "luci.non_production"  (default 0%)
+  // Builds with this experiment SHOULD NOT affect production resources. This
+  // means that they should e.g. skip uploads steps which send data to locations
+  // which would overlap with production uploads.
+  //
+  // This experiment does not directly affect the behavior of any LUCI services,
+  // but is set by some LUCI tools/systems (for example `led`). It is very
+  // coarse-grained, but is still useful to allow communication from
+  // higher-layer systems that the build in question shouldn't impact
+  // production.
+  //
+  // Although it's tempting to enable new functionality when this experiment is
+  // set, prefer to create your own experiment names for that purpose. For
+  // example:
+  //
+  //    # Good
+  //    upload_bucket = 'gs://production-binaries'
+  //    if 'luci.non_production' in experiments:
+  //      upload_bucket = 'gs://non-production-binaries'
+  //
+  //    # Good
+  //    if 'luci.non_production' not in experiments:
+  //      official_results_service.report(stuff)
+  //
+  //    # Bad
+  //    if 'luci.non_production' in experiments:
+  //      enable_wacky_new_functionality()
+  //
+  //    # Instead
+  //    if 'my_project.wacky_new_functionality' in experiments:
+  //      enable_wacky_new_functionality()
+  //
+  // Currently maps to the "recipe_engine/runtime".is_experimental flag in
+  // recipes, though getting it directly from build.input.experiments is
+  // preferable.
+  //
+  // # "luci.buildbucket.canary_software"  (default 10%)
+  // Builds with this experiment use the canary software versions listed in
+  // Buildbucket's service-wide `settings.cfg`.
+  //
+  // NOTE: There's a good argument for controlling each software package with
+  // its own experiment. However, in practice, we don't usually have more than
+  // one piece of software in canary at the same time. If we were designing this
+  // today, we would likely lean towards individual package control.
+  //
+  // # "luci.buildbucket.use_bbagent"  (default currently 0%)
+  // Builds with this experiment will default to the new 'luciexe'-based
+  // protocol, rather than the deprecated '@@@annotation@@@' protocol.
+  //
+  // Over time we'll be moving the default up from 0%. Ideally we'll be removing
+  // the @@@annotation@@@ protocol entirely in 2020Q3.
+  map<string, int32> experiments = 28;
 
   // This field will set the default value of the "critical" field of
   // all the builds of this builder. Please refer to build.proto for
