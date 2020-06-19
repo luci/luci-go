@@ -25,7 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestInvocatoinFinalization(t *testing.T) {
+func TestInvocationFinalization(t *testing.T) {
 	Convey(`ShouldFinalize`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		app, err := startTestApp(ctx)

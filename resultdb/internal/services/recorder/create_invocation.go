@@ -38,9 +38,12 @@ import (
 )
 
 var (
-	// trustedInvocationCreators is a CIA group that can create invocations with
-	// custom IDs and specify producer_resource field.
-	trustedInvocationCreators = "luci-resultdb-trusted-invocation-creators"
+	permCreateInvocation = realms.RegisterPermission("resultdb.invocations.create")
+
+	// Internal permissions
+	permCreateWithReservedID = realms.RegisterPermission("resultdb.invocations.createWithReservedID")
+	permExportToBigQuery     = realms.RegisterPermission("resultdb.invocations.exportToBigQuery")
+	permSetProducerResource  = realms.RegisterPermission("resultdb.invocations.setProducerResource")
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
@@ -63,20 +66,10 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, trustedCreator bool) error {
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
 	}
-
-	if !trustedCreator {
-		if !strings.HasPrefix(req.InvocationId, "u-") {
-			return errors.Reason(`invocation_id: only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`).Err()
-		}
-		if req.GetInvocation().GetProducerResource() != "" {
-			return errors.Reason(`invocation: producer_resource: only trusted systems are allowed to set producer_resource field for now`).Err()
-		}
-	}
-
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
 		return errors.Annotate(err, "request_id").Err()
 	}
@@ -112,15 +105,72 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	return nil
 }
 
+func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocationRequest) error {
+	inv := in.GetInvocation()
+	realm := inv.GetRealm()
+
+	// TODO(crbug.com/1013316): Remove this fallback when realm is required in
+	// all invocation creations.
+	if realm == "" || realm == "chromium:public" {
+		// legacyTrustedCreator indicates the caller is allowed certain things on realm-less invocations
+		// without being explicitly granted these permissions, by virtue of belonging to a trusted group.
+		switch legacyTrustedCreator, err := auth.IsMember(ctx, "luci-resultdb-trusted-invocation-creators"); {
+		case err != nil:
+			return err
+		case legacyTrustedCreator:
+			return nil
+		}
+		// Set the default realm to avoid checking permissions against the empty realm.
+		realm = "chromium:public"
+	}
+
+	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, []string{realm}); {
+	case err != nil:
+		return err
+	case !allowed:
+		return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to create invocations in realm %q`, realm)
+
+	}
+
+	if !strings.HasPrefix(in.InvocationId, "u-") {
+		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, []string{realm}); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`)
+		}
+	}
+
+	if len(inv.GetBigqueryExports()) > 0 {
+		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, []string{realm}); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set bigquery exports in realm %q`, inv.GetRealm())
+		}
+	}
+
+	if inv.GetProducerResource() != "" {
+		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, []string{realm}); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `only invocations created by trusted system may have a populated producer_resource field`)
+		}
+	}
+
+	return nil
+}
+
 // CreateInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	now := clock.Now(ctx).UTC()
 
-	trustedCreator, err := auth.IsMember(ctx, trustedInvocationCreators)
-	if err != nil {
+	if err := verifyCreateInvocationPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := validateCreateInvocationRequest(in, now, trustedCreator); err != nil {
+
+	if err := validateCreateInvocationRequest(in, now); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId, now, invocations.NewIDSet(invocations.ID(in.InvocationId)))
