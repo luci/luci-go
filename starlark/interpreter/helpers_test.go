@@ -111,6 +111,8 @@ type intrParams struct {
 	predeclared starlark.StringDict
 	preExec     func(th *starlark.Thread, module ModuleKey)
 	postExec    func(th *starlark.Thread, module ModuleKey)
+
+	visited *[]ModuleKey
 }
 
 // runIntr initializes and runs the interpreter over given scripts, by loading
@@ -152,6 +154,10 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 			}
 			sort.Strings(keys)
 		}
+	}
+
+	if p.visited != nil {
+		*p.visited = intr.Visited()
 	}
 
 	return
