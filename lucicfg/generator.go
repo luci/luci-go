@@ -162,6 +162,14 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	if len(state.errors) != 0 {
 		return nil, state.errors
 	}
+
+	// Discover what main package modules we actually executed.
+	for _, key := range intr.Visited() {
+		if key.Package == interpreter.MainPkg {
+			state.Visited = append(state.Visited, key.Path)
+		}
+	}
+
 	return state, nil
 }
 
