@@ -196,6 +196,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "434656c3_456ccfca",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-19T01:13:50Z",
+      "side": 1,
+      "message": "Thanks for pinging me. I\u0027m not fully understand how the experiments will be done. \nPlease include me in future Py implementation CLs. The main SearchBuild flow in Go hasn\u0027t \nbeen done. I can include this new logic when working on Go.",
+      "parentUuid": "c214c535_4e91cd92",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
