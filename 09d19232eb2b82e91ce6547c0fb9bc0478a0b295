@@ -214,6 +214,24 @@
       "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1f5f3e28_9284e863",
+        "filename": "buildbucket/proto/builds_service.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-19T01:23:52Z",
+      "side": 1,
+      "message": "Will do; see the docstring (https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/project_config.proto#425) for \"what\" they are. Basically they\u0027re strings that buildbucket will probabilistically assign to the build at the time its scheduled, and the presence of those strings will let users enable experimental features. The initial use will be to enable the \u0027bbagent\u0027 rollout in more of a gradual way.",
+      "parentUuid": "434656c3_456ccfca",
+      "revId": "09d19232eb2b82e91ce6547c0fb9bc0478a0b295",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
