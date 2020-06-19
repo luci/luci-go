@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/lucicfg/cli/cmds/diff"
 	"go.chromium.org/luci/lucicfg/cli/cmds/fmt"
 	"go.chromium.org/luci/lucicfg/cli/cmds/generate"
+	"go.chromium.org/luci/lucicfg/cli/cmds/lint"
 	"go.chromium.org/luci/lucicfg/cli/cmds/validate"
 )
 
@@ -74,6 +75,7 @@ func GetApplication(params base.Parameters) *cli.Application {
 			generate.Cmd(params),
 			validate.Cmd(params),
 			fmt.Cmd(params),
+			lint.Cmd(params),
 
 			subcommands.Section("Aiding in the migration\n"),
 			diff.Cmd(params),
