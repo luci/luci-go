@@ -271,6 +271,7 @@ type Interpreter struct {
 
 	modules map[ModuleKey]*loadedModule // cache of the loaded modules
 	execed  map[ModuleKey]struct{}      // a set of modules that were ever exec'ed
+	visited []ModuleKey                 // all modules, in order of visits
 	globals starlark.StringDict         // global symbols exposed to all modules
 }
 
@@ -473,6 +474,13 @@ func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (star
 	return intr.runModule(ctx, key, ThreadExecing)
 }
 
+// Visited returns a list of modules visited by the interpreter.
+//
+// Includes both loaded and execed modules, successfully or not.
+func (intr *Interpreter) Visited() []ModuleKey {
+	return intr.visited
+}
+
 // LoadSource returns a body of a file inside a package.
 //
 // It doesn't have to be a Starlark file, can be any text file as long as
@@ -639,6 +647,9 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 			defer intr.PostExec(th, key)
 		}
 	}
+
+	// Record we've been here.
+	intr.visited = append(intr.visited, key)
 
 	// Execute the module. It may 'load' or 'exec' other modules inside, which
 	// will either call LoadModule or ExecModule.
