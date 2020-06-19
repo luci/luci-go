@@ -79,6 +79,19 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 			name: "luci-resultdb-access"
 			members: "anonymous:anonymous"
 		}
+		realms: {
+			api_version: 1
+			permissions: {
+				name: "resultdb.invocations.create"
+			}
+			realms: {
+				name: "chromium:public"
+				bindings: {
+					permissions: 0
+					principals: "anonymous:anonymous"
+				}
+			}
+		}
 	`
 	authDBPath := filepath.Join(tempDir, "authdb.txt")
 	if err := ioutil.WriteFile(authDBPath, []byte(authDBTextProto), 0666); err != nil {
