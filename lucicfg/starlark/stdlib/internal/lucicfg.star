@@ -67,7 +67,9 @@ def _config(
       config_service_host=None,
       config_dir=None,
       tracked_files=None,
-      fail_on_warnings=None
+      fail_on_warnings=None,
+      check_fmt=None,
+      lint_checks=None
   ):
   r"""Sets one or more parameters for the `lucicfg` itself.
 
@@ -116,6 +118,12 @@ def _config(
         Default is False (i.e. warnings do not cause the validation to fail). If
         set to True via `lucicfg.config` and you want to override it to False
         via command line flags use `-fail-on-warnings=false`.
+    check_fmt: if set to True verify Starlark files are properly formatted and
+        fail if they are not. Improperly formatted files can be fixed by running
+        `lucicfg fmt`. Default is False for now.
+    lint_checks: a list of linter rules to apply. If contains `all`, all
+        available rules will be applied. If contains `none`, disables the
+        linter. Default is `['none']` for now.
   """
   if config_service_host != None:
     __native__.set_meta('config_service_host', config_service_host)
@@ -125,6 +133,10 @@ def _config(
     __native__.set_meta('tracked_files', tracked_files)
   if fail_on_warnings != None:
     __native__.set_meta('fail_on_warnings', fail_on_warnings)
+  if check_fmt != None:
+    __native__.set_meta('check_fmt', check_fmt)
+  if lint_checks != None:
+    __native__.set_meta('lint_checks', lint_checks)
 
 
 def _enable_experiment(experiment):

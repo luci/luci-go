@@ -107,6 +107,8 @@ func (c *Subcommand) DefaultMeta() lucicfg.Meta {
 	return lucicfg.Meta{
 		ConfigServiceHost: c.params.ConfigServiceHost,
 		ConfigDir:         "generated",
+		CheckFmt:          false,
+		LintChecks:        []string{"none"},
 	}
 }
 

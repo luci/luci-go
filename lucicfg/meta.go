@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.starlark.net/starlark"
+
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
-
-	"go.starlark.net/starlark"
 )
 
 // Meta contains configuration for the configuration generator itself.
@@ -39,6 +39,8 @@ type Meta struct {
 	ConfigDir         string   `json:"config_dir"`          // output directory to place generated files or '-' for stdout
 	TrackedFiles      []string `json:"tracked_files"`       // e.g. ["*.cfg", "!*-dev.cfg"]
 	FailOnWarnings    bool     `json:"fail_on_warnings"`    // true to treat validation warnings as errors
+	CheckFmt          bool     `json:"check_fmt"`           // true to verify all loaded files are properly formatted
+	LintChecks        []string `json:"lint_checks"`         // active lint checks
 
 	// FlagSet passed to AddFlags and AddOutputFlags.
 	fs *flag.FlagSet
@@ -55,6 +57,8 @@ func (m *Meta) Log(ctx context.Context) {
 	logging.Debugf(ctx, "  config_dir = %q", m.ConfigDir)
 	logging.Debugf(ctx, "  tracked_files = %v", m.TrackedFiles)
 	logging.Debugf(ctx, "  fail_on_warnings = %v", m.FailOnWarnings)
+	logging.Debugf(ctx, "  check_fmt = %v", m.CheckFmt)
+	logging.Debugf(ctx, "  lint_checks = %v", m.LintChecks)
 }
 
 // RebaseConfigDir changes ConfigDir, if it is set, to be absolute by appending
@@ -77,6 +81,8 @@ flag otherwise relative to the main script). If '-', generated configs are just
 printed to stdout in a format useful for debugging.`)
 	fs.Var(luciflag.CommaList(&m.TrackedFiles), "tracked-files", "Globs for files considered generated, see lucicfg.config(...) doc for more info.")
 	fs.BoolVar(&m.FailOnWarnings, "fail-on-warnings", m.FailOnWarnings, "Treat validation warnings as errors.")
+	fs.BoolVar(&m.CheckFmt, "check-fmt", m.CheckFmt, "Check Starlark files are properly formatted after executing them.")
+	fs.Var(luciflag.CommaList(&m.LintChecks), "lint-checks", "Active lint checks, see lucicfg.config(...) doc for more info.")
 }
 
 // detectTouchedFlags is called after flags are parsed to figure out what flags
@@ -162,6 +168,8 @@ func (m *Meta) fieldsMap() map[string]interface{} {
 		"config_dir":          &m.ConfigDir,
 		"tracked_files":       &m.TrackedFiles,
 		"fail_on_warnings":    &m.FailOnWarnings,
+		"check_fmt":           &m.CheckFmt,
+		"lint_checks":         &m.LintChecks,
 	}
 }
 

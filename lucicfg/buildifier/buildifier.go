@@ -28,6 +28,31 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 )
 
+// Finding is information about one lint error.
+//
+// Implements error interface.
+type Finding struct {
+	// TODO(vadimsh): Implement.
+}
+
+// Error returns a short summary of the finding.
+func (f *Finding) Error() string {
+	return "..."
+}
+
+// Format returns a detailed reported printed to stderr.
+func (f *Finding) Format() string {
+	return "..."
+}
+
+// Lint performs checks in all given input files.
+//
+// Returns all findings and a non-nil error if they are blocking.
+func Lint(loader interpreter.Loader, paths []string, checkFmt bool, lintChecks []string) ([]*Finding, error) {
+	// TODO(vadimsh): Implement.
+	return nil, nil
+}
+
 // Visitor processes a parsed Starlark file, returning all errors encountered
 // when processing it.
 type Visitor func(path string, body []byte, f *build.File) errors.MultiError
