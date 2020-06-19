@@ -392,6 +392,29 @@
     },
     {
       "key": {
+        "uuid": "00766109_c8948a87",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:45:45Z",
+      "side": 1,
+      "message": "where is this file closed?",
+      "range": {
+        "startLine": 138,
+        "startChar": 9,
+        "endLine": 138,
+        "endChar": 10
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6c02c538_cb098396",
         "filename": "resultdb/sink/artifact_uploader_test.go",
         "patchSetId": 9
