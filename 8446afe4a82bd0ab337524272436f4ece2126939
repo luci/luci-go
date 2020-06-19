@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b7afbf3_cfe43401",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 21
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-19T23:28:13Z",
+      "side": 1,
+      "message": "IIUC this means that we won\u0027t see much speedup for a buildbucket build until it completes? We\u0027re \u0027just\u0027 trading 1000 Spanner RPCs for 1000 Redis RPCs?\n\nedit: it looks like not, based on the links below. Will read cl to try to see how.\n\nedit 2: do we have a visualization for what the \u0027tree\u0027 of invocations looks like for 8877501336285858192? Maybe it\u0027s more bushy than I\u0027m imagining.",
+      "range": {
+        "startLine": 32,
+        "startChar": 15,
+        "endLine": 32,
+        "endChar": 24
+      },
+      "revId": "8446afe4a82bd0ab337524272436f4ece2126939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4a486c4_1a7b813e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 21
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-19T23:28:13Z",
+      "side": 1,
+      "message": "probably don\u0027t want these links in repo history?",
+      "range": {
+        "startLine": 54,
+        "startChar": 7,
+        "endLine": 54,
+        "endChar": 188
+      },
+      "revId": "8446afe4a82bd0ab337524272436f4ece2126939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
