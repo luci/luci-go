@@ -17,12 +17,16 @@ package sink
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"golang.org/x/time/rate"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -64,7 +68,31 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
-		return c.upload(ctx, b.Data[0].(*uploadTask))
+		var err error
+		task := b.Data[0].(*uploadTask)
+
+		// first attempt?
+		if b.Meta == nil {
+			b.Meta, err = c.cfg.Uploader.NewRequest(task.artName, task.art, cfg.UpdateToken)
+			if err != nil {
+				return errors.Annotate(err, "artifact %q", task.artName).Err()
+			}
+		} else {
+			switch b.Meta.(*http.Request).Body.(type) {
+			case *os.File:
+				// re-opens the artifact on retries
+				b.Meta.(*http.Request).Body, err = os.Open(task.art.GetFilePath())
+				if err != nil {
+					return errors.Annotate(err, "artifact %q", task.artName).Err()
+				}
+			case io.Seeker:
+				// sets the offset to the beginning of the byte stream.
+				b.Meta.(*http.Request).Body.(io.Seeker).Seek(0, io.SeekStart)
+			default:
+				panic("impossible")
+			}
+		}
+		return c.cfg.Uploader.Upload(b.Meta.(*http.Request), task.art)
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for artifact uploads: %s", err))
@@ -80,11 +108,6 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
 	c.ch.CloseAndDrain(ctx)
-}
-
-func (c *artifactChannel) upload(ctx context.Context, t *uploadTask) error {
-	// TODO(crbug/1087955) - upload the artifact to ResultDB.
-	return nil
 }
 
 func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {

@@ -187,6 +187,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		UpdateToken:  r.invocation.UpdateToken,
 		TestIDPrefix: r.testIDPrefix,
 		BaseVariant:  &pb.Variant{Def: r.vars},
+		Uploader:     sink.NewArtifactUploader(r.http, r.host),
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)
