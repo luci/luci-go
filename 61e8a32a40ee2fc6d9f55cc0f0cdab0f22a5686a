@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "716de96b_43c02693",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-19T21:00:32Z",
+      "side": 1,
+      "message": "fmt",
+      "range": {
+        "startLine": 38,
+        "startChar": 11,
+        "endLine": 38,
+        "endChar": 19
+      },
+      "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5bf8a3a_c54a6eb8",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-19T21:00:32Z",
+      "side": 1,
+      "message": "nit: sounds like it mutates the incoming slice. Maybe \"expands\" or \"traverses\" ?",
+      "range": {
+        "startLine": 163,
+        "startChar": 21,
+        "endLine": 163,
+        "endChar": 29
+      },
+      "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9da99efa_045a743a",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-19T21:00:32Z",
+      "side": 1,
+      "message": "what if it is not *.star file?",
+      "range": {
+        "startLine": 172,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 27
+      },
+      "revId": "61e8a32a40ee2fc6d9f55cc0f0cdab0f22a5686a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
