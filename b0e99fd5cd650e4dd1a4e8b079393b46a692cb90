@@ -1,0 +1,434 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a628a5ee_237f8e6a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "nit: keep rdb imports in a separate block",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "312c6614_4a190193",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "why not do what everyone does: mock via https://pkg.go.dev/net/http?tab\u003ddoc#Client.Transport",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 1
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce3e861d_56e8f3b2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "if the intention of making this struct public is to make it reusable, then i think it should not depend on sink protobufs. The body of the artifact can be passed as io.Reader or `func() io.Reader`.",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 21
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1be621fd_c2a5d893",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "comment missing",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36ce9f73_2d36a3c3",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "why is it public?",
+      "range": {
+        "startLine": 50,
+        "startChar": 27,
+        "endLine": 50,
+        "endChar": 28
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8890604_f5c1336a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/net/http?tab\u003ddoc#NewRequestWithContext",
+      "range": {
+        "startLine": 51,
+        "startChar": 18,
+        "endLine": 51,
+        "endChar": 28
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "626ce622_2e789199",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "please annotate errors using errors.Annotate\n\napplies to many places of this file",
+      "range": {
+        "startLine": 59,
+        "startChar": 14,
+        "endLine": 59,
+        "endChar": 17
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d10e0ef_da9ee153",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "please init req.GetBody too",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 9
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4231e23_2ce55106",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "please check returned error",
+      "range": {
+        "startLine": 71,
+        "startChar": 7,
+        "endLine": 71,
+        "endChar": 11
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea64848b_d7c2f88d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "nit: why not just `art.ContenType !\u003d \"\"` ?",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 40
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee8ed304_c133cfd6",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "why is this function makes the user to call NewRequest instead of  just\n\n  u.Upload(ctx, name, art, token)\n\n?",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27e26668_b02b720a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "context.Context missing",
+      "range": {
+        "startLine": 84,
+        "startChar": 32,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d2c69a6_37afff98",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1aeafb9_c93dd1b3",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "we don\u0027t expect 302 here, right?\nin fact i think we expect only https://pkg.go.dev/net/http?tab\u003ddoc#StatusNoContent\nwhy not check that?",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f5fb19f_ccbcedae",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "retries are missing, see https://godoc.org/github.com/luci/luci-go/common/retry",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cec7cf96_389480af",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/io/ioutil@go1.14.4?tab\u003ddoc#NopCloser",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 1
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dc52736_e3adb8d9",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "this doesn\u0027t tell what is this number. please name the return values",
+      "range": {
+        "startLine": 117,
+        "startChar": 57,
+        "endLine": 117,
+        "endChar": 62
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f1040d9_cb1a561b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "make it a const?",
+      "range": {
+        "startLine": 127,
+        "startChar": 18,
+        "endLine": 127,
+        "endChar": 25
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c02c538_cb098396",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "dot imports should go last",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02f9dfbf_4af9faa3",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:40:49Z",
+      "side": 1,
+      "message": "why not standard https://pkg.go.dev/net/http/httptest?tab\u003ddoc",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 1
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
