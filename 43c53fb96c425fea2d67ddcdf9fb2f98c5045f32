@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "669906ff_c69a7e1d",
+        "filename": "ttq/ttqdatastore/iface.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T18:39:48Z",
+      "side": 1,
+      "message": "Document who will be calling these routes and how they do authentication/authorization and what shit they expect to happen in `mw`.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 38
+      },
+      "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "45c6ab57_0d4127d4",
         "filename": "ttq/ttqdatastore/iface.go",
         "patchSetId": 3
@@ -18,6 +41,53 @@
         "startChar": 14,
         "endLine": 81,
         "endChar": 21
+      },
+      "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9aba1da4_705eb2f2",
+        "filename": "ttq/ttqdatastore/iface.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T18:39:48Z",
+      "side": 1,
+      "message": "Task Queue is a generic enough mechanism. Cloud Tasks vs Pub Sub is just an internal transport. So I think ttq name (and AddTask) is still fine. We\u0027ll need to replace taskspb.CreateTaskRequest with something more generic though. I agree it can be done later.",
+      "parentUuid": "45c6ab57_0d4127d4",
+      "range": {
+        "startLine": 81,
+        "startChar": 14,
+        "endLine": 81,
+        "endChar": 21
+      },
+      "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47e3f1ac_0441d3f7",
+        "filename": "ttq/types.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-19T18:39:48Z",
+      "side": 1,
+      "message": "I think it might be future-friendlier just to name it Options, add Cloud Tasks stuff here and pass it to all clients in New:\n\nttqdatastore.New(\u003cimpl specific options\u003e, ttq.Options{\n  ...\n})",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 15
       },
       "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
