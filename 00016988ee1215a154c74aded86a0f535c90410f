@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19e093a5_5eaa1293",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:48:12Z",
+      "side": 1,
+      "message": "this looks like a layering violation: it shouldn\u0027t know anything about body.\n\nthus overall func would be much simpler if ArtifactUploader had retries.",
+      "range": {
+        "startLine": 81,
+        "startChar": 9,
+        "endLine": 81,
+        "endChar": 44
+      },
+      "revId": "00016988ee1215a154c74aded86a0f535c90410f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a52f7e64_0efb79ec",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T22:48:12Z",
+      "side": 1,
+      "message": "this name is too abstract. It can mean \"test result uploader\" too. I think it should be ArtifactUploader.",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 9
+      },
+      "revId": "00016988ee1215a154c74aded86a0f535c90410f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
