@@ -100,10 +100,11 @@ func (dr *diffRun) Run(a subcommands.Application, args []string, env subcommands
 
 func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []string) error {
 	meta := dr.DefaultMeta()
-	output, err := base.GenerateConfigs(ctx, inputFile, &meta, &dr.Meta, dr.Vars)
+	state, err := base.GenerateConfigs(ctx, inputFile, &meta, &dr.Meta, dr.Vars)
 	if err != nil {
 		return err
 	}
+	output := state.Output
 
 	logging.Infof(ctx, "Preparing configs for comparison...")
 
