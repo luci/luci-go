@@ -15,8 +15,10 @@
 package lucicfg
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -167,18 +169,13 @@ func (cs ConfigSet) Validate(ctx context.Context, val ConfigSetValidator) *Valid
 	return res
 }
 
-// Log all messages in the result to the logger at an appropriate logging level.
-func (vr *ValidationResult) Log(ctx context.Context) {
+// Format formats the validation result as a multi-line string
+func (vr *ValidationResult) Format() string {
+	buf := bytes.Buffer{}
 	for _, msg := range vr.Messages {
-		lvl := logging.Info
-		switch msg.Severity {
-		case "WARNING":
-			lvl = logging.Warning
-		case "ERROR", "CRITICAL":
-			lvl = logging.Error
-		}
-		logging.Logf(ctx, lvl, "%s: %s: %s", vr.ConfigSet, msg.Path, msg.Text)
+		fmt.Fprintf(&buf, "%s: %s: %s: %s\n", msg.Severity, vr.ConfigSet, msg.Path, msg.Text)
 	}
+	return buf.String()
 }
 
 // OverallError is nil if the validation succeeded or non-nil if failed.

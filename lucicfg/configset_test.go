@@ -134,7 +134,6 @@ func TestConfigSet(t *testing.T) {
 					Text:     "boo",
 				})
 			}
-			res.Log(ctx) // for code coverage
 			return res
 		}
 

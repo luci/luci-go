@@ -16,34 +16,128 @@ package base
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sync"
 
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/buildifier"
 )
 
-// ConfigServiceFactory returns LUCI Config RPC client that sends requests
+// ValidateParams contains parameters for Validate call.
+type ValidateParams struct {
+	Loader interpreter.Loader // represents the main package
+	Source []string           // paths to lint, relative to the main package
+	Output lucicfg.Output     // generated output files to validate
+	Meta   lucicfg.Meta       // validation options (settable through Starlark)
+
+	// ConfigService returns a LUCI Config RPC client that sends requests
+	// to the given host.
+	//
+	// This is usually just subcommand.ConfigService.
+	ConfigService ConfigServiceFactory
+}
+
+// ConfigServiceFactory returns a LUCI Config RPC client that sends requests
 // to the given host.
-//
-// This is usually just subcommand.ConfigService.
 type ConfigServiceFactory func(ctx context.Context, host string) (*config.Service, error)
 
-// ValidateOutput splits the output into 0 or more config sets and sends them
-// for validation to LUCI Config.
+// Validate validates both input source code and generated config files.
 //
 // It is a common part of subcommands that validate configs.
 //
-// It is allowed for 'host' to be empty. This causes a warning and
-// the validation is skipped.
+// Source code is checked using buildifier linters and formatters, if enabled.
+// This is controlled by LintChecks meta args.
 //
-// If failOnWarn is true, treat warnings from LUCI Config as errors.
+// Generated config files are split into 0 or more config sets and sent to
+// the LUCI Config remote service for validation, if enabled. This is controlled
+// by ConfigServiceHost meta arg.
 //
-// Dumps validation errors to the logger. In addition to detailed validation
-// results, also returns a multi-error with all validation and RPC errors.
-func ValidateOutput(ctx context.Context, output lucicfg.Output, svc ConfigServiceFactory, host string, failOnWarns bool) ([]*lucicfg.ValidationResult, error) {
+// Dumps all validation errors to the stderr. In addition to detailed validation
+// results, also returns a multi-error with all blocking errors.
+func Validate(ctx context.Context, params ValidateParams) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	var localRes []*buildifier.Finding
+	var localErr error
+	go func() {
+		defer wg.Done()
+		localRes, localErr = buildifier.Lint(
+			params.Loader,
+			params.Source,
+			params.Meta.LintChecks,
+		)
+	}()
+
+	var remoteRes []*lucicfg.ValidationResult
+	var remoteErr error
+	go func() {
+		defer wg.Done()
+		remoteRes, remoteErr = validateOutput(ctx,
+			params.Output,
+			params.ConfigService,
+			params.Meta.ConfigServiceHost,
+			params.Meta.FailOnWarnings,
+		)
+	}()
+
+	wg.Wait()
+
+	first := true
+	for _, r := range localRes {
+		if text := r.Format(); text != "" {
+			if first {
+				fmt.Fprintf(os.Stderr, "--------------------------------------------\n")
+				fmt.Fprintf(os.Stderr, "Formatting and linting errors\n")
+				fmt.Fprintf(os.Stderr, "--------------------------------------------\n")
+				first = false
+			}
+			fmt.Fprintf(os.Stderr, "%s", text)
+		}
+	}
+
+	first = true
+	for _, r := range remoteRes {
+		if text := r.Format(); text != "" {
+			if first {
+				fmt.Fprintf(os.Stderr, "--------------------------------------------\n")
+				fmt.Fprintf(os.Stderr, "LUCI Config validation errors\n")
+				fmt.Fprintf(os.Stderr, "--------------------------------------------\n")
+				first = false
+			}
+			fmt.Fprintf(os.Stderr, "%s", text)
+		}
+	}
+
+	var merr errors.MultiError
+	merr = mergeMerr(merr, localErr)
+	merr = mergeMerr(merr, remoteErr)
+	if len(merr) != 0 {
+		return localRes, remoteRes, merr
+	}
+	return localRes, remoteRes, nil
+}
+
+// mergeMerr adds errs to merr returning new merr.
+func mergeMerr(merr errors.MultiError, err error) errors.MultiError {
+	if err == nil {
+		return merr
+	}
+	if many, ok := err.(errors.MultiError); ok {
+		return append(merr, many...)
+	}
+	return append(merr, err)
+}
+
+// validateOutput splits the output into 0 or more config sets and sends them
+// for validation to LUCI Config.
+func validateOutput(ctx context.Context, output lucicfg.Output, svc ConfigServiceFactory, host string, failOnWarns bool) ([]*lucicfg.ValidationResult, error) {
 	configSets, err := output.ConfigSets()
 	if len(configSets) == 0 || err != nil {
 		return nil, err // nothing to validate or failed to serialize
@@ -74,11 +168,9 @@ func ValidateOutput(ctx context.Context, output lucicfg.Output, svc ConfigServic
 	}
 	wg.Wait()
 
-	// Log all messages, assemble the final verdict. Note that OverallError
-	// mutates r.Failed.
+	// Assemble the final verdict. Note that OverallError mutates r.Failed.
 	var merr errors.MultiError
 	for _, r := range results {
-		r.Log(ctx)
 		if err := r.OverallError(failOnWarns); err != nil {
 			merr = append(merr, err)
 		}

@@ -24,8 +24,9 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/lucicfg"
 
+	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/cli/base"
 )
 
@@ -81,6 +82,10 @@ type validateRun struct {
 }
 
 type validateResult struct {
+	// Meta is the final meta parameters used by the generator.
+	Meta *lucicfg.Meta `json:"meta,omitempty"`
+	// LinterFindings is linter findings (if enabled).
+	LinterFindings []*buildifier.Finding `json:"linter_findings,omitempty"`
 	// Validation is per config set validation results.
 	Validation []*lucicfg.ValidationResult `json:"validation"`
 
@@ -138,12 +143,11 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 	if err != nil {
 		return nil, err
 	}
-	res, err := base.ValidateOutput(
-		ctx,
-		configSet.AsOutput("."),
-		vr.ConfigService,
-		vr.Meta.ConfigServiceHost,
-		vr.Meta.FailOnWarnings)
+	_, res, err := base.Validate(ctx, base.ValidateParams{
+		Output:        configSet.AsOutput("."),
+		Meta:          vr.Meta,
+		ConfigService: vr.ConfigService,
+	})
 	return &validateResult{Validation: res}, err
 }
 
@@ -158,12 +162,13 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	}
 
 	meta := vr.DefaultMeta()
-	output, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars)
+	state, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars)
 	if err != nil {
 		return nil, err
 	}
+	output := state.Output
 
-	result := &validateResult{}
+	result := &validateResult{Meta: &meta}
 
 	if meta.ConfigDir != "-" {
 		// Find files that are present on disk, but no longer in the output.
@@ -202,13 +207,14 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		}
 	}
 
-	// Validate via LUCI Config RPC. This silently skips configs not belonging to
-	// any config sets.
-	result.Validation, err = base.ValidateOutput(
-		ctx,
-		output,
-		vr.ConfigService,
-		meta.ConfigServiceHost,
-		meta.FailOnWarnings)
+	// Apply local linters and validate outputs via LUCI Config RPC. This silently
+	// skips configs not belonging to any config sets.
+	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
+		Loader:        state.Inputs.Code,
+		Source:        state.Visited,
+		Output:        output,
+		Meta:          meta,
+		ConfigService: vr.ConfigService,
+	})
 	return result, err
 }
