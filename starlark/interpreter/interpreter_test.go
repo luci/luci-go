@@ -437,6 +437,32 @@ Error: invalid call of non-function (NoneType)`)
 		})
 	})
 
+	Convey("Collects list of visited modules", t, func() {
+		var visited []ModuleKey
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					load("//a.star", "sym")
+					exec("//c.star")
+				`,
+				"a.star": `
+					load("//b.star", _sym="sym")
+					sym = _sym
+				`,
+				"b.star": `sym = 1`,
+				"c.star": `load("//b.star", "sym")`,
+			},
+			visited: &visited,
+		})
+		So(err, ShouldBeNil)
+		So(visited, ShouldResemble, []ModuleKey{
+			{MainPkg, "main.star"},
+			{MainPkg, "a.star"},
+			{MainPkg, "b.star"},
+			{MainPkg, "c.star"},
+		})
+	})
+
 	loadSrcBuiltin := starlark.NewBuiltin("load_src", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, _ []starlark.Tuple) (starlark.Value, error) {
 		src, err := GetThreadInterpreter(th).LoadSource(th, args[0].(starlark.String).GoString())
 		return starlark.String(src), err
