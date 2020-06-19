@@ -25,8 +25,9 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/lucicfg"
 
+	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/cli/base"
 )
 
@@ -70,6 +71,8 @@ type generateRun struct {
 type generateResult struct {
 	// Meta is the final meta parameters used by the generator.
 	Meta *lucicfg.Meta `json:"meta,omitempty"`
+	// LinterFindings is linter findings (if enabled).
+	LinterFindings []*buildifier.Finding `json:"linter_findings,omitempty"`
 	// Validation is per config set validation results (if -validate was used).
 	Validation []*lucicfg.ValidationResult `json:"validation,omitempty"`
 
@@ -91,10 +94,11 @@ func (gr *generateRun) Run(a subcommands.Application, args []string, env subcomm
 
 func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResult, error) {
 	meta := gr.DefaultMeta()
-	output, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars)
+	state, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars)
 	if err != nil {
 		return nil, err
 	}
+	output := state.Output
 
 	result := &generateResult{Meta: &meta}
 
@@ -145,14 +149,16 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		}
 	}
 
-	// Optionally validate via RPC. This is slow, thus off by default.
+	// Optionally validate via RPC and apply linters. This is slow, thus off by
+	// default.
 	if gr.validate {
-		result.Validation, err = base.ValidateOutput(
-			ctx,
-			output,
-			gr.ConfigService,
-			meta.ConfigServiceHost,
-			meta.FailOnWarnings)
+		result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
+			Loader:        state.Inputs.Code,
+			Source:        state.Visited,
+			Output:        output,
+			Meta:          meta,
+			ConfigService: gr.ConfigService,
+		})
 	}
 	return result, nil
 }
