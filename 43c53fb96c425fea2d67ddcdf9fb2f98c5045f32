@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45c6ab57_0d4127d4",
+        "filename": "ttq/ttqdatastore/iface.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-19T10:59:38Z",
+      "side": 1,
+      "message": "I am itching to make things more generic up front to support PubSub and not just tasks, but I must not spend too much time on it,  so for now I just named methods \"AddTask\" with the idea that we can add ~EmitPubSub later on. Of course, the name \"ttq\" doesn\u0027t sound right any more 😞\n\nThoughts?",
+      "range": {
+        "startLine": 81,
+        "startChar": 14,
+        "endLine": 81,
+        "endChar": 21
+      },
+      "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
