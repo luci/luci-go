@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "382da0da_b5d60c8c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 21
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T23:43:05Z",
+      "side": 1,
+      "message": "\u003e IIUC this means that we won\u0027t see much speedup for a buildbucket build until it completes? We\u0027re \u0027just\u0027 trading 1000 Spanner RPCs for 1000 Redis RPCs?\n\nThis would be correct if tasks didn\u0027t have children, but the way it is implemented right now, tasks include \"batch\" invocations. The task invocations are actually empty. This will change with ResultSink, but this is the case with DeriveInvocation RPC.\n\n\u003e edit: it looks like not, based on the links below. Will read cl to try to see how.\n\u003e \n\u003e edit 2: do we have a visualization for what the \u0027tree\u0027 of invocations looks like for 8877501336285858192? Maybe it\u0027s more bushy than I\u0027m imagining.\n\nthe best visualization we have is the list of included invocations in https://ci.chromium.org/inv/build-8878616839014495024/invocation-details. please follow those links to go deeper.",
+      "parentUuid": "5b7afbf3_cfe43401",
+      "range": {
+        "startLine": 32,
+        "startChar": 15,
+        "endLine": 32,
+        "endChar": 24
+      },
+      "revId": "8446afe4a82bd0ab337524272436f4ece2126939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b4a486c4_1a7b813e",
         "filename": "/COMMIT_MSG",
         "patchSetId": 21
@@ -45,6 +69,30 @@
       "revId": "8446afe4a82bd0ab337524272436f4ece2126939",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "681ad644_6fa50155",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 21
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T23:43:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4a486c4_1a7b813e",
+      "range": {
+        "startLine": 54,
+        "startChar": 7,
+        "endLine": 54,
+        "endChar": 188
+      },
+      "revId": "8446afe4a82bd0ab337524272436f4ece2126939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
