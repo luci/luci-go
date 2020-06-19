@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68e0a14c_bdee039c",
+        "filename": "lucicfg/buildifier/buildifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-19T21:06:57Z",
+      "side": 1,
+      "message": "this is, indeed, very short. However \"\" would be shorter.",
+      "range": {
+        "startLine": 43,
+        "startChar": 10,
+        "endLine": 43,
+        "endChar": 11
+      },
+      "revId": "4a3e913c69e1f2f6189f1c9fd75e709a7af1a2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6287f7f0_3c931402",
+        "filename": "lucicfg/cli/base/validate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-19T21:06:57Z",
+      "side": 1,
+      "message": "buildifier?",
+      "range": {
+        "startLine": 54,
+        "startChar": 32,
+        "endLine": 54,
+        "endChar": 41
+      },
+      "revId": "4a3e913c69e1f2f6189f1c9fd75e709a7af1a2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
