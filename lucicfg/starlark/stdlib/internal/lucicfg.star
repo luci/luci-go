@@ -67,7 +67,8 @@ def _config(
       config_service_host=None,
       config_dir=None,
       tracked_files=None,
-      fail_on_warnings=None
+      fail_on_warnings=None,
+      lint_checks=None
   ):
   r"""Sets one or more parameters for the `lucicfg` itself.
 
@@ -116,6 +117,9 @@ def _config(
         Default is False (i.e. warnings do not cause the validation to fail). If
         set to True via `lucicfg.config` and you want to override it to False
         via command line flags use `-fail-on-warnings=false`.
+    lint_checks: a list of linter rules to apply in `lucicfg validate`. If
+        contains `all`, all available rules will be applied. If contains `none`,
+        disables the linter completely. Default is `['none']` for now.
   """
   if config_service_host != None:
     __native__.set_meta('config_service_host', config_service_host)
@@ -125,6 +129,8 @@ def _config(
     __native__.set_meta('tracked_files', tracked_files)
   if fail_on_warnings != None:
     __native__.set_meta('fail_on_warnings', fail_on_warnings)
+  if lint_checks != None:
+    __native__.set_meta('lint_checks', lint_checks)
 
 
 def _enable_experiment(experiment):
