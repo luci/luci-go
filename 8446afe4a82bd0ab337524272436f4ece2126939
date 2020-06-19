@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8bf61fa8_46928a71",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 21
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-19T23:48:15Z",
+      "side": 1,
+      "message": "correct link: https://ci.chromium.org/inv/build-8877501336285858192/invocation-details",
+      "parentUuid": "382da0da_b5d60c8c",
+      "range": {
+        "startLine": 32,
+        "startChar": 15,
+        "endLine": 32,
+        "endChar": 24
+      },
+      "revId": "8446afe4a82bd0ab337524272436f4ece2126939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b4a486c4_1a7b813e",
         "filename": "/COMMIT_MSG",
         "patchSetId": 21
