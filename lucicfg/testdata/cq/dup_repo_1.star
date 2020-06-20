@@ -1,13 +1,13 @@
 luci.project(
-    name = 'zzz',
-    acls = [acl.entry(acl.CQ_COMMITTER, groups = ['g'])],
+    name = "zzz",
+    acls = [acl.entry(acl.CQ_COMMITTER, groups = ["g"])],
 )
 
 luci.cq_group(
-    name = 'group',
+    name = "group",
     watch = [
-        cq.refset('https://example.googlesource.com/repo'),
-        cq.refset('https://example.googlesource.com/a/repo'),
+        cq.refset("https://example.googlesource.com/repo"),
+        cq.refset("https://example.googlesource.com/a/repo"),
     ],
 )
 

@@ -12,46 +12,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Defines symbols available in the global namespace of any lucicfg script."""
+
 # Non-LUCI features.
-load('@stdlib//internal/io.star', _io='io')
-load('@stdlib//internal/lucicfg.star', _lucicfg='lucicfg')
-load('@stdlib//internal/time.star', _time='time')
+load("@stdlib//internal/io.star", _io = "io")
+load("@stdlib//internal/lucicfg.star", _lucicfg = "lucicfg")
+load("@stdlib//internal/time.star", _time = "time")
 
 # Individual LUCI rules.
-load('@stdlib//internal/luci/rules/binding.star', _binding='binding')
-load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
-load('@stdlib//internal/luci/rules/builder.star', _builder='builder')
-load('@stdlib//internal/luci/rules/console_view.star', _console_view='console_view')
-load('@stdlib//internal/luci/rules/console_view_entry.star', _console_view_entry='console_view_entry')
-load('@stdlib//internal/luci/rules/cq.star', _cq='cq')
-load('@stdlib//internal/luci/rules/cq_group.star', _cq_group='cq_group')
-load('@stdlib//internal/luci/rules/cq_tryjob_verifier.star', _cq_tryjob_verifier='cq_tryjob_verifier')
-load('@stdlib//internal/luci/rules/custom_role.star', _custom_role='custom_role')
-load('@stdlib//internal/luci/rules/executable.star', _executable='executable', _recipe='recipe')
-load('@stdlib//internal/luci/rules/external_console_view.star', _external_console_view='external_console_view')
-load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
-load('@stdlib//internal/luci/rules/list_view.star', _list_view='list_view')
-load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list_view_entry')
-load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
-load('@stdlib//internal/luci/rules/milo.star', _milo='milo')
-load('@stdlib//internal/luci/rules/notifier.star', _notifier='notifier')
-load('@stdlib//internal/luci/rules/notifier_template.star', _notifier_template='notifier_template')
-load('@stdlib//internal/luci/rules/notify.star', _notify='notify')
-load('@stdlib//internal/luci/rules/project.star', _project='project')
-load('@stdlib//internal/luci/rules/realm.star', _realm='realm')
-load('@stdlib//internal/luci/rules/tree_closer.star', _tree_closer='tree_closer')
+load("@stdlib//internal/luci/rules/binding.star", _binding = "binding")
+load("@stdlib//internal/luci/rules/bucket.star", _bucket = "bucket")
+load("@stdlib//internal/luci/rules/builder.star", _builder = "builder")
+load("@stdlib//internal/luci/rules/console_view.star", _console_view = "console_view")
+load("@stdlib//internal/luci/rules/console_view_entry.star", _console_view_entry = "console_view_entry")
+load("@stdlib//internal/luci/rules/cq.star", _cq = "cq")
+load("@stdlib//internal/luci/rules/cq_group.star", _cq_group = "cq_group")
+load("@stdlib//internal/luci/rules/cq_tryjob_verifier.star", _cq_tryjob_verifier = "cq_tryjob_verifier")
+load("@stdlib//internal/luci/rules/custom_role.star", _custom_role = "custom_role")
+load("@stdlib//internal/luci/rules/executable.star", _executable = "executable", _recipe = "recipe")
+load("@stdlib//internal/luci/rules/external_console_view.star", _external_console_view = "external_console_view")
+load("@stdlib//internal/luci/rules/gitiles_poller.star", _gitiles_poller = "gitiles_poller")
+load("@stdlib//internal/luci/rules/list_view.star", _list_view = "list_view")
+load("@stdlib//internal/luci/rules/list_view_entry.star", _list_view_entry = "list_view_entry")
+load("@stdlib//internal/luci/rules/logdog.star", _logdog = "logdog")
+load("@stdlib//internal/luci/rules/milo.star", _milo = "milo")
+load("@stdlib//internal/luci/rules/notifier.star", _notifier = "notifier")
+load("@stdlib//internal/luci/rules/notifier_template.star", _notifier_template = "notifier_template")
+load("@stdlib//internal/luci/rules/notify.star", _notify = "notify")
+load("@stdlib//internal/luci/rules/project.star", _project = "project")
+load("@stdlib//internal/luci/rules/realm.star", _realm = "realm")
+load("@stdlib//internal/luci/rules/tree_closer.star", _tree_closer = "tree_closer")
 
 # LUCI helper modules.
-load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
-load('@stdlib//internal/luci/lib/resultdb.star', _resultdb='resultdb')
-load('@stdlib//internal/luci/lib/scheduler.star', _scheduler='scheduler')
-load('@stdlib//internal/luci/lib/swarming.star', _swarming='swarming')
-load('@stdlib//internal/luci/lib/cq.star', _cq_helpers='cq')
+load("@stdlib//internal/luci/lib/acl.star", _acl = "acl")
+load("@stdlib//internal/luci/lib/resultdb.star", _resultdb = "resultdb")
+load("@stdlib//internal/luci/lib/scheduler.star", _scheduler = "scheduler")
+load("@stdlib//internal/luci/lib/swarming.star", _swarming = "swarming")
+load("@stdlib//internal/luci/lib/cq.star", _cq_helpers = "cq")
 
 # Register all LUCI config generator callbacks.
-load('@stdlib//internal/luci/generators.star', _register='register')
-_register()
+load("@stdlib//internal/luci/generators.star", _register = "register")
 
+_register()
 
 # Non-LUCI-specific public API.
 
@@ -66,7 +68,7 @@ luci = struct(
     realm = _realm,
     binding = _binding,
     custom_role = _custom_role,
-    logdog =  _logdog,
+    logdog = _logdog,
     bucket = _bucket,
     executable = _executable,
     recipe = _recipe,

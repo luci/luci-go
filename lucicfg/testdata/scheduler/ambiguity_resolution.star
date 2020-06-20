@@ -1,60 +1,60 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
 luci.recipe(
-    name = 'noop',
-    cipd_package = 'noop',
+    name = "noop",
+    cipd_package = "noop",
 )
 
-luci.bucket(name = 'b1')
-luci.bucket(name = 'b2')
+luci.bucket(name = "b1")
+luci.bucket(name = "b2")
 
 # Poller<->Poller clash.
 luci.gitiles_poller(
-    name = 'poller',
-    bucket = 'b1',
-    repo = 'https://noop.com',
+    name = "poller",
+    bucket = "b1",
+    repo = "https://noop.com",
 )
 luci.gitiles_poller(
-    name = 'poller',
-    bucket = 'b2',
-    repo = 'https://noop.com',
+    name = "poller",
+    bucket = "b2",
+    repo = "https://noop.com",
 )
 
 # Poller<->Builder clash.
 luci.gitiles_poller(
-    name = 'poller-builder',
-    bucket = 'b1',
-    repo = 'https://noop.com',
+    name = "poller-builder",
+    bucket = "b1",
+    repo = "https://noop.com",
 )
 luci.builder(
-    name = 'poller-builder',
-    bucket = 'b2',
-    executable = 'noop',
-    triggered_by = ['b1/poller-builder'],
+    name = "poller-builder",
+    bucket = "b2",
+    executable = "noop",
+    triggered_by = ["b1/poller-builder"],
 )
 
 # Builder<->Builder clash.
 luci.gitiles_poller(
-    name = 'some poller',
-    bucket = 'b1',
-    repo = 'https://noop.com',
+    name = "some poller",
+    bucket = "b1",
+    repo = "https://noop.com",
 )
 luci.builder(
-    name = 'builder-builder',
-    bucket = 'b1',
-    executable = 'noop',
-    triggered_by = ['some poller'],
+    name = "builder-builder",
+    bucket = "b1",
+    executable = "noop",
+    triggered_by = ["some poller"],
 )
 luci.builder(
-    name = 'builder-builder',
-    bucket = 'b2',
-    executable = 'noop',
-    triggered_by = ['some poller'],
+    name = "builder-builder",
+    bucket = "b2",
+    executable = "noop",
+    triggered_by = ["some poller"],
 )
 
 # Expect configs:

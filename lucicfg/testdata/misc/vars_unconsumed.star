@@ -4,7 +4,7 @@
 # unconsumed_var1=
 # unconsumed_var2=
 
-lucicfg.var(expose_as='consumed_var')
+lucicfg.var(expose_as = "consumed_var")
 
 # Expect errors:
 #

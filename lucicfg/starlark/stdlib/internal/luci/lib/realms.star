@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load('@stdlib//internal/experiments.star', 'experiments')
+"""Helper library for working with LUCI Realms."""
 
+load("@stdlib//internal/experiments.star", "experiments")
 
 realms = struct(
     # LUCI Realms integration is hidden behind an experiment for now.
-    experiment = experiments.register('crbug.com/1085650'),
+    experiment = experiments.register("crbug.com/1085650"),
 )

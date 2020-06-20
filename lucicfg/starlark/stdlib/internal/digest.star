@@ -14,13 +14,12 @@
 
 """Functions to calculate hash digests of blocks of data."""
 
-load('@stdlib//internal/strutil.star', 'strutil')
-
+load("@stdlib//internal/strutil.star", "strutil")
 
 digest = struct(
     sha256 = struct(
         size = 32,
-        bytes = lambda blob: __native__.hash_digest('SHA256', blob),
-        hex = lambda blob: strutil.hex_encode(__native__.hash_digest('SHA256', blob)),
+        bytes = lambda blob: __native__.hash_digest("SHA256", blob),
+        hex = lambda blob: strutil.hex_encode(__native__.hash_digest("SHA256", blob)),
     ),
 )

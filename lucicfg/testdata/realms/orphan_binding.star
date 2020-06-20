@@ -1,7 +1,7 @@
-lucicfg.enable_experiment('crbug.com/1085650')
+lucicfg.enable_experiment("crbug.com/1085650")
 
-luci.project(name = 'proj')
-luci.binding(roles = 'role/a')
+luci.project(name = "proj")
+luci.binding(roles = "role/a")
 
 # Expect errors like:
 #
