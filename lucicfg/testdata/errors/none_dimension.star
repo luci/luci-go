@@ -1,20 +1,20 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 luci.builder(
-    name = 'b',
-    bucket = 'ci',
+    name = "b",
+    bucket = "ci",
     executable = luci.recipe(
-        name = 'noop',
-        cipd_package = 'noop',
+        name = "noop",
+        cipd_package = "noop",
     ),
     dimensions = {
-        'key': None,
+        "key": None,
     },
 )
 

@@ -1,9 +1,9 @@
 luci.project(
-    name = 'proj',
+    name = "proj",
     # no 'buildbucket' attribute
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 # TODO(vadimsh): Filter out stdlib@ frames from public stack traces.
 

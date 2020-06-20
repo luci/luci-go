@@ -1,10 +1,10 @@
-luci.project(name = 'zzz')
+luci.project(name = "zzz")
 
 luci.cq_group(
-    name = 'first',
-    watch = cq.refset('https://example.googlesource.com/repo'),
+    name = "first",
+    watch = cq.refset("https://example.googlesource.com/repo"),
     acls = [
-        acl.entry(acl.CQ_COMMITTER, groups = ['committers']),
+        acl.entry(acl.CQ_COMMITTER, groups = ["committers"]),
     ],
 )
 

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Exposes descriptor sets with some built-in well-known protos."""
+
 # wellknown_descpb is proto.DescriptorSet with following files:
 #   load('@proto//google/protobuf/any.proto', any_pb='google.protobuf')
 #   load('@proto//google/protobuf/duration.proto', duration_pb='google.protobuf')

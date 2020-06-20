@@ -1,43 +1,43 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    milo = 'luci-milo.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    milo = "luci-milo.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 luci.recipe(
-    name = 'main/recipe',
-    cipd_package = 'recipe/bundles/main',
+    name = "main/recipe",
+    cipd_package = "recipe/bundles/main",
 )
 
 luci.builder(
-    name = 'b1',
-    bucket = 'ci',
-    executable = 'main/recipe',
+    name = "b1",
+    bucket = "ci",
+    executable = "main/recipe",
 )
 
 luci.builder(
-    name = 'b2',
-    bucket = 'ci',
-    executable = 'main/recipe',
+    name = "b2",
+    bucket = "ci",
+    executable = "main/recipe",
 )
 
-b2_entry = luci.list_view_entry('b2')
+b2_entry = luci.list_view_entry("b2")
 
 luci.list_view(
-    name = 'View 1',
+    name = "View 1",
     entries = [
-        'b1',
+        "b1",
         b2_entry,
     ],
 )
 
 luci.list_view(
-    name = 'View 2',
+    name = "View 2",
     entries = [
-        'b1',
+        "b1",
         b2_entry,
     ],
 )

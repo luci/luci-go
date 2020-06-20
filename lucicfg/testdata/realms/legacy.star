@@ -1,13 +1,11 @@
-lucicfg.enable_experiment('crbug.com/1085650')
+lucicfg.enable_experiment("crbug.com/1085650")
 
 luci.project(
-    name = 'proj',
-
-    buildbucket = 'cr-buildbucket-dev.appspot.com',
-    logdog = 'luci-logdog-dev.appspot.com',
-    scheduler = 'luci-scheduler-dev.appspot.com',
-    swarming = 'chromium-swarm-dev.appspot.com',
-
+    name = "proj",
+    buildbucket = "cr-buildbucket-dev.appspot.com",
+    logdog = "luci-logdog-dev.appspot.com",
+    scheduler = "luci-scheduler-dev.appspot.com",
+    swarming = "chromium-swarm-dev.appspot.com",
     acls = [
         acl.entry(
             roles = [
@@ -15,60 +13,60 @@ luci.project(
                 acl.BUILDBUCKET_READER,
                 acl.SCHEDULER_READER,
             ],
-            groups = ['readers1', 'readers2'],
-            users = ['r1@example.com', 'r2@example.com'],
-            projects = ['pr1', 'pr2'],
+            groups = ["readers1", "readers2"],
+            users = ["r1@example.com", "r2@example.com"],
+            projects = ["pr1", "pr2"],
         ),
         acl.entry(
             roles = [
                 acl.BUILDBUCKET_TRIGGERER,
                 acl.SCHEDULER_TRIGGERER,
             ],
-            groups = 'triggerers',
+            groups = "triggerers",
         ),
         acl.entry(
             roles = [
                 acl.BUILDBUCKET_OWNER,
                 acl.SCHEDULER_OWNER,
             ],
-            groups = 'owners',
+            groups = "owners",
         ),
         acl.entry(
             roles = [
                 acl.LOGDOG_READER,
                 acl.LOGDOG_WRITER,
             ],
-            groups = 'logdog',
+            groups = "logdog",
         ),
         acl.entry(
             roles = acl.CQ_COMMITTER,
-            groups = 'committer',
+            groups = "committer",
         ),
         acl.entry(
             roles = acl.CQ_DRY_RUNNER,
-            groups = 'dry-runner',
+            groups = "dry-runner",
         ),
     ],
 )
 
 luci.bucket(
-    name = 'bucket',
+    name = "bucket",
     acls = [
         acl.entry(
             roles = acl.BUILDBUCKET_OWNER,
-            groups = 'bucket-owner',
+            groups = "bucket-owner",
         ),
     ],
 )
 
 luci.builder(
-    name = 'builder',
-    bucket = 'bucket',
+    name = "builder",
+    bucket = "bucket",
     executable = luci.recipe(
-        name = 'recipe',
-        cipd_package = 'recipe/bundles/main',
+        name = "recipe",
+        cipd_package = "recipe/bundles/main",
     ),
-    service_account = 'builder@example.com',
+    service_account = "builder@example.com",
 )
 
 # Expect configs:

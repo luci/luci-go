@@ -1,13 +1,12 @@
 load("@stdlib//internal/graph.star", "graph")
 
-graph.add_node(key = graph.key('node', 'name'))
-graph.add_edge(graph.key('node', 'name'), graph.key('node', 'missing'), 'rel')
-
+graph.add_node(key = graph.key("node", "name"))
+graph.add_edge(graph.key("node", "name"), graph.key("node", "missing"), "rel")
 
 def gen(ctx):
-  fail('must not be called')
-lucicfg.generator(impl = gen)
+    fail("must not be called")
 
+lucicfg.generator(impl = gen)
 
 # Expect errors:
 #

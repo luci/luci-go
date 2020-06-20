@@ -1,80 +1,78 @@
 luci.builder.defaults.properties.set({
-    'base': 'base val',
-    'overridden': 'original',
+    "base": "base val",
+    "overridden": "original",
 })
-luci.builder.defaults.service_account.set('default@example.com')
-luci.builder.defaults.caches.set([swarming.cache('base')])
+luci.builder.defaults.service_account.set("default@example.com")
+luci.builder.defaults.caches.set([swarming.cache("base")])
 luci.builder.defaults.execution_timeout.set(time.hour)
 luci.builder.defaults.dimensions.set({
-    'base': 'base val',
-    'overridden': ['original 1', 'original 2'],
+    "base": "base val",
+    "overridden": ["original 1", "original 2"],
 })
 luci.builder.defaults.priority.set(30)
-luci.builder.defaults.swarming_tags.set(['base:tag'])
+luci.builder.defaults.swarming_tags.set(["base:tag"])
 luci.builder.defaults.expiration_timeout.set(2 * time.hour)
-luci.builder.defaults.triggering_policy.set(scheduler.greedy_batching(max_batch_size=5))
+luci.builder.defaults.triggering_policy.set(scheduler.greedy_batching(max_batch_size = 5))
 luci.builder.defaults.build_numbers.set(True)
 luci.builder.defaults.experimental.set(True)
 luci.builder.defaults.task_template_canary_percentage.set(90)
 
-luci.recipe.defaults.cipd_package.set('cipd/default')
-luci.recipe.defaults.cipd_version.set('refs/default')
-
+luci.recipe.defaults.cipd_package.set("cipd/default")
+luci.recipe.defaults.cipd_version.set("refs/default")
 
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 # Pick up all defaults.
 luci.builder(
-    name = 'b1',
-    bucket = 'ci',
-    executable = luci.recipe(name = 'recipe1'),
+    name = "b1",
+    bucket = "ci",
+    executable = luci.recipe(name = "recipe1"),
 )
 
 # Pick defaults and merge with provided values.
 luci.builder(
-    name = 'b2',
-    bucket = 'ci',
-    executable = 'recipe1',
+    name = "b2",
+    bucket = "ci",
+    executable = "recipe1",
     properties = {
-        'base': None,  # won't override the default
-        'overridden': 'new',
-        'extra': 'extra',
+        "base": None,  # won't override the default
+        "overridden": "new",
+        "extra": "extra",
     },
-    caches = [swarming.cache('new')],
+    caches = [swarming.cache("new")],
     dimensions = {
-        'base': None,  # won't override the default
-        'overridden': ['new 1', 'new 2'],  # will override, not merge
+        "base": None,  # won't override the default
+        "overridden": ["new 1", "new 2"],  # will override, not merge
     },
-    swarming_tags = ['extra:tag'],
+    swarming_tags = ["extra:tag"],
 )
 
 # Override various scalar values. In particular False, 0 and '' are treated as
 # not None.
 luci.builder(
-    name = 'b3',
-    bucket = 'ci',
+    name = "b3",
+    bucket = "ci",
     executable = luci.recipe(
-        name = 'recipe2',
-        cipd_package = 'cipd/another',
-        cipd_version = 'refs/another',
+        name = "recipe2",
+        cipd_package = "cipd/another",
+        cipd_version = "refs/another",
     ),
-    service_account = 'new@example.com',
+    service_account = "new@example.com",
     execution_timeout = 30 * time.minute,
     priority = 1,
     expiration_timeout = 20 * time.minute,
-    triggering_policy = scheduler.greedy_batching(max_batch_size=1),
+    triggering_policy = scheduler.greedy_batching(max_batch_size = 1),
     build_numbers = False,
     experimental = False,
     task_template_canary_percentage = 0,
 )
-
 
 # Expect configs:
 #

@@ -1,8 +1,8 @@
-luci.project(name = 'test')
+luci.project(name = "test")
 
 lucicfg.emit(
-    dest = 'from-exec',
-    data = str(lucicfg.current_module()) + '\n',
+    dest = "from-exec",
+    data = str(lucicfg.current_module()) + "\n",
 )
 
 # Expect configs:

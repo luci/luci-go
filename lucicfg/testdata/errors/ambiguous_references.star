@@ -1,74 +1,69 @@
 luci.project(
-    name = 'proj',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
+    name = "proj",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
 )
-
 
 luci.recipe(
-    name = 'noop',
-    cipd_package = 'noop',
+    name = "noop",
+    cipd_package = "noop",
 )
 
-
-luci.bucket(name = 'b1')
-luci.bucket(name = 'b2')
-
+luci.bucket(name = "b1")
+luci.bucket(name = "b2")
 
 luci.builder(
-    name = 'b1 builder',
-    bucket = 'b1',
-    executable = 'noop',
-    service_account = 'noop@example.com',
+    name = "b1 builder",
+    bucket = "b1",
+    executable = "noop",
+    service_account = "noop@example.com",
 )
 luci.builder(
-    name = 'ambiguous builder',
-    bucket = 'b1',
-    executable = 'noop',
+    name = "ambiguous builder",
+    bucket = "b1",
+    executable = "noop",
 )
 luci.builder(
-    name = 'b2 builder',
-    bucket = 'b2',
-    executable = 'noop',
+    name = "b2 builder",
+    bucket = "b2",
+    executable = "noop",
 )
 luci.builder(
-    name = 'ambiguous builder',
-    bucket = 'b2',
-    executable = 'noop',
+    name = "ambiguous builder",
+    bucket = "b2",
+    executable = "noop",
 )
-
 
 luci.gitiles_poller(
-    name = 'valid',
-    bucket = 'b1',
-    repo = 'https://noop.com',
+    name = "valid",
+    bucket = "b1",
+    repo = "https://noop.com",
     triggers = [
-        'b1 builder',
-        'b1/b1 builder',  # this is allowed
-        'b2 builder',
-        'b2/ambiguous builder',
+        "b1 builder",
+        "b1/b1 builder",  # this is allowed
+        "b2 builder",
+        "b2/ambiguous builder",
     ],
 )
 
 luci.gitiles_poller(
-    name = 'ambiguous',
-    bucket = 'b1',
-    repo = 'https://noop.com',
+    name = "ambiguous",
+    bucket = "b1",
+    repo = "https://noop.com",
     triggers = [
-        'b1 builder',
-        'ambiguous builder',  # error: is it b1 or b2?
+        "b1 builder",
+        "ambiguous builder",  # error: is it b1 or b2?
     ],
 )
 
-
 luci.builder(
-    name = 'triggered',
-    bucket = 'b1',
-    executable = 'noop',
+    name = "triggered",
+    bucket = "b1",
+    executable = "noop",
     triggered_by = [
-        'b1 builder',
-        'ambiguous builder',  # error: is it b1 or b2?
+        "b1 builder",
+        "ambiguous builder",  # error: is it b1 or b2?
     ],
 )
 

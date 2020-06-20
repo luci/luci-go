@@ -1,6 +1,6 @@
 luci.project(
-    name = 'project',
-    config_dir = 'abc/./././/def',
+    name = "project",
+    config_dir = "abc/./././/def",
 )
 
 # Expect configs:
