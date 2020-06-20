@@ -238,7 +238,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 3e8},
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c1/c2/t1.html"),
 				},
 				Artifacts: map[string]string{"isolate_object_list": "harness/log.txt"},
 			},
@@ -248,7 +250,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 2e8},
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c1/c2/t1.html"),
 				},
 				Artifacts: map[string]string{"isolate_object_list": "harness/retry_1/log.txt"},
 			},
@@ -258,7 +262,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 1e8},
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c1/c2/t1.html"),
 				},
 				Artifacts: map[string]string{"isolate_object_list": "harness/retry_2/log.txt"},
 			},
@@ -270,7 +276,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 5e7},
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c1/c2/t2.html"),
 				},
 			},
 			{
@@ -279,7 +287,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_FAIL,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 5e7},
-					Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "FAIL",
+						"test_name", "c1/c2/t2.html"),
 				},
 			},
 			{
@@ -288,7 +298,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 5e7},
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c1/c2/t2.html"),
 				},
 			},
 			{
@@ -297,17 +309,21 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_CRASH,
 					Expected: false,
 					Duration: &duration.Duration{Nanos: 5e7},
-					Tags:     pbutil.StringPairs("json_format_status", "CRASH"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "CRASH",
+						"test_name", "c1/c2/t2.html"),
 				},
 			},
 
 			// Test 3
 			{
 				TestResult: &pb.TestResult{
-					TestId:      "ninja://tests/c2/t3.html",
-					Status:      pb.TestStatus_FAIL,
-					Expected:    false,
-					Tags:        pbutil.StringPairs("json_format_status", "FAIL"),
+					TestId:   "ninja://tests/c2/t3.html",
+					Status:   pb.TestStatus_FAIL,
+					Expected: false,
+					Tags: pbutil.StringPairs(
+						"json_format_status", "FAIL",
+						"test_name", "c2/t3.html"),
 					SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
 				},
 				Artifacts: map[string]string{
@@ -323,7 +339,9 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 3e8},
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c2/t4.html"),
 				},
 			},
 			{
@@ -331,7 +349,9 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t4.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c2/t4.html"),
 				},
 			},
 			{
@@ -339,7 +359,9 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t4.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c2/t4.html"),
 				},
 			},
 
@@ -349,7 +371,9 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t5.html",
 					Status:   pb.TestStatus_SKIP,
 					Expected: true,
-					Tags:     pbutil.StringPairs("json_format_status", "SKIP"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "SKIP",
+						"test_name", "c2/t5.html"),
 				},
 			},
 
@@ -359,7 +383,9 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t6.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
-					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+					Tags: pbutil.StringPairs(
+						"json_format_status", "PASS",
+						"test_name", "c2/t6.html"),
 				},
 			},
 		})
