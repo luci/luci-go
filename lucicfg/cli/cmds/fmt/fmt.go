@@ -21,12 +21,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/maruel/subcommands"
-	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -83,14 +81,11 @@ func (fr *fmtRun) Run(a subcommands.Application, args []string, env subcommands.
 		return 1
 	}
 	ctx := cli.GetContext(a, fr, env)
-	if len(args) == 0 {
-		args = []string{"."}
-	}
 	return fr.Done(fr.run(ctx, args))
 }
 
 func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) {
-	files, err := expandDirectories(inputs)
+	files, err := base.ExpandDirectories(inputs)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +112,7 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		l.Unlock()
 	}
 
-	errs := buildifier.Visit(pathLoader, files, func(path string, body []byte, f *build.File) errors.MultiError {
+	errs := buildifier.Visit(base.PathLoader, files, func(path string, body []byte, f *build.File) errors.MultiError {
 		formatted := build.Format(f)
 		if bytes.Equal(body, formatted) {
 			outcome(path, outcomeGood, nil)
@@ -158,37 +153,4 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		return &res, errs
 	}
 	return &res, nil
-}
-
-// expandDirectories recursively traverses directories in `paths` discovering
-// *.star files in them.
-//
-// Returns the overall list of discovered files.
-func expandDirectories(paths []string) ([]string, error) {
-	var files []string
-	for _, p := range paths {
-		switch info, err := os.Stat(p); {
-		case err != nil:
-			return nil, err
-		case !info.IsDir():
-			files = append(files, p)
-		default:
-			err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
-				if err == nil && !info.IsDir() && filepath.Ext(info.Name()) == ".star" {
-					files = append(files, path)
-				}
-				return err
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return files, nil
-}
-
-// pathLoader is an interpreter.Loader that loads files using file system paths.
-func pathLoader(path string) (starlark.StringDict, string, error) {
-	body, err := ioutil.ReadFile(path)
-	return nil, string(body), err
 }
