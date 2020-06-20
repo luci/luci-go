@@ -1,6 +1,6 @@
 lucicfg.emit(
-    dest = '../a.cfg',
-    data = 'zzz',
+    dest = "../a.cfg",
+    data = "zzz",
 )
 
 # Expect errors:

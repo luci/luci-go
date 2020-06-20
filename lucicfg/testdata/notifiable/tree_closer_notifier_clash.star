@@ -1,13 +1,13 @@
-lucicfg.enable_experiment('crbug.com/1054172')
+lucicfg.enable_experiment("crbug.com/1054172")
 
 luci.tree_closer(
-    name = 'some name',
-    tree_status_host = 'some-tree.example.com',
+    name = "some name",
+    tree_status_host = "some-tree.example.com",
 )
 
 luci.notifier(
-    name = 'some name',
-    on_occurrence = ['FAILURE'],
+    name = "some name",
+    on_occurrence = ["FAILURE"],
 )
 
 # Expect errors like:

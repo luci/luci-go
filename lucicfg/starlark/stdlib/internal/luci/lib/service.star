@@ -14,30 +14,28 @@
 
 """Helpers for parsing and validating service names."""
 
-load('@stdlib//internal/validate.star', 'validate')
-
+load("@stdlib//internal/validate.star", "validate")
 
 def _from_host(attr, host):
-  """Validates a service host name and returns a struct with the service info.
+    """Validates a service host name and returns a struct with the service info.
 
-  Args:
-    attr: name of the attribute, e.g. 'buildbucket' (for error messages).
-    host: a service host name, e.g. 'buildbucket.appspot.com'.
-  """
-  host = validate.string(attr, host, required=False)
-  if not host:
-    return None
+    Args:
+      attr: name of the attribute, e.g. 'buildbucket' (for error messages).
+      host: a service host name, e.g. 'buildbucket.appspot.com'.
+    """
+    host = validate.string(attr, host, required = False)
+    if not host:
+        return None
 
-  # Recognize appspot.com, since this is where all LUCI services are.
-  app_id = host
-  if host.endswith('.appspot.com'):
-    app_id = host[:-len('.appspot.com')]
+    # Recognize appspot.com, since this is where all LUCI services are.
+    app_id = host
+    if host.endswith(".appspot.com"):
+        app_id = host[:-len(".appspot.com")]
 
-  return struct(
-      host = host,
-      app_id = app_id,
-      cfg_file = '%s.cfg' % app_id,
-  )
-
+    return struct(
+        host = host,
+        app_id = app_id,
+        cfg_file = "%s.cfg" % app_id,
+    )
 
 service = struct(from_host = _from_host)

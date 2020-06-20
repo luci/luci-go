@@ -449,9 +449,9 @@ lucicfg.check_version(min, message = None)
 
 Fails if lucicfg version is below the requested minimal one.
 
-Useful when a script depends on some lucicfg feature that may not be available
-in earlier versions. [lucicfg.check_version(...)](#lucicfg.check_version) can be used at the start of
-the script to fail right away with a clean error message:
+Useful when a script depends on some lucicfg feature that may not be
+available in earlier versions. [lucicfg.check_version(...)](#lucicfg.check_version) can be used at
+the start of the script to fail right away with a clean error message:
 
 ```python
 lucicfg.check_version(
@@ -494,22 +494,22 @@ Sets one or more parameters for the `lucicfg` itself.
 These parameters do not affect semantic meaning of generated configs, but
 influence how they are generated and validated.
 
-Each parameter has a corresponding command line flag. If the flag is present,
-it overrides the value set via `lucicfg.config` (if any). For example, the
-flag `-config-service-host <value>` overrides whatever was set via
-`lucicfg.config(config_service_host=...)`.
+Each parameter has a corresponding command line flag. If the flag is
+present, it overrides the value set via `lucicfg.config` (if any). For
+example, the flag `-config-service-host <value>` overrides whatever was set
+via `lucicfg.config(config_service_host=...)`.
 
-`lucicfg.config` is allowed to be called multiple times. The most recently set
-value is used in the end, so think of `lucicfg.config(var=...)` just as
+`lucicfg.config` is allowed to be called multiple times. The most recently
+set value is used in the end, so think of `lucicfg.config(var=...)` just as
 assigning to a variable.
 
 #### Arguments {#lucicfg.config-args}
 
 * **config_service_host**: a hostname of a LUCI Config Service to send validation requests to. Default is whatever is hardcoded in `lucicfg` binary, usually `luci-config.appspot.com`.
 * **config_dir**: a directory to place generated configs into, relative to the directory that contains the entry point \*.star file. `..` is allowed. If set via `-config-dir` command line flag, it is relative to the current working directory. Will be created if absent. If `-`, the configs are just printed to stdout in a format useful for debugging. Default is "generated".
-* **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` is considered tracked if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, single positive `**/*` glob is implied as well. `tracked_files` can be used to limit what files are actually emitted: if this set is not empty, only files that are in this set will be actually written to the disk (and all other files are discarded). This is beneficial when `lucicfg` is used to generate only a subset of config files, e.g. during the migration from handcrafted to generated configs. Knowing the tracked files set is also important when some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. If `tracked_files` is empty (default), `lucicfg` will save all generated files and will never delete any file (in this case it is responsibility of the caller to make sure no stale output remains).
+* **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` is considered tracked if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, single positive `**/*` glob is implied as well. `tracked_files` can be used to limit what files are actually emitted: if this set is not empty, only files that are in this set will be actually written to the disk (and all other files are discarded). This is beneficial when `lucicfg` is used to generate only a subset of config files, e.g. during the migration from handcrafted to generated configs. Knowing the tracked files set is also important when some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. If `tracked_files` is empty (default), `lucicfg` will save all generated files and will never delete any file in this case it is responsibility of the caller to make sure no stale output remains).
 * **fail_on_warnings**: if set to True treat validation warnings as errors. Default is False (i.e. warnings do not cause the validation to fail). If set to True via `lucicfg.config` and you want to override it to False via command line flags use `-fail-on-warnings=false`.
-* **lint_checks**: a list of linter rules to apply in `lucicfg validate`. If contains `all`, all available rules will be applied. If contains `none`, disables the linter completely. Default is `['none']` for now.
+* **lint_checks**: a list of linter rules to apply in `lucicfg validate`. The first entry defines what group of checks to use as a basis and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See **TODO** for a list of available checks. Default is `['none']` for now.
 
 
 
@@ -524,16 +524,16 @@ lucicfg.enable_experiment(experiment)
 
 Enables an experimental feature.
 
-Can be used to experiment with not yet released features that may later change
-in a non-backwards compatible way or even be removed completely. Primarily
-intended for lucicfg developers to test their features before they are
-"frozen" to be backward compatible. If you rely on an experimental feature
-and a lucicfg update breaks your config, this is a problem in your config, not
-in lucicfg.
+Can be used to experiment with not yet released features that may later
+change in a non-backwards compatible way or even be removed completely.
+Primarily intended for lucicfg developers to test their features before they
+are "frozen" to be backward compatible. If you rely on an experimental
+feature and a lucicfg update breaks your config, this is a problem in your
+config, not in lucicfg.
 
 Enabling an experiment that doesn't exist logs a warning, but doesn't fail
-the execution. Refer to the documentation and the source code for the list of
-available experiments.
+the execution. Refer to the documentation and the source code for the list
+of available experiments.
 
 #### Arguments {#lucicfg.enable_experiment-args}
 
@@ -554,20 +554,22 @@ lucicfg.generator(impl = None)
 ***
 
 
-Registers a callback that is called at the end of the config generation
-stage to modify/append/delete generated configs in an arbitrary way.
+Registers a generator callback.
+
+Such callback is called at the end of the config generation stage to
+modify/append/delete generated configs in an arbitrary way.
 
 The callback accepts single argument `ctx` which is a struct with the
 following fields and methods:
 
-  * **output**: a dict `{config file name -> (str | proto)}`. The callback is
-    free to modify `ctx.output` in whatever way it wants, e.g. by adding new
-    values there or mutating/deleting existing ones.
+  * **output**: a dict `{config file name -> (str | proto)}`. The callback
+    is free to modify `ctx.output` in whatever way it wants, e.g. by adding
+    new values there or mutating/deleting existing ones.
 
-  * **declare_config_set(name, root)**: proclaims that generated configs under
-    the given root (relative to `config_dir`) belong to the given config set.
-    Safe to call multiple times with exact same arguments, but changing an
-    existing root to something else is an error.
+  * **declare_config_set(name, root)**: proclaims that generated configs
+    under the given root (relative to `config_dir`) belong to the given
+    config set. Safe to call multiple times with exact same arguments, but
+    changing an existing root to something else is an error.
 
 #### Arguments {#lucicfg.generator-args}
 
@@ -586,8 +588,8 @@ lucicfg.emit(dest, data)
 
 Tells lucicfg to write given data to some output file.
 
-In particular useful in conjunction with [io.read_file(...)](#io.read_file) to copy files into
-the generated output:
+In particular useful in conjunction with [io.read_file(...)](#io.read_file) to copy files
+into the generated output:
 
 ```python
 lucicfg.emit(
@@ -596,8 +598,8 @@ lucicfg.emit(
 )
 ```
 
-Note that [lucicfg.emit(...)](#lucicfg.emit) cannot be used to override generated files. `dest`
-must refer to a path not generated or emitted by anything else.
+Note that [lucicfg.emit(...)](#lucicfg.emit) cannot be used to override generated files.
+`dest` must refer to a path not generated or emitted by anything else.
 
 #### Arguments {#lucicfg.emit-args}
 
@@ -655,31 +657,31 @@ usually empty. [lucicfg.var(...)](#lucicfg.var) returns a struct with methods to
 it:
 
   * `set(value)`: sets the variable's value if it's unset, fails otherwise.
-  * `get()`: returns the current value, auto-setting it to `default` if it was
-    unset.
+  * `get()`: returns the current value, auto-setting it to `default` if it
+    was unset.
 
-Note the auto-setting the value in `get()` means once `get()` is called on an
-unset variable, this variable can't be changed anymore, since it becomes
-initialized and initialized variables are immutable. In effect, all callers of
-`get()` within a scope always observe the exact same value (either an
+Note the auto-setting the value in `get()` means once `get()` is called on
+an unset variable, this variable can't be changed anymore, since it becomes
+initialized and initialized variables are immutable. In effect, all callers
+of `get()` within a scope always observe the exact same value (either an
 explicitly set one, or a default one).
 
-Any module (loaded or exec'ed) can declare variables via [lucicfg.var(...)](#lucicfg.var). But
-only modules running through [exec(...)](#exec) can read and write them. Modules being
-loaded via load(...) must not depend on the state of the world while they are
-loading, since they may be loaded at unpredictable moments. Thus an attempt to
-use `get` or `set` from a loading module causes an error.
+Any module (loaded or exec'ed) can declare variables via [lucicfg.var(...)](#lucicfg.var).
+But only modules running through [exec(...)](#exec) can read and write them. Modules
+being loaded via load(...) must not depend on the state of the world while
+they are loading, since they may be loaded at unpredictable moments. Thus
+an attempt to use `get` or `set` from a loading module causes an error.
 
 Note that functions _exported_ by loaded modules still can do anything they
-want with variables, as long as they are called from an exec-ing module. Only
-code that executes _while the module is loading_ is forbidden to rely on state
-of variables.
+want with variables, as long as they are called from an exec-ing module.
+Only code that executes _while the module is loading_ is forbidden to rely
+on state of variables.
 
-Assignments performed by an exec-ing module are visible only while this module
-and all modules it execs are running. As soon as it finishes, all changes
-made to variable values are "forgotten". Thus variables can be used to
-implicitly propagate information down the exec call stack, but not up (use
-exec's return value for that).
+Assignments performed by an exec-ing module are visible only while this
+module and all modules it execs are running. As soon as it finishes, all
+changes made to variable values are "forgotten". Thus variables can be used
+to implicitly propagate information down the exec call stack, but not up
+(use exec's return value for that).
 
 Generator callbacks registered via [lucicfg.generator(...)](#lucicfg.generator) are forbidden to
 read or write variables, since they execute outside of context of any
@@ -691,12 +693,12 @@ necessary.
 The most common application for [lucicfg.var(...)](#lucicfg.var) is to "configure" library
 modules with default values pertaining to some concrete executing script:
 
-  * A library declares variables while it loads and exposes them in its public
-    API either directly or via wrapping setter functions.
-  * An executing script uses library's public API to set variables' values to
-    values relating to what this script does.
-  * All calls made to the library from the executing script (or any scripts it
-    includes with [exec(...)](#exec)) can access variables' values now.
+  * A library declares variables while it loads and exposes them in its
+    public API either directly or via wrapping setter functions.
+  * An executing script uses library's public API to set variables' values
+    to values relating to what this script does.
+  * All calls made to the library from the executing script (or any scripts
+    it includes with [exec(...)](#exec)) can access variables' values now.
 
 This is more magical but less wordy alternative to either passing specific
 default values in every call to library functions, or wrapping all library
@@ -707,9 +709,9 @@ libraries involved.
 Another use case is to allow parameterizing configs with values passed via
 CLI flags. A string-typed var can be declared with `expose_as=<name>`
 argument, making it settable via `-var <name>=<value>` CLI flag. This is
-primarily useful in conjunction with `-emit-to-stdout` CLI flag to use lucicfg
-as a "function call" that accepts arguments via CLI flags and returns the
-result via stdout to pipe somewhere else, e.g.
+primarily useful in conjunction with `-emit-to-stdout` CLI flag to use
+lucicfg as a "function call" that accepts arguments via CLI flags and
+returns the result via stdout to pipe somewhere else, e.g.
 
 ```shell
 lucicfg generate main.star -var environ=dev -emit-to-stdout all.json | ...
@@ -752,7 +754,7 @@ the first positional argument).
 
 `ctx` is a struct with the following fields:
 
-  * _TODO: add some_
+  * `defaults`: a struct with module-scoped defaults for the rule.
 
 The callback is expected to return a graph.keyset(...) with the set of graph
 keys that represent the added node (or nodes). Other rules use such keysets
@@ -928,8 +930,8 @@ Defines a LUCI project.
 
 There should be exactly one such definition in the top-level config file.
 
-This rule also implicitly defines the `@root` realm of the project. It can be
-used to setup permissions that apply to all resources in the project. See
+This rule also implicitly defines the `@root` realm of the project. It can
+be used to setup permissions that apply to all resources in the project. See
 [luci.realm(...)](#luci.realm).
 
 #### Arguments {#luci.project-args}
@@ -968,29 +970,29 @@ Realm is a named collection of `(<principal>, <permission>)` pairs.
 A LUCI resource can point to exactly one realm by referring to its full
 name (`<project>:<realm>`). We say that such resource "belongs to the realm"
 or "lives in the realm" or is just "in the realm". We also say that such
-resource belongs to the project `<project>`. The corresponding [luci.realm(...)](#luci.realm)
-definition then describes who can do what to the resource.
+resource belongs to the project `<project>`. The corresponding
+[luci.realm(...)](#luci.realm) definition then describes who can do what to the resource.
 
-The logic of how resources get assigned to realms is a part of the public API
-of the service that owns resources. Some services may use a static realm
+The logic of how resources get assigned to realms is a part of the public
+API of the service that owns resources. Some services may use a static realm
 assignment via project configuration files, others may do it dynamically by
 accepting a realm when a resource is created via an RPC.
 
 A realm can "extend" one or more other realms. If a realm `A` extends `B`,
-then all permissions defined in `B` are also in `A`. Remembering that a realm
-is just a set of `(<principal>, <permission>)` pairs, the "extend" relation is
-just a set inclusion.
+then all permissions defined in `B` are also in `A`. Remembering that a
+realm is just a set of `(<principal>, <permission>)` pairs, the "extends"
+relation is just a set inclusion.
 
 There are two special realms that a project can have: "@root" and "@legacy".
 
 The root realm is implicitly included into all other realms (including
 "@legacy"), and it is also used as a fallback when a resource points to a
 realm that no longer exists. Without the root realm, such resources become
-effectively inaccessible and this may be undesirable. Permissions in the root
-realm apply to all realms in the project (current, past and future), and thus
-the root realm should contain only administrative-level bindings. If you are
-not sure whether you should use the root realm or not, err on the side of not
-using it.
+effectively inaccessible and this may be undesirable. Permissions in the
+root realm apply to all realms in the project (current, past and future),
+and thus the root realm should contain only administrative-level bindings.
+If you are not sure whether you should use the root realm or not, err on
+the side of not using it.
 
 The legacy realm is used for existing resources created before the realms
 mechanism was introduced. Such resources usually are not associated with any
@@ -1149,8 +1151,8 @@ luci.bucket(name, acls = None, bindings = None)
 Defines a bucket: a container for LUCI builds.
 
 This rule also implicitly defines the realm to use for the builds in this
-bucket. It can be used to specify permissions that apply to all builds in this
-bucket and all resources these builds produce. See [luci.realm(...)](#luci.realm).
+bucket. It can be used to specify permissions that apply to all builds in
+this bucket and all resources these builds produce. See [luci.realm(...)](#luci.realm).
 
 #### Arguments {#luci.bucket-args}
 
@@ -1180,18 +1182,18 @@ luci.executable(
 Defines an executable.
 
 Builders refer to such executables in their `executable` field, see
-[luci.builder(...)](#luci.builder). Multiple builders can execute the same executable (perhaps
-passing different properties to it).
+[luci.builder(...)](#luci.builder). Multiple builders can execute the same executable
+(perhaps passing different properties to it).
 
 Executables must be available as cipd packages.
 
 The cipd version to fetch is usually a lower-cased git ref (like
 `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
 
-A [luci.executable(...)](#luci.executable) with some particular name can be redeclared many times
-as long as all fields in all declaration are identical. This is helpful when
-[luci.executable(...)](#luci.executable) is used inside a helper function that at once declares
-a builder and an executable needed for this builder.
+A [luci.executable(...)](#luci.executable) with some particular name can be redeclared many
+times as long as all fields in all declaration are identical. This is
+helpful when [luci.executable(...)](#luci.executable) is used inside a helper function that at
+once declares a builder and an executable needed for this builder.
 
 #### Arguments {#luci.executable-args}
 
@@ -1255,7 +1257,7 @@ a builder and a recipe needed for this builder.
 * **cipd_package**: a cipd package name with the recipe bundle. Supports the module-scoped default.
 * **cipd_version**: a version of the recipe bundle package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
 * **recipe**: name of a recipe inside the recipe bundle if it differs from `name`. Useful if recipe names clash between different recipe bundles. When this happens, `name` can be used as a non-ambiguous alias, and `recipe` can provide the actual recipe name. Defaults to `name`.
-* **use_bbagent**: a boolean to override Buildbucket's global configuration. If True, then builders with this recipe will always use bbagent. If False, then builders with this recipe will temporarially stop using bbagent (note that all builders are expected to use bbagent by ~2020Q3). Defaults to unspecified, which will cause Buildbucket to pick according to it's own global configuration. See [this bug](crbug.com/1015181) for the global bbagent rollout. Supports the module-scoped default.
+* **use_bbagent**: a boolean to override Buildbucket's global configuration. If True, then builders with this recipe will always use bbagent. If False, then builders with this recipe will temporarily stop using bbagent (note that all builders are expected to use bbagent by ~2020Q3). Defaults to unspecified, which will cause Buildbucket to pick according to it's own global configuration. See [this bug](crbug.com/1015181) for the global bbagent rollout. Supports the module-scoped default.
 
 
 
@@ -1299,8 +1301,8 @@ Defines a generic builder.
 
 It runs some executable (usually a recipe) in some requested environment,
 passing it a struct with given properties. It is launched whenever something
-triggers it (a poller or some other builder, or maybe some external actor via
-Buildbucket or LUCI Scheduler APIs).
+triggers it (a poller or some other builder, or maybe some external actor
+via Buildbucket or LUCI Scheduler APIs).
 
 The full unique builder name (as expected by Buildbucket RPC interface) is
 a pair `(<project>, <bucket>/<name>)`, but within a single project config
@@ -1311,20 +1313,20 @@ doesn't introduce ambiguities.
 The definition of what can *potentially* trigger what is defined through
 `triggers` and `triggered_by` fields. They specify how to prepare ACLs and
 other configuration of services that execute builds. If builder **A** is
-defined as "triggers builder **B**", it means all services should expect **A**
-builds to trigger **B** builds via LUCI Scheduler's EmitTriggers RPC or via
-Buildbucket's ScheduleBuild RPC, but the actual triggering is still the
-responsibility of **A**'s executable.
+defined as "triggers builder **B**", it means all services should expect
+**A** builds to trigger **B** builds via LUCI Scheduler's EmitTriggers RPC
+or via Buildbucket's ScheduleBuild RPC, but the actual triggering is still
+the responsibility of **A**'s executable.
 
-There's a caveat though: only Scheduler ACLs are auto-generated by the config
-generator when one builder triggers another, because each Scheduler job has
-its own ACL and we can precisely configure who's allowed to trigger this job.
-Buildbucket ACLs are left unchanged, since they apply to an entire bucket, and
-making a large scale change like that (without really knowing whether
-Buildbucket API will be used) is dangerous. If the executable triggers other
-builds directly through Buildbucket, it is the responsibility of the config
-author (you) to correctly specify Buildbucket ACLs, for example by adding the
-corresponding service account to the bucket ACLs:
+There's a caveat though: only Scheduler ACLs are auto-generated by the
+config generator when one builder triggers another, because each Scheduler
+job has its own ACL and we can precisely configure who's allowed to trigger
+this job. Buildbucket ACLs are left unchanged, since they apply to an entire
+bucket, and making a large scale change like that (without really knowing
+whether Buildbucket API will be used) is dangerous. If the executable
+triggers other builds directly through Buildbucket, it is the responsibility
+of the config author (you) to correctly specify Buildbucket ACLs, for
+example by adding the corresponding service account to the bucket ACLs:
 
 ```python
 luci.bucket(
@@ -1396,13 +1398,13 @@ each iteration it triggers builders if either:
 
   * A watched ref's tip has changed since the last iteration (e.g. a new
     commit landed on a ref). Each new detected commit results in a separate
-    triggering request, so if for example 10 new commits landed on a ref since
-    the last poll, 10 new triggering requests will be submitted to the
-    builders triggered by this poller. How they are converted to actual builds
-    depends on `triggering_policy` of a builder. For example, some builders
-    may want to have one build per commit, others don't care and just want to
-    test the latest commit. See [luci.builder(...)](#luci.builder) and [scheduler.policy(...)](#scheduler.policy)
-    for more details.
+    triggering request, so if for example 10 new commits landed on a ref
+    since the last poll, 10 new triggering requests will be submitted to the
+    builders triggered by this poller. How they are converted to actual
+    builds depends on `triggering_policy` of a builder. For example, some
+    builders may want to have one build per commit, others don't care and
+    just want to test the latest commit. See [luci.builder(...)](#luci.builder) and
+    [scheduler.policy(...)](#scheduler.policy) for more details.
 
     *** note
     **Caveat**: When a large number of commits are pushed on the ref between
@@ -1433,16 +1435,16 @@ matched by some `path_regexps`, subject to following caveats:
     case of not specifying any `path_regexps`.
   * As mentioned above, if a ref fast-forwards >=50 commits, only the last
     50 commits are checked. If none of them pass path-based filtering, a
-    single triggering request is emitted for the ref's new tip. Rational: it's
-    better to emit redundant triggers than silently not emit triggers for
-    commits beyond latest 50.
-  * If a ref tip has just been created, a triggering request would be emitted
-    regardless of what files the commit touches.
+    single triggering request is emitted for the ref's new tip. Rational:
+    it's better to emit redundant triggers than silently not emit triggers
+    for commits beyond latest 50.
+  * If a ref tip has just been created, a triggering request would be
+    emitted regardless of what files the commit touches.
 
 A [luci.gitiles_poller(...)](#luci.gitiles_poller) with some particular name can be redeclared many
-times as long as all fields in all declaration are identical. This is helpful
-when [luci.gitiles_poller(...)](#luci.gitiles_poller) is used inside a helper function that at once
-declares a builder and a poller that triggers this builder.
+times as long as all fields in all declaration are identical. This is
+helpful when [luci.gitiles_poller(...)](#luci.gitiles_poller) is used inside a helper function that
+at once declares a builder and a poller that triggers this builder.
 
 #### Arguments {#luci.gitiles_poller-args}
 
@@ -1586,8 +1588,8 @@ the list view declaration. In particular useful in functions. For example:
     luci.list_view(name = 'Try builders')
 
     def try_builder(name, ...):
-      luci.builder(name = name, ...)
-      luci.list_view_entry(list_view = 'Try builders', builder = name)
+        luci.builder(name = name, ...)
+        luci.list_view_entry(list_view = 'Try builders', builder = name)
 
 Can also be used inline in [luci.list_view(...)](#luci.list_view) declarations, for consistency
 with corresponding [luci.console_view_entry(...)](#luci.console_view_entry) usage. `list_view` argument
@@ -1632,8 +1634,10 @@ luci.console_view(
 
 
 
-A Milo UI view that displays a table-like console where columns are
-builders and rows are git commits on which builders are triggered.
+A Milo UI view that displays a table-like console.
+
+In this view columns are builders and rows are git commits on which builders
+are triggered.
 
 A console is associated with a single git repository it uses as a source of
 commits to display as rows. The watched ref set is defined via `refs` and
@@ -1653,9 +1657,9 @@ these release branches are branched off:
     )
 
 For best results, ensure commits on each watched ref have **committer**
-timestamps monotonically non-decreasing. Gerrit will take care of this if you
-require each commit to go through Gerrit by prohibiting "git push" on these
-refs.
+timestamps monotonically non-decreasing. Gerrit will take care of this if
+you require each commit to go through Gerrit by prohibiting "git push" on
+these refs.
 
 #### Adding builders
 
@@ -1698,10 +1702,10 @@ details.
 #### Console headers
 
 Consoles can have headers which are collections of links, oncall rotation
-information, and console summaries that are displayed at the top of a console,
-below the tree status information. Links and oncall information is always laid
-out to the left, while console groups are laid out to the right. Each oncall
-and links group take up a row.
+information, and console summaries that are displayed at the top of a
+console, below the tree status information. Links and oncall information is
+always laid out to the left, while console groups are laid out to the right.
+Each oncall and links group take up a row.
 
 Header definitions are based on `Header` message in Milo's [project.proto].
 There are two way to supply this message via `header` field:
@@ -1738,7 +1742,7 @@ There are two way to supply this message via `header` field:
 * **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console_view) and [luci.list_view(...)](#luci.list_view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
 * **title**: a title of this console, will show up in UI. Defaults to `name`.
 * **repo**: URL of a git repository whose commits are displayed as rows in the console. Must start with `https://`. Required.
-* **refs**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically.  If empty, defaults to `['refs/heads/master']`.
+* **refs**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. If empty, defaults to `['refs/heads/master']`.
 * **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
 * **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
@@ -1796,7 +1800,7 @@ the console declaration. In particular useful in functions. For example:
 
 * **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details.
 * **short_name**: a shorter name of the builder. The recommendation is to keep this name as short as reasonable, as longer names take up more horizontal space.
-* **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged. In expanded view, each leaf category or builder under a non-leaf category will have it's own column. The recommendation for maximum densification is not to mix subcategories and builders for children of each category.
+* **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged. In expanded view, each leaf category or builder under a non-leaf category will have it's own column. The recommendation for maximum density is not to mix subcategories and builders for children of each category.
 * **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
 
 
@@ -1812,8 +1816,8 @@ luci.external_console_view(name, source, title = None)
 
 Includes a Milo console view from another project.
 
-This console will be listed in the Milo UI on the project page, alongside the
-consoles native to this project.
+This console will be listed in the Milo UI on the project page, alongside
+the consoles native to this project.
 
 In the following example, we include a console from the 'chromium' project
 called 'main', and we give it a local name of 'cr-main' and title of
@@ -1854,85 +1858,68 @@ Defines configuration of the LUCI-Notify service for this project.
 ### luci.notifier {#luci.notifier}
 
 ```python
-luci.notifier()
+luci.notifier(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    on_occurrence = None,
+    on_new_status = None,
+    on_failure = None,
+    on_new_failure = None,
+    on_status_change = None,
+    on_success = None,
+    failed_step_regexp = None,
+    failed_step_regexp_exclude = None,
+    notify_emails = None,
+    notify_rotation_urls = None,
+    notify_blamelist = None,
+    blamelist_repos_whitelist = None,
+    template = None,
+    notified_by = None,
+)
 ```
 
 
 
 Defines a notifier that sends notifications on events from builders.
 
- A notifier contains a set of conditions specifying what events are considered
- interesting (e.g. a previously green builder has failed), and a set of
- recipients to notify when an interesting event happens. The conditions are
- specified via `on_*` fields, and recipients are specified via `notify_*`
- fields.
+A notifier contains a set of conditions specifying what events are
+considered interesting (e.g. a previously green builder has failed), and a
+set of recipients to notify when an interesting event happens. The
+conditions are specified via `on_*` fields, and recipients are specified
+via `notify_*` fields.
 
- The set of builders that are being observed is defined through `notified_by`
- field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
- finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) objects subscribed to
- it, and in turn each notifier filters and forwards this event to corresponding
- recipients.
+The set of builders that are being observed is defined through `notified_by`
+field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
+finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) objects subscribed
+to it, and in turn each notifier filters and forwards this event to
+corresponding recipients.
 
- Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
- a `luci.notifiable` object, i.e. both are something that "can be notified"
- when a build finishes. They both are valid targets for `notifies` field in
- [luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
- not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
- the same name.
+Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
+a `luci.notifiable` object, i.e. both are something that "can be notified"
+when a build finishes. They both are valid targets for `notifies` field in
+[luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
+not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
+the same name.
 
- Args:
-   name: name of this notifier to reference it from other rules. Required.
+#### Arguments {#luci.notifier-args}
 
-   on_occurrence: a list specifying which build statuses to notify for.
-       Notifies for every build status specified. Valid values are string
-       literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
-   on_new_status: a list specifying which new build statuses to notify for.
-       Notifies for each build status specified unless the previous build
-       was the same status. Valid values are string literals `SUCCESS`,
-       `FAILURE`, and `INFRA_FAILURE`. Default is None.
-   on_failure: Deprecated. Please use `on_new_status` or `on_occurrence`
-       instead. If True, notify on each build failure. Ignores transient (aka
-       "infra") failures. Default is False.
-   on_new_failure: Deprecated. Please use `on_new_status` or `on_occurrence`
-       instead.  If True, notify on a build failure unless the previous build
-       was a failure too. Ignores transient (aka "infra") failures. Default is
-       False.
-   on_status_change: Deprecated. Please use `on_new_status` or `on_occurrence`
-       instead. If True, notify on each change to a build status (e.g.
-       a green build becoming red and vice versa). Default is False.
-   on_success: Deprecated. Please use `on_new_status` or `on_occurrence`
-       instead. If True, notify on each build success. Default is False.
-
-   failed_step_regexp: an optional regex or list of regexes, which is matched
-       against the names of failed steps. Only build failures containing
-       failed steps matching this regex will cause a notification to be sent.
-       Mutually exclusive with `on_new_status`.
-   failed_step_regexp_exclude: an optional regex or list of regexes, which has
-       the same function as `failed_step_regexp`, but negated - this regex
-       must *not* match any failed steps for a notification to be sent.
-       Mutually exclusive with `on_new_status`.
-
-   notify_emails: an optional list of emails to send notifications to.
-   notify_rotation_urls: an optional list of URLs from which to fetch rotation
-       members. For each URL, an email will be sent to the currently active
-member of that rotation. The URL must contain a JSON object, with a
-field named 'emails' containing a list of email address strings.
-   notify_blamelist: if True, send notifications to everyone in the computed
-       blamelist for the build. Works only if the builder has a repository
-       associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is
-       False.
-
-   blamelist_repos_whitelist: an optional list of repository URLs (e.g.
-       `https://host/repo`) to restrict the blamelist calculation to. If empty
-       (default), only the primary repository associated with the builder is
-       considered, see `repo` field in [luci.builder(...)](#luci.builder).
-   template: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification
-       emails. If not specified, and a template `default` is defined in the
-       project somewhere, it is used implicitly by the notifier.
-
-   notified_by: builders to receive status notifications from. This relation
-       can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
-
+* **name**: name of this notifier to reference it from other rules. Required.
+* **on_occurrence**: a list specifying which build statuses to notify for. Notifies for every build status specified. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
+* **on_new_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
+* **on_status_change**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
+* **on_success**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build success. Default is False.
+* **failed_step_regexp**: an optional regex or list of regexes, which is matched against the names of failed steps. Only build failures containing failed steps matching this regex will cause a notification to be sent. Mutually exclusive with `on_new_status`.
+* **failed_step_regexp_exclude**: an optional regex or list of regexes, which has the same function as `failed_step_regexp`, but negated - this regex must *not* match any failed steps for a notification to be sent. Mutually exclusive with `on_new_status`.
+* **notify_emails**: an optional list of emails to send notifications to.
+* **notify_rotation_urls**: an optional list of URLs from which to fetch rotation members. For each URL, an email will be sent to the currently active member of that rotation. The URL must contain a JSON object, with a field named 'emails' containing a list of email address strings.
+* **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
+* **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
+* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template `default` is defined in the project somewhere, it is used implicitly by the notifier.
+* **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
 
 
@@ -1955,8 +1942,7 @@ luci.tree_closer(
 
 
 
-Defines a rule for closing or opening a tree via a tree status app based on
-a status of the observed builders.
+Defines a rule for closing or opening a tree via a tree status app.
 
 *** note
 **Experimental.** This feature is under development and guarded by
@@ -1966,8 +1952,8 @@ a status of the observed builders.
 The set of builders that are being observed is defined through `notified_by`
 field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
 finishes, the builder "notifies" all (but usually none or just one)
-[luci.tree_closer(...)](#luci.tree_closer) objects subscribed to it, so they can decide whether to
-close or open the tree in reaction to the new builder state.
+[luci.tree_closer(...)](#luci.tree_closer) objects subscribed to it, so they can decide whether
+to close or open the tree in reaction to the new builder state.
 
 Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
 a `luci.notifiable` object, i.e. both are something that "can be notified"
@@ -1996,8 +1982,10 @@ luci.notifier_template(name, body)
 
 
 
-Defines a template to use for notifications sent by [luci.notifier(...)](#luci.notifier) and
-[luci.tree_closer(...)](#luci.tree_closer).
+Defines a template to use for notifications from LUCI.
+
+Such template can be referenced by [luci.notifier(...)](#luci.notifier) and
+[luci.tree_closer(...)](#luci.tree_closer) rules.
 
 The main template body should have format `<subject>\n\n<body>` where
 subject is one line of [text/template] and body is an [html/template]. The
@@ -2042,9 +2030,9 @@ A template can "import" subtemplates defined in all other
 project are merged into one. Example:
 
 ```python
-# The actual email template which uses subtemplates defined below. In the real
-# life it might be better to load such large template from an external file
-# using io.read_file.
+# The actual email template which uses subtemplates defined below. In the
+# real life it might be better to load such large template from an external
+# file using io.read_file.
 luci.notifier_template(
     name = 'default',
     body = '\n'.join([
@@ -2096,7 +2084,7 @@ failure.
 
 #### Arguments {#luci.notifier_template-args}
 
-* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) rules. Must match the regex `^[a-z][a-z0-9\_]*$`. Required.
+* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) rules. Must match `^[a-z][a-z0-9\_]*$`. Required.
 * **body**: string with the template body. Use [io.read_file(...)](#io.read_file) to load it from an external file, if necessary. Required.
 
 
@@ -2149,14 +2137,17 @@ luci.cq_group(
     allow_owner_if_submittable = None,
     tree_status_host = None,
     retry_config = None,
+    cancel_stale_tryjobs = None,
     verifiers = None,
 )
 ```
 
 
 
-Defines a set of refs to be watched by the CQ and a set of verifiers to run
-whenever there's a pending approved CL for a ref in the watched set.
+Defines a set of refs to watch and a set of verifier to run.
+
+The CQ will run given verifiers whenever there's a pending approved CL for
+a ref in the watched set.
 
 #### Arguments {#luci.cq_group-args}
 
@@ -2167,7 +2158,8 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
-* **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict entry is an alias for `luci.cq_tryjob_verifier(**entry)` and a string entry is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
+* **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
+* **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
 
 
 
@@ -2197,24 +2189,25 @@ luci.cq_tryjob_verifier(
 
 
 
-A verifier in a [luci.cq_group(...)](#luci.cq_group) that triggers tryjobs for verifying CLs.
+A verifier in a [luci.cq_group(...)](#luci.cq_group) that triggers tryjobs to verify CLs.
 
 When processing a CL, the CQ examines a list of registered verifiers and
 launches new corresponding builds (called "tryjobs") if it decides this is
 necessary (per the configuration of the verifier and the previous history
 of this CL).
 
-The CQ automatically retries failed tryjobs (per configured `retry_config` in
-[luci.cq_group(...)](#luci.cq_group)) and only allows CL to land if each builder has succeeded
-in the latest retry. If a given tryjob result is too old (>1 day) it is
-ignored.
+The CQ automatically retries failed tryjobs (per configured `retry_config`
+in [luci.cq_group(...)](#luci.cq_group)) and only allows CL to land if each builder has
+succeeded in the latest retry. If a given tryjob result is too old (>1 day)
+it is ignored.
 
 #### Filtering based on files touched by a CL
 
 The CQ can examine a set of files touched by the CL and decide to skip this
 verifier. Touching a file means either adding, modifying or removing it.
 
-This is controlled by `location_regexp` and `location_regexp_exclude` fields:
+This is controlled by `location_regexp` and `location_regexp_exclude`
+fields:
 
   * If `location_regexp` is specified and no file in a CL matches any of the
     `location_regexp`, then the CQ will not care about this verifier.
@@ -2255,8 +2248,8 @@ directory of the `chromium/src` repo, but not directory itself:
         ],
     )
 
-Match a CL which touches at least one file other than `one.txt` inside `all/`
-directory of the Gerrit project `repo`:
+Match a CL which touches at least one file other than `one.txt` inside
+`all/` directory of the Gerrit project `repo`:
 
     luci.cq_tryjob_verifier(
         location_regexp = ['https://example.com/repo/[+]/.+'],
@@ -2274,8 +2267,8 @@ repository **or** belongs to any other Gerrit server. Note, in this case
 #### Per-CL opt-in only builders
 
 For builders which may be useful only for some CLs, predeclare them using
-`includable_only=True` flag. Such builders will be triggered by CQ if and only
-if a CL opts in via `CQ-Include-Trybots: <builder>` in its description.
+`includable_only=True` flag. Such builders will be triggered by CQ if and
+only if a CL opts in via `CQ-Include-Trybots: <builder>` in its description.
 
 For example, default verifiers may include only fast builders which skip low
 level assertions, but for coverage of such assertions one may add slower
@@ -2290,8 +2283,8 @@ level assertions, but for coverage of such assertions one may add slower
 #### Declaring verifiers
 
 `cq_tryjob_verifier` is used inline in [luci.cq_group(...)](#luci.cq_group) declarations to
-provide per-builder verifier parameters. `cq_group` argument can be omitted in
-this case:
+provide per-builder verifier parameters. `cq_group` argument can be omitted
+in this case:
 
     luci.cq_group(
         name = 'Main CQ',
@@ -2313,8 +2306,8 @@ For example:
     luci.cq_group(name = 'Main CQ')
 
     def try_builder(name, ...):
-      luci.builder(name = name, ...)
-      luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
+        luci.builder(name = name, ...)
+        luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
 
 #### Arguments {#luci.cq_tryjob_verifier-args}
 
@@ -2322,9 +2315,9 @@ For example:
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
 * **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
 * **cancel_stale**: Controls whether not yet finished builds previously triggered by CQ will be cancelled as soon as a substantially different patchset is uploaded to a CL. Default is True, meaning CQ will cancel.
-* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in CL description.
+* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
-* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements. May be combined with location_regexp and location_regexp_exclude.
+* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decision whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements. May be combined with `location_regexp` and `location_regexp_exclude`.
 * **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
 * **location_regexp_exclude**: a list of regexps that define a set of files to completely skip when evaluating whether the verifier should be applied to a CL or not. See the explanation above for all details.
 * **owner_whitelist**: a list of groups with accounts of CL owners to enable this builder for. If set, only CLs owned by someone from any one of these groups will be verified by this builder.
@@ -2384,8 +2377,10 @@ acl.entry(
 
 
 
-Returns an ACL binding which assigns given role (or roles) to given
-individuals, groups or LUCI projects.
+Returns a new ACL binding.
+
+It assign the given role (or roles) to given individuals, groups or LUCI
+projects.
 
 Lists of acl.entry structs are passed to `acls` fields of [luci.project(...)](#luci.project)
 and [luci.bucket(...)](#luci.bucket) rules.
@@ -2454,8 +2449,7 @@ resultdb.export_test_results(bq_table = None, predicate = None)
 
 
 
-Represents a mapping between a subset of test results and a BigQuery table
-to export them to.
+Defines a mapping between a test results and a BigQuery table for them.
 
 #### Arguments {#resultdb.export_test_results-args}
 
@@ -2541,23 +2535,23 @@ Represents a request for the bot to mount a named cache to a path.
 Each bot has a LRU of named caches: think of them as local named directories
 in some protected place that survive between builds.
 
-A build can request one or more such caches to be mounted (in read/write mode)
-at the requested path relative to some known root. In recipes-based builds,
-the path is relative to `api.paths['cache']` dir.
+A build can request one or more such caches to be mounted (in read/write
+mode) at the requested path relative to some known root. In recipes-based
+builds, the path is relative to `api.paths['cache']` dir.
 
 If it's the first time a cache is mounted on this particular bot, it will
 appear as an empty directory. Otherwise it will contain whatever was left
 there by the previous build that mounted exact same named cache on this bot,
 even if that build is completely irrelevant to the current build and just
-happened to use the same named cache (sometimes this is useful to share state
-between different builders).
+happened to use the same named cache (sometimes this is useful to share
+state between different builders).
 
-At the end of the build the cache directory is unmounted. If at that time the
-bot is running out of space, caches (in their entirety, the named cache
-directory and all files inside) are evicted in LRU manner until there's enough
-free disk space left. Renaming a cache is equivalent to clearing it from the
-builder perspective. The files will still be there, but eventually will be
-purged by GC.
+At the end of the build the cache directory is unmounted. If at that time
+the bot is running out of space, caches (in their entirety, the named cache
+directory and all files inside) are evicted in LRU manner until there's
+enough free disk space left. Renaming a cache is equivalent to clearing it
+from the builder perspective. The files will still be there, but eventually
+will be purged by GC.
 
 Additionally, Buildbucket always implicitly requests to mount a special
 builder cache to 'builder' path:
@@ -2565,17 +2559,18 @@ builder cache to 'builder' path:
     swarming.cache('builder', name=some_hash('<project>/<bucket>/<builder>'))
 
 This means that any LUCI builder has a "personal disk space" on the bot.
-Builder cache is often a good start before customizing caching. In recipes, it
-is available at `api.path['cache'].join('builder')`.
+Builder cache is often a good start before customizing caching. In recipes,
+it is available at `api.path['cache'].join('builder')`.
 
 In order to share the builder cache directory among multiple builders, some
 explicitly named cache can be mounted to `builder` path on these builders.
-Buildbucket will not try to override it with its auto-generated builder cache.
+Buildbucket will not try to override it with its auto-generated builder
+cache.
 
 For example, if builders **A** and **B** both declare they use named cache
-`swarming.cache('builder', name='my_shared_cache')`, and an **A** build ran on
-a bot and left some files in the builder cache, then when a **B** build runs
-on the same bot, the same files will be available in its builder cache.
+`swarming.cache('builder', name='my_shared_cache')`, and an **A** build ran
+on a bot and left some files in the builder cache, then when a **B** build
+runs on the same bot, the same files will be available in its builder cache.
 
 If the pool of swarming bots is shared among multiple LUCI projects and
 projects mount same named cache, the cache will be shared across projects.
@@ -2605,8 +2600,8 @@ swarming.dimension(value, expiration = None)
 
 A value of some Swarming dimension, annotated with its expiration time.
 
-Intended to be used as a value in `dimensions` dict of [luci.builder(...)](#luci.builder) when
-using dimensions that expire:
+Intended to be used as a value in `dimensions` dict of [luci.builder(...)](#luci.builder)
+when using dimensions that expire:
 
 ```python
 luci.builder(
@@ -2752,10 +2747,11 @@ The following batching strategies are supported:
     takes all pending triggering requests (up to `max_batch_size` limit) and
     collapses them into one new build. It doesn't wait for a full batch, nor
     tries to batch evenly.
-  * `scheduler.LOGARITHMIC_BATCHING_KIND`: use a logarithmic batching function
-    that takes log(N) pending triggers (up to `max_batch_size` limit) and
-    collapses them into one new build, where N is the total number of pending
-    triggers. The base of the logarithm is defined by `log_base`.
+  * `scheduler.LOGARITHMIC_BATCHING_KIND`: use a logarithmic batching
+    function that takes log(N) pending triggers (up to `max_batch_size`
+    limit) and collapses them into one new build, where N is the total
+    number of pending triggers. The base of the logarithm is defined by
+    `log_base`.
 
 #### Arguments {#scheduler.policy-args}
 
@@ -2779,7 +2775,7 @@ scheduler.greedy_batching(max_concurrent_invocations = None, max_batch_size = No
 
 
 
-A shortcut for `scheduler.policy(scheduler.GREEDY_BATCHING_KIND, ...).`
+Shortcut for `scheduler.policy(scheduler.GREEDY_BATCHING_KIND, ...).`
 
 See [scheduler.policy(...)](#scheduler.policy) for all details.
 
@@ -2799,7 +2795,7 @@ scheduler.logarithmic_batching(log_base, max_concurrent_invocations = None, max_
 
 
 
-A shortcut for `scheduler.policy(scheduler.LOGARITHMIC_BATCHING_KIND, ...)`.
+Shortcut for `scheduler.policy(scheduler.LOGARITHMIC_BATCHING_KIND, ...)`.
 
 See [scheduler.policy(...)](#scheduler.policy) for all details.
 
@@ -2865,8 +2861,8 @@ cq.refset(repo, refs = None)
 
 Defines a repository and a subset of its refs.
 
-Used in `watch` field of [luci.cq_group(...)](#luci.cq_group) to specify what refs the CQ should
-be monitoring.
+Used in `watch` field of [luci.cq_group(...)](#luci.cq_group) to specify what refs the CQ
+should be monitoring.
 
 *** note
 **Note:** Gerrit ACLs must be configured such that the CQ has read access to
@@ -2942,23 +2938,25 @@ In addition, `lucicfg` exposes the following functions.
 ### __load {#__load}
 
 ```python
-__load(module)
+__load(module, *args, **kwargs)
 ```
 
 
 
-Loads another Starlark module (if it haven't been loaded before), extracts
-one or more values from it, and binds them to names in the current module.
+Loads a Starlark module as a library (if it hasn't been loaded before).
+
+Extracts one or more values from it, and binds them to names in the current
+module.
 
 A load statement requires at least two "arguments". The first must be a
-literal string, it identifies the module to load. The remaining arguments are
-a mixture of literal strings, such as `'x'`, or named literal strings, such as
-`y='x'`.
+literal string, it identifies the module to load. The remaining arguments
+are a mixture of literal strings, such as `'x'`, or named literal strings,
+such as `y='x'`.
 
-The literal string (`'x'`), which must denote a valid identifier not starting
-with `_`, specifies the name to extract from the loaded module. In effect,
-names starting with `_` are not exported. The name (`y`) specifies the local
-name. If no name is given, the local name matches the quoted name.
+The literal string (`'x'`), which must denote a valid identifier not
+starting with `_`, specifies the name to extract from the loaded module. In
+effect, names starting with `_` are not exported. The name (`y`) specifies
+the local name. If no name is given, the local name matches the quoted name.
 
 ```
 load('//module.star', 'x', 'y', 'z')       # assigns x, y, and z
@@ -2973,6 +2971,8 @@ interacts with [exec(...)](#exec).
 #### Arguments {#__load-args}
 
 * **module**: module to load, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star` or `./relative/path.star`. Required.
+* **\*args**: what values to import under their original names.
+* **\*\*kwargs**: what values to import and bind under new names.
 
 
 
@@ -3047,17 +3047,16 @@ struct(**kwargs)
 
 
 
-Returns an immutable struct object with fields populated from the specified
-keyword arguments.
+Returns an immutable struct object with given fields.
 
 Can be used to define namespaces, for example:
 
 ```python
 def _func1():
-  ...
+    ...
 
 def _func2():
-  ...
+    ...
 
 exported = struct(
     func1 = _func1,
@@ -3084,7 +3083,8 @@ to_json(value)
 
 Serializes a value to a compact JSON string.
 
-Doesn't support integers that do not fit int64. Fails if the value has cycles.
+Doesn't support integers that do not fit int64. Fails if the value has
+cycles.
 
 #### Arguments {#to_json-args}
 

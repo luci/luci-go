@@ -1,33 +1,32 @@
 luci.project(
-    name = 'zzz',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "zzz",
+    buildbucket = "cr-buildbucket.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
-luci.bucket(name = 'bucket')
-luci.recipe(name = 'noop', cipd_package = 'noop')
+luci.bucket(name = "bucket")
+luci.recipe(name = "noop", cipd_package = "noop")
 
 luci.builder(
-    name = 'confused',
-    bucket = 'bucket',
-    executable = 'noop',
+    name = "confused",
+    bucket = "bucket",
+    executable = "noop",
 )
 
 luci.cq_group(
-    name = 'main',
-    watch = cq.refset('https://example.googlesource.com/repo1'),
+    name = "main",
+    watch = cq.refset("https://example.googlesource.com/repo1"),
     acls = [
-        acl.entry(acl.CQ_COMMITTER, groups = ['committer']),
+        acl.entry(acl.CQ_COMMITTER, groups = ["committer"]),
     ],
     verifiers = [
         luci.cq_tryjob_verifier(
-            builder = 'confused',
+            builder = "confused",
             includable_only = True,
-            experiment_percentage = 10.0
+            experiment_percentage = 10.0,
         ),
     ],
 )
-
 
 # Expect errors like:
 #

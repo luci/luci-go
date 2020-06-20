@@ -2,7 +2,7 @@ resultdb.settings(
     enable = True,
     bq_exports = [
         resultdb.export_test_results(
-            bq_table = 'a.b.c.d',
+            bq_table = "a.b.c.d",
         ),
     ],
 )

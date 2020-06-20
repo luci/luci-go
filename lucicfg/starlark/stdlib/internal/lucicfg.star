@@ -14,87 +14,84 @@
 
 """Core lucicfg-related functions."""
 
-load('@stdlib//internal/error.star', 'error')
-
+load("@stdlib//internal/error.star", "error")
 
 def _version():
-  """Returns a triple with lucicfg version: `(major, minor, revision)`."""
-  return __native__.version()
+    """Returns a triple with lucicfg version: `(major, minor, revision)`."""
+    return __native__.version()
 
+def _check_version(min, message = None):
+    """Fails if lucicfg version is below the requested minimal one.
 
-def _check_version(min, message=None):
-  """Fails if lucicfg version is below the requested minimal one.
+    Useful when a script depends on some lucicfg feature that may not be
+    available in earlier versions. lucicfg.check_version(...) can be used at
+    the start of the script to fail right away with a clean error message:
 
-  Useful when a script depends on some lucicfg feature that may not be available
-  in earlier versions. lucicfg.check_version(...) can be used at the start of
-  the script to fail right away with a clean error message:
+    ```python
+    lucicfg.check_version(
+        min = '1.5.5',
+        message = 'Update depot_tools',
+    )
+    ```
 
-  ```python
-  lucicfg.check_version(
-      min = '1.5.5',
-      message = 'Update depot_tools',
-  )
-  ```
+    Or even
 
-  Or even
+    ```python
+    lucicfg.check_version('1.5.5')
+    ```
 
-  ```python
-  lucicfg.check_version('1.5.5')
-  ```
-
-  Args:
-    min: a string `major.minor.revision` with minimally accepted version.
+    Args:
+      min: a string `major.minor.revision` with minimally accepted version.
         Required.
-    message: a custom failure message to show.
-  """
-  min_ver = [int(x) for x in min.split('.')][:3]
-  if len(min_ver) < 3:
-    min_ver += [0] * (3-len(min_ver))
-  min_ver = tuple(min_ver)
+      message: a custom failure message to show.
+    """
+    min_ver = [int(x) for x in min.split(".")][:3]
+    if len(min_ver) < 3:
+        min_ver += [0] * (3 - len(min_ver))
+    min_ver = tuple(min_ver)
 
-  ver = _version()
-  if ver < min_ver:
-    fail(
-        'Your lucicfg version v%s is older than required v%s. %s.' % (
-        '%d.%d.%d' % ver,
-        '%d.%d.%d' % min_ver,
-        message or 'Please update',
-    ))
-
+    ver = _version()
+    if ver < min_ver:
+        fail(
+            "Your lucicfg version v%s is older than required v%s. %s." % (
+                "%d.%d.%d" % ver,
+                "%d.%d.%d" % min_ver,
+                message or "Please update",
+            ),
+        )
 
 def _config(
-      *,
-      config_service_host=None,
-      config_dir=None,
-      tracked_files=None,
-      fail_on_warnings=None,
-      lint_checks=None
-  ):
-  r"""Sets one or more parameters for the `lucicfg` itself.
+        *,
+        config_service_host = None,
+        config_dir = None,
+        tracked_files = None,
+        fail_on_warnings = None,
+        lint_checks = None):
+    r"""Sets one or more parameters for the `lucicfg` itself.
 
-  These parameters do not affect semantic meaning of generated configs, but
-  influence how they are generated and validated.
+    These parameters do not affect semantic meaning of generated configs, but
+    influence how they are generated and validated.
 
-  Each parameter has a corresponding command line flag. If the flag is present,
-  it overrides the value set via `lucicfg.config` (if any). For example, the
-  flag `-config-service-host <value>` overrides whatever was set via
-  `lucicfg.config(config_service_host=...)`.
+    Each parameter has a corresponding command line flag. If the flag is
+    present, it overrides the value set via `lucicfg.config` (if any). For
+    example, the flag `-config-service-host <value>` overrides whatever was set
+    via `lucicfg.config(config_service_host=...)`.
 
-  `lucicfg.config` is allowed to be called multiple times. The most recently set
-  value is used in the end, so think of `lucicfg.config(var=...)` just as
-  assigning to a variable.
+    `lucicfg.config` is allowed to be called multiple times. The most recently
+    set value is used in the end, so think of `lucicfg.config(var=...)` just as
+    assigning to a variable.
 
-  Args:
-    config_service_host: a hostname of a LUCI Config Service to send validation
-        requests to. Default is whatever is hardcoded in `lucicfg` binary,
-        usually `luci-config.appspot.com`.
-    config_dir: a directory to place generated configs into, relative to the
+    Args:
+      config_service_host: a hostname of a LUCI Config Service to send
+        validation requests to. Default is whatever is hardcoded in `lucicfg`
+        binary, usually `luci-config.appspot.com`.
+      config_dir: a directory to place generated configs into, relative to the
         directory that contains the entry point \*.star file. `..` is allowed.
         If set via `-config-dir` command line flag, it is relative to the
         current working directory. Will be created if absent. If `-`, the
         configs are just printed to stdout in a format useful for debugging.
         Default is "generated".
-    tracked_files: a list of glob patterns that define a subset of files under
+      tracked_files: a list of glob patterns that define a subset of files under
         `config_dir` that are considered generated. Each entry is either
         `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative"
         glob). A file under `config_dir` is considered tracked if its
@@ -111,217 +108,217 @@ def _config(
         generated file disappears from `lucicfg` output: it must be deleted from
         the disk as well. To do this, `lucicfg` needs to know what files are
         safe to delete. If `tracked_files` is empty (default), `lucicfg` will
-        save all generated files and will never delete any file (in this case it
+        save all generated files and will never delete any file in this case it
         is responsibility of the caller to make sure no stale output remains).
-    fail_on_warnings: if set to True treat validation warnings as errors.
-        Default is False (i.e. warnings do not cause the validation to fail). If
-        set to True via `lucicfg.config` and you want to override it to False
+      fail_on_warnings: if set to True treat validation warnings as errors.
+        Default is False (i.e. warnings do not cause the validation to fail).
+        If set to True via `lucicfg.config` and you want to override it to False
         via command line flags use `-fail-on-warnings=false`.
-    lint_checks: a list of linter rules to apply in `lucicfg validate`. If
-        contains `all`, all available rules will be applied. If contains `none`,
-        disables the linter completely. Default is `['none']` for now.
-  """
-  if config_service_host != None:
-    __native__.set_meta('config_service_host', config_service_host)
-  if config_dir != None:
-    __native__.set_meta('config_dir', config_dir)
-  if tracked_files != None:
-    __native__.set_meta('tracked_files', tracked_files)
-  if fail_on_warnings != None:
-    __native__.set_meta('fail_on_warnings', fail_on_warnings)
-  if lint_checks != None:
-    __native__.set_meta('lint_checks', lint_checks)
-
+      lint_checks: a list of linter rules to apply in `lucicfg validate`. The
+        first entry defines what group of checks to use as a basis and it can
+        be one of `none`, `default` or `all`. The following entries either
+        add checks to the set (`+<name>`) or remove them (`-<name>`). See
+        **TODO** for a list of available checks. Default is `['none']` for now.
+    """
+    if config_service_host != None:
+        __native__.set_meta("config_service_host", config_service_host)
+    if config_dir != None:
+        __native__.set_meta("config_dir", config_dir)
+    if tracked_files != None:
+        __native__.set_meta("tracked_files", tracked_files)
+    if fail_on_warnings != None:
+        __native__.set_meta("fail_on_warnings", fail_on_warnings)
+    if lint_checks != None:
+        __native__.set_meta("lint_checks", lint_checks)
 
 def _enable_experiment(experiment):
-  """Enables an experimental feature.
+    """Enables an experimental feature.
 
-  Can be used to experiment with not yet released features that may later change
-  in a non-backwards compatible way or even be removed completely. Primarily
-  intended for lucicfg developers to test their features before they are
-  "frozen" to be backward compatible. If you rely on an experimental feature
-  and a lucicfg update breaks your config, this is a problem in your config, not
-  in lucicfg.
+    Can be used to experiment with not yet released features that may later
+    change in a non-backwards compatible way or even be removed completely.
+    Primarily intended for lucicfg developers to test their features before they
+    are "frozen" to be backward compatible. If you rely on an experimental
+    feature and a lucicfg update breaks your config, this is a problem in your
+    config, not in lucicfg.
 
-  Enabling an experiment that doesn't exist logs a warning, but doesn't fail
-  the execution. Refer to the documentation and the source code for the list of
-  available experiments.
+    Enabling an experiment that doesn't exist logs a warning, but doesn't fail
+    the execution. Refer to the documentation and the source code for the list
+    of available experiments.
 
-  Args:
-    experiment: a string ID of the experimental feature to enable. Required.
-  """
-  __native__.enable_experiment(experiment)
-
+    Args:
+      experiment: a string ID of the experimental feature to enable. Required.
+    """
+    __native__.enable_experiment(experiment)
 
 def _generator(impl):
-  """Registers a callback that is called at the end of the config generation
-  stage to modify/append/delete generated configs in an arbitrary way.
+    """Registers a generator callback.
 
-  The callback accepts single argument `ctx` which is a struct with the
-  following fields and methods:
+    Such callback is called at the end of the config generation stage to
+    modify/append/delete generated configs in an arbitrary way.
 
-    * **output**: a dict `{config file name -> (str | proto)}`. The callback is
-      free to modify `ctx.output` in whatever way it wants, e.g. by adding new
-      values there or mutating/deleting existing ones.
+    The callback accepts single argument `ctx` which is a struct with the
+    following fields and methods:
 
-    * **declare_config_set(name, root)**: proclaims that generated configs under
-      the given root (relative to `config_dir`) belong to the given config set.
-      Safe to call multiple times with exact same arguments, but changing an
-      existing root to something else is an error.
+      * **output**: a dict `{config file name -> (str | proto)}`. The callback
+        is free to modify `ctx.output` in whatever way it wants, e.g. by adding
+        new values there or mutating/deleting existing ones.
 
-  DocTags:
-    Advanced.
+      * **declare_config_set(name, root)**: proclaims that generated configs
+        under the given root (relative to `config_dir`) belong to the given
+        config set. Safe to call multiple times with exact same arguments, but
+        changing an existing root to something else is an error.
 
-  Args:
-    impl: a callback `func(ctx) -> None`.
-  """
-  __native__.add_generator(impl)
+    DocTags:
+      Advanced.
 
+    Args:
+      impl: a callback `func(ctx) -> None`.
+    """
+    __native__.add_generator(impl)
 
-def _emit(*, dest=None, data=None):
-  """Tells lucicfg to write given data to some output file.
+def _emit(*, dest = None, data = None):
+    """Tells lucicfg to write given data to some output file.
 
-  In particular useful in conjunction with io.read_file(...) to copy files into
-  the generated output:
+    In particular useful in conjunction with io.read_file(...) to copy files
+    into the generated output:
 
-  ```python
-  lucicfg.emit(
-      dest = 'tricium.cfg',
-      data = io.read_file('//tricium.cfg'),
-  )
-  ```
+    ```python
+    lucicfg.emit(
+        dest = 'tricium.cfg',
+        data = io.read_file('//tricium.cfg'),
+    )
+    ```
 
-  Note that lucicfg.emit(...) cannot be used to override generated files. `dest`
-  must refer to a path not generated or emitted by anything else.
+    Note that lucicfg.emit(...) cannot be used to override generated files.
+    `dest` must refer to a path not generated or emitted by anything else.
 
-  Args:
-    dest: path to the output file, relative to the `config_dir` (see
+    Args:
+      dest: path to the output file, relative to the `config_dir` (see
         lucicfg.config(...)). Must not start with `../`. Required.
-    data: either a string or a proto message to write to `dest`. Proto messages
-        are serialized using text protobuf encoding. Required.
-  """
-  trace = stacktrace(skip=2)
-  def _emit_data(ctx):
-    _, err = __native__.clean_relative_path('', dest, False)
-    if err:
-      error('%s', err, trace=trace)
-      return
-    if ctx.output.get(dest) != None:
-      error('config file %r is already generated by something else', dest, trace=trace)
-      return
-    ctx.output[dest] = data
-  _generator(impl = _emit_data)
+      data: either a string or a proto message to write to `dest`. Proto
+        messages are serialized using text protobuf encoding. Required.
+    """
+    trace = stacktrace(skip = 2)
 
+    def _emit_data(ctx):
+        _, err = __native__.clean_relative_path("", dest, False)
+        if err:
+            error("%s", err, trace = trace)
+            return
+        if ctx.output.get(dest) != None:
+            error("config file %r is already generated by something else", dest, trace = trace)
+            return
+        ctx.output[dest] = data
+
+    _generator(impl = _emit_data)
 
 def _current_module():
-  """Returns the location of a module being currently executed.
+    """Returns the location of a module being currently executed.
 
-  This is the module being processed by a current load(...) or exec(...)
-  statement. It has no relation to the module that holds the top-level stack
-  frame. For example, if a currently loading module `A` calls a function in
-  a module `B` and this function calls lucicfg.current_module(...), the result
-  would be the module `A`, even though the call goes through code in the
-  module `B` (i.e. lucicfg.current_module(...) invocation itself resided in
-  a function in module `B`).
+    This is the module being processed by a current load(...) or exec(...)
+    statement. It has no relation to the module that holds the top-level stack
+    frame. For example, if a currently loading module `A` calls a function in
+    a module `B` and this function calls lucicfg.current_module(...), the result
+    would be the module `A`, even though the call goes through code in the
+    module `B` (i.e. lucicfg.current_module(...) invocation itself resided in
+    a function in module `B`).
 
-  Fails if called from inside a generator callback. Threads executing such
-  callbacks are not running any load(...) or exec(...).
+    Fails if called from inside a generator callback. Threads executing such
+    callbacks are not running any load(...) or exec(...).
 
-  Returns:
-    A `struct(package='...', path='...')` with the location of the module.
-  """
-  pkg, path = __native__.current_module()
-  return struct(package=pkg, path=path)
-
+    Returns:
+      A `struct(package='...', path='...')` with the location of the module.
+    """
+    pkg, path = __native__.current_module()
+    return struct(package = pkg, path = path)
 
 # A constructor for lucicfg.var structs.
-_var_ctor = __native__.genstruct('lucicfg.var')
+_var_ctor = __native__.genstruct("lucicfg.var")
 
+def _var(*, default = None, validator = None, expose_as = None):
+    """Declares a variable.
 
-def _var(*, default=None, validator=None, expose_as=None):
-  """Declares a variable.
+    A variable is a slot that can hold some frozen value. Initially this slot is
+    usually empty. lucicfg.var(...) returns a struct with methods to manipulate
+    it:
 
-  A variable is a slot that can hold some frozen value. Initially this slot is
-  usually empty. lucicfg.var(...) returns a struct with methods to manipulate
-  it:
+      * `set(value)`: sets the variable's value if it's unset, fails otherwise.
+      * `get()`: returns the current value, auto-setting it to `default` if it
+        was unset.
 
-    * `set(value)`: sets the variable's value if it's unset, fails otherwise.
-    * `get()`: returns the current value, auto-setting it to `default` if it was
-      unset.
+    Note the auto-setting the value in `get()` means once `get()` is called on
+    an unset variable, this variable can't be changed anymore, since it becomes
+    initialized and initialized variables are immutable. In effect, all callers
+    of `get()` within a scope always observe the exact same value (either an
+    explicitly set one, or a default one).
 
-  Note the auto-setting the value in `get()` means once `get()` is called on an
-  unset variable, this variable can't be changed anymore, since it becomes
-  initialized and initialized variables are immutable. In effect, all callers of
-  `get()` within a scope always observe the exact same value (either an
-  explicitly set one, or a default one).
+    Any module (loaded or exec'ed) can declare variables via lucicfg.var(...).
+    But only modules running through exec(...) can read and write them. Modules
+    being loaded via load(...) must not depend on the state of the world while
+    they are loading, since they may be loaded at unpredictable moments. Thus
+    an attempt to use `get` or `set` from a loading module causes an error.
 
-  Any module (loaded or exec'ed) can declare variables via lucicfg.var(...). But
-  only modules running through exec(...) can read and write them. Modules being
-  loaded via load(...) must not depend on the state of the world while they are
-  loading, since they may be loaded at unpredictable moments. Thus an attempt to
-  use `get` or `set` from a loading module causes an error.
+    Note that functions _exported_ by loaded modules still can do anything they
+    want with variables, as long as they are called from an exec-ing module.
+    Only code that executes _while the module is loading_ is forbidden to rely
+    on state of variables.
 
-  Note that functions _exported_ by loaded modules still can do anything they
-  want with variables, as long as they are called from an exec-ing module. Only
-  code that executes _while the module is loading_ is forbidden to rely on state
-  of variables.
+    Assignments performed by an exec-ing module are visible only while this
+    module and all modules it execs are running. As soon as it finishes, all
+    changes made to variable values are "forgotten". Thus variables can be used
+    to implicitly propagate information down the exec call stack, but not up
+    (use exec's return value for that).
 
-  Assignments performed by an exec-ing module are visible only while this module
-  and all modules it execs are running. As soon as it finishes, all changes
-  made to variable values are "forgotten". Thus variables can be used to
-  implicitly propagate information down the exec call stack, but not up (use
-  exec's return value for that).
+    Generator callbacks registered via lucicfg.generator(...) are forbidden to
+    read or write variables, since they execute outside of context of any
+    exec(...). Generators must operate exclusively over state stored in the node
+    graph. Note that variables still can be used by functions that _build_ the
+    graph, they can transfer information from variables into the graph, if
+    necessary.
 
-  Generator callbacks registered via lucicfg.generator(...) are forbidden to
-  read or write variables, since they execute outside of context of any
-  exec(...). Generators must operate exclusively over state stored in the node
-  graph. Note that variables still can be used by functions that _build_ the
-  graph, they can transfer information from variables into the graph, if
-  necessary.
+    The most common application for lucicfg.var(...) is to "configure" library
+    modules with default values pertaining to some concrete executing script:
 
-  The most common application for lucicfg.var(...) is to "configure" library
-  modules with default values pertaining to some concrete executing script:
+      * A library declares variables while it loads and exposes them in its
+        public API either directly or via wrapping setter functions.
+      * An executing script uses library's public API to set variables' values
+        to values relating to what this script does.
+      * All calls made to the library from the executing script (or any scripts
+        it includes with exec(...)) can access variables' values now.
 
-    * A library declares variables while it loads and exposes them in its public
-      API either directly or via wrapping setter functions.
-    * An executing script uses library's public API to set variables' values to
-      values relating to what this script does.
-    * All calls made to the library from the executing script (or any scripts it
-      includes with exec(...)) can access variables' values now.
+    This is more magical but less wordy alternative to either passing specific
+    default values in every call to library functions, or wrapping all library
+    functions with wrappers that supply such defaults. These more explicit
+    approaches can become pretty convoluted when there are multiple scripts and
+    libraries involved.
 
-  This is more magical but less wordy alternative to either passing specific
-  default values in every call to library functions, or wrapping all library
-  functions with wrappers that supply such defaults. These more explicit
-  approaches can become pretty convoluted when there are multiple scripts and
-  libraries involved.
+    Another use case is to allow parameterizing configs with values passed via
+    CLI flags. A string-typed var can be declared with `expose_as=<name>`
+    argument, making it settable via `-var <name>=<value>` CLI flag. This is
+    primarily useful in conjunction with `-emit-to-stdout` CLI flag to use
+    lucicfg as a "function call" that accepts arguments via CLI flags and
+    returns the result via stdout to pipe somewhere else, e.g.
 
-  Another use case is to allow parameterizing configs with values passed via
-  CLI flags. A string-typed var can be declared with `expose_as=<name>`
-  argument, making it settable via `-var <name>=<value>` CLI flag. This is
-  primarily useful in conjunction with `-emit-to-stdout` CLI flag to use lucicfg
-  as a "function call" that accepts arguments via CLI flags and returns the
-  result via stdout to pipe somewhere else, e.g.
+    ```shell
+    lucicfg generate main.star -var environ=dev -emit-to-stdout all.json | ...
+    ```
 
-  ```shell
-  lucicfg generate main.star -var environ=dev -emit-to-stdout all.json | ...
-  ```
+    **Danger**: Using `-var` without `-emit-to-stdout` is generally wrong, since
+    configs generated on disk (and presumably committed into a repository) must
+    not depend on undetermined values passed via CLI flags.
 
-  **Danger**: Using `-var` without `-emit-to-stdout` is generally wrong, since
-  configs generated on disk (and presumably committed into a repository) must
-  not depend on undetermined values passed via CLI flags.
+    DocTags:
+      Advanced.
 
-  DocTags:
-    Advanced.
-
-  Args:
-    default: a value to auto-set to the variable in `get()` if it was unset.
-    validator: a callback called as `validator(value)` from `set(value)` and
+    Args:
+      default: a value to auto-set to the variable in `get()` if it was unset.
+      validator: a callback called as `validator(value)` from `set(value)` and
         inside lucicfg.var(...) declaration itself (to validate `default` or a
         value passed via CLI flags). Must be a side-effect free idempotent
         function that returns the value to be assigned to the variable (usually
         just `value` itself, but conversions are allowed, including type
         changes).
-    expose_as: an optional string identifier to make this var settable via
+      expose_as: an optional string identifier to make this var settable via
         CLI flags as `-var <expose_as>=<value>`. If there's no such flag, the
         variable is auto-initialized to its default value (which must be string
         or None). Variables declared with `expose_as` are not settable via
@@ -329,78 +326,78 @@ def _var(*, default=None, validator=None, expose_as=None):
         declared. If multiple vars use the same `expose_as` identifier, they
         will all be initialized to the same value.
 
-  Returns:
-    A struct with two methods: `set(value)` and `get(): value`.
-  """
-  # Variables that can be bound to CLI flags are string-value, and thus the
-  # default value must also be a string (or be absent).
-  if expose_as and not (default == None or type(default) == 'string'):
-    fail(
-        'lucicfg.var declared with expose_as must have a string or None ' +
-        'default, got %s %s' % (type(default), default))
+    Returns:
+      A struct with two methods: `set(value)` and `get(): value`.
+    """
 
-  # The default value (if any) must pass the validation itself.
-  if validator and default != None:
-    default = validator(default)
+    # Variables that can be bound to CLI flags are string-value, and thus the
+    # default value must also be a string (or be absent).
+    if expose_as and not (default == None or type(default) == "string"):
+        fail(
+            "lucicfg.var declared with expose_as must have a string or None " +
+            "default, got %s %s" % (type(default), default),
+        )
 
-  # Validate the value passed via CLI flag (if any).
-  preset_value = None
-  if expose_as:
-    preset_value = __native__.value_of_var_flag(expose_as)
-    if preset_value == None:
-      preset_value = default
-    elif validator:
-      preset_value = validator(preset_value)
+    # The default value (if any) must pass the validation itself.
+    if validator and default != None:
+        default = validator(default)
 
-  # This declares the variable and pre-sets it to validated value passed via
-  # CLI flags (if expose_as is not None). This also puts the corresponding
-  # -var flag in the set of "consumed" flags. At the end of the script execution
-  # all -var flags provided on the command line must be consumed (the run fails
-  # otherwise).
-  var_id = __native__.declare_var(expose_as or "", preset_value)
+    # Validate the value passed via CLI flag (if any).
+    preset_value = None
+    if expose_as:
+        preset_value = __native__.value_of_var_flag(expose_as)
+        if preset_value == None:
+            preset_value = default
+        elif validator:
+            preset_value = validator(preset_value)
 
-  return _var_ctor(
-      set = lambda v: __native__.set_var(var_id, validator(v) if validator else v),
-      get = lambda: __native__.get_var(var_id, default),
-  )
+    # This declares the variable and pre-sets it to validated value passed via
+    # CLI flags (if expose_as is not None). This also puts the corresponding
+    # -var flag in the set of "consumed" flags. At the end of the script
+    # execution all -var flags provided on the command line must be consumed
+    # (the run fails otherwise).
+    var_id = __native__.declare_var(expose_as or "", preset_value)
 
+    return _var_ctor(
+        set = lambda v: __native__.set_var(var_id, validator(v) if validator else v),
+        get = lambda: __native__.get_var(var_id, default),
+    )
 
-def _rule(*, impl, defaults=None):
-  """Declares a new rule.
+def _rule(*, impl, defaults = None):
+    """Declares a new rule.
 
-  A rule is a callable that adds nodes and edges to an entity graph. It wraps
-  the given `impl` callback by passing one additional argument `ctx` to it (as
-  the first positional argument).
+    A rule is a callable that adds nodes and edges to an entity graph. It wraps
+    the given `impl` callback by passing one additional argument `ctx` to it (as
+    the first positional argument).
 
-  `ctx` is a struct with the following fields:
+    `ctx` is a struct with the following fields:
 
-    * _TODO: add some_
+      * `defaults`: a struct with module-scoped defaults for the rule.
 
-  The callback is expected to return a graph.keyset(...) with the set of graph
-  keys that represent the added node (or nodes). Other rules use such keysets
-  as inputs.
+    The callback is expected to return a graph.keyset(...) with the set of graph
+    keys that represent the added node (or nodes). Other rules use such keysets
+    as inputs.
 
-  DocTags:
-    Advanced. RuleCtor.
+    DocTags:
+      Advanced. RuleCtor.
 
-  Args:
-    impl: a callback that actually implements the rule. Its first argument
+    Args:
+      impl: a callback that actually implements the rule. Its first argument
         should be `ctx`. The rest of the arguments define the API of the rule.
         Required.
-    defaults: a dict with keys matching the rule arguments and values of type
-        lucicfg.var(...). These variables can be used to set defaults to use
-        for a rule within some exec scope (see lucicfg.var(...) for more details
+      defaults: a dict with keys matching the rule arguments and values of type
+        lucicfg.var(...). These variables can be used to set defaults to use for
+        a rule within some exec scope (see lucicfg.var(...) for more details
         about scoping). These vars become the public API of the rule. Callers
         can set them via `rule.defaults.<name>.set(...)`. `impl` callback can
         get them via `ctx.defaults.<name>.get()`. It is up to the rule's author
-        to define vars for fields that can have defaults, document them in
-        the rule doc, and finally use them from `impl` callback.
+        to define vars for fields that can have defaults, document them in the
+        rule doc, and finally use them from `impl` callback.
 
-  Returns:
-    A special callable.
-  """
-  return __native__.declare_rule(impl, defaults or {})
-
+    Returns:
+      A special callable.
+    """
+    return __native__.declare_rule(impl, defaults or {})
 
 # Public API.
 

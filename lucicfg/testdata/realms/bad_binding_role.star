@@ -1,12 +1,12 @@
-lucicfg.enable_experiment('crbug.com/1085650')
+lucicfg.enable_experiment("crbug.com/1085650")
 
-luci.project(name = 'proj')
+luci.project(name = "proj")
 luci.realm(
-    name = 'realm',
+    name = "realm",
     bindings = [
         luci.binding(
-            roles = 'customRole/undefined',
-            users = 'a@example.com',
+            roles = "customRole/undefined",
+            users = "a@example.com",
         ),
     ],
 )

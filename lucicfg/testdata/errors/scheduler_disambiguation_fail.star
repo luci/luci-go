@@ -1,34 +1,34 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
 luci.recipe(
-    name = 'noop',
-    cipd_package = 'noop',
+    name = "noop",
+    cipd_package = "noop",
 )
 
-luci.bucket(name = 'b1')
-luci.bucket(name = 'b2')
+luci.bucket(name = "b1")
+luci.bucket(name = "b2")
 
 luci.gitiles_poller(
-    name = 'p',
-    bucket = 'b1',
-    repo = 'https://noop.com',
+    name = "p",
+    bucket = "b1",
+    repo = "https://noop.com",
 )
 luci.gitiles_poller(
-    name = 'p',
-    bucket = 'b2',
-    repo = 'https://noop.com',
+    name = "p",
+    bucket = "b2",
+    repo = "https://noop.com",
 )
 
 luci.builder(
-    name = 'b1-p',
-    bucket = 'b1',
-    executable = 'noop',
-    triggered_by = ['b1/p'] # need to be triggered but something to get job{...}
+    name = "b1-p",
+    bucket = "b1",
+    executable = "noop",
+    triggered_by = ["b1/p"],  # need to be triggered but something to get job{...}
 )
 
 # Expect errors like:

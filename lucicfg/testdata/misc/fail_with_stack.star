@@ -1,8 +1,8 @@
 def func():
-  return stacktrace()
+    return stacktrace()
 
 def another_func(t):
-  fail("boom", trace=t)
+    fail("boom", trace = t)
 
 t = func()
 

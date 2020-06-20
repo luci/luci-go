@@ -1,15 +1,15 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 luci.builder(
-    name = 'b',
-    bucket = 'ci',
-    service_account = 'noop@example.com',
+    name = "b",
+    bucket = "ci",
+    service_account = "noop@example.com",
 )
 
 # Expect errors like:

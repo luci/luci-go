@@ -1,8 +1,8 @@
-exec('//testdata/misc/support/execed.star')
+exec("//testdata/misc/support/execed.star")
 
 lucicfg.emit(
-    dest = 'from-top',
-    data = str(lucicfg.current_module()) + '\n',
+    dest = "from-top",
+    data = str(lucicfg.current_module()) + "\n",
 )
 
 # Expect configs:

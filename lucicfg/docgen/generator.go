@@ -168,7 +168,8 @@ type symbol struct {
 	Module   string // module name used to load this symbol
 	FullName string // field path from module's top dict to this symbol
 
-	tags stringset.Set // lazily extracted from "DocTags" remarks section
+	doc  *docstring.Parsed // lazily redacted doc, see Doc()
+	tags stringset.Set     // lazily extracted from "DocTags" remarks section
 }
 
 // Flavor returns one of "func", "var", "struct", "unknown".
@@ -190,6 +191,30 @@ func (s *symbol) Flavor() string {
 	default:
 		return "unknown"
 	}
+}
+
+// Doc is a parsed docstring for this symbol.
+//
+// An argument called `ctx` is kicked out since it is part of the internal
+// lucicfg API.
+func (s *symbol) Doc() *docstring.Parsed {
+	if s.doc == nil {
+		s.doc = s.Symbol.Doc()
+		for i, block := range s.doc.Fields {
+			if block.Title == "Args" {
+				filtered := block.Fields[:0]
+				for _, field := range block.Fields {
+					if field.Name != "ctx" {
+						filtered = append(filtered, field)
+					}
+				}
+				block.Fields = filtered
+				s.doc.Fields[i] = block
+				break
+			}
+		}
+	}
+	return s.doc
 }
 
 // HasDocTag returns true if the docstring has a section "DocTags" and the

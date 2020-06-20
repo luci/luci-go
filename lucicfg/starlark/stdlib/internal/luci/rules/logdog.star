@@ -12,28 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/lucicfg.star', 'lucicfg')
-load('@stdlib//internal/validate.star', 'validate')
+"""Defines luci.logdog(...) rule."""
 
-load('@stdlib//internal/luci/common.star', 'keys')
+load("@stdlib//internal/graph.star", "graph")
+load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/validate.star", "validate")
+load("@stdlib//internal/luci/common.star", "keys")
 
+def _logdog(ctx, *, gs_bucket = None):
+    """Defines configuration of the LogDog service for this project.
 
-def _logdog(ctx, *, gs_bucket=None):
-  """Defines configuration of the LogDog service for this project.
+    Usually required for any non-trivial project.
 
-  Usually required for any non-trivial project.
-
-  Args:
-    gs_bucket: base Google Storage archival path, archive logs will be written
+    Args:
+      ctx: the implicit rule context, see lucicfg.rule(...).
+      gs_bucket: base Google Storage archival path, archive logs will be written
         to this bucket/path.
-  """
-  key = keys.logdog()
-  graph.add_node(key, props = {
-      'gs_bucket': validate.string('gs_bucket', gs_bucket, required=False),
-  })
-  graph.add_edge(keys.project(), key)
-  return graph.keyset(key)
-
+    """
+    key = keys.logdog()
+    graph.add_node(key, props = {
+        "gs_bucket": validate.string("gs_bucket", gs_bucket, required = False),
+    })
+    graph.add_edge(keys.project(), key)
+    return graph.keyset(key)
 
 logdog = lucicfg.rule(impl = _logdog)
