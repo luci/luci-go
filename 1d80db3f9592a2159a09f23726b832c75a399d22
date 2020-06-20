@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a429463_c5fd8278",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-20T20:33:29Z",
+      "side": 1,
+      "message": "what happens if I forget to do this? Will go generate ./... or go test ./ fail?\nif nothing, then can we stick this into presubmit?",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 61
+      },
+      "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a4db643_52acbd63",
+        "filename": "lucicfg/fmt-lint.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-20T20:33:29Z",
+      "side": 1,
+      "message": "isn\u0027t it that we actually don\u0027t want them to be formatted?",
+      "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
