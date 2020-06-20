@@ -140,7 +140,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv
 	for _, name := range testNames {
 		testID := testIDPrefix + name
 		// Populate protos.
-		if err := r.Tests[name].toProtos(ctx, &ret, testID, availableArtifacts, buf); err != nil {
+		if err := r.Tests[name].toProtos(ctx, &ret, testID, name, availableArtifacts, buf); err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
 	}
@@ -302,7 +302,7 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 // appends them to dest.
 //
 // Logs unresolved artifacts.
-func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID string, availableArtifacts stringset.Set, buf *strings.Builder) error {
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, testName string, availableArtifacts stringset.Set, buf *strings.Builder) error {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 
@@ -354,7 +354,9 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID s
 				TestId:   testID,
 				Expected: expectedSet.Has(runStatus),
 				Status:   status,
-				Tags:     pbutil.StringPairs("json_format_status", runStatus),
+				Tags: pbutil.StringPairs(
+					"json_format_status", runStatus,
+					"test_name", testName),
 			},
 		}
 
