@@ -33,7 +33,7 @@ export class TestFilterElement extends MobxLitElement {
 
   @observable.ref showExpected = false;
   @observable.ref showExonerated = true;
-  @observable.ref showFlaky = false;
+  @observable.ref showFlaky = true;
 
   private disposer = () => {};
   connectedCallback() {
