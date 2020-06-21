@@ -98,6 +98,14 @@ router.setRoutes({
                     return cmd.component('tr-text-diff-artifact-page');
                   },
                 },
+                {
+                  path: '/image-diff/:artifact_name',
+                  name: 'image-diff-artifact',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "image_diff_artifact_page" */ './pages/artifact/image_diff_artifact_page');
+                    return cmd.component('tr-image-diff-artifact-page');
+                  },
+                },
                 notFoundRoute,
               ],
             },
