@@ -199,3 +199,45 @@ export class ResultDb {
     );
   }
 }
+
+/**
+ * Parses the artifact name and get the individual components.
+ */
+export function parseArtifactName(artifactName: string): ArtifactIdentifier {
+  const groups = artifactName
+    .match(/invocations\/(?<invocationId>.*?)\/(tests\/(?<testId>.*?)\/results\/(?<resultId>.*?)\/)?artifacts\/(?<artifactId>.*)/)!
+    .groups!;
+  return {
+    invocationId: groups['invocationId'],
+    testId: groups['testId'] ? decodeURIComponent(groups['testId']) : undefined,
+    resultId: groups['resultId'] ? groups['resultId'] : undefined,
+    artifactId: groups['artifactId'],
+  };
+}
+
+export type ArtifactIdentifier = InvocationArtifactIdentifier | TestResultArtifactIdentifier;
+
+export interface InvocationArtifactIdentifier {
+  readonly invocationId: string;
+  readonly testId?: string;
+  readonly resultId?: string;
+  readonly artifactId: string;
+}
+
+export interface TestResultArtifactIdentifier {
+  readonly invocationId: string;
+  readonly testId: string;
+  readonly resultId: string;
+  readonly artifactId: string;
+}
+
+/**
+ * Constructs the name of the artifact.
+ */
+export function constructArtifactName(identifier: ArtifactIdentifier) {
+  if (identifier.testId && identifier.resultId) {
+    return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(identifier.testId)}/results/${identifier.resultId}/artifacts/${identifier.artifactId}`;
+  } else {
+    return `invocations/${identifier.invocationId}/artifacts/${identifier.artifactId}`;
+  }
+}
