@@ -22,7 +22,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 import { AppState, consumeAppState } from '../../context/app_state_provider';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult, TestStatus } from '../../services/resultdb';
-import './text_diff_artifacts';
+import './text_diff_artifact';
 
 const STATUS_DISPLAY_MAP = {
   [TestStatus.Unspecified]: 'unspecified',
@@ -70,7 +70,7 @@ export class ResultEntryElement extends MobxLitElement {
   @computed private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
 
   @computed private get textDiffArtifacts() {
-    return this.artifacts.filter((a) => a.artifactId.match(/_diff$/) && a.contentType === 'text/plain');
+    return this.artifacts.filter((a) => a.artifactId === 'text_diff');
   }
 
   private renderSummaryHtml() {
