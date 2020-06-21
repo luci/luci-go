@@ -96,4 +96,20 @@ func TestStringPairs(t *testing.T) {
 			{Key: "b", Value: "1"},
 		})
 	})
+
+	Convey("Parse StringPairs to strings", t, func() {
+		var stringPairs []*pb.StringPair
+		So(ParseStringPairs(stringPairs), ShouldResemble, []string{})
+
+		stringPairs = []*pb.StringPair{}
+		So(ParseStringPairs(stringPairs), ShouldResemble, []string{})
+
+		stringPairs = []*pb.StringPair{
+			{Key: "a", Value: "1"},
+			{Key: "a", Value: "2"},
+		}
+		actualStrs := ParseStringPairs(stringPairs)
+		exceptedStrs := []string{"a:1", "a:2"}
+		So(actualStrs, ShouldResemble, exceptedStrs)
+	})
 }
