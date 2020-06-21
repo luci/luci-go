@@ -22,6 +22,7 @@ import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
 
 import { ID_SEG_REGEX, ReadonlyVariant, VariantStatus } from '../../models/test_node';
+import '../copy_to_clipboard';
 import './exoneration_entry';
 import './result_entry';
 
@@ -129,7 +130,9 @@ export class VariantEntryElement extends MobxLitElement {
             >${STATUS_ICON_MAP[this.variant.status]}</mwc-icon>
             <div id="identifier">
               <div id="test-identifier">
-                <span class="light">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
+                <span>
+                  <span class="light">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
+                </span>
                 <tr-copy-to-clipboard
                   .textToCopy=${this.variant.testId}
                   @click=${(e: Event) => e.stopPropagation()}
@@ -235,13 +238,20 @@ export class VariantEntryElement extends MobxLitElement {
     .flaky {
       color: #f5a309;
     }
-    #identifer {
+    #identifier {
+      overflow: hidden;
       grid-row: 1;
       grid-column: 2;
     }
     #test-identifier {
+      display: flex;
+      overflow: hidden;
       font-size: 16px;
       line-height: 24px;
+    }
+    #test-identifier>span {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .expandable-header.display-variant-id:not(.expanded) #test-identifier {
       line-height: 16px;
