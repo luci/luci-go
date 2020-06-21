@@ -22,6 +22,7 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 import { AppState, consumeAppState } from '../../context/app_state_provider';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult, TestStatus } from '../../services/resultdb';
+import './image_diff_artifact';
 import './text_diff_artifact';
 
 const STATUS_DISPLAY_MAP = {
@@ -69,8 +70,15 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get artifacts() { return this.artifactsRes.state === 'fulfilled' ? this.artifactsRes.value.artifacts || [] : []; }
 
-  @computed private get textDiffArtifacts() {
-    return this.artifacts.filter((a) => a.artifactId === 'text_diff');
+  @computed private get textDiffArtifact() {
+    return this.artifacts.find((a) => a.artifactId === 'text_diff');
+  }
+  @computed private get imageDiffArtifactGroup() {
+    return {
+      'expected': this.artifacts.find((a) => a.artifactId === 'expected_image'),
+      'actual': this.artifacts.find((a) => a.artifactId === 'actual_image'),
+      'diff': this.artifacts.find((a) => a.artifactId === 'image_diff'),
+    };
   }
 
   private renderSummaryHtml() {
@@ -164,10 +172,18 @@ export class ResultEntryElement extends MobxLitElement {
           <div id="content-ruler"></div>
           <div id="content" style=${styleMap({display: this.expanded ? '' : 'none'})}>
             ${this.renderSummaryHtml()}
-            ${this.textDiffArtifacts.map((artifact) => html`
-            <tr-text-diff-artifact .artifact=${artifact}>
+            ${this.textDiffArtifact && html`
+            <tr-text-diff-artifact .artifact=${this.textDiffArtifact}>
             </tr-text-diff-artifact>
-            `)}
+            `}
+            ${this.imageDiffArtifactGroup.diff && html`
+            <tr-image-diff-artifact
+              .expected=${this.imageDiffArtifactGroup.expected}
+              .actual=${this.imageDiffArtifactGroup.actual}
+              .diff=${this.imageDiffArtifactGroup.diff}
+            >
+            </tr-image-diff-artifact>
+            `}
             ${this.renderArtifacts()}
             ${this.renderTags()}
           </div>
@@ -177,6 +193,10 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   static styles = css`
+    :host {
+      display: block;
+    }
+
     .expandable-header {
       display: grid;
       grid-template-columns: 24px 1fr;
@@ -213,6 +233,9 @@ export class ResultEntryElement extends MobxLitElement {
       display: grid;
       grid-template-columns: 24px 1fr;
       grid-gap: 5px;
+    }
+    #content {
+      overflow: hidden;
     }
     #content-ruler {
       border-left: 1px solid #DDDDDD;
