@@ -191,6 +191,10 @@ export class VariantEntryElement extends MobxLitElement {
 
   // TODO(weiweilin): extract the color scheme to a separate stylesheet.
   static styles = css`
+    :host {
+      display: block;
+    }
+
     .expandable-header {
       display: grid;
       grid-template-columns: 24px 1fr;
@@ -269,6 +273,9 @@ export class VariantEntryElement extends MobxLitElement {
       display: grid;
       grid-template-columns: 24px 1fr;
       grid-gap: 5px;
+    }
+    #content {
+      overflow: hidden;
     }
     #content-ruler {
       border-left: 1px solid #DDDDDD;
