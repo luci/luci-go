@@ -53,6 +53,24 @@ func SortStringPairs(pairs []*pb.StringPair) {
 	})
 }
 
+func ParseStringPair(p *pb.StringPair) string {
+	if p == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s:%s", p.Key, p.Value)
+}
+
+func ParseStringPairs(p []*pb.StringPair) []string {
+	if p == nil {
+		return []string{}
+	}
+	strs := make([]string, len(p))
+	for i, pair := range p {
+		strs[i] = ParseStringPair(pair)
+	}
+	return strs
+}
+
 // BuildSets returns all of the buildsets of the build.
 func BuildSets(b *pb.Build) []string {
 	var result []string
