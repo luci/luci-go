@@ -115,13 +115,16 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-nav-tree>
         </tr-left-panel>
         <div id="test-result-view">
-          ${repeat(iter.withPrev(iter.flatten(iter.map(state.selectedNode.tests(), (t) => t.variants))), ([v]) => `${v.testId} ${v.variantKey}`, ([v, prev]) => html`
+          ${repeat(iter.withPrev(state.selectedNode.tests()), ([test]) => test.id, ([test, prevTest]) =>
+          repeat(iter.withPrev(test.variants), ([variant]) => variant.variantKey, ([variant, prevVariant]) => html`
           <tr-variant-entry
-            .variant=${v}
-            .prevTestId=${(prev?.testId || '')}
+            .variant=${variant}
+            .prevTestId=${prevVariant?.testId ?? prevTest?.id ?? ''}
+            .prevVariant=${prevVariant}
             .expanded=${this.hasSingleVariant}
+            .displayVariantId=${test.variants.length > 1}
           ></tr-variant-entry>
-          `)}
+          `))}
           <div id="list-tail">
             <span>Showing ${state.selectedNode.testCount} tests.</span>
             <span
@@ -175,6 +178,9 @@ export class TestResultsTabElement extends MobxLitElement {
       flex-direction: column;
       overflow-y: auto;
       padding-top: 5px;
+    }
+    #test-result-view>* {
+      margin-bottom: 2px;
     }
 
     tr-test-nav-tree {

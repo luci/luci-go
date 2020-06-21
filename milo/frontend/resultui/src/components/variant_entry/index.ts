@@ -64,6 +64,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
 export class VariantEntryElement extends MobxLitElement {
   @observable.ref variant!: ReadonlyVariant;
   @observable.ref prevTestId = '';
+  @observable.ref prevVariant?: ReadonlyVariant;
+  @observable.ref displayVariantId = true;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -79,7 +81,7 @@ export class VariantEntryElement extends MobxLitElement {
   @observable.ref private wasExpanded = false;
 
   /**
-   * Common prefix between this.test.id and this.prevTestId.
+   * Common prefix between this.variant.testId and this.prevTestId.
    */
   @computed
   private get commonTestIdPrefix() {
@@ -116,7 +118,7 @@ export class VariantEntryElement extends MobxLitElement {
     return html`
       <div>
         <div
-          class="test-identifier expandable-header"
+          class=${classMap({'expanded': this.expanded, 'display-variant-id': this.displayVariantId, 'expandable-header': true})}
           @click=${() => this.expanded = !this.expanded}
         >
           <mwc-icon id="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
@@ -125,13 +127,25 @@ export class VariantEntryElement extends MobxLitElement {
               id="status-indicator"
               class=${classMap({[STATUS_CLASS_MAP[this.variant.status]]: true})}
             >${STATUS_ICON_MAP[this.variant.status]}</mwc-icon>
-            <div id="test-identifier">
-              <span class="light">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
-              <tr-copy-to-clipboard
-                .textToCopy=${this.variant.testId}
-                @click=${(e: Event) => e.stopPropagation()}
-                title="copy test ID to clipboard"
-              ></tr-copy-to-clipboard>
+            <div id="identifier">
+              <div id="test-identifier">
+                <span class="light">${this.commonTestIdPrefix}</span>${this.variant.testId.slice(this.commonTestIdPrefix.length)}
+                <tr-copy-to-clipboard
+                  .textToCopy=${this.variant.testId}
+                  @click=${(e: Event) => e.stopPropagation()}
+                  title="copy test ID to clipboard"
+                ></tr-copy-to-clipboard>
+              </div>
+              <div id="variant-identifier">
+                <span>
+                  ${this.variantDef.map(([k, v]) => html`
+                  <span class=${classMap({'light': !this.prevVariant || v === this.prevVariant.variant.def?.[k], 'kv': true})}>
+                    <span class="kv-key">${k}</span>
+                    <span class="kv-value">${v}</span>
+                  </span>
+                  `)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -145,8 +159,10 @@ export class VariantEntryElement extends MobxLitElement {
               ${this.variantDef.length === 0 ? '' : '|'}
               <span class="light">
                 ${this.variantDef.map(([k, v]) => html`
-                <span class="kv-key">${k}</span>
-                <span class="kv-value">${v}</span>
+                <span class="kv">
+                  <span class="kv-key">${k}</span>
+                  <span class="kv-value">${v}</span>
+                </span>
                 `)}
               </span>
             </span>
@@ -181,6 +197,9 @@ export class VariantEntryElement extends MobxLitElement {
       cursor: pointer;
       user-select: none;
     }
+    .expandable-header.display-variant-id:not(.expanded) {
+      grid-template-rows: 30px;
+    }
     .expandable-header .expand-toggle {
       grid-row: 1;
       grid-column: 1;
@@ -193,17 +212,13 @@ export class VariantEntryElement extends MobxLitElement {
       white-space: nowrap;
       text-overflow: ellipsis;
     }
-    #test-identifier {
-      font-size: 16px;
-    }
 
     #header {
       display: grid;
       grid-template-columns: 24px 1fr;
-      grid-template-rows: 24px;
+      grid-template-rows: 36px;
       grid-gap: 5px;
     }
-
     #status-indicator {
       grid-row: 1;
       grid-column: 1;
@@ -219,6 +234,25 @@ export class VariantEntryElement extends MobxLitElement {
     }
     .flaky {
       color: #f5a309;
+    }
+    #identifer {
+      grid-row: 1;
+      grid-column: 2;
+    }
+    #test-identifier {
+      font-size: 16px;
+      line-height: 24px;
+    }
+    .expandable-header.display-variant-id:not(.expanded) #test-identifier {
+      line-height: 16px;
+    }
+    #variant-identifier {
+      display: none;
+      font-size: 12px;
+      line-height: 12px;
+    }
+    .expandable-header.display-variant-id:not(.expanded) #variant-identifier {
+      display: block;
     }
 
     #body {
@@ -243,7 +277,7 @@ export class VariantEntryElement extends MobxLitElement {
     .kv-value::after {
       content: ',';
     }
-    .kv-value:last-child::after {
+    .kv:last-child>.kv-value::after {
       content: '';
     }
     #def-table {
