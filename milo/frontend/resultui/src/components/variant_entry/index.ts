@@ -272,6 +272,9 @@ export class VariantEntryElement extends MobxLitElement {
       grid-template-columns: 24px 1fr;
       grid-gap: 5px;
     }
+    #content {
+      overflow: hidden;
+    }
     #content-ruler {
       border-left: 1px solid #DDDDDD;
       width: 0px;
