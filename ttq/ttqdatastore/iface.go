@@ -51,12 +51,14 @@ type TTQ struct {
 
 // New creates a new TTQ for Datastore.
 // You must also call InstallRoutes in at least one of your app's microservices.
-func New(c *cloudtasks.Client, opts ttq.Options) *TTQ {
-	// TODO(tandrii): implement.
+func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
 	return &TTQ{impl: internal.Impl{
 		Options: opts,
 		DB:      &db{},
-	}}
+	}}, nil
 }
 
 // InstallRoutes installs handlers for sweeping to ensure correctness.
