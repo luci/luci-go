@@ -21,8 +21,8 @@ import { styleMap } from 'lit-html/directives/style-map';
 import takeWhile from 'lodash-es/takeWhile';
 import { computed, observable } from 'mobx';
 
+import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ID_SEG_REGEX, ReadonlyVariant, VariantStatus } from '../../models/test_node';
-import './exoneration_entry';
 import './result_entry';
 
 
@@ -166,19 +166,17 @@ export class VariantEntryElement extends MobxLitElement {
                 `)}
               </span>
             </span>
+            ${repeat(this.wasExpanded ? this.variant!.exonerations : [], (e) => e.exonerationId, (e) => html`
+            <div class="explanation-html">
+              ${sanitizeHTML(e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).')}
+            </div>
+            `)}
             ${repeat(this.wasExpanded ? this.variant!.results : [], (r) => r.resultId, (r, i) => html`
             <tr-result-entry
               .id=${i + 1}
               .testResult=${r}
               .expanded=${this.hasSingleChild || !r.expected}
             ></tr-result-entry>
-            `)}
-            ${repeat(this.wasExpanded ? this.variant!.exonerations : [], (e) => e.exonerationId, (e, i) => html`
-            <tr-exoneration-entry
-              .id=${this.variant!.results.length + i + 1}
-              .testExoneration=${e}
-              .expanded=${this.hasSingleChild}
-            ></tr-exoneration-entry>
             `)}
           </div>
         </div>
@@ -286,6 +284,11 @@ export class VariantEntryElement extends MobxLitElement {
 
     .light {
       color: grey;
+    }
+
+    .explanation-html {
+      background-color: rgb(245, 245, 245);
+      padding: 5px;
     }
   `;
 }
