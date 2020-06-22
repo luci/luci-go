@@ -81,6 +81,24 @@
       "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff7eaa27_91c71d4f",
+        "filename": "lucicfg/fmt-lint.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-22T17:03:56Z",
+      "side": 1,
+      "message": "ACK, sorry.",
+      "parentUuid": "db808dfe_a1044320",
+      "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
