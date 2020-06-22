@@ -516,9 +516,15 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 	}
 }
 
-// withBuildbucketClient is a middleware that installs a production buildbucket RPC client into the context.
-func withBuildbucketClient(c *router.Context, next router.Handler) {
-	c.Context = buildbucket.WithClientFactory(c.Context, buildbucket.ProdClientFactory)
+// withBuildbucketBuildsClient is a middleware that installs a production buildbucket builds RPC client into the context.
+func withBuildbucketBuildsClient(c *router.Context, next router.Handler) {
+	c.Context = buildbucket.WithBuildsClientFactory(c.Context, buildbucket.ProdBuildsClientFactory)
+	next(c)
+}
+
+// withBuildbucketBuildersClient is a middleware that installs a production buildbucket builders RPC client into the context.
+func withBuildbucketBuildersClient(c *router.Context, next router.Handler) {
+	c.Context = buildbucket.WithBuildersClientFactory(c.Context, buildbucket.ProdBuildersClientFactory)
 	next(c)
 }
 

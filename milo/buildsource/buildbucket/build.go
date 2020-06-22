@@ -299,7 +299,7 @@ var builderIDMask = &field_mask.FieldMask{
 
 // GetBuilderID returns the builder, and maybe the build number, for a build id.
 func GetBuilderID(c context.Context, id int64) (builder *buildbucketpb.BuilderID, number int32, err error) {
-	client, err := getBuildbucketClient(c)
+	client, err := getBuildbucketBuildsClient(c)
 	if err != nil {
 		return
 	}
@@ -367,7 +367,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	if err != nil {
 		return nil, err
 	}
-	client, err := buildbucketClient(c, host, auth.AsUser)
+	client, err := buildbucketBuildsClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +434,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 func GetRelatedBuildsTable(c context.Context, buildbucketID int64) (*ui.RelatedBuildsTable, error) {
 	now, _ := ptypes.TimestampProto(clock.Now(c))
 
-	client, err := getBuildbucketClient(c)
+	client, err := getBuildbucketBuildsClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +463,7 @@ func GetRelatedBuildsTable(c context.Context, buildbucketID int64) (*ui.RelatedB
 
 // CancelBuild cancels the build with the given ID.
 func CancelBuild(c context.Context, id int64, reason string) (*buildbucketpb.Build, error) {
-	client, err := getBuildbucketClient(c)
+	client, err := getBuildbucketBuildsClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func CancelBuild(c context.Context, id int64, reason string) (*buildbucketpb.Bui
 
 // RetryBuild retries the build with the given ID and returns the new build.
 func RetryBuild(c context.Context, buildbucketID int64, requestID string) (*buildbucketpb.Build, error) {
-	client, err := getBuildbucketClient(c)
+	client, err := getBuildbucketBuildsClient(c)
 	if err != nil {
 		return nil, err
 	}
@@ -487,12 +487,12 @@ func RetryBuild(c context.Context, buildbucketID int64, requestID string) (*buil
 	})
 }
 
-func getBuildbucketClient(c context.Context) (buildbucketpb.BuildsClient, error) {
+func getBuildbucketBuildsClient(c context.Context) (buildbucketpb.BuildsClient, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
 	}
-	client, err := buildbucketClient(c, host, auth.AsUser)
+	client, err := buildbucketBuildsClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}

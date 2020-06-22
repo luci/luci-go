@@ -348,7 +348,14 @@ func builderPageData() []TestBundle {
 					URL: &url.URL{Path: "/p/chromium/builders/try/linux-rel"},
 				},
 				"BuilderPage": &ui.BuilderPage{
-					BuilderName: "linux-rel",
+					Builder: &buildbucketpb.BuilderItem{
+						Id: &buildbucketpb.BuilderID{
+							Builder: "linux-rel",
+						},
+						Config: &buildbucketpb.Builder{
+							Description: "this is a builder",
+						},
+					},
 					ScheduledBuilds: []*ui.Build{
 						build(&buildbucketpb.Build{
 							Id:         1,

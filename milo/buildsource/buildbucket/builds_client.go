@@ -26,12 +26,13 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-var clientContextKey = "context key for builds client"
+var buildsClientContextKey = "context key for builds client"
 
-// clientFactory is a function that returns a buildbucket rpc client.
-type clientFactory func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error)
+// buildsClientFactory is a function that returns a buildbucket rpc builds
+// client.
+type buildsClientFactory func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error)
 
-func ProdClientFactory(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+func ProdBuildsClientFactory(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
 	t, err := auth.GetRPCTransport(c, as, opts...)
 	if err != nil {
 		return nil, err
@@ -48,15 +49,16 @@ func ProdClientFactory(c context.Context, host string, as auth.RPCAuthorityKind,
 	}), nil
 }
 
-// WithClientFactory installs a buildbucket rpc client in the context.
-func WithClientFactory(c context.Context, factory clientFactory) context.Context {
-	return context.WithValue(c, &clientContextKey, factory)
+// WithBuildsClientFactory installs a buildbucket rpc builds client in the
+// context.
+func WithBuildsClientFactory(c context.Context, factory buildsClientFactory) context.Context {
+	return context.WithValue(c, &buildsClientContextKey, factory)
 }
 
-func buildbucketClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
-	factory, ok := c.Value(&clientContextKey).(clientFactory)
+func buildbucketBuildsClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+	factory, ok := c.Value(&buildsClientContextKey).(buildsClientFactory)
 	if !ok {
-		return nil, fmt.Errorf("no buildbucket client factory found in context")
+		return nil, fmt.Errorf("no buildbucket builds client factory found in context")
 	}
 	return factory(c, host, as, opts...)
 }

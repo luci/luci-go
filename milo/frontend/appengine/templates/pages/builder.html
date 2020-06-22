@@ -1,4 +1,8 @@
-{{define "title"}}{{ .BuilderPage.BuilderName }} | Builder{{end}}
+{{define "title"}}{{ .BuilderPage.Builder.Id.Builder }} | Builder{{end}}
+
+{{define "head"}}
+  <link rel="stylesheet" href="/static/common/css/builder.css" type="text/css">
+{{end}}
 
 {{define "body"}}
 {{ $request := .Request }}
@@ -7,7 +11,10 @@
 
 {{ $hasChanges := .HasChanges }}
 
-<h1>Builder <a href="{{ pagedURL $request -1 "EMPTY" }}">{{.BuilderName}}</a></h1>
+<h1>Builder <a href="{{ pagedURL $request -1 "EMPTY" }}">{{.Builder.Id.Builder}}</a></h1>
+{{ if .Builder.Config.Description }}
+  <p id="builder-description">{{ .Builder.Config.Description }}</p>
+{{ end }}
 
 <div class="prelude">
   <div class="column">

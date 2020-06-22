@@ -50,7 +50,7 @@ func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Co
 	factory := func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
 		return client, nil
 	}
-	return WithClientFactory(c, factory), ctrl, client
+	return WithBuildsClientFactory(c, factory), ctrl, client
 }
 
 // Buildbucket timestamps round off to milliseconds, so define a reference.

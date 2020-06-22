@@ -103,7 +103,7 @@ var summaryBuildMask = &field_mask.FieldMask{
 
 // getSummary returns a model.BuildSummary representing a buildbucket build.
 func getSummary(c context.Context, host string, project string, id int64) (*model.BuildSummary, error) {
-	client, err := buildbucketClient(c, host, auth.AsProject, auth.WithProject(project))
+	client, err := buildbucketBuildsClient(c, host, auth.AsProject, auth.WithProject(project))
 	if err != nil {
 		return nil, err
 	}
