@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d82cf966_a094795d",
+        "filename": "milo/buildsource/buildbucket/builders_client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-22T02:04:19Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "8e367b69_36bad3f9",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 38
+      },
+      "revId": "5d0a678837f73706b41ba3cea5d5cc37d249026f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "110dce84_495b5446",
         "filename": "milo/frontend/routes_test.go",
         "patchSetId": 13
@@ -45,6 +69,30 @@
       "revId": "5d0a678837f73706b41ba3cea5d5cc37d249026f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07c900ec_e1c7f900",
+        "filename": "milo/frontend/routes_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-22T02:04:19Z",
+      "side": 1,
+      "message": "It doesn\u0027t support rich-text.\nAlso the proto field explicitly says that it needs to be a plain string.\nIf rich-text needs to be supported, I\u0027ll add it in other CL.",
+      "parentUuid": "110dce84_495b5446",
+      "range": {
+        "startLine": 356,
+        "startChar": 21,
+        "endLine": 356,
+        "endChar": 38
+      },
+      "revId": "5d0a678837f73706b41ba3cea5d5cc37d249026f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
