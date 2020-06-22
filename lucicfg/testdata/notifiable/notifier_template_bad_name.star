@@ -1,6 +1,6 @@
 luci.notifier_template(
-    name = 'template-with-dashes-in-name',
-    body = 'foo',
+    name = "template-with-dashes-in-name",
+    body = "foo",
 )
 
 # Expect errors:

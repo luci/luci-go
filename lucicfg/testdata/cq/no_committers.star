@@ -1,10 +1,10 @@
-luci.project(name = 'zzz')
+luci.project(name = "zzz")
 
 luci.cq_group(
-    name = 'group',
-    watch = cq.refset('https://example.googlesource.com/repo'),
+    name = "group",
+    watch = cq.refset("https://example.googlesource.com/repo"),
     acls = [
-        acl.entry(acl.CQ_DRY_RUNNER, groups = ['running dry']),
+        acl.entry(acl.CQ_DRY_RUNNER, groups = ["running dry"]),
     ],
 )
 

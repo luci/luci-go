@@ -55,7 +55,7 @@ func (x duration) Binary(op syntax.Token, y starlark.Value, side starlark.Side) 
 		switch {
 		case op == syntax.STAR:
 			return duration{x.Int.Mul(y)}, nil
-		case op == syntax.SLASH && side == starlark.Left:
+		case (op == syntax.SLASH || op == syntax.SLASHSLASH) && side == starlark.Left:
 			return duration{x.Int.Div(y)}, nil
 		}
 
@@ -67,9 +67,9 @@ func (x duration) Binary(op syntax.Token, y starlark.Value, side starlark.Side) 
 			return duration{x.Int.Sub(y.Int)}, nil
 		case op == syntax.MINUS && side == starlark.Right:
 			return duration{y.Int.Sub(x.Int)}, nil
-		case op == syntax.SLASH && side == starlark.Left:
+		case (op == syntax.SLASH || op == syntax.SLASHSLASH) && side == starlark.Left:
 			return x.Int.Div(y.Int), nil
-		case op == syntax.SLASH && side == starlark.Right:
+		case (op == syntax.SLASH || op == syntax.SLASHSLASH) && side == starlark.Right:
 			return y.Int.Div(x.Int), nil
 		}
 	}

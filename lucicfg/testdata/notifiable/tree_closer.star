@@ -1,42 +1,42 @@
-lucicfg.enable_experiment('crbug.com/1054172')
+lucicfg.enable_experiment("crbug.com/1054172")
 
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    notify = 'luci-notify.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    notify = "luci-notify.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 luci.notify(tree_closing_enabled = True)
-luci.bucket(name = 'bucket')
+luci.bucket(name = "bucket")
 luci.builder(
-    name = 'builder 1',
-    bucket = 'bucket',
-    executable = luci.recipe(name = 'noop', cipd_package = 'noop'),
+    name = "builder 1",
+    bucket = "bucket",
+    executable = luci.recipe(name = "noop", cipd_package = "noop"),
     notifies = [
         luci.notifier(
-            name = 'email notifier',
-            on_occurrence = ['FAILURE'],
-            notify_emails = ['a@example.com'],
+            name = "email notifier",
+            on_occurrence = ["FAILURE"],
+            notify_emails = ["a@example.com"],
         ),
-        'tree closer',
+        "tree closer",
     ],
 )
 luci.builder(
-    name = 'builder 2',
-    bucket = 'bucket',
-    executable = 'noop',
-    repo = 'https://repo.example.com',
+    name = "builder 2",
+    bucket = "bucket",
+    executable = "noop",
+    repo = "https://repo.example.com",
 )
 luci.tree_closer(
-    name = 'tree closer',
-    tree_status_host = 'some-tree.example.com',
-    failed_step_regexp = 'failed-step-regexp',
-    failed_step_regexp_exclude = ['regex1', 'or maybe regex 2'],
+    name = "tree closer",
+    tree_status_host = "some-tree.example.com",
+    failed_step_regexp = "failed-step-regexp",
+    failed_step_regexp_exclude = ["regex1", "or maybe regex 2"],
     template = luci.notifier_template(
-        name = 'tree_status',
-        body = 'boom\n',
+        name = "tree_status",
+        body = "boom\n",
     ),
-    notified_by = ['builder 2'],
+    notified_by = ["builder 2"],
 )
 # Expect configs:
 #

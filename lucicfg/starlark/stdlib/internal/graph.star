@@ -12,295 +12,286 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""API for manipulating the node graph."""
 
-_KEY_ORDER = 'key'
-_REVERSE_KEY_ORDER = '~key'
+_KEY_ORDER = "key"
+_REVERSE_KEY_ORDER = "~key"
 
-_DEFINITION_ORDER = 'def'
-_REVERSE_DEFINITION_ORDER = '~def'
+_DEFINITION_ORDER = "def"
+_REVERSE_DEFINITION_ORDER = "~def"
 
-_BREADTH_FIRST = 'breadth'
-_DEPTH_FIRST = 'depth'
-
+_BREADTH_FIRST = "breadth"
+_DEPTH_FIRST = "depth"
 
 # A constructor for graph.keyset structs.
-_keyset_ctor = __native__.genstruct('graph.keyset')
-
+_keyset_ctor = __native__.genstruct("graph.keyset")
 
 def _check_interpreter_context():
-  """Verifies add_node and add_edge are used only from 'exec' context."""
-  ctx = __native__.interpreter_context()
-  if ctx == 'EXEC':
-    return  # allowed
-  if ctx == 'LOAD':
-    fail('code executed via "load" must be side-effect free, consider using "exec" instead')
-  elif ctx == 'GEN':
-    fail('generators aren\'t allowed to modify the graph, only query it')
-  else:
-    fail('cannot modify the graph from interpreter context %s' % ctx)
-
+    """Verifies add_node and add_edge are used only from 'exec' context."""
+    ctx = __native__.interpreter_context()
+    if ctx == "EXEC":
+        return  # allowed
+    if ctx == "LOAD":
+        fail('code executed via "load" must be side-effect free, consider using "exec" instead')
+    elif ctx == "GEN":
+        fail("generators aren't allowed to modify the graph, only query it")
+    else:
+        fail("cannot modify the graph from interpreter context %s" % ctx)
 
 def _key(*args):
-  """Returns a key with given [(kind, name)] path.
+    """Returns a key with given [(kind, name)] path.
 
-  The kind in the last pair is considered the principal kind: when keys or nodes
-  are filtered by kind, they are filtered by the kind from the last pair.
+    The kind in the last pair is considered the principal kind: when keys or
+    nodes are filtered by kind, they are filtered by the kind from the last
+    pair.
 
-  Args:
-    *args: even number of strings: kind1, name1, kind2, name2, ...
+    Args:
+      *args: even number of strings: kind1, name1, kind2, name2, ...
 
-  Returns:
-    graph.key object representing this path.
-  """
-  return __native__.graph().key(*args)
-
+    Returns:
+      graph.key object representing this path.
+    """
+    return __native__.graph().key(*args)
 
 def _keyset(*keys):
-  """Returns a struct that encapsulates a set of keys of different kinds.
+    """Returns a struct that encapsulates a set of keys of different kinds.
 
-  Keysets are returned by rules such as luci.builder(...). Internally such rules
-  add a bunch of nodes to the graph, representing different aspects of the
-  definition. Keysets represent keys of "publicly exposed" nodes, so that other
-  nodes can connect to them.
+    Keysets are returned by rules such as luci.builder(...). Internally such
+    rules add a bunch of nodes to the graph, representing different aspects of
+    the definition. Keysets represent keys of "publicly exposed" nodes, so that
+    other nodes can connect to them.
 
-  For example, luci.builder(...) is internally represented by nodes of 3 kinds:
-      * luci.builder (actual builder definition)
-      * luci.builder_ref (used when the builder is treated as a builder)
-      * luci.triggerer (used when the builder is treated as a triggerer).
+    For example, luci.builder(...) is internally represented by nodes of 3
+    kinds:
+        * luci.builder (actual builder definition)
+        * luci.builder_ref (used when the builder is treated as a builder)
+        * luci.triggerer (used when the builder is treated as a triggerer).
 
-  Other nodes, depending of what they do, sometimes want to connect to
-  `luci.builder_ref` or to `luci.triggerer`. So in general rules accept keysets,
-  and their implementations then pick a key they want via `keyset.get(...)`.
+    Other nodes, depending of what they do, sometimes want to connect to
+    `luci.builder_ref` or to `luci.triggerer`. So in general rules accept
+    keysets, and their implementations then pick a key they want via
+    `keyset.get(...)`.
 
-  Note that `keys` must all have different kinds, otherwise `get` has no way
-  to target a particular key. graph.keyset(...) fails if some keys have the same
-  kind.
+    Note that `keys` must all have different kinds, otherwise `get` has no way
+    to target a particular key. graph.keyset(...) fails if some keys have the
+    same kind.
 
-  The kind of the first key in the keyset is used for error messages. It should
-  be the "most representative" key (e.g. `luci.builder` in the example above).
+    The kind of the first key in the keyset is used for error messages. It
+    should be the "most representative" key (e.g. `luci.builder` in the example
+    above).
 
-  Returns:
-    A graph.keyset struct with two methods:
-      `get(kind): graph.key`: either returns a key with given kind or fails with
-          an informative message if it's not there.
-      `has(kind): bool`: returns True if there's a key with given kind in the
+    Returns:
+      A graph.keyset struct with two methods:
+        `get(kind): graph.key`: either returns a key with given kind or fails
+          with an informative message if it's not there.
+        `has(kind): bool`: returns True if there's a key with given kind in the
           keyset.
-  """
-  if not keys:
-    fail('bad empty keyset')
+    """
+    if not keys:
+        fail("bad empty keyset")
 
-  as_map = {}
-  for k in keys:
-    if k.kind in as_map:
-      fail('bad key set %s, kind %s is duplicated' % (keys, k.kind))
-    as_map[k.kind] = k
+    as_map = {}
+    for k in keys:
+        if k.kind in as_map:
+            fail("bad key set %s, kind %s is duplicated" % (keys, k.kind))
+        as_map[k.kind] = k
 
-  def get(kind):
-    k = as_map.get(kind)
-    if not k:
-      fail('expecting %s, got %s' % (kind, keys[0].kind))
-    return k
+    def get(kind):
+        k = as_map.get(kind)
+        if not k:
+            fail("expecting %s, got %s" % (kind, keys[0].kind))
+        return k
 
-  def has(kind):
-    return kind in as_map
+    def has(kind):
+        return kind in as_map
 
-  return _keyset_ctor(get=get, has=has)
-
+    return _keyset_ctor(get = get, has = has)
 
 def _is_keyset(keyset):
-  """Returns True if `keyset` is graph.keyset(...) struct."""
-  return __native__.ctor(keyset) == _keyset_ctor
+    """Returns True if `keyset` is graph.keyset(...) struct."""
+    return __native__.ctor(keyset) == _keyset_ctor
 
+def _add_node(key, props = None, idempotent = False, trace = None):
+    """Adds a node to the graph.
 
-def _add_node(key, props=None, idempotent=False, trace=None):
-  """Adds a node to the graph.
+    If such node already exists, either fails right away (if 'idempotent' is
+    false), or verifies the existing node has also been marked as idempotent and
+    has exact same props dict as being passed here.
 
-  If such node already exists, either fails right away (if 'idempotent' is
-  false), or verifies the existing node has also been marked as idempotent and
-  has exact same props dict as being passed here.
+    Can be used only from code that was loaded via some exec(...). Fails if run
+    from a module being loaded via load(...). Such library-like modules must not
+    have side effects during their loading.
 
-  Can be used only from code that was loaded via some exec(...). Fails if run
-  from a module being loaded via load(...). Such library-like modules must not
-  have side effects during their loading.
+    Also fails if used from a generator callback: at this point the graph is
+    frozen and can't be extended.
 
-  Also fails if used from a generator callback: at this point the graph is
-  frozen and can't be extended.
+    Args:
+      key: a node key, see graph.key(...).
+      props: a dict with node properties, will be frozen.
+      idempotent: True if this node can be redeclared, but only with same props.
+      trace: a stack trace to associate with the node.
+    """
+    _check_interpreter_context()
+    __native__.graph().add_node(
+        key,
+        props or {},
+        bool(idempotent),
+        trace or stacktrace(skip = 1),
+    )
 
-  Args:
-    key: a node key, see graph.key(...).
-    props: a dict with node properties, will be frozen.
-    idempotent: True if this node can be redeclared, but only with same props.
-    trace: a stack trace to associate with the node.
-  """
-  _check_interpreter_context()
-  __native__.graph().add_node(
-      key, props or {}, bool(idempotent), trace or stacktrace(skip=1))
+def _add_edge(parent, child, title = None, trace = None):
+    """Adds an edge to the graph.
 
+    Neither of the nodes have to exist yet: it is OK to declare nodes and edges
+    in arbitrary order as long as at the end of the script execution (when the
+    graph is finalized) the graph is complete.
 
-def _add_edge(parent, child, title=None, trace=None):
-  """Adds an edge to the graph.
+    It is OK to add the same edge (with the same title) more than once. Only
+    the trace of the first definition is recorded.
 
-  Neither of the nodes have to exist yet: it is OK to declare nodes and edges
-  in arbitrary order as long as at the end of the script execution (when the
-  graph is finalized) the graph is complete.
+    Fails if the new edge introduces a cycle.
 
-  It is OK to add the same edge (with the same title) more than once. Only
-  the trace of the first definition is recorded.
+    Can be used only from code that was loaded via some exec(...). Fails if run
+    from a module being loaded via load(...). Such library-like modules must not
+    have side effects during their loading.
 
-  Fails if the new edge introduces a cycle.
+    Also fails if used from a generator callback: at this point the graph is
+    frozen and can't be extended.
 
-  Can be used only from code that was loaded via some exec(...). Fails if run
-  from a module being loaded via load(...). Such library-like modules must not
-  have side effects during their loading.
-
-  Also fails if used from a generator callback: at this point the graph is
-  frozen and can't be extended.
-
-  Args:
-    parent: a parent node key, see graph.key(...).
-    child: a child node key, see graph.key(...).
-    title: a title for the edge, used in error messages.
-    trace: a stack trace to associate with the edge.
-  """
-  _check_interpreter_context()
-  __native__.graph().add_edge(
-      parent, child, title or '', trace or stacktrace(skip=1))
-
+    Args:
+      parent: a parent node key, see graph.key(...).
+      child: a child node key, see graph.key(...).
+      title: a title for the edge, used in error messages.
+      trace: a stack trace to associate with the edge.
+    """
+    _check_interpreter_context()
+    __native__.graph().add_edge(
+        parent,
+        child,
+        title or "",
+        trace or stacktrace(skip = 1),
+    )
 
 def _node(key):
-  """Returns a node by the key or None if there's no such node.
+    """Returns a node by the key or None if there's no such node.
 
-  Fails if called not from a generator callback: a graph under construction
-  can't be queried.
+    Fails if called not from a generator callback: a graph under construction
+    can't be queried.
 
-  Args:
-    key: a node key, see graph.key(...).
+    Args:
+      key: a node key, see graph.key(...).
 
-  Returns:
-    graph.node object representing the node.
-  """
-  return __native__.graph().node(key)
+    Returns:
+      graph.node object representing the node.
+    """
+    return __native__.graph().node(key)
 
+def _children(parent, kind = None, order_by = _KEY_ORDER):
+    """Returns direct children of a node (given by its key).
 
-def _children(parent, kind=None, order_by=_KEY_ORDER):
-  """Returns direct children of a node (given by its key), optionally filtering
-  them by kind.
+    Depending on 'order_by', the children are either ordered lexicographically
+    by their keys or by the order edges to them were defined.
 
-  Depending on 'order_by', the children are either ordered lexicographically by
-  their keys or by the order edges to them were defined.
+    Fails if called not from a generator callback: a graph under construction
+    can't be queried.
 
-  Fails if called not from a generator callback: a graph under construction
-  can't be queried.
+    Args:
+      parent: a key of the parent node, see graph.key(...).
+      kind: a string with a kind of children to return or None for all.
+      order_by: one of `*_ORDER` constants, default is KEY_ORDER.
 
-  Args:
-    parent: a key of the parent node, see graph.key(...).
-    kind: a string with a kind of children to return or None for all.
-    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
-
-  Returns:
-    List of graph.node objects.
-  """
-  out = __native__.graph().children(parent, order_by)
-  if kind:
-    return [n for n in out if n.key.kind == kind]
-  return out
-
+    Returns:
+      List of graph.node objects.
+    """
+    out = __native__.graph().children(parent, order_by)
+    if kind:
+        return [n for n in out if n.key.kind == kind]
+    return out
 
 def _descendants(
-      root,
-      visitor=None,
-      order_by=_KEY_ORDER,
-      topology=_BREADTH_FIRST,
-  ):
-  """Recursively visits 'root' (given by its key) and all its children, in
-  breadth or depth first order, ordering edges by 'order_by'.
+        root,
+        visitor = None,
+        order_by = _KEY_ORDER,
+        topology = _BREADTH_FIRST):
+    """Recursively visits 'root' (given by its key) and all its children.
 
-  Returns the list of all visited nodes. When visiting in breadth-first order
-  (i.e. with `topology = BREADTH_FIRST`), nodes are returned exactly in the
-  same order they were passed to `visitor` callback. When visiting in
-  depth-first order, nodes are returned sorted topologically.
+    Returns the list of all visited nodes. When visiting in breadth-first order
+    (i.e. with `topology = BREADTH_FIRST`), nodes are returned exactly in the
+    same order they were passed to `visitor` callback. When visiting in
+    depth-first order, nodes are returned sorted topologically.
 
-  Fails if called not from a generator callback: a graph under construction
-  can't be queried.
+    Fails if called not from a generator callback: a graph under construction
+    can't be queried.
 
-  Each node is visited only once, even if it is reachable through multiple
-  paths. Note that the graph has no cycles (by construction).
+    Each node is visited only once, even if it is reachable through multiple
+    paths. Note that the graph has no cycles (by construction).
 
-  The visitor callback (if not None) is called for each visited node. It decides
-  what subset of children of this node to visit. The callback always sees all
-  children, even if some of them (or all) have already been visited. Visited
-  nodes will be skipped even if the visitor returns them.
+    The visitor callback (if not None) is called for each visited node. It
+    decides what subset of children of this node to visit. The callback always
+    sees all children, even if some of them (or all) have already been visited.
+    Visited nodes will be skipped even if the visitor returns them.
 
-  Args:
-    root: a key of the node to start the traversal from, see graph.key(...).
-    visitor: func(node: graph.node, children: []graph.node): []graph.node.
-    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
-    topology: either BREADTH_FIRST or DEPTH_FIRST, default is BREADTH_FIRST.
+    Args:
+      root: a key of the node to start the traversal from, see graph.key(...).
+      visitor: func(node: graph.node, children: []graph.node): []graph.node.
+      order_by: one of `*_ORDER` constants, default is KEY_ORDER.
+      topology: either BREADTH_FIRST or DEPTH_FIRST, default is BREADTH_FIRST.
 
-  Returns:
-    List of visited graph.node objects, starting with the root.
-  """
-  return __native__.graph().descendants(root, visitor, order_by, topology)
+    Returns:
+      List of visited graph.node objects, starting with the root.
+    """
+    return __native__.graph().descendants(root, visitor, order_by, topology)
 
+def _parents(child, kind = None, order_by = _KEY_ORDER):
+    """Returns direct parents of a node (given by its key).
 
-def _parents(child, kind=None, order_by=_KEY_ORDER):
-  """Returns direct parents of a node (given by its key), optionally filtering
-  them by kind.
+    Depending on 'order_by', the parents are either ordered lexicographically by
+    their key or by the order edges from them were defined.
 
-  Depending on 'order_by', the parents are either ordered lexicographically by
-  their key or by the order edges from them were defined.
+    Fails if called not from a generator callback: a graph under construction
+    can't be queried.
 
-  Fails if called not from a generator callback: a graph under construction
-  can't be queried.
+    Args:
+      child: a key of the node to find parents of, see graph.key(...).
+      kind: a string with a kind of parents to return or None for all.
+      order_by: one of `*_ORDER` constants, default is KEY_ORDER.
 
-  Args:
-    child: a key of the node to find parents of, see graph.key(...).
-    kind: a string with a kind of parents to return or None for all.
-    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
+    Returns:
+      List of graph.node objects.
+    """
+    out = __native__.graph().parents(child, order_by)
+    if kind:
+        return [n for n in out if n.key.kind == kind]
+    return out
 
-  Returns:
-    List of graph.node objects.
-  """
-  out = __native__.graph().parents(child, order_by)
-  if kind:
-    return [n for n in out if n.key.kind == kind]
-  return out
+def _sorted_nodes(nodes, order_by = _KEY_ORDER):
+    """Returns a new sorted list of nodes.
 
+    Depending on 'order_by', the nodes are either ordered lexicographically by
+    their keys or by the order they were defined in the graph.
 
-def _sorted_nodes(nodes, order_by=_KEY_ORDER):
-  """Returns a new sorted list of nodes.
+    Args:
+      nodes: an iterable of graph.node objects.
+      order_by: one of `*_ORDER` constants, default is KEY_ORDER.
 
-  Depending on 'order_by', the nodes are either ordered lexicographically by
-  their keys or by the order they were defined in the graph.
-
-  Args:
-    nodes: an iterable of graph.node objects.
-    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
-
-  Returns:
-    List of graph.node objects.
-  """
-  return __native__.graph().sorted_nodes(nodes, order_by)
-
+    Returns:
+      List of graph.node objects.
+    """
+    return __native__.graph().sorted_nodes(nodes, order_by)
 
 # Public API of this module.
 graph = struct(
     KEY_ORDER = _KEY_ORDER,
     REVERSE_KEY_ORDER = _REVERSE_KEY_ORDER,
-
     DEFINITION_ORDER = _DEFINITION_ORDER,
     REVERSE_DEFINITION_ORDER = _REVERSE_DEFINITION_ORDER,
-
     BREADTH_FIRST = _BREADTH_FIRST,
     DEPTH_FIRST = _DEPTH_FIRST,
-
     key = _key,
     keyset = _keyset,
     is_keyset = _is_keyset,
-
     add_node = _add_node,
     add_edge = _add_edge,
-
     node = _node,
     children = _children,
     descendants = _descendants,

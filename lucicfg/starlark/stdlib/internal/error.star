@@ -12,25 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Defines 'error' function used internally to emit non-fatal errors."""
+
 def error(msg, *args, **kwargs):
-  """Emits an error message and continues the execution.
+    """Emits an error message and continues the execution.
 
-  If at the end of the execution there's at least one error recorded, the
-  execution is considered failed.
+    If at the end of the execution there's at least one error recorded, the
+    execution is considered failed.
 
-  Either captures the current stack trace for the traceback or uses a
-  previously captured one if it was passed via 'trace' keyword argument:
+    Either captures the current stack trace for the traceback or uses a
+    previously captured one if it was passed via 'trace' keyword argument:
 
-    trace = stacktrace()
-    ...
-    error('Boom, %s', 'arg', trace=trace)
+      trace = stacktrace()
+      ...
+      error('Boom, %s', 'arg', trace=trace)
 
-  Args:
-    msg: error message format string.
-    *args: arguments for the format string.
-    **kwargs: either empty of contains single 'trace' var with a stack trace.
-  """
-  trace = kwargs.pop('trace', None) or stacktrace(skip=1)
-  if len(kwargs) != 0:
-    fail('expecting trace=... kwargs only')
-  __native__.emit_error(msg % args, trace)
+    Args:
+      msg: error message format string.
+      *args: arguments for the format string.
+      **kwargs: either empty of contains single 'trace' var with a stack trace.
+    """
+    trace = kwargs.pop("trace", None) or stacktrace(skip = 1)
+    if len(kwargs) != 0:
+        fail("expecting trace=... kwargs only")
+    __native__.emit_error(msg % args, trace)

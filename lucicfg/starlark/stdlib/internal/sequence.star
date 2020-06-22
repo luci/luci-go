@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""API for generating sequences of numbers."""
 
 def _next(name):
-  """Returns the next value in a sequence.
+    """Returns the next value in a sequence.
 
-  Sequences are auto-incrementing integer counters living in the global
-  interpreter state. They are useful for generating values unique within a
-  single `lucicfg` run.
+    Sequences are auto-incrementing integer counters living in the global
+    interpreter state. They are useful for generating values unique within a
+    single `lucicfg` run.
 
-  Args:
-    name: name of the sequence to increment. Required.
+    Args:
+      name: name of the sequence to increment. Required.
 
-  Returns:
-    A positive integer, a new one each call, in the increasing order.
-  """
-  return __native__.sequence_next(name)
-
+    Returns:
+      A positive integer, a new one each call, in the increasing order.
+    """
+    return __native__.sequence_next(name)
 
 sequence = struct(next = _next)

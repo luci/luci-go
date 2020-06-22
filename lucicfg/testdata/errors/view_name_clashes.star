@@ -1,10 +1,10 @@
 luci.project(
-    name = 'project',
-    milo = 'luci-milo.appspot.com',
+    name = "project",
+    milo = "luci-milo.appspot.com",
 )
 
-luci.list_view(name = 'Some view')
-luci.console_view(name = 'Some view', repo = 'https://some.repo')
+luci.list_view(name = "Some view")
+luci.console_view(name = "Some view", repo = "https://some.repo")
 
 # Expect errors like:
 #

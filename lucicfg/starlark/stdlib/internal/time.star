@@ -12,103 +12,98 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""API for defining time intervals."""
 
 def _duration(milliseconds):
-  """Returns a duration that represents the integer number of milliseconds.
+    """Returns a duration that represents the integer number of milliseconds.
 
-  Args:
-    milliseconds: integer with the requested number of milliseconds. Required.
+    Args:
+      milliseconds: integer with the requested number of milliseconds. Required.
 
-  Returns:
-    time.duration value.
-  """
-  if type(milliseconds) != 'int':
-    fail('time.duration: got %s, want int' % type(milliseconds))
-  return __native__.make_duration(milliseconds)
-
+    Returns:
+      time.duration value.
+    """
+    if type(milliseconds) != "int":
+        fail("time.duration: got %s, want int" % type(milliseconds))
+    return __native__.make_duration(milliseconds)
 
 def _epoch(layout, value, location):
-  """Returns epoch seconds for value interpreted as a time per layout in location.
+    """Returns epoch seconds for value interpreted as a time per layout in location.
 
-  Args:
-    layout: a string format showing how the reference time would be
-      interpreted, see golang's time.Parse. Required.
-    value: a string value to be parsed as a time. Required.
-    location: a string location, for example 'America/Los_Angeles'. Required.
+    Args:
+      layout: a string format showing how the reference time would be
+        interpreted, see golang's time.Parse. Required.
+      value: a string value to be parsed as a time. Required.
+      location: a string location, for example 'America/Los_Angeles'. Required.
 
-  Returns:
-    int epoch seconds for value.
-  """
-  if type(layout) != 'string':
-    fail('time.epoch: got %s as first argument, want string' % type(layout))
-  if type(value) != 'string':
-    fail('time.epoch: got %s as second argument, want string' % type(value))
-  if type(location) != 'string':
-    fail('time.epoch: got %s as third argument, want string' % type(location))
-  return __native__.epoch(layout, value, location)
-
+    Returns:
+      int epoch seconds for value.
+    """
+    if type(layout) != "string":
+        fail("time.epoch: got %s as first argument, want string" % type(layout))
+    if type(value) != "string":
+        fail("time.epoch: got %s as second argument, want string" % type(value))
+    if type(location) != "string":
+        fail("time.epoch: got %s as third argument, want string" % type(location))
+    return __native__.epoch(layout, value, location)
 
 def _truncate(duration, precision):
-  """Truncates the precision of the duration to the given value.
+    """Truncates the precision of the duration to the given value.
 
-  For example `time.truncate(time.hour+10*time.minute, time.hour)` is
-  `time.hour`.
+    For example `time.truncate(time.hour+10*time.minute, time.hour)` is
+    `time.hour`.
 
-  Args:
-    duration: a time.duration to truncate. Required.
-    precision: a time.duration with precision to truncate to. Required.
+    Args:
+      duration: a time.duration to truncate. Required.
+      precision: a time.duration with precision to truncate to. Required.
 
-  Returns:
-    Truncated time.duration value.
-  """
-  if type(duration) != 'duration':
-    fail('time.truncate: got %s as first argument, want duration' % type(duration))
-  if type(precision) != 'duration':
-    fail('time.truncate: got %s as second argument, want duration' % type(precision))
-  return (duration / precision) * precision
+    Returns:
+      Truncated time.duration value.
+    """
+    if type(duration) != "duration":
+        fail("time.truncate: got %s as first argument, want duration" % type(duration))
+    if type(precision) != "duration":
+        fail("time.truncate: got %s as second argument, want duration" % type(precision))
+    return (duration // precision) * precision
 
-
-_days = {'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6, 'sun': 7}
-
+_days = {"mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6, "sun": 7}
 
 def _day_index(name):
-  """E.g. 'Tue' -> 1."""
-  idx = _days.get(name.lower())
-  if idx == None:
-    fail('days_of_week: %r is not a valid 3-char abbreviated day of the week' % (name,))
-  return idx
-
+    """E.g. 'Tue' -> 1."""
+    idx = _days.get(name.lower())
+    if idx == None:
+        fail("days_of_week: %r is not a valid 3-char abbreviated day of the week" % (name,))
+    return idx
 
 def _days_of_week(spec):
-  """Parses e.g. `Tue,Fri-Sun` into a list of day indexes, e.g. `[2, 5, 6, 7]`.
+    """Parses e.g. `Tue,Fri-Sun` into a list of day indexes, e.g. `[2, 5, 6, 7]`.
 
-  Monday is 1, Sunday is 7. The returned list is sorted and has no duplicates.
-  An empty string results in the empty list.
+    Monday is 1, Sunday is 7. The returned list is sorted and has no duplicates.
+    An empty string results in the empty list.
 
-  Args:
-    spec: a case-insensitive string with 3-char abbreviated days of the week.
+    Args:
+      spec: a case-insensitive string with 3-char abbreviated days of the week.
         Multiple terms are separated by a comma and optional spaces. Each term
         is either a day (e.g. `Tue`), or a range (e.g. `Wed-Sun`). Required.
 
-  Returns:
-    A list of 1-based day indexes. Monday is 1.
-  """
-  days = []
-  for term in spec.split(','):
-    term = term.strip()
-    if not term:
-      continue
-    if '-' in term:
-      l, r = term.split('-')
-      l, r = l.strip(), r.strip()
-      li, ri = _day_index(l), _day_index(r)
-      if li > ri:
-        fail('days_of_week: bad range %r - %r is later than %r' % (term, l, r))
-      days.extend(range(li, ri+1))
-    else:
-      days.append(_day_index(term))
-  return sorted(set(days))
-
+    Returns:
+      A list of 1-based day indexes. Monday is 1.
+    """
+    days = []
+    for term in spec.split(","):
+        term = term.strip()
+        if not term:
+            continue
+        if "-" in term:
+            left, right = term.split("-")
+            left, right = left.strip(), right.strip()
+            li, ri = _day_index(left), _day_index(right)
+            if li > ri:
+                fail("days_of_week: bad range %r - %r is later than %r" % (term, left, right))
+            days.extend(range(li, ri + 1))
+        else:
+            days.append(_day_index(term))
+    return sorted(set(days))
 
 # Time module provides a simple API for defining durations in a readable way,
 # resembling golang's time.Duration.
@@ -141,8 +136,7 @@ time = struct(
     truncate = _truncate,
 
     # Handy for epoch's layout argument.
-    short_date = '2006-01-02 15:04:05',
-
+    short_date = "2006-01-02 15:04:05",
     zero = _duration(0),
     millisecond = _duration(1),
     second = _duration(1000),
@@ -150,6 +144,5 @@ time = struct(
     hour = _duration(60 * 60 * 1000),
     day = _duration(24 * 60 * 60 * 1000),
     week = _duration(7 * 24 * 60 * 60 * 1000),
-
     days_of_week = _days_of_week,
 )

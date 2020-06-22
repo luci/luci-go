@@ -1,56 +1,53 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    milo = 'luci-milo.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    milo = "luci-milo.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
-luci.bucket(name = 'bucket')
-luci.recipe(name = 'noop', cipd_package = 'noop')
+luci.bucket(name = "bucket")
+luci.recipe(name = "noop", cipd_package = "noop")
 
 luci.cq_group(
-    name = 'cq group',
-    watch = cq.refset('https://example.googlesource.com/repo'),
+    name = "cq group",
+    watch = cq.refset("https://example.googlesource.com/repo"),
     acls = [
-        acl.entry(acl.CQ_COMMITTER, groups=['c']),
+        acl.entry(acl.CQ_COMMITTER, groups = ["c"]),
     ],
 )
 
 luci.list_view(
-    name = 'list view',
+    name = "list view",
 )
 
-
 def one(name):
-  luci.builder(
-      name = name,
-      bucket = 'bucket',
-      executable = 'noop',
-      service_account = 'noop@example.com',
-  )
-  luci.cq_tryjob_verifier(
-      builder = name,
-      cq_group = 'cq group',
-  )
-  luci.list_view_entry(
-      builder = name,
-      list_view = 'list view',
-  )
-
+    luci.builder(
+        name = name,
+        bucket = "bucket",
+        executable = "noop",
+        service_account = "noop@example.com",
+    )
+    luci.cq_tryjob_verifier(
+        builder = name,
+        cq_group = "cq group",
+    )
+    luci.list_view_entry(
+        builder = name,
+        list_view = "list view",
+    )
 
 # 11 builders, to make sure we cover the case when "10" is lexicographically
 # before "2".
-one('builder-k')
-one('builder-j')
-one('builder-i')
-one('builder-h')
-one('builder-g')
-one('builder-f')
-one('builder-e')
-one('builder-d')
-one('builder-c')
-one('builder-b')
-one('builder-a')
-
+one("builder-k")
+one("builder-j")
+one("builder-i")
+one("builder-h")
+one("builder-g")
+one("builder-f")
+one("builder-e")
+one("builder-d")
+one("builder-c")
+one("builder-b")
+one("builder-a")
 
 # commit-queue.cfg is in alphabetical order.
 # luci-milo.cfg is in definition order.

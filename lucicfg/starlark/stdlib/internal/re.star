@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""API for checking regular expressions."""
 
 def _submatches(pattern, str):
-  """Returns a tuple of submatches with the leftmost match of the regular
-  expression.
+    """Returns a tuple of submatches of the regular expression.
 
-  The returned tuple has the full match as a first item, followed by
-  subexpression matches.
+    The returned tuple has the full match as a first item, followed by
+    subexpression matches.
 
-  If the string doesn't match the expression returns an empty tuple. Fails if
-  the regular expression can't be compiled.
-  """
-  return __native__.re_submatches(pattern, str)
-
+    If the string doesn't match the expression returns an empty tuple. Fails if
+    the regular expression can't be compiled.
+    """
+    return __native__.re_submatches(pattern, str)
 
 # Public API of this module.
 re = struct(

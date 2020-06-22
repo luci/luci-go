@@ -1,4 +1,4 @@
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 # Expect errors like:
 #

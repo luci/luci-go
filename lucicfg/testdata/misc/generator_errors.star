@@ -1,19 +1,23 @@
 def gen1(ctx):
-  fail("gen1 failed")
+    fail("gen1 failed")
+
 lucicfg.generator(impl = gen1)
 
 trace = stacktrace()
 
 def gen2(ctx):
-  fail("gen2 failed", trace=trace)
+    fail("gen2 failed", trace = trace)
+
 lucicfg.generator(impl = gen2)
 
 def gen3(ctx):
-  fail("dedupped error", trace=trace)
+    fail("dedupped error", trace = trace)
+
 lucicfg.generator(impl = gen3)
 
 def gen4(ctx):
-  fail("dedupped error", trace=trace)
+    fail("dedupped error", trace = trace)
+
 lucicfg.generator(impl = gen4)
 
 # Expect errors:

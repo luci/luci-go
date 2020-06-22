@@ -1,8 +1,11 @@
 #!/usr/bin/env lucicfg
 
-# This example shows a bare minimum needed to declare a builder. This builder is
-# not really functional, since it still misses many important parts (e.g. a list
-# of Swarming dimensions).
+"""Minimal example.
+
+This example shows a bare minimum needed to declare a builder. This builder is
+not really functional, since it still misses many important parts (e.g. a list
+of Swarming dimensions).
+"""
 
 luci.project(
     name = "hello-world",

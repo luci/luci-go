@@ -12,200 +12,197 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/lucicfg.star', 'lucicfg')
-load('@stdlib//internal/validate.star', 'validate')
+"""Defines luci.executable(...) and luci.recipe(...) rules."""
 
-load('@stdlib//internal/luci/common.star', 'keys')
-
+load("@stdlib//internal/graph.star", "graph")
+load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/validate.star", "validate")
+load("@stdlib//internal/luci/common.star", "keys")
 
 def _executable_props(
-      ctx,
-      cipd_package=None,
-      cipd_version=None,
-      recipe=None,
-      cmd=None,
-  ):
-  """Defines an executable's properties. See luci.executable(...).
+        ctx,
+        cipd_package = None,
+        cipd_version = None,
+        recipe = None,
+        cmd = None):
+    """Defines an executable's properties. See luci.executable(...).
 
-  Args:
-    cipd_package: a cipd package name with the executable. Supports the
+    Args:
+      ctx: the implicit rule context, see lucicfg.rule(...).
+      cipd_package: a cipd package name with the executable. Supports the
         module-scoped default.
-    cipd_version: a version of the executable package to fetch, default
+      cipd_version: a version of the executable package to fetch, default
         is `refs/heads/master`. Supports the module-scoped default.
-    recipe: name of a recipe. Required if the executable is a recipe bundle.
-    cmd: a list of strings to use as the executable command. If None (or empty),
-        Buildbucket will fill this in on the server side to either ['luciexe']
-        or ['recipes'], depending on its global configuration.
-  """
-  return {
-      'cipd_package': validate.string(
-          'cipd_package',
-          cipd_package,
-          default = ctx.defaults.cipd_package.get(),
-          required = ctx.defaults.cipd_package.get() == None,
-      ),
-      'cipd_version': validate.string(
-          'cipd_version',
-          cipd_version,
-          default = ctx.defaults.cipd_version.get() or 'refs/heads/master',
-          required = False,
-      ),
-      'recipe': validate.string(
-          'recipe',
-          recipe,
-          required = False,
-      ),
-      'cmd': validate.str_list(
-          'cmd',
-          cmd,
-          required = False,
-      ),
-  }
-
+      recipe: name of a recipe. Required if the executable is a recipe bundle.
+      cmd: a list of strings to use as the executable command. If None
+        (or empty), Buildbucket will fill this in on the server side to either
+        `['luciexe']` or `['recipes']`, depending on its global configuration.
+    """
+    return {
+        "cipd_package": validate.string(
+            "cipd_package",
+            cipd_package,
+            default = ctx.defaults.cipd_package.get(),
+            required = ctx.defaults.cipd_package.get() == None,
+        ),
+        "cipd_version": validate.string(
+            "cipd_version",
+            cipd_version,
+            default = ctx.defaults.cipd_version.get() or "refs/heads/master",
+            required = False,
+        ),
+        "recipe": validate.string(
+            "recipe",
+            recipe,
+            required = False,
+        ),
+        "cmd": validate.str_list(
+            "cmd",
+            cmd,
+            required = False,
+        ),
+    }
 
 def _executable(
-      ctx,
-      name=None,
-      cipd_package=None,
-      cipd_version=None,
-      cmd=None
-  ):
-  """Defines an executable.
+        ctx,
+        name = None,
+        cipd_package = None,
+        cipd_version = None,
+        cmd = None):
+    """Defines an executable.
 
-  Builders refer to such executables in their `executable` field, see
-  luci.builder(...). Multiple builders can execute the same executable (perhaps
-  passing different properties to it).
+    Builders refer to such executables in their `executable` field, see
+    luci.builder(...). Multiple builders can execute the same executable
+    (perhaps passing different properties to it).
 
-  Executables must be available as cipd packages.
+    Executables must be available as cipd packages.
 
-  The cipd version to fetch is usually a lower-cased git ref (like
-  `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+    The cipd version to fetch is usually a lower-cased git ref (like
+    `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
 
-  A luci.executable(...) with some particular name can be redeclared many times
-  as long as all fields in all declaration are identical. This is helpful when
-  luci.executable(...) is used inside a helper function that at once declares
-  a builder and an executable needed for this builder.
+    A luci.executable(...) with some particular name can be redeclared many
+    times as long as all fields in all declaration are identical. This is
+    helpful when luci.executable(...) is used inside a helper function that at
+    once declares a builder and an executable needed for this builder.
 
-  Args:
-    name: name of this executable entity, to refer to it from builders.
+    Args:
+      ctx: the implicit rule context, see lucicfg.rule(...).
+      name: name of this executable entity, to refer to it from builders.
         Required.
-    cipd_package: a cipd package name with the executable. Supports the
+      cipd_package: a cipd package name with the executable. Supports the
         module-scoped default.
-    cipd_version: a version of the executable package to fetch, default
+      cipd_version: a version of the executable package to fetch, default
         is `refs/heads/master`. Supports the module-scoped default.
-    cmd: a list of strings which are the command line to use for this
+      cmd: a list of strings which are the command line to use for this
         executable. If omitted, either `('recipes',)` or `('luciexe',)` will be
         used by Buildbucket, according to its global configuration. The special
         value of `('recipes',)` indicates that this executable should be run
         under the legacy kitchen runtime. All other values will be executed
         under the go.chromium.org/luci/luciexe protocol.
-  """
-  name = validate.string('name', name)
-  key = keys.executable(name)
-  props = _executable_props(
-      ctx,
-      cipd_package = cipd_package,
-      cipd_version = cipd_version,
-      cmd = cmd,
-  )
-  graph.add_node(key, idempotent = True, props = props)
-  return graph.keyset(key)
-
+    """
+    name = validate.string("name", name)
+    key = keys.executable(name)
+    props = _executable_props(
+        ctx,
+        cipd_package = cipd_package,
+        cipd_version = cipd_version,
+        cmd = cmd,
+    )
+    graph.add_node(key, idempotent = True, props = props)
+    return graph.keyset(key)
 
 def _recipe(
-      ctx,
-      *,
-      name=None,
-      cipd_package=None,
-      cipd_version=None,
-      recipe=None,
-      use_bbagent=None,  # transitional for crbug.com/1015181
-  ):
-  """Defines an executable that runs a particular recipe.
+        ctx,
+        *,
+        name = None,
+        cipd_package = None,
+        cipd_version = None,
+        recipe = None,
+        use_bbagent = None):  # transitional for crbug.com/1015181
+    """Defines an executable that runs a particular recipe.
 
-  Recipes are python-based DSL for defining what a builder should do, see
-  [recipes-py](https://chromium.googlesource.com/infra/luci/recipes-py/).
+    Recipes are python-based DSL for defining what a builder should do, see
+    [recipes-py](https://chromium.googlesource.com/infra/luci/recipes-py/).
 
-  Builders refer to such executable recipes in their `executable` field, see
-  luci.builder(...). Multiple builders can execute the same recipe (perhaps
-  passing different properties to it).
+    Builders refer to such executable recipes in their `executable` field, see
+    luci.builder(...). Multiple builders can execute the same recipe (perhaps
+    passing different properties to it).
 
-  Recipes are located inside cipd packages called "recipe bundles". Typically
-  the cipd package name with the recipe bundle will look like:
+    Recipes are located inside cipd packages called "recipe bundles". Typically
+    the cipd package name with the recipe bundle will look like:
 
-      infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
+        infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
 
-  Recipes bundled from internal repositories are typically under
+    Recipes bundled from internal repositories are typically under
 
-      infra_internal/recipe_bundles/...
+        infra_internal/recipe_bundles/...
 
-  But if you're building your own recipe bundles, they could be located
-  elsewhere.
+    But if you're building your own recipe bundles, they could be located
+    elsewhere.
 
-  The cipd version to fetch is usually a lower-cased git ref (like
-  `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+    The cipd version to fetch is usually a lower-cased git ref (like
+    `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
 
-  A luci.recipe(...) with some particular name can be redeclared many times as
-  long as all fields in all declaration are identical. This is helpful when
-  luci.recipe(...) is used inside a helper function that at once declares
-  a builder and a recipe needed for this builder.
+    A luci.recipe(...) with some particular name can be redeclared many times as
+    long as all fields in all declaration are identical. This is helpful when
+    luci.recipe(...) is used inside a helper function that at once declares
+    a builder and a recipe needed for this builder.
 
-  Args:
-    name: name of this recipe entity, to refer to it from builders. If `recipe`
-        is None, also specifies the recipe name within the bundle. Required.
-    cipd_package: a cipd package name with the recipe bundle. Supports the
+    Args:
+      ctx: the implicit rule context, see lucicfg.rule(...).
+      name: name of this recipe entity, to refer to it from builders. If
+        `recipe` is None, also specifies the recipe name within the bundle.
+        Required.
+      cipd_package: a cipd package name with the recipe bundle. Supports the
         module-scoped default.
-    cipd_version: a version of the recipe bundle package to fetch, default
+      cipd_version: a version of the recipe bundle package to fetch, default
         is `refs/heads/master`. Supports the module-scoped default.
-    recipe: name of a recipe inside the recipe bundle if it differs from
+      recipe: name of a recipe inside the recipe bundle if it differs from
         `name`. Useful if recipe names clash between different recipe bundles.
         When this happens, `name` can be used as a non-ambiguous alias, and
         `recipe` can provide the actual recipe name. Defaults to `name`.
-    use_bbagent: a boolean to override Buildbucket's global configuration. If
+      use_bbagent: a boolean to override Buildbucket's global configuration. If
         True, then builders with this recipe will always use bbagent. If False,
-        then builders with this recipe will temporarially stop using bbagent
-        (note that all builders are expected to use bbagent by ~2020Q3).
-        Defaults to unspecified, which will cause Buildbucket to pick according
-        to it's own global configuration. See [this bug](crbug.com/1015181) for
-        the global bbagent rollout. Supports the module-scoped default.
-  """
-  name = validate.string('name', name)
-  use_bbagent = validate.bool('use_bbagent', use_bbagent, required=False)
-  key = keys.executable(name)
+        then builders with this recipe will temporarily stop using bbagent (note
+        that all builders are expected to use bbagent by ~2020Q3). Defaults to
+        unspecified, which will cause Buildbucket to pick according to it's own
+        global configuration. See [this bug](crbug.com/1015181) for the global
+        bbagent rollout. Supports the module-scoped default.
+    """
+    name = validate.string("name", name)
+    use_bbagent = validate.bool("use_bbagent", use_bbagent, required = False)
+    key = keys.executable(name)
 
-  cmd = None
-  if use_bbagent != None:
-    if use_bbagent:
-      cmd = ['luciexe']
-    else:
-      cmd = ['recipes']
+    cmd = None
+    if use_bbagent != None:
+        if use_bbagent:
+            cmd = ["luciexe"]
+        else:
+            cmd = ["recipes"]
 
-  props = _executable_props(
-      ctx,
-      cipd_package = cipd_package,
-      cipd_version = cipd_version,
-      recipe = recipe or name,
-      cmd = cmd,
-  )
-  graph.add_node(key, idempotent = True, props = props)
-  return graph.keyset(key)
-
+    props = _executable_props(
+        ctx,
+        cipd_package = cipd_package,
+        cipd_version = cipd_version,
+        recipe = recipe or name,
+        cmd = cmd,
+    )
+    graph.add_node(key, idempotent = True, props = props)
+    return graph.keyset(key)
 
 executable = lucicfg.rule(
     impl = _executable,
     defaults = validate.vars_with_validators({
-        'cipd_package': validate.string,
-        'cipd_version': validate.string,
+        "cipd_package": validate.string,
+        "cipd_version": validate.string,
     }),
 )
-
 
 recipe = lucicfg.rule(
     impl = _recipe,
     defaults = validate.vars_with_validators({
-        'cipd_package': validate.string,
-        'cipd_version': validate.string,
-        'use_bbagent': validate.bool,
+        "cipd_package": validate.string,
+        "cipd_version": validate.string,
+        "use_bbagent": validate.bool,
     }),
 )

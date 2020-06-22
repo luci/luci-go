@@ -321,5 +321,7 @@ func allChecks() stringset.Set {
 func defaultChecks() stringset.Set {
 	s := stringset.NewFromSlice(warn.DefaultWarnings...)
 	s.Add(formattingCategory)
+	s.Del("load-on-top")   // order of loads may matter in lucicfg
+	s.Del("uninitialized") // this check doesn't work well with lambdas and inner functions
 	return s
 }

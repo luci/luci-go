@@ -1,70 +1,70 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    notify = 'luci-notify.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    notify = "luci-notify.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
-luci.bucket(name = 'bucket')
-luci.recipe(name = 'noop', cipd_package = 'noop')
+luci.bucket(name = "bucket")
+luci.recipe(name = "noop", cipd_package = "noop")
 luci.builder(
-    name = 'builder 1',
-    bucket = 'bucket',
-    executable = 'noop',
+    name = "builder 1",
+    bucket = "bucket",
+    executable = "noop",
     notifies = [
         luci.notifier(
-            name = 'email notifier',
-            on_occurrence = ['FAILURE'],
-            notify_emails = ['a@example.com'],
+            name = "email notifier",
+            on_occurrence = ["FAILURE"],
+            notify_emails = ["a@example.com"],
         ),
     ],
 )
 luci.builder(
-    name = 'builder 2',
-    bucket = 'bucket',
-    executable = 'noop',
-    repo = 'https://repo.example.com',
+    name = "builder 2",
+    bucket = "bucket",
+    executable = "noop",
+    repo = "https://repo.example.com",
     notifies = [
         luci.notifier(
-            name = 'blamelist notifier',
-            on_occurrence = ['FAILURE'],
+            name = "blamelist notifier",
+            on_occurrence = ["FAILURE"],
             notify_blamelist = True,
         ),
     ],
 )
 luci.builder(
-    name = 'builder 3',
-    bucket = 'bucket',
-    executable = 'noop',
-    repo = 'https://repo.example.com',
+    name = "builder 3",
+    bucket = "bucket",
+    executable = "noop",
+    repo = "https://repo.example.com",
     notifies = [
         luci.notifier(
-            name = 'blamelist notifier with infra failures',
-            on_occurrence = ['FAILURE', 'INFRA_FAILURE'],
+            name = "blamelist notifier with infra failures",
+            on_occurrence = ["FAILURE", "INFRA_FAILURE"],
             notify_blamelist = True,
         ),
     ],
 )
 luci.builder(
-    name = 'builder 4',
-    bucket = 'bucket',
-    executable = 'noop',
+    name = "builder 4",
+    bucket = "bucket",
+    executable = "noop",
     notifies = [
         luci.notifier(
-            name = 'notifier with regex filter',
-            on_occurrence = ['FAILURE'],
-            failed_step_regexp = '.*test.*',
+            name = "notifier with regex filter",
+            on_occurrence = ["FAILURE"],
+            failed_step_regexp = ".*test.*",
         ),
     ],
 )
 luci.builder(
-    name = 'builder 5',
-    bucket = 'bucket',
-    executable = 'noop',
+    name = "builder 5",
+    bucket = "bucket",
+    executable = "noop",
     notifies = [
         luci.notifier(
-            name = 'notifier with rotations',
-            on_occurrence = ['FAILURE'],
-            notify_rotation_urls = ['https://rota-ng.appspot.com/legacy/sheriff.json'],
+            name = "notifier with rotations",
+            on_occurrence = ["FAILURE"],
+            notify_rotation_urls = ["https://rota-ng.appspot.com/legacy/sheriff.json"],
         ),
     ],
 )

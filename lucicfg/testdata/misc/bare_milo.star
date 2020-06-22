@@ -1,11 +1,11 @@
 luci.project(
-    name = 'infra',
-    milo = 'luci-milo.appspot.com',
+    name = "infra",
+    milo = "luci-milo.appspot.com",
 )
 
 luci.milo(
-    monorail_project = 'project',
-    monorail_components = ['A'],
+    monorail_project = "project",
+    monorail_components = ["A"],
 )
 
 # Expect configs:

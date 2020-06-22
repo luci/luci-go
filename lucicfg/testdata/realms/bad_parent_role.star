@@ -1,9 +1,9 @@
-lucicfg.enable_experiment('crbug.com/1085650')
+lucicfg.enable_experiment("crbug.com/1085650")
 
-luci.project(name = 'proj')
+luci.project(name = "proj")
 luci.custom_role(
-    name = 'customRole/r1',
-    extends = ['customRole/r2'],
+    name = "customRole/r1",
+    extends = ["customRole/r2"],
 )
 
 # Expect errors like:

@@ -1,32 +1,32 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
 luci.recipe(
-    name = 'noop',
-    cipd_package = 'noop',
+    name = "noop",
+    cipd_package = "noop",
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 luci.builder(
-    name = 'b1',
-    bucket = 'ci',
-    executable = 'noop',
-    triggers = ['b2', 'b3'],
+    name = "b1",
+    bucket = "ci",
+    executable = "noop",
+    triggers = ["b2", "b3"],
 )
 luci.builder(
-    name = 'b2',
-    bucket = 'ci',
-    executable = 'noop',
+    name = "b2",
+    bucket = "ci",
+    executable = "noop",
 )
 luci.builder(
-    name = 'b3',
-    bucket = 'ci',
-    executable = 'noop',
+    name = "b3",
+    bucket = "ci",
+    executable = "noop",
 )
 
 # Expect errors like:

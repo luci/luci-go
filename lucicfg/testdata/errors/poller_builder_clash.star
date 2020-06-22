@@ -1,23 +1,23 @@
 luci.project(
-    name = 'proj',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
+    name = "proj",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
 )
 luci.recipe(
-    name = 'noop',
-    cipd_package = 'noop',
+    name = "noop",
+    cipd_package = "noop",
 )
-luci.bucket(name = 'b')
+luci.bucket(name = "b")
 luci.builder(
-    name = 'clashing name',
-    bucket = 'b',
-    executable = 'noop',
+    name = "clashing name",
+    bucket = "b",
+    executable = "noop",
 )
 luci.gitiles_poller(
-    name = 'clashing name',
-    bucket = 'b',
-    repo = 'https://noop.com',
+    name = "clashing name",
+    bucket = "b",
+    repo = "https://noop.com",
 )
 
 # Expect errors like:

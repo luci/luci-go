@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Exposes the descriptor set with built-in LUCI protos."""
+
 # lucitypes_descpb is proto.DescriptorSet with following files:
 #   load('@stdlib//internal/luci/proto.star', 'buildbucket_pb')
 #   load('@stdlib//internal/luci/proto.star', 'config_pb')

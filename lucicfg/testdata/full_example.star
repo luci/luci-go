@@ -1,17 +1,15 @@
-lucicfg.config(config_dir = '.output')
-lucicfg.config(tracked_files = ['*.cfg'])
+lucicfg.config(config_dir = ".output")
+lucicfg.config(tracked_files = ["*.cfg"])
 lucicfg.config(fail_on_warnings = True)
 
 luci.project(
-    name = 'infra',
-
-    buildbucket = 'cr-buildbucket.appspot.com',
-    logdog = 'luci-logdog.appspot.com',
-    milo = 'luci-milo.appspot.com',
-    notify = 'luci-notify.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
-
+    name = "infra",
+    buildbucket = "cr-buildbucket.appspot.com",
+    logdog = "luci-logdog.appspot.com",
+    milo = "luci-milo.appspot.com",
+    notify = "luci-notify.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
     acls = [
         acl.entry(
             roles = [
@@ -20,7 +18,7 @@ luci.project(
                 acl.BUILDBUCKET_READER,
                 acl.SCHEDULER_READER,
             ],
-            groups = ['all'],
+            groups = ["all"],
         ),
         acl.entry(
             roles = [
@@ -28,42 +26,40 @@ luci.project(
                 acl.SCHEDULER_OWNER,
                 acl.CQ_COMMITTER,
             ],
-            groups = ['admins'],
+            groups = ["admins"],
         ),
     ],
 )
 
-luci.logdog(gs_bucket = 'chromium-luci-logdog')
+luci.logdog(gs_bucket = "chromium-luci-logdog")
 
 luci.milo(
-    logo = 'https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png',
-    favicon = 'https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico',
-    monorail_project = 'tutu, all aboard',
-    monorail_components = ['Stuff>Hard'],
-    bug_summary = 'Bug summary',
-    bug_description = 'Everything is broken',
+    logo = "https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png",
+    favicon = "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico",
+    monorail_project = "tutu, all aboard",
+    monorail_components = ["Stuff>Hard"],
+    bug_summary = "Bug summary",
+    bug_description = "Everything is broken",
 )
-
 
 # Recipes.
 
 luci.recipe(
-    name = 'main/recipe',
-    cipd_package = 'recipe/bundles/main',
+    name = "main/recipe",
+    cipd_package = "recipe/bundles/main",
 )
 
 # Executables.
 
 luci.executable(
-    name = 'main/executable',
-    cipd_package = 'executable/bundles/main',
+    name = "main/executable",
+    cipd_package = "executable/bundles/main",
 )
-
 
 # CI bucket.
 
 luci.bucket(
-    name = 'ci',
+    name = "ci",
 
     # Allow developers to force-launch CI builds through Scheduler, but not
     # directly through Buildbucket. The direct access to Buildbucket allows to
@@ -76,81 +72,76 @@ luci.bucket(
     acls = [
         acl.entry(
             acl.SCHEDULER_TRIGGERER,
-            groups = ['devs'],
-            projects = ['some-project'],
+            groups = ["devs"],
+            projects = ["some-project"],
         ),
     ],
 )
 
 luci.gitiles_poller(
-    name = 'master-poller',
-    bucket = 'ci',
-    repo = 'https://noop.com',
+    name = "master-poller",
+    bucket = "ci",
+    repo = "https://noop.com",
     refs = [
-        'refs/heads/master',
-        'refs/tags/blah',
-        r'refs/branch-heads/\d+\.\d+',
+        "refs/heads/master",
+        "refs/tags/blah",
+        r"refs/branch-heads/\d+\.\d+",
     ],
-    path_regexps = ['.*'],
-    path_regexps_exclude = ['excluded'],
-    schedule = 'with 10s interval',
+    path_regexps = [".*"],
+    path_regexps_exclude = ["excluded"],
+    schedule = "with 10s interval",
 )
 
 luci.builder(
-    name = 'linux ci builder',
-    bucket = 'ci',
-    description = 'this is a linux ci builder',
+    name = "linux ci builder",
+    bucket = "ci",
+    description = "this is a linux ci builder",
     executable = luci.recipe(
-        name = 'main/recipe',
-        cipd_package = 'recipe/bundles/main',
+        name = "main/recipe",
+        cipd_package = "recipe/bundles/main",
     ),
-
-    triggered_by = ['master-poller'],
+    triggered_by = ["master-poller"],
     triggers = [
-        'ci/generically named builder',
-        'ci/generically named executable builder',
+        "ci/generically named builder",
+        "ci/generically named executable builder",
     ],
-
     properties = {
-        'prop1': 'val1',
-        'prop2': ['val2', 123],
+        "prop1": "val1",
+        "prop2": ["val2", 123],
     },
-    service_account = 'builder@example.com',
-
+    service_account = "builder@example.com",
     caches = [
-        swarming.cache('path1'),
-        swarming.cache('path2', name='name2'),
-        swarming.cache('path3', name='name3', wait_for_warm_cache=10*time.minute),
+        swarming.cache("path1"),
+        swarming.cache("path2", name = "name2"),
+        swarming.cache("path3", name = "name3", wait_for_warm_cache = 10 * time.minute),
     ],
     execution_timeout = 3 * time.hour,
-
     dimensions = {
-        'os': 'Linux',
-        'builder': 'linux ci builder',  # no auto_builder_dimension
-        'prefer_if_available': [
-            swarming.dimension('first-choice', expiration=5*time.minute),
-            swarming.dimension('fallback'),
+        "os": "Linux",
+        "builder": "linux ci builder",  # no auto_builder_dimension
+        "prefer_if_available": [
+            swarming.dimension("first-choice", expiration = 5 * time.minute),
+            swarming.dimension("fallback"),
         ],
     },
     priority = 80,
-    swarming_tags = ['tag1:val1', 'tag2:val2'],
+    swarming_tags = ["tag1:val1", "tag2:val2"],
     expiration_timeout = time.hour,
     build_numbers = True,
-
     triggering_policy = scheduler.greedy_batching(
-        max_concurrent_invocations=5,
-        max_batch_size=10,
+        max_concurrent_invocations = 5,
+        max_batch_size = 10,
     ),
     resultdb_settings = resultdb.settings(
         enable = True,
         bq_exports = [
             resultdb.export_test_results(
-                bq_table = 'luci-resultdb.my-awesome-project.all_test_results',
+                bq_table = "luci-resultdb.my-awesome-project.all_test_results",
                 predicate = resultdb.test_result_predicate(
-                    test_id_regexp = 'ninja:.*',
+                    test_id_regexp = "ninja:.*",
                     unexpected_only = True,
                     variant_contains = True,
-                    variant = {'test_suite': 'super_interesting_suite'},
+                    variant = {"test_suite": "super_interesting_suite"},
                 ),
             ),
         ],
@@ -158,320 +149,298 @@ luci.builder(
 )
 
 luci.builder(
-    name = 'generically named builder',
-    bucket = 'ci',
-    executable = 'main/recipe',
-
-    triggered_by = ['master-poller'],
+    name = "generically named builder",
+    bucket = "ci",
+    executable = "main/recipe",
+    triggered_by = ["master-poller"],
 )
 
 luci.builder(
-    name = 'generically named executable builder',
-    bucket = 'ci',
-    executable = 'main/executable',
+    name = "generically named executable builder",
+    bucket = "ci",
+    executable = "main/executable",
     properties = {
-        'prop1': 'val1',
-        'prop2': ['val2', 123],
+        "prop1": "val1",
+        "prop2": ["val2", 123],
     },
-
-    triggered_by = ['master-poller'],
+    triggered_by = ["master-poller"],
 )
 
 luci.builder(
-    name = 'cron builder',
-    bucket = 'ci',
-    executable = 'main/recipe',
-    schedule = '0 6 * * *',
-    repo = 'https://cron.repo.example.com',
+    name = "cron builder",
+    bucket = "ci",
+    executable = "main/recipe",
+    schedule = "0 6 * * *",
+    repo = "https://cron.repo.example.com",
 )
 
 luci.builder(
-    name = 'builder with custom swarming host',
-    bucket = 'ci',
-    executable = 'main/recipe',
-    swarming_host = 'another-swarming.appspot.com',
+    name = "builder with custom swarming host",
+    bucket = "ci",
+    executable = "main/recipe",
+    swarming_host = "another-swarming.appspot.com",
 )
-
 
 # Try bucket.
 
 luci.bucket(
-    name = 'try',
+    name = "try",
 
     # Allow developers to launch try jobs directly with whatever parameters
     # they want. Try bucket is basically a free build farm for all developers.
     acls = [
-        acl.entry(acl.BUILDBUCKET_TRIGGERER, groups='devs'),
+        acl.entry(acl.BUILDBUCKET_TRIGGERER, groups = "devs"),
     ],
 )
 
 luci.builder(
-    name = 'linux try builder',
-    bucket = 'try',
-    executable = 'main/recipe',
+    name = "linux try builder",
+    bucket = "try",
+    executable = "main/recipe",
 )
 
 luci.builder(
-    name = 'linux try builder 2',
-    bucket = 'try',
-    executable = 'main/recipe',
+    name = "linux try builder 2",
+    bucket = "try",
+    executable = "main/recipe",
 )
 
 luci.builder(
-    name = 'generically named builder',
-    bucket = 'try',
-    executable = 'main/recipe',
+    name = "generically named builder",
+    bucket = "try",
+    executable = "main/recipe",
 )
 
 luci.builder(
-    name = 'builder with executable',
-    bucket = 'try',
-    executable = 'main/executable',
+    name = "builder with executable",
+    bucket = "try",
+    executable = "main/executable",
 )
-
 
 # Inline definitions.
 
-
 def inline_poller():
-  return luci.gitiles_poller(
-      name = 'inline poller',
-      bucket = 'inline',
-      repo = 'https://noop.com',
-      refs = [
-          'refs/heads/master',
-          'refs/tags/blah',
-          r'refs/branch-heads/\d+\.\d+',
-      ],
-      schedule = 'with 10s interval',
-  )
-
+    return luci.gitiles_poller(
+        name = "inline poller",
+        bucket = "inline",
+        repo = "https://noop.com",
+        refs = [
+            "refs/heads/master",
+            "refs/tags/blah",
+            r"refs/branch-heads/\d+\.\d+",
+        ],
+        schedule = "with 10s interval",
+    )
 
 luci.builder(
-    name = 'triggerer builder',
-    bucket = luci.bucket(name = 'inline'),
+    name = "triggerer builder",
+    bucket = luci.bucket(name = "inline"),
     executable = luci.recipe(
-        name = 'inline/recipe',
-        cipd_package = 'recipe/bundles/inline',
+        name = "inline/recipe",
+        cipd_package = "recipe/bundles/inline",
     ),
-
-    service_account = 'builder@example.com',
-
+    service_account = "builder@example.com",
     triggers = [
         luci.builder(
-            name = 'triggered builder',
-            bucket = 'inline',
-            executable = 'inline/recipe',
+            name = "triggered builder",
+            bucket = "inline",
+            executable = "inline/recipe",
         ),
     ],
-
     triggered_by = [inline_poller()],
 )
 
-
 luci.builder(
-    name = 'another builder',
-    bucket = 'inline',
+    name = "another builder",
+    bucket = "inline",
     executable = luci.recipe(
-        name = 'inline/recipe',
-        cipd_package = 'recipe/bundles/inline',
+        name = "inline/recipe",
+        cipd_package = "recipe/bundles/inline",
     ),
-    service_account = 'builder@example.com',
+    service_account = "builder@example.com",
     triggered_by = [inline_poller()],
 )
-
 
 luci.builder(
-    name = 'another executable builder',
-    bucket = 'inline',
+    name = "another executable builder",
+    bucket = "inline",
     executable = luci.executable(
-        name = 'inline/executable',
-        cipd_package = 'executable/bundles/inline',
+        name = "inline/executable",
+        cipd_package = "executable/bundles/inline",
     ),
-    service_account = 'builder@example.com',
+    service_account = "builder@example.com",
     triggered_by = [inline_poller()],
 )
-
 
 # List views.
 
-
 luci.list_view(
-    name = 'List view',
+    name = "List view",
     entries = [
-        'cron builder',
-        'ci/generically named builder',
+        "cron builder",
+        "ci/generically named builder",
         luci.list_view_entry(
-            builder = 'linux ci builder',
+            builder = "linux ci builder",
         ),
     ],
 )
 
 luci.list_view_entry(
-    list_view = 'List view',
-    builder = 'inline/triggered builder',
+    list_view = "List view",
+    builder = "inline/triggered builder",
 )
 
 # Console views.
 
-
 luci.console_view(
-    name = 'Console view',
-    title = 'CI Builders',
+    name = "Console view",
+    title = "CI Builders",
     header = {
-        'links': [
-            {'name': 'a', 'links': [{'text': 'a'}]},
-            {'name': 'b', 'links': [{'text': 'b'}]},
+        "links": [
+            {"name": "a", "links": [{"text": "a"}]},
+            {"name": "b", "links": [{"text": "b"}]},
         ],
     },
-    repo = 'https://noop.com',
-    refs = ['refs/tags/blah', r'refs/branch-heads/\d+\.\d+'],
-    exclude_ref = 'refs/heads/master',
+    repo = "https://noop.com",
+    refs = ["refs/tags/blah", r"refs/branch-heads/\d+\.\d+"],
+    exclude_ref = "refs/heads/master",
     include_experimental_builds = True,
     entries = [
         luci.console_view_entry(
-            builder = 'linux ci builder',
-            category = 'a|b',
-            short_name = 'lnx',
+            builder = "linux ci builder",
+            category = "a|b",
+            short_name = "lnx",
         ),
         # An alias for luci.console_view_entry(**{...}).
-        {'builder': 'cron builder', 'category': 'cron'},
+        {"builder": "cron builder", "category": "cron"},
     ],
     default_commit_limit = 3,
     default_expand = True,
 )
 
 luci.console_view_entry(
-    console_view = 'Console view',
-    builder = 'inline/triggered builder',
+    console_view = "Console view",
+    builder = "inline/triggered builder",
 )
 
 luci.external_console_view(
-    name = 'external-console',
-    title = 'External console',
-    source = 'chromium:main',
+    name = "external-console",
+    title = "External console",
+    source = "chromium:main",
 )
-
 
 # Notifier.
 
-
 luci.notifier(
-    name = 'main notifier',
-    on_new_status = ['FAILURE'],
-    notify_emails = ['someone@example,com'],
+    name = "main notifier",
+    on_new_status = ["FAILURE"],
+    notify_emails = ["someone@example,com"],
     notify_blamelist = True,
-    template = 'notifier_template',
+    template = "notifier_template",
     notified_by = [
-        'linux ci builder',
-        'cron builder',
+        "linux ci builder",
+        "cron builder",
     ],
 )
 
 luci.notifier_template(
-    name = 'notifier_template',
-    body = 'Hello\n\nHi\n',
+    name = "notifier_template",
+    body = "Hello\n\nHi\n",
 )
 
 luci.notifier_template(
-    name = 'another_template',
-    body = 'Boo!\n',
+    name = "another_template",
+    body = "Boo!\n",
 )
-
 
 luci.builder(
-    name = 'watched builder',
-    bucket = 'ci',
-    executable = 'main/recipe',
-    repo = 'https://custom.example.com/repo',
-    notifies = ['main notifier'],
+    name = "watched builder",
+    bucket = "ci",
+    executable = "main/recipe",
+    repo = "https://custom.example.com/repo",
+    notifies = ["main notifier"],
 )
 
-
 # CQ.
-
 
 luci.cq(
     submit_max_burst = 10,
     submit_burst_delay = 10 * time.minute,
-    draining_start_time = '2017-12-23T15:47:58Z',
-    status_host = 'chromium-cq-status.appspot.com',
+    draining_start_time = "2017-12-23T15:47:58Z",
+    status_host = "chromium-cq-status.appspot.com",
 )
 
 luci.cq_group(
-    name = 'main-cq',
+    name = "main-cq",
     watch = [
-        cq.refset('https://example.googlesource.com/repo'),
-        cq.refset('https://example.googlesource.com/another/repo'),
+        cq.refset("https://example.googlesource.com/repo"),
+        cq.refset("https://example.googlesource.com/another/repo"),
     ],
     acls = [
-        acl.entry(acl.CQ_COMMITTER, groups = ['committers']),
-        acl.entry(acl.CQ_DRY_RUNNER, groups = ['dry-runners']),
+        acl.entry(acl.CQ_COMMITTER, groups = ["committers"]),
+        acl.entry(acl.CQ_DRY_RUNNER, groups = ["dry-runners"]),
     ],
     allow_submit_with_open_deps = True,
     allow_owner_if_submittable = cq.ACTION_COMMIT,
-    tree_status_host = 'tree-status.example.com',
-
+    tree_status_host = "tree-status.example.com",
     verifiers = [
         luci.cq_tryjob_verifier(
-            builder = 'linux try builder',
+            builder = "linux try builder",
             cancel_stale = False,
             result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
-            location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+            location_regexp_exclude = ["https://example.com/repo/[+]/all/one.txt"],
         ),
         # An experimental verifier with location_regexp_exclude.
         luci.cq_tryjob_verifier(
-            builder = 'linux try builder 2',
-            location_regexp_exclude = ['https://example.com/repo/[+]/all/two.txt'],
+            builder = "linux try builder 2",
+            location_regexp_exclude = ["https://example.com/repo/[+]/all/two.txt"],
             experiment_percentage = 50,
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
-        {'builder': 'try/generically named builder', 'disable_reuse': True},
+        {"builder": "try/generically named builder", "disable_reuse": True},
         # An alias for luci.cq_tryjob_verifier(<builder>).
-        'another-project:try/yyy',
+        "another-project:try/yyy",
         luci.cq_tryjob_verifier(
-            builder = 'another-project:try/zzz',
+            builder = "another-project:try/zzz",
             includable_only = True,
-            owner_whitelist = ['another-project-committers'],
+            owner_whitelist = ["another-project-committers"],
         ),
     ],
 )
 
 luci.cq_tryjob_verifier(
-    builder = 'triggerer builder',
-    cq_group = 'main-cq',
+    builder = "triggerer builder",
+    cq_group = "main-cq",
     experiment_percentage = 50.0,
 )
 
 luci.cq_tryjob_verifier(
-    builder = 'triggered builder',
-    cq_group = 'main-cq',
+    builder = "triggered builder",
+    cq_group = "main-cq",
 )
 
 luci.cq_tryjob_verifier(
     builder = luci.builder(
-        name = 'main cq builder',
-        bucket = 'try',
-        executable = 'main/recipe',
+        name = "main cq builder",
+        bucket = "try",
+        executable = "main/recipe",
     ),
     equivalent_builder = luci.builder(
-        name = 'equivalent cq builder',
-        bucket = 'try',
-        executable = 'main/recipe',
+        name = "equivalent cq builder",
+        bucket = "try",
+        executable = "main/recipe",
     ),
     equivalent_builder_percentage = 60,
-    equivalent_builder_whitelist = 'owners',
-    cq_group = 'main-cq',
+    equivalent_builder_whitelist = "owners",
+    cq_group = "main-cq",
 )
-
 
 # Emitting arbitrary configs,
 
 lucicfg.emit(
-    dest = 'dir/custom.cfg',
-    data = 'hello!\n',
+    dest = "dir/custom.cfg",
+    data = "hello!\n",
 )
-
 
 # Expect configs:
 #

@@ -1,28 +1,28 @@
 luci.project(
-    name = 'project',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    scheduler = 'luci-scheduler.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "project",
+    buildbucket = "cr-buildbucket.appspot.com",
+    scheduler = "luci-scheduler.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
 luci.recipe(
-    name = 'noop',
-    cipd_package = 'noop',
+    name = "noop",
+    cipd_package = "noop",
 )
 
-luci.bucket(name = 'ci')
+luci.bucket(name = "ci")
 
 luci.builder(
-    name = 'b1',
-    bucket = 'ci',
-    executable = 'noop',
-    service_account = 'noop@example.com',
-    triggers = ['b2'],
+    name = "b1",
+    bucket = "ci",
+    executable = "noop",
+    service_account = "noop@example.com",
+    triggers = ["b2"],
 )
 luci.builder(
-    name = 'b2',
-    bucket = 'ci',
-    executable = 'noop',
+    name = "b2",
+    bucket = "ci",
+    executable = "noop",
 )
 
 # Expect configs:

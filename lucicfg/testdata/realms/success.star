@@ -1,122 +1,120 @@
-lucicfg.enable_experiment('crbug.com/1085650')
+lucicfg.enable_experiment("crbug.com/1085650")
 
 luci.project(
-    name = 'proj',
-
-    buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
-
+    name = "proj",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
     bindings = [
         luci.binding(
-            roles = 'role/a',
-            groups = 'root',
+            roles = "role/a",
+            groups = "root",
         ),
     ],
 )
 
 luci.bucket(
-    name = 'bucket',
+    name = "bucket",
     bindings = [
         luci.binding(
-            roles = 'role/a',
-            groups = 'bucket',
+            roles = "role/a",
+            groups = "bucket",
         ),
     ],
 )
 
 luci.realm(
-    name = 'realm1',
-    extends = 'bucket',
+    name = "realm1",
+    extends = "bucket",
     bindings = [
         luci.binding(
-            roles = 'role/a',
-            groups = 'group-a',
-            users = 'a@example.com',
-            projects = 'proj-a',
+            roles = "role/a",
+            groups = "group-a",
+            users = "a@example.com",
+            projects = "proj-a",
         ),
     ],
 )
 
 luci.binding(
-    realm = ['realm1', 'realm2'],
-    roles = ['role/a', 'role/b'],
-    groups = ['group-a', 'group-b'],
-    users = ['a@example.com', 'b@example.com'],
-    projects = ['proj-a', 'proj-b'],
+    realm = ["realm1", "realm2"],
+    roles = ["role/a", "role/b"],
+    groups = ["group-a", "group-b"],
+    users = ["a@example.com", "b@example.com"],
+    projects = ["proj-a", "proj-b"],
 )
 
 luci.realm(
-    name = 'realm2',
-    extends = ['bucket', 'realm1', '@root'],
+    name = "realm2",
+    extends = ["bucket", "realm1", "@root"],
     bindings = [
-        luci.binding(roles = 'role/c', groups = 'group-c'),
-        luci.binding(roles = 'role/c', users = 'c@example.com'),
-        luci.binding(roles = 'role/c', projects = 'proj-c'),
+        luci.binding(roles = "role/c", groups = "group-c"),
+        luci.binding(roles = "role/c", users = "c@example.com"),
+        luci.binding(roles = "role/c", projects = "proj-c"),
     ],
 )
 
 luci.realm(
-    name = '@legacy',
-    extends = '@root',
+    name = "@legacy",
+    extends = "@root",
 )
 
 # Empty binding is fine.
 luci.binding(
-    realm = '@legacy',
-    roles = 'role/a',
+    realm = "@legacy",
+    roles = "role/a",
 )
 
 luci.binding(
-    realm = '@legacy',
-    roles = 'role/a',
-    users = 'a@example.com',
+    realm = "@legacy",
+    roles = "role/a",
+    users = "a@example.com",
 )
 
 luci.custom_role(
-    name = 'customRole/r1',
+    name = "customRole/r1",
     extends = [
-        'role/a',
+        "role/a",
         luci.custom_role(
-            name = 'customRole/r2',
-            extends = ['customRole/r3'],
-            permissions = ['luci.dev.testing2'],
+            name = "customRole/r2",
+            extends = ["customRole/r3"],
+            permissions = ["luci.dev.testing2"],
         ),
     ],
-    permissions = ['luci.dev.testing1'],
+    permissions = ["luci.dev.testing1"],
 )
 
 luci.custom_role(
-    name = 'customRole/r3',
-    permissions = ['luci.dev.testing3'],
+    name = "customRole/r3",
+    permissions = ["luci.dev.testing3"],
 )
 
 luci.realm(
-    name = 'custom_roles',
+    name = "custom_roles",
     bindings = [
         luci.binding(
-            roles = 'customRole/r1',
-            users = 'a@example.com',
+            roles = "customRole/r1",
+            users = "a@example.com",
         ),
         luci.binding(
-            roles = ['role/a', 'customRole/r1'],
-            users = 'b@example.com',
+            roles = ["role/a", "customRole/r1"],
+            users = "b@example.com",
         ),
         luci.binding(
             roles = luci.custom_role(
-                name = 'customRole/r3',
-                permissions = ['luci.dev.testing3'],
+                name = "customRole/r3",
+                permissions = ["luci.dev.testing3"],
             ),
-            users = 'c@example.com',
+            users = "c@example.com",
         ),
         luci.binding(
             roles = [
                 luci.custom_role(
-                    name = 'customRole/r3',
-                    permissions = ['luci.dev.testing3'],
+                    name = "customRole/r3",
+                    permissions = ["luci.dev.testing3"],
                 ),
-                'role/a',
+                "role/a",
             ],
-            users = 'd@example.com',
+            users = "d@example.com",
         ),
     ],
 )

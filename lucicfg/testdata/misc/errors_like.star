@@ -1,18 +1,18 @@
 load("@stdlib//internal/error.star", "error")
 
 def func1():
-  error("hello %s", "world")
+    error("hello %s", "world")
 
 def capture_stack():
-  return stacktrace()
+    return stacktrace()
 
 def func2():
-  return capture_stack()
+    return capture_stack()
 
 s = func2()
 
 func1()
-error("another err", trace=s)
+error("another err", trace = s)
 
 # Expect errors like:
 #

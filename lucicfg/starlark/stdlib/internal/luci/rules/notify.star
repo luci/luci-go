@@ -12,26 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load('@stdlib//internal/graph.star', 'graph')
-load('@stdlib//internal/lucicfg.star', 'lucicfg')
-load('@stdlib//internal/validate.star', 'validate')
+"""Defines luci.notify(...) rule."""
 
-load('@stdlib//internal/luci/common.star', 'keys')
+load("@stdlib//internal/graph.star", "graph")
+load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/validate.star", "validate")
+load("@stdlib//internal/luci/common.star", "keys")
 
-def _notify(ctx, *, tree_closing_enabled=False):
-  """Defines configuration of the LUCI-Notify service for this project.
+def _notify(ctx, *, tree_closing_enabled = False):
+    """Defines configuration of the LUCI-Notify service for this project.
 
-  Args:
-    tree_closing_enabled: if this is set to False, LUCI-Notify won't close trees
-        for this project, just monitor builders and log what actions it would
-        have taken.
-  """
-  key = keys.notify()
-  graph.add_node(key, props = {
-      'tree_closing_enabled': validate.bool(
-          'tree_closing_enabled', tree_closing_enabled, required=False),
-  })
-  graph.add_edge(keys.project(), key)
-  return graph.keyset(key)
+    Args:
+      ctx: the implicit rule context, see lucicfg.rule(...).
+      tree_closing_enabled: if this is set to False, LUCI-Notify won't close
+        trees for this project, just monitor builders and log what actions it
+        would have taken.
+    """
+    key = keys.notify()
+    graph.add_node(key, props = {
+        "tree_closing_enabled": validate.bool(
+            "tree_closing_enabled",
+            tree_closing_enabled,
+            required = False,
+        ),
+    })
+    graph.add_edge(keys.project(), key)
+    return graph.keyset(key)
 
 notify = lucicfg.rule(impl = _notify)

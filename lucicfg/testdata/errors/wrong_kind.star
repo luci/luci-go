@@ -1,14 +1,14 @@
 luci.project(
-    name = 'proj',
-    buildbucket = 'cr-buildbucket.appspot.com',
-    swarming = 'chromium-swarm.appspot.com',
+    name = "proj",
+    buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm.appspot.com",
 )
 
 luci.builder(
-    name = 'builder',
+    name = "builder",
     bucket = luci.recipe(
-        name = 'noop',
-        cipd_package = 'noop',
+        name = "noop",
+        cipd_package = "noop",
     ),
 )
 

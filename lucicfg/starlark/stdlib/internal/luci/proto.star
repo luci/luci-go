@@ -19,20 +19,21 @@ paths may change in a backward incompatible way. Using this module gives more
 stability.
 """
 
-load('@stdlib//internal/luci/descpb.star', 'lucitypes_descpb')
+load("@stdlib//internal/luci/descpb.star", "lucitypes_descpb")
+
 lucitypes_descpb.register()
 
-load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', _common_pb='buildbucket.v2')
-load('@proto//go.chromium.org/luci/buildbucket/proto/project_config.proto', _buildbucket_pb='buildbucket')
-load('@proto//go.chromium.org/luci/common/proto/config/project_config.proto', _config_pb='config')
-load('@proto//go.chromium.org/luci/common/proto/realms/realms_config.proto', _realms_pb='auth_service')
-load('@proto//go.chromium.org/luci/cq/api/config/v2/cq.proto', _cq_pb='cq.config')
-load('@proto//go.chromium.org/luci/logdog/api/config/svcconfig/project.proto', _logdog_pb='svcconfig')
-load('@proto//go.chromium.org/luci/luci_notify/api/config/notify.proto', _notify_pb='notify')
-load('@proto//go.chromium.org/luci/milo/api/config/project.proto', _milo_pb='milo')
-load('@proto//go.chromium.org/luci/resultdb/proto/v1/invocation.proto', _resultdb_pb='luci.resultdb.v1')
-load('@proto//go.chromium.org/luci/resultdb/proto/v1/predicate.proto', _predicate_pb='luci.resultdb.v1')
-load('@proto//go.chromium.org/luci/scheduler/appengine/messages/config.proto', _scheduler_pb='scheduler.config')
+load("@proto//go.chromium.org/luci/buildbucket/proto/common.proto", _common_pb = "buildbucket.v2")
+load("@proto//go.chromium.org/luci/buildbucket/proto/project_config.proto", _buildbucket_pb = "buildbucket")
+load("@proto//go.chromium.org/luci/common/proto/config/project_config.proto", _config_pb = "config")
+load("@proto//go.chromium.org/luci/common/proto/realms/realms_config.proto", _realms_pb = "auth_service")
+load("@proto//go.chromium.org/luci/cq/api/config/v2/cq.proto", _cq_pb = "cq.config")
+load("@proto//go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", _logdog_pb = "svcconfig")
+load("@proto//go.chromium.org/luci/luci_notify/api/config/notify.proto", _notify_pb = "notify")
+load("@proto//go.chromium.org/luci/milo/api/config/project.proto", _milo_pb = "milo")
+load("@proto//go.chromium.org/luci/resultdb/proto/v1/invocation.proto", _resultdb_pb = "luci.resultdb.v1")
+load("@proto//go.chromium.org/luci/resultdb/proto/v1/predicate.proto", _predicate_pb = "luci.resultdb.v1")
+load("@proto//go.chromium.org/luci/scheduler/appengine/messages/config.proto", _scheduler_pb = "scheduler.config")
 
 buildbucket_pb = _buildbucket_pb
 common_pb = _common_pb

@@ -1,7 +1,7 @@
 luci.notifier(
-    name = 'wrong',
-    on_new_status = ['FAILURE'],
-    failed_step_regexp = 'some_regex',
+    name = "wrong",
+    on_new_status = ["FAILURE"],
+    failed_step_regexp = "some_regex",
 )
 
 # Expect errors like:
