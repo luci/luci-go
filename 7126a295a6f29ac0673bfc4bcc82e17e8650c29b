@@ -1,0 +1,140 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "100a5e31_ce37233a",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "I think you\u0027re indenting the whole file with spaces, but we use tabs in our go code. I think if you run \"gofmt -w -s .\" in this directory the tool may be able fix it for you.",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4fd425d_ec5f6fc0",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "Is this actually necessary? Could you construct the Query directly from the SearchBuildsRequest?\nhttps://godoc.org/go.chromium.org/gae/service/datastore#Query",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f72ba09_05764c26",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "I think you can probably make these unexported, if it\u0027s just an intermediate representation used by the query package. Or do you need code from outside this package to be able to set these fields without calling NewSearchQuery?",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bae8b0f_7dd35b23",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "Theoretically req itself may be nil. I\u0027d check \"if req.GetPredicate() \u003d\u003d nil\". Then below req.GetPageSize() and req.GetPageToken().",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51a68276_858aa6af",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "At this point you know it\u0027s not nil so you can just set p :\u003d req.Predicate. Get* is in case the req is nil.",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6375de02_36a16392",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "I don\u0027t think you need these variables, you can just declare something like s :\u003d \u0026SearchQuery{} at the top and fill in SearchQuery.Project, etc. directly. Then at the end return s instead of return \u0026SearchQuery{...}.",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f694d083_1df3e813",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "Do you need this helper?\n*canary \u003d p.GetCanary() \u003d\u003d pb.Trinary_YES.\nSame comment for ToInt64Ptr above.",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c64a79e9_e58cb449",
+        "filename": "buildbucket/protoutil/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-22T22:24:43Z",
+      "side": 1,
+      "message": "You don\u0027t really need this check, if len(p) is 0, make([]string, 0) and range should both work correctly and return an empty slice.",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
