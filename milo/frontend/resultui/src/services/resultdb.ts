@@ -65,7 +65,7 @@ export interface TestExoneration {
   readonly testId: string;
   readonly variant?: Variant;
   readonly exonerationId: string;
-  readonly explanationHTML?: string;
+  readonly explanationHtml?: string;
 }
 
 export interface Artifact {
