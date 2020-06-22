@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e59d7ca0_b4b7203f",
+        "filename": "milo/frontend/resultui/src/components/image_diff_viewer.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-22T06:50:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20b62e46_141d19da",
+      "range": {
+        "startLine": 157,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 5
+      },
+      "revId": "8469778c8c581b8a923dd3ea6428013e47040b54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "736f009c_d98511fb",
         "filename": "milo/frontend/resultui/src/pages/artifact/image_diff_artifact_page.ts",
         "patchSetId": 5
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fcb99c00_524a307a",
+        "filename": "milo/frontend/resultui/src/pages/artifact/image_diff_artifact_page.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-22T06:50:54Z",
+      "side": 1,
+      "message": "Made it scrollable.",
+      "parentUuid": "736f009c_d98511fb",
+      "range": {
+        "startLine": 126,
+        "startChar": 7,
+        "endLine": 126,
+        "endChar": 27
+      },
+      "revId": "8469778c8c581b8a923dd3ea6428013e47040b54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f34002f0_33eaf304",
         "filename": "milo/frontend/resultui/src/routes.ts",
         "patchSetId": 5
@@ -115,6 +163,30 @@
       "revId": "8469778c8c581b8a923dd3ea6428013e47040b54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c375d84_10b40e28",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-06-22T06:50:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f34002f0_33eaf304",
+      "range": {
+        "startLine": 102,
+        "startChar": 26,
+        "endLine": 102,
+        "endChar": 34
+      },
+      "revId": "8469778c8c581b8a923dd3ea6428013e47040b54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
