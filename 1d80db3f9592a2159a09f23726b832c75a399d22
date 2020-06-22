@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "63b78afe_19e40c9f",
+        "filename": "lucicfg/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-22T16:46:24Z",
+      "side": 1,
+      "message": "Nothing is checking this right now. Sticking into `go generate` and presubmit is complicated because it requires to build `lucicfg` binary first. In particular when checking `starlark/` directory there\u0027s a circular dependency of sorts (`go generate`\u0027d starlark/ is needed to build lucicfg, but lucicfg is needed to lint starlark/). I decided to postpone dealing with it for now, will do something in a separate CL.",
+      "parentUuid": "7a429463_c5fd8278",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 61
+      },
+      "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a4db643_52acbd63",
         "filename": "lucicfg/fmt-lint.sh",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db808dfe_a1044320",
+        "filename": "lucicfg/fmt-lint.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-22T16:46:24Z",
+      "side": 1,
+      "message": "They are formatted (see `fmt` call above), just not linted.",
+      "parentUuid": "2a4db643_52acbd63",
+      "revId": "1d80db3f9592a2159a09f23726b832c75a399d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
