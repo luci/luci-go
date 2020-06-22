@@ -88,12 +88,18 @@ router.setRoutes({
               ],
             },
             {
-              path: '/artifact/:artifact_name',
-              name: 'artifact',
-              action: async (_ctx, cmd) => {
-                await import(/* webpackChunkName: "artifact_page" */ './pages/artifact_page');
-                return cmd.component('tr-artifact-page');
-              },
+              path: '/artifact',
+              children: [
+                {
+                  path: '/text-diff/:artifact_name',
+                  name: 'text-diff-artifact',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "text_diff_artifact_page" */ './pages/artifact/text_diff_artifact_page');
+                    return cmd.component('tr-text-diff-artifact-page');
+                  },
+                },
+                notFoundRoute,
+              ],
             },
             notFoundRoute,
           ],

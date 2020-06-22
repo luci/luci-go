@@ -19,45 +19,21 @@ import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '../components/status_bar';
-import { AppState, consumeAppState } from '../context/app_state_provider';
-import { sanitizeHTML } from '../libs/sanitize_html';
-import { router } from '../routes';
-
-enum ArtifactType {
-  /**
-   * A text diff artifact.
-   */
-  TextDiff,
-  /**
-   * Unsupported artifact type.
-   */
-  Unsupported,
-}
+import '../../components/status_bar';
+import { AppState, consumeAppState } from '../../context/app_state_provider';
+import { sanitizeHTML } from '../../libs/sanitize_html';
+import { router } from '../../routes';
+import { parseArtifactName } from '../../services/resultdb';
 
 /**
- * Renders an Artifact.
+ * Renders a text diff artifact.
  */
 // TODO(weiweilin): improve error handling.
-export class ArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class TextDiffArtifactPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
   @observable.ref private artifactName!: string;
 
-  @computed private get invocationId() { return this.parsedArtifactName.invocationId; }
-  @computed private get testId() { return this.parsedArtifactName.testId; }
-  @computed private get resultId() { return this.parsedArtifactName.resultId; }
-  @computed private get artifactId() { return this.parsedArtifactName.artifactId; }
-  @computed private get parsedArtifactName() {
-    const groups = this.artifactName
-      .match(/invocations\/(?<invocationId>.*?)\/(tests\/(?<testId>.*?)\/results\/(?<resultId>.*?)\/)?artifacts\/(?<artifactId>.*)/)!
-      .groups!;
-    return {
-      invocationId: decodeURIComponent(groups['invocationId']),
-      testId: groups['testId'] ? decodeURIComponent(groups['testId']) : null,
-      resultId: groups['resultId'] ? decodeURIComponent(groups['resultId']) : null,
-      artifactId: decodeURIComponent(groups['artifactId']),
-    };
-  }
+  @computed private get artifactIdent() { return parseArtifactName(this.artifactName); }
 
   @computed({keepAlive: true})
   private get artifactRes() {
@@ -68,16 +44,6 @@ export class ArtifactPageElement extends MobxLitElement implements BeforeEnterOb
   }
   @computed private get artifact() {
     return this.artifactRes.state === 'fulfilled' ? this.artifactRes.value : null;
-  }
-
-  @computed private get artifactType() {
-    if (!this.artifact) {
-      return null;
-    }
-    if (this.artifact.contentType === 'text/plain' && this.artifact.artifactId.match(/_diff$/)) {
-      return ArtifactType.TextDiff;
-    }
-    return ArtifactType.Unsupported;
   }
 
   @computed({keepAlive: true})
@@ -101,40 +67,31 @@ export class ArtifactPageElement extends MobxLitElement implements BeforeEnterOb
     return;
   }
 
-  private renderContent() {
-    if (this.artifactType === null) {
-      return html``;
-    }
-    if (this.artifactType === ArtifactType.TextDiff) {
-      return html`
-        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-        ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false, outputFormat: 'side-by-side'}))}
-      `;
-    }
-    return html`Unsupported artifact type`;
-  }
-
   protected render() {
     return html`
       <div id="artifact-header">
         <table>
           <tr>
             <td class="id-component-label">Invocation</td>
-            <td><a href=${router.urlForName('invocation', {'invocation_id': this.invocationId})}>${this.invocationId}</a></td>
+            <td><a href=${router.urlForName('invocation', {'invocation_id': this.artifactIdent.invocationId})}>${this.artifactIdent.invocationId}</a></td>
           </tr>
+          ${this.artifactIdent.testId && html`
           <!-- TODO(weiweilin): add view test link -->
           <tr>
             <td class="id-component-label">Test</td>
-            <td>${this.testId}</td>
+            <td>${this.artifactIdent.testId}</td>
           </tr>
+          `}
+          ${this.artifactIdent.resultId && html`
           <!-- TODO(weiweilin): add view result link -->
           <tr>
             <td class="id-component-label">Result</td>
-            <td>${this.resultId}</td>
+            <td>${this.artifactIdent.resultId}</td>
           </tr>
+          `}
           <tr>
             <td class="id-component-label">Artifact</td>
-            <td>${this.artifactId}</td>
+            <td>${this.artifactIdent.artifactId}</td>
           </tr>
         </table>
       </div>
@@ -145,7 +102,10 @@ export class ArtifactPageElement extends MobxLitElement implements BeforeEnterOb
       <div id="details">
         ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
       </div>
-      <div id="content">${this.renderContent()}</div>
+      <div id="content">
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+        ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false, outputFormat: 'side-by-side'}))}
+      </div>
     `;
   }
 
@@ -176,8 +136,8 @@ export class ArtifactPageElement extends MobxLitElement implements BeforeEnterOb
   `;
 }
 
-customElement('tr-artifact-page')(
+customElement('tr-text-diff-artifact-page')(
   consumeAppState(
-    ArtifactPageElement,
+    TextDiffArtifactPageElement,
   ),
 );
