@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0b1f07cc_1ee66140",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Removed sinkpb import.",
+      "parentUuid": "a628a5ee_237f8e6a",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "312c6614_4a190193",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -39,6 +57,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ed08c87_2eda7ae8",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Updated. :)",
+      "parentUuid": "312c6614_4a190193",
+      "range": {
+        "startLine": 32,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 1
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +124,48 @@
     },
     {
       "key": {
+        "uuid": "59f68cd9_071b209a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Added.",
+      "parentUuid": "1be621fd_c2a5d893",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e04aff6_2fbe4409",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "++++1. sinkpb removed.\n\nI updated upload functions to take io.ReadSeeker, instead of io.Reader. The stream cursors need to be reset to 0 after the hash calculated.",
+      "parentUuid": "ce3e861d_56e8f3b2",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 21
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36ce9f73_2d36a3c3",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "5b601e8a_3eeeeef1",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "The original intent was that the user of this function can keep a original copy of the HTTP request so that it can be reused on retries without having to calculate the hash again.\n\nIn ResultSink, dispatcher already implements retries on transient errors, and I wanted to rely on the retry performed on dispatcher, because the dispatcher worker could process another batch, while the temporarily failed batch was held with a retry delay.\n\nHowever, now I think it\u0027s unnecessary complication, and upload functions retry requests on transient failures by themselves. As a result, if a transient failure happens for a long period, like a minute, then it will hold the dispatcher worker during the retry delays.",
+      "parentUuid": "36ce9f73_2d36a3c3",
+      "range": {
+        "startLine": 50,
+        "startChar": 27,
+        "endLine": 50,
+        "endChar": 28
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8890604_f5c1336a",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -125,6 +233,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23924d55_b648c0e6",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8890604_f5c1336a",
+      "range": {
+        "startLine": 51,
+        "startChar": 18,
+        "endLine": 51,
+        "endChar": 28
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -174,6 +306,30 @@
     },
     {
       "key": {
+        "uuid": "79ccf170_1d367664",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done inside UploadFromFile(). http.NewRequestWithContext() auto-sets GetBody() if the input stream is byte streams.",
+      "parentUuid": "5d10e0ef_da9ee153",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 9
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e4231e23_2ce55106",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -197,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "4ce8371e_3ef70691",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4231e23_2ce55106",
+      "range": {
+        "startLine": 71,
+        "startChar": 7,
+        "endLine": 71,
+        "endChar": 11
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea64848b_d7c2f88d",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -217,6 +397,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a668026_735e371b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "ea64848b_d7c2f88d",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 40
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +464,48 @@
     },
     {
       "key": {
+        "uuid": "4f2a29c5_1f85c3e0",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Added",
+      "parentUuid": "27e26668_b02b720a",
+      "range": {
+        "startLine": 84,
+        "startChar": 32,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0f431d71_a279b109",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "The original intent is described in another comment. I made changes to remove NewRequest(), and users can invoke u.Upload() directly.",
+      "parentUuid": "ee8ed304_c133cfd6",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d2c69a6_37afff98",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -280,6 +526,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95d9a614_377d3ed0",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "7d2c69a6_37afff98",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -306,6 +576,30 @@
     },
     {
       "key": {
+        "uuid": "a1317ac6_7d76a0e2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1aeafb9_c93dd1b3",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f5fb19f_ccbcedae",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -320,6 +614,24 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6983fd0_a177b383",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "added",
+      "parentUuid": "7f5fb19f_ccbcedae",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -346,6 +658,30 @@
     },
     {
       "key": {
+        "uuid": "9d9b827d_9548693a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cec7cf96_389480af",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 112,
+        "endChar": 1
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6dc52736_e3adb8d9",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -366,6 +702,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d483443_5950fa81",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "removed this function.",
+      "parentUuid": "6dc52736_e3adb8d9",
+      "range": {
+        "startLine": 117,
+        "startChar": 57,
+        "endLine": 117,
+        "endChar": 62
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -392,6 +752,30 @@
     },
     {
       "key": {
+        "uuid": "9d64357d_5a842430",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "this function has been moved to artifact_channel. I made this as a constant in the child CL.",
+      "parentUuid": "1f1040d9_cb1a561b",
+      "range": {
+        "startLine": 127,
+        "startChar": 18,
+        "endLine": 127,
+        "endChar": 25
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "00766109_c8948a87",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -415,6 +799,30 @@
     },
     {
       "key": {
+        "uuid": "bf5f7c9c_ffca49d2",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "http.Client.Do() closes the request body.",
+      "parentUuid": "00766109_c8948a87",
+      "range": {
+        "startLine": 138,
+        "startChar": 9,
+        "endLine": 138,
+        "endChar": 10
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c02c538_cb098396",
         "filename": "resultdb/sink/artifact_uploader_test.go",
         "patchSetId": 9
@@ -429,6 +837,24 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95068d67_7c06faaf",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c02c538_cb098396",
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -452,6 +878,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b17708c_6f854bfe",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:02:38Z",
+      "side": 1,
+      "message": "Now, it mocks Transport.RoundTrip(). httptest seems to prrovide NewResponseRecorder() only, but this unittest module needs to record and validate the request sent out, not the response.",
+      "parentUuid": "02f9dfbf_4af9faa3",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 1
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
