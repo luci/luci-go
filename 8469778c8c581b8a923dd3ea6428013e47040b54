@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c4b8c7fc_2a1480bd",
+        "filename": "milo/frontend/resultui/src/components/image_diff_viewer.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-22T04:01:13Z",
+      "side": 1,
+      "message": "Actually it\u0027s probably fine to keep this here as long as my other comment about horizontal scrolling is addressed.",
+      "parentUuid": "c7a83b77_10257a46",
+      "range": {
+        "startLine": 102,
+        "startChar": 8,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "8469778c8c581b8a923dd3ea6428013e47040b54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20b62e46_141d19da",
         "filename": "milo/frontend/resultui/src/components/image_diff_viewer.ts",
         "patchSetId": 5
