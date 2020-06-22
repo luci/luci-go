@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9f4f0567_00dce66a",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:30:57Z",
+      "side": 1,
+      "message": "Done. ArtifactUploader retries failed requests with transient errors by itself.",
+      "parentUuid": "19e093a5_5eaa1293",
+      "range": {
+        "startLine": 81,
+        "startChar": 9,
+        "endLine": 81,
+        "endChar": 44
+      },
+      "revId": "00016988ee1215a154c74aded86a0f535c90410f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a52f7e64_0efb79ec",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "00016988ee1215a154c74aded86a0f535c90410f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60ce1eec_0e12cc07",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-22T21:30:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a52f7e64_0efb79ec",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 9
+      },
+      "revId": "00016988ee1215a154c74aded86a0f535c90410f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
