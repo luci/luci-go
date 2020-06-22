@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e367b69_36bad3f9",
+        "filename": "milo/buildsource/buildbucket/builders_client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-22T01:48:50Z",
+      "side": 1,
+      "message": "I think you can remove this now, right? IIUC GetBuilder is only implemented in the Go version of buildbucket, which does binary protobuf quickly.\n\nOr is this because there\u0027s some shared parsing code on Milo side that only handles json?",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 38
+      },
+      "revId": "5d0a678837f73706b41ba3cea5d5cc37d249026f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "110dce84_495b5446",
+        "filename": "milo/frontend/routes_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-22T01:48:50Z",
+      "side": 1,
+      "message": "Can we have some formatting in the test data? I can\u0027t remember if it\u0027s supposed to be Markdown or HTML, but would be good to test whatever rich-text format we accept here.",
+      "range": {
+        "startLine": 356,
+        "startChar": 21,
+        "endLine": 356,
+        "endChar": 38
+      },
+      "revId": "5d0a678837f73706b41ba3cea5d5cc37d249026f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
