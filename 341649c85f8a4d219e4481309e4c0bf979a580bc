@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84f105be_eb6c2f2d",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-22T03:57:48Z",
+      "side": 1,
+      "message": "bug: this should be expectedVariants",
+      "range": {
+        "startLine": 121,
+        "startChar": 28,
+        "endLine": 121,
+        "endChar": 46
+      },
+      "revId": "341649c85f8a4d219e4481309e4c0bf979a580bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "641d3829_bd16fed4",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/test_results_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-22T03:57:48Z",
+      "side": 1,
+      "message": "Suggest replacing \"Entries\" with \"Newly loaded entries\"",
+      "range": {
+        "startLine": 194,
+        "startChar": 46,
+        "endLine": 194,
+        "endChar": 53
+      },
+      "revId": "341649c85f8a4d219e4481309e4c0bf979a580bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
