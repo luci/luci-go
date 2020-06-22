@@ -14,6 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-button';
+import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
@@ -26,8 +27,7 @@ import '../../components/test_nav_tree';
 import '../../components/variant_entry';
 import { VariantEntryElement } from '../../components/variant_entry';
 import { consumeContext } from '../../libs/context';
-import * as iter from '../../libs/iter_utils';
-import { TestNode } from '../../models/test_node';
+import { ReadonlyVariant, TestNode, VariantStatus } from '../../models/test_node';
 import { InvocationPageState } from './context';
 
 /**
@@ -84,8 +84,65 @@ export class TestResultsTabElement extends MobxLitElement {
     }
   }
 
+  private renderAllVariants() {
+    const exoneratedVariants: ReadonlyVariant[] = [];
+    const expectedVariants: ReadonlyVariant[] = [];
+    const unexpectedVariants: ReadonlyVariant[] = [];
+    const flakyVariants: ReadonlyVariant[] = [];
+    for (const test of this.pageState.selectedNode.tests()) {
+      for (const variant of test.variants) {
+        switch (variant.status) {
+          case VariantStatus.Exonerated:
+            exoneratedVariants.push(variant);
+            break;
+          case VariantStatus.Expected:
+            expectedVariants.push(variant);
+            break;
+          case VariantStatus.Unexpected:
+            unexpectedVariants.push(variant);
+            break;
+          case VariantStatus.Flaky:
+            flakyVariants.push(variant);
+            break;
+          default:
+            console.error('unexpected variant type', variant);
+            break;
+        }
+      }
+    }
+    return html`
+      ${unexpectedVariants.length === 0 ? html`
+      <div class="list-entry">No unexpected test results.</div>
+      <hr class="divider">
+      ` : ''}
+      ${this.renderVariants(unexpectedVariants)}
+      ${this.renderVariants(flakyVariants)}
+      ${this.renderVariants(exoneratedVariants)}
+      ${this.renderVariants(expectedVariants)}
+    `;
+  }
+
+  private renderVariants(variants: ReadonlyVariant[]) {
+    return html`
+      ${repeat(
+        variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [ReadonlyVariant | undefined, ReadonlyVariant, ReadonlyVariant | undefined]),
+        ([_, v]) => `${v.testId} ${v.variantKey}`,
+        ([prev, v, next]) => html`
+        <tr-variant-entry
+          .variant=${v}
+          .prevTestId=${prev?.testId ?? ''}
+          .prevVariant=${prev?.testId === v.testId ? prev : null}
+          .expanded=${this.hasSingleVariant}
+          .displayVariantId=${prev?.testId === v.testId || next?.testId === v.testId}
+        ></tr-variant-entry>
+      `)}
+      ${variants.length !== 0 ? html`<hr class="divider">` : ''}
+    `;
+  }
+
   protected render() {
     const state = this.pageState;
+
     return html`
       <div id="header">
         <tr-test-filter
@@ -115,17 +172,8 @@ export class TestResultsTabElement extends MobxLitElement {
           ></tr-test-nav-tree>
         </tr-left-panel>
         <div id="test-result-view">
-          ${repeat(iter.withPrev(state.selectedNode.tests()), ([test]) => test.id, ([test, prevTest]) =>
-          repeat(iter.withPrev(test.variants), ([variant]) => variant.variantKey, ([variant, prevVariant]) => html`
-          <tr-variant-entry
-            .variant=${variant}
-            .prevTestId=${prevVariant?.testId ?? prevTest?.id ?? ''}
-            .prevVariant=${prevVariant}
-            .expanded=${this.hasSingleVariant}
-            .displayVariantId=${test.variants.length > 1}
-          ></tr-variant-entry>
-          `))}
-          <div id="list-tail">
+          ${this.renderAllVariants()}
+          <div class="list-entry">
             <span>Showing ${state.selectedNode.testCount} tests.</span>
             <span
               id="load"
@@ -143,6 +191,7 @@ export class TestResultsTabElement extends MobxLitElement {
               >
                 Loading <tr-dot-spinner></tr-dot-spinner>
               </span>
+              <mwc-icon id="load-info" title="Newly loaded entries might be inserted into the list.">info</mwc-icon>
             </span>
           </div>
         </div>
@@ -174,8 +223,6 @@ export class TestResultsTabElement extends MobxLitElement {
     }
     #test-result-view {
       flex: 1;
-      display: flex;
-      flex-direction: column;
       overflow-y: auto;
       padding-top: 5px;
     }
@@ -183,12 +230,18 @@ export class TestResultsTabElement extends MobxLitElement {
       margin-bottom: 2px;
     }
 
+    .divider {
+      border: none;
+      border-top: 1px solid #DDDDDD;
+    }
+
     tr-test-nav-tree {
       overflow: hidden;
     }
 
-    #list-tail {
-      margin: 5px;
+    .list-entry {
+      margin-left: 5px;
+      margin-top: 5px;
     }
     #load {
       color: blue;
@@ -196,6 +249,11 @@ export class TestResultsTabElement extends MobxLitElement {
     #load-more {
       color: blue;
       cursor: pointer;
+    }
+    #load-info {
+      color: #212121;
+      --mdc-icon-size: 1.2em;
+      vertical-align: bottom;
     }
   `;
 }
