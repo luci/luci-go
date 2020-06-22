@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2099def7_eda48527",
+        "filename": "ttq/ttqdatastore/iface.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-22T21:57:05Z",
+      "side": 1,
+      "message": "wrt cron/task queue -- will be in the follow up (this is what TODO meant to cover).\n\nwrt `mw`, I didn\u0027t give it any thought yet. I don\u0027t think `ttq` should care what additional checks its user does.\n\nwrt authorization:\nIf I do nothing, then worst case would be higher load on underlying Database due to excessive sweeping, so as of today I didn\u0027t bother,\nbut I will for prod. I don\u0027t think user of the library needs to think about this. I will probably need your advice anyway on a later CL where I create task queue tasks for sweeping, where I will be able to specify https://cloud.google.com/tasks/docs/reference/rpc/google.cloud.tasks.v2#google.cloud.tasks.v2.OidcToken\n(note I chose to use non-GAE generic HTTP request even if ttq runs on GAE).",
+      "parentUuid": "669906ff_c69a7e1d",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 38
+      },
+      "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "45c6ab57_0d4127d4",
         "filename": "ttq/ttqdatastore/iface.go",
         "patchSetId": 3
@@ -69,6 +93,30 @@
       "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4c81106_cd59ebd0",
+        "filename": "ttq/ttqdatastore/iface.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-22T21:57:05Z",
+      "side": 1,
+      "message": "ACK.",
+      "parentUuid": "9aba1da4_705eb2f2",
+      "range": {
+        "startLine": 81,
+        "startChar": 14,
+        "endLine": 81,
+        "endChar": 21
+      },
+      "revId": "43c53fb96c425fea2d67ddcdf9fb2f98c5045f32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
