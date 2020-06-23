@@ -433,10 +433,10 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 			return
 		}
 
-		mode := 0666
+		mode := 0644
 		// Ignore mode other than executable bit.
 		if details.Mode != nil {
-			mode |= *details.Mode & 0100
+			mode |= *details.Mode & 0111
 		}
 
 		if d.options.Cache == nil {
@@ -600,7 +600,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 			filename := filepath.Join(d.outputDir, name)
 
 			// Igonre mode other than executable bit.
-			mode := 0666 | (int(hdr.Mode) & 0100)
+			mode := 0644 | (int(hdr.Mode) & 0111)
 
 			if err := d.ensureDir(filepath.Dir(filename)); err != nil {
 				d.addError(tarType, string(hash)+":"+filename, err)
