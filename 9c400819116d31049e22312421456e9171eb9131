@@ -46,6 +46,30 @@
       "revId": "9c400819116d31049e22312421456e9171eb9131",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44aaf2d0_02811823",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-23T20:37:43Z",
+      "side": 1,
+      "message": "Ah, I was thinking of https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/proto/milo/annotations.proto#150\n\nWhat a mess :(. Neither of these are the one I was thinking of.\n\nLet me poke around a bit.",
+      "parentUuid": "24a995ad_476c0f61",
+      "range": {
+        "startLine": 75,
+        "startChar": 8,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "9c400819116d31049e22312421456e9171eb9131",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
