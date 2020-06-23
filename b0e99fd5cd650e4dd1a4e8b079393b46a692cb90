@@ -166,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "6eabccdb_86bcdfae",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-23T06:58:29Z",
+      "side": 1,
+      "message": "I changed the function signature of Upload such that it takes a slice of bytes, instead of io.ReadSeeker. If Upload takes io.Reader or io.ReadSeeker, users can still pass *os.File, but because Upload completely hides the HTTP request used inside, users have no way to set GetBody().\n\nThis module now provides Upload() and UploadFromFile(). If users want to upload an artifact from a file, then they can simply pass the file path to UploadFromFile. Then, UploadFromFile will set GetBody() automatically. Let me know if you have different ideas.",
+      "parentUuid": "5e04aff6_2fbe4409",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 21
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36ce9f73_2d36a3c3",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 9
@@ -201,6 +225,30 @@
       "side": 1,
       "message": "The original intent was that the user of this function can keep a original copy of the HTTP request so that it can be reused on retries without having to calculate the hash again.\n\nIn ResultSink, dispatcher already implements retries on transient errors, and I wanted to rely on the retry performed on dispatcher, because the dispatcher worker could process another batch, while the temporarily failed batch was held with a retry delay.\n\nHowever, now I think it\u0027s unnecessary complication, and upload functions retry requests on transient failures by themselves. As a result, if a transient failure happens for a long period, like a minute, then it will hold the dispatcher worker during the retry delays.",
       "parentUuid": "36ce9f73_2d36a3c3",
+      "range": {
+        "startLine": 50,
+        "startChar": 27,
+        "endLine": 50,
+        "endChar": 28
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d386b3fd_441862f4",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-23T06:58:29Z",
+      "side": 1,
+      "message": "added this back as a private",
+      "parentUuid": "5b601e8a_3eeeeef1",
       "range": {
         "startLine": 50,
         "startChar": 27,
@@ -280,6 +328,30 @@
       "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "388a44ac_5d2807d6",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-23T06:58:29Z",
+      "side": 1,
+      "message": "done.",
+      "parentUuid": "626ce622_2e789199",
+      "range": {
+        "startLine": 59,
+        "startChar": 14,
+        "endLine": 59,
+        "endChar": 17
+      },
+      "revId": "b0e99fd5cd650e4dd1a4e8b079393b46a692cb90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
