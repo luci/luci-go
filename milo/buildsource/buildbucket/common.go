@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-const bbRPCTimeout = time.Minute
+const bbRPCTimeout = time.Minute - time.Second
 
 func newSwarmbucketClient(ctx context.Context, server string) (*swarmbucket.Service, error) {
 	// TODO(crbug/1006920): Do not leak the cancel context.
