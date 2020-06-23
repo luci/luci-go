@@ -139,6 +139,10 @@ export class ImageDiffArtifactPage extends MobxLitElement {
   }
 
   static styles = css`
+    :host {
+      display: block;
+    }
+
     #artifact-header {
       background-color: rgb(248, 249, 250);
       padding: 6px 16px;
