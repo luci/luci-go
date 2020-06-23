@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"strings"
 
+	"cloud.google.com/go/datastore"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
@@ -167,4 +168,20 @@ func InstallHandlers(r *router.Router) { classicEnv.InstallHandlers(r) }
 // unauthenticated requests).
 func InstallHandlersWithMiddleware(r *router.Router, base router.MiddlewareChain) {
 	classicEnv.InstallHandlersWithMiddleware(r, base)
+}
+
+type CloudServices struct {
+	DS *datastore.Client
+}
+
+// InstallHandlersWithCloudServices installs handlers for framework routes using
+// classic production services, except for the services set in cloudServices, which
+// will use cloud implementations.
+func InstallHandlersWithCloudServices(r *router.Router, cloudServices CloudServices) {
+	services := prod.CloudServices{CloudDs: cloudServices.DS}
+	env := classicEnv
+	env.WithInitialRequest = func(c context.Context, r *http.Request) context.Context {
+		return prod.UseWithCloudServices(c, services, r)
+	}
+	env.InstallHandlers(r)
 }

@@ -20,18 +20,25 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/notify"
+
+	"cloud.google.com/go/datastore"
+
+	"google.golang.org/api/option"
 )
 
 var buildbucketPubSub = metric.NewCounter(
@@ -42,9 +49,31 @@ var buildbucketPubSub = metric.NewCounter(
 	field.String("status"),
 )
 
+func initDatastoreClient() (*datastore.Client, error) {
+	ts, err := auth.GetTokenSource(context.Background(),
+		auth.AsSelf,
+		auth.WithScopes(datastore.ScopeDatastore))
+	if err != nil {
+		return nil, err
+	}
+	return datastore.NewClient(context.Background(),
+		datastore.DetectProjectID,
+		option.WithTokenSource(ts))
+}
+
 func main() {
 	r := router.New()
-	standard.InstallHandlers(r)
+
+	env := environ.System()
+	cloudServices := standard.CloudServices{}
+	if env.GetEmpty("USE_CLOUD_DATASTORE") == "1" {
+		var err error
+		if cloudServices.DS, err = initDatastoreClient(); err != nil {
+			panic(err)
+		}
+		defer cloudServices.DS.Close()
+	}
+	standard.InstallHandlersWithCloudServices(r, cloudServices)
 
 	basemw := standard.Base()
 
