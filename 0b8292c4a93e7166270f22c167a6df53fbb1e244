@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64c92232_e6678345",
+        "filename": "appengine/gaemiddleware/standard/env.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-23T02:07:40Z",
+      "side": 1,
+      "message": "What\u0027s the purpose of this type? Could you just use prod.CloudServices directly?",
+      "range": {
+        "startLine": 173,
+        "startChar": 0,
+        "endLine": 175,
+        "endChar": 1
+      },
+      "revId": "0b8292c4a93e7166270f22c167a6df53fbb1e244",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
