@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e96fedb2_5ae2b61e",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-23T21:21:12Z",
+      "side": 1,
+      "message": "now that I\u0027m looking at this closer; why not:\n\n   # add UpdateToken at the time the artifact uploader is constructed\n   c.cfg.ArtifactUploader \u003d NewArtifactUploader(..., UpdateToken)\n\n   # Just pass the entire Artifact object through instead of exploding it into the args\n   c.cfg.ArtifactUploader(ctx, task.artName, task.art)\n\n?\n\nThis also means that you can encapsulate the filepath/bytes stuff entirely within ArtifactUploader.",
+      "range": {
+        "startLine": 69,
+        "startChar": 33,
+        "endLine": 69,
+        "endChar": 47
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
