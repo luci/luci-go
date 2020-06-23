@@ -158,3 +158,35 @@ func TestPartition(t *testing.T) {
 		})
 	})
 }
+
+func TestSortedPartitionsBuilder(t *testing.T) {
+	t.Parallel()
+
+	Convey("SortedPartitionsBuilder", t, func() {
+		b := NewSortedPartitionsBuilder(FromInts(0, 300))
+		So(b.IsEmpty(), ShouldBeFalse)
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 300)})
+
+		b.Exclude(FromInts(100, 200))
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(200, 300)})
+
+		b.Exclude(FromInts(150, 175)) // noop
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(200, 300)})
+
+		b.Exclude(FromInts(150, 250)) // cut front
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(250, 300)})
+
+		b.Exclude(FromInts(275, 400)) // cut back
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(250, 275)})
+
+		b.Exclude(FromInts(40, 80)) // another split.
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 40), FromInts(80, 100), FromInts(250, 275)})
+
+		b.Exclude(FromInts(10, 270))
+		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 10), FromInts(270, 275)})
+
+		b.Exclude(FromInts(0, 4000))
+		So(b.Result(), ShouldResemble, SortedPartitions{})
+		So(b.IsEmpty(), ShouldBeTrue)
+	})
+}

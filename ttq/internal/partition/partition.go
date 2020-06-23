@@ -19,6 +19,7 @@
 package partition
 
 import (
+	"container/list"
 	"fmt"
 	"math/big"
 	"strings"
@@ -171,6 +172,82 @@ func (p Partition) EducatedSplitAfter(exclusive string, beforeItems, targetItems
 	}
 	return remaining.Split(shards)
 }
+
+// SortedPartitionsBuilder constructs a sequence of partitions by excluding
+// chunks from a starting partion.
+//
+// Not intended to scale to large number of exclusion operations.
+type SortedPartitionsBuilder struct {
+	// l holds partitions in sorted order, leading to O(len(l)) runtime of the
+	// Exclude().
+	//
+	// For max performance with >~20 exclusions, an interval tree should be used
+	// instead. Unfortunately, due to lack of generics in Go, most interval tree
+	// libraries expect float64 or int64 nounds, not big.Int.
+	l *list.List
+}
+
+func NewSortedPartitionsBuilder(p *Partition) SortedPartitionsBuilder {
+	b := SortedPartitionsBuilder{l: list.New()}
+	b.l.PushBack(p.Copy())
+	return b
+}
+
+func (b *SortedPartitionsBuilder) IsEmpty() bool {
+	return b.l.Len() == 0
+}
+
+func (b *SortedPartitionsBuilder) Result() SortedPartitions {
+	r := make([]*Partition, 0, b.l.Len())
+	for el := b.l.Front(); el != nil; el = el.Next() {
+		r = append(r, el.Value.(*Partition))
+	}
+	return r
+}
+
+func (b *SortedPartitionsBuilder) Exclude(exclude *Partition) {
+	for el := b.l.Front(); el != nil; {
+		avail := el.Value.(*Partition)
+		switch {
+		case exclude.low.Cmp(&avail.high) >= 0:
+			// avail < exclude
+			el = el.Next()
+
+		case exclude.high.Cmp(&avail.low) <= 0:
+			// exclude < avail
+			return
+
+		case exclude.low.Cmp(&avail.low) <= 0:
+			// front excluded
+			if exclude.high.Cmp(&avail.high) >= 0 {
+				// back also excluded
+				next := el.Next()
+				b.l.Remove(el)
+				el = next
+			} else {
+				// only back remains.
+				avail.low.Set(&exclude.high)
+				return
+			}
+
+		case exclude.high.Cmp(&avail.high) >= 0:
+			// only front remains.
+			avail.high.Set(&exclude.low)
+			el = el.Next()
+
+		default:
+			// middle is excluded.
+			second := &Partition{}
+			second.low.Set(&exclude.high)
+			second.high.Set(&avail.high)
+			avail.high.Set(&exclude.low)
+			b.l.InsertAfter(second, el)
+			return
+		}
+	}
+}
+
+// helpers
 
 var (
 	// these are effectively constants predefined to avoid needless memory allocations.
