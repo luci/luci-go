@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "3aa6135d_a08de88f",
+        "filename": "milo/frontend/resultui/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-23T04:37:33Z",
+      "side": 1,
+      "message": "Suggest adding to the end of this sentence: \", with a focus on test results served from the new ResultDB backend.\"",
+      "range": {
+        "startLine": 2,
+        "startChar": 70,
+        "endLine": 2,
+        "endChar": 80
+      },
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c40f79ca_2e79465b",
+        "filename": "milo/frontend/resultui/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-23T04:37:33Z",
+      "side": 1,
+      "message": "This link doesn\u0027t work (go links don\u0027t support https), and is internal-only anyway so maybe just remove it?",
+      "range": {
+        "startLine": 2,
+        "startChar": 38,
+        "endLine": 2,
+        "endChar": 69
+      },
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fe2cae7_524308f2",
+        "filename": "milo/frontend/resultui/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-23T04:37:33Z",
+      "side": 1,
+      "message": "I think the words \"portal\" and \"debugging\" are slightly misleading here.\n\nSuggest rewording to something like:\n\"It aims to provide Chrome developers a convenient way to view the output of failing tests.\"",
+      "range": {
+        "startLine": 3,
+        "startChar": 37,
+        "endLine": 3,
+        "endChar": 73
+      },
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28e8a6b8_3b590408",
         "filename": "milo/frontend/resultui/README.md",
         "patchSetId": 2
