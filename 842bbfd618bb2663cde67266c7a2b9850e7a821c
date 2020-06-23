@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4d5868f_3931db52",
+        "filename": "milo/buildsource/buildbucket/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-23T23:07:17Z",
+      "side": 1,
+      "message": "Milo itself has just 60s. Giving BB 60s is a noop, really. 59s is more actionable.\nOnce we finish SearchBuild, Batch \u0026 ScheduleBuild in Go, this can be shrank to perhaps as low as 10s.",
+      "revId": "842bbfd618bb2663cde67266c7a2b9850e7a821c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
