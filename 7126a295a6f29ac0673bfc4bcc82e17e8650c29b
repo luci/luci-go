@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "253390bf_b8f128e7",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "100a5e31_ce37233a",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4fd425d_ec5f6fc0",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 6
@@ -30,6 +48,24 @@
       "writtenOn": "2020-06-22T22:24:43Z",
       "side": 1,
       "message": "Is this actually necessary? Could you construct the Query directly from the SearchBuildsRequest?\nhttps://godoc.org/go.chromium.org/gae/service/datastore#Query",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41e7c634_71f0f218",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Yeah, I also considered a while and then decided to create an intermediate SearchQuery obj as in Py.\n\nThe search flow contains 3 major steps :\t\t\t\t\t\t\t\t\t\t\t \n                                           |— query on TagIndex; get builds on Builds via ids  \npreprocessing -\u003e determine which subflow --|\t\t\t\t\t\t\t\t\t\t\t\t\t \n                                           |— normal query directly on Builds kind\n\nNewSearchQuery is in the preprocessing.\n\n1. We need this intermediate obj as two subflows use different datatore.Query but need some\nsame info which can be preprocessed and converted at the same place before, e.g. timeRange, idRange, tags from pb to str slices and so on.\n\n2. Another potential benefit could be the low coupling and better isolation if case of SearchBuildsRequest or repo structure get changed. An intermediate usually benefits for the 3-layer repo and is used between the handler layer to the controller/business layer.\nOur repo seems like only two layers - handler(which handle RPC and do business logic) and Repository layer. But it doesn\u0027t hurt to have it.",
+      "parentUuid": "b4fd425d_ec5f6fc0",
       "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "a89213fa_e1d196eb",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Yes,as mentioned above. there are many places need to directly access to the properties outside the SearchQuery struct to determine something in the flowing two steps.",
+      "parentUuid": "8f72ba09_05764c26",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7bae8b0f_7dd35b23",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 6
@@ -67,6 +121,24 @@
       "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "374f333c_02327bc0",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Make sense. Thx for pointing this out.",
+      "parentUuid": "7bae8b0f_7dd35b23",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "07bab35c_759e95ba",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51a68276_858aa6af",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6375de02_36a16392",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 6
@@ -101,6 +191,24 @@
       "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1f82fcc_d3b1325a",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6375de02_36a16392",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "80bd8e07_e2214332",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "It complains the error - `invalid memory address or nil pointer dereference`.\nI think it\u0027s because the value of canary variable don\u0027t is zero value. It cannot change\nthe content of the address when  p.GetCanary() equals to pb.Trinary_YES.",
+      "parentUuid": "f694d083_1df3e813",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c64a79e9_e58cb449",
         "filename": "buildbucket/protoutil/tag.go",
         "patchSetId": 6
@@ -135,6 +261,24 @@
       "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bdd333f_660cde7b",
+        "filename": "buildbucket/protoutil/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-23T03:44:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c64a79e9_e58cb449",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
