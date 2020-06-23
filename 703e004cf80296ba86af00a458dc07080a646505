@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e799d554_44b54909",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-23T21:14:36Z",
+      "side": 1,
+      "message": "Did you consider just memory-mapping the file? https://godoc.org/golang.org/x/exp/mmap and https://golang.org/pkg/io/#NewSectionReader\n\nI think this would effectively have the same effect, but you\u0027d let the OS do the memory buffering.",
+      "range": {
+        "startLine": 38,
+        "startChar": 8,
+        "endLine": 38,
+        "endChar": 27
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
