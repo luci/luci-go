@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28e8a6b8_3b590408",
+        "filename": "milo/frontend/resultui/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-06-23T01:00:57Z",
+      "side": 1,
+      "message": "typo: why they failed",
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dd713c1_84f2c8b9",
+        "filename": "milo/frontend/resultui/docs/contribution.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-06-23T01:00:57Z",
+      "side": 1,
+      "message": "Does the root of the project refer to the milo directory?",
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d0a6066_b3429f70",
+        "filename": "milo/frontend/resultui/docs/contribution.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-06-23T01:00:57Z",
+      "side": 1,
+      "message": "Maybe we can give an example for the \u003cResultDB Host Name\u003e?",
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6c48aa5_2af0881b",
+        "filename": "milo/frontend/resultui/docs/contribution.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-06-23T01:00:57Z",
+      "side": 1,
+      "message": "Do you have the URL to the GCP console?",
+      "revId": "c2607900aa6422524e64c65db45bd0c144e31edc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
