@@ -70,9 +70,9 @@ message BugTemplate {
   repeated string components = 4;
 }
 
-// Link is a link to an internet resource, which will be rendered out as
+// ManifestLink is a link to an internet resource, which will be rendered out as
 // an anchor tag <a href="url" alt="alt">text</a>.
-message Link {
+message ManifestLink {
   // Text is displayed as the text between the anchor tags.
   string text = 1;
 
@@ -106,7 +106,7 @@ message LinkGroup {
   string name = 1;
 
   // Links is a list of links to display.
-  repeated Link links = 2;
+  repeated ManifestLink links = 2;
 }
 
 // ConsoleSummaryGroup is a list of consoles to be displayed as console summaries
@@ -115,7 +115,7 @@ message LinkGroup {
 // (e.g. "Tree closers", "Experimental", etc)
 message ConsoleSummaryGroup {
   // Title is a name or label for this group of consoles.  This is optional.
-  Link title = 1;
+  ManifestLink title = 1;
 
   // ConsoleIds is a list of console ids to display in this console group.
   // Each console id must be prepended with its related project (e.g.
@@ -185,7 +185,7 @@ message Console {
   //
   // For best results, ensure each ref's has commit's **committer** timestamp
   // monotonically non-decreasing. Gerrit will take care of this if you require
-  // each commmit to go through Gerrit by prohibiting "git push" on these refs.
+  // each commit to go through Gerrit by prohibiting "git push" on these refs.
   //
   // Eg. refs/heads/master, regexp:refs/branch-heads/\d+\.\d+
   repeated string refs = 14;
