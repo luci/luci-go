@@ -14,8 +14,13 @@
 
 package internal
 
+import "context"
+
 // Database abstracts out specific storage implementation.
 type Database interface {
 	// Kind is used only for monitoring/logging purposes.
 	Kind() string
+
+	SaveReminder(context.Context, *Reminder) error
+	DeleteReminder(context.Context, *Reminder) error
 }
