@@ -372,6 +372,24 @@
     },
     {
       "key": {
+        "uuid": "9b79b995_0e80ade7",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T23:41:22Z",
+      "side": 1,
+      "message": "there is no guarantee that http.Client.Do is called to begin with, e.g. L119",
+      "parentUuid": "329ca7e9_7d4dfc0a",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92c652b8_91ceb671",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -475,6 +493,30 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4b57512c_58bcea52",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T23:41:22Z",
+      "side": 1,
+      "message": "it would be simpler to use ioutil.NopCloser(theFile) as body to avoid this unclarity?",
+      "parentUuid": "89b38644_d9047198",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 25
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
