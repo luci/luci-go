@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package srcman;
 
+option go_package = "go.chromium.org/luci/common/proto/srcman";
+
 // A Manifest attempts to make an accurate accounting of source/data directories
 // during the execution of a LUCI task.
 //

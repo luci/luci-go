@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package srcman;
 
+option go_package = "go.chromium.org/luci/common/proto/srcman";
+
 import "go.chromium.org/luci/common/proto/git/commit.proto";
 import "go.chromium.org/luci/common/proto/srcman/manifest.proto";
 
