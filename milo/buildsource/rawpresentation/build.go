@@ -247,9 +247,9 @@ func NewURLBuilder(addr *types.StreamAddr) *ViewerURLBuilder {
 }
 
 // BuildLink implements URLBuilder.
-func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
+func (b *ViewerURLBuilder) BuildLink(l *miloProto.AnnotationLink) *ui.Link {
 	switch t := l.Value.(type) {
-	case *miloProto.Link_LogdogStream:
+	case *miloProto.AnnotationLink_LogdogStream:
 		ls := t.LogdogStream
 
 		server := ls.Server
@@ -269,7 +269,7 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 		}
 		return link
 
-	case *miloProto.Link_Url:
+	case *miloProto.AnnotationLink_Url:
 		link := ui.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = "unnamed"

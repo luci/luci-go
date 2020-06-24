@@ -18,6 +18,8 @@ import "google/protobuf/timestamp.proto";
 
 package git;
 
+option go_package = "go.chromium.org/luci/common/proto/git";
+
 // Commit is a single parsed commit as represented in a git log or git show
 // expression.
 message Commit {
