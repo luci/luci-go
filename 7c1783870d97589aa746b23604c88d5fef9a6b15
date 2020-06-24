@@ -16,6 +16,24 @@
       "revId": "7c1783870d97589aa746b23604c88d5fef9a6b15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dd985e5_4778980a",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-24T03:05:50Z",
+      "side": 1,
+      "message": "I think this is independent of that. Right now the code is basically saying, \"any error that\u0027s not ErrNotExist means the file exists\", which can be misleading?",
+      "parentUuid": "598a427b_1510b06b",
+      "revId": "7c1783870d97589aa746b23604c88d5fef9a6b15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
