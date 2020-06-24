@@ -19,9 +19,11 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/server/redisconn"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -109,4 +111,88 @@ func BenchmarkChainFetch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		read()
 	}
+}
+
+type redisConn struct {
+	redis.Conn
+	reply    interface{}
+	received [][]interface{}
+}
+
+func (c *redisConn) Send(cmd string, args ...interface{}) error {
+	c.received = append(c.received, append([]interface{}{cmd}, args...))
+	return nil
+}
+
+func (c *redisConn) Do(cmd string, args ...interface{}) (reply interface{}, err error) {
+	if cmd != "" {
+		c.Send(cmd, args...)
+	}
+	return c.reply, nil
+}
+
+func (c *redisConn) Err() error { return nil }
+
+func (c *redisConn) Close() error { return nil }
+
+func TestReachCache(t *testing.T) {
+	t.Parallel()
+
+	Convey(`TestReachCache`, t, func(c C) {
+		ctx := testutil.TestingContext()
+
+		// Stub Redis.
+		conn := &redisConn{}
+		ctx = redisconn.UsePool(ctx, redis.NewPool(func() (redis.Conn, error) {
+			return conn, nil
+		}, 0))
+
+		cache := ReachCache("inv")
+
+		Convey(`Read`, func() {
+			conn.reply = []byte("a\nb\n")
+			actual, err := cache.Read(ctx)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, NewIDSet("a", "b", "inv"))
+			So(conn.received, ShouldResemble, [][]interface{}{
+				{"GET", "reach:inv"},
+			})
+		})
+
+		Convey(`Read empty`, func() {
+			conn.reply = []byte("\n")
+			actual, err := cache.Read(ctx)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResemble, NewIDSet("inv"))
+		})
+
+		Convey(`Read, cache miss`, func() {
+			conn.reply = []byte(nil)
+			_, err := cache.Read(ctx)
+			So(err, ShouldEqual, ErrUnknownReach)
+		})
+
+		Convey(`Write`, func() {
+			err := cache.Write(ctx, NewIDSet("a", "b"))
+			So(err, ShouldBeNil)
+
+			So(conn.received[0][2], ShouldBeIn, []interface{}{
+				[]byte("a\nb\n"),
+				[]byte("b\na\n"),
+			})
+			So(conn.received, ShouldResemble, [][]interface{}{
+				{"SET", "reach:inv", conn.received[0][2]},
+				{"EXPIRE", "reach:inv", 2592000},
+			})
+		})
+
+		Convey(`Write empty`, func() {
+			err := cache.Write(ctx, nil)
+			So(err, ShouldBeNil)
+			So(conn.received, ShouldResemble, [][]interface{}{
+				{"SET", "reach:inv", []byte("\n")},
+				{"EXPIRE", "reach:inv", 2592000},
+			})
+		})
+	})
 }

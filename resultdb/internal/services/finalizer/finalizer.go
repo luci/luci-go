@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server"
 
@@ -256,35 +257,54 @@ func ensureFinalizing(ctx context.Context, txn span.Txn, invID invocations.ID) e
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
+	var reach invocations.IDSet
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		// Check once again if the invocation is still not finalized.
+		// Check the state before proceeding, so that if the invocation already
+		// finalized, we return errAlreadyFinalized.
 		if err := ensureFinalizing(ctx, txn, invID); err != nil {
 			return err
 		}
 
-		// Enqueue tasks to try to finalize invocations that include ours.
-		if err := insertNextFinalizationTasks(ctx, txn, invID); err != nil {
-			return err
-		}
+		return parallel.FanOutIn(func(work chan<- func() error) {
+			// Read all reachable invocations to cache them after the transaction.
+			work <- func() (err error) {
+				reach, err = invocations.Reachable(ctx, txn, invocations.NewIDSet(invID))
+				return
+			}
 
-		// Enqueue tasks to export the invocation to BigQuery.
-		if err := insertBigQueryTasks(ctx, txn, invID); err != nil {
-			return err
-		}
+			// Enqueue tasks to try to finalize invocations that include ours.
+			work <- func() error {
+				if err := insertNextFinalizationTasks(ctx, txn, invID); err != nil {
+					return err
+				}
+				// Enqueue tasks to export the invocation to BigQuery.
+				// Note: this cannot be done in parallel with insertNextFinalizationTasks
+				// because a Spanner session can process only one DML query at a time.
+				return insertBigQueryTasks(ctx, txn, invID)
+			}
 
-		// Update the invocation state.
-		return txn.BufferWrite([]*spanner.Mutation{
-			span.UpdateMap("Invocations", map[string]interface{}{
-				"InvocationId": invID,
-				"State":        pb.Invocation_FINALIZED,
-				"FinalizeTime": spanner.CommitTimestamp,
-			}),
+			// Update the invocation state.
+			work <- func() error {
+				return txn.BufferWrite([]*spanner.Mutation{
+					span.UpdateMap("Invocations", map[string]interface{}{
+						"InvocationId": invID,
+						"State":        pb.Invocation_FINALIZED,
+						"FinalizeTime": spanner.CommitTimestamp,
+					}),
+				})
+			}
 		})
 	})
-	if err != nil && err != errAlreadyFinalized {
+	switch {
+	case err == errAlreadyFinalized:
+		return nil
+	case err != nil:
 		return err
+	default:
+		// Cache the reachable invocations.
+		invocations.ReachCache(invID).TryWrite(ctx, reach)
+		return nil
 	}
-	return nil
 }
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly

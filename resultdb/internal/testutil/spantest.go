@@ -27,20 +27,38 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/server/redisconn"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// IntegrationTestEnvVar is the name of the environment variable which controls
-// whether spanner tests are executed.
-// The value must be "1" for integration tests to run.
-const IntegrationTestEnvVar = "INTEGRATION_TESTS"
+const (
+	// IntegrationTestEnvVar is the name of the environment variable which controls
+	// whether spanner tests are executed.
+	// The value must be "1" for integration tests to run.
+	IntegrationTestEnvVar = "INTEGRATION_TESTS"
 
-// RunIntegrationTests returns true if integration tests should run.
-func RunIntegrationTests() bool {
+	// RedisTestEnvVar is the name of the environment variable which controls
+	// whether tests will attempt to connect to *local* Redis at port 6379.
+	// The value must be "1" to connect to Redis.
+	//
+	// Note that this mode does not support running multiple test binaries in
+	// parallel, e.g. `go test ./...`.
+	// This could be mitigated by using different Redis databases in different
+	// test binaries, but the default limit is only 16.
+	RedisTestEnvVar = "INTEGRATION_TESTS_REDIS"
+)
+
+// runIntegrationTests returns true if integration tests should run.
+func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
+}
+
+// connectToRedis returns true if tests should connect to Redis.
+func connectToRedis() bool {
+	return os.Getenv(RedisTestEnvVar) == "1"
 }
 
 var spannerClient *spanner.Client
@@ -51,7 +69,7 @@ var spannerClient *spanner.Client
 // Tests that use Spanner must not call t.Parallel().
 func SpannerTestContext(tb testing.TB) context.Context {
 	switch {
-	case !RunIntegrationTests():
+	case !runIntegrationTests():
 		tb.Skipf("env var %s=1 is missing", IntegrationTestEnvVar)
 	case spannerClient == nil:
 		tb.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
@@ -65,7 +83,16 @@ func SpannerTestContext(tb testing.TB) context.Context {
 		tb.Fatal(err)
 	}
 
-	return span.WithClient(ctx, spannerClient)
+	ctx = span.WithClient(ctx, spannerClient)
+
+	if connectToRedis() {
+		ctx = redisconn.UsePool(ctx, redisconn.NewPool("localhost:6379", 0))
+		if err := cleanupRedis(ctx); err != nil {
+			tb.Fatal(err)
+		}
+	}
+
+	return ctx
 }
 
 // findInitScript returns path //resultdb/internal/span/init_db.sql.
@@ -110,7 +137,7 @@ func SpannerTestMain(m *testing.M) {
 func spannerTestMain(m *testing.M) (exitCode int, err error) {
 	testing.Init()
 
-	if RunIntegrationTests() {
+	if runIntegrationTests() {
 		// Find init_db.sql
 		initScriptPath, err := findInitScript()
 		if err != nil {
@@ -155,6 +182,17 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 		// All other tables are interleaved in Invocations table.
 		spanner.Delete("Invocations", spanner.AllKeys()),
 	})
+	return err
+}
+
+// cleanupRedis deletes all data from the selected Redis database.
+func cleanupRedis(ctx context.Context) error {
+	conn, err := redisconn.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Do("FLUSHDB")
 	return err
 }
 

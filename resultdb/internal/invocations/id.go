@@ -103,6 +103,13 @@ func (s IDSet) Add(id ID) {
 	s[id] = struct{}{}
 }
 
+// Union adds other ids.
+func (s IDSet) Union(other IDSet) {
+	for id := range other {
+		s.Add(id)
+	}
+}
+
 // Remove removes id from the set if it was present.
 func (s IDSet) Remove(id ID) {
 	delete(s, id)
