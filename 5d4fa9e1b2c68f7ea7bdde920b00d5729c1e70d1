@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0fc92fb_5d09c648",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:43:54Z",
+      "side": 1,
+      "message": "What actually happens if it takes longer than a minute? Duplicate task gets enqueued?",
+      "revId": "5d4fa9e1b2c68f7ea7bdde920b00d5729c1e70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24cab061_e9aed353",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:43:54Z",
+      "side": 1,
+      "message": "deserializing",
+      "range": {
+        "startLine": 80,
+        "startChar": 64,
+        "endLine": 80,
+        "endChar": 77
+      },
+      "revId": "5d4fa9e1b2c68f7ea7bdde920b00d5729c1e70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f354712_ea91f30a",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:43:54Z",
+      "side": 1,
+      "message": "In general prefer\n// TODO(crbug/1080423): one line sentence.\n// More info if necessary\ncrbug is so you can see if there are any open items associated with a bug when closing it, or so someone who isn\u0027t you can see where to find more context. One line is so that you get a complete sentence in a one line grep without opening the file (or adding -A to grep).",
+      "range": {
+        "startLine": 98,
+        "startChar": 10,
+        "endLine": 98,
+        "endChar": 17
+      },
+      "revId": "5d4fa9e1b2c68f7ea7bdde920b00d5729c1e70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3504204_8a267685",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:43:54Z",
+      "side": 1,
+      "message": "IMO WithDeadline is slightly more readable in tests, so you can see it\u0027s being set to a specific value and not being added to a value installed in the context earlier.",
+      "revId": "5d4fa9e1b2c68f7ea7bdde920b00d5729c1e70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
