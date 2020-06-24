@@ -39,19 +39,21 @@
 
 
 <body class="interface">
-  <header>
-    <div>
-      <a href="/" aria-label="Home page">Home</a> |
-      <a href="/search" aria-label="Search page">Search</a>
-    </div>
-    <div>
-      
-        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">Login</a>
-      
-    </div>
-  </header>
-  <hr>
   
+  <div id="main">
+    <header>
+      <div>
+        <a href="/" aria-label="Home page">Home</a> |
+        <a href="/search" aria-label="Search page">Search</a>
+      </div>
+      <div>
+        
+          <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">Login</a>
+        
+      </div>
+    </header>
+    <hr>
+    
   
   <div id="modal-overlay">
     <div id="retry-build-modal" class="modal-content">
@@ -11695,15 +11697,16 @@
     </div>
   </div>
 
-  <footer>
-    <hr>
-      <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
-      <div>
-        <a href="https://chromium.googlesource.com/infra/luci">LUCI</a><br>
-        built: <b><span class="local-time " data-timestamp="1549166706000">Sunday, 03-Feb-19 04:05:06 UTC</span></b><br>
-        version: <b>testVersionID</b><br>
-      </div>
-  </footer>
+    <footer>
+      <hr>
+        <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
+        <div>
+          <a href="https://chromium.googlesource.com/infra/luci">LUCI</a><br>
+          built: <b><span class="local-time " data-timestamp="1549166706000">Sunday, 03-Feb-19 04:05:06 UTC</span></b><br>
+          version: <b>testVersionID</b><br>
+        </div>
+    </footer>
+  </div>
 </body>
 <script>
 $(function () {

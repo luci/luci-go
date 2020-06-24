@@ -13,6 +13,15 @@
  * limitations under the License.
  */
 
+#opt-in-banner {
+    background-color: #feb;
+    text-align: center;
+    padding: 3px;
+    color: #333;
+    font-weight: bold;
+    font-size: 12px;
+}
+
 #modal-overlay {
     display: none;
     position: fixed;
