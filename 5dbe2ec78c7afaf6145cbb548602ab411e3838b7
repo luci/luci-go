@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93dc8097_057dc0d1",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T23:05:21Z",
+      "side": 1,
+      "message": "GPU string is computed differently https://source.chromium.org/chromium/chromium/tools/build/+/master:scripts/slave/recipe_modules/chromium_tests/steps.py;l\u003d1668?q\u003dchromium_tests%2Fsteps.py",
+      "range": {
+        "startLine": 173,
+        "startChar": 32,
+        "endLine": 173,
+        "endChar": 33
+      },
+      "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
