@@ -174,6 +174,24 @@
     },
     {
       "key": {
+        "uuid": "143c774a_47558323",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-24T18:21:40Z",
+      "side": 1,
+      "message": "I believe that http is documented as closing the body even on error?",
+      "parentUuid": "049e4f4d_e252697c",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92c652b8_91ceb671",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -202,6 +220,30 @@
       "writtenOn": "2020-06-24T06:01:48Z",
       "side": 1,
       "message": "hmm, why are we reopening the same file? why not seek?",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 25
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "101905d3_6efdf301",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-24T18:21:40Z",
+      "side": 1,
+      "message": "Unfortunately the semantics of GetBody aren\u0027t clearly documented; I tried to read the docs to see if seek would be a sensible thing to do, but my read is that http has the right to close Body before calling GetBody again; in that case we would have to reopen the file.",
+      "parentUuid": "7adb6fee_508afd7d",
       "range": {
         "startLine": 122,
         "startChar": 2,
