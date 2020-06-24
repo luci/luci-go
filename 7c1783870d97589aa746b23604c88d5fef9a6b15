@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "598a427b_1510b06b",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-24T03:03:15Z",
+      "side": 1,
+      "message": "I think it is better to change in cache.\nWould you do this?\nhttps://bugs.chromium.org/p/chromium/issues/detail?id\u003d1098265#c5",
+      "revId": "7c1783870d97589aa746b23604c88d5fef9a6b15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
