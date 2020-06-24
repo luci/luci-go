@@ -378,26 +378,28 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	return settings, nil
 }
 
-// updateProject ingests configs of a single project.
+// fetchProject fetches the config for a single project and parses it.
 //
 // As an input takes project.cfg config (**not** milo.cfg) with ACLs. Fetches
 // Milo's config from the same config set. Absence of the Milo config is not an
 // error.
 //
-// Returns a set of console names defined in the project, this is used to
-// cleanup stale console entities in UpdateProjects.
-func updateProject(c context.Context, cfg *configInterface.Config) (stringset.Set, error) {
-	logging.Infof(c, "processing configs from %q", cfg.ConfigSet)
+// Returns, in order:
+//   * A Project entity to store in Datastore
+//   * The parsed Milo config (may be nil if there was no milo.cfg)
+//   * Metadata for the Milo config (may be nil if there was no milo.cfg)
+func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *config.Project, *configInterface.Meta, error) {
+	logging.Infof(c, "fetching configs from %q", cfg.ConfigSet)
 
 	projectID := cfg.ConfigSet.Project()
 	if projectID == "" {
-		return nil, errors.Reason("bad config set name %q, not a project", cfg.ConfigSet).Err()
+		return nil, nil, nil, errors.Reason("bad config set name %q, not a project", cfg.ConfigSet).Err()
 	}
 
 	// Deserialize project.cfg and grab an ACL from it.
 	acl, err := parseProjectACL(cfg.Content)
 	if err != nil {
-		return nil, errors.Annotate(err, "parsing project.cfg").Err()
+		return nil, nil, nil, errors.Annotate(err, "parsing project.cfg").Err()
 	}
 
 	// The future project entity.
@@ -418,46 +420,33 @@ func updateProject(c context.Context, cfg *configInterface.Config) (stringset.Se
 	switch {
 	case err == configInterface.ErrNoConfig:
 		// No Milo config. This is fine, just save Project entity.
-		return nil, errors.Annotate(datastore.Put(c, &project), "when saving Project entity").Err()
+		return &project, nil, nil, nil
 	case err != nil:
 		// Something blew up.
-		return nil, errors.Annotate(err, "when loading Milo config").Err()
+		return nil, nil, nil, errors.Annotate(err, "when loading Milo config").Err()
 	}
 
-	// Have the Milo config! Use it to update console entities.
+	// Have the Milo config! Use it to update the Project entity.
 	project.HasConfig = true
 	project.LogoURL = miloCfg.LogoUrl
 	if miloCfg.BuildBugTemplate != nil {
 		project.BuildBugTemplate = *miloCfg.BuildBugTemplate
 	}
 
-	// Apply all datastore changes in a single transaction.
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
-		toPut, err := prepareConsolesUpdate(c, &project, &miloCfg, &miloCfgMeta)
-		if err != nil {
-			return err
-		}
-		toPut = append(toPut, &project)
-		return datastore.Put(c, toPut)
-	}, nil)
-	if err != nil {
-		return nil, errors.Annotate(err, "when applying config rev %q", miloCfgMeta.Revision).Err()
-	}
-
-	// Grab a set of known consoles so we can prune deleted ones later.
-	consoles := stringset.New(len(miloCfg.Consoles))
-	for _, pc := range miloCfg.Consoles {
-		consoles.Add(pc.Id)
-	}
-	logging.Infof(c, "saved %d consoles of project %q at revision %q", len(consoles), projectID, miloCfgMeta.Revision)
-	return consoles, nil
+	return &project, &miloCfg, &miloCfgMeta, nil
 }
 
-// prepareConsolesUpdate is called in a transaction to evaluate what Console
-// entities should be updated.
+// prepareConsolesUpdate is called in a transaction to evaluate which Console
+// entities should be updated for a given project.
 //
 // Returns a list of entities to store to apply the update.
-func prepareConsolesUpdate(c context.Context, project *Project, cfg *config.Project, meta *configInterface.Meta) ([]interface{}, error) {
+func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[string]*config.Console,
+	project *Project, cfg *config.Project, meta *configInterface.Meta) ([]interface{}, error) {
+	// If no Milo config was loaded, there are no consoles to update.
+	if cfg == nil {
+		return []interface{}{}, nil
+	}
+
 	// Extract the headers into a map for convenience.
 	headers := make(map[string]*config.Header, len(cfg.Headers))
 	for _, header := range cfg.Headers {
@@ -468,6 +457,20 @@ func prepareConsolesUpdate(c context.Context, project *Project, cfg *config.Proj
 	// known ones if needed.
 	toPut := make([]interface{}, 0, len(cfg.Consoles))
 	for i, pc := range cfg.Consoles {
+		// Resolve the console if it refers to one from a different project.
+		if pc.ExternalProject != "" {
+			// If ExternalProject is set, validation ensures ExternalId is also set.
+			externalConsole, ok := knownProjects[pc.ExternalProject][pc.ExternalId]
+			if !ok {
+				return nil, fmt.Errorf("external console %s not found at %s:%s", pc.Id, pc.ExternalProject, pc.ExternalId)
+			}
+			if externalConsole.ExternalId != "" {
+				return nil, fmt.Errorf("external console %s found at %s:%s, but was itself an external console",
+					pc.Id, pc.ExternalProject, pc.ExternalId)
+			}
+			// Copy the fields of the external console into this one.
+			proto.Merge(pc, externalConsole)
+		}
 		if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
 			// Inject a header if HeaderId is specified, and it doesn't already have one.
 			pc.Header = header
@@ -527,6 +530,19 @@ func parseProjectACL(projectCfg string) (ACL, error) {
 	return acl, nil
 }
 
+// getConsolesFromMiloCfg extracts a list of consoles from a Milo config proto
+// and returns them in a map, indexed by name.
+func getConsolesFromMiloCfg(miloCfg *config.Project) map[string]*config.Console {
+	if miloCfg == nil {
+		return nil
+	}
+	consoles := make(map[string]*config.Console, len(miloCfg.Consoles))
+	for _, console := range miloCfg.Consoles {
+		consoles[console.Id] = console
+	}
+	return consoles
+}
+
 // UpdateProjects reads project configs from LUCI Config and updates entities.
 //
 // Visits all LUCI projects (not only ones that have Milo config) to grab
@@ -543,43 +559,71 @@ func UpdateProjects(c context.Context) error {
 	}
 	logging.Debugf(c, "found %d LUCI projects", len(cfgs))
 
-	// This will collect results of individual updateProject call. It will receive
+	// This will collect results of individual fetchProject call. It will receive
 	// exactly len(cfgs) items no matter what.
 	type result struct {
-		project  string
-		consoles stringset.Set
-		err      error
+		project     *Project
+		miloCfg     *config.Project
+		miloCfgMeta *configInterface.Meta
+		err         error
 	}
 	results := make(chan result, len(cfgs))
 
-	// Process projects in parallel to make sure we fit under 10 min cron job
+	// Fetch project configs in parallel to make sure we fit under 10 min cron job
 	// deadline. Each task is simple, but involves a slow RPC to LUCI Config.
 	// We don't want to run all of them sequentially.
 	parallel.WorkPool(8, func(tasks chan<- func() error) {
 		for _, cfg := range cfgs {
 			cfg := cfg
 			tasks <- func() error {
-				consoles, err := updateProject(c, &cfg)
+				project, miloCfg, miloCfgMeta, err := fetchProject(c, &cfg)
 				results <- result{
-					project:  cfg.ConfigSet.Project(),
-					consoles: consoles,
-					err:      errors.Annotate(err, "processing %q", cfg.ConfigSet).Err(),
+					project:     project,
+					miloCfg:     miloCfg,
+					miloCfgMeta: miloCfgMeta,
+					err:         errors.Annotate(err, "fetching %q", cfg.ConfigSet).Err(),
 				}
 				return nil
 			}
 		}
 	})
 
-	// Build a map "project name -> set of consoles in it", gather all errors.
-	knownProjects := map[string]stringset.Set{}
+	// Build a map "project name -> set of consoles in it", and gather all errors.
+	// We use the map for two purposes:
+	//   * Resolving external console references
+	//   * Pruning consoles that were deleted.
+	knownProjects := map[string]map[string]*config.Console{}
 	merr := errors.MultiError{}
+	resultsList := make([]result, 0, len(cfgs))
 	for i := 0; i < len(cfgs); i++ {
 		res := <-results
-		if res.project != "" {
-			knownProjects[res.project] = res.consoles // may be nil on errors
+		if res.project != nil {
+			knownProjects[res.project.ID] = getConsolesFromMiloCfg(res.miloCfg) // may be nil
 		}
 		if res.err != nil {
 			merr = append(merr, res.err)
+		}
+		resultsList = append(resultsList, res)
+	}
+
+	// Now process the consoles for each project and push them to Datastore, resolving
+	// external console references along the way.
+	for _, res := range resultsList {
+		// If there was an error fetching this project, don't apply any Datastore changes.
+		if res.err != nil {
+			continue
+		}
+		// Apply datastore changes in a single transaction per project.
+		err := datastore.RunInTransaction(c, func(c context.Context) error {
+			toPut, err := prepareConsolesUpdate(c, knownProjects, res.project, res.miloCfg, res.miloCfgMeta)
+			if err != nil {
+				return err
+			}
+			toPut = append(toPut, res.project)
+			return datastore.Put(c, toPut)
+		}, nil)
+		if err != nil {
+			merr = append(merr, errors.Annotate(err, "when applying config rev %q of %q", res.miloCfgMeta.Revision, res.miloCfgMeta.ConfigSet).Err())
 		}
 	}
 
@@ -605,7 +649,7 @@ func UpdateProjects(c context.Context) error {
 			// try again the next cron cycle.
 			return nil
 		}
-		if !knownConsoles.Has(id) {
+		if _, ok := knownConsoles[id]; !ok {
 			logging.Infof(
 				c, "deleting %s/%s because the console no longer exists", proj, id)
 			toDelete = append(toDelete, key)
@@ -620,7 +664,7 @@ func UpdateProjects(c context.Context) error {
 	logging.Debugf(c, "searching for stale projects")
 	err = datastore.Run(c, datastore.NewQuery("Project"), func(key *datastore.Key) error {
 		proj := key.StringID()
-		if _, hasIt := knownProjects[proj]; !hasIt {
+		if _, ok := knownProjects[proj]; !ok {
 			logging.Infof(c, "deleting Project entity for %s", proj)
 			toDelete = append(toDelete, key)
 		}
@@ -642,7 +686,7 @@ func UpdateProjects(c context.Context) error {
 	processedConsoles := 0
 	for _, cons := range knownProjects {
 		if cons != nil {
-			processedConsoles += cons.Len()
+			processedConsoles += len(cons)
 		}
 	}
 	logging.Infof(
