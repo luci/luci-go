@@ -353,7 +353,7 @@ func builderPageData() []TestBundle {
 							Builder: "linux-rel",
 						},
 						Config: &buildbucketpb.Builder{
-							Description: "this is a builder",
+							DescriptionHtml: "this is a builder",
 						},
 					},
 					ScheduledBuilds: []*ui.Build{
