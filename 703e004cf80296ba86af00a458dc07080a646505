@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "31076261_ce5da89c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "That\u0027s a good idea. However, NewSectionReader() doesn\u0027t implement Close(), and, therefore, http.Client.Do() won\u0027t close req.Body when it finished the transmission.\n\nI tried to add Close() into io.SectionReader by embedding or aliasing it into a new struct, but couldn\u0027t find a super nice way of doing it without introducing a new field to keep the original mmap handler. I will play more with it and send a CL, if I could make it work.",
+      "parentUuid": "e799d554_44b54909",
+      "range": {
+        "startLine": 38,
+        "startChar": 8,
+        "endLine": 38,
+        "endChar": 27
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba60a3f3_e5cdc8b6",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -45,6 +69,30 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b25163f7_94971a4a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "Added as a field.",
+      "parentUuid": "ba60a3f3_e5cdc8b6",
+      "range": {
+        "startLine": 40,
+        "startChar": 6,
+        "endLine": 40,
+        "endChar": 25
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "07bf4028_3e5ba405",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e3b76278_bdc8b58e",
+      "range": {
+        "startLine": 78,
+        "startChar": 58,
+        "endLine": 78,
+        "endChar": 59
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2046a72_66c04a94",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -85,6 +157,24 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66907507_271d7143",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2046a72_66c04a94",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "226bdf88_9aaf89c9",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "removed. PTAL",
+      "parentUuid": "e0c56d71_6fe1f679",
+      "range": {
+        "startLine": 86,
+        "startChar": 30,
+        "endLine": 86,
+        "endChar": 50
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b59c0e7_b10cdec0",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "144e305b_f4290c7d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b59c0e7_b10cdec0",
+      "range": {
+        "startLine": 94,
+        "startChar": 3,
+        "endLine": 94,
+        "endChar": 9
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38c95eae_b6bdf5dd",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -154,6 +292,30 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b5fc6f8_2fc689e4",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "removed. PTAL",
+      "parentUuid": "38c95eae_b6bdf5dd",
+      "range": {
+        "startLine": 102,
+        "startChar": 31,
+        "endLine": 102,
+        "endChar": 42
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -192,6 +354,24 @@
     },
     {
       "key": {
+        "uuid": "329ca7e9_7d4dfc0a",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "Yes, http.Client is responsible for calling the Close method.\nhttps://golang.org/src/net/http/request.go#L177",
+      "parentUuid": "143c774a_47558323",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92c652b8_91ceb671",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -206,6 +386,24 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1ebc77e_3f33a2d3",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "At L117, `input` is passed to u.newRequest, and at L56, NewRequestWithContext() takes a param `body`, which is set the `Body` of the created request.\n\nhttps://golang.org/src/net/http/request.go#L877\nNewRequestWithContext installs GetBody() by itself, if it\u0027s one of bytes.{Buffer,Reader} and strings.Reader. In ArtifactUploader{}, GetBody() is required for an artifact from a file input only.",
+      "parentUuid": "92c652b8_91ceb671",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -256,6 +454,30 @@
     },
     {
       "key": {
+        "uuid": "89b38644_d9047198",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "As Robbie mentioned, the doc doesn\u0027t seem to clearly describe whether Client.Do() would close the request body on 3xx response before looping back to the beginning, but the current implementation does so.\n\nAt https://golang.org/src/net/http/client.go#L718, Client.Do() closes the request body, and then loops back to the beginning, if the response was sent with 3xx status code.",
+      "parentUuid": "101905d3_6efdf301",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 25
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c2cca0a1_12874fd5",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -273,6 +495,24 @@
     },
     {
       "key": {
+        "uuid": "6b3992e7_9893700c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "That\u0027s a good point. However, I made a change to pass req.Context() to retry.Retry() instead.\n\nif newRequest() is moved inside send(), then send() needs to take params for each of GetBody and ContentLength separately. Passing req.Context() to retry.Retry() seems simpler.",
+      "parentUuid": "c2cca0a1_12874fd5",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16058928_be3e4ca3",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -287,6 +527,24 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4dfaed8_7e93463f",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "Changed to retry on any 5xx.",
+      "parentUuid": "16058928_be3e4ca3",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -313,6 +571,30 @@
     },
     {
       "key": {
+        "uuid": "27a48530_7659327c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "removed",
+      "parentUuid": "1b4db9f7_eef7ad4e",
+      "range": {
+        "startLine": 153,
+        "startChar": 40,
+        "endLine": 153,
+        "endChar": 53
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ba546cf_ab899a89",
         "filename": "resultdb/sink/artifact_uploader_test.go",
         "patchSetId": 14
@@ -336,6 +618,30 @@
     },
     {
       "key": {
+        "uuid": "2651f17f_257f82a1",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "that\u0027s cool. done",
+      "parentUuid": "2ba546cf_ab899a89",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2592bb2d_b15e7c2a",
         "filename": "resultdb/sink/artifact_uploader_test.go",
         "patchSetId": 14
@@ -347,6 +653,30 @@
       "writtenOn": "2020-06-23T21:35:14Z",
       "side": 1,
       "message": "I am not sure this will work they way you expect. FWIU such initialization must happen within a top-level Convey, otherwise the state is shared\n\nRobbie can correct me",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 0
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4819f22e_bc44b62f",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-24T23:26:51Z",
+      "side": 1,
+      "message": "The following example uses a variable declared in the scope of the top-level test, out of Convey().\n: https://github.com/smartystreets/goconvey/blob/master/convey/isolated_execution_test.go#L377\n\nWDYT?",
+      "parentUuid": "2592bb2d_b15e7c2a",
       "range": {
         "startLine": 41,
         "startChar": 0,
