@@ -134,6 +134,86 @@
     },
     {
       "key": {
+        "uuid": "38c95eae_b6bdf5dd",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T06:01:48Z",
+      "side": 1,
+      "message": "same here. it adds info that the caller already has.",
+      "range": {
+        "startLine": 102,
+        "startChar": 31,
+        "endLine": 102,
+        "endChar": 42
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "049e4f4d_e252697c",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T06:01:48Z",
+      "side": 1,
+      "message": "defer input.Close()",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92c652b8_91ceb671",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T06:01:48Z",
+      "side": 1,
+      "message": "from https://godoc.org/net/http#Request.GetBody\n\n\u003e Use of GetBody still requires setting Body.",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7adb6fee_508afd7d",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-24T06:01:48Z",
+      "side": 1,
+      "message": "hmm, why are we reopening the same file? why not seek?",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 25
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2cca0a1_12874fd5",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
