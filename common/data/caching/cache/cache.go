@@ -471,6 +471,10 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//  In short, nobody ain't got time for that.
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
+	fi, err := os.Stat(dest)
+	if err != nil {
+		return errors.Annotate(err, "failed to call os.Stat(%s)", dest).Err()
+	}
 	if err := os.Link(src, dest); err != nil {
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
 		return errors.Annotate(err, "failed to call os.Link(%s, %s)\n%s", src, dest, debugInfo).Err()
@@ -480,10 +484,6 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		return errors.Annotate(err, "failed to call os.Chmod(%s, %#o)", dest, perm).Err()
 	}
 
-	fi, err := os.Stat(dest)
-	if err != nil {
-		return errors.Annotate(err, "failed to call os.Stat(%s)", dest).Err()
-	}
 	size := fi.Size()
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
