@@ -160,7 +160,6 @@ type parsedSwarmingTags struct {
 }
 
 func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingTags {
-	ninjaTarget := ""
 	ret := parsedSwarmingTags{
 		baseVariant: &pb.Variant{Def: make(map[string]string, 3)},
 	}
@@ -170,18 +169,17 @@ func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingT
 			ret.baseVariant.Def["bucket"] = v
 		case "buildername":
 			ret.baseVariant.Def["builder"] = v
-		case "test_suite":
-			ret.baseVariant.Def["test_suite"] = v
+		case "device_type":
+			ret.baseVariant.Def["device_type"] = v
+		case "gpu":
+			ret.baseVariant.Def["gpu"] = v
+		case "os":
+			ret.baseVariant.Def["os"] = v
 		case "test_id_prefix":
 			ret.testIDPrefix = v
-		case "ninja_target":
-			ninjaTarget = v
 		case "stepname":
 			ret.tags = pbutil.StringPairs("step_name", v)
 		}
-	}
-	if ret.testIDPrefix == "" && ninjaTarget != "" {
-		ret.testIDPrefix = fmt.Sprintf("ninja:%s/", ninjaTarget)
 	}
 	return ret
 }
