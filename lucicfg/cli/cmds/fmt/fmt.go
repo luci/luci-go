@@ -130,6 +130,7 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		return nil
 	})
 
+	allGood := true
 	// Preserve the order of files in the output.
 	res := fmtResult{}
 	for _, p := range files {
@@ -137,10 +138,13 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		case outcomeGood:
 			res.Good = append(res.Good, p)
 		case outcomeUnformatted:
+			allGood = false
 			res.Unformatted = append(res.Unformatted, p)
 		case outcomeFormatted:
+			allGood = false
 			res.Formatted = append(res.Formatted, p)
 		case outcomeFailed, "":
+			allGood = false
 			res.Failed = append(res.Failed, p)
 			res.Unformatted = append(res.Unformatted, p) // still need to format it
 			if outcome == "" {
@@ -149,6 +153,9 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		}
 	}
 
+	if !allGood && fr.dryRun {
+		errs = append(errs, fmt.Errorf("Could not verify that all files are properly formatted"))
+	}
 	if len(errs) != 0 {
 		return &res, errs
 	}
