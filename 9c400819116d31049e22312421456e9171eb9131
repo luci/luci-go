@@ -117,6 +117,30 @@
       "revId": "9c400819116d31049e22312421456e9171eb9131",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "682ce137_dbf2a783",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-24T00:45:03Z",
+      "side": 1,
+      "message": "Alternate: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2260903",
+      "parentUuid": "fea0cb0d_033817de",
+      "range": {
+        "startLine": 75,
+        "startChar": 8,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "9c400819116d31049e22312421456e9171eb9131",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
