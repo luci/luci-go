@@ -203,7 +203,7 @@ export class VariantEntryElement extends MobxLitElement {
       user-select: none;
     }
     .expandable-header.display-variant-id:not(.expanded) {
-      grid-template-rows: 30px;
+      grid-template-rows: 32px;
     }
     .expandable-header .expand-toggle {
       grid-row: 1;
