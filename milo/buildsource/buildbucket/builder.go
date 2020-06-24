@@ -202,6 +202,9 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 				Id: bid,
 			}
 			result.Builder, err = buildersClient.GetBuilder(c, req)
+			if err != nil {
+				err = common.TagGRPC(c, err)
+			}
 			return
 		}
 	})
