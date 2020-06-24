@@ -95,7 +95,7 @@ luci.gitiles_poller(
 luci.builder(
     name = "linux ci builder",
     bucket = "ci",
-    description = "this is a linux ci builder",
+    description_html = "this is a linux ci builder",
     executable = luci.recipe(
         name = "main/recipe",
         cipd_package = "recipe/bundles/main",
@@ -634,7 +634,7 @@ lucicfg.emit(
 #           }
 #         }
 #       }
-#       description: "this is a linux ci builder"
+#       description_html: "this is a linux ci builder"
 #     }
 #     builders {
 #       name: "watched builder"
