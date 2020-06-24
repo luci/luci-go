@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "f65906e6_ad9807ea",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:59:45Z",
+      "side": 1,
+      "message": "I accept your reasoning. But in general you don\u0027t have to copy Python implementation exactly, if you want to redesign certain aspects things feel free.",
+      "parentUuid": "41e7c634_71f0f218",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f72ba09_05764c26",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 6
@@ -104,6 +122,24 @@
       "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cd60b23_72aa4b95",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:59:45Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a89213fa_e1d196eb",
+      "revId": "7126a295a6f29ac0673bfc4bcc82e17e8650c29b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

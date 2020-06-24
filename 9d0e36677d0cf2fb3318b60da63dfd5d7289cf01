@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7de63b34_bda74141",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-24T18:59:45Z",
+      "side": 1,
+      "message": "This is fine but I think you can also do:\nvar err error\np.StartTime, err \u003d ptypes.Timestamp(...)\nif err !\u003d nil { ... }\np.EndTime, err \u003d ptypes.Timestamp(...)\nif err !\u003d nil { ... }\nWhich is slightly shorter.",
+      "revId": "9d0e36677d0cf2fb3318b60da63dfd5d7289cf01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
