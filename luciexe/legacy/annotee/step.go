@@ -258,22 +258,22 @@ var statusPrecedence = map[pb.Status]int{
 }
 
 func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*pb.Log, []string) {
-	aLinks := make([]*annotpb.Link, 0, len(ann.OtherLinks)+2)
+	aLinks := make([]*annotpb.AnnotationLink, 0, len(ann.OtherLinks)+2)
 
 	// Get stdout, stderr Logdog links.
 	if ann.StdoutStream != nil {
 		aLinks = append(aLinks,
-			&annotpb.Link{
+			&annotpb.AnnotationLink{
 				Label: "stdout",
-				Value: &annotpb.Link_LogdogStream{ann.StdoutStream},
+				Value: &annotpb.AnnotationLink_LogdogStream{ann.StdoutStream},
 			},
 		)
 	}
 	if ann.StderrStream != nil {
 		aLinks = append(aLinks,
-			&annotpb.Link{
+			&annotpb.AnnotationLink{
 				Label: "stderr",
-				Value: &annotpb.Link_LogdogStream{ann.StderrStream},
+				Value: &annotpb.AnnotationLink_LogdogStream{ann.StderrStream},
 			},
 		)
 	}

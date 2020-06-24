@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package milo;
 
+option go_package = "go.chromium.org/luci/common/proto/milo";
+
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/proto/srcman/manifest.proto";
 
@@ -125,10 +127,10 @@ message Step {
 
   // The primary link for this Component. This is the link that interaction
   // with the Component will use.
-  Link link = 22;
+  AnnotationLink link = 22;
   // Additional links related to the Component. These will be rendered alongside
   // the component.
-  repeated Link other_links = 23;
+  repeated AnnotationLink other_links = 23;
 
   // Property is an arbitrary key/value (build) property.
   message Property {
@@ -147,7 +149,7 @@ message Step {
 
 // A Link is an optional label followed by a typed link to an external
 // resource.
-message Link {
+message AnnotationLink {
   // An optional display label for the link.
   string label = 1;
   // If present, this link is an alias for another link with this name, and
