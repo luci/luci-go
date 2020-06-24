@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eae34583_0e9568c8",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-24T07:27:47Z",
+      "side": 0,
+      "message": "I\u0027ve moved this to be done later in serial (line 617). This is because I want to collect the full map of consoles from all projects first (line 595), so that I can use it to resolve external consoles when preparing the console updates.",
+      "range": {
+        "startLine": 435,
+        "startChar": 1,
+        "endLine": 435,
+        "endChar": 33
+      },
+      "revId": "7a90c7650c631d0b93dba4f991be7d184328df7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
