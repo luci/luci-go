@@ -32,7 +32,7 @@ type URLBuilder interface {
 	// LinkURL returns the URL associated with the supplied Link.
 	//
 	// If no URL could be built for that Link, nil will be returned.
-	BuildLink(l *miloProto.Link) *ui.Link
+	BuildLink(l *miloProto.AnnotationLink) *ui.Link
 }
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
@@ -78,11 +78,11 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 	}
 
 	// Main link is a link to the stdout.
-	var stdoutLink *miloProto.Link
+	var stdoutLink *miloProto.AnnotationLink
 	if anno.StdoutStream != nil {
-		stdoutLink = &miloProto.Link{
+		stdoutLink = &miloProto.AnnotationLink{
 			Label: "stdout",
-			Value: &miloProto.Link_LogdogStream{
+			Value: &miloProto.AnnotationLink_LogdogStream{
 				LogdogStream: anno.StdoutStream,
 			},
 		}
@@ -93,7 +93,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 
 		// If we also have a STDOUT stream, add it to our OtherLinks.
 		if stdoutLink != nil {
-			anno.OtherLinks = append([]*miloProto.Link{stdoutLink}, anno.OtherLinks...)
+			anno.OtherLinks = append([]*miloProto.AnnotationLink{stdoutLink}, anno.OtherLinks...)
 		}
 	} else if stdoutLink != nil {
 		comp.MainLink = ui.LinkSet{ub.BuildLink(stdoutLink)}
@@ -101,9 +101,9 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 
 	// Add STDERR link, if available.
 	if anno.StderrStream != nil {
-		anno.OtherLinks = append(anno.OtherLinks, &miloProto.Link{
+		anno.OtherLinks = append(anno.OtherLinks, &miloProto.AnnotationLink{
 			Label: "stderr",
-			Value: &miloProto.Link_LogdogStream{
+			Value: &miloProto.AnnotationLink_LogdogStream{
 				LogdogStream: anno.StderrStream,
 			},
 		})

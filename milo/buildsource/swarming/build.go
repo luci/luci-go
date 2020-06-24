@@ -321,9 +321,9 @@ func AddBanner(build *ui.MiloBuildLegacy, tags strpair.Map) {
 // addTaskToMiloStep augments a Milo Annotation Protobuf with state from the
 // Swarming task.
 func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, step *miloProto.Step) error {
-	step.Link = &miloProto.Link{
+	step.Link = &miloProto.AnnotationLink{
 		Label: "Task " + sr.TaskId,
-		Value: &miloProto.Link_Url{
+		Value: &miloProto.AnnotationLink_Url{
 			Url: TaskPageURL(host, sr.TaskId).String(),
 		},
 	}
@@ -806,9 +806,9 @@ const URLBase = "/swarming/task"
 // It should be the swarming task id.
 type swarmingURLBuilder string
 
-func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
+func (b swarmingURLBuilder) BuildLink(l *miloProto.AnnotationLink) *ui.Link {
 	switch t := l.Value.(type) {
-	case *miloProto.Link_LogdogStream:
+	case *miloProto.AnnotationLink_LogdogStream:
 		ls := t.LogdogStream
 
 		link := ui.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name), "")
@@ -818,7 +818,7 @@ func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 		link.AriaLabel = fmt.Sprintf("log link for %s", link.Label)
 		return link
 
-	case *miloProto.Link_Url:
+	case *miloProto.AnnotationLink_Url:
 		return ui.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 
 	default:

@@ -72,22 +72,22 @@ var annotationStep = &annotpb.Step{
 		},
 		&annotpb.Step{
 			Name: "other links",
-			OtherLinks: []*annotpb.Link{
-				&annotpb.Link{
+			OtherLinks: []*annotpb.AnnotationLink{
+				&annotpb.AnnotationLink{
 					Label: "logdog link",
-					Value: &annotpb.Link_LogdogStream{
+					Value: &annotpb.AnnotationLink_LogdogStream{
 						LogdogStream: &annotpb.LogdogStream{Name: "steps/setup_build/0/logs/run_recipe/0"},
 					},
 				},
-				&annotpb.Link{
+				&annotpb.AnnotationLink{
 					Label: "1",
-					Value: &annotpb.Link_Url{
+					Value: &annotpb.AnnotationLink_Url{
 						Url: "https://example.com/1(foo)",
 					},
 				},
-				&annotpb.Link{
+				&annotpb.AnnotationLink{
 					Label: "with-ampersand",
-					Value: &annotpb.Link_Url{
+					Value: &annotpb.AnnotationLink_Url{
 						Url: "https://example.com?a=1&timestamp=2",
 					},
 				},
@@ -145,10 +145,10 @@ var annotationStep = &annotpb.Step{
 			Name:         "duplicate_log_name",
 			StdoutStream: &annotpb.LogdogStream{Name: "steps/duplicate_log_name/0/stdout"},
 			StderrStream: &annotpb.LogdogStream{Name: "steps/duplicate_log_name/0/stderr"},
-			OtherLinks: []*annotpb.Link{
-				&annotpb.Link{
+			OtherLinks: []*annotpb.AnnotationLink{
+				&annotpb.AnnotationLink{
 					Label: "stdout",
-					Value: &annotpb.Link_LogdogStream{
+					Value: &annotpb.AnnotationLink_LogdogStream{
 						LogdogStream: &annotpb.LogdogStream{Name: "steps/duplicate_log_name/0/stdout"},
 					},
 				},
