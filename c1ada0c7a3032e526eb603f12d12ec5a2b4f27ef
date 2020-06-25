@@ -1,0 +1,297 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "feb4cedb_e347bdd5",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "why not BuilderID message",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 27
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f08db387_e104915c",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "strpair.Map would probably be more type-safe",
+      "range": {
+        "startLine": 36,
+        "startChar": 21,
+        "endLine": 36,
+        "endChar": 29
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6195680_b0d38010",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/auth/identity#Identity",
+      "range": {
+        "startLine": 38,
+        "startChar": 21,
+        "endLine": 38,
+        "endChar": 27
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad97680f_41f000ff",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "this name does not entail that this is about ID. It should, e.g. BuildIDHigh",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 10
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1207c31f_d66ef728",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "just \"IncludeExperimental\" would be more consistent",
+      "range": {
+        "startLine": 62,
+        "startChar": 25,
+        "endLine": 62,
+        "endChar": 49
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1283b405_c22c8039",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "why not use the same syntax as above:\n\n  ...\n  Tags: protoutil.ParseStringPairs(p.Tags),\n}",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 44
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ec032c2_d5caccc4",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "this is nil, so this will panic",
+      "range": {
+        "startLine": 73,
+        "startChar": 14,
+        "endLine": 73,
+        "endChar": 23
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eecbb2f_b5f85c7c",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "this returns the value of the tag, not a key-value pair.\n\nusing strpair.Map for s.Tags would probably prevent this mistake.",
+      "range": {
+        "startLine": 78,
+        "startChar": 26,
+        "endLine": 78,
+        "endChar": 58
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "052f997f_6793aa52",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "nit: unnecessary. Usage of \":\u003d\" in L84 would define these variables anyway.",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 22
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78054dc8_8fa08920",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "https://godoc.org/github.com/golang/protobuf/proto#Bool",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 1
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "156975f3_7c6152e0",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "https://godoc.org/github.com/golang/protobuf/proto#Int64",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c30fa6e_beac93ef",
+        "filename": "buildbucket/protoutil/tag.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "it says parse, but what it does is formatting.\nin other words, parsing is normally conversion from a string to a structure, but what happens here is the opposite.\n\nalso I am not sure you\u0027d need this function if https://godoc.org/github.com/luci/luci-go/common/data/strpair was used in the callsite",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 10
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2bc287f_8c69b36d",
+        "filename": "buildbucket/protoutil/tag.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T05:35:43Z",
+      "side": 1,
+      "message": "i think, instead of this, adding the opposite of StringPairs() function above, would be more consistent with this codebase.\nFor example, \n  \n  func StringPairMap(pairs []*pb.StringPair) strpair.Map {...}",
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
