@@ -390,6 +390,24 @@
     },
     {
       "key": {
+        "uuid": "40d6ebbf_6a630027",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-25T01:06:51Z",
+      "side": 1,
+      "message": "oops. your are 100% right. fixed with `defer input.Close()`",
+      "parentUuid": "9b79b995_0e80ade7",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92c652b8_91ceb671",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -517,6 +535,30 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4880e1a7_b6496631",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-25T01:06:51Z",
+      "side": 1,
+      "message": "That\u0027s a good idea. It actually solves the problem of using mmap()-ed file. If UploadFromFile() self-closes the body on return, then it\u0027s no longer necessary to add and implement Close() on SectionReader.\n\nDone. PTAL",
+      "parentUuid": "4b57512c_58bcea52",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 25
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
