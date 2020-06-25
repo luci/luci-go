@@ -142,6 +142,30 @@
       "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5df19713_61ad0faa",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-25T06:43:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a30f1c74_075dc99e",
+      "range": {
+        "startLine": 173,
+        "startChar": 32,
+        "endLine": 173,
+        "endChar": 33
+      },
+      "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
