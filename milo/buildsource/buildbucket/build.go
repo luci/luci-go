@@ -375,31 +375,31 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	var b *buildbucketpb.Build
 	var blame []*ui.Commit
 	var blameErr error
+
+	blameCtx, blameCancel := context.WithTimeout(c, 55 * time.Second)
+	defer blameCancel()
+
 	if err = parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
 			fullbr := br // Copy request
 			fullbr.Fields = fullBuildMask
 			b, err = client.GetBuild(c, &fullbr)
+			if err == nil && !forceBlamelist {
+				// Do not block on slow Gitiles unless the blamelist is required.
+				blameCancel()
+			}
 			return common.TagGRPC(c, err)
 		}
 
-		// Fetch a small build with just a tiny bit of information.
-		// We use this to get the Gitiles tag so that we can fetch
-		// related builds and blamelist in parallel.
-		smallbr := br // Copy request
-		smallbr.Fields = tagsAndGitilesMask
-		sb, err := client.GetBuild(c, &smallbr)
-		if err != nil {
-			return
-		}
 		ch <- func() error {
-			timeout := 1 * time.Second
-			if forceBlamelist {
-				timeout = 55 * time.Second
+			// Fetch a small build with just a tiny bit of information.
+			// We use this to get the Gitiles tag so that we can fetch
+			// related builds and blamelist in parallel.
+			smallbr := br // Copy request
+			smallbr.Fields = tagsAndGitilesMask
+			if sb, err := client.GetBuild(c, &smallbr); err == nil {
+				blame, blameErr = getBlame(blameCtx, host, sb)
 			}
-			nc, cancel := context.WithTimeout(c, timeout)
-			defer cancel()
-			blame, blameErr = getBlame(nc, host, sb)
 			return nil
 		}
 	}); err != nil {
