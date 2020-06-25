@@ -165,7 +165,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			resp := &swarmingAPI.SwarmingRpcsTaskResult{
 				CreatedTs: "2019-10-14T13:49:16.01",
 				Tags: []string{
-					"bucket:bkt",
 					"buildername:blder",
 					"test_suite:foo_unittests",
 					"test_id_prefix:ninja://tests:tests/",
@@ -255,7 +254,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
 			So(trs[0].Status, ShouldEqual, pb.TestStatus_FAIL)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
-				"bucket", "bkt",
 				"builder", "blder",
 				"test_suite", "foo_unittests",
 			))
@@ -303,7 +301,6 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
 			So(trs[0].Status, ShouldEqual, pb.TestStatus_FAIL)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
-				"bucket", "bkt",
 				"builder", "blder",
 				"test_suite", "foo_unittests",
 			))
