@@ -210,7 +210,7 @@ func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	// Read body and essential headers.
 	body, err := ioutil.ReadAll(r.Body)
 	s.c.So(err, ShouldBeNil)
-	blacklist := map[string]bool{
+	ignorelist := map[string]bool{
 		"Accept-Encoding": true,
 		"Content-Length":  true,
 		"Content-Type":    true,
@@ -219,7 +219,7 @@ func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	headers := http.Header{}
 	for k, v := range r.Header {
 		_, isExpected := exp.Headers[k]
-		if isExpected || !blacklist[k] {
+		if isExpected || !ignorelist[k] {
 			headers[k] = v
 		}
 	}
