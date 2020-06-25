@@ -52,6 +52,18 @@ const (
 	buildIdSuffixLen = 20
 )
 
+// MayContainBuilds is to determine if a time range can possibly contain builds.
+func MayContainBuilds(low, high *time.Time) bool {
+	switch {
+	case high != nil && high.UTC().Unix() <= beginningOfTheWorld:
+		return false
+	case low != nil && high != nil && (*high).Sub(*low) <= 0:
+		return false
+	default:
+		return true
+	}
+}
+
 // IdRange converts a creation time range to the build id range.
 // Low/high bounds are inclusive/exclusive respectively
 // for both time and id ranges.

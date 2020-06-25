@@ -20,12 +20,18 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/utils"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
+)
+
+const (
+	defaultPageSize = 100
+	maxPageSize = 1000
 )
 
 // SearchQuery is the intermediate to store the arguments for ds search query.
@@ -60,9 +66,9 @@ func NewSearchQuery(req *pb.SearchBuildsRequest) (*SearchQuery, error) {
 		Status:              p.Status,
 		CreatedBy:           p.CreatedBy,
 		IncludeExperimental: p.GetIncludeExperimental(),
-		PageSize:            req.PageSize,
 		StartCursor:         req.PageToken,
 	}
+	s.PageSize = fixPageSize(req.PageSize)
 	s.Tags = protoutil.ParseStringPairs(p.Tags)
 
 	// Filter by builder.
@@ -79,18 +85,15 @@ func NewSearchQuery(req *pb.SearchBuildsRequest) (*SearchQuery, error) {
 	}
 
 	// Filter by creation time.
-	var startTime time.Time
-	var endTime time.Time
-	startTime, err := ptypes.Timestamp(p.CreateTime.GetStartTime())
+	var err error
+	s.StartTime, err = parseTimestamp(p.CreateTime.GetStartTime())
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "CreateTime.StartTime").Err())
+		return nil, errors.Annotate(err, "CreateTime.StartTime").Err()
 	}
-	s.StartTime = &startTime
-	endTime, err = ptypes.Timestamp(p.CreateTime.GetEndTime())
+	s.EndTime, err = parseTimestamp(p.CreateTime.GetEndTime())
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "CreateTime.EndTime").Err())
+		return nil, errors.Annotate(err, "CreateTime.EndTime" ).Err()
 	}
-	s.EndTime = &endTime
 
 	// Filter by build range.
 	// BuildIds less or equal to 0 means no boundary.
@@ -111,4 +114,25 @@ func NewSearchQuery(req *pb.SearchBuildsRequest) (*SearchQuery, error) {
 		s.Canary = utils.ToBoolPtr(p.GetCanary() == pb.Trinary_YES)
 	}
 	return s, nil
+}
+
+// fixPageSize is to make sure size between the defaultPageSize and maxPageSize.
+func fixPageSize(size int32) int32 {
+	switch {
+	case size <= 0:
+		return defaultPageSize
+	case size > maxPageSize:
+		return maxPageSize
+	default:
+		return size
+	}
+}
+
+// parseTimestamp parses protobuf timestamp to golang time.
+func parseTimestamp(t *timestamp.Timestamp) (*time.Time, error) {
+	if t == nil {
+		return nil, nil
+	}
+	time, err := ptypes.Timestamp(t)
+	return &time, err
 }

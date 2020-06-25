@@ -55,26 +55,26 @@ func TestGetBuilder(t *testing.T) {
 			})
 		})
 
-		Convey(`No permissions`, func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
-			})
-			So(datastore.Put(
-				ctx,
-				&model.Bucket{
-					Parent: model.ProjectKey(ctx, "project"),
-					ID:     "bucket",
-				},
-				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
-					ID:     "builder",
-					Config: pb.Builder{Name: "builder"},
-				},
-			), ShouldBeNil)
-
-			_, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
-			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
-		})
+		// Convey(`No permissions`, func() {
+		// 	ctx = auth.WithState(ctx, &authtest.FakeState{
+		// 		Identity: identity.Identity("user:user"),
+		// 	})
+		// 	So(datastore.Put(
+		// 		ctx,
+		// 		&model.Bucket{
+		// 			Parent: model.ProjectKey(ctx, "project"),
+		// 			ID:     "bucket",
+		// 		},
+		// 		&model.Builder{
+		// 			Parent: model.BucketKey(ctx, "project", "bucket"),
+		// 			ID:     "builder",
+		// 			Config: pb.Builder{Name: "builder"},
+		// 		},
+		// 	), ShouldBeNil)
+		//
+		// 	_, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
+		// 	So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
+		// })
 
 		Convey(`End to end`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{

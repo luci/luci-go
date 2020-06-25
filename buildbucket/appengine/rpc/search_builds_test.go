@@ -15,15 +15,26 @@
 package rpc
 
 import (
+	"context"
 	"testing"
 
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestSearchBuilds(t *testing.T) {
+func TestValidateSearchBuilds(t *testing.T) {
 	t.Parallel()
 
 	Convey("validateChange", t, func() {
@@ -222,5 +233,103 @@ func TestSearchBuilds(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 		})
+	})
+}
+
+
+func TestSearchBuilds(t *testing.T) {
+	t.Parallel()
+
+	Convey("search builds", t, func() {
+		srv := &Builds{}
+		ctx := memory.Use(context.Background())
+		ctx = memlogger.Use(ctx)
+		log := logging.Get(ctx).(*memlogger.MemLogger)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		req := &pb.SearchBuildsRequest{
+			Predicate: &pb.BuildPredicate{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			},
+		}
+		Convey("No permission for requested bucketId", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:user"),
+			})
+			So(datastore.Put(
+				ctx,
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: pb.Builder{Name: "builder"},
+				},
+			), ShouldBeNil)
+
+			_, err := srv.SearchBuilds(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
+		})
+
+		// TODO(crbug/1090540): Add more tests after searchBuilds func completed.
+		Convey("search via TagIndex flow", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:user"),
+			})
+			So(datastore.Put(
+				ctx,
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+					Proto: pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_READER,
+							},
+						},
+					},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: pb.Builder{Name: "builder"},
+				},
+			), ShouldBeNil)
+			req.Predicate.Tags = []*pb.StringPair{
+				{Key: "buildset", Value: "1"},
+			}
+			_, err := srv.SearchBuilds(ctx, req)
+			So(log, memlogger.ShouldHaveLog, logging.Debug, "Searching builds on TagIndex")
+			So(err, ShouldBeNil)
+		})
+	})
+}
+func TestIndexedTags(t *testing.T) {
+	t.Parallel()
+
+	Convey("tags", t, func() {
+		tags := []string{"a:b", "buildset:b1"}
+		result := indexed_tags(tags)
+		So(result, ShouldResemble, []string{"buildset:b1"})
+	})
+
+	Convey("duplicate tags", t, func() {
+		tags := []string{"buildset:b1", "buildset:b1", "build_address:address"}
+		result := indexed_tags(tags)
+		So(result, ShouldResemble, []string{"build_address:address", "buildset:b1"})
+	})
+
+	Convey("empty tags", t, func() {
+		tags := []string{}
+		result := indexed_tags(tags)
+		So(result, ShouldResemble, []string{})
 	})
 }
