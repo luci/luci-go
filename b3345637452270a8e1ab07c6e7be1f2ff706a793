@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1054ab1_99180ed3",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "i see little value in this function. it simply copies params to fields. i think it would be simpler to inline this func",
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e143830e_5af0aeaa",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "this is not how default in go usually work. Zero value of ArtifactUploader.MaxInMemoryFileSize must mean that the default should be used. \n\nthis is because in Go, zero values should be useful",
+      "range": {
+        "startLine": 55,
+        "startChar": 70,
+        "endLine": 55,
+        "endChar": 96
+      },
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "847ed85a_685a0760",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "/\n\nhere and to the right",
+      "range": {
+        "startLine": 87,
+        "startChar": 18,
+        "endLine": 87,
+        "endChar": 19
+      },
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1010201_29bc0c59",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 9
+      },
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eba8cde3_97a2cd3f",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 132,
+        "startChar": 44,
+        "endLine": 132,
+        "endChar": 51
+      },
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8c51306_6058d469",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "ioutil.NopCloser(input)",
+      "range": {
+        "startLine": 139,
+        "startChar": 9,
+        "endLine": 139,
+        "endChar": 14
+      },
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c5acb2_1dcdeffe",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 142,
+        "startChar": 1,
+        "endLine": 142,
+        "endChar": 11
+      },
+      "revId": "b3345637452270a8e1ab07c6e7be1f2ff706a793",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

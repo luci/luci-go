@@ -597,6 +597,24 @@
     },
     {
       "key": {
+        "uuid": "55dbcab6_c575795b",
+        "filename": "resultdb/sink/artifact_uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "yeah, this is good",
+      "parentUuid": "6b3992e7_9893700c",
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16058928_be3e4ca3",
         "filename": "resultdb/sink/artifact_uploader.go",
         "patchSetId": 14
@@ -794,6 +812,30 @@
       "revId": "703e004cf80296ba86af00a458dc07080a646505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c9985f1c_6b8f7b30",
+        "filename": "resultdb/sink/artifact_uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T02:49:29Z",
+      "side": 1,
+      "message": "in that example, newNilReporter is immutable. \nthis state is mutable.\nanyway, I trust Robbie more than myself here, so would like to hear his thoughts",
+      "parentUuid": "5c4030d8_5a1da106",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 0
+      },
+      "revId": "703e004cf80296ba86af00a458dc07080a646505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
