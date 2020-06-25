@@ -215,7 +215,7 @@ func configURL(c context.Context, meta *configInterface.Meta) string {
 	// the moment so it is okay for now.
 	// TODO(hinoka): The UI doesn't allow specifying paths and revision yet.  Add
 	// that in when it is supported.
-	return fmt.Sprintf("https://luci-config.appspot.com/newui#/%s", meta.ConfigSet)
+	return fmt.Sprintf("https://luci-config.appspot.com/#/%s", meta.ConfigSet)
 }
 
 // ServiceConfigID is the key for the service config entity in datastore.
