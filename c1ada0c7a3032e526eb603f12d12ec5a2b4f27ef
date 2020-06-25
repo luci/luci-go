@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "93011b21_dbc9bdae",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:09Z",
+      "side": 1,
+      "message": "nvm, i see why",
+      "parentUuid": "feb4cedb_e347bdd5",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 27
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f08db387_e104915c",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 8
@@ -64,6 +88,29 @@
         "startChar": 21,
         "endLine": 38,
         "endChar": 27
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1d183c5_69f0bea1",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:09Z",
+      "side": 1,
+      "message": "it is unusual to use *time.Time.\nnormally absence of time is indicated by zero value (because it is zero time.Time is not something we expect in the real life), and checked using https://godoc.org/time#Time.IsZero",
+      "range": {
+        "startLine": 39,
+        "startChar": 21,
+        "endLine": 39,
+        "endChar": 22
       },
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
