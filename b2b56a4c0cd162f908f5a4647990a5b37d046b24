@@ -22,6 +22,29 @@
       "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecc2c3cd_3d24398c",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:32:52Z",
+      "side": 1,
+      "message": "http.DefaultClient",
+      "range": {
+        "startLine": 66,
+        "startChar": 40,
+        "endLine": 66,
+        "endChar": 54
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
