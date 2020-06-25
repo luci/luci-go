@@ -81,7 +81,7 @@ func TestNewSearchQuery(t *testing.T) {
 				BuildHigh:           utils.ToInt64Ptr(int64(201)),
 				BuildLow:            utils.ToInt64Ptr(int64(99)),
 				Canary:              utils.ToBoolPtr(true),
-				PageSize:            0,
+				PageSize:            100,
 				StartCursor:         "",
 			}
 
@@ -105,14 +105,50 @@ func TestNewSearchQuery(t *testing.T) {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
 					CreateTime: &pb.TimeRange{
-						StartTime: nil,
+						StartTime: &timestamp.Timestamp{Seconds: int64(253402300801)},
 					},
 				},
 			}
 			query, err := NewSearchQuery(req)
 
 			So(query, ShouldBeNil)
-			So(err, ShouldErrLike, "CreateTime.StartTime: timestamp: nil Timestamp")
+			So(err,
+				ShouldErrLike,
+				"CreateTime.StartTime: timestamp: seconds:253402300801 after 10000-01-01")
 		})
+	})
+}
+
+func TestFixPageSize(t *testing.T) {
+	t.Parallel()
+
+	Convey("normal page size", t, func() {
+		So(fixPageSize(200), ShouldEqual, 200)
+	})
+
+	Convey("default page size", t, func() {
+		So(fixPageSize(0), ShouldEqual, 100)
+	})
+
+	Convey("max page size", t, func() {
+		So(fixPageSize(1500), ShouldEqual, 1000)
+	})
+}
+
+func TestParseTimestamp(t *testing.T) {
+	t.Parallel()
+	Convey("normal timestamp", t, func() {
+		res, err := parseTimestamp(&timestamp.Timestamp{Seconds:1592701200})
+		So(err, ShouldBeNil)
+		So(*res, ShouldEqual,time.Unix(1592701200, 0).UTC())
+	})
+	Convey("invalid timestamp", t, func() {
+		_, err := parseTimestamp(&timestamp.Timestamp{Seconds:253402300801})
+		So(err, ShouldErrLike, "timestamp: seconds:253402300801 after 10000-01-01")
+	})
+	Convey("nil timestamp", t, func() {
+		res, err := parseTimestamp(nil)
+		So(err, ShouldBeNil)
+		So(res, ShouldBeNil)
 	})
 }

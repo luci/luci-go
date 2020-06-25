@@ -16,13 +16,23 @@ package rpc
 
 import (
 	"context"
+	"regexp"
+	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
+	imodel "go.chromium.org/luci/buildbucket/appengine/internal/model"
+	dbmodel "go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
+)
+
+var (
+	tagIndexCursorRegex = regexp.MustCompile("^id>\\d+$")
 )
 
 // validateChange validates the given Gerrit change.
@@ -109,5 +119,83 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
 	// TODO(crbug/1042991): Search for the requested builds.
+	searchQuery, err:= imodel.NewSearchQuery(req)
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
+	_, err = searchBuilds(ctx, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+// searchBuilds is an internal func to perform main search builds business logic.
+func searchBuilds(ctx context.Context, q *imodel.SearchQuery) (*pb.SearchBuildsResponse, error) {
+	// TODO(crbug/1090540): validate the q.createBy identity when validating the RPC req.
+	// It'll be the replacement for the `user.parse_identity(q.created_by)` in Py.
+	// https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/search.py;l=294
+
+	if !buildid.MayContainBuilds(q.StartTime, q.EndTime) {
+		return &pb.SearchBuildsResponse{}, nil
+	}
+
+	// Validate bucket ACL permission.
+	if q.BucketId != "" {
+		index := strings.Index(q.BucketId, "/")
+		if index <= 0 {
+			return nil, appstatus.BadRequest(errors.Reason("invalid bucketId").Err())
+		}
+		if err := canRead(ctx, q.BucketId[:index], q.BucketId[index + 1:]); err != nil {
+			return nil, err
+		}
+	}
+
+	// Determine which subflow - directly query on Builds or on TagIndex
+	isTagIndexCursor := tagIndexCursorRegex.MatchString(q.StartCursor)
+	canUseTagIndex := len(indexed_tags(q.Tags)) != 0 &&
+		(q.StartCursor == "" || isTagIndexCursor)
+	if isTagIndexCursor && !canUseTagIndex {
+		return nil, appstatus.BadRequest(errors.Reason("invalid cursor").Err())
+	}
+	if canUseTagIndex {
+		// TODO(crbug/1090540): test switch-case block after tagIndexSearch() is complete.
+		logging.Debugf(ctx, "Searching builds on TagIndex")
+		switch res, err := tagIndexSearch(ctx, q); {
+		case dbmodel.TagIndexIncomplete.In(err) && q.StartCursor == "":
+			logging.Infof(ctx, "Falling back to querying search on builds.")
+		case err != nil:
+			return nil, err
+		default:
+			return res, nil
+		}
+	}
+
+	// TODO(crbug/1090540): implement the function querySearch().
+	return nil, nil
+}
+
+// indexed_tags returns the indexed tags.
+func indexed_tags(tags []string) []string{
+	indexed := []string{}
+	set := map[string]bool{}
+	for _, tag := range tags {
+		if !(strings.HasPrefix(tag, "buildset:") ||
+			strings.HasPrefix(tag, "build_address:")) ||
+			set[tag] {
+			continue
+		}
+		indexed = append(indexed, tag)
+		set[tag] = true
+	}
+	sort.Strings(indexed)
+	return indexed
+}
+
+
+// TODO(crbug/1090540): implement search via tagIndex flow
+func tagIndexSearch(ctx context.Context, q *imodel.SearchQuery) (*pb.SearchBuildsResponse, error) {
+	logging.Debugf(ctx, "querying on TagIndex flow.")
 	return nil, nil
 }
