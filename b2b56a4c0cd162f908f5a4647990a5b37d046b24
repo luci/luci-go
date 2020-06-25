@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b154d45d_b69cce5d",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T22:36:29Z",
+      "side": 1,
+      "message": "i didn\u0027t flag this myself because i thought this is intentional: Upload() functions accept an artifact name which includes invocation name. This means, same artifactUploader can be used for different invocation names, so to be symmetric, token is passed in the same place where invocation name is passed (which is inside artifact name)\n\ni just noticed: why ArtifactUploader is in sink package if our intention is to make it sink-agnostic?",
+      "parentUuid": "d13bc92e_8f761226",
+      "range": {
+        "startLine": 69,
+        "startChar": 33,
+        "endLine": 69,
+        "endChar": 47
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecc2c3cd_3d24398c",
         "filename": "resultdb/sink/testutil_test.go",
         "patchSetId": 5
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "Use of http.DefaultClient causes the state of the returned ServerConfig shared across all tests.\n\nAt L37 in artifact_channel_test.go, it overrides cfg.Client.Transport with a mock transport.\n\n```\ncfg.ArtifactUploader.Client.Transport \u003d \u0026mockTransport{func(req *http.Request) (*http.Response, error) {\n    do_something()\n}\n```\n\nIt unexpectedly affects other unit tests with testServerConfig(), because the custom mockTransport{} set in artifact_channel_test.go is being used by all other tests launched after the test.",
       "parentUuid": "ecc2c3cd_3d24398c",
+      "range": {
+        "startLine": 66,
+        "startChar": 40,
+        "endLine": 66,
+        "endChar": 54
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2d2c99af_0fb46971",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T22:36:29Z",
+      "side": 1,
+      "message": "ah, i see.\nlooks like the code that assigns Transport assumes that Client is not shared. it would be more explicit to pass transport as a param to testServerConfig",
+      "parentUuid": "2d04806b_07b534b0",
       "range": {
         "startLine": 66,
         "startChar": 40,
