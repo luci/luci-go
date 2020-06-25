@@ -46,6 +46,30 @@
       "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42e4ad66_03dd8363",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T00:46:47Z",
+      "side": 1,
+      "message": "yes, I believe GPU team prefers to have simple variant names, e.g. \"NVidia\" or \"Intel\".\nThe raw gpu dimension string includes driver version. This means we\u0027d be loosing test history each time the drivers are updated (which happens continuously)\n\n+kbr to confirm/unconfirm",
+      "parentUuid": "420a3acb_d74013e4",
+      "range": {
+        "startLine": 173,
+        "startChar": 32,
+        "endLine": 173,
+        "endChar": 33
+      },
+      "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
