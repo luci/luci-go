@@ -118,6 +118,30 @@
       "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a30f1c74_075dc99e",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:38:21Z",
+      "side": 1,
+      "message": "Chan, I am happy to resolve this comment:\n1) the only concern here is that we\u0027d lose test history, but we don\u0027t have it today anyway, so we don\u0027t have to think about this today. Changing this later will be easy\n2) Based on Ken says, it *might* be actually desirable to see separate histories on separate gpus. I think it will be much easier to tell when we have some history UI implemented and users get used to ResultDB, variants, etc.",
+      "parentUuid": "6b8f646e_9b719d91",
+      "range": {
+        "startLine": 173,
+        "startChar": 32,
+        "endLine": 173,
+        "endChar": 33
+      },
+      "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
