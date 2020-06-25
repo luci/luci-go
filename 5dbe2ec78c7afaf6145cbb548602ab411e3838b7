@@ -94,6 +94,30 @@
       "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b8f646e_9b719d91",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-25T05:26:12Z",
+      "side": 1,
+      "message": "\u003e What are the implications of this change?\nBackground: https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1090671#c22.\n\nCurrently ResultDB cannot differentiate results of a test runs on different gpus - either test_id nor variants has the gpu information.\n\nThis change is to fix that issue.\n\n\u003e \n\u003e - As we test out certain new driver versions, we want to know if they\u0027ve induced flakiness compared to the previous one.\n\u003e - There are different variants of some GPUs on the waterfall (for example, 2 kinds of AMD GPUs on macOS, one very old, one new) and we need to be able to distinguish between the two.\n\nSo I think you agreed to use the gpu tag (the value will be something like \"8086:0102-18.3.6\") as it is, right?",
+      "parentUuid": "49bddd82_a1fd559e",
+      "range": {
+        "startLine": 173,
+        "startChar": 32,
+        "endLine": 173,
+        "endChar": 33
+      },
+      "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
