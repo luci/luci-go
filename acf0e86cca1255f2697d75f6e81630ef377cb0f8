@@ -2,6 +2,293 @@
   "comments": [
     {
       "key": {
+        "uuid": "3166d232_5639e168",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "returns true",
+      "range": {
+        "startLine": 55,
+        "startChar": 20,
+        "endLine": 55,
+        "endChar": 35
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf54a43e_b2a967aa",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 55,
+        "startChar": 39,
+        "endLine": 55,
+        "endChar": 40
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7582f936_29ac8aad",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2256460/8/buildbucket/appengine/internal/model/query.go#39",
+      "range": {
+        "startLine": 56,
+        "startChar": 32,
+        "endLine": 56,
+        "endChar": 33
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d99a5099_282aae4e",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "unrelated to this CL, but it would be more type-safe to use have beginningOfTheWorld of type time.Time and use https://godoc.org/time#Time.Before",
+      "range": {
+        "startLine": 58,
+        "startChar": 42,
+        "endLine": 58,
+        "endChar": 61
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba2644ae_f6be775f",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "https://godoc.org/time#Time.Before",
+      "range": {
+        "startLine": 60,
+        "startChar": 43,
+        "endLine": 60,
+        "endChar": 57
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12b2af42_2c9311ee",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "this is not sorted. also consider separating buildbucket imports from non-builbducket imports",
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b5a4f59_cd431ce7",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "from the comments in this CL, I take it this exists to not compute the same thing twice.\nthat makes sense, but it doesn\u0027t mean we have to copy/mirror all fields.\nwouldn\u0027t it be simpler to have \n\n  type SearchQuery struct {\n    Request *pb.SearchBuildsRequest\n\n    ..precomputed fields go here...\n  }\n\nthis is related to my comment in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2265732/3/buildbucket/appengine/rpc/search_builds.go#148",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 16
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26cb09bd_5cc25e97",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "nit: why did this have to move out from the struct literal?",
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f211d601_dade9906",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "nit: consolidate into one line. same below",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 7
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a019c777_dba22350",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "ensures the",
+      "range": {
+        "startLine": 118,
+        "startChar": 15,
+        "endLine": 118,
+        "endChar": 30
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5612c7d7_e4ccde64",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 118,
+        "startChar": 35,
+        "endLine": 118,
+        "endChar": 36
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac3b29e0_b4746e14",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "if you use `, then you don\u0027t have to escape \\",
+      "range": {
+        "startLine": 35,
+        "startChar": 42,
+        "endLine": 35,
+        "endChar": 43
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99fcb3cd_7dec1d87",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "this shouldn\u0027t happen. The only case this might happen is req was invalid, but then we should have returned an error in L115. So if we return the error here, it must be an internal error (e.g. a bug in validateSeach() that it didn\u0027t return a non-nil error on an invalid request)",
+      "range": {
+        "startLine": 124,
+        "startChar": 14,
+        "endLine": 124,
+        "endChar": 39
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c603091a_3d42be1d",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
@@ -22,6 +309,259 @@
       "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "356fd93f_0e925051",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "should this TODO be in the validation code then?",
+      "range": {
+        "startLine": 136,
+        "startChar": 58,
+        "endLine": 136,
+        "endChar": 85
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "254a5b09_541c7f01",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "this is not the last time we are going to split bucket id, so i recommend extracting it to a reusable function. same for \n\n  s.BucketId \u003d fmt.Sprintf(\"%s/%s\", p.Builder.GetProject(), p.Builder.GetBucket())\n\nin model/query.go",
+      "range": {
+        "startLine": 146,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 41
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "959d6275_b8242354",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "this isn\u0027t a bad request. we\u0027ve already validated the request and determined it was valid.\n\nstepping back, it seems that we accept separated (project, bucket, builder), then convert it to a single BuilderID string, and then here parse it back?",
+      "range": {
+        "startLine": 148,
+        "startChar": 15,
+        "endLine": 148,
+        "endChar": 35
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d7cfbea_5241e564",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "it would be more readable if this was one line.\nit\u0027s ok to have \u003e80col lines in Golang",
+      "range": {
+        "startLine": 157,
+        "startChar": 49,
+        "endLine": 158,
+        "endChar": 43
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c331e249_eb63effd",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "this check should be in validateSearch()",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 2
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c81f779_2800c5cc",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "Warningf",
+      "range": {
+        "startLine": 167,
+        "startChar": 11,
+        "endLine": 167,
+        "endChar": 16
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4269f9d4_34c1b0df",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "indexedTags",
+      "range": {
+        "startLine": 180,
+        "startChar": 5,
+        "endLine": 180,
+        "endChar": 17
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1bd32b8_204ccef0",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "this allocates a 0-length slice, which is equivalent to nil, but unnecessarily occupies space. Consider\n\n  var indexed []string",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 181,
+        "endChar": 22
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a3dab81_4863d8d7",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/data/stringset",
+      "range": {
+        "startLine": 182,
+        "startChar": 8,
+        "endLine": 182,
+        "endChar": 25
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6eb76ea_e5ae0b84",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "did you mean !set[tag] ?\n\noverall, if we used stringset, then we could return stringset in this function, so we don\u0027t have to deal with the slice to begin with.  Then the caller can call https://godoc.org/go.chromium.org/luci/common/data/stringset#Set.ToSortedSlice if needed",
+      "range": {
+        "startLine": 186,
+        "startChar": 3,
+        "endLine": 186,
+        "endChar": 11
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e092bd2_1d170e7d",
+        "filename": "buildbucket/appengine/rpc/search_builds_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-25T06:08:00Z",
+      "side": 1,
+      "message": "please place the following in separate import blocks\n\n1) non-luci code, e.g. protobuf\n2) luci code\n3) buildbucket code\n4) dot imports",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 44
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
