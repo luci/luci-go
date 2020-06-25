@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c603091a_3d42be1d",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-25T04:24:47Z",
+      "side": 1,
+      "message": "Returning SearchBuildsResponse instead of a list of Builds is because I\u0027ll utilize paged.Query(...) for handling the pagination which would include NextPageToken in response.\n\nWill filter the fieldMask on SearchBuildsResponse after this searchBuilds returns to previous caller.",
+      "range": {
+        "startLine": 135,
+        "startChar": 63,
+        "endLine": 135,
+        "endChar": 88
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
