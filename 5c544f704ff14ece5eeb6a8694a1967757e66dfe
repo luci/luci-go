@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77777ec4_c509fdca",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T19:53:00Z",
+      "side": 1,
+      "message": "duplicate as",
+      "range": {
+        "startLine": 16,
+        "startChar": 27,
+        "endLine": 16,
+        "endChar": 32
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3621ab6_ec758ae2",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T19:53:00Z",
+      "side": 1,
+      "message": "Should we implement a check in those factory functions (e.g. FromInts, SpanInclusive) that ensures `low \u003c\u003d high`?",
+      "range": {
+        "startLine": 29,
+        "startChar": 26,
+        "endLine": 29,
+        "endChar": 43
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "020ee959_a91dd221",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T19:53:00Z",
+      "side": 1,
+      "message": "Do you think it\u0027s better to make it an exported constant so that the user side code may become clearer? e.g.\n\n    if low, high :\u003d p.QueryBounds(8); high !\u003d partition.OutOfBound {\n        // do stuff\n    }",
+      "range": {
+        "startLine": 93,
+        "startChar": 9,
+        "endLine": 93,
+        "endChar": 12
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "604508c5_aaaba892",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T19:53:00Z",
+      "side": 1,
+      "message": "remaining.High is never set at this point. Is this check needed?",
+      "range": {
+        "startLine": 141,
+        "startChar": 0,
+        "endLine": 143,
+        "endChar": 2
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1effef32_3d6bd8ef",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T19:53:00Z",
+      "side": 1,
+      "message": "why not convert expShards to int and compare as it will anyway be converted in the if block?",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 51
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
