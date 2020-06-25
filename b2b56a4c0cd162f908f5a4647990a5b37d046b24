@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d13bc92e_8f761226",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-25T22:30:53Z",
+      "side": 1,
+      "message": "\u003e\u003e add UpdateToken at the time the artifact uploader is constructed\nI will send a separate CL to add UpdateToken to ArtifactUploader.\n\n\u003e\u003e Just pass the entire Artifact object through instead of exploding it into the args\nInitially, ArtifactUploader was implemented with a single Upload(ctx, task.artName, task.art), but I changed the function signature such that it takes `contents []byte` or `filePath string` instead.\n\nThe intent is to make ArtifactUploader self-contained without ResultSink so that an application may use ArtifactUploader to upload an artifact without importing any module/protos from ResultSink.\n\n+nodir@, please correct me, if anything incorrect.",
+      "parentUuid": "e96fedb2_5ae2b61e",
+      "range": {
+        "startLine": 69,
+        "startChar": 33,
+        "endLine": 69,
+        "endChar": 47
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecc2c3cd_3d24398c",
         "filename": "resultdb/sink/testutil_test.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d04806b_07b534b0",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-25T22:30:53Z",
+      "side": 1,
+      "message": "Use of http.DefaultClient causes the state of the returned ServerConfig shared across all tests.\n\nAt L37 in artifact_channel_test.go, it overrides cfg.Client.Transport with a mock transport.\n\n```\ncfg.ArtifactUploader.Client.Transport \u003d \u0026mockTransport{func(req *http.Request) (*http.Response, error) {\n    do_something()\n}\n```\n\nIt unexpectedly affects other unit tests with testServerConfig(), because the custom mockTransport{} set in artifact_channel_test.go is being used by all other tests launched after the test.",
+      "parentUuid": "ecc2c3cd_3d24398c",
+      "range": {
+        "startLine": 66,
+        "startChar": 40,
+        "endLine": 66,
+        "endChar": 54
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
