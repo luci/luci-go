@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "34d2f320_058063f4",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T20:31:40Z",
+      "side": 1,
+      "message": "got it!",
+      "parentUuid": "49879666_dde84424",
+      "range": {
+        "startLine": 93,
+        "startChar": 9,
+        "endLine": 93,
+        "endChar": 12
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "604508c5_aaaba892",
         "filename": "ttq/internal/partition/partition.go",
         "patchSetId": 6
@@ -225,6 +249,30 @@
       "side": 1,
       "message": "because expShards may be \u003e max int64 in which case Int64() behavior is undefined.",
       "parentUuid": "1effef32_3d6bd8ef",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 51
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7428cd78_18c2ad71",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-06-25T20:31:40Z",
+      "side": 1,
+      "message": "it sounds really unlikely (i.e. expShards \u003e max of int64) but sgtm",
+      "parentUuid": "9866b11f_5bed2a8d",
       "range": {
         "startLine": 169,
         "startChar": 1,
