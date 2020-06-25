@@ -70,6 +70,30 @@
       "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49bddd82_a1fd559e",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1105344
+      },
+      "writtenOn": "2020-06-25T04:26:15Z",
+      "side": 1,
+      "message": "What are the implications of this change? While the step names certainly use an abbreviated GPU type (\"Intel\", \"AMD\", \"NVIDIA\"), if this test result database is the source of truth, I think the test results should include the detailed GPU type, not an abbreviation.\n\n- As we test out certain new driver versions, we want to know if they\u0027ve induced flakiness compared to the previous one.\n- There are different variants of some GPUs on the waterfall (for example, 2 kinds of AMD GPUs on macOS, one very old, one new) and we need to be able to distinguish between the two.\n\nBrian and Yuly, please give this more thought and your feedback. On the whole I think we want to keep the entire GPU information for a given test result - what detailed GPU type, including driver version, it ran on.",
+      "parentUuid": "42e4ad66_03dd8363",
+      "range": {
+        "startLine": 173,
+        "startChar": 32,
+        "endLine": 173,
+        "endChar": 33
+      },
+      "revId": "5dbe2ec78c7afaf6145cbb548602ab411e3838b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
