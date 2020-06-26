@@ -110,18 +110,6 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 		EndTime:   ann.Ended,
 	}
 
-	// Annotee is known to produce startTime>endTime if they are very close.
-	// Correct that here.
-	if bb.StartTime != nil && bb.EndTime != nil && cmpTs(bb.StartTime, bb.EndTime) > 0 {
-		if bb.StartTime.Seconds-bb.EndTime.Seconds > 1 {
-			return nil, fmt.Errorf(
-				"step %q start time %q is much greater than end time %q",
-				ann.Name, bb.StartTime, bb.EndTime)
-		}
-		// Swap them. They are close enough.
-		bb.StartTime, bb.EndTime = bb.EndTime, bb.StartTime
-	}
-
 	// Unlike annotation step names, buildbucket step names must be unique.
 	// Choose a name.
 	stripPrefix := strings.Replace(strings.TrimSuffix(stepPrefix, StepSep), "|", ".", -1) + "."
@@ -132,11 +120,36 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 	}
 	p.steps[bb.Name] = bb
 
+	bb.Logs, bb.SummaryMarkdown = p.calcLogsAndSummary(c, ann)
+
+	// Put step into list of steps.
+	*bbSteps = append(*bbSteps, bb)
+
+	// Handle substeps.
+	bbSubsteps, err := p.convertSubsteps(c, bbSteps, ann.Substep, bb.Name+StepSep)
+	if err != nil {
+		return nil, err
+	}
+
+	if bb.StartTime, bb.EndTime, err = fixupStartAndEndTime(bb.StartTime, bb.EndTime, bbSubsteps); err != nil {
+		return nil, errors.Annotate(err, "Step %s: ", bb.Name).Err()
+	}
+
+	if bb.Status, err = determineStatus(bb.StartTime, bb.EndTime, ann, bbSubsteps); err != nil {
+		return nil, errors.Annotate(err, "Step %s: ", bb.Name).Err()
+	}
+
+	maybeCloneTimestamp(&bb.StartTime)
+	maybeCloneTimestamp(&bb.EndTime)
+	return bb, nil
+}
+
+func (p *stepConverter) calcLogsAndSummary(ctx context.Context, annStep *annotpb.Step) ([]*pb.Log, string) {
 	// summary stores a slice of paragraphs, not individual lines.
 	var summary []string
 
 	// Get any failure details.
-	if fd := ann.GetFailureDetails(); fd != nil && fd.Text != "" {
+	if fd := annStep.GetFailureDetails(); fd != nil && fd.Text != "" {
 		summary = append(summary, fd.Text)
 	}
 
@@ -149,92 +162,95 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 	// https://cs.chromium.org/chromium/build/third_party/buildbot_8_4p1/buildbot/status/web/build.py?sq=package:chromium&rcl=83e20043dedd1db6977c6aa818e66c1f82ff31e1&l=130
 	// Preserve this semantics (except, it is not safe).
 	// HTML is valid Markdown, so use it as is.
-	if len(ann.Text) > 0 {
+	if len(annStep.Text) > 0 {
 		// enclose ann.Text in a div so they are treated as plain text or HTML.
 		// use 2 \n so the div is guaranteed to be separated from other sections
-		summary = append(summary, fmt.Sprintf("\n\n<div>%s</div>\n\n", strings.Join(ann.Text, " ")))
+		summary = append(summary, fmt.Sprintf("\n\n<div>%s</div>\n\n", strings.Join(annStep.Text, " ")))
 	}
 
 	// Handle logs.
-	logs, lines := p.convertLinks(c, ann)
-	bb.Logs = logs
+	logs, lines := p.convertLinks(ctx, annStep)
+
 	if len(lines) > 0 {
 		summary = append(summary, strings.Join(lines, "\n"))
 	}
 
-	// Put completed summary into current step.
-	bb.SummaryMarkdown = strings.Join(summary, "\n\n")
+	return logs, strings.Join(summary, "\n\n")
+}
 
-	// Put step into list of steps.
-	*bbSteps = append(*bbSteps, bb)
+func fixupStartAndEndTime(startTime, endTime *timestamp.Timestamp, subSteps []*pb.Step) (newStart, newEnd *timestamp.Timestamp, err error) {
+	newStart, newEnd = startTime, endTime
 
-	// Handle substeps.
-	bbSubsteps, err := p.convertSubsteps(c, bbSteps, ann.Substep, bb.Name+StepSep)
-	if err != nil {
-		return nil, err
+	// Annotee is known to produce startTime>endTime if they are very close.
+	// Correct that here.
+	if startTime != nil && endTime != nil && cmpTs(startTime, endTime) > 0 {
+		if startTime.Seconds-endTime.Seconds > 1 {
+			return nil, nil, errors.Reason("start time %q is much greater than end time %q", startTime, endTime).Err()
+		}
+		// Swap them. They are close enough.
+		newStart, newEnd = endTime, startTime
 	}
 
 	// Ensure parent step start/end time is not after/before of its children.
-	for _, ss := range bbSubsteps {
-		if ss.StartTime != nil && (bb.StartTime == nil || cmpTs(bb.StartTime, ss.StartTime) > 0) {
-			bb.StartTime = ss.StartTime
+	for _, ss := range subSteps {
+		if ss.StartTime != nil && (newStart == nil || cmpTs(newStart, ss.StartTime) > 0) {
+			newStart = ss.StartTime
 		}
 		switch {
 		case ss.EndTime == nil:
-			bb.EndTime = nil
-		case bb.EndTime != nil && cmpTs(bb.EndTime, ss.EndTime) < 0:
-			bb.EndTime = ss.EndTime
+			newEnd = nil
+		case newEnd != nil && cmpTs(newEnd, ss.EndTime) < 0:
+			newEnd = ss.EndTime
 		}
 	}
+	return
+}
 
+func determineStatus(startTime, endTime *timestamp.Timestamp, annStep *annotpb.Step, subSteps []*pb.Step) (ret pb.Status, err error) {
 	// Determine status.
 	switch {
 	// First of all, honor start/end times.
+	case startTime == nil:
+		ret = pb.Status_SCHEDULED
 
-	case bb.StartTime == nil:
-		bb.Status = pb.Status_SCHEDULED
-
-	case bb.EndTime == nil:
-		bb.Status = pb.Status_STARTED
+	case endTime == nil:
+		ret = pb.Status_STARTED
 
 	// Secondly, honor current status.
+	case annStep.Status == annotpb.Status_SUCCESS:
+		ret = pb.Status_SUCCESS
 
-	case ann.Status == annotpb.Status_SUCCESS:
-		bb.Status = pb.Status_SUCCESS
-
-	case ann.Status == annotpb.Status_FAILURE:
-		if fd := ann.GetFailureDetails(); fd != nil {
+	case annStep.Status == annotpb.Status_FAILURE:
+		if fd := annStep.GetFailureDetails(); fd != nil {
 			switch fd.Type {
 			case annotpb.FailureDetails_GENERAL:
-				bb.Status = pb.Status_FAILURE
+				ret = pb.Status_FAILURE
 			case annotpb.FailureDetails_CANCELLED:
-				bb.Status = pb.Status_CANCELED
+				ret = pb.Status_CANCELED
 			default:
-				bb.Status = pb.Status_INFRA_FAILURE
+				ret = pb.Status_INFRA_FAILURE
 			}
 		} else {
-			bb.Status = pb.Status_FAILURE
+			ret = pb.Status_FAILURE
 		}
 
 	default:
-		return nil, errors.Reason("step %q has end time, but status is not terminal", bb.Name).Err()
+		return ret, errors.Reason("expected terminal status when endTime is not nil, got %s", annStep.Status).Err()
 	}
 
 	// When parent step finishes running, compute its final status as worst
 	// status, as determined by statusPrecedence map below, among direct children
 	// and its own status.
-	if protoutil.IsEnded(bb.Status) {
-		for _, bbSubstep := range bbSubsteps {
-			substepStatusPrecedence, ok := statusPrecedence[bbSubstep.Status]
-			if ok && substepStatusPrecedence < statusPrecedence[bb.Status] {
-				bb.Status = bbSubstep.Status
+	if protoutil.IsEnded(ret) {
+		for _, subStep := range subSteps {
+			substepStatusPrecedence, ok := statusPrecedence[subStep.Status]
+			if ok && substepStatusPrecedence < statusPrecedence[ret] {
+				ret = subStep.Status
 			}
 		}
 	}
 
-	maybeCloneTimestamp(&bb.StartTime)
-	maybeCloneTimestamp(&bb.EndTime)
-	return bb, nil
+	return
 }
 
 func maybeCloneTimestamp(ts **timestamp.Timestamp) {
