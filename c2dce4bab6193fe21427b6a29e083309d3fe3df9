@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34cc6d29_878cc9c4",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T23:54:17Z",
+      "side": 1,
+      "message": "If UNSET/NO are the same does it need to be Trinary? I don\u0027t have a strong opinion, just curious.",
+      "revId": "c2dce4bab6193fe21427b6a29e083309d3fe3df9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a93e8bca_2aabc443",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T23:54:17Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 368,
+        "startChar": 29,
+        "endLine": 368,
+        "endChar": 37
+      },
+      "revId": "c2dce4bab6193fe21427b6a29e083309d3fe3df9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
