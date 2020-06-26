@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "fdee01c6_02349c38",
+        "filename": "resultdb/internal/services/resultdb/list_test_exonerations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T19:13:45Z",
+      "side": 1,
+      "message": "yes. we have it here: https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/auth_service/realms/permissions.py#121",
+      "parentUuid": "679ea718_e421baa5",
+      "range": {
+        "startLine": 49,
+        "startChar": 45,
+        "endLine": 49,
+        "endChar": 51
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c4b42331_c1238009",
         "filename": "resultdb/internal/services/resultdb/list_test_results_test.go",
         "patchSetId": 1
@@ -203,6 +227,30 @@
       "writtenOn": "2020-06-26T18:24:15Z",
       "side": 1,
       "message": "This function is only used in GetArtifact. Do you have plan to use it elsewhere? If not move it into get_artifact.go ?",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 33
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5759219d_6cbfb767",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T19:13:45Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "dff76045_be6976d6",
       "range": {
         "startLine": 38,
         "startChar": 5,
