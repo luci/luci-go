@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46775595_33656f7b",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T15:57:45Z",
+      "side": 1,
+      "message": "Maybe use the term \"happy path\" in this doc since you use it in logging.",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16688a1d_8770a317",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T15:57:45Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2257381/3/ttq/internal/impl.go#98\n\nAnother problem with the \"send multiple CLs\" approach IMO. I have to leave duplicate comments and search through all the CLs to see if you\u0027ve already refuted them.",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cac1bbcc_a8d402df",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T15:57:45Z",
+      "side": 1,
+      "message": "times",
+      "range": {
+        "startLine": 87,
+        "startChar": 52,
+        "endLine": 87,
+        "endChar": 56
+      },
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a99ffb0_437451ae",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T15:57:45Z",
+      "side": 1,
+      "message": "Hm, it\u0027s unfortunate we can\u0027t know this up front. Does legacy transactional task enqueuing fail the transaction if the task is invalid?",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f614fa1_649dea5c",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-26T15:57:45Z",
+      "side": 1,
+      "message": "Where is this called with when \u003d\u003d \"ttq\"?",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
