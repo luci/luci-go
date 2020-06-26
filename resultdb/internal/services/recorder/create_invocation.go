@@ -122,6 +122,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		}
 		// Set the default realm to avoid checking permissions against the empty realm.
 		realm = "chromium:public"
+		return nil
 	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, []string{realm}); {
