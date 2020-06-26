@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -60,12 +61,13 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 
 func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 	return ServerConfig{
-		Address:      addr,
-		AuthToken:    tk,
-		Recorder:     pb.NewMockRecorderClient(ctl),
-		Invocation:   "invocations/u-foo-1587421194_893166206",
-		invocationID: "u-foo-1587421194_893166206",
-		UpdateToken:  "UpdateToken-ABC",
+		Address:          addr,
+		AuthToken:        tk,
+		ArtifactUploader: &ArtifactUploader{Client: &http.Client{}, Host: "example.org"},
+		Recorder:         pb.NewMockRecorderClient(ctl),
+		Invocation:       "invocations/u-foo-1587421194_893166206",
+		invocationID:     "u-foo-1587421194_893166206",
+		UpdateToken:      "UpdateToken-ABC",
 	}
 }
 

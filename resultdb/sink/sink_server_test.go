@@ -93,7 +93,6 @@ func TestReportTestResults(t *testing.T) {
 		})
 
 		Convey("generates a random ResultID, if omitted", func() {
-
 			tr.ResultId = ""
 			expected.ResultId = "foo-00101"
 			check(ctx, cfg, tr, expected)

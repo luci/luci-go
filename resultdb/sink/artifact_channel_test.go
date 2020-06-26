@@ -16,8 +16,12 @@ package sink
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,6 +33,12 @@ func TestArtifactChannel(t *testing.T) {
 	Convey("schedule works", t, func() {
 		ctx := context.Background()
 		cfg := testServerConfig(nil, "127.0.0.1:123", "secret")
+		reqCh := make(chan *http.Request, 1)
+		cfg.ArtifactUploader.Client.Transport = mockTransport(func(req *http.Request) (*http.Response, error) {
+			reqCh <- req
+			return &http.Response{StatusCode: http.StatusNoContent}, nil
+		})
+
 		ac := newArtifactChannel(ctx, &cfg)
 
 		// send a sample request
@@ -39,6 +49,16 @@ func TestArtifactChannel(t *testing.T) {
 		ac.schedule(tr)
 		ac.closeAndDrain(ctx)
 
-		// TODO(ddoman): validate the uploaded artifacts
+		// verify the URL of the sent request
+		req := <-reqCh
+		artName := pbutil.TestResultArtifactName(cfg.invocationID, tr.TestId, tr.ResultId, "art1")
+		expectedURL := fmt.Sprintf("https://%s/%s", cfg.ArtifactUploader.Host, artName)
+		So(req, ShouldNotBeNil)
+		So(req.URL.String(), ShouldEqual, expectedURL)
+
+		// verify the body
+		body, err := ioutil.ReadAll(req.Body)
+		So(err, ShouldBeNil)
+		So(body, ShouldResemble, []byte("123"))
 	})
 }
