@@ -32,6 +32,7 @@ func TestOptions(t *testing.T) {
 		}
 		Convey("Valid", func() {
 			So(valid.Validate(), ShouldBeNil)
+			So(valid.pathPrefix, ShouldEqual, "/internal/ttq")
 			So(valid.ScanInterval, ShouldEqual, time.Minute)
 			So(valid.Shards, ShouldEqual, 16)
 		})

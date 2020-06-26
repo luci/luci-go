@@ -34,7 +34,6 @@ package ttqdatastore
 
 import (
 	"context"
-	"errors"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
@@ -74,7 +73,7 @@ func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 //
 // Panics if called twice.
 func (t *TTQ) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
-	// TODO(tandrii): implement.
+	t.impl.InstallRoutes(r, mw)
 }
 
 // AddTask guarantees eventual creation of a task in Cloud Tasks if the current
@@ -87,6 +86,5 @@ func (t *TTQ) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
 //
 // Panics if not called with a transaction context.
 func (t *TTQ) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
-	// TODO(tandrii): implement.
-	return nil, errors.New("not implemented")
+	return t.impl.AddTask(ctx, req)
 }
