@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package internal
 
-// ToBoolPtr converts bool to its pointer.
-func ToBoolPtr(b bool) *bool {
-	return &b
-}
-
-// ToInt64Ptr converts int64 to its pointer.
-func ToInt64Ptr(i int64) *int64 {
-	return &i
+// Database abstracts out specific storage implementation.
+type Database interface {
+	// Kind is used only for monitoring/logging purposes.
+	Kind() string
 }
