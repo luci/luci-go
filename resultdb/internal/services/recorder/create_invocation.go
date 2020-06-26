@@ -127,9 +127,8 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, []string{realm}); {
 	case err != nil:
 		return err
-	case !allowed:
+	case !allowed && realm != "chromium:public":
 		return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to create invocations in realm %q`, realm)
-
 	}
 
 	if !strings.HasPrefix(in.InvocationId, "u-") {
