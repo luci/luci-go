@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7362d25a_185acaa0",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-26T22:27:50Z",
+      "side": 1,
+      "message": "arg, that\u0027s sucky, lol",
+      "range": {
+        "startLine": 125,
+        "startChar": 9,
+        "endLine": 125,
+        "endChar": 12
+      },
+      "revId": "931fd6f36c6bdfa1340f0d8d5608fc5e17c23519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
