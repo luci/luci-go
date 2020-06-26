@@ -39,6 +39,10 @@ import (
 // or invalid input parameters.
 const ExitCodeCommandFailure = 1001
 
+// maxContentLength is the maximum content length (in bytes)
+// for prpc Client. It is 64MiB.
+const maxContentLength = 64 * 1024 * 1024
+
 // baseCommandRun provides common command run functionality.
 // All rdb subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
@@ -128,6 +132,7 @@ func (r *baseCommandRun) initClients(ctx context.Context, loginMode auth.LoginMo
 		Host:                  r.host,
 		Options:               rpcOpts,
 		MaxConcurrentRequests: r.maxConcurrentRPCs,
+		MaxContentLength:      maxContentLength,
 	}
 	r.resultdb = pb.NewResultDBPRPCClient(r.prpcClient)
 	r.recorder = pb.NewRecorderPRPCClient(r.prpcClient)
