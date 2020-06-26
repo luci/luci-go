@@ -42,6 +42,10 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 		return nil, appstatus.BadRequest(err)
 	}
 
+	if err := verifyArtifactReadPermission(ctx, in.Name); err != nil {
+		return nil, err
+	}
+
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 

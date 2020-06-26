@@ -64,6 +64,12 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		q.ParentIDRegexp = regexp.QuoteMeta(artifacts.ParentID(testID, resultID))
 	}
 
+	for _, n := range q.InvocationIDs.Names() {
+		if err := verifyPermission(ctx, permReadArtifact, n); err != nil {
+			return nil, err
+		}
+	}
+
 	// Read artifacts.
 	arts, token, err := q.Fetch(ctx, span.Client(ctx).Single())
 	if err != nil {

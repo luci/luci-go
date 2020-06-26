@@ -46,6 +46,10 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 		return nil, appstatus.BadRequest(err)
 	}
 
+	if err := verifyPermission(ctx, permReadTestResult, in.Invocation); err != nil {
+		return nil, err
+	}
+
 	q := exonerations.Query{
 		InvocationIDs: invocations.NewIDSet(invocations.MustParseName(in.Invocation)),
 		PageSize:      pagination.AdjustPageSize(in.PageSize),

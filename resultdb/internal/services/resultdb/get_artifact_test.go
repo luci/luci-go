@@ -23,6 +23,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -60,13 +62,30 @@ func AssertFetchURLCorrectness(ctx context.Context, a *pb.Artifact) {
 
 func TestGetArtifact(t *testing.T) {
 	Convey(`GetArtifact`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permReadArtifact},
+			},
+		})
 		srv := newTestResultDBService()
+
+		Convey(`Permission denied`, func() {
+			// Insert a Artifact.
+			testutil.MustApply(ctx,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+				insert.Artifact("inv", "", "a", nil),
+			)
+			const name = "invocations/inv/artifacts/a"
+			req := &pb.GetArtifactRequest{Name: name}
+			_, err := srv.GetArtifact(ctx, req)
+			So(err, ShouldErrLike, "caller does not have permission")
+		})
 
 		Convey(`Exists`, func() {
 			// Insert a Artifact.
 			testutil.MustApply(ctx,
-				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			const name = "invocations/inv/artifacts/a"
@@ -79,6 +98,8 @@ func TestGetArtifact(t *testing.T) {
 		})
 
 		Convey(`Does not exist`, func() {
+			testutil.MustApply(ctx,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv/artifacts/a not found")

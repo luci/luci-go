@@ -44,6 +44,9 @@ func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocation
 	if err := validateGetInvocationRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
+	if err := verifyPermission(ctx, permReadInvocation, in.Name); err != nil {
+		return nil, err
+	}
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()

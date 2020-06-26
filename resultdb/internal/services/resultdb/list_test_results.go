@@ -46,6 +46,10 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 		return nil, appstatus.BadRequest(err)
 	}
 
+	if err := verifyPermission(ctx, permReadTestResult, in.Invocation); err != nil {
+		return nil, err
+	}
+
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
