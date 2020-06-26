@@ -257,10 +257,10 @@ func (c ReachCache) Read(ctx context.Context) (ids IDSet, err error) {
 
 	members, err := redis.Bytes(conn.Do("GET", c.key()))
 	switch {
+	case err == redis.ErrNil:
+		return nil, ErrUnknownReach
 	case err != nil:
 		return nil, err
-	case len(members) == 0:
-		return nil, ErrUnknownReach
 	}
 	ts.Attribute("size", len(members))
 
