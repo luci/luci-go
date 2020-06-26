@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "9a04d971_4191b5bf",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-26T04:39:46Z",
+      "side": 1,
+      "message": "\u003e\u003e why ArtifactUploader is in sink package if our intention is to make it sink-agnostic?\n\nI wanted to have it tested with ResultSink first, and then move it out of ResultSink folder with a new package name once there are actual use cases. I wrote it as if it was an independent, public package so that it would be easy to move it out with a minimum change.\n\nI filed https://crbug.com/1099560 for the work.",
+      "parentUuid": "b154d45d_b69cce5d",
+      "range": {
+        "startLine": 69,
+        "startChar": 33,
+        "endLine": 69,
+        "endChar": 47
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecc2c3cd_3d24398c",
         "filename": "resultdb/sink/testutil_test.go",
         "patchSetId": 5
@@ -132,6 +156,30 @@
       "side": 1,
       "message": "ah, i see.\nlooks like the code that assigns Transport assumes that Client is not shared. it would be more explicit to pass transport as a param to testServerConfig",
       "parentUuid": "2d04806b_07b534b0",
+      "range": {
+        "startLine": 66,
+        "startChar": 40,
+        "endLine": 66,
+        "endChar": 54
+      },
+      "revId": "b2b56a4c0cd162f908f5a4647990a5b37d046b24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "721506f5_2d9f7f4c",
+        "filename": "resultdb/sink/testutil_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-26T04:39:46Z",
+      "side": 1,
+      "message": "It assumes that ServerConfig and any of its fields are not shared with any other tests. The assumption remains the same for other helpful functions in testutil_test.go\n\n- validTestResult()  \u003d\u003e returns a complete copy of TestResult{} without any shared state. e.g., it\u0027s safe to modify Artifacts of the returned TestResult.\n- testArtifactWithContents() \u003d\u003e returns a complete copy of Artifact{}.\n- testArtifactWithFile() \u003d\u003e same...\n- testServerConfig() \u003d\u003e also same\n\nI think it\u0027s OK to assume that testServerConfig{} returns a complete copy of ServerConfig{} without a field shared with any others.",
+      "parentUuid": "2d2c99af_0fb46971",
       "range": {
         "startLine": 66,
         "startChar": 40,
