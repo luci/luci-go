@@ -218,17 +218,17 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `does not have permission to create invocations`)
 		})
-		Convey(`creation disallowed, legacy`, func() {
+		Convey(`creation allowed, legacy`, func() {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity:            "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
-				InvocationId: "build:8765432100",
+				InvocationId: "u-someguid",
 				Invocation:   &pb.Invocation{},
 				// No Realm.
 			})
-			So(err, ShouldErrLike, `does not have permission to create invocations`)
+			So(err, ShouldBeNil)
 		})
 	})
 
