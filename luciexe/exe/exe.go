@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -243,7 +244,9 @@ func runUserCode(ctx context.Context, build *bbpb.Build, userArgs []string, send
 		errors.Log(ctx, err)
 		retcode = 1
 	} else {
-		build.Status = bbpb.Status_SUCCESS
+		if !protoutil.IsEnded(build.Status) {
+			build.Status = bbpb.Status_SUCCESS
+		}
 	}
 	return
 }
