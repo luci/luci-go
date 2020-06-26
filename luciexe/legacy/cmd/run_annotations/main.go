@@ -63,19 +63,12 @@ func main() {
 
 		var buildMU sync.Mutex
 		sendAnnotations := func(ann *milo.Step) {
-			steps, err := annotee.ConvertBuildSteps(ctx, ann.Substep, false, "", "")
-			check(errors.Annotate(err, "failed to extract steps from annotations").Err())
-
-			props, err := milo.ExtractProperties(ann)
-			check(errors.Annotate(err, "failed to extract properties from annotations").Err())
+			latest, err := annotee.ConvertRootStep(ctx, ann)
+			check(errors.Annotate(err, "failed to convert an annotation root step to a build").Err())
 
 			buildMU.Lock()
 			defer buildMU.Unlock()
-			build.Steps = steps
-			if build.Output == nil {
-				build.Output = &pb.Build_Output{}
-			}
-			build.Output.Properties = props
+			updateBaseBuild(build, latest)
 			sendBuild()
 		}
 
@@ -121,4 +114,22 @@ func main() {
 		sendAnnotations(processor.Finish().RootStep().Proto())
 		return nil
 	})
+}
+
+func updateBaseBuild(base, latest *pb.Build) {
+	base.Status = latest.Status
+	base.StartTime = latest.StartTime
+	base.EndTime = latest.EndTime
+	base.SummaryMarkdown = latest.SummaryMarkdown
+	base.Output = latest.Output
+	for _, log := range base.GetOutput().GetLogs() {
+		// Rename the annotation's std logs so that it won't conflict with the
+		// std log of this command/luciexe when merging. More specifically,
+		// recipe engine will try to merge all logs in output into the step
+		// logs which already opens up stdout and stderr log.
+		if log.Name == "stdout" || log.Name == "stderr" {
+			log.Name = "annotation." + log.Name
+		}
+	}
+	base.Steps = latest.Steps
 }
