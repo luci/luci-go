@@ -64,7 +64,13 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
-		return c.upload(ctx, b.Data[0].(*uploadTask))
+		task := b.Data[0].(*uploadTask)
+		if task.art.GetFilePath() != "" {
+			return c.cfg.ArtifactUploader.UploadFromFile(
+				ctx, task.artName, task.art.ContentType, task.art.GetFilePath(), c.cfg.UpdateToken)
+		}
+		return c.cfg.ArtifactUploader.Upload(
+			ctx, task.artName, task.art.ContentType, task.art.GetContents(), c.cfg.UpdateToken)
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create a channel for artifact uploads: %s", err))
@@ -80,11 +86,6 @@ func (c *artifactChannel) closeAndDrain(ctx context.Context) {
 	// wait for all the active sessions to finish enquing tests results to the channel
 	c.wgActive.Wait()
 	c.ch.CloseAndDrain(ctx)
-}
-
-func (c *artifactChannel) upload(ctx context.Context, t *uploadTask) error {
-	// TODO(crbug/1087955) - upload the artifact to ResultDB.
-	return nil
 }
 
 func (c *artifactChannel) schedule(trs ...*sinkpb.TestResult) {
