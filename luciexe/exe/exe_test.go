@@ -92,6 +92,7 @@ func TestExe(t *testing.T) {
 		Convey(`basic`, func() {
 			Convey(`success`, func() {
 				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					build.Status = bbpb.Status_SCHEDULED
 					return nil
 				})
 				So(exitCode, ShouldEqual, 0)
@@ -130,6 +131,19 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final panic: bad stuff",
+				})
+			})
+
+			Convey(`respect user program status`, func() {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					build.Status = bbpb.Status_INFRA_FAILURE
+					build.SummaryMarkdown = "status set inside"
+					return nil
+				})
+				So(exitCode, ShouldEqual, 0)
+				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: "status set inside",
 				})
 			})
 		})
