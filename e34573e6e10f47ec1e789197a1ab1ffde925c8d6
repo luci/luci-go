@@ -122,6 +122,29 @@
     },
     {
       "key": {
+        "uuid": "186bd05e_a728ce17",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T19:16:00Z",
+      "side": 1,
+      "message": "it occurred to me that we are missing \"list\" permissions, which we should use in List RPCs. This is different form \"read one resource\" permission. \n\nsee buildbucket.bucket.list as an example in go/luci-realms",
+      "range": {
+        "startLine": 68,
+        "startChar": 34,
+        "endLine": 68,
+        "endChar": 50
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2a648f2e_f4d73e2c",
         "filename": "resultdb/internal/services/resultdb/list_test_exonerations.go",
         "patchSetId": 1
