@@ -56,8 +56,9 @@ func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 		return nil, err
 	}
 	return &TTQ{impl: internal.Impl{
-		Options: opts,
-		DB:      &db{},
+		Options:     opts,
+		DB:          &db{},
+		TasksClient: c,
 	}}, nil
 }
 
