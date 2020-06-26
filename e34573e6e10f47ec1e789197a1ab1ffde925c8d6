@@ -145,6 +145,30 @@
     },
     {
       "key": {
+        "uuid": "679ea718_e421baa5",
+        "filename": "resultdb/internal/services/resultdb/list_test_exonerations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-26T18:24:15Z",
+      "side": 1,
+      "message": "Do we need a separated permission of reading test exoneration?",
+      "parentUuid": "2a648f2e_f4d73e2c",
+      "range": {
+        "startLine": 49,
+        "startChar": 45,
+        "endLine": 49,
+        "endChar": 51
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c4b42331_c1238009",
         "filename": "resultdb/internal/services/resultdb/list_test_results_test.go",
         "patchSetId": 1
@@ -161,6 +185,29 @@
         "startChar": 67,
         "endLine": 77,
         "endChar": 80
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dff76045_be6976d6",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-26T18:24:15Z",
+      "side": 1,
+      "message": "This function is only used in GetArtifact. Do you have plan to use it elsewhere? If not move it into get_artifact.go ?",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 33
       },
       "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
