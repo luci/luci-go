@@ -132,6 +132,19 @@ func TestExe(t *testing.T) {
 					SummaryMarkdown: "Final panic: bad stuff",
 				})
 			})
+
+			Convey(`respect terminal build status`, func() {
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					build.Status = bbpb.Status_INFRA_FAILURE
+					build.SummaryMarkdown = "status set inside"
+					return nil
+				})
+				So(exitCode, ShouldEqual, 0)
+				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: "status set inside",
+				})
+			})
 		})
 
 		Convey(`send`, func() {
