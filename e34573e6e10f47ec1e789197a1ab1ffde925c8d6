@@ -1,0 +1,279 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5e34782_0b4fe82f",
+        "filename": "resultdb/internal/services/resultdb/get_artifact.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "in create_invocation.go, permissions are checked before validation. let\u0027s be consistent.\nIt does mean that we\u0027d have to validate inv name twice, but I think the cost is negligible.\n\napplies to other files as well.",
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed30a051_5f470945",
+        "filename": "resultdb/internal/services/resultdb/get_artifact_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "this const used in a single place. inline?",
+      "range": {
+        "startLine": 79,
+        "startChar": 9,
+        "endLine": 79,
+        "endChar": 13
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2648f75b_31e9ddd3",
+        "filename": "resultdb/internal/services/resultdb/get_artifact_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "ShouldHaveAppStatus\n\nsame in other files",
+      "range": {
+        "startLine": 82,
+        "startChar": 11,
+        "endLine": 82,
+        "endChar": 24
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0e22c91_43c9e71a",
+        "filename": "resultdb/internal/services/resultdb/get_invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6cd29a7_cc7f2026",
+        "filename": "resultdb/internal/services/resultdb/get_invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "move this up to reuse?",
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93543e5c_cabe5c5b",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "we should check only the invocation in the request.\nan invocation may \"reshare\" results from another restrict realm",
+      "range": {
+        "startLine": 67,
+        "startChar": 19,
+        "endLine": 67,
+        "endChar": 33
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a648f2e_f4d73e2c",
+        "filename": "resultdb/internal/services/resultdb/list_test_exonerations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "Exoneration",
+      "range": {
+        "startLine": 49,
+        "startChar": 45,
+        "endLine": 49,
+        "endChar": 51
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4b42331_c1238009",
+        "filename": "resultdb/internal/services/resultdb/list_test_results_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "copy-pasta?",
+      "range": {
+        "startLine": 77,
+        "startChar": 67,
+        "endLine": 77,
+        "endChar": 80
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed77d26d_003e0ae1",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "is this all because of L43? i think it would be simpler to have two functions\n\n  func verifyPermission(ctx context.Context, permission realms.Permission, inv string) error\n  func verifyPermissionInvID(ctx context.Context, permission realms.Permission, inv invocations.ID) error\n\nformer using the latter",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 46
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c6a33a8_9018dc98",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "normally this isn\u0027t needed in type-switch statements:\n\n  switch inv :\u003d inv.(type) {\n  case string:\n   // inv is string",
+      "range": {
+        "startLine": 56,
+        "startChar": 50,
+        "endLine": 56,
+        "endChar": 59
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "621a6161_cd895a6f",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "Single\n\notherwise it must be closed in defer",
+      "range": {
+        "startLine": 66,
+        "startChar": 59,
+        "endLine": 66,
+        "endChar": 78
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75551b76_60a3a4d3",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "TODO to remove this",
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78ec6112_a5012809",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-26T07:33:05Z",
+      "side": 1,
+      "message": "i think users will appreciate if the error message includes more details\n  \n  \"caller does not have permissions %q in realm %q\"\n\nbtw, why ` as opposed to \"",
+      "range": {
+        "startLine": 78,
+        "startChar": 51,
+        "endLine": 78,
+        "endChar": 113
+      },
+      "revId": "e34573e6e10f47ec1e789197a1ab1ffde925c8d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
