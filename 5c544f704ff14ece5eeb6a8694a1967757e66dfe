@@ -214,6 +214,29 @@
     },
     {
       "key": {
+        "uuid": "8ef68727_c48403f1",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-26T10:10:38Z",
+      "side": 1,
+      "message": "oh, this should be space.",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 149,
+        "endChar": 4
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1effef32_3d6bd8ef",
         "filename": "ttq/internal/partition/partition.go",
         "patchSetId": 6
@@ -273,6 +296,30 @@
       "side": 1,
       "message": "it sounds really unlikely (i.e. expShards \u003e max of int64) but sgtm",
       "parentUuid": "9866b11f_5bed2a8d",
+      "range": {
+        "startLine": 169,
+        "startChar": 1,
+        "endLine": 169,
+        "endChar": 51
+      },
+      "revId": "5c544f704ff14ece5eeb6a8694a1967757e66dfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aafa11e4_ffa42b49",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-26T10:10:38Z",
+      "side": 1,
+      "message": "actually, it\u0027s quite likely to happen once in a while once because the density is just an *estimation*, and it can be very wrong (i\u0027ll point it out on the future CL). This is the reason why maxShards cap is actually important.",
+      "parentUuid": "7428cd78_18c2ad71",
       "range": {
         "startLine": 169,
         "startChar": 1,
