@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56cf5ea7_7758be82",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-26T20:09:28Z",
+      "side": 1,
+      "message": "Sort of unrelated: one thing that occurs to me; could it be possible for an annotation step to launch a bbagent merge step? Nothing does this today... Can we do something simple to prevent it? If folks want to use that functionality, they should ditch annotations first, I think.",
+      "range": {
+        "startLine": 7,
+        "startChar": 73,
+        "endLine": 7,
+        "endChar": 78
+      },
+      "revId": "769ef2eb8f4bd21724a2a26720e6ae61f8f9c3fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91a21046_5a0ac408",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-26T20:09:28Z",
+      "side": 1,
+      "message": "probably don\u0027t want tabs here",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 1
+      },
+      "revId": "769ef2eb8f4bd21724a2a26720e6ae61f8f9c3fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
