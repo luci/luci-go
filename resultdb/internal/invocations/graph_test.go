@@ -116,6 +116,7 @@ func BenchmarkChainFetch(b *testing.B) {
 type redisConn struct {
 	redis.Conn
 	reply    interface{}
+	replyErr error
 	received [][]interface{}
 }
 
@@ -128,7 +129,7 @@ func (c *redisConn) Do(cmd string, args ...interface{}) (reply interface{}, err 
 	if cmd != "" {
 		c.Send(cmd, args...)
 	}
-	return c.reply, nil
+	return c.reply, c.replyErr
 }
 
 func (c *redisConn) Err() error { return nil }
@@ -167,7 +168,7 @@ func TestReachCache(t *testing.T) {
 		})
 
 		Convey(`Read, cache miss`, func() {
-			conn.reply = []byte(nil)
+			conn.replyErr = redis.ErrNil
 			_, err := cache.Read(ctx)
 			So(err, ShouldEqual, ErrUnknownReach)
 		})
