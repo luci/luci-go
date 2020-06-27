@@ -22,6 +22,30 @@
       "revId": "3e1ddc8240d1ba346201050d5d1e79095ab3f6b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc665b76_cfdc8655",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:20:17Z",
+      "side": 1,
+      "message": "wow, I placed this if statement in a wrong place! It would cause panics in the deriver. \n\nI\u0027ve moved it now. Please take another look.",
+      "parentUuid": "c1aec6fb_86acf45c",
+      "range": {
+        "startLine": 316,
+        "startChar": 1,
+        "endLine": 316,
+        "endChar": 26
+      },
+      "revId": "3e1ddc8240d1ba346201050d5d1e79095ab3f6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
