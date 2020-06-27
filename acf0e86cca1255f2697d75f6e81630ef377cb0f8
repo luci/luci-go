@@ -565,6 +565,30 @@
     },
     {
       "key": {
+        "uuid": "569a3a3d_3e3c6476",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:57:32Z",
+      "side": 1,
+      "message": "In practice, there will not be any BadRequest thrown from here as req has been validated in validateSeach(). \n\nBut in NewSearchQuery(), the third party functions - identity.MakeIdentity() and ptypes.Timestamp() have the err to return. We can choose to ignore the error like `searchQuery, _:\u003d search.NewQuery(req)`. But it looks weird.",
+      "parentUuid": "99fcb3cd_7dec1d87",
+      "range": {
+        "startLine": 124,
+        "startChar": 14,
+        "endLine": 124,
+        "endChar": 39
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c603091a_3d42be1d",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
