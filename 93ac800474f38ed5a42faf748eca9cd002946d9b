@@ -141,6 +141,30 @@
       "revId": "93ac800474f38ed5a42faf748eca9cd002946d9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83fab7aa_b0159c27",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T06:49:41Z",
+      "side": 1,
+      "message": "done, but in even more hacky way.\n\nthis is very \"best effort\". my goal is to attach locations to flaky tests, so that we can filter by path. Once this lands, I will see how many flaky tests don\u0027t have a location.\n\nsince it needs to be \"good enough\" and this is admittedly a hack, I will omit asking kbr for now :) but we will need to ask him when gpu tests are integrated with resultsink",
+      "parentUuid": "16c294d0_6026b531",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 183,
+        "endChar": 61
+      },
+      "revId": "93ac800474f38ed5a42faf748eca9cd002946d9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
