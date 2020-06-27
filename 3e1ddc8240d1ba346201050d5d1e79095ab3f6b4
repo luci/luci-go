@@ -70,6 +70,30 @@
       "revId": "3e1ddc8240d1ba346201050d5d1e79095ab3f6b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7847036f_4cdccc13",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:31:13Z",
+      "side": 1,
+      "message": "the only harm I am thinking of is that you and I wouldn\u0027t know if the app started to experience this condition. I don\u0027t expect this condition to ever happen (if it happens, then this code will produce incorrect results), so I\u0027d like this app to tell me when it happens\nhttps://en.wikipedia.org/wiki/Fail-fast",
+      "parentUuid": "6f3954fe_fe86a0a1",
+      "range": {
+        "startLine": 316,
+        "startChar": 1,
+        "endLine": 316,
+        "endChar": 26
+      },
+      "revId": "3e1ddc8240d1ba346201050d5d1e79095ab3f6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
