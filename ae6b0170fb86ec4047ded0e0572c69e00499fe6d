@@ -2,6 +2,167 @@
   "comments": [
     {
       "key": {
+        "uuid": "76e0241f_bc1d025c",
+        "filename": "resultdb/internal/services/resultdb/list_test_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "appstatus.BadRequest here and in other places\n\nalternatively, do it inside testresults.GetReadMask",
+      "range": {
+        "startLine": 51,
+        "startChar": 14,
+        "endLine": 51,
+        "endChar": 17
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "090bf7ba_c8029a98",
+        "filename": "resultdb/internal/services/resultdb/query_test_results_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "nit: maybe set PageSize\u003d1 to avoid this code",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 143,
+        "endChar": 5
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b94906af_8edb88a3",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "should we call it defaultListMask because it is not used in GetTestResult?\n\nsame idea about GetReadMask below",
+      "range": {
+        "startLine": 39,
+        "startChar": 4,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35dc9b7d_beb741d5",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "should we omit this too? users might put a lot of tags",
+      "range": {
+        "startLine": 53,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 10
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "464b41a9_dbf0845c",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "r",
+      "range": {
+        "startLine": 61,
+        "startChar": 15,
+        "endLine": 61,
+        "endChar": 16
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "179ecfc1_f804993d",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "public comments should not refer to internal symbols",
+      "range": {
+        "startLine": 62,
+        "startChar": 14,
+        "endLine": 62,
+        "endChar": 25
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d82b330e_5d93fa1e",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "omit\n\nhttps://golang.org/doc/effective_go.html#Getters",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 8
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e5305df6_b432a19e",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 2
@@ -13,6 +174,24 @@
       "writtenOn": "2020-06-27T07:21:54Z",
       "side": 1,
       "message": "ReadMask is added here, but it\u0027s actually only used in Fetch(). Should I pass it as an argument to Fetch instead?",
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8873853_febd9441",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "i think we shouldn\u0027t use it in Fetch(), but in run(). let\u0027s step back.\n\nthe reason mask.Mask has Trim() is because it was designed for datastore where the client must read entire row. In Spanner, we can choose columns to read, so instead we should dynamically generate the list of columns below.\n\nif we don\u0027t do that, then we\u0027d be reading large summary HTML from Spanner, and then throwing it away",
+      "parentUuid": "e5305df6_b432a19e",
       "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -39,6 +218,52 @@
       "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed643098_5fa00165",
+        "filename": "resultdb/proto/v1/invocation.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "please update your protoc",
+      "range": {
+        "startLine": 18,
+        "startChar": 21,
+        "endLine": 18,
+        "endChar": 22
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fe31500_a3c9021e",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T07:44:14Z",
+      "side": 1,
+      "message": "very nice!\n\njfyi: modifying the proto and using this default in the same deployment is only OK because we are not production yet. If we were, the sequence would be 1) update proto 2) update resultUI to pass the mask 3) implement the mask\n\non the other hand, Weiwei will send the announcement on Monday, so it might be too late already. Anyway, please sync with him, since he will need to make this change, unless you plan to make it yourself",
+      "range": {
+        "startLine": 125,
+        "startChar": 17,
+        "endLine": 125,
+        "endChar": 72
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
