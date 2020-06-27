@@ -401,7 +401,7 @@ func TestSwarming(t *testing.T) {
 					}
 				}`)
 			inv := &pb.Invocation{}
-			_, err := convertOutputJSON(ctx, inv, "", buf, nil)
+			_, err := convertOutputJSON(ctx, inv, "", "", buf, nil)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR))
@@ -424,7 +424,7 @@ func TestSwarming(t *testing.T) {
 					}]
 				}`)
 			inv := &pb.Invocation{}
-			_, err := convertOutputJSON(ctx, inv, "", buf, nil)
+			_, err := convertOutputJSON(ctx, inv, "", "", buf, nil)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest))
@@ -436,7 +436,7 @@ func TestSwarming(t *testing.T) {
 					"all_tests": "not GTest format",
 					"version": "not JSON Test Results format"
 				}`)
-			_, err := convertOutputJSON(ctx, &pb.Invocation{}, "", buf, nil)
+			_, err := convertOutputJSON(ctx, &pb.Invocation{}, "", "", buf, nil)
 			So(err, ShouldErrLike, `(and 1 other error)`)
 		})
 	})

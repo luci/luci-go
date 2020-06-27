@@ -17,6 +17,7 @@ package formats
 import (
 	"html/template"
 	"math"
+	"strings"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -85,4 +86,9 @@ func splitSeconds(t float64) (seconds int64, nanos int32) {
 	seconds = int64(t)
 	nanos = int32(1e9 * (t - math.Floor(t)))
 	return
+}
+
+// ensureLeadingDoubleSlash ensures that the path starts with "//".
+func ensureLeadingDoubleSlash(path string) string {
+	return "//" + strings.TrimLeft(path, "/")
 }
