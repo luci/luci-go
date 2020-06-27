@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8e47a36a_16562455",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-27T01:09:53Z",
+      "side": 1,
+      "message": "Yes, unfortunately :(.\n\nBuildbucket mixins are still a thing. If we didn\u0027t have the mixins, then this could just be a bool.",
+      "parentUuid": "34cc6d29_878cc9c4",
+      "revId": "c2dce4bab6193fe21427b6a29e083309d3fe3df9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a93e8bca_2aabc443",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "c2dce4bab6193fe21427b6a29e083309d3fe3df9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "657b8dfe_6d483739",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-27T01:09:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a93e8bca_2aabc443",
+      "range": {
+        "startLine": 368,
+        "startChar": 29,
+        "endLine": 368,
+        "endChar": 37
+      },
+      "revId": "c2dce4bab6193fe21427b6a29e083309d3fe3df9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
