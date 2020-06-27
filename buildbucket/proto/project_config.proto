@@ -75,7 +75,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 29.
+// Next tag: 30.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -355,6 +355,19 @@ message Builder {
 
   // Maximum build pending time.
   uint32 expiration_secs = 20;
+
+  // If YES, will request that swarming wait until it sees at least one bot
+  // report a superset of the requested dimensions.
+  //
+  // If UNSET/NO (the default), swarming will immediately reject a build which
+  // specifies a dimension set that it's never seen before.
+  //
+  // Usually you want this to be UNSET/NO, unless you know that some external
+  // system is working to add bots to swarming which will match the requested
+  // dimensions within expiration_secs. Otherwise you'll have to wait for all of
+  // `expiration_secs` until swarming tells you "Sorry, nothing has dimension
+  // `os:MadeUpOS`".
+  buildbucket.v2.Trinary wait_for_capacity = 29;
 
   // Caches that should be present on the bot.
   repeated CacheEntry caches = 9;

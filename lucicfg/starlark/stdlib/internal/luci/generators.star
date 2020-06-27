@@ -345,6 +345,7 @@ def _buildbucket_builders(bucket, swarming_host):
             priority = node.props.priority,
             swarming_tags = node.props.swarming_tags,
             expiration_secs = optional_sec(node.props.expiration_timeout),
+            wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
             experimental = _buildbucket_toggle(node.props.experimental),
             task_template_canary_percentage = optional_UInt32Value(
@@ -424,6 +425,12 @@ def _buildbucket_dimensions(dims):
             else:
                 out.append("%d:%s:%s" % (d.expiration // time.second, key, d.value))
     return out
+
+def _buildbucket_trinary(val):
+    """Bool|None => common_pb.Trinary."""
+    if val == None:
+        return common_pb.UNSET
+    return common_pb.YES if val else common_pb.NO
 
 def _buildbucket_toggle(val):
     """Bool|None => buildbucket_pb.Toggle."""
