@@ -206,8 +206,7 @@ func TestGTestConversions(t *testing.T) {
 			}
 			tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
 			So(err, ShouldBeNil)
-			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
-			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_line", "54")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("test_location", "TestFile:54")), ShouldBeTrue)
 		})
 
 		Convey("links", func() {
