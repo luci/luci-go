@@ -117,7 +117,7 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 	ref := task.OutputsRef
 
 	if ref != nil && ref.Isolated != "" {
-		if results, err = processOutputs(ctx, ref, parsed.testIDPrefix, inv, req); err != nil {
+		if results, err = processOutputs(ctx, ref, parsed.testIDPrefix, parsed.locationPrefix, inv, req); err != nil {
 			logging.Warningf(ctx, "isolated outputs at %q in %q, %q: %s",
 				ref.Isolated, ref.Isolatedserver, ref.Namespace, err)
 		}
@@ -154,9 +154,10 @@ func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskRe
 }
 
 type parsedSwarmingTags struct {
-	baseVariant  *pb.Variant
-	testIDPrefix string
-	tags         []*pb.StringPair
+	baseVariant    *pb.Variant
+	testIDPrefix   string
+	locationPrefix string
+	tags           []*pb.StringPair
 }
 
 func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingTags {
@@ -175,6 +176,12 @@ func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingT
 			ret.baseVariant.Def["os"] = v
 		case "test_suite":
 			ret.baseVariant.Def["test_suite"] = v
+			switch v {
+			case "blink_web_tests" {
+				ret.locationPrefix = "//third_party/blink/web_tests/"
+			case "webgl_conformance_tests":
+				ret.locationPrefix = "//third_party/webgl/src/sdk/tests/"
+			}
 		case "test_id_prefix":
 			ret.testIDPrefix = v
 		case "stepname":
@@ -276,7 +283,7 @@ func convertTaskToResult(testID string, task *swarmingAPI.SwarmingRpcsTaskResult
 
 // processOutputs fetches the output.json from the given task and processes it
 // using whichever artifacts necessary.
-func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) ([]*TestResult, error) {
+func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix, locationPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) ([]*TestResult, error) {
 
 	isoClient := isolatedclient.NewClient(
 		outputsRef.Isolatedserver, isolatedclient.WithAuthClient(internal.HTTPClient(ctx)), isolatedclient.WithNamespace(outputsRef.Namespace))
@@ -298,9 +305,16 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	}
 
 	// Convert the output JSON.
-	results, err := convertOutputJSON(ctx, inv, testIDPrefix, outputJSON, availableArtifacts)
+	results, err := convertOutputJSON(ctx, inv, testIDPrefix, locationPrefix, outputJSON, availableArtifacts)
 	if err != nil {
 		return nil, attachInvalidTaskf(err, "invalid output: %s", err)
+	}
+
+	if locationPrefix != "" {
+		// This must never happen.
+		// Steping back, the code in this package could be better, but it is
+		// deprecated, so it is not worth to improve it.
+		panic("locationPrefix is not empty")
 	}
 
 	// Convert formats.TestResult to TestResult and convert the isolated.File
@@ -407,12 +421,12 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 // convertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func convertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix string, data []byte, availableArtifacts stringset.Set) ([]*formats.TestResult, error) {
+func convertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix, locationPrefix string, data []byte, availableArtifacts stringset.Set) ([]*formats.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, testIDPrefix, inv, availableArtifacts)
+		results, err := jsonFormat.ToProtos(ctx, testIDPrefix, locationPrefix, inv, availableArtifacts)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
