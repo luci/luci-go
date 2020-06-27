@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2dab0b1_d98fcb18",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-27T06:18:08Z",
+      "side": 1,
+      "message": "why not Toggle?",
+      "range": {
+        "startLine": 370,
+        "startChar": 2,
+        "endLine": 370,
+        "endChar": 24
+      },
+      "revId": "250b5f66dcf26b5e6abc828af81becbb321f8100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
