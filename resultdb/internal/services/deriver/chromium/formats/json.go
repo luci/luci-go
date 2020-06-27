@@ -356,7 +356,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, 
 				Status:   status,
 				Tags: pbutil.StringPairs(
 					"json_format_status", runStatus,
-					"test_location", testName,
+					"test_location", ensureLeadingDoubleSlash(path.Join("third_party/blink/web_tests", testName)),
 					"test_name", testName,
 				),
 			},
