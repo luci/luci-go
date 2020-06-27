@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5305df6_b432a19e",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-27T07:21:54Z",
+      "side": 1,
+      "message": "ReadMask is added here, but it\u0027s actually only used in Fetch(). Should I pass it as an argument to Fetch instead?",
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ffcfcca_4dfa42c9",
+        "filename": "resultdb/proto/v1/artifact.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-27T07:21:54Z",
+      "side": 1,
+      "message": "Not sure why this changed...",
+      "range": {
+        "startLine": 18,
+        "startChar": 21,
+        "endLine": 18,
+        "endChar": 22
+      },
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
