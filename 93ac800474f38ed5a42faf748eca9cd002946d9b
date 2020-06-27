@@ -22,6 +22,30 @@
       "revId": "93ac800474f38ed5a42faf748eca9cd002946d9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0de12394_297e71a1",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T06:13:35Z",
+      "side": 1,
+      "message": "do you mean it should be //src/third_party/blink/tools/blinkpy/web_tests/\"?\n\nthis path is relative to the repo root, as indicated by the \"//\" prefix.\n\"src\" is a part of the repo name, not a directory in the repo root, which is https://chromium.googlesource.com/chromium/src/+/master/",
+      "parentUuid": "5f735c7d_df44a676",
+      "range": {
+        "startLine": 181,
+        "startChar": 46,
+        "endLine": 181,
+        "endChar": 55
+      },
+      "revId": "93ac800474f38ed5a42faf748eca9cd002946d9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
