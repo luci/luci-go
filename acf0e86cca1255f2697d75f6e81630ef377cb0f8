@@ -589,6 +589,30 @@
     },
     {
       "key": {
+        "uuid": "bd10d228_9e415f18",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T02:51:30Z",
+      "side": 1,
+      "message": "see my comment in that func. it seems our validation func is still incomplete, e.g. it may return nil if createTime range is invalid. If we checked it there, then we can rid of \"err\" in this line completely",
+      "parentUuid": "569a3a3d_3e3c6476",
+      "range": {
+        "startLine": 124,
+        "startChar": 14,
+        "endLine": 124,
+        "endChar": 39
+      },
+      "revId": "acf0e86cca1255f2697d75f6e81630ef377cb0f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c603091a_3d42be1d",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
