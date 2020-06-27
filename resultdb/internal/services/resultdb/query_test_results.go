@@ -103,12 +103,18 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, err
 	}
 
+	readMask, err := testresults.GetFieldMask(in.GetReadMask())
+	if err != nil {
+		return nil, err
+	}
+
 	// Query test results.
 	q := testresults.Query{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		InvocationIDs: invs,
+		ReadMask:      readMask,
 	}
 	trs, token, err := q.Fetch(ctx, txn)
 	if err != nil {
