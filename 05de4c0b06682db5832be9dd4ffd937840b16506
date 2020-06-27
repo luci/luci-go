@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63c514d3_8505edd7",
+        "filename": "ttq/ttqdatastore/iface.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "a, unless you\u0027re reading it as \"an Options.Queue\" with silent \"ttq.\" package prefix. Same in ttqspanner.",
+      "range": {
+        "startLine": 68,
+        "startChar": 13,
+        "endLine": 68,
+        "endChar": 14
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b2ff88b_e3fa4229",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "values",
+      "range": {
+        "startLine": 47,
+        "startChar": 52,
+        "endLine": 47,
+        "endChar": 57
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6a9a71f_ce25079e",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "acquaint, rationale\n\nAlthough this comment basically amounts to \"read what these values are for before you change them\" which seems condescending.",
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "047a0eb5_c82e7cff",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "Can\u0027t you just GET/POST to the relative path /internal/ttq/whatever? Do you need the full URL?",
+      "range": {
+        "startLine": 91,
+        "startChar": 18,
+        "endLine": 91,
+        "endChar": 40
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6a74c76_a1d42d33",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "Is there some public doc for this?",
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e284292c_23cec45f",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "each shard",
+      "range": {
+        "startLine": 120,
+        "startChar": 49,
+        "endLine": 120,
+        "endChar": 55
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1522c79_2273a4bb",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "validates\n(or \"validity\" + \"apply\" (the latter is needed for agreement); but I believe that would be the wrong voice for godoc)",
+      "range": {
+        "startLine": 129,
+        "startChar": 12,
+        "endLine": 129,
+        "endChar": 22
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c344563e_22186b6c",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "This is fine but in my opinion it wouldn\u0027t be unreasonable if you automatically converted any value \u003c time.Minute to time.Minute. Would remove two lines from this switch.",
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b7ed013_5068f15d",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-27T00:35:31Z",
+      "side": 1,
+      "message": "understanding",
+      "range": {
+        "startLine": 170,
+        "startChar": 5,
+        "endLine": 170,
+        "endChar": 18
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
