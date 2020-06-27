@@ -332,8 +332,23 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 
 	// Store the test code location.
 	if loc, ok := r.TestLocations[name]; ok {
-		tr.Tags = append(tr.Tags, pbutil.StringPair("test_location", fmt.Sprintf("%s:%d", loc.File, loc.Line)))
+		// For some reason, many file paths start with "../../", followed by
+		// the correct path. Strip the prefix.
+		file := stripLeadingDoubleDots(loc.File)
+		file = ensureLeadingDoubleSlash(file)
+		tr.Tags = append(tr.Tags, pbutil.StringPair("test_location", fmt.Sprintf("%s:%d", file, loc.Line)))
 	}
 
 	return tr, nil
+}
+
+// stripLeadingDoubleDots strips leading "../" prefixes.
+func stripLeadingDoubleDots(path string) string {
+	for {
+		stripped := strings.TrimPrefix(path, "../")
+		if stripped == path {
+			return path
+		}
+		path = stripped
+	}
 }
