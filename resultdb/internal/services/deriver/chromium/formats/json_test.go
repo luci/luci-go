@@ -240,7 +240,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 3e8},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c1/c2/t1.html"),
+						"test_location", "c1/c2/t1.html",
+						"test_name", "c1/c2/t1.html",
+					),
 				},
 				Artifacts: map[string]string{"isolate_object_list": "harness/log.txt"},
 			},
@@ -252,7 +254,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 2e8},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c1/c2/t1.html"),
+						"test_location", "c1/c2/t1.html",
+						"test_name", "c1/c2/t1.html",
+					),
 				},
 				Artifacts: map[string]string{"isolate_object_list": "harness/retry_1/log.txt"},
 			},
@@ -264,7 +268,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 1e8},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c1/c2/t1.html"),
+						"test_location", "c1/c2/t1.html",
+						"test_name", "c1/c2/t1.html",
+					),
 				},
 				Artifacts: map[string]string{"isolate_object_list": "harness/retry_2/log.txt"},
 			},
@@ -278,7 +284,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 5e7},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c1/c2/t2.html"),
+						"test_location", "c1/c2/t2.html",
+						"test_name", "c1/c2/t2.html",
+					),
 				},
 			},
 			{
@@ -289,7 +297,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 5e7},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "FAIL",
-						"test_name", "c1/c2/t2.html"),
+						"test_location", "c1/c2/t2.html",
+						"test_name", "c1/c2/t2.html",
+					),
 				},
 			},
 			{
@@ -300,7 +310,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 5e7},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c1/c2/t2.html"),
+						"test_location", "c1/c2/t2.html",
+						"test_name", "c1/c2/t2.html",
+					),
 				},
 			},
 			{
@@ -311,7 +323,9 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 5e7},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "CRASH",
-						"test_name", "c1/c2/t2.html"),
+						"test_location", "c1/c2/t2.html",
+						"test_name", "c1/c2/t2.html",
+					),
 				},
 			},
 
@@ -323,7 +337,9 @@ func TestJSONConversions(t *testing.T) {
 					Expected: false,
 					Tags: pbutil.StringPairs(
 						"json_format_status", "FAIL",
-						"test_name", "c2/t3.html"),
+						"test_location", "c2/t3.html",
+						"test_name", "c2/t3.html",
+					),
 					SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
 				},
 				Artifacts: map[string]string{
@@ -341,6 +357,7 @@ func TestJSONConversions(t *testing.T) {
 					Duration: &duration.Duration{Nanos: 3e8},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
+						"test_location", "c2/t4.html",
 						"test_name", "c2/t4.html"),
 				},
 			},
@@ -351,7 +368,9 @@ func TestJSONConversions(t *testing.T) {
 					Expected: true,
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c2/t4.html"),
+						"test_location", "c2/t4.html",
+						"test_name", "c2/t4.html",
+					),
 				},
 			},
 			{
@@ -361,7 +380,9 @@ func TestJSONConversions(t *testing.T) {
 					Expected: true,
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c2/t4.html"),
+						"test_location", "c2/t4.html",
+						"test_name", "c2/t4.html",
+					),
 				},
 			},
 
@@ -373,7 +394,9 @@ func TestJSONConversions(t *testing.T) {
 					Expected: true,
 					Tags: pbutil.StringPairs(
 						"json_format_status", "SKIP",
-						"test_name", "c2/t5.html"),
+						"test_location", "c2/t5.html",
+						"test_name", "c2/t5.html",
+					),
 				},
 			},
 
@@ -385,7 +408,9 @@ func TestJSONConversions(t *testing.T) {
 					Expected: true,
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_name", "c2/t6.html"),
+						"test_location", "c2/t6.html",
+						"test_name", "c2/t6.html",
+					),
 				},
 			},
 		})

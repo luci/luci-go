@@ -356,7 +356,9 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, 
 				Status:   status,
 				Tags: pbutil.StringPairs(
 					"json_format_status", runStatus,
-					"test_name", testName),
+					"test_location", testName,
+					"test_name", testName,
+				),
 			},
 		}
 
