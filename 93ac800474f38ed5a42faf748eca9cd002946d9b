@@ -94,6 +94,30 @@
       "revId": "93ac800474f38ed5a42faf748eca9cd002946d9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a03a5c7_064a746c",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-06-27T06:23:41Z",
+      "side": 1,
+      "message": "oops. my bad. please discard my comment. :D",
+      "parentUuid": "aac51f97_301d9631",
+      "range": {
+        "startLine": 181,
+        "startChar": 46,
+        "endLine": 181,
+        "endChar": 55
+      },
+      "revId": "93ac800474f38ed5a42faf748eca9cd002946d9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
