@@ -123,7 +123,7 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 // If an error is returned, inv is left unchanged.
 //
 // Does not populate TestResult.Name or TestResult.ResultId.
-func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation, availableArtifacts stringset.Set) ([]*TestResult, error) {
+func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix, locationPrefix string, inv *pb.Invocation, availableArtifacts stringset.Set) ([]*TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
@@ -140,7 +140,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv
 	for _, name := range testNames {
 		testID := testIDPrefix + name
 		// Populate protos.
-		if err := r.Tests[name].toProtos(ctx, &ret, testID, name, availableArtifacts, buf); err != nil {
+		if err := r.Tests[name].toProtos(ctx, &ret, testID, name, locationPrefix, availableArtifacts, buf); err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
 	}
@@ -302,7 +302,7 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 // appends them to dest.
 //
 // Logs unresolved artifacts.
-func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, testName string, availableArtifacts stringset.Set, buf *strings.Builder) error {
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, testName, locationPrefix string, availableArtifacts stringset.Set, buf *strings.Builder) error {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 
@@ -356,7 +356,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, 
 				Status:   status,
 				Tags: pbutil.StringPairs(
 					"json_format_status", runStatus,
-					"test_location", testName,
+					"test_location", ensureLeadingDoubleSlash(locationPrefix+testName),
 					"test_name", testName,
 				),
 			},

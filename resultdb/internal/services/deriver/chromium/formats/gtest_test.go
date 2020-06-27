@@ -196,17 +196,32 @@ func TestGTestConversions(t *testing.T) {
 		})
 
 		Convey("testLocations", func() {
-			results := &GTestResults{
-				TestLocations: map[string]*Location{
-					"TestName": {
-						File: "TestFile",
-						Line: 54,
+			Convey(`Works`, func() {
+				results := &GTestResults{
+					TestLocations: map[string]*Location{
+						"TestName": {
+							File: "//TestFile",
+							Line: 54,
+						},
 					},
-				},
-			}
-			tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
-			So(err, ShouldBeNil)
-			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("test_location", "TestFile:54")), ShouldBeTrue)
+				}
+				tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
+				So(err, ShouldBeNil)
+				So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("test_location", "//TestFile:54")), ShouldBeTrue)
+			})
+			Convey(`Clean path`, func() {
+				results := &GTestResults{
+					TestLocations: map[string]*Location{
+						"TestName": {
+							File: "../../TestFile",
+							Line: 54,
+						},
+					},
+				}
+				tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
+				So(err, ShouldBeNil)
+				So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("test_location", "//TestFile:54")), ShouldBeTrue)
+			})
 		})
 
 		Convey("links", func() {
