@@ -21,6 +21,8 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 
@@ -96,29 +98,52 @@ func TestQueryTestResults(t *testing.T) {
 		)...)
 
 		srv := newTestResultDBService()
-		res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
-			Invocations: []string{"invocations/a"},
+
+		Convey(`Without readMask`, func() {
+			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/a"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TestResults, ShouldHaveLength, 5)
+
+			sort.Slice(res.TestResults, func(i, j int) bool {
+				return res.TestResults[i].Name < res.TestResults[j].Name
+			})
+
+			So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
+			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
+
+			So(res.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
+			So(res.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+
+			So(res.TestResults[2].Name, ShouldEqual, "invocations/b/tests/B/results/0")
+			So(res.TestResults[2].Status, ShouldEqual, pb.TestStatus_CRASH)
+
+			So(res.TestResults[3].Name, ShouldEqual, "invocations/b/tests/B/results/1")
+			So(res.TestResults[3].Status, ShouldEqual, pb.TestStatus_PASS)
+
+			So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
+			So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
 		})
-		So(err, ShouldBeNil)
-		So(res.TestResults, ShouldHaveLength, 5)
 
-		sort.Slice(res.TestResults, func(i, j int) bool {
-			return res.TestResults[i].Name < res.TestResults[j].Name
+		Convey(`With readMask`, func() {
+			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/a"},
+				ReadMask: &field_mask.FieldMask{
+					Paths: []string{
+						"name",
+						"status",
+					}},
+			})
+			So(err, ShouldBeNil)
+			So(res.TestResults, ShouldHaveLength, 5)
+
+			sort.Slice(res.TestResults, func(i, j int) bool {
+				return res.TestResults[i].Name < res.TestResults[j].Name
+			})
+
+			So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
+			So(res.TestResults[0].TestId, ShouldEqual, "")
 		})
-
-		So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
-		So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
-
-		So(res.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
-		So(res.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
-
-		So(res.TestResults[2].Name, ShouldEqual, "invocations/b/tests/B/results/0")
-		So(res.TestResults[2].Status, ShouldEqual, pb.TestStatus_CRASH)
-
-		So(res.TestResults[3].Name, ShouldEqual, "invocations/b/tests/B/results/1")
-		So(res.TestResults[3].Status, ShouldEqual, pb.TestStatus_PASS)
-
-		So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
-		So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
 	})
 }

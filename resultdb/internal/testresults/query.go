@@ -20,8 +20,10 @@ import (
 	"strings"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -31,6 +33,40 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// defaultMask is the default field mask to use for QueryTestResults and
+// ListTestResults requests.
+// Initialized by init.
+var defaultMask mask.Mask
+
+func init() {
+	var err error
+	defaultMask, err = mask.FromFieldMask(&field_mask.FieldMask{
+		Paths: []string{
+			"name",
+			"test_id",
+			"result_id",
+			"variant",
+			"expected",
+			"status",
+			"start_time",
+			"duration",
+			"tags",
+		},
+	}, &pb.TestResult{}, false, false)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// GetReadMask Returns mask.Mask converted from field_mask.FieldMask.
+// It returns defaultMask if readMask is empty.
+func GetReadMask(readMask *field_mask.FieldMask) (mask.Mask, error) {
+	if len(readMask.GetPaths()) == 0 {
+		return defaultMask, nil
+	}
+	return mask.FromFieldMask(readMask, &pb.TestResult{}, false, false)
+}
+
 // Query specifies test results to fetch.
 type Query struct {
 	InvocationIDs     invocations.IDSet
@@ -38,6 +74,7 @@ type Query struct {
 	PageSize          int // must be positive
 	PageToken         string
 	SelectVariantHash bool
+	ReadMask          mask.Mask
 }
 
 func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(QueryItem) error) (err error) {
@@ -178,6 +215,10 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tr
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
 	err = q.run(ctx, txn, func(item QueryItem) error {
+		if err := q.ReadMask.Trim(item.TestResult); err != nil {
+			return errors.Annotate(
+				err, "error trimming fields for %s", item.TestResult.Name).Err()
+		}
 		trs = append(trs, item.TestResult)
 		return nil
 	})
