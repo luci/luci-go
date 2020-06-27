@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "2b8bb272_33d842ae",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f08db387_e104915c",
+      "range": {
+        "startLine": 36,
+        "startChar": 21,
+        "endLine": 36,
+        "endChar": 29
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e6195680_b0d38010",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 8
@@ -92,6 +116,30 @@
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2d54bde_081e7035",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6195680_b0d38010",
+      "range": {
+        "startLine": 38,
+        "startChar": 21,
+        "endLine": 38,
+        "endChar": 27
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "7d2e6641_b382ac86",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1d183c5_69f0bea1",
+      "range": {
+        "startLine": 39,
+        "startChar": 21,
+        "endLine": 39,
+        "endChar": 22
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad97680f_41f000ff",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 8
@@ -138,6 +210,30 @@
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b17d715_a2b0d144",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad97680f_41f000ff",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 10
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -164,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "d3688cff_ef334e49",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1207c31f_d66ef728",
+      "range": {
+        "startLine": 62,
+        "startChar": 25,
+        "endLine": 62,
+        "endChar": 49
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1283b405_c22c8039",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 8
@@ -184,6 +304,30 @@
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0a2d466_7c642c71",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1283b405_c22c8039",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 44
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -210,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "e2510d92_c3052393",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done. No need to parse the project, bucket and builder separately.",
+      "parentUuid": "0ec032c2_d5caccc4",
+      "range": {
+        "startLine": 73,
+        "startChar": 14,
+        "endLine": 73,
+        "endChar": 23
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8eecbb2f_b5f85c7c",
         "filename": "buildbucket/appengine/internal/model/query.go",
         "patchSetId": 8
@@ -230,6 +398,30 @@
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d169da6f_033ba5c0",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8eecbb2f_b5f85c7c",
+      "range": {
+        "startLine": 78,
+        "startChar": 26,
+        "endLine": 78,
+        "endChar": 58
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -256,6 +448,30 @@
     },
     {
       "key": {
+        "uuid": "ca8a8b6e_b7db0744",
+        "filename": "buildbucket/appengine/internal/model/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "052f997f_6793aa52",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 22
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78054dc8_8fa08920",
         "filename": "buildbucket/appengine/internal/utils/utils.go",
         "patchSetId": 8
@@ -276,6 +492,30 @@
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c808b1d_99ad4ef8",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78054dc8_8fa08920",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 1
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -302,6 +542,30 @@
     },
     {
       "key": {
+        "uuid": "edfecab8_84571a43",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "156975f3_7c6152e0",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c30fa6e_beac93ef",
         "filename": "buildbucket/protoutil/tag.go",
         "patchSetId": 8
@@ -325,6 +589,30 @@
     },
     {
       "key": {
+        "uuid": "f3db3b4b_dc5717e3",
+        "filename": "buildbucket/protoutil/tag.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "removed. adopted the advice below.",
+      "parentUuid": "7c30fa6e_beac93ef",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 10
+      },
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a2bc287f_8c69b36d",
         "filename": "buildbucket/protoutil/tag.go",
         "patchSetId": 8
@@ -339,6 +627,24 @@
       "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25873902_deaf933f",
+        "filename": "buildbucket/protoutil/tag.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-06-27T01:42:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2bc287f_8c69b36d",
+      "revId": "c1ada0c7a3032e526eb603f12d12ec5a2b4f27ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
