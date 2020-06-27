@@ -46,6 +46,30 @@
       "revId": "3e1ddc8240d1ba346201050d5d1e79095ab3f6b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6f3954fe_fe86a0a1",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-27T07:26:57Z",
+      "side": 1,
+      "message": "Ah it makes a lot sense now. Though I don\u0027t really know the necessity. I mean yes it should never happen, but if it happens, what harm can it bring?",
+      "parentUuid": "bc665b76_cfdc8655",
+      "range": {
+        "startLine": 316,
+        "startChar": 1,
+        "endLine": 316,
+        "endChar": 26
+      },
+      "revId": "3e1ddc8240d1ba346201050d5d1e79095ab3f6b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
