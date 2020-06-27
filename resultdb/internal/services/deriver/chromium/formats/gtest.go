@@ -332,10 +332,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 
 	// Store the test code location.
 	if loc, ok := r.TestLocations[name]; ok {
-		tr.Tags = append(tr.Tags,
-			pbutil.StringPair("gtest_file", loc.File),
-			pbutil.StringPair("gtest_line", strconv.Itoa(loc.Line)),
-		)
+		tr.Tags = append(tr.Tags, pbutil.StringPair("test_location", fmt.Sprintf("%s:%d", loc.File, loc.Line)))
 	}
 
 	return tr, nil
