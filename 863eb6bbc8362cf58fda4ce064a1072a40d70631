@@ -22,6 +22,30 @@
       "revId": "863eb6bbc8362cf58fda4ce064a1072a40d70631",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d97537ca_4e62e522",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-27T05:26:49Z",
+      "side": 1,
+      "message": "Done, but in a somewhat awful way. I hope we delete this code soon.",
+      "parentUuid": "2d1c8e95_21f7e229",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 14
+      },
+      "revId": "863eb6bbc8362cf58fda4ce064a1072a40d70631",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
