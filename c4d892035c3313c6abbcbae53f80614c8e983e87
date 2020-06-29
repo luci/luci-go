@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3818b466_fe99c065",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-29T20:20:49Z",
+      "side": 1,
+      "message": "maybe s/allowed/supported.\n\nTechnically they could fork run_annotations and do whatever they want, we just won\u0027t support it as a first-class thing.",
+      "range": {
+        "startLine": 143,
+        "startChar": 17,
+        "endLine": 143,
+        "endChar": 24
+      },
+      "revId": "c4d892035c3313c6abbcbae53f80614c8e983e87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
