@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "e4f4e704_e4e795ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-29T19:41:21Z",
+      "side": 1,
+      "message": "I think you mean logs names?\n\nmaybe just intercept logs named \"$build.proto\" and replace them with \"disabled-$build.proto\"?",
+      "parentUuid": "4d372e2c_190d2e0a",
+      "range": {
+        "startLine": 7,
+        "startChar": 73,
+        "endLine": 7,
+        "endChar": 78
+      },
+      "revId": "769ef2eb8f4bd21724a2a26720e6ae61f8f9c3fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "91a21046_5a0ac408",
         "filename": "/COMMIT_MSG",
         "patchSetId": 3
