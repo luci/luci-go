@@ -181,6 +181,17 @@ func Code(err error) codes.Code {
 	if code, ok := Tag.In(err); ok {
 		return code
 	}
+	// If it's a multi-error, look for an error code that isn't Unknown.
+	if multi, isMulti := err.(errors.MultiError); isMulti {
+		var code codes.Code
+		for _, err := range multi {
+			code = grpc.Code(errors.Unwrap(err))
+			if code != codes.Unknown {
+				break
+			}
+		}
+		return code
+	}
 	// TODO(nodir): use status.FromError
 	return grpc.Code(errors.Unwrap(err))
 }
