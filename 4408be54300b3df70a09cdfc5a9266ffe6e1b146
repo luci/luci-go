@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e69b9e1_6f981e52",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-29T12:15:34Z",
+      "side": 1,
+      "message": "why this is necessary?",
+      "revId": "4408be54300b3df70a09cdfc5a9266ffe6e1b146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
