@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a40f40c_763fd99e",
+        "filename": "resultdb/proto/v1/recorder.pb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-29T22:23:23Z",
+      "side": 1,
+      "message": "this looks like your protoc is out of date?",
+      "range": {
+        "startLine": 18,
+        "startChar": 18,
+        "endLine": 18,
+        "endChar": 24
+      },
+      "revId": "fed6f82ed4984922a61a56ffc9ded2db446d607c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
