@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -333,7 +334,7 @@ var expectedStepsFn = func(urlFunc, viewerURLFunc calcURLFunc) []*pb.Step {
 
 }
 
-func TestStep(t *testing.T) {
+func TestConvertBuildStep(t *testing.T) {
 	t.Parallel()
 
 	Convey("convert", t, func() {
@@ -362,6 +363,135 @@ func TestStep(t *testing.T) {
 			)
 			So(actual, ShouldResembleProto, expected)
 		})
+	})
+}
+
+func TestConvertRootStep(t *testing.T) {
+	t.Parallel()
+
+	Convey("convert", t, func() {
+		rootStep := &annotpb.Step{
+			Started: &timestamppb.Timestamp{Seconds: 1400000000},
+			Ended:   &timestamppb.Timestamp{Seconds: 1500000000},
+			Status:  annotpb.Status_SUCCESS,
+			Substep: asSubSteps(
+				&annotpb.Step{
+					Name:    "cool step",
+					Status:  annotpb.Status_SUCCESS,
+					Started: &timestamppb.Timestamp{Seconds: 1400000000},
+					Ended:   &timestamppb.Timestamp{Seconds: 1500000000},
+					Property: []*annotpb.Step_Property{
+						{
+							Name:  "string_prop",
+							Value: "\"baz\"",
+						},
+					},
+				},
+			),
+			StdoutStream: &annotpb.LogdogStream{Name: "build/stdout"},
+			OtherLinks: []*annotpb.AnnotationLink{
+				&annotpb.AnnotationLink{
+					Label: "awesome_log",
+					Value: &annotpb.AnnotationLink_LogdogStream{
+						LogdogStream: &annotpb.LogdogStream{Name: "build/awesome"},
+					},
+				},
+			},
+			Text: []string{
+				"text one",
+				"text two",
+			},
+			Property: []*annotpb.Step_Property{
+				{
+					Name:  "map_prop",
+					Value: "{\"foo\" : \"bar\"}",
+				},
+			},
+		}
+
+		expectedBuild := &pb.Build{
+			StartTime: &timestamppb.Timestamp{Seconds: 1400000000},
+			EndTime:   &timestamppb.Timestamp{Seconds: 1500000000},
+			Status:    pb.Status_SUCCESS,
+			Steps: []*pb.Step{
+				&pb.Step{
+					Name:      "cool step",
+					Status:    pb.Status_SUCCESS,
+					StartTime: &timestamppb.Timestamp{Seconds: 1400000000},
+					EndTime:   &timestamppb.Timestamp{Seconds: 1500000000},
+				},
+			},
+			SummaryMarkdown: "\n\n<div>text one text two</div>\n\n",
+			Output: &pb.Build_Output{
+				Logs: []*pb.Log{
+					{
+						Name: "stdout",
+						Url:  "build/stdout",
+					},
+					{
+						Name: "awesome_log",
+						Url:  "build/awesome",
+					},
+				},
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"map_prop": &structpb.Value{
+							Kind: &structpb.Value_StructValue{
+								StructValue: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"foo": &structpb.Value{
+											Kind: &structpb.Value_StringValue{
+												StringValue: "bar",
+											},
+										},
+									},
+								},
+							},
+						},
+						"string_prop": &structpb.Value{
+							Kind: &structpb.Value_StringValue{
+								StringValue: "baz",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		var test = func() {
+			actual, err := ConvertRootStep(context.Background(), rootStep)
+			So(err, ShouldBeNil)
+			So(actual, ShouldResembleProto, expectedBuild)
+		}
+
+		test()
+
+		Convey("infra failure build", func() {
+			rootStep.Status = annotpb.Status_FAILURE
+			rootStep.FailureDetails = &annotpb.FailureDetails{
+				Type: annotpb.FailureDetails_INFRA,
+				Text: "bad infra failure",
+			}
+
+			expectedBuild.Status = pb.Status_INFRA_FAILURE
+			expectedBuild.SummaryMarkdown = "bad infra failure\n\n" + expectedBuild.SummaryMarkdown
+			test()
+		})
+		Convey("worst step status", func() {
+			rootStep.Substep[0].GetStep().Status = annotpb.Status_FAILURE
+
+			expectedBuild.Steps[0].Status = pb.Status_FAILURE
+			expectedBuild.Status = pb.Status_FAILURE
+			test()
+		})
+		Convey("use largest step end time", func() {
+			rootStep.Substep[0].GetStep().Ended = &timestamppb.Timestamp{Seconds: 1600000000}
+
+			expectedBuild.Steps[0].EndTime = &timestamppb.Timestamp{Seconds: 1600000000}
+			expectedBuild.EndTime = &timestamppb.Timestamp{Seconds: 1600000000}
+			test()
+		})
+
 	})
 }
 

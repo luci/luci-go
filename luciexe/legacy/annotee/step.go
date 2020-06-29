@@ -27,13 +27,17 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/milo"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	annotpb "go.chromium.org/luci/common/proto/milo"
 )
 
-// This code converts annotation steps to Buildbucket v2 steps.
-// See //buildbucket/proto/step.proto, //common/proto/milo/annotations.proto
+// This code converts annotation step(s) to Buildbucket v2 steps or build.
+// See:
+//   * go.chromium.org/luci/buildbucket/proto#Build
+//   * go.chromium.org/luci/buildbucket/proto#Step
+//   * go.chromium.org/luci/common/proto/milo#Step
 
 // StepSep separates parent and child steps.
 const StepSep = "|"
@@ -72,6 +76,49 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, cons
 		return nil, err
 	}
 	return bbSteps, nil
+}
+
+// ConvertRootStep converts an annotation root step to a Build proto msg.
+//
+// This function will populate following fields in the return build.
+//   * EndTime
+//   * StartTime
+//   * Steps
+//   * Status
+//   * SummaryMarkdown
+//   * Output.Logs
+//   * Output.Properties
+func ConvertRootStep(c context.Context, rootStep *annotpb.Step) (*pb.Build, error) {
+	sc := &stepConverter{
+		steps: map[string]*pb.Step{},
+	}
+	ret := &pb.Build{
+		StartTime: rootStep.Started,
+		EndTime:   rootStep.Ended,
+		Steps:     []*pb.Step{},
+		Output:    &pb.Build_Output{},
+	}
+	var err error
+
+	if _, err = sc.convertSubsteps(c, &ret.Steps, rootStep.Substep, ""); err != nil {
+		return nil, err
+	}
+
+	if ret.Output.Properties, err = milo.ExtractProperties(rootStep); err != nil {
+		return nil, err
+	}
+
+	if ret.StartTime, ret.EndTime, err = fixupStartAndEndTime(ret.StartTime, ret.EndTime, ret.Steps); err != nil {
+		return nil, err
+	}
+
+	if ret.Status, err = determineStatus(ret.StartTime, ret.EndTime, rootStep, ret.Steps); err != nil {
+		return nil, err
+	}
+
+	ret.Output.Logs, ret.SummaryMarkdown = sc.calcLogsAndSummary(c, rootStep)
+
+	return ret, nil
 }
 
 type stepConverter struct {
