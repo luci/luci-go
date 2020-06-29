@@ -149,6 +149,9 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		}
 	}
 
+	if len(res.Unformatted) > 0 { // only happens in dry run
+		errs = append(errs, fmt.Errorf("Some files need formatting"))
+	}
 	if len(errs) != 0 {
 		return &res, errs
 	}
