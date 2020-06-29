@@ -1282,6 +1282,7 @@ luci.builder(
     swarming_host = None,
     swarming_tags = None,
     expiration_timeout = None,
+    wait_for_capacity = None,
     schedule = None,
     triggering_policy = None,
     build_numbers = None,
@@ -1357,6 +1358,7 @@ Buildbucket.
 * **swarming_host**: appspot hostname of a Swarming service to use for this builder instead of the default specified in [luci.project(...)](#luci.project). Use with great caution. Supports the module-scoped default.
 * **swarming_tags**: a list of tags (`k:v` strings) to assign to the Swarming task that runs the builder. Each tag will also end up in `swarming_tag` Buildbucket tag, for example `swarming_tag:builder:release`. Supports the module-scoped defaults. They are joined with the explicitly passed tags.
 * **expiration_timeout**: how long to wait for a build to be picked up by a matching bot (based on `dimensions`) before canceling the build and marking it as expired. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **wait_for_capacity**: tell swarming to wait for `expiration_timeout` even if it has never seen a bot whose dimensions are a superset of the requested dimensions. This is useful if this builder has bots whose dimensions are mutated dynamically. Supports the module-scoped default.
 * **schedule**: string with a cron schedule that describes when to run this builder. See [Defining cron schedules](#schedules_doc) for the expected format of this field. If None, the builder will not be running periodically.
 * **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details. Supports the module-scoped default.
 * **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service. Supports the module-scoped default.

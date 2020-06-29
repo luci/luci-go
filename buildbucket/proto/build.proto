@@ -38,7 +38,7 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 //
-// Next id: 28.
+// Next id: 29.
 message Build {
   // Defines what to build/test.
   //
@@ -247,6 +247,10 @@ message Build {
   // If the timeout is reached, the build is marked as INFRA_FAILURE status
   // and status_details.timeout is set.
   google.protobuf.Duration execution_timeout = 27;
+
+  // If set, swarming was requested to wait until it sees at least one bot
+  // report a superset of the build's requested dimensions.
+  bool wait_for_capacity = 28;
 }
 
 // Build infrastructure that was used for a particular build.

@@ -44,6 +44,7 @@ def _builder(
         swarming_host = None,
         swarming_tags = None,
         expiration_timeout = None,
+        wait_for_capacity = None,
 
         # LUCI Scheduler parameters.
         schedule = None,
@@ -154,6 +155,10 @@ def _builder(
         matching bot (based on `dimensions`) before canceling the build and
         marking it as expired. If None, defer the decision to Buildbucket
         service. Supports the module-scoped default.
+      wait_for_capacity: tell swarming to wait for `expiration_timeout` even if
+        it has never seen a bot whose dimensions are a superset of the requested
+        dimensions. This is useful if this builder has bots whose dimensions
+        are mutated dynamically. Supports the module-scoped default.
 
       schedule: string with a cron schedule that describes when to run this
         builder. See [Defining cron schedules](#schedules_doc) for the expected
@@ -220,6 +225,7 @@ def _builder(
         "swarming_host": validate.string("swarming_host", swarming_host, required = False),
         "swarming_tags": swarming.validate_tags("swarming_tags", swarming_tags),
         "expiration_timeout": validate.duration("expiration_timeout", expiration_timeout, required = False),
+        "wait_for_capacity": validate.bool("wait_for_capacity", wait_for_capacity, required = False),
         "schedule": validate.string("schedule", schedule, required = False),
         "triggering_policy": schedulerimpl.validate_policy("triggering_policy", triggering_policy, required = False),
         "build_numbers": validate.bool("build_numbers", build_numbers, required = False),
@@ -323,6 +329,7 @@ builder = lucicfg.rule(
         "swarming_host": validate.string,
         "swarming_tags": swarming.validate_tags,
         "expiration_timeout": validate.duration,
+        "wait_for_capacity": validate.bool,
         "triggering_policy": schedulerimpl.validate_policy,
         "build_numbers": validate.bool,
         "experimental": validate.bool,

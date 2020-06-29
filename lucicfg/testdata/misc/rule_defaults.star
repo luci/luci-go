@@ -68,6 +68,7 @@ luci.builder(
     execution_timeout = 30 * time.minute,
     priority = 1,
     expiration_timeout = 20 * time.minute,
+    wait_for_capacity = True,
     triggering_policy = scheduler.greedy_batching(max_batch_size = 1),
     build_numbers = False,
     experimental = False,
@@ -159,6 +160,7 @@ luci.builder(
 #       priority: 1
 #       execution_timeout_secs: 1800
 #       expiration_secs: 1200
+#       wait_for_capacity: YES
 #       caches {
 #         name: "base"
 #         path: "base"
