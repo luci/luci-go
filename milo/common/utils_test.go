@@ -29,17 +29,30 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
-
-func testTagGRPC(t *testing.T) {
+func TestTagGRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("GRPC Tagging Works", t, func() {
+	Convey("GRPC tagging works", t, func() {
 		c := memory.Use(context.Background())
 		cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:user@example.com"})
 		cAnon := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
-		So(grpcutil.Code(TagGRPC(cAnon, errGRPCNotFound)), ShouldEqual, codes.Unauthenticated)
-		So(grpcutil.Code(TagGRPC(cUser, errGRPCNotFound)), ShouldEqual, codes.NotFound)
+		Convey("For not found errors", func() {
+			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
+			So(grpcutil.Code(TagGRPC(cAnon, errGRPCNotFound)), ShouldEqual, codes.Unauthenticated)
+			So(grpcutil.Code(TagGRPC(cUser, errGRPCNotFound)), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("For permission denied errors", func() {
+			errGRPCPermissionDenied := status.Errorf(codes.PermissionDenied, "permission denied")
+			So(grpcutil.Code(TagGRPC(cAnon, errGRPCPermissionDenied)), ShouldEqual, codes.Unauthenticated)
+			So(grpcutil.Code(TagGRPC(cUser, errGRPCPermissionDenied)), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("For invalid argument errors", func() {
+			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
+			So(grpcutil.Code(TagGRPC(cAnon, errGRPCInvalidArgument)), ShouldEqual, codes.InvalidArgument)
+			So(grpcutil.Code(TagGRPC(cUser, errGRPCInvalidArgument)), ShouldEqual, codes.InvalidArgument)
+		})
 	})
 }
