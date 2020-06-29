@@ -175,7 +175,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 		// Do nothing, all is good.
 	case codes.NotFound:
 		return nil, nil, errors.Reason("incorrect repo URL %q in the config or no access", def.RepoUrl).
-			Tag(grpcutil.InternalTag).Err()
+			Tag(grpcutil.NotFoundTag).Err()
 	default:
 		return nil, nil, err
 	}
