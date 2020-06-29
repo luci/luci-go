@@ -16,6 +16,24 @@
       "revId": "b337f306e65b5f720cc07c3bf39dd2a63e919787",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f5f0866_5d1eba1d",
+        "filename": "milo/common/utils_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-06-29T05:20:44Z",
+      "side": 1,
+      "message": "Yes. Otherwise we leak the existence of things that user isn\u0027t allowed to see.",
+      "parentUuid": "54ca338c_9180e9d0",
+      "revId": "b337f306e65b5f720cc07c3bf39dd2a63e919787",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
