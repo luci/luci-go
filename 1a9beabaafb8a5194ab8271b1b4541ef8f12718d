@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "80dfe4fb_09e25352",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-06-29T05:22:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d58d0f1_670eb4b9",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 6
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e03382c_43a7b5b6",
         "filename": "luci_notify/frontend/main.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "759825a8_f66434b7",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-06-29T05:22:52Z",
+      "side": 1,
+      "message": "I\u0027ll come back to this after I\u0027ve tested the change in dev.",
+      "parentUuid": "8e03382c_43a7b5b6",
+      "range": {
+        "startLine": 83,
+        "startChar": 56,
+        "endLine": 83,
+        "endChar": 61
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "cf40f35f_db3a65a3",
+        "filename": "luci_notify/notify/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-06-29T05:22:52Z",
+      "side": 1,
+      "message": "Sure, done. Still getting a feel for what the Go conventions are.",
+      "parentUuid": "22c252b8_2f176cf4",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 21
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4ccf20c_c4e9fbd7",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c8f7a1f_a69bacfc",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1115868
+      },
+      "writtenOn": "2020-06-29T05:22:52Z",
+      "side": 1,
+      "message": "That\u0027s right. The original in tq.go had some other possibilities, but they\u0027re not relevant here. Simplified as you suggested.",
+      "parentUuid": "b4ccf20c_c4e9fbd7",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 6
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
