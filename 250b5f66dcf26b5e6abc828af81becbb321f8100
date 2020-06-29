@@ -46,6 +46,30 @@
       "revId": "250b5f66dcf26b5e6abc828af81becbb321f8100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0821f71_5138fb1a",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-29T20:02:16Z",
+      "side": 1,
+      "message": "Oh, actually it wouldn\u0027t; the tag and binary types are the same.\n\nMaybe I can just do that? I\u0027m not sure why that wasn\u0027t done originally.\n\n+nodir for commentary?",
+      "parentUuid": "1dc7e1f3_dbb4fcf5",
+      "range": {
+        "startLine": 370,
+        "startChar": 2,
+        "endLine": 370,
+        "endChar": 24
+      },
+      "revId": "250b5f66dcf26b5e6abc828af81becbb321f8100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
