@@ -22,6 +22,30 @@
       "revId": "7143601ee36d26153d8b25564c3f183ebbf14fef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52f5dd94_8938542f",
+        "filename": "lucicfg/cli/cmds/fmt/fmt.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2020-06-29T21:10:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05093211_c00f1c12",
+      "range": {
+        "startLine": 156,
+        "startChar": 4,
+        "endLine": 156,
+        "endChar": 25
+      },
+      "revId": "7143601ee36d26153d8b25564c3f183ebbf14fef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
