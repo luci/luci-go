@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe2c445a_fdb80f05",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-29T23:48:02Z",
+      "side": 1,
+      "message": "did you decide to include tags by default? they might be heavy",
+      "range": {
+        "startLine": 125,
+        "startChar": 48,
+        "endLine": 125,
+        "endChar": 60
+      },
+      "revId": "f03409a5233c1cb4c1822c9c85b048dd386c7778",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
