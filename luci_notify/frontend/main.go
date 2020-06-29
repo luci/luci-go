@@ -16,8 +16,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
@@ -56,30 +60,43 @@ func main() {
 	r.GET("/internal/cron/update-config", basemw.Extend(gaemiddleware.RequireCron), config.UpdateHandler)
 	r.GET("/internal/cron/update-tree-status", basemw.Extend(gaemiddleware.RequireCron), notify.UpdateTreeStatus)
 
+	ct, err := cloudtasks.NewClient(context.Background())
+	if err != nil {
+		panic(fmt.Sprintf("Could not initialize cloud tasks client: %s", err.Error()))
+	}
+	defer ct.Close()
+
 	// Pub/Sub endpoint.
-	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
-		ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
-		defer cancel()
-		c.Context = ctx
+	appId := os.Getenv("GAE_APPLICATION")
+	// This can be extended to handle other region codes if needed.
+	if len(appId) < 3 || !strings.HasPrefix(appId, "s~") {
+		panic("Expected GAE_APPLICATION to be set and of the form s~appid.")
+	}
+	appId = strings.TrimPrefix(appId, "s~")
+	r.POST("/_ah/push-handlers/buildbucket", basemw,
+		func(c *router.Context) {
+			ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
+			defer cancel()
+			c.Context = ctx
 
-		status := ""
-		switch err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); {
-		case transient.Tag.In(err) || appengine.IsTimeoutError(errors.Unwrap(err)):
-			status = "transient-failure"
-			logging.Errorf(ctx, "transient failure: %s", err)
-			// Retry the message.
-			c.Writer.WriteHeader(http.StatusInternalServerError)
+			status := ""
+			switch err := notify.BuildbucketPubSubHandler(c, ct, appId); {
+			case transient.Tag.In(err) || appengine.IsTimeoutError(errors.Unwrap(err)):
+				status = "transient-failure"
+				logging.Errorf(ctx, "transient failure: %s", err)
+				// Retry the message.
+				c.Writer.WriteHeader(http.StatusInternalServerError)
 
-		case err != nil:
-			status = "permanent-failure"
-			logging.Errorf(ctx, "permanent failure: %s", err)
+			case err != nil:
+				status = "permanent-failure"
+				logging.Errorf(ctx, "permanent failure: %s", err)
 
-		default:
-			status = "success"
-		}
+			default:
+				status = "success"
+			}
 
-		buildbucketPubSub.Add(ctx, 1, status)
-	})
+			buildbucketPubSub.Add(ctx, 1, status)
+		})
 
 	http.Handle("/", r)
 	appengine.Main()
