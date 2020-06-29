@@ -456,6 +456,9 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		return os.ErrInvalid
 	}
 	src := d.itemPath(digest)
+	if _, err := os.Stat(src); err != nil {
+		return errors.Annotate(err, "missing cached src=%s", src).Err()
+	}
 	// - Windows, if dest exists, the call fails. In particular, trying to
 	//   os.Remove() will fail if the file's ReadOnly bit is set. What's worse is
 	//   that the ReadOnly bit is set on the file inode, shared on all hardlinks
