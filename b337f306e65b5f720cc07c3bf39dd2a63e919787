@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54ca338c_9180e9d0",
+        "filename": "milo/common/utils_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-06-29T05:18:52Z",
+      "side": 1,
+      "message": "Just wonder if it is 100% correct that all codes.PermissionDenied becomes codes.NotFound if the user logged in?",
+      "revId": "b337f306e65b5f720cc07c3bf39dd2a63e919787",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
