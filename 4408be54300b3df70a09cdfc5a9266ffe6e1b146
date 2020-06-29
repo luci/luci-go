@@ -88,6 +88,24 @@
       "revId": "4408be54300b3df70a09cdfc5a9266ffe6e1b146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cad0bdd_31de4515",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-06-29T12:51:28Z",
+      "side": 1,
+      "message": "Even if we see src in this stat, we may not see src when we do link because this is out of lock.\nAlso it is fine to remove corrupted file after link?",
+      "parentUuid": "f2656fbd_b6a55302",
+      "revId": "4408be54300b3df70a09cdfc5a9266ffe6e1b146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
