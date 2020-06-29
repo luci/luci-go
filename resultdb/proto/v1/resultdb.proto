@@ -18,6 +18,7 @@ package luci.resultdb.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
@@ -119,6 +120,11 @@ message ListTestResultsRequest {
   // When paginating, all other parameters provided to `ListTestResults` MUST
   // match the call that provided the page token.
   string page_token = 3;
+
+  // Fields to include in the response.
+  // If not set, the default mask is used where summary_html and tags are
+  // excluded.
+  google.protobuf.FieldMask read_mask = 4;
 }
 
 // A response message for ListTestResults RPC.
@@ -204,6 +210,11 @@ message QueryTestResultsRequest {
   // When paginating, all other parameters provided to `QueryTestResults` MUST
   // match the call that provided the page token.
   string page_token = 5;
+
+  // Fields to include in the response.
+  // If not set, the default mask is used where summary_html and tags are
+  // excluded.
+  google.protobuf.FieldMask read_mask = 6;
 }
 
 // A response message for QueryTestResults RPC.
