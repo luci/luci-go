@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d58d0f1_670eb4b9",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-29T04:47:03Z",
+      "side": 1,
+      "message": "Nit: appID",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 6
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e03382c_43a7b5b6",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-29T04:47:03Z",
+      "side": 1,
+      "message": "Perhaps appID should be bundled into the context object?",
+      "range": {
+        "startLine": 83,
+        "startChar": 56,
+        "endLine": 83,
+        "endChar": 61
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "22c252b8_2f176cf4",
+        "filename": "luci_notify/notify/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-29T04:47:03Z",
+      "side": 1,
+      "message": "Making a new file just to contain this interface feels excessive. Can it go into notify.go or pubsub.go instead?",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 21
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4ccf20c_c4e9fbd7",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-06-29T04:47:03Z",
+      "side": 1,
+      "message": "\"parts\" is either empty (if deDupKey \u003d\u003d \"\") or just contains the SHA digest, right? If so, using a slice and joining on \"-\" is unnecessary - either return the digest or return an empty string.",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 6
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
