@@ -52,6 +52,24 @@
       "revId": "4408be54300b3df70a09cdfc5a9266ffe6e1b146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c889d5e_60fa43e0",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-06-29T12:37:47Z",
+      "side": 1,
+      "message": "Why? This is checking src, not dest. If src doesn\u0027t exist, we don\u0027t even need to try os.Link?",
+      "parentUuid": "01b04c90_d637985d",
+      "revId": "4408be54300b3df70a09cdfc5a9266ffe6e1b146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
