@@ -22,6 +22,30 @@
       "revId": "250b5f66dcf26b5e6abc828af81becbb321f8100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dc7e1f3_dbb4fcf5",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-29T20:01:04Z",
+      "side": 1,
+      "message": "Toggle says that it\u0027s deprecated and it should be replaced with Trinary 😜\n\nHowever, Toggle and Trinary both use exactly the same numeric and string values for the enum... I wonder if we can just s/Toggle/Trinary and then things should just work?\n\nI guess it would break if we had binary versions of these protos somewhere, right?",
+      "parentUuid": "b2dab0b1_d98fcb18",
+      "range": {
+        "startLine": 370,
+        "startChar": 2,
+        "endLine": 370,
+        "endChar": 24
+      },
+      "revId": "250b5f66dcf26b5e6abc828af81becbb321f8100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
