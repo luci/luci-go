@@ -69,8 +69,7 @@ func getConsoleDef(c context.Context, project, name string) (*config.Console, er
 	return &cs.Def, nil
 }
 
-// validateFaviconURL checks to see if the URL is well-formed and the host is in
-// the whitelist.
+// validateFaviconURL checks to see if the URL is well-formed and from an allowed host.
 func validateFaviconURL(faviconURL string) error {
 	parsedFaviconURL, err := url.Parse(faviconURL)
 	if err != nil {
