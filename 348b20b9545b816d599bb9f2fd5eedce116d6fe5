@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66dde0aa_8de1d916",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-30T22:03:25Z",
+      "side": 1,
+      "message": "this loop doesn\u0027t look very fast; how big is cells usually?",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 30
+      },
+      "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
