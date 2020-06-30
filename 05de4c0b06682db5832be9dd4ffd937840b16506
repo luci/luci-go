@@ -220,6 +220,30 @@
     },
     {
       "key": {
+        "uuid": "cfafcf7d_9b14f795",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T19:19:40Z",
+      "side": 1,
+      "message": "Ha, I had this in my prototype, but I think it is not worth the migration later.\nI decided to avoid complexity until we have a need.",
+      "parentUuid": "a1be55c9_e0ca1903",
+      "range": {
+        "startLine": 91,
+        "startChar": 18,
+        "endLine": 91,
+        "endChar": 40
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6a74c76_a1d42d33",
         "filename": "ttq/types.go",
         "patchSetId": 7
@@ -270,6 +294,24 @@
       "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a40ddd4_d8abdd3f",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T19:19:40Z",
+      "side": 1,
+      "message": "gcloud tasks queues describe",
+      "parentUuid": "5fd4a434_fb2a5221",
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
