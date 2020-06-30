@@ -100,6 +100,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          tr.Status,
 			"RunDurationUsec": 1e6*i + 234567,
+			"SummaryHtml":     span.Compressed("SummaryHtml"),
 		}
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
