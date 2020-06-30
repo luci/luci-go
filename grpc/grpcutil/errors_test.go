@@ -49,7 +49,14 @@ func TestCode(t *testing.T) {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti := lucierr.NewMultiError(errGRPCNotFound, errGRPCInvalidArgument)
-			So(Code(errMulti), ShouldEqual, codes.Unknown)
+			So(Code(errMulti), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("For multi-errors with missing tags", func() {
+			errUnknown := errors.New("unknown")
+			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
+			errMulti := lucierr.NewMultiError(errUnknown, errGRPCInvalidArgument)
+			So(Code(errMulti), ShouldEqual, codes.InvalidArgument)
 		})
 	})
 }
