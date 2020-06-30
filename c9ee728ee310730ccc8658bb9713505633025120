@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f43b55bd_b8a609d6",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:08:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46775595_33656f7b",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16688a1d_8770a317",
         "filename": "ttq/internal/impl.go",
         "patchSetId": 5
@@ -33,6 +51,24 @@
       "revId": "c9ee728ee310730ccc8658bb9713505633025120",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ed5c853_9fe4a24f",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:08:35Z",
+      "side": 1,
+      "message": "ACK. Indeed, refuted (or so I think) there.",
+      "parentUuid": "16688a1d_8770a317",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "dc5eb5fd_53d33b8b",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:08:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cac1bbcc_a8d402df",
+      "range": {
+        "startLine": 87,
+        "startChar": 52,
+        "endLine": 87,
+        "endChar": 56
+      },
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a99ffb0_437451ae",
         "filename": "ttq/internal/impl.go",
         "patchSetId": 5
@@ -70,6 +130,24 @@
       "writtenOn": "2020-06-26T15:57:45Z",
       "side": 1,
       "message": "Hm, it\u0027s unfortunate we can\u0027t know this up front. Does legacy transactional task enqueuing fail the transaction if the task is invalid?",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7621c97e_d3b6e21b",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:08:35Z",
+      "side": 1,
+      "message": "I think it did the verification, but to get the same luxury we\u0027d need to enqueue an additional noop task.\nIn practice, I don\u0027t think this is a big problem so long as people -dev test their codepaths.\nWDYT?",
+      "parentUuid": "0a99ffb0_437451ae",
       "revId": "c9ee728ee310730ccc8658bb9713505633025120",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -90,6 +168,24 @@
       "revId": "c9ee728ee310730ccc8658bb9713505633025120",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e31e8e39_006541b0",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:08:35Z",
+      "side": 1,
+      "message": "Good eyes! It\u0027s for the sweeping tasks (CL in the stack).",
+      "parentUuid": "3f614fa1_649dea5c",
+      "revId": "c9ee728ee310730ccc8658bb9713505633025120",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
