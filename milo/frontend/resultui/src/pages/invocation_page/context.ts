@@ -68,6 +68,7 @@ export class InvocationPageState {
         predicate: {
           expectancy: this.showExpected ? Expectancy.All : Expectancy.VariantsWithUnexpectedResults,
         },
+        readMask: 'name,testId,variant,expected,status,summaryHtml,startTime,duration,tags',
       },
       this.appState.resultDb,
     ));
