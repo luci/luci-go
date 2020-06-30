@@ -15,6 +15,8 @@
 package ttqspanner
 
 import (
+	"context"
+
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/ttq/internal"
 )
@@ -28,4 +30,12 @@ var _ internal.Database = (*db)(nil)
 // Kind is used only for monitoring/logging purposes.
 func (d *db) Kind() string {
 	return "spanner"
+}
+
+func (d *db) SaveReminder(_ context.Context, _ *internal.Reminder) error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (d *db) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
+	panic("not implemented") // TODO: Implement
 }

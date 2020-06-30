@@ -18,14 +18,19 @@ import (
 	"context"
 	"encoding/hex"
 	"io"
+	"sync/atomic"
 	"time"
 
+	"github.com/googleapis/gax-go"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/ttq"
 )
@@ -52,11 +57,121 @@ type Reminder struct {
 // Impl implements abstract transaction enqueue semantics on top of Database
 // interface.
 type Impl struct {
-	Options ttq.Options
-	DB      Database
+	Options     ttq.Options
+	DB          Database
+	TasksClient TasksClient
+}
+
+// TasksClient decouples Impl from the Cloud Tasks client.
+type TasksClient interface {
+	CreateTask(context.Context, *taskspb.CreateTaskRequest, ...gax.CallOption) (*taskspb.Task, error)
+}
+
+// AddTask persists a task during a transaction and returns PostProcess to be
+// called after the transaction completes (aka happy path).
+func (impl *Impl) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
+	// TODO(tandrii): this can't be instrumented in a naive way because the
+	// transaction can be retried, leading to inflated counts. Ideally, we'd want
+	// a callback as soon as transaction successfully finishes or annotating
+	// metrics with try number s.t. all retries can be ignored.
+	r, reqClone, err := makeReminder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err = impl.DB.SaveReminder(ctx, r); err != nil {
+		return nil, err
+	}
+	once := int32(0)
+	return func(outCtx context.Context) {
+		if count := atomic.AddInt32(&once, 1); count > 1 {
+			logging.Warningf(outCtx, "calling PostProcess %d times is not necessary", count)
+			return
+		}
+		if clock.Now(outCtx).After(r.FreshUntil) {
+			logging.Warningf(outCtx, "ttq happy path PostProcess %s has no time to run", r.Id)
+			return
+		}
+		if err := impl.postProcess(outCtx, r, reqClone); err != nil {
+			logging.Warningf(outCtx, "ttq happy path PostProcess %s failed: %s", r.Id, err)
+		}
+	}, nil
 }
 
 // Helpers.
+
+// postProcess enqueues a task and deletes a reminder.
+// During happy path, the req is not nil.
+func (impl *Impl) postProcess(ctx context.Context, r *Reminder, req *taskspb.CreateTaskRequest) (err error) {
+	startedAt := clock.Now(ctx)
+	when := "happy"
+	status := "OK"
+	defer func() {
+		durMS := float64(clock.Now(ctx).Sub(startedAt).Milliseconds())
+		metricPostProcessedAttempts.Add(ctx, 1, status, when, impl.DB.Kind())
+		metricPostProcessedDurationsMS.Add(ctx, durMS, status, when, impl.DB.Kind())
+	}()
+
+	if req == nil {
+		when = "sweep"
+		if req, err = r.createTaskRequest(); err != nil {
+			status = "fail-deserialize"
+			return err
+		}
+	}
+
+	switch err = impl.createCloudTask(ctx, req, when); {
+	case err == nil:
+	case transient.Tag.In(err):
+		status = "fail-task"
+		return err
+	default:
+		status = "ignored-bad-task"
+		// Proceed deleting reminder, there is no point retrying later.
+	}
+	if err = impl.DB.DeleteReminder(ctx, r); err != nil {
+		// This may override "ignored-bad-task" status and this is fine as:
+		//   * createCloudTask keeps metrics, too
+		//   * most likely the reminder wasn't deleted,
+		//     so there will be a retry later anyway.
+		status = "fail-db"
+		return err
+	}
+	return nil
+}
+
+// createCloudTask tries to create a Cloud Task.
+// On AlreadyExists error, returns nil.
+// The returned error has transient.Tag applied if the error isn't permanent.
+func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRequest, when string) error {
+	// WORKAROUND(https://github.com/googleapis/google-cloud-go/issues/1577): if
+	// the passed context deadline is larger than 30s, the CreateTask call fails
+	// with InvalidArgument "The request deadline is ... The deadline cannot be
+	// more than 30s in the future." So, give it 20s.
+	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
+	defer cancel()
+	_, err := impl.TasksClient.CreateTask(ctx, req)
+	code := status.Code(err)
+	switch code {
+	case codes.OK:
+	case codes.AlreadyExists:
+		err = nil
+
+	case codes.InvalidArgument:
+		err = errors.Annotate(err, "failed to create Cloud Task").Err()
+
+	case codes.Unavailable:
+		fallthrough
+	default:
+		// TODO(tandrii): refine with use which errors really should be fatal and
+		// which should not.
+		err = errors.Annotate(err, "failed to create Cloud Task").Tag(transient.Tag).Err()
+	}
+	if when != "ttq" {
+		// Monitor only tasks created for the user.
+		metricTasksCreated.Add(ctx, 1, code.String(), when, impl.DB.Kind())
+	}
+	return err
+}
 
 const (
 	// keySpaceBytes defines the space of the Reminder Ids.

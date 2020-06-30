@@ -15,6 +15,8 @@
 package ttqdatastore
 
 import (
+	"context"
+
 	"go.chromium.org/luci/ttq/internal"
 )
 
@@ -26,4 +28,12 @@ var _ internal.Database = (*db)(nil)
 // Kind is used only for monitoring/logging purposes.
 func (d *db) Kind() string {
 	return "datastore"
+}
+
+func (d *db) SaveReminder(_ context.Context, _ *internal.Reminder) error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (d *db) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
+	panic("not implemented") // TODO: Implement
 }

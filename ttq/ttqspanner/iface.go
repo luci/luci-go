@@ -50,9 +50,10 @@ func New(c *cloudtasks.Client, opts ttq.Options, sp *spanner.Client) (*TTQ, erro
 		return nil, err
 	}
 	return &TTQ{impl: internal.Impl{
-		Options: opts,
-		DB:      &db{client: sp}},
-	}, nil
+		Options:     opts,
+		DB:          &db{client: sp},
+		TasksClient: c,
+	}}, nil
 }
 
 // InstallRoutes installs handlers for sweeping to ensure correctness.
