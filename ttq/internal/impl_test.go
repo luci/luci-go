@@ -16,16 +16,24 @@ package internal
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/ttq"
 
+	"github.com/googleapis/gax-go"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -79,4 +87,136 @@ func TestMakeReminder(t *testing.T) {
 			So(err, ShouldErrLike, "Named tasks are not supported")
 		})
 	})
+}
+
+func TestAddTask(t *testing.T) {
+	t.Parallel()
+
+	Convey("AddTask works", t, func() {
+		ctx := cryptorand.MockForTest(context.Background(), 111)
+		ctx, tclock := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+
+		latestOf := func(m types.Metric, fieldVals ...interface{}) interface{} {
+			return tsmon.GetState(ctx).Store().Get(ctx, m, time.Time{}, fieldVals)
+		}
+
+		req := taskspb.CreateTaskRequest{
+			Parent: "projects/example-project/locations/us-central1/queues/q",
+			Task: &taskspb.Task{
+				MessageType: &taskspb.Task_HttpRequest{HttpRequest: &taskspb.HttpRequest{
+					HttpMethod: taskspb.HttpMethod_GET,
+					Url:        "https://example.com/user/exec",
+				}},
+				ScheduleTime: google.NewTimestamp(clock.Now(ctx).Add(time.Minute)),
+			},
+		}
+		opts := ttq.Options{
+			Queue:   "projects/example-project/locations/us-central1/queues/ttq",
+			BaseURL: "https://example.com/ttq",
+		}
+		So(opts.Validate(), ShouldBeNil)
+		db := ramDB{}
+		fakeCT := fakeCloudTasks{}
+		impl := Impl{Options: opts, DB: &db, TasksClient: &fakeCT}
+
+		Convey("with deadline", func() {
+			pp, err := impl.AddTask(ctx, &req)
+			So(err, ShouldBeNil)
+			So(pp, ShouldNotBeNil)
+			So(len(db.reminders), ShouldEqual, 1)
+
+			Convey("no time to complete happy path", func() {
+				for _, r := range db.reminders {
+					tclock.Set(r.FreshUntil.Add(time.Second))
+				}
+				pp(ctx) // noop now
+				So(len(fakeCT.calls), ShouldEqual, 0)
+				So(len(db.reminders), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "db"), ShouldBeNil)
+			})
+
+			Convey("happy path", func() {
+				pp(ctx)
+				So(len(db.reminders), ShouldEqual, 0)
+				So(len(fakeCT.calls), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "db"), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedDurationsMS, "OK", "happy", "db").(*distribution.Distribution).Count(), ShouldEqual, 1)
+
+				Convey("calling 2nd time is a noop", func() {
+					pp(ctx)
+					So(len(fakeCT.calls), ShouldEqual, 1)
+					So(latestOf(metricPostProcessedAttempts, "OK", "happy", "db"), ShouldEqual, 1)
+				})
+			})
+			Convey("happy path transient task creation error", func() {
+				fakeCT.errs = []error{status.Errorf(codes.Unavailable, "please retry")}
+				pp(ctx)
+				So(len(db.reminders), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedAttempts, "fail-task", "happy", "db"), ShouldEqual, 1)
+			})
+			Convey("happy path permanent task creation error", func() {
+				fakeCT.errs = []error{status.Errorf(codes.InvalidArgument, "forever")}
+				pp(ctx)
+				So(latestOf(metricPostProcessedAttempts, "ignored-bad-task", "happy", "db"), ShouldEqual, 1)
+				So(latestOf(metricTasksCreated, "InvalidArgument", "happy", "db"), ShouldEqual, 1)
+				// Must remove reminder despite the error.
+				So(len(db.reminders), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+// helpers
+
+type ramDB struct {
+	mu        sync.RWMutex
+	reminders map[string]*Reminder
+}
+
+func (_ *ramDB) Kind() string { return "db" }
+
+func (db *ramDB) SaveReminder(_ context.Context, r *Reminder) error {
+	db.mu.Lock()
+	if db.reminders == nil {
+		db.reminders = map[string]*Reminder{}
+	}
+	db.reminders[r.Id] = r
+	db.mu.Unlock()
+	return nil
+}
+
+func (db *ramDB) DeleteReminder(_ context.Context, r *Reminder) error {
+	db.mu.Lock()
+	if db.reminders == nil {
+		return nil
+	}
+	for id, _ := range db.reminders {
+		if id == r.Id {
+			delete(db.reminders, id)
+			break
+		}
+	}
+	db.mu.Unlock()
+	return nil
+}
+
+type fakeCloudTasks struct {
+	mu    sync.Mutex
+	errs  []error
+	calls []*taskspb.CreateTaskRequest
+}
+
+func (f *fakeCloudTasks) CreateTask(_ context.Context, req *taskspb.CreateTaskRequest, _ ...gax.CallOption) (*taskspb.Task, error) {
+	// NOTE: actual implementation returns the created Task, but the TTQ library
+	// doesn't care.
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.calls = append(f.calls, req)
+	if len(f.errs) > 0 {
+		var err error
+		f.errs, err = f.errs[1:], f.errs[0]
+		return nil, err
+	}
+	return nil, nil
 }
