@@ -28,9 +28,11 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server"
@@ -461,10 +463,19 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		return b.batchExportRows(ctx, ins, batchC)
 	})
 
+	listMask, err := mask.FromFieldMask(&field_mask.FieldMask{
+		Paths: []string{
+			"*",
+		},
+	}, &pb.TestResult{}, false, false)
+	if err != nil {
+		return err
+	}
 	q := testresults.Query{
 		Predicate:         bqExport.GetTestResults().GetPredicate(),
 		InvocationIDs:     invIDs,
 		SelectVariantHash: true,
+		ListMask:          listMask,
 	}
 	eg.Go(func() error {
 		defer close(batchC)
