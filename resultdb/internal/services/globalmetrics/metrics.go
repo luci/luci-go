@@ -55,7 +55,7 @@ var (
 		nil,
 		field.String("type")) // tasks.Type
 
-	taskStats = &taskStatPerType{}
+	taskStats = sync.Map{}
 )
 
 // Options is global metrics server configuration.
@@ -70,25 +70,6 @@ func InitServer(srv *server.Server, opts Options) {
 	if interval == 0 {
 		interval = 5 * time.Minute
 	}
-
-	tsmon.RegisterCallbackIn(srv.Context, func(ctx context.Context) {
-		taskStats.Range(func(taskType string, stat *taskStat) bool {
-			// reset the stat of each task type so that the stat of each task type can
-			// continue being reported with the default values, even if it stopped being
-			// present in the output of the SQL query.
-			s := stat.CloneAndReset()
-
-			// reset the oldest task creation time if there no longer exists any tasks
-			// with the type.
-			if s.taskCount == 0 {
-				tsmon.Store(ctx).Reset(ctx, oldestTaskMetric)
-			} else {
-				oldestTaskMetric.Set(ctx, s.oldestCreateTime.Unix(), taskType)
-			}
-			taskCountMetric.Set(ctx, s.taskCount, taskType)
-			return true
-		})
-	})
 
 	srv.RunInBackground("resultdb.tasks", func(ctx context.Context) {
 		cron.Run(ctx, interval, updateTaskStats)
@@ -107,6 +88,29 @@ func updateTaskStats(ctx context.Context) error {
 	`)
 
 	var b span.Buffer
+	// make a copy of taskStats with the keys only so that the task count of a TaskType
+	// will continue being reported with 0 even if the taskType is no longer present in the
+	// output of the query.
+	newStats := make(map[string]*taskStat)
+	taskStats.Range(func(k, _ interface{}) bool {
+		newStats[k.(string)] = &taskStat{0, time.Time{}}
+		return true
+	})
+	defer func() {
+		// update the tsmon metrics with the new stats.
+		for taskType, stat := range newStats {
+			taskStats.Store(taskType, stat)
+
+			// delete or update the oldest task metric.
+			if stat.taskCount == 0 {
+				tsmon.Store(ctx).Del(ctx, oldestTaskMetric, []interface{}{taskType})
+			} else {
+				oldestTaskMetric.Set(ctx, stat.oldestCreateTime.Unix(), taskType)
+			}
+			// update the count metric always.
+			taskCountMetric.Set(ctx, stat.taskCount, taskType)
+		}
+	}()
 	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var taskType string
 		var minCreateTime time.Time
@@ -114,7 +118,7 @@ func updateTaskStats(ctx context.Context) error {
 		if err := b.FromSpanner(row, &taskType, &minCreateTime, &count); err != nil {
 			return err
 		}
-		taskStats.Update(taskType, count, minCreateTime)
+		newStats[taskType].Update(count, minCreateTime)
 		return nil
 	})
 }
@@ -155,40 +159,12 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 	return
 }
 
-type taskStatPerType struct {
-	m sync.Map
-}
-
-func (t *taskStatPerType) Update(taskType string, cnt int64, oldestCreateTime time.Time) {
-	stat, loaded := t.m.LoadOrStore(
-		taskType, &taskStat{sync.Mutex{}, cnt, oldestCreateTime})
-	if loaded {
-		stat.(*taskStat).Update(cnt, oldestCreateTime)
-	}
-}
-
-func (t *taskStatPerType) Range(fn func(taskType string, stat *taskStat) bool) {
-	t.m.Range(func(k, v interface{}) bool { return fn(k.(string), v.(*taskStat)) })
-}
-
 type taskStat struct {
-	lock             sync.Mutex
 	taskCount        int64
 	oldestCreateTime time.Time
 }
 
 func (s *taskStat) Update(cnt int64, oldestCreateTime time.Time) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
 	s.taskCount = cnt
 	s.oldestCreateTime = oldestCreateTime
-}
-
-func (s *taskStat) CloneAndReset() *taskStat {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	ret := &taskStat{sync.Mutex{}, s.taskCount, s.oldestCreateTime}
-	s.taskCount = 0
-	s.oldestCreateTime = time.Time{}
-	return ret
 }
