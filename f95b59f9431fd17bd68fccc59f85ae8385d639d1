@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bdcccb43_145c0481",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-30T21:27:04Z",
+      "side": 1,
+      "message": "Sorry could you tell me more about the problem here? Why the difference in intervals caused the issue?",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 29
+      },
+      "revId": "f95b59f9431fd17bd68fccc59f85ae8385d639d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
