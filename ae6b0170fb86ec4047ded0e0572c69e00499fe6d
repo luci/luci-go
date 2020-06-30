@@ -384,6 +384,24 @@
     },
     {
       "key": {
+        "uuid": "690dc65c_959b307b",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:08:21Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "bffbe008_5212f18f",
+      "revId": "ae6b0170fb86ec4047ded0e0572c69e00499fe6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ffcfcca_4dfa42c9",
         "filename": "resultdb/proto/v1/artifact.pb.go",
         "patchSetId": 2

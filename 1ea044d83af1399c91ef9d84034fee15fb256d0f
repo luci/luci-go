@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7794a5c9_f1572acf",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:08:21Z",
+      "side": 1,
+      "message": "please make it a global var. there is no need to re-create the same proto and re-parse it every time\n\nalso nit: \"readMask\"",
+      "range": {
+        "startLine": 466,
+        "startChar": 0,
+        "endLine": 470,
+        "endChar": 35
+      },
+      "revId": "1ea044d83af1399c91ef9d84034fee15fb256d0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54ebe9e6_5a6e3098",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:08:21Z",
+      "side": 1,
+      "message": "why not just \"Mask\". The context (Query struct) already says that this is listing/querying",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 9
+      },
+      "revId": "1ea044d83af1399c91ef9d84034fee15fb256d0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2764320_8ff88a7f",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:08:21Z",
+      "side": 1,
+      "message": "nit:\n\nselectIfIncluded :\u003d func(column, field string) {\n  switch inc, err :\u003d q.ListMask.Includes(field); {\n  case err !\u003d nil:\n    panic(err)\n  case inc !\u003d mask.Exclude:\n    extraSelect \u003d append(extraSelect, column)\n  }    \n}\n\nselectIfIncluded(\"tr.SummaryHtml\", \"summary_html\")\nselectIfIncluded(\"tr.Tags\", \"tags\")\n\nIncludes() should not return an error unless we have a bug in our code (e.g. typo in the field name), so its to panic",
+      "range": {
+        "startLine": 90,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 2
+      },
+      "revId": "1ea044d83af1399c91ef9d84034fee15fb256d0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d51fb4b_b953e618",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:08:21Z",
+      "side": 1,
+      "message": "nit: panic(\"impossible\")",
+      "range": {
+        "startLine": 211,
+        "startChar": 4,
+        "endLine": 211,
+        "endChar": 13
+      },
+      "revId": "1ea044d83af1399c91ef9d84034fee15fb256d0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
