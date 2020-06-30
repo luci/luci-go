@@ -22,6 +22,30 @@
       "revId": "fed6f82ed4984922a61a56ffc9ded2db446d607c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "527cf61f_c1658b0f",
+        "filename": "resultdb/proto/v1/recorder.pb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-30T00:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a40f40c_763fd99e",
+      "range": {
+        "startLine": 18,
+        "startChar": 18,
+        "endLine": 18,
+        "endChar": 24
+      },
+      "revId": "fed6f82ed4984922a61a56ffc9ded2db446d607c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
