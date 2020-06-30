@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3b28423_3275a636",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-30T21:54:42Z",
+      "side": 1,
+      "message": "can we just round this nop sled up to 42 lines?",
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f6e02bad_776c6d58",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-30T21:54:42Z",
+      "side": 1,
+      "message": "intended?",
+      "range": {
+        "startLine": 427,
+        "startChar": 24,
+        "endLine": 427,
+        "endChar": 32
+      },
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f153e84_f2451704",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-30T21:54:42Z",
+      "side": 1,
+      "message": "line wrap?",
+      "range": {
+        "startLine": 442,
+        "startChar": 78,
+        "endLine": 442,
+        "endChar": 79
+      },
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da2f29e3_af2feb8e",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-30T21:54:42Z",
+      "side": 1,
+      "message": "maybe move this to the top (at least above `all`) since I think it\u0027s more-recommended?",
+      "range": {
+        "startLine": 463,
+        "startChar": 7,
+        "endLine": 463,
+        "endChar": 14
+      },
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
