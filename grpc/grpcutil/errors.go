@@ -177,6 +177,8 @@ func CodeStatus(code codes.Code) int {
 //
 // In addition to the functionality of grpc.Code, this will unwrap any wrapped
 // errors before asking for its code.
+//
+// If the error is a MultiError, this will return codes.Unknown.
 func Code(err error) codes.Code {
 	if code, ok := Tag.In(err); ok {
 		return code
