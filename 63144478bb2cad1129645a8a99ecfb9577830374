@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b343afed_30eaed82",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-06-30T20:48:19Z",
+      "side": 1,
+      "message": "maybe a new function Codes which returns a set of all codes found? Maybe with a function \"FirstKnown\" which picks out the first not-Unknown code if any?",
+      "range": {
+        "startLine": 182,
+        "startChar": 5,
+        "endLine": 182,
+        "endChar": 9
+      },
+      "revId": "63144478bb2cad1129645a8a99ecfb9577830374",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
