@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f9eaacf_d79880b4",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:44:05Z",
+      "side": 1,
+      "message": "nit: one line?",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 63,
+        "endChar": 4
+      },
+      "revId": "bda67ac732b9522789b9770fbbad126e02d9322a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddf54367_a83b0b97",
+        "filename": "resultdb/internal/services/resultdb/query_test_results_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-06-30T05:44:05Z",
+      "side": 1,
+      "message": "looks like import order got messy here (before your CL). This should be below and L23 should be removed",
+      "revId": "bda67ac732b9522789b9770fbbad126e02d9322a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
