@@ -22,6 +22,30 @@
       "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ee77eab_49ecb63a",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-30T00:34:22Z",
+      "side": 1,
+      "message": "Thanks for the advice.\n\nIn task like https://chromium-swarm.appspot.com/task?d\u003dtrue\u0026id\u003d4d1b73d8901d9210 I found tags like \"device_os:L\" and \"device_os_type:userdebug\" and \"device_type:hammerhead\".\n\nShould we also add \"device_os_type\"? Or that tag doesn\u0027t matter?",
+      "parentUuid": "0293a74b_5a40e2e3",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 19
+      },
+      "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
