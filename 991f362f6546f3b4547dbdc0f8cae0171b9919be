@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "ca971973_42c12bfe",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-30T22:56:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6e02bad_776c6d58",
+      "range": {
+        "startLine": 427,
+        "startChar": 24,
+        "endLine": 427,
+        "endChar": 32
+      },
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f153e84_f2451704",
         "filename": "lucicfg/doc/README.md",
         "patchSetId": 4
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "631e0b67_f6d196b6",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-30T22:56:02Z",
+      "side": 1,
+      "message": "It is wrapped correctly in README.mdt which is the source for this generated file.",
+      "parentUuid": "8f153e84_f2451704",
+      "range": {
+        "startLine": 442,
+        "startChar": 78,
+        "endLine": 442,
+        "endChar": 79
+      },
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da2f29e3_af2feb8e",
         "filename": "lucicfg/doc/README.md",
         "patchSetId": 4
@@ -85,6 +133,30 @@
       "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "091edfa7_d092bf39",
+        "filename": "lucicfg/doc/README.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-06-30T22:56:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da2f29e3_af2feb8e",
+      "range": {
+        "startLine": 463,
+        "startChar": 7,
+        "endLine": 463,
+        "endChar": 14
+      },
+      "revId": "991f362f6546f3b4547dbdc0f8cae0171b9919be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
