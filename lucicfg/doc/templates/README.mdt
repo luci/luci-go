@@ -61,8 +61,9 @@
 {{ $acl_entry_ref := LinkifySymbols "acl.entry(...)" }}
 {{ $bucket_ref := LinkifySymbols "luci.bucket(...)" }}
 {{ $builder_ref := LinkifySymbols "luci.builder(...)" }}
-{{ $console_view_ref := LinkifySymbols "luci.console_view(...)" }}
+{{ $config_ref := LinkifySymbols "lucicfg.config(...)" }}
 {{ $console_view_entry_ref := LinkifySymbols "luci.console_view_entry(...)" }}
+{{ $console_view_ref := LinkifySymbols "luci.console_view(...)" }}
 {{ $cq_group_ref := LinkifySymbols "luci.cq_group(...)" }}
 {{ $exec_ref := LinkifySymbols "exec(...)" }}
 {{ $generator_ref := LinkifySymbols "lucicfg.generator(...)" }}
@@ -285,10 +286,10 @@ internally referred to as "idempotent nodes"). It allows following usage style:
 
 ```python
 def my_recipe(name):
-  return luci.recipe(
-      name = name,
-      cipd_package = 'my/recipe/bundle',
-  )
+    return luci.recipe(
+        name = name,
+        cipd_package = 'my/recipe/bundle',
+    )
 
 luci.builder(
     name = 'builder 1',
@@ -462,6 +463,125 @@ strings. Supported kinds of schedules (illustrated via examples):
         LUCI Scheduler API.
       - in {{$gitiles_poller_ref}} this is useful to setup a poller that polls
         only on manual requests, not periodically.
+
+
+## Formatting and linting Starlark code {#formatting_linting}
+
+lucicfg uses [buildifier] internally to format and lint Starlark code.
+Buildifier is primarily intended for Bazel BUILD and \*.bzl files, but it works
+with lucicfg's \*.star files reasonably well too.
+
+To format a single Starlark file use `lucicfg fmt path.star`. To format all
+\*.star files in a directory (recursively) use `lucicfg fmt <dir>`.
+
+There are two ways to run lint checks:
+
+  1. Per-file or directory using `lucicfg lint <path>`. What set of checks to
+     perform can be specified via `-check <set>` argument, where `<set>` is
+     a special comma-delimited string that identifies what checks to apply. See
+     below for how to construct it.
+  2. As part of `lucicfg validate <entry point>.star`. It will check only files
+     loaded while executing the entry point script. This is the recommended way.
+     The set of checks to apply can be specified via `lint_checks` argument in
+     {{$config_ref}}, see below for examples. Note that **all checks (including
+     formatting checks) are disabled by default for now**. This will change in
+     the future.
+
+Checking that files are properly formatted is a special kind of a lint check
+called `formatting`.
+
+[buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
+
+
+### Specifying a set of linter checks to apply
+
+Both `lucicfg lint -check ...` CLI argument and `lint_checks` in {{$config_ref}}
+accept a list of strings that looks like `[<initial set>], +warn1, +warn2,
+-warn3, -warn4, ... `, where
+
+  * `<initial set>` can be one of `default`, `none` or `all` and it
+    identifies a set of linter checks to use as a base:
+    * `default` is a set of checks that are known to work well with lucicfg
+      Starlark code. If `<initial set>` is omitted, `default` is used.
+    * `none` is an empty set.
+    * `all` is all checks known to buildifier. Note that some of them may be
+      incompatible with lucicfg Starlark code.
+  * `+warn` adds some specific check to the set of checks to apply.
+  * `-warn` removes some specific check from the set of checks to apply.
+
+See [buildifier warnings list] for identifiers and meanings of all possible
+checks. Note that many of them are specific to Bazel not applicable to lucicfg
+Starlark code.
+
+Additionally a check called `formatting` can be used to instruct lucicfg to
+verify formatting of Starlark files. It is part of the `default` set. Note that
+it is not a built-in buildifier check and thus it's not listed in the buildifier
+docs nor can it be disabled via `buildifier: disable=...`.
+
+[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
+
+
+### Examples {#linter_config}
+
+To apply all default checks when running `lucicfg validate` use:
+
+```python
+lucicfg.config(
+    ...
+    lint_checks = ["default"],
+)
+```
+
+This is equivalent to running `lucicfg lint -checks default` or just
+`lucicfg lint`.
+
+To check formatting only:
+
+```python
+lucicfg.config(
+    ...
+    lint_checks = ["none", "+formatting"],
+)
+```
+
+This is equivalent to running `lucicfg lint -checks "none,+formatting"`.
+
+To disable some single default check (e.g. `function-docstring`) globally:
+
+```python
+lucicfg.config(
+    ...
+    lint_checks = ["-function-docstring"],
+)
+```
+
+This is equivalent to running `lucicfg lint -checks "-function-docstring"`.
+
+
+### Disabling checks locally
+
+To suppress a specific occurrence of a linter warning add a special comment
+`# buildifier: disable=<check-name>` to the expression that causes the warning:
+
+```python
+# buildifier: disable=function-docstring
+def update_submodules_mirror(
+        name,
+        short_name,
+        source_repo,
+        target_repo,
+        extra_submodules = None,
+        triggered_by = None,
+        refs = None):
+    properties = {
+        "source_repo": source_repo,
+        "target_repo": target_repo,
+    }
+    ...
+```
+
+To suppress formatting changes (and thus formatting check) use
+`# buildifier: leave-alone`.
 
 
 ## Interfacing with lucicfg internals
