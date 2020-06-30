@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "964d6898_b5e1070e",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-30T19:11:25Z",
+      "side": 1,
+      "message": "I assume UI needs the full test result? If yes you can simply use \u0027*\u0027 to include everything.",
+      "range": {
+        "startLine": 71,
+        "startChar": 18,
+        "endLine": 71,
+        "endChar": 91
+      },
+      "revId": "64bde123dd698289614acff96f157ef12de0f885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
