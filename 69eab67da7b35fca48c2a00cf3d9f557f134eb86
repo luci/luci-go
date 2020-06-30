@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0293a74b_5a40e2e3",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001921
+      },
+      "writtenOn": "2020-06-30T00:21:04Z",
+      "side": 1,
+      "message": "I think you\u0027d also want device_os on Android.",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 19
+      },
+      "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
