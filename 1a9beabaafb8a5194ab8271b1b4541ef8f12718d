@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5aceeada_71b3be69",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:46:10Z",
+      "side": 1,
+      "message": "^ I think this should be used as RequestUri when you create a task.",
+      "range": {
+        "startLine": 55,
+        "startChar": 42,
+        "endLine": 55,
+        "endChar": 60
+      },
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2d58d0f1_670eb4b9",
         "filename": "luci_notify/frontend/main.go",
         "patchSetId": 2
@@ -166,6 +189,23 @@
     },
     {
       "key": {
+        "uuid": "c89abee5_c849526e",
+        "filename": "luci_notify/notify/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:46:10Z",
+      "side": 1,
+      "message": "fwiw, I\u0027ve defined the same thing, including a crappy, but we are really looking forward to making appengine/tq into server/tq package on top of Cloud Tasks.\nHowever, I\u0027m focused on getting ttq/ package working first (https://godoc.org/go.chromium.org/luci/ttq).",
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b4ccf20c_c4e9fbd7",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -233,6 +273,57 @@
       "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2b822975_13bb5a2a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 482,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:46:10Z",
+      "side": 1,
+      "message": "fwiw, i think the general server/tq library won\u0027t use GAE-specific routing, which would imply the need to carry entire URL, not just relative path.\nSee https://godoc.org/go.chromium.org/luci/ttq#Options",
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6561caad_84cd0979",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:46:10Z",
+      "side": 1,
+      "message": "if RelativeUri, it defaults to \"/\". But the tq.Handler expects /internal/tasks\nhttps://godoc.org/google.golang.org/genproto/googleapis/cloud/tasks/v2#AppEngineHttpRequest",
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1158575d_22c494fe",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-06-30T01:46:10Z",
+      "side": 1,
+      "message": "have you verified that switch to cloud tasks won\u0027t cause the `gaemiddleware.RequireTaskQueue(q)` to reject cloud tasks?\nSee \nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/appengine/tq/tq.go;l\u003d372?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F",
+      "revId": "1a9beabaafb8a5194ab8271b1b4541ef8f12718d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
