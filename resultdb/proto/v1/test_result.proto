@@ -38,6 +38,8 @@ message TestResult {
   // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
   // where URL_ESCAPED_TEST_ID is test_id escaped with
   // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+  //
+  // Output only.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -155,6 +157,8 @@ message TestExoneration {
   // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
   // URL_ESCAPED_TEST_ID is test_variant.test_id escaped with
   // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+  //
+  // Output only.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE

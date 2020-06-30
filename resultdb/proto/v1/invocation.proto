@@ -36,6 +36,8 @@ message Invocation {
   // RPC.
   // Format: invocations/{INVOCATION_ID}
   // See also https://aip.dev/122.
+  //
+  // Output only.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -59,9 +61,12 @@ message Invocation {
   }
 
   // Current state of the invocation.
+  //
+  // Output only.
   State state = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // When the invocation was created.
+  // Output only.
   google.protobuf.Timestamp create_time = 4 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -75,6 +80,8 @@ message Invocation {
 
   // When the invocation was finalized, i.e. transitioned to FINALIZED state.
   // If this field is set, implies that the invocation is finalized.
+  //
+  // Output only.
   google.protobuf.Timestamp finalize_time = 6
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
@@ -109,6 +116,8 @@ message Invocation {
   // Typically, a LUCI service account (e.g.
   // "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
   // (e.g. "user:johndoe@example.com").
+  //
+  // Output only.
   string created_by = 10 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Full name of the resource that produced results in this invocation.

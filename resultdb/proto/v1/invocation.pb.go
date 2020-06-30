@@ -115,16 +115,23 @@ type Invocation struct {
 	// RPC.
 	// Format: invocations/{INVOCATION_ID}
 	// See also https://aip.dev/122.
+	//
+	// Output only.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Current state of the invocation.
+	//
+	// Output only.
 	State Invocation_State `protobuf:"varint,2,opt,name=state,proto3,enum=luci.resultdb.v1.Invocation_State" json:"state,omitempty"`
 	// When the invocation was created.
+	// Output only.
 	CreateTime *timestamp.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Invocation-level string key-value pairs.
 	// A key can be repeated.
 	Tags []*StringPair `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 	// When the invocation was finalized, i.e. transitioned to FINALIZED state.
 	// If this field is set, implies that the invocation is finalized.
+	//
+	// Output only.
 	FinalizeTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=finalize_time,json=finalizeTime,proto3" json:"finalize_time,omitempty"`
 	// Timestamp when the invocation will be forcefully finalized.
 	// Can be extended with UpdateInvocation until finalized.
@@ -153,6 +160,8 @@ type Invocation struct {
 	// Typically, a LUCI service account (e.g.
 	// "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
 	// (e.g. "user:johndoe@example.com").
+	//
+	// Output only.
 	CreatedBy string `protobuf:"bytes,10,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	// Full name of the resource that produced results in this invocation.
 	// See also https://aip.dev/122#full-resource-names

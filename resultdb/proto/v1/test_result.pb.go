@@ -139,6 +139,8 @@ type TestResult struct {
 	// "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
 	// where URL_ESCAPED_TEST_ID is test_id escaped with
 	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+	//
+	// Output only.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test id, a unique identifier of the test in a LUCI project.
 	// Regex: ^[[::print::]]{1,256}$
@@ -309,6 +311,8 @@ type TestExoneration struct {
 	// invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
 	// URL_ESCAPED_TEST_ID is test_variant.test_id escaped with
 	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+	//
+	// Output only.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test identifier, see TestResult.test_id.
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
