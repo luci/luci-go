@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package milo
+package annopb
 
 import (
 	"bytes"
 	"encoding/json"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes/struct"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 // ContentTypeAnnotations is a stream content type for annotation streams.

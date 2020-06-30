@@ -26,12 +26,12 @@ import (
 	"go.chromium.org/luci/common/flag/flagenum"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/types"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -244,8 +244,8 @@ func getDatagramWriter(c context.Context, desc *logpb.LogStreamDescriptor) rende
 	return func(w io.Writer, dg []byte) bool {
 		var pb proto.Message
 		switch desc.ContentType {
-		case milo.ContentTypeAnnotations:
-			mp := milo.Step{}
+		case annopb.ContentTypeAnnotations:
+			mp := annopb.Step{}
 			if err := proto.Unmarshal(dg, &mp); err != nil {
 				log.WithError(err).Errorf(c, "Failed to unmarshal datagram data.")
 				return false

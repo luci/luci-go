@@ -27,17 +27,16 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/milo"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-	annotpb "go.chromium.org/luci/common/proto/milo"
+	annotpb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 
 // This code converts annotation step(s) to Buildbucket v2 steps or build.
 // See:
 //   * go.chromium.org/luci/buildbucket/proto#Build
 //   * go.chromium.org/luci/buildbucket/proto#Step
-//   * go.chromium.org/luci/common/proto/milo#Step
+//   * go.chromium.org/luci/luciexe/legacy/annotee/proto#Step
 
 // StepSep separates parent and child steps.
 const StepSep = "|"
@@ -104,7 +103,7 @@ func ConvertRootStep(c context.Context, rootStep *annotpb.Step) (*pb.Build, erro
 		return nil, err
 	}
 
-	if ret.Output.Properties, err = milo.ExtractProperties(rootStep); err != nil {
+	if ret.Output.Properties, err = annotpb.ExtractProperties(rootStep); err != nil {
 		return nil, err
 	}
 
