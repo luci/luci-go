@@ -170,6 +170,8 @@ func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) parsedSwarmingT
 			ret.baseVariant.Def["builder"] = v
 		case "device_type":
 			ret.baseVariant.Def["device_type"] = v
+		case "device_os":
+			ret.baseVariant.Def["device_os"] = v
 		case "gpu":
 			ret.baseVariant.Def["gpu"] = v
 		case "os":
