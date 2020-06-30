@@ -27,7 +27,6 @@ package ttqspanner
 
 import (
 	"context"
-	"errors"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/spanner"
@@ -68,7 +67,7 @@ func New(c *cloudtasks.Client, opts ttq.Options, sp *spanner.Client) (*TTQ, erro
 //
 // Panics if called twice.
 func (t *TTQ) InstallRoutes(r *router.Router, pathPrefix string, mw router.MiddlewareChain) {
-	// TODO(tandrii): implement.
+	t.impl.InstallRoutes(r, mw)
 }
 
 // AddTask guarantees eventual creation of a task in Cloud Tasks if the current
@@ -79,6 +78,6 @@ func (t *TTQ) InstallRoutes(r *router.Router, pathPrefix string, mw router.Middl
 //   TODO(tandrii): link
 // documentation for more info.
 func (t *TTQ) AddTask(ctx context.Context, txn *spanner.ReadWriteTransaction, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
-	// TODO(tandrii): implement.
-	return nil, errors.New("not implemented")
+	// TODO(tandrii): stick Spanner txn into context.
+	return t.impl.AddTask(ctx, req)
 }

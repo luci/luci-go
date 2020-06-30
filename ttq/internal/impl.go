@@ -17,7 +17,10 @@ package internal
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"io"
+	"net/http"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -32,6 +35,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
 )
@@ -61,6 +66,8 @@ type Impl struct {
 	Options     ttq.Options
 	DB          Database
 	TasksClient TasksClient
+
+	routesInstalled int32
 }
 
 // TasksClient decouples Impl from the Cloud Tasks client.
@@ -96,6 +103,55 @@ func (impl *Impl) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (
 			logging.Warningf(outCtx, "ttq happy path PostProcess %s failed: %s", r.Id, err)
 		}
 	}, nil
+}
+
+// InstallRoutes installs handlers for sweeping to ensure correctness.
+//
+// Requires an Options.Queue to be available.
+// Reserves Options.BaseURL path component in the given router for its own use.
+//
+// Panics if called twice.
+func (impl *Impl) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
+	if atomic.AddInt32(&impl.routesInstalled, 1) > 1 {
+		panic("InstallRoutes be called just once")
+	}
+	r.GET(impl.Options.CronPathPrefix(), mw, impl.handleCron)
+	// TODO(tandrii): authentication check.
+	r.GET(impl.Options.PathPrefix()+"/sweep/:shard/:level/:partition", mw, impl.handleSweepPart)
+}
+
+func (impl *Impl) handleCron(rctx *router.Context) {
+	u := partition.Universe(keySpaceBytes)
+	err := parallel.FanOutIn(func(workChan chan<- func() error) {
+		for shard, part := range u.Split(int(impl.Options.Shards)) {
+			shard, part := shard, part
+			workChan <- func() error {
+				return impl.triggerWorkItem(rctx.Context, sweepWorkItem{
+					level: 0,
+					shard: shard,
+					part:  part,
+				})
+			}
+		}
+	})
+	statusOffError(rctx, err)
+}
+
+func (impl *Impl) handleSweepPart(rctx *router.Context) {
+	w := sweepWorkItem{}
+	var err error
+	defer statusOffError(rctx, err)
+
+	if w.shard, err = strconv.Atoi(rctx.Params.ByName("shard")); err != nil {
+		return
+	}
+	if w.level, err = strconv.Atoi(rctx.Params.ByName("level")); err != nil {
+		return
+	}
+	if w.part, err = partition.FromString(rctx.Params.ByName("partition")); err != nil {
+		return
+	}
+	err = impl.execWorkItem(rctx.Context, w)
 }
 
 // Helpers.
@@ -174,6 +230,20 @@ func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRe
 	return err
 }
 
+type sweepWorkItem struct {
+	shard int
+	level int
+	part  *partition.Partition
+}
+
+func (impl *Impl) triggerWorkItem(ctx context.Context, w sweepWorkItem) error {
+	return errors.New("implement")
+}
+
+func (impl *Impl) execWorkItem(ctx context.Context, w sweepWorkItem) error {
+	return errors.New("implement")
+}
+
 const (
 	// keySpaceBytes defines the space of the Reminder Ids.
 	//
@@ -247,4 +317,25 @@ func onlyLeased(sorted []*Reminder, leased partition.SortedPartitions) []*Remind
 	}
 	leased.OnlyIn(len(sorted), keyOf, use, keySpaceBytes)
 	return reuse[:l]
+}
+
+func statusOffError(rctx *router.Context, err error) {
+	rctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	kind := ""
+	code := 0
+	switch {
+	case err == nil:
+		rctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		rctx.Writer.WriteHeader(200)
+		fmt.Fprintln(rctx.Writer, "OK")
+	case transient.Tag.In(err):
+		kind = "transient"
+		code = 503
+	default:
+		kind = "transient"
+		code = 202 // avoid retries.
+	}
+	logging.Errorf(rctx.Context, "HTTP %d: %s error: %s", code, kind, err)
+	errors.Log(rctx.Context, err)
+	http.Error(rctx.Writer, "", code)
 }
