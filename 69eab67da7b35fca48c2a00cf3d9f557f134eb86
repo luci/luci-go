@@ -94,6 +94,30 @@
       "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e27cc74c_e075f937",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-06-30T02:08:47Z",
+      "side": 1,
+      "message": "Thanks. \n\nChanged at https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2274934",
+      "parentUuid": "f9b2bf8b_50547329",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 19
+      },
+      "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
