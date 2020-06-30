@@ -30,6 +30,7 @@
 
 
 
+
 [TOC]
 
 ## Overview
@@ -241,10 +242,10 @@ internally referred to as "idempotent nodes"). It allows following usage style:
 
 ```python
 def my_recipe(name):
-  return luci.recipe(
-      name = name,
-      cipd_package = 'my/recipe/bundle',
-  )
+    return luci.recipe(
+        name = name,
+        cipd_package = 'my/recipe/bundle',
+    )
 
 luci.builder(
     name = 'builder 1',
@@ -420,6 +421,125 @@ strings. Supported kinds of schedules (illustrated via examples):
         only on manual requests, not periodically.
 
 
+## Formatting and linting Starlark code {#formatting_linting}
+
+lucicfg uses [buildifier] internally to format and lint Starlark code.
+Buildifier is primarily intended for Bazel BUILD and \*.bzl files, but it works
+with lucicfg's \*.star files reasonably well too.
+
+To format a single Starlark file use `lucicfg fmt path.star`. To format all
+\*.star files in a directory (recursively) use `lucicfg fmt <dir>`.
+
+There are two ways to run lint checks:
+
+  1. Per-file or directory using `lucicfg lint <path>`. What set of checks to
+     perform can be specified via `-check <set>` argument, where `<set>` is
+     a special comma-delimited string that identifies what checks to apply. See
+     below for how to construct it.
+  2. As part of `lucicfg validate <entry point>.star`. It will check only files
+     loaded while executing the entry point script. This is the recommended way.
+     The set of checks to apply can be specified via `lint_checks` argument in
+     [lucicfg.config(...)](#lucicfg.config), see below for examples. Note that **all checks (including
+     formatting checks) are disabled by default for now**. This will change in
+     the future.
+
+Checking that files are properly formatted is a special kind of a lint check
+called `formatting`.
+
+[buildifier]: https://github.com/bazelbuild/buildtools/tree/master/buildifier
+
+
+### Specifying a set of linter checks to apply
+
+Both `lucicfg lint -check ...` CLI argument and `lint_checks` in [lucicfg.config(...)](#lucicfg.config)
+accept a list of strings that looks like `[<initial set>], +warn1, +warn2,
+-warn3, -warn4, ... `, where
+
+  * `<initial set>` can be one of `default`, `none` or `all` and it
+    identifies a set of linter checks to use as a base:
+    * `default` is a set of checks that are known to work well with lucicfg
+      Starlark code. If `<initial set>` is omitted, `default` is used.
+    * `none` is an empty set.
+    * `all` is all checks known to buildifier. Note that some of them may be
+      incompatible with lucicfg Starlark code.
+  * `+warn` adds some specific check to the set of checks to apply.
+  * `-warn` removes some specific check from the set of checks to apply.
+
+See [buildifier warnings list] for identifiers and meanings of all possible
+checks. Note that many of them are specific to Bazel not applicable to lucicfg
+Starlark code.
+
+Additionally a check called `formatting` can be used to instruct lucicfg to
+verify formatting of Starlark files. It is part of the `default` set. Note that
+it is not a built-in buildifier check and thus it's not listed in the buildifier
+docs nor can it be disabled via `buildifier: disable=...`.
+
+[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
+
+
+### Examples {#linter_config}
+
+To apply all default checks when running `lucicfg validate` use:
+
+```python
+lucicfg.config(
+    ...
+    lint_checks = ["default"],
+)
+```
+
+This is equivalent to running `lucicfg lint -checks default` or just
+`lucicfg lint`.
+
+To check formatting only:
+
+```python
+lucicfg.config(
+    ...
+    lint_checks = ["none", "+formatting"],
+)
+```
+
+This is equivalent to running `lucicfg lint -checks "none,+formatting"`.
+
+To disable some single default check (e.g. `function-docstring`) globally:
+
+```python
+lucicfg.config(
+    ...
+    lint_checks = ["-function-docstring"],
+)
+```
+
+This is equivalent to running `lucicfg lint -checks "-function-docstring"`.
+
+
+### Disabling checks locally
+
+To suppress a specific occurrence of a linter warning add a special comment
+`# buildifier: disable=<check-name>` to the expression that causes the warning:
+
+```python
+# buildifier: disable=function-docstring
+def update_submodules_mirror(
+        name,
+        short_name,
+        source_repo,
+        target_repo,
+        extra_submodules = None,
+        triggered_by = None,
+        refs = None):
+    properties = {
+        "source_repo": source_repo,
+        "target_repo": target_repo,
+    }
+    ...
+```
+
+To suppress formatting changes (and thus formatting check) use
+`# buildifier: leave-alone`.
+
+
 ## Interfacing with lucicfg internals
 
 
@@ -509,7 +629,7 @@ assigning to a variable.
 * **config_dir**: a directory to place generated configs into, relative to the directory that contains the entry point \*.star file. `..` is allowed. If set via `-config-dir` command line flag, it is relative to the current working directory. Will be created if absent. If `-`, the configs are just printed to stdout in a format useful for debugging. Default is "generated".
 * **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` is considered tracked if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, single positive `**/*` glob is implied as well. `tracked_files` can be used to limit what files are actually emitted: if this set is not empty, only files that are in this set will be actually written to the disk (and all other files are discarded). This is beneficial when `lucicfg` is used to generate only a subset of config files, e.g. during the migration from handcrafted to generated configs. Knowing the tracked files set is also important when some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. If `tracked_files` is empty (default), `lucicfg` will save all generated files and will never delete any file in this case it is responsibility of the caller to make sure no stale output remains).
 * **fail_on_warnings**: if set to True treat validation warnings as errors. Default is False (i.e. warnings do not cause the validation to fail). If set to True via `lucicfg.config` and you want to override it to False via command line flags use `-fail-on-warnings=false`.
-* **lint_checks**: a list of linter rules to apply in `lucicfg validate`. The first entry defines what group of checks to use as a basis and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See **TODO** for a list of available checks. Default is `['none']` for now.
+* **lint_checks**: a list of linter checks to apply in `lucicfg validate`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting_linting) for more info. Default is `['none']` for now.
 
 
 
