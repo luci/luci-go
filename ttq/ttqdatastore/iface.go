@@ -51,24 +51,28 @@ type TTQ struct {
 
 // New creates a new TTQ for Datastore.
 // You must also call InstallRoutes in at least one of your app's microservices.
-func New(c *cloudtasks.Client, opts ttq.Options) *TTQ {
-	// TODO(tandrii): implement.
+func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
 	return &TTQ{impl: internal.Impl{
 		Options: opts,
 		DB:      &db{},
-	}}
+	}}, nil
 }
 
 // InstallRoutes installs handlers for sweeping to ensure correctness.
 //
 // Users must ensure at least one of their microservices calls InstallRoutes.
 //
-// Requires a SweepOptions.Queue to be available.
-// Panics if called twice.
-// Reserves for its own use all path under the given pathPrefix.
+// Requires a ttq.Options.Queue to be available.
+// Reserves a ttq.Options.BaseURL path component in the given router for its own
+// use.
+// Do read the documentation about the required cron setup in ttq.Options:
+//   TODO(tandrii): link
 //
-// TODO(tandrii): describe cron setup.
-func (t *TTQ) InstallRoutes(r *router.Router, pathPrefix string, mw router.MiddlewareChain) {
+// Panics if called twice.
+func (t *TTQ) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
 	// TODO(tandrii): implement.
 }
 
