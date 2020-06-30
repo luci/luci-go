@@ -397,8 +397,6 @@ func GetReload(r *http.Request, def int) int {
 	return refresh
 }
 
-var rLinkBreak = regexp.MustCompile("<br */?>")
-
 // renderMarkdown renders the given text as markdown HTML.
 // This uses blackfriday to convert from markdown to HTML,
 // and sanitizehtml to allow only a small subset of HTML through.

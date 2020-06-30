@@ -69,14 +69,14 @@ func (c annotationParser) addLogDogTextStream(s *rawpresentation.Streams, ls *mi
 	}
 	ms, ok := c.stream[ls.Name]
 	if !ok {
-		return fmt.Errorf("Could not find text stream %q\n%s", ls.Name, keys)
+		return fmt.Errorf("could not find text stream %q\n%s", ls.Name, keys)
 	}
 	lds, err := toLogDogStream(ms)
 	if err != nil {
-		return fmt.Errorf("Could not convert text stream %s\n%s\n%s", ls.Name, err, keys)
+		return fmt.Errorf("could not convert text stream %s\n%s\n%s", ls.Name, err, keys)
 	}
 	if lds.IsDatagram {
-		return fmt.Errorf("Expected %s to be a text stream, got a data stream", ls.Name)
+		return fmt.Errorf("expected %s to be a text stream, got a data stream", ls.Name)
 	}
 	s.Streams[ls.Name] = lds
 	return nil
@@ -88,13 +88,13 @@ func (c annotationParser) addToStreams(s *rawpresentation.Streams, anno *miloPro
 	if lds := anno.StdoutStream; lds != nil {
 		if err := c.addLogDogTextStream(s, lds); err != nil {
 			return fmt.Errorf(
-				"Encountered error while processing step streams for STDOUT: %s", err)
+				"encountered error while processing step streams for STDOUT: %s", err)
 		}
 	}
 	if lds := anno.StderrStream; lds != nil {
 		if err := c.addLogDogTextStream(s, lds); err != nil {
 			return fmt.Errorf(
-				"Encountered error while processing step streams for STDERR: %s", err)
+				"encountered error while processing step streams for STDERR: %s", err)
 		}
 	}
 
@@ -108,7 +108,7 @@ func (c annotationParser) addToStreams(s *rawpresentation.Streams, anno *miloPro
 
 		if err := c.addLogDogTextStream(s, lds); err != nil {
 			return fmt.Errorf(
-				"Encountered error while processing step streams for '%s'\n%s", lds.Name, err)
+				"encountered error while processing step streams for '%s'\n%s", lds.Name, err)
 		}
 	}
 
@@ -135,15 +135,15 @@ func (c annotationParser) ToLogDogStreams() (*rawpresentation.Streams, error) {
 	const annotationStreamName = "annotations"
 	ms, ok := c.stream[annotationStreamName]
 	if !ok {
-		return nil, fmt.Errorf("Could not find stream %s", annotationStreamName)
+		return nil, fmt.Errorf("could not find stream %s", annotationStreamName)
 	}
 	ls, err := toLogDogStream(ms)
 	if err != nil {
-		return nil, fmt.Errorf("Could not unmarshal stream %s\n%s", annotationStreamName, err)
+		return nil, fmt.Errorf("could not unmarshal stream %s\n%s", annotationStreamName, err)
 	}
 	if !ls.IsDatagram {
 		return nil, fmt.Errorf(
-			"Annotation stream %s is not a datagram\nText: %s",
+			"annotation stream %s is not a datagram\nText: %s",
 			annotationStreamName, ls.Text)
 	}
 	result.Streams[annotationStreamName] = ls
@@ -163,7 +163,7 @@ func (c annotationParser) ToLogDogStreams() (*rawpresentation.Streams, error) {
 			lk = append(lk, k)
 		}
 		return nil, fmt.Errorf(
-			"Number of streams do not match %d vs %d\nMemory:%s\nResult:%s",
+			"number of streams do not match %d vs %d\nMemory:%s\nResult:%s",
 			len(c.stream), len(result.Streams), mk, lk)
 	}
 

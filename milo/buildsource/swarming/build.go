@@ -69,10 +69,6 @@ var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", grpcutil.Permi
 // SwarmingTimeLayout is time layout used by swarming.
 const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
 
-// logDogFetchTimeout is the amount of time to wait while fetching a LogDog
-// stream before we time out the fetch.
-const logDogFetchTimeout = 30 * time.Second
-
 // Swarming task states..
 const (
 	// TaskRunning means task is running.
@@ -926,9 +922,7 @@ func RedirectsFromTask(c context.Context, host, taskID string) (int64, string, e
 		const ldPrefix = "log_location:"
 		if strings.HasPrefix(t, ldPrefix) {
 			url := t[len(ldPrefix):]
-			if strings.HasPrefix(url, "logdog://") {
-				url = url[len("logdog://"):]
-			}
+			url = strings.TrimPrefix(url, "logdog://")
 			return 0, url, nil
 		}
 	}

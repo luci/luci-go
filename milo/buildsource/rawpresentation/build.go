@@ -123,7 +123,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 
 	var toUnmarshal proto.Message
 	var compressed bool
-	followup := func() {}
+	var followup func()
 
 	switch state.Desc.ContentType {
 	case miloProto.ContentTypeAnnotations:
