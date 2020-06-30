@@ -14,13 +14,13 @@
     {{ if .Render.FaviconURL }}
       <img src="{{ .Render.FaviconURL }}" />
     {{ end }}
-      <a class="console-header-name"
-         href="/p/{{ .ProjectID }}/g/{{ .Def.Id | urlPathEscape }}/console"
-         aria-label="console {{ .Def.Name }}">{{ .Def.Name }}</a>
-      <a href="{{ .Def.RepoUrl }}">(repo)</a>
-      <div class="console-builder-summary-grid">
+    <a class="console-header-name"
+       href="/p/{{ .ProjectID }}/g/{{ .ID | urlPathEscape }}/console"
+       aria-label="console {{ .Def.Name }}">{{ .Def.Name }}</a>
+    <a href="{{ .Def.RepoUrl }}">(repo)</a>
+    <div class="console-builder-summary-grid">
       {{ .Render.ConsoleSummary }}
-      </div>
+    </div>
   </div>
 {{ else }}
   <h4>No builder groups defined.</h4>
