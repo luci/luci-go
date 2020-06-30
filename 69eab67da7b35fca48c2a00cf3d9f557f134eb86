@@ -70,6 +70,30 @@
       "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9b2bf8b_50547329",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001921
+      },
+      "writtenOn": "2020-06-30T00:50:07Z",
+      "side": 1,
+      "message": "I don\u0027t think device_os_type matters.\nuserdebug is default, but on non-Google devices we are not able to use it, so it\u0027s \"user\" there.\nI can\u0027t imagine that we would have different types for the same device.\n\ndevice_os is important, though, since it\u0027s the only indication of the driver version on Android devices (which we have in \"gpu\" for other OSes).",
+      "parentUuid": "0ee77eab_49ecb63a",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 19
+      },
+      "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
