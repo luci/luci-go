@@ -46,6 +46,30 @@
       "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb041514_2b0ca0b9",
+        "filename": "resultdb/internal/services/deriver/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1163549
+      },
+      "writtenOn": "2020-06-30T00:40:29Z",
+      "side": 1,
+      "message": "device_os_type is likely unnecessary - AFAIK all the Google devices we test on are userdebug, and non-Google devices will be user.",
+      "parentUuid": "0ee77eab_49ecb63a",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 19
+      },
+      "revId": "69eab67da7b35fca48c2a00cf3d9f557f134eb86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
