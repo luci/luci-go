@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "9e77f9e6_97a4f860",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T07:03:12Z",
+      "side": 1,
+      "message": "I understand. Often I spend more time thinking about a function name than I take to write the function, for example. I guess it depends how much energy you want to expend, but it is beneficial to others, especially if you don\u0027t get around to resolving the TODO. For the same reason of not getting around to resolving it, I prefer bugs even if they aren\u0027t blockers, because they provide context.\n\nI\u0027m not insisting I\u0027m just saying what I\u0027d do and why I\u0027d do it.",
+      "parentUuid": "260f5a67_2b8fa048",
+      "range": {
+        "startLine": 98,
+        "startChar": 10,
+        "endLine": 98,
+        "endChar": 17
+      },
+      "revId": "5d4fa9e1b2c68f7ea7bdde920b00d5729c1e70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3504204_8a267685",
         "filename": "ttq/internal/impl_test.go",
         "patchSetId": 3
