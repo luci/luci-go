@@ -56,19 +56,6 @@ func logTimer(c context.Context, message string) func() {
 	}
 }
 
-// getConsoleDef finds the console definition as defined by any project.
-// If the user is not a reader of the project, this will return a 404.
-// TODO(hinoka): If the user is not a reader of any of of the builders returned,
-// that builder will be removed from list of results.
-func getConsoleDef(c context.Context, project, name string) (*config.Console, error) {
-	cs, err := common.GetConsole(c, project, name)
-	if err != nil {
-		return nil, err
-	}
-	// TODO(hinoka): Remove builders that the user does not have access to.
-	return &cs.Def, nil
-}
-
 // validateFaviconURL checks to see if the URL is well-formed and from an allowed host.
 func validateFaviconURL(faviconURL string) error {
 	parsedFaviconURL, err := url.Parse(faviconURL)

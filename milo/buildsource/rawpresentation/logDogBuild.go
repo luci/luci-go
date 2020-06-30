@@ -148,7 +148,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 		case *miloProto.Step_Substep_AnnotationStream:
 			panic("Non-inline substeps not supported")
 		default:
-			panic(fmt.Errorf("Unknown type %v", s))
+			panic(fmt.Errorf("unknown type %v", s))
 		}
 		subcomp := miloBuildStep(c, ub, subanno, includeChildren)
 		comp.Children = append(comp.Children, &subcomp)
@@ -237,6 +237,4 @@ func AddLogDogToBuild(
 				rev, fmt.Sprintf("https://crrev.com/%s", rev), fmt.Sprintf("revision %s", rev))
 		}
 	}
-
-	return
 }

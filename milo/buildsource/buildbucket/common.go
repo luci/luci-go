@@ -21,7 +21,6 @@ import (
 	"time"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
@@ -44,21 +43,6 @@ func newSwarmbucketClient(ctx context.Context, server string) (*swarmbucket.Serv
 	return client, nil
 }
 
-func newBuildbucketClient(ctx context.Context, server string) (*bbv1.Service, error) {
-	// TODO(crbug/1006920): Do not leak the cancel context.
-	ctx, _ = context.WithTimeout(ctx, bbRPCTimeout)
-	t, err := auth.GetRPCTransport(ctx, auth.AsUser)
-	if err != nil {
-		return nil, err
-	}
-	client, err := bbv1.New(&http.Client{Transport: t})
-	if err != nil {
-		return nil, err
-	}
-	client.BasePath = fmt.Sprintf("https://%s/_ah/api/buildbucket/v1/", server)
-	return client, nil
-}
-
 // statusMap maps buildbucket status to milo status.
 // Buildbucket statuses not in the map must be treated
 // as InfraFailure.
@@ -69,12 +53,4 @@ var statusMap = map[buildbucketpb.Status]model.Status{
 	buildbucketpb.Status_FAILURE:       model.Failure,
 	buildbucketpb.Status_INFRA_FAILURE: model.InfraFailure,
 	buildbucketpb.Status_CANCELED:      model.Canceled,
-}
-
-// parseStatus converts a buildbucket status to model.Status.
-func parseStatus(status buildbucketpb.Status) model.Status {
-	if st, ok := statusMap[status]; ok {
-		return st
-	}
-	return model.InfraFailure
 }

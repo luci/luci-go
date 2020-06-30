@@ -89,6 +89,9 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 			return nil
 		}
 	})
+	if err != nil {
+		return err
+	}
 	builders := common.MergeStrings(buildersFromConfig, buildersFromSwarmbucket)
 
 	if len(builders) == 0 {

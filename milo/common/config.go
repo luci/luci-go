@@ -507,7 +507,7 @@ func parseProjectACL(projectCfg string) (ACL, error) {
 	groups := stringset.New(0)
 	idents := stringset.New(0)
 	for _, access := range cfg.Access {
-		if strings.IndexRune(access, ':') < 0 {
+		if !strings.ContainsRune(access, ':') {
 			access = "user:" + access
 		}
 		if strings.HasPrefix(access, "group:") {
