@@ -179,6 +179,30 @@
     },
     {
       "key": {
+        "uuid": "da41aee6_49efc749",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T07:20:32Z",
+      "side": 1,
+      "message": "To see what TODOs are left in the code? In that case I don\u0027t want to see some shit like \"TODO: if\" and then have to open the file to see what the hell it\u0027s talking about. On the other hand if I see \"TODO: allow custom happy path deadline\" then assuming I have any familiarity with the ttq package (functionality, I don\u0027t even need to understand the code), I immediately know what feature is missing.",
+      "parentUuid": "530be52c_2273a0b3",
+      "range": {
+        "startLine": 98,
+        "startChar": 10,
+        "endLine": 98,
+        "endChar": 17
+      },
+      "revId": "5d4fa9e1b2c68f7ea7bdde920b00d5729c1e70d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3504204_8a267685",
         "filename": "ttq/internal/impl_test.go",
         "patchSetId": 3
