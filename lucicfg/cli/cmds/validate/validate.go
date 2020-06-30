@@ -64,7 +64,7 @@ statement. See its doc for more details.
 		CommandRun: func() subcommands.CommandRun {
 			vr := &validateRun{}
 			vr.Init(params)
-			vr.AddMetaFlags()
+			vr.AddGeneratorFlags()
 			vr.Flags.StringVar(&vr.configSet, "config-set", "",
 				"Name of the config set to validate against when validating existing *.cfg configs.")
 			vr.Flags.BoolVar(&vr.strict, "strict", false,

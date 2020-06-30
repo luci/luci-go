@@ -70,7 +70,7 @@ Example:
 		CommandRun: func() subcommands.CommandRun {
 			dr := &diffRun{}
 			dr.Init(params)
-			dr.AddMetaFlags()
+			dr.AddGeneratorFlags()
 			dr.Flags.StringVar(&dr.outputDir, "output-dir", "", "Where to put normalized configs if you want them preserved after the command completes.")
 			return dr
 		},

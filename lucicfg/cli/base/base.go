@@ -88,9 +88,6 @@ func (c *Subcommand) Init(params Parameters) {
 	c.params = &params
 	c.Meta = c.DefaultMeta()
 
-	c.Flags.Var(&c.Vars, "var",
-		"A `k=v` pair setting a value of some lucicfg.var(expose_as=...) variable, can be used multiple times (to set multiple vars).")
-
 	c.logConfig.Level = logging.Info
 	c.logConfig.AddFlags(&c.Flags)
 
@@ -112,14 +109,16 @@ func (c *Subcommand) DefaultMeta() lucicfg.Meta {
 	}
 }
 
-// AddMetaFlags registers c.Meta in the FlagSet.
+// AddGeneratorFlags registers c.Meta and c.Vars in the FlagSet.
 //
 // Used by subcommands that end up executing Starlark.
-func (c *Subcommand) AddMetaFlags() {
+func (c *Subcommand) AddGeneratorFlags() {
 	if c.params == nil {
 		panic("call Init first")
 	}
 	c.Meta.AddFlags(&c.Flags)
+	c.Flags.Var(&c.Vars, "var",
+		"A `k=v` pair setting a value of some lucicfg.var(expose_as=...) variable, can be used multiple times (to set multiple vars).")
 }
 
 // CheckArgs checks command line args.

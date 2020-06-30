@@ -52,7 +52,7 @@ on disk, so they can be manually examined for reasons they are invalid.
 		CommandRun: func() subcommands.CommandRun {
 			gr := &generateRun{}
 			gr.Init(params)
-			gr.AddMetaFlags()
+			gr.AddGeneratorFlags()
 			gr.Flags.BoolVar(&gr.validate, "validate", false, "Validate the generate configs by sending them to LUCI Config")
 			gr.Flags.StringVar(&gr.emitToStdout, "emit-to-stdout", "",
 				"When set to a path, keep generated configs in memory (don't touch disk) and just emit this single config file to stdout")
