@@ -42,6 +42,10 @@ func (s *Fake) Get(context.Context, types.Metric, time.Time, []interface{}) inte
 func (s *Fake) Set(context.Context, types.Metric, time.Time, []interface{}, interface{}) {
 }
 
+// Del does nothing.
+func (s *Fake) Del(context.Context, types.Metric, []interface{}) {
+}
+
 // Incr does nothing.
 func (s *Fake) Incr(context.Context, types.Metric, time.Time, []interface{}, interface{}) {
 }
