@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -48,10 +50,34 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
+
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 )
 
+type CloudTasksClient interface {
+	CreateTask(ctx context.Context, queue string, task *taskspb.Task) (*taskspb.Task, error)
+}
+
+// Generates a task name that will dedup by email address.
+func taskName(task *internal.EmailTask, dedupKey string) string {
+	if dedupKey == "" {
+		return ""
+	}
+
+	// There's some weird restrictions on what characters are allowed inside task
+	// names. Lexicographically close names also cause hot spot problems in the
+	// Task Queues backend. To avoid these two issues, we always use SHA256 hashes
+	// as task names. Also each task kind owns its own namespace of deduplication
+	// keys, so add task type to the digest as well.
+	h := sha256.New()
+	h.Write([]byte(proto.MessageName(task)))
+	h.Write([]byte{0})
+	h.Write([]byte(dedupKey))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 // createEmailTasks constructs EmailTasks to be dispatched onto the task queue.
-func createEmailTasks(c context.Context, recipients []EmailNotify, input *notifypb.TemplateInput) ([]*tq.Task, error) {
+func createEmailTasks(c context.Context, recipients []EmailNotify, input *notifypb.TemplateInput) (map[string]*internal.EmailTask, error) {
 	// Get templates.
 	bundle, err := getBundle(c, input.Build.Builder.Project)
 	if err != nil {
@@ -90,7 +116,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 
 	// Create a task per recipient.
 	// Do not bundle multiple recipients into one task because we don't use BCC.
-	tasks := make([]*tq.Task, 0, len(recipients))
+	tasks := make(map[string]*internal.EmailTask)
 	seen := stringset.New(len(recipients))
 	for _, r := range recipients {
 		name := r.Template
@@ -106,10 +132,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 
 		task := *taskTemplates[name] // copy
 		task.Recipients = []string{r.Email}
-		tasks = append(tasks, &tq.Task{
-			DeduplicationKey: emailKey,
-			Payload:          &task,
-		})
+		tasks[emailKey] = &task
 	}
 	return tasks, nil
 }
@@ -427,7 +450,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 // and 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, recipients []EmailNotify, templateParams *notifypb.TemplateInput) error {
+func Notify(c context.Context, ct CloudTasksClient, recipients []EmailNotify, templateParams *notifypb.TemplateInput) error {
 	c = datastore.WithoutTransaction(c)
 
 	// Remove unallowed recipients.
@@ -447,7 +470,26 @@ func Notify(c context.Context, d *tq.Dispatcher, recipients []EmailNotify, templ
 	if err != nil {
 		return errors.Annotate(err, "failed to create email tasks").Err()
 	}
-	return d.AddTask(c, tasks...)
+	for emailKey, task := range tasks {
+		blob, err := serializePayload(task)
+		if err != nil {
+			return err
+		}
+		task := &taskspb.Task{
+			Name: taskName(task, emailKey),
+			MessageType: &taskspb.Task_AppEngineHttpRequest{
+				AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
+					RelativeUri: "/internal/tasks/",
+					HttpMethod:  taskspb.HttpMethod_POST,
+					Body:        blob,
+				},
+			},
+		}
+		if _, err := ct.CreateTask(c, "email", task); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // InitDispatcher registers the send email task with the given dispatcher.
