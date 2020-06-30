@@ -36,7 +36,7 @@ import (
 )
 
 func TestFuncs(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	Convey("Middleware Tests", t, func() {
 		Convey("Format Commit Description", func() {
@@ -125,7 +125,7 @@ func TestFuncs(t *testing.T) {
 			So(ok, ShouldBeFalse)
 			So(project, ShouldEqual, "")
 			So(r.Code, ShouldEqual, 302)
-			So(r.HeaderMap["Location"], ShouldResemble, []string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"})
+			So(r.Result().Header["Location"], ShouldResemble, []string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"})
 		})
 
 		Convey("Install git project to context when the user has access to the project", func() {
