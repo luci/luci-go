@@ -131,6 +131,24 @@
     },
     {
       "key": {
+        "uuid": "b0de11b7_b57e40ce",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T07:15:39Z",
+      "side": 1,
+      "message": "This is better, thanks.",
+      "parentUuid": "e8ed872d_a19027cc",
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "047a0eb5_c82e7cff",
         "filename": "ttq/types.go",
         "patchSetId": 7
@@ -178,6 +196,30 @@
     },
     {
       "key": {
+        "uuid": "a1be55c9_e0ca1903",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T07:15:39Z",
+      "side": 1,
+      "message": "I forgot about GKE. Could you let it support either relative or full or do you think that\u0027s confusing?",
+      "parentUuid": "0ccfcb43_7c27841e",
+      "range": {
+        "startLine": 91,
+        "startChar": 18,
+        "endLine": 91,
+        "endChar": 40
+      },
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a6a74c76_a1d42d33",
         "filename": "ttq/types.go",
         "patchSetId": 7
@@ -207,6 +249,24 @@
       "side": 1,
       "message": "on what exactly? Format? You can find regexps for individuals components, but I have never seen doc in one place.\npublic docs typically avoid going into detail, e.g. https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues.tasks/create?hl\u003den\n\nIn practice, exact regexp doesn\u0027t matter -- people will copy-pasta LOCATION_ID from existing apps and QUEUE_ID will have to be created up front anyhow.",
       "parentUuid": "a6a74c76_a1d42d33",
+      "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fd4a434_fb2a5221",
+        "filename": "ttq/types.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T07:15:39Z",
+      "side": 1,
+      "message": "I mean how to configure the queue which must exist. Do you use queue.yaml or this method:\nhttps://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues/create\n\nIf you use queue.yaml how do you get the value of LOCATION_ID?",
+      "parentUuid": "369f2cd2_10ddbbc7",
       "revId": "05de4c0b06682db5832be9dd4ffd937840b16506",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
