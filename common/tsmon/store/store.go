@@ -29,6 +29,7 @@ type Store interface {
 
 	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) interface{}
 	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{})
+	Del(c context.Context, m types.Metric, fieldVals []interface{})
 	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{})
 
 	GetAll(c context.Context) []types.Cell
