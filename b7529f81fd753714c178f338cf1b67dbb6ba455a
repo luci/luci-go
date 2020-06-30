@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "4bc63752_df377c6f",
+        "filename": "buildbucket/appengine/internal/buildid/buildid.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T17:41:39Z",
+      "side": 1,
+      "message": "IMO high.IsZero being shorthand for no upper bound is slightly unintuitive, but I don\u0027t really have a better solution. Conversely low.IsZero makes sense to me as meaning from 0 to whatever.\n\nI\u0027d add something explanatory to the function comment.",
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "54af04bf_a7f2d97b",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 4
@@ -81,6 +98,29 @@
         "startChar": 23,
         "endLine": 89,
         "endChar": 29
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce613dc1_38642169",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T17:41:39Z",
+      "side": 1,
+      "message": "Remove extraneous space.",
+      "range": {
+        "startLine": 93,
+        "startChar": 55,
+        "endLine": 93,
+        "endChar": 56
       },
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -249,6 +289,30 @@
     },
     {
       "key": {
+        "uuid": "b7ff60e2_50724d21",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T17:41:39Z",
+      "side": 1,
+      "message": "I wouldn\u0027t bother with this comment otherwise, but since you already have to update this, please use \"page_token\" with an underscore to match the style used in other validation functions. In general I\u0027m using the names from the *.proto.",
+      "parentUuid": "75845a93_ac1f385a",
+      "range": {
+        "startLine": 108,
+        "startChar": 32,
+        "endLine": 108,
+        "endChar": 38
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "041ca35b_400c082e",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 4
@@ -260,6 +324,30 @@
       "writtenOn": "2020-06-27T02:51:30Z",
       "side": 1,
       "message": "tags :\u003d req.GetPredicate().GetTags()",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 2
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8db351ae_f559c813",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-06-30T17:41:39Z",
+      "side": 1,
+      "message": "At that point just inline into the validatePageToken call IMO.",
+      "parentUuid": "041ca35b_400c082e",
       "range": {
         "startLine": 119,
         "startChar": 1,
