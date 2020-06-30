@@ -43,9 +43,9 @@ message Settings {
     // none is specified.  Default host is implicitly an allowed host.
     string default_host = 1;
 
-    // allowed_hosts is a whitelist of hostnames of swarming instances
-    // that Milo is allowed to talk to.  This is specified here for security
-    // reasons, because Milo will hand out its oauth2 token to a swarming host.
+    // allowed_hosts is a list of hostnames of swarming instances that Milo is
+    // allowed to talk to.  This is specified here for security reasons,
+    // because Milo will hand out its oauth2 token to a swarming host.
     repeated string allowed_hosts = 2;
   }
   Swarming swarming = 3;
