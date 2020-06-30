@@ -26,9 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/proto/srcman"
 	"go.chromium.org/luci/logdog/common/types"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 
 // UpdateType is information sent to the Updated callback to indicate the nature
@@ -60,7 +60,7 @@ type Callbacks interface {
 
 // State is the aggregate annotation state for a given annotation
 // stream. It receives updates in the form of annotations added via Append,
-// and can be serialized to a Milo annotation state protobuf.
+// and can be serialized to an annotation state protobuf.
 type State struct {
 	// LogNameBase is the base log stream name that is prepeneded to generated
 	// log streams.
@@ -68,7 +68,7 @@ type State struct {
 	// Callbacks implements annotation callbacks. It may not be nil.
 	Callbacks Callbacks
 	// Execution is the supplied Execution. If nil, no execution details will be
-	// added to the generated Milo protos.
+	// added to the generated annotation protos.
 	Execution *Execution
 	// Offline specifies whether parsing happens not at the same time as
 	// emitting. If true and CURRENT_TIMESTAMP annotations are not provided
@@ -90,9 +90,9 @@ type State struct {
 	// startedProcessing is true iff processed at least one annotation.
 	startedProcessing bool
 
-	// stepLookup is a mapping of *milo.Step entries to their respective *Step
+	// stepLookup is a mapping of *annopb.Step entries to their respective *Step
 	// entries.
-	stepLookup map[*milo.Step]*Step
+	stepLookup map[*annopb.Step]*Step
 
 	// currentTimestamp is time for the next annotation expected in Append.
 	currentTimestamp *timestamp.Timestamp
@@ -108,7 +108,7 @@ func (s *State) initialize() {
 	}
 
 	s.stepMap = map[string]*Step{}
-	s.stepLookup = map[*milo.Step]*Step{}
+	s.stepLookup = map[*annopb.Step]*Step{}
 
 	name := "steps"
 	if s.Execution != nil {
@@ -120,7 +120,7 @@ func (s *State) initialize() {
 
 	// Add our Command parameters, if applicable.
 	if exec := s.Execution; exec != nil {
-		s.rootStep.Command = &milo.Step_Command{
+		s.rootStep.Command = &annopb.Step_Command{
 			CommandLine: exec.Command,
 			Cwd:         exec.Dir,
 			Environ:     exec.Env,
@@ -271,9 +271,9 @@ func (s *State) Append(annotation string) error {
 		fallthrough
 	case "STEP_FAILURE":
 		step := s.CurrentStep()
-		updatedIf(step, UpdateIterative, step.SetStatus(milo.Status_FAILURE, nil))
+		updatedIf(step, UpdateIterative, step.SetStatus(annopb.Status_FAILURE, nil))
 		if s.haltOnFailure {
-			updatedIf(step, UpdateIterative, s.finishWithStatus(milo.Status_FAILURE, nil))
+			updatedIf(step, UpdateIterative, s.finishWithStatus(annopb.Status_FAILURE, nil))
 		}
 
 	// @@@STEP_EXCEPTION@@@
@@ -281,8 +281,8 @@ func (s *State) Append(annotation string) error {
 		fallthrough
 	case "STEP_EXCEPTION":
 		step := s.CurrentStep()
-		updatedIf(step, UpdateIterative, step.SetStatus(milo.Status_FAILURE, &milo.FailureDetails{
-			Type: milo.FailureDetails_EXCEPTION,
+		updatedIf(step, UpdateIterative, step.SetStatus(annopb.Status_FAILURE, &annopb.FailureDetails{
+			Type: annopb.FailureDetails_EXCEPTION,
 		}))
 
 	// @@@STEP_CLOSED@@@
@@ -425,11 +425,11 @@ func (s *State) finishAndDeriveStatus() bool {
 	return s.finishWithStatusImpl(nil, nil)
 }
 
-func (s *State) finishWithStatus(st milo.Status, fd *milo.FailureDetails) bool {
+func (s *State) finishWithStatus(st annopb.Status, fd *annopb.FailureDetails) bool {
 	return s.finishWithStatusImpl(&st, fd)
 }
 
-func (s *State) finishWithStatusImpl(status *milo.Status, fd *milo.FailureDetails) bool {
+func (s *State) finishWithStatusImpl(status *annopb.Status, fd *annopb.FailureDetails) bool {
 	if s.closed {
 		return false
 	}
@@ -452,11 +452,11 @@ func (s *State) finishWithStatusImpl(status *milo.Status, fd *milo.FailureDetail
 
 	// If some steps were unfinished, show a root exception.
 	if unfinished && status == nil {
-		exception := milo.Status_FAILURE
+		exception := annopb.Status_FAILURE
 		status = &exception
 		if fd == nil {
-			fd = &milo.FailureDetails{
-				Type: milo.FailureDetails_EXCEPTION,
+			fd = &annopb.FailureDetails{
+				Type: annopb.FailureDetails_EXCEPTION,
 			}
 		}
 
@@ -489,11 +489,11 @@ func (s *State) LookupStepErr(name string) (*Step, error) {
 }
 
 // ResolveStep returns the annotation package *Step corresponding to the
-// supplied *milo.Step. This is a reverse lookup operation.
+// supplied *annopb.Step. This is a reverse lookup operation.
 //
-// If the supplied *milo.Step is not registered with this annotation State,
+// If the supplied *annopb.Step is not registered with this annotation State,
 // this function will return nil.
-func (s *State) ResolveStep(ms *milo.Step) *Step { return s.stepLookup[ms] }
+func (s *State) ResolveStep(ms *annopb.Step) *Step { return s.stepLookup[ms] }
 
 // RootStep returns the root step.
 func (s *State) RootStep() *Step {
@@ -556,7 +556,7 @@ func (s *State) now() *timestamp.Timestamp {
 
 // Step represents a single step.
 type Step struct {
-	milo.Step
+	annopb.Step
 	s *State
 
 	// parent is the step that spawned this step.
@@ -598,7 +598,7 @@ type Step struct {
 
 	// linkMap is a map of link label to link struct. BuildBot only retains the
 	// latest link for a given label, so we use this to enforce that.
-	linkMap map[string]*milo.AnnotationLink
+	linkMap map[string]*annopb.AnnotationLink
 
 	// logNameBase is the LogDog stream name root for this step.
 	LogNameBase types.StreamName
@@ -612,8 +612,8 @@ type Step struct {
 func (as *Step) String() string { return string(as.LogNameBase) }
 
 func (as *Step) initializeStep(s *State, parent *Step, name string, legacy bool) *Step {
-	t := milo.Status_RUNNING
-	as.Step = milo.Step{
+	t := annopb.Status_RUNNING
+	as.Step = annopb.Step{
 		Name:   name,
 		Status: t,
 	}
@@ -641,8 +641,8 @@ func (as *Step) appendSubstep(s *Step) {
 	s.detachFromParent()
 
 	s.parent = as
-	as.Substep = append(as.Substep, &milo.Step_Substep{
-		Substep: &milo.Step_Substep_Step{
+	as.Substep = append(as.Substep, &annopb.Step_Substep{
+		Substep: &annopb.Step_Substep_Step{
 			Step: &s.Step,
 		},
 	})
@@ -672,8 +672,8 @@ func (as *Step) Name() string {
 	return as.Step.Name
 }
 
-// Proto returns the Milo protobuf associated with this Step.
-func (as *Step) Proto() *milo.Step {
+// Proto returns the annotation Step protobuf associated with this Step.
+func (as *Step) Proto() *annopb.Step {
 	return &as.Step
 }
 
@@ -743,13 +743,13 @@ func (as *Step) Close(closeTime *timestamp.Timestamp) bool {
 	return as.closeWithStatus(closeTime, nil)
 }
 
-func (as *Step) closeWithStatus(closeTime *timestamp.Timestamp, sp *milo.Status) bool {
+func (as *Step) closeWithStatus(closeTime *timestamp.Timestamp, sp *annopb.Status) bool {
 	if as.closed {
 		return false
 	}
 
 	// Close our outstanding substeps, and get their highest status value.
-	stepStatus := milo.Status_SUCCESS
+	stepStatus := annopb.Status_SUCCESS
 	if sp == nil {
 		for _, ss := range as.Substep {
 			sub := as.s.ResolveStep(ss.GetStep())
@@ -772,7 +772,7 @@ func (as *Step) closeWithStatus(closeTime *timestamp.Timestamp, sp *milo.Status)
 		as.LogEnd(l)
 	}
 
-	if as.Status == milo.Status_RUNNING {
+	if as.Status == annopb.Status_RUNNING {
 		as.Status = stepStatus
 	}
 	as.Ended = closeTime
@@ -907,7 +907,7 @@ func (as *Step) SetNestLevel(l int) bool {
 // AddLogdogStreamLink adds a LogDog stream link to this Step's links list.
 func (as *Step) AddLogdogStreamLink(server, label string, prefix, name types.StreamName) {
 	link := as.getOrCreateLinkForLabel(label)
-	link.Value = &milo.AnnotationLink_LogdogStream{&milo.LogdogStream{
+	link.Value = &annopb.AnnotationLink_LogdogStream{&annopb.LogdogStream{
 		Name:   string(name),
 		Server: server,
 		Prefix: string(prefix),
@@ -918,20 +918,20 @@ func (as *Step) AddLogdogStreamLink(server, label string, prefix, name types.Str
 func (as *Step) AddURLLink(label, alias, url string) {
 	link := as.getOrCreateLinkForLabel(label)
 	link.AliasLabel = alias
-	link.Value = &milo.AnnotationLink_Url{url}
+	link.Value = &annopb.AnnotationLink_Url{url}
 }
 
-func (as *Step) getOrCreateLinkForLabel(label string) *milo.AnnotationLink {
+func (as *Step) getOrCreateLinkForLabel(label string) *annopb.AnnotationLink {
 	if cur := as.linkMap[label]; cur != nil {
 		return cur
 	}
 
 	// New label, so create a new link.
-	link := &milo.AnnotationLink{
+	link := &annopb.AnnotationLink{
 		Label: label,
 	}
 	if as.linkMap == nil {
-		as.linkMap = make(map[string]*milo.AnnotationLink)
+		as.linkMap = make(map[string]*annopb.AnnotationLink)
 	}
 	as.OtherLinks = append(as.OtherLinks, link)
 	as.linkMap[label] = link
@@ -941,7 +941,7 @@ func (as *Step) getOrCreateLinkForLabel(label string) *milo.AnnotationLink {
 // SetStatus sets this step's component status.
 //
 // If the status doesn't change, the supplied failure details will be ignored.
-func (as *Step) SetStatus(s milo.Status, fd *milo.FailureDetails) bool {
+func (as *Step) SetStatus(s annopb.Status, fd *annopb.FailureDetails) bool {
 	if as.closed || as.Status == s {
 		return false
 	}
@@ -962,7 +962,7 @@ func (as *Step) SetProperty(name, value string) bool {
 		}
 	}
 
-	as.Property = append(as.Property, &milo.Step_Property{
+	as.Property = append(as.Property, &annopb.Step_Property{
 		Name:  name,
 		Value: value,
 	})
@@ -971,19 +971,19 @@ func (as *Step) SetProperty(name, value string) bool {
 
 // SetSTDOUTStream sets the LogDog STDOUT stream value, returning true if the
 // Step was updated.
-func (as *Step) SetSTDOUTStream(st *milo.LogdogStream) (updated bool) {
+func (as *Step) SetSTDOUTStream(st *annopb.LogdogStream) (updated bool) {
 	as.StdoutStream, updated = as.maybeSetLogDogStream(as.StdoutStream, st)
 	return
 }
 
 // SetSTDERRStream sets the LogDog STDERR stream value, returning true if the
 // Step was updated.
-func (as *Step) SetSTDERRStream(st *milo.LogdogStream) (updated bool) {
+func (as *Step) SetSTDERRStream(st *annopb.LogdogStream) (updated bool) {
 	as.StderrStream, updated = as.maybeSetLogDogStream(as.StderrStream, st)
 	return
 }
 
-func (as *Step) maybeSetLogDogStream(target *milo.LogdogStream, st *milo.LogdogStream) (*milo.LogdogStream, bool) {
+func (as *Step) maybeSetLogDogStream(target *annopb.LogdogStream, st *annopb.LogdogStream) (*annopb.LogdogStream, bool) {
 	if (target == nil && st == nil) || (target != nil && st != nil && proto.Equal(target, st)) {
 		return target, false
 	}

@@ -31,8 +31,8 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/common/types"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -182,17 +182,17 @@ func playAnnotationScript(t *testing.T, name string, st *State) (string, error) 
 	return path, nil
 }
 
-func loadStepProto(t *testing.T, test string, s *Step) *milo.Step {
+func loadStepProto(t *testing.T, test string, s *Step) *annopb.Step {
 	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(string(s.LogNameBase))))
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		t.Errorf("Failed to read milo.Step proto [%s]: %v", path, err)
+		t.Errorf("Failed to read annopb.Step proto [%s]: %v", path, err)
 		return nil
 	}
 
-	st := milo.Step{}
+	st := annopb.Step{}
 	if err := proto.UnmarshalText(string(data), &st); err != nil {
-		t.Errorf("Failed to Unmarshal milo.Step proto [%s]: %v", path, err)
+		t.Errorf("Failed to Unmarshal annopb.Step proto [%s]: %v", path, err)
 		return nil
 	}
 	return &st

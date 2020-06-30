@@ -4,9 +4,9 @@
 
 syntax = "proto3";
 
-package milo;
+package annotation;
 
-option go_package = "go.chromium.org/luci/common/proto/milo";
+option go_package = "go.chromium.org/luci/luciexe/legacy/annotee/proto;annopb";
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/proto/srcman/manifest.proto";

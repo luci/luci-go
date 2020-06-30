@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-	annotpb "go.chromium.org/luci/common/proto/milo"
+	annotpb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

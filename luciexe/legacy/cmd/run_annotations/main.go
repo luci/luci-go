@@ -27,12 +27,12 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/exe"
 	"go.chromium.org/luci/luciexe/legacy/annotee"
 	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 
 func check(err error) {
@@ -63,7 +63,7 @@ func main() {
 		check(err)
 
 		var buildMU sync.Mutex
-		sendAnnotations := func(ann *milo.Step) {
+		sendAnnotations := func(ann *annopb.Step) {
 			latest, err := annotee.ConvertRootStep(ctx, ann)
 			check(errors.Annotate(err, "failed to convert an annotation root step to a build").Err())
 
@@ -83,7 +83,7 @@ func main() {
 			Offline:                false,
 			CloseSteps:             true,
 			AnnotationUpdated: func(annBytes []byte) {
-				ann := &milo.Step{}
+				ann := &annopb.Step{}
 				check(errors.Annotate(proto.Unmarshal(annBytes, ann), "failed to parse annotation proto").Err())
 				sendAnnotations(ann)
 			},
