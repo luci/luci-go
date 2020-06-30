@@ -114,11 +114,12 @@ def _config(
         Default is False (i.e. warnings do not cause the validation to fail).
         If set to True via `lucicfg.config` and you want to override it to False
         via command line flags use `-fail-on-warnings=false`.
-      lint_checks: a list of linter rules to apply in `lucicfg validate`. The
-        first entry defines what group of checks to use as a basis and it can
+      lint_checks: a list of linter checks to apply in `lucicfg validate`. The
+        first entry defines what group of checks to use as a base and it can
         be one of `none`, `default` or `all`. The following entries either
         add checks to the set (`+<name>`) or remove them (`-<name>`). See
-        **TODO** for a list of available checks. Default is `['none']` for now.
+        [Formatting and linting Starlark code](#formatting_linting) for more
+        info. Default is `['none']` for now.
     """
     if config_service_host != None:
         __native__.set_meta("config_service_host", config_service_host)
