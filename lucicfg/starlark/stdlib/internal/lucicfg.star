@@ -118,7 +118,8 @@ def _config(
         first entry defines what group of checks to use as a basis and it can
         be one of `none`, `default` or `all`. The following entries either
         add checks to the set (`+<name>`) or remove them (`-<name>`). See
-        **TODO** for a list of available checks. Default is `['none']` for now.
+        [Formatting and linting Starlark code](#formatting_linting) for more
+        info. Default is `['none']` for now.
     """
     if config_service_host != None:
         __native__.set_meta("config_service_host", config_service_host)
