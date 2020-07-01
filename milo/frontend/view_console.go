@@ -510,6 +510,9 @@ func ConsoleHandler(c *router.Context) error {
 	switch {
 	case err != nil:
 		return err
+	case con.IsExternal():
+		// We don't allow navigating directly to external consoles.
+		return common.ErrConsoleNotFound
 	case con.Def.BuilderViewOnly:
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
 		return nil
@@ -571,6 +574,7 @@ func ConsolesHandler(c *router.Context, projectID string) error {
 	}
 
 	type fullConsole struct {
+		ID        string
 		ProjectID string
 		Def       *config.Console
 		Render    consoleRenderer
@@ -591,8 +595,15 @@ func ConsolesHandler(c *router.Context, projectID string) error {
 			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
 			continue
 		}
+		resolvedProjectID := con.ProjectID()
+		resolvedConsoleID := con.Def.Id
+		if con.Def.ExternalProject != "" {
+			resolvedProjectID = con.Def.ExternalProject
+			resolvedConsoleID = con.Def.ExternalId
+		}
 		full := fullConsole{
-			ProjectID: con.ProjectID(),
+			ID:        resolvedConsoleID,
+			ProjectID: resolvedProjectID,
 			Def:       &con.Def,
 			Render:    consoleRenderer{respConsole},
 		}

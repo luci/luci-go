@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -148,6 +150,13 @@ func TestConfig(t *testing.T) {
 				So(baz.ACL, ShouldResemble, ACL{
 					Groups: []string{"a"},
 				})
+
+				external := &Project{ID: "external"}
+				So(datastore.Get(c, external), ShouldBeNil)
+				So(external.HasConfig, ShouldBeTrue)
+				So(external.ACL, ShouldResemble, ACL{
+					Identities: []identity.Identity{"user:a@example.com", "user:e@example.com"},
+				})
 			})
 
 			Convey("Check Console config updated", func() {
@@ -165,6 +174,42 @@ func TestConfig(t *testing.T) {
 				So(cs.Ordinal, ShouldEqual, 1)
 				So(cs.Def.Header.Id, ShouldEqual, "main_header")
 				So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
+			})
+
+			Convey("Check external Console is resolved", func() {
+				cs, err := GetConsole(c, "external", "foo-default")
+				So(err, ShouldBeNil)
+				So(cs.Ordinal, ShouldEqual, 0)
+				So(cs.ID, ShouldEqual, "foo-default")
+				So(cs.Def.Id, ShouldEqual, "foo-default")
+				So(cs.Def.Name, ShouldEqual, "foo default")
+				So(cs.Def.ExternalProject, ShouldEqual, "foo")
+				So(cs.Def.ExternalId, ShouldEqual, "default")
+				So(cs.Builders, ShouldResemble, []string{"buildbucket/luci.foo.something/bar", "buildbucket/luci.foo.other/baz"})
+			})
+
+			Convey("Check user can see external consoles they have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:a@example.com"})
+				cs, err := GetProjectConsoles(cUser, "external")
+				So(err, ShouldBeNil)
+
+				ids := make([]string, 0, len(cs))
+				for _, c := range cs {
+					ids = append(ids, c.ID)
+				}
+				So(ids, ShouldResemble, []string{"foo-default"})
+			})
+
+			Convey("Check user can't see external consoles they don't have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:e@example.com"})
+				cs, err := GetProjectConsoles(cUser, "external")
+				So(err, ShouldBeNil)
+
+				ids := make([]string, 0, len(cs))
+				for _, c := range cs {
+					ids = append(ids, c.ID)
+				}
+				So(ids, ShouldHaveLength, 0)
 			})
 
 			Convey("Check second update reorders", func() {
@@ -214,7 +259,8 @@ func TestConfig(t *testing.T) {
 				})
 
 				Convey("Check getting project builder groups in correct order", func() {
-					cs, err := GetProjectConsoles(c, "foo")
+					cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:a@example.com"})
+					cs, err := GetProjectConsoles(cUser, "foo")
 					So(err, ShouldBeNil)
 
 					ids := make([]string, 0, len(cs))
@@ -235,6 +281,7 @@ headers: {
 }
 consoles: {
 	id: "default"
+	name: "default"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
 	refs: "refs/heads/master"
 	manifest_name: "REVISION"
@@ -408,6 +455,20 @@ var fooProjectCfg2 = `
 access: "a@example.com"
 `
 
+var externalConsoleCfg = `
+consoles: {
+	id: "foo-default"
+	name: "foo default"
+	external_project: "foo"
+	external_id: "default"
+}
+`
+
+var externalProjectCfg = `
+access: "a@example.com"
+access: "e@example.com"
+`
+
 var badConsoleCfg = `
 consoles: {
 	id: "baz"
@@ -441,6 +502,10 @@ var mockedConfigs = map[config.Set]memcfg.Files{
 	"projects/baz": {
 		// no Milo config
 		"project.cfg": bazProjectCfg,
+	},
+	"projects/external": {
+		"${appid}.cfg": externalConsoleCfg,
+		"project.cfg":  externalProjectCfg,
 	},
 }
 
