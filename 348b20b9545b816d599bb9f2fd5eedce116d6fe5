@@ -94,6 +94,30 @@
       "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "feccdd8a_658f4ee8",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-01T21:54:46Z",
+      "side": 1,
+      "message": "thanks for your comment. I\u0027d like to profile a real application and gather stats before making any performance improvements.",
+      "parentUuid": "228f8966_4832ff47",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 30
+      },
+      "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
