@@ -23,16 +23,17 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
@@ -45,6 +46,46 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+type MockCloudTasksClient struct {
+	Tasks []*taskspb.Task
+
+	// De-dupe tasks with the same name, to match prod API expectations.
+	seen stringset.Set
+}
+
+func newMockCloudTasksClient() MockCloudTasksClient {
+	return MockCloudTasksClient{seen: make(stringset.Set)}
+}
+
+func (MockCloudTasksClient) ProjectID() string {
+	return "luci-notify-test"
+}
+
+func (MockCloudTasksClient) LocationID() string {
+	return "us-central1"
+}
+
+func (c *MockCloudTasksClient) CreateTask(ctx context.Context, queue string, task *taskspb.Task) (*taskspb.Task, error) {
+	if c.seen.Add(task.Name) {
+		c.Tasks = append(c.Tasks, task)
+	}
+	return task, nil
+}
+
+func extractEmailTask(task *taskspb.Task) (*internal.EmailTask, error) {
+	httpreq, ok := task.MessageType.(*taskspb.Task_AppEngineHttpRequest)
+	if !ok {
+		return nil, errors.New("Task is missing AppEngineHttpRequest")
+	}
+	m, err := deserializePayload(httpreq.AppEngineHttpRequest.Body)
+	if err != nil {
+		return nil, err
+	}
+	et := internal.EmailTask{}
+	proto.Merge(&et, m)
+	return &et, nil
+}
 
 func dummyBuildWithEmails(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
 	ret := &Build{
@@ -242,7 +283,7 @@ func TestHandleBuild(t *testing.T) {
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
 		newTime2 := time.Date(2015, 2, 3, 12, 59, 8, 0, time.UTC)
 
-		dispatcher, tqTestable := createMockTaskQueue(c)
+		ct := newMockCloudTasksClient()
 		assertTasks := func(build *Build, checkoutFunc CheckoutFunc, expectedRecipients ...EmailNotify) {
 			history := mockHistoryFunc(map[string][]*gitpb.Commit{
 				"chromium/src":      testCommits,
@@ -250,13 +291,15 @@ func TestHandleBuild(t *testing.T) {
 			})
 
 			// Test handleBuild.
-			err := handleBuild(c, dispatcher, build, checkoutFunc, history)
+			err := handleBuild(c, &ct, build, checkoutFunc, history)
 			So(err, ShouldBeNil)
 
 			// Verify tasks were scheduled.
 			var actualEmails []string
-			for _, t := range tqTestable.GetScheduledTasks() {
-				actualEmails = append(actualEmails, t.Payload.(*internal.EmailTask).Recipients...)
+			for _, t := range ct.Tasks {
+				et, err := extractEmailTask(t)
+				So(err, ShouldBeNil)
+				actualEmails = append(actualEmails, et.Recipients...)
 			}
 			var expectedEmails []string
 			for _, r := range expectedRecipients {
@@ -544,7 +587,7 @@ func TestHandleBuild(t *testing.T) {
 			// Handle a new build.
 			build := dummyBuildWithFailingSteps(buildStatus, failingSteps)
 			history := mockHistoryFunc(map[string][]*gitpb.Commit{})
-			So(handleBuild(c, dispatcher, build, mockCheckoutFunc(nil), history), ShouldBeNil)
+			So(handleBuild(c, &ct, build, mockCheckoutFunc(nil), history), ShouldBeNil)
 
 			// Fetch the new tree closer.
 			So(datastore.Get(c, tc), ShouldBeNil)
@@ -626,7 +669,7 @@ func TestHandleBuild(t *testing.T) {
 			// Handle a new build.
 			build := dummyBuildWithFailingSteps(buildbucketpb.Status_FAILURE, []string{"step1", "step2"})
 			history := mockHistoryFunc(map[string][]*gitpb.Commit{})
-			So(handleBuild(c, dispatcher, build, mockCheckoutFunc(nil), history), ShouldBeNil)
+			So(handleBuild(c, &ct, build, mockCheckoutFunc(nil), history), ShouldBeNil)
 
 			// Fetch the new tree closer.
 			So(datastore.Get(c, tc), ShouldBeNil)
@@ -664,12 +707,4 @@ func mockCheckoutReturnsErrorFunc() CheckoutFunc {
 	return func(_ context.Context, _ *Build) (Checkout, error) {
 		return nil, errors.New("Some error")
 	}
-}
-
-func createMockTaskQueue(c context.Context) (*tq.Dispatcher, tqtesting.Testable) {
-	dispatcher := &tq.Dispatcher{}
-	InitDispatcher(dispatcher)
-	taskqueue := tqtesting.GetTestable(c, dispatcher)
-	taskqueue.CreateQueues()
-	return dispatcher, taskqueue
 }

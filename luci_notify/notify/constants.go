@@ -14,11 +14,13 @@
 
 // Define the constants to use in notify
 package notify
-import(
+
+import (
 	"time"
 )
 
 const PUBSUB_POST_REQUEST_TIMEOUT = 60 * time.Second
+
 // As Logdog request is a component of pubsub post request,
 // LOGDOG_REQUEST_TIMEOUT should be smaller than PUBSUB_POST_REQUEST_TIMEOUT
 const LOGDOG_REQUEST_TIMEOUT = 30 * time.Second

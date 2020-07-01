@@ -34,7 +34,6 @@ import (
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
-	"go.chromium.org/luci/luci_notify/internal"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -412,26 +411,22 @@ func TestNotify(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tasks, ShouldHaveLength, 4)
 
-			t := tasks[0].Payload.(*internal.EmailTask)
-			So(tasks[0].DeduplicationKey, ShouldEqual, "54-default-jane@example.com")
+			t := tasks["54-default-jane@example.com"]
 			So(t.Recipients, ShouldResemble, []string{"jane@example.com"})
 			So(t.Subject, ShouldEqual, "Build 54 completed")
 			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS")
 
-			t = tasks[1].Payload.(*internal.EmailTask)
-			So(tasks[1].DeduplicationKey, ShouldEqual, "54-default-john@example.com")
+			t = tasks["54-default-john@example.com"]
 			So(t.Recipients, ShouldResemble, []string{"john@example.com"})
 			So(t.Subject, ShouldEqual, "Build 54 completed")
 			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS")
 
-			t = tasks[2].Payload.(*internal.EmailTask)
-			So(tasks[2].DeduplicationKey, ShouldEqual, "54-non-default-don@example.com")
+			t = tasks["54-non-default-don@example.com"]
 			So(t.Recipients, ShouldResemble, []string{"don@example.com"})
 			So(t.Subject, ShouldEqual, "Build 54 completed from non-default template")
 			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS from non-default template")
 
-			t = tasks[3].Payload.(*internal.EmailTask)
-			So(tasks[3].DeduplicationKey, ShouldEqual, "54-with-steps-juan@example.com")
+			t = tasks["54-with-steps-juan@example.com"]
 			So(t.Recipients, ShouldResemble, []string{"juan@example.com"})
 			So(t.Subject, ShouldEqual, `Subject "step name"`)
 			So(decompress(t.BodyGzip), ShouldEqual, "Body &#34;step name&#34;")
