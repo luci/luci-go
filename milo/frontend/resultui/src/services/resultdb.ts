@@ -90,8 +90,9 @@ export interface GetInvocationRequest {
   readonly name: string;
 }
 
-export interface QueryTestResultRequest {
+export interface QueryTestResultsRequest {
   readonly invocations: string[];
+  readonly readMask?: string;
   readonly predicate?: TestResultPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
@@ -163,7 +164,7 @@ export class ResultDb {
     ) as Invocation;
   }
 
-  async queryTestResults(req: QueryTestResultRequest) {
+  async queryTestResults(req: QueryTestResultsRequest) {
     return await this.call(
         'QueryTestResults',
         req,

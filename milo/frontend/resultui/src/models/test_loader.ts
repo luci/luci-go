@@ -19,7 +19,7 @@
 
 import { action, computed, observable } from 'mobx';
 
-import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
+import { QueryTestExonerationsRequest, QueryTestResultsRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
 import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
 
 
@@ -154,7 +154,7 @@ function keyForVariant(variant: Variant) {
 /**
  * Streams test result batches from resultDb.
  */
-export async function* streamTestResultBatches(req: QueryTestResultRequest, resultDb: ResultDb): AsyncIterableIterator<TestResult[]> {
+export async function* streamTestResultBatches(req: QueryTestResultsRequest, resultDb: ResultDb): AsyncIterableIterator<TestResult[]> {
   let pageToken = req.pageToken;
   do {
     const res = await resultDb.queryTestResults({...req, pageToken});
