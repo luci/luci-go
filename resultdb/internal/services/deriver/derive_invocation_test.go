@@ -27,10 +27,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/proto/mask"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -47,6 +49,20 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+// readMask is the field mask to use when querying test results.
+// Initialized by init.
+var readMask mask.Mask
+
+func init() {
+	var err error
+	readMask, err = mask.FromFieldMask(&field_mask.FieldMask{
+		Paths: []string{"*"},
+	}, &pb.TestResult{}, false, false)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestValidateDeriveChromiumInvocationRequest(t *testing.T) {
 	Convey(`TestValidateDeriveChromiumInvocationRequest`, t, func() {
@@ -247,6 +263,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			q := testresults.Query{
 				InvocationIDs: invIDs,
 				PageSize:      100,
+				Mask:          readMask,
 			}
 			trs, _, err := q.Fetch(ctx, txn)
 			So(err, ShouldBeNil)
@@ -294,6 +311,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			q := testresults.Query{
 				InvocationIDs: invIDs,
 				PageSize:      100,
+				Mask:          readMask,
 			}
 			trs, _, err := q.Fetch(ctx, txn)
 			So(err, ShouldBeNil)
@@ -359,6 +377,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 				q := testresults.Query{
 					InvocationIDs: invocations.NewIDSet(batchInvocationID(baseID, i)),
 					PageSize:      100,
+					Mask:          readMask,
 				}
 				actualResults, _, err := q.Fetch(ctx, txn)
 				So(err, ShouldBeNil)
