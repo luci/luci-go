@@ -743,6 +743,24 @@
     },
     {
       "key": {
+        "uuid": "de45e53c_66c37761",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-01T17:10:03Z",
+      "side": 1,
+      "message": "it just the package \"search\" is not very useful on its own. No package other than \"rpc\" can benefit from it (the Query struct without Fetch() is kind of useless), so we could as well not create \"search\" package to begin with.\n\nThe problem with the current approach is that \"rpc\" package will grow pretty large. It would have all search implementation, also build creation logic, etc. The symbols in this package would have to be long e.g. all search-related functions should have names that entail search to avoid clashing with other functions.\n\noriginal buildbucket code does check permissions inside search.py, but that\u0027s not great. It is simpler to reason about security if ACL checks are as close to the surface (the RPC method) as possible.\n\nwe can this in another CL though, so I will resolve this for now",
+      "parentUuid": "756fd1b5_6b982ea4",
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea155290_b5a06e17",
         "filename": "buildbucket/appengine/rpc/search_builds_test.go",
         "patchSetId": 4
