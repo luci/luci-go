@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab0d8a89_41969594",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T01:03:47Z",
+      "side": 1,
+      "message": "shouldn\u0027t this recurse? i.e. Code(err)?",
+      "range": {
+        "startLine": 192,
+        "startChar": 15,
+        "endLine": 192,
+        "endChar": 44
+      },
+      "revId": "5b54bda86e7c96f08c57a47d6a9037ecfda1dab3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99111253_2cb419ff",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T01:03:47Z",
+      "side": 1,
+      "message": "nit: imo `return codes.Unknown` would be clearer",
+      "range": {
+        "startLine": 198,
+        "startChar": 4,
+        "endLine": 198,
+        "endChar": 8
+      },
+      "revId": "5b54bda86e7c96f08c57a47d6a9037ecfda1dab3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
