@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f12bc30c_bee8d974",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-01T23:35:42Z",
+      "side": 1,
+      "message": "nit: move right before span.Query",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 18
+      },
+      "revId": "88c466245bc4039bcd6462f45c3ecf88dcaa0ef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef25e7d3_462b406b",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-01T23:35:42Z",
+      "side": 1,
+      "message": "neither value is necessary. I\u0027d keep `taskCount:0` for emphasis, however.",
+      "range": {
+        "startLine": 96,
+        "startChar": 35,
+        "endLine": 96,
+        "endChar": 49
+      },
+      "revId": "88c466245bc4039bcd6462f45c3ecf88dcaa0ef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a2b4925_620190ef",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-01T23:35:42Z",
+      "side": 1,
+      "message": "why defer stuff() and not :\n\nerr :\u003d span.Query(...)\nstuff()\nreturn err\n\n? Is processing this in case of panic really important?",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 99,
+        "endChar": 15
+      },
+      "revId": "88c466245bc4039bcd6462f45c3ecf88dcaa0ef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98a15b7b_6b607396",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-01T23:35:42Z",
+      "side": 1,
+      "message": "just for myself: since taskType is a metric field, its cardinality must be small, so we don\u0027t care about eventually deleteing very old taskTypes from the taskStats map, right?",
+      "range": {
+        "startLine": 106,
+        "startChar": 4,
+        "endLine": 106,
+        "endChar": 72
+      },
+      "revId": "88c466245bc4039bcd6462f45c3ecf88dcaa0ef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b042fc39_60c365cd",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-01T23:35:42Z",
+      "side": 1,
+      "message": "esp. now that are modifying the copy, but also before, why do you need ugly SyncMap?\nIf your concern is preventing concurrent invocations to updateTaskStats(), then a mutex at the top will suffice.",
+      "range": {
+        "startLine": 121,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 10
+      },
+      "revId": "88c466245bc4039bcd6462f45c3ecf88dcaa0ef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
