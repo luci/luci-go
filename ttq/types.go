@@ -47,7 +47,7 @@ type PostProcess func(context.Context)
 // If there is a need to override or change default values, please read
 // the overall rationale behind these default values below. Tuning one value
 // without regard to others may lead to unreliable sweeping exactly when your
-// services needs the sweeping the most.
+// service needs the sweeping the most.
 //
 // The goal is to keep up with temporary hiccups resulting in 5000 QPS creation
 // rate of stale user tasks via "Sweeping" process.
@@ -104,6 +104,16 @@ type Options struct {
 	//
 	// Format: `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID`.
 	// The queue must already exist with a throughput of at least 10 QPS.
+	//
+	// Docs:
+	//  https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues/create
+	//
+	// It doesn't matter how you create the queue, whether via queue.yaml or the
+	// API or gcloud SDK, but beware of
+	// https://cloud.google.com/tasks/docs/queue-yaml#pitfalls
+	//
+	// To find out which location an existing queue belongs to
+	//    $ gcloud tasks queues describe my-queue-name
 	//
 	// If the same queue is used for other purposes, beware that this may increase
 	// the latency of the sweeping process. Thus, a dedicated queue for sweeping
