@@ -52,6 +52,14 @@ message Project {
   // If any specified placeholder cannot be satisfied then the link is
   // not displayed.
   BugTemplate build_bug_template = 5;
+
+  // IgnoredBuilderIds is a list of builder IDs to be ignored by pubsub handler.
+  // Build update events from the builders in this list will be ignored to
+  // improve performance.
+  // This means that updates to these builders will not be reflected in
+  // consoles, the builders page, or the builder groups page.
+  // Builders that post updates frequently (> 1/s) should be added to this list.
+  repeated string ignored_builder_ids = 7;
 }
 
 // BugTemplate defines how to make custom bug links to file Monorail
