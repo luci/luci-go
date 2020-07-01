@@ -100,6 +100,11 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	// Get the transitive closure.
 	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
 	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
+	readMask, err := testresults.ListMask(in.GetReadMask())
+	if err != nil {
 		return nil, err
 	}
 
@@ -109,6 +114,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		InvocationIDs: invs,
+		Mask:          readMask,
 	}
 	trs, token, err := q.Fetch(ctx, txn)
 	if err != nil {
