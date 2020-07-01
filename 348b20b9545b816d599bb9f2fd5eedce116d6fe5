@@ -22,6 +22,30 @@
       "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88b2058f_06b1b3f8",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-01T00:07:39Z",
+      "side": 1,
+      "message": "len(cells) scales by (# of unique target value sets * # of unique metric field value sets). # of unique metric field value sets varies by application and metric, but could be as high as a few thousands in some metrics.\n\nI\u0027d like to refactor the data structure used in store.go but that\u0027s how it\u0027s constructed now. It is probably affecting the performance of store.Get() and store.Set() a lot. As you can set in L122, metricData.get() is implemented with the same loop, and both of store.Get() and store.Set() invoke metricData.get().\n\nIf we want to make tsmon better, then a separate CL should be made to refactor the data structure.",
+      "parentUuid": "66dde0aa_8de1d916",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 30
+      },
+      "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
