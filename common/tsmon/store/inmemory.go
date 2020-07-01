@@ -31,7 +31,7 @@ import (
 )
 
 type inMemoryStore struct {
-	defaultTarget     atomic.Value
+	defaultTarget atomic.Value
 
 	data     map[dataKey]*metricData
 	dataLock sync.RWMutex
@@ -131,11 +131,41 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 	return cell
 }
 
+func (m *metricData) del(fieldVals []interface{}, t types.Target) {
+	fieldVals, err := field.Canonicalize(m.Fields, fieldVals)
+	if err != nil {
+		panic(err) // bad field types, can only happen if the code is wrong
+	}
+
+	key := cellKey{fieldValuesHash: field.Hash(fieldVals)}
+	if t != nil {
+		key.targetHash = t.Hash()
+	}
+
+	cells, ok := m.cells[key]
+	if ok {
+		for i, cell := range cells {
+			if reflect.DeepEqual(fieldVals, cell.FieldVals) &&
+				reflect.DeepEqual(t, cell.Target) {
+				// if the length is 1, then simply delete the map entry.
+				if len(cells) == 1 {
+					delete(m.cells, key)
+					return
+				}
+				cells[i] = cells[len(cells)-1]
+				m.cells[key] = cells[:len(cells)-1]
+				return
+			}
+		}
+	}
+	return
+}
+
 // NewInMemory creates a new metric store that holds metric data in this
 // process' memory.
 func NewInMemory(defaultTarget types.Target) Store {
 	s := &inMemoryStore{
-		data:          map[dataKey]*metricData{},
+		data: map[dataKey]*metricData{},
 	}
 	s.SetDefaultTarget(defaultTarget)
 	return s
@@ -221,6 +251,16 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	}
 
 	c.Value = value
+}
+
+// Del deletes the metric cell.
+func (s *inMemoryStore) Del(ctx context.Context, h types.Metric, fieldVals []interface{}) {
+	m := s.getOrCreateData(h)
+	t := s.findTarget(ctx, m)
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.del(fieldVals, t)
+	return
 }
 
 // Incr increments the value in a given metric cell by the given delta.

@@ -46,6 +46,9 @@ func (nilStore) Get(ctx context.Context, m types.Metric, resetTime time.Time, fi
 func (nilStore) Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) {
 }
 
+func (nilStore) Del(ctx context.Context, m types.Metric, fieldVals []interface{}) {
+}
+
 func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) {
 }
 

@@ -43,6 +43,7 @@ type Store interface {
 
 	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) interface{}
 	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{})
+	Del(c context.Context, m types.Metric, fieldVals []interface{})
 	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{})
 
 	GetAll(c context.Context) []types.Cell
@@ -658,6 +659,127 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				So(g.Value, ShouldEqual, w.Value)
 			})
 		}
+	})
+
+	Convey("Set and del", t, func() {
+		Convey("With no fields", func() {
+			for i, test := range tests {
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{FakeMetric{
+							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
+							types.MetricMetadata{}}, test.bucketer}
+
+					} else {
+						m = &FakeMetric{
+							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
+							types.MetricMetadata{}}
+					}
+
+					s := opts.Factory()
+
+					// Value should be nil initially.
+					So(s.Get(ctx, m, time.Time{}, []interface{}{}), ShouldBeNil)
+
+					// Set and get the value.
+					s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0])
+					v := s.Get(ctx, m, time.Time{}, []interface{}{})
+					if test.wantSetValidator != nil {
+						test.wantSetValidator(v, test.values[0])
+					} else {
+						So(v, ShouldEqual, test.values[0])
+					}
+
+					// Delete the cell. Then, get should return nil.
+					s.Del(ctx, m, []interface{}{})
+					So(s.Get(ctx, m, time.Time{}, []interface{}{}), ShouldBeNil)
+				})
+			}
+		})
+
+		Convey("With fields", func() {
+			for i, test := range tests {
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{FakeMetric{
+							types.MetricInfo{"m", "", []field.Field{field.String("f")}, test.typ, target.NilType},
+							types.MetricMetadata{}}, test.bucketer}
+					} else {
+						m = &FakeMetric{
+							types.MetricInfo{"m", "", []field.Field{field.String("f")}, test.typ, target.NilType},
+							types.MetricMetadata{}}
+					}
+
+					s := opts.Factory()
+
+					// Values should be nil initially.
+					So(s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), ShouldBeNil)
+					So(s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two")), ShouldBeNil)
+
+					// Set both and then delete "one".
+					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
+					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), test.values[1])
+					s.Del(ctx, m, makeInterfaceSlice("one"))
+
+					// Get should return nil for "one", but the value for "two".
+					So(s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), ShouldBeNil)
+					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					if test.wantSetValidator != nil {
+						test.wantSetValidator(v, test.values[1])
+					} else {
+						So(v, ShouldEqual, test.values[1])
+					}
+				})
+			}
+		})
+
+		Convey("With a target set in the context", func() {
+			for i, test := range tests {
+				if test.wantIncrPanic {
+					continue
+				}
+
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{FakeMetric{
+							types.MetricInfo{"m", "", []field.Field{field.String("f")}, test.typ, target.NilType},
+							types.MetricMetadata{}}, test.bucketer}
+					} else {
+						m = &FakeMetric{
+							types.MetricInfo{"m", "", []field.Field{field.String("f")}, test.typ, target.NilType},
+							types.MetricMetadata{}}
+					}
+
+					s := opts.Factory()
+					opts.RegistrationFinished(s)
+
+					// Create a context with a different target.
+					foo := target.Task{ServiceName: "foo"}
+					ctxWithTarget := target.Set(ctx, &foo)
+
+					// Set the first value on the default target, second value on the
+					// different target. Note that both are set with the same field value,
+					// "one".
+					fvs := func() []interface{} { return makeInterfaceSlice("one") }
+					s.Set(ctx, m, time.Time{}, fvs(), test.values[0])
+					s.Set(ctxWithTarget, m, time.Time{}, fvs(), test.values[1])
+
+					// Get should return different values for different contexts.
+					v1 := s.Get(ctx, m, time.Time{}, fvs())
+					v2 := s.Get(ctxWithTarget, m, time.Time{}, fvs())
+					So(v1, ShouldNotEqual, v2)
+
+					// Delete the cell with the custom target. Then, get should return
+					// the value for the default target, and nil for the custom target.
+					s.Del(ctxWithTarget, m, fvs())
+					So(s.Get(ctx, m, time.Time{}, fvs()), ShouldEqual, test.values[0])
+					So(s.Get(ctxWithTarget, m, time.Time{}, fvs()), ShouldBeNil)
+				})
+			}
+		})
 	})
 
 	Convey("Concurrency", t, func() {
