@@ -16,6 +16,24 @@
       "revId": "1ef039d02f2aa4065b62242313d7e1aabe67e94d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1b39d453_1145880a",
+        "filename": "ttq/types.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-01T20:48:48Z",
+      "side": 1,
+      "message": "legacy queue.yaml -\u003e same region\ncloud API (via cmd / RPC / ui) -\u003e choose any supported region.",
+      "parentUuid": "49ae4987_d01c8666",
+      "revId": "1ef039d02f2aa4065b62242313d7e1aabe67e94d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
