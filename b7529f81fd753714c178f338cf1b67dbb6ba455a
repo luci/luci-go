@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "33d906d6_d98db423",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54af04bf_a7f2d97b",
+      "range": {
+        "startLine": 55,
+        "startChar": 21,
+        "endLine": 55,
+        "endChar": 28
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5e87981_6c4c47a8",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 4
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "9179dabc_23609ecf",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Yeah, no need to unwrap those 3 fields.",
+      "parentUuid": "e5e87981_6c4c47a8",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 10
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f5a8ba7_400ca1bc",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 4
@@ -79,6 +127,24 @@
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b371f2e_61cdab40",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f5a8ba7_400ca1bc",
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "e785c25c_87140ecb",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Modified to perform similar behaviors.",
+      "parentUuid": "e01298cd_6c575d8c",
+      "range": {
+        "startLine": 89,
+        "startChar": 23,
+        "endLine": 89,
+        "endChar": 29
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce613dc1_38642169",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 4
@@ -125,6 +215,30 @@
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1de4c5d3_70a8bc1d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce613dc1_38642169",
+      "range": {
+        "startLine": 93,
+        "startChar": 55,
+        "endLine": 93,
+        "endChar": 56
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +265,30 @@
     },
     {
       "key": {
+        "uuid": "f0b3b233_fd12a5e2",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "revised comment msg.",
+      "parentUuid": "e4006cd4_e4817f7d",
+      "range": {
+        "startLine": 117,
+        "startChar": 43,
+        "endLine": 117,
+        "endChar": 62
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0697832_11d37ee6",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 4
@@ -171,6 +309,30 @@
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adcf073b_d18b0e9c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0697832_11d37ee6",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 134,
+        "endChar": 2
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +359,30 @@
     },
     {
       "key": {
+        "uuid": "79c5c29a_acfcaeb5",
+        "filename": "buildbucket/appengine/internal/search/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecfe9671_feb97859",
+      "range": {
+        "startLine": 66,
+        "startChar": 47,
+        "endLine": 66,
+        "endChar": 52
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1dbaf1db_85378680",
         "filename": "buildbucket/appengine/internal/search/query_test.go",
         "patchSetId": 4
@@ -217,6 +403,30 @@
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d7621d6_c9cf7081",
+        "filename": "buildbucket/appengine/internal/search/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1dbaf1db_85378680",
+      "range": {
+        "startLine": 76,
+        "startChar": 10,
+        "endLine": 76,
+        "endChar": 13
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -243,6 +453,30 @@
     },
     {
       "key": {
+        "uuid": "1a71155b_d274c877",
+        "filename": "buildbucket/appengine/internal/search/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "It would convert to time in local timezone without .UTC()\nhttps://github.com/golang/go/blob/master/src/time/time.go#L1077",
+      "parentUuid": "3a699541_ac3f9974",
+      "range": {
+        "startLine": 78,
+        "startChar": 48,
+        "endLine": 78,
+        "endChar": 54
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8ba3e7c_27a028e0",
         "filename": "buildbucket/appengine/internal/search/query_test.go",
         "patchSetId": 4
@@ -263,6 +497,30 @@
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e439797_79fc7471",
+        "filename": "buildbucket/appengine/internal/search/query_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8ba3e7c_27a028e0",
+      "range": {
+        "startLine": 84,
+        "startChar": 3,
+        "endLine": 84,
+        "endChar": 11
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -313,6 +571,30 @@
     },
     {
       "key": {
+        "uuid": "5e759fc4_8f925e0b",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done.\n\nUsing \"invalid cursor\" before is to ensure the customers see the same msg in both py and go.\nBut I notice some error msg content already got changed in other validation functions. So I guess it won\u0027t be a big deal.",
+      "parentUuid": "b7ff60e2_50724d21",
+      "range": {
+        "startLine": 108,
+        "startChar": 32,
+        "endLine": 108,
+        "endChar": 38
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "041ca35b_400c082e",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 4
@@ -360,6 +642,30 @@
     },
     {
       "key": {
+        "uuid": "4da88f1d_b4bee753",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8db351ae_f559c813",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 2
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e51cc60_89b20ef5",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 4
@@ -371,6 +677,24 @@
       "writtenOn": "2020-06-27T02:51:30Z",
       "side": 1,
       "message": "shouldn\u0027t everything below be inside search package?\n\n e.g.\n\n  func (q *Query) Fetch(ctx context.Context) (*Result, error)",
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "756fd1b5_6b982ea4",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "I think either ways makes sense. If we think it as purely searching on the Query object, then putting into the internal/search package is reasonable. \n\nBut thinking from another perspective, this series of functions are performing the main business logic, doing operations and call DAOs. This is in scope of /rpc. We have already put the similar types of functionalities under /rpc package in get_build.go, list_builders.go, etc.. \n\nBesides, it needs to access some private functions in /rpc pkg, like canRead - https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/rpc/common.go;l\u003d58.\nIt will need to use other privates functions in /rpc in future. It would be better to keep it here.",
+      "parentUuid": "6e51cc60_89b20ef5",
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -400,6 +724,30 @@
     },
     {
       "key": {
+        "uuid": "905ff9ce_4aaeadc5",
+        "filename": "buildbucket/appengine/rpc/search_builds_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea155290_b5a06e17",
+      "range": {
+        "startLine": 21,
+        "startChar": 23,
+        "endLine": 22,
+        "endChar": 25
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be1ab8d2_176bb56c",
         "filename": "buildbucket/protoutil/tag_test.go",
         "patchSetId": 4
@@ -420,6 +768,30 @@
       "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71c2aa8e_8ae10a06",
+        "filename": "buildbucket/protoutil/tag_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-01T02:15:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be1ab8d2_176bb56c",
+      "range": {
+        "startLine": 113,
+        "startChar": 13,
+        "endLine": 113,
+        "endChar": 25
+      },
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
