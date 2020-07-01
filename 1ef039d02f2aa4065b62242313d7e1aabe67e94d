@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "49ae4987_d01c8666",
+        "filename": "ttq/types.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-01T20:05:57Z",
+      "side": 1,
+      "message": "Do created queues end up in a random region I wonder, or is this the region your GAE app/GKE instance is created in?",
+      "revId": "1ef039d02f2aa4065b62242313d7e1aabe67e94d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
