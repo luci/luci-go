@@ -69,6 +69,30 @@
       "revId": "f95b59f9431fd17bd68fccc59f85ae8385d639d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dda71cd4_d7854ffb",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-01T22:20:37Z",
+      "side": 1,
+      "message": "err: solving (2) will improve the time-precision ....",
+      "parentUuid": "4246de38_530352db",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 4
+      },
+      "revId": "f95b59f9431fd17bd68fccc59f85ae8385d639d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
