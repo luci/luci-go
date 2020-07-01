@@ -46,6 +46,30 @@
       "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "02bcc850_879f06bd",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-01T02:01:14Z",
+      "side": 1,
+      "message": "ah, let me take back my last comment. I got confused by the name of the var and misinterpreted the logic. :P\n\nI can\u0027t think of valid use cases that can result in len(cells) \u003e 1, except for the case where\n(1) t.Hash() is poorly implemented, AND\n(2) the application is reporting data for multiple targets.\ne.g., different task_num, different job_names, etc.\n\nPractically, I don\u0027t believe that we can use cases where len(cells) would be greater than 1.",
+      "parentUuid": "88b2058f_06b1b3f8",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 30
+      },
+      "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
