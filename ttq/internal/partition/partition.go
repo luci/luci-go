@@ -22,6 +22,7 @@ import (
 	"container/list"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -253,6 +254,29 @@ func (b *SortedPartitionsBuilder) Exclude(exclude *Partition) {
 			b.l.InsertAfter(second, el)
 			return
 		}
+	}
+}
+
+// OnlyIn efficiently returns a subsequence of the `n` sorted by key objects
+// whose key belongs to one of the partitions.
+//
+// Calls use(i,j) for each objects[i:j] which belong to the range.
+func (ps SortedPartitions) OnlyIn(n int, key func(i int) string, use func(l, h int), keySpaceBytes int) {
+	k := 0
+	// Remaining slice is [k..n)
+	for len(ps) > 0 && k < n {
+		lowStr, highStr := ps[0].QueryBounds(keySpaceBytes)
+		fr := sort.Search(n-k, func(i int) bool { return key(k+i) >= lowStr })
+		if fr == n-k {
+			return
+		}
+		to := sort.Search(n-k-fr, func(i int) bool { return key(fr+k+i) >= highStr })
+		if to > 0 {
+			use(fr+k, k+fr+to)
+		}
+		// Can be optimized more by doing binary search over `ps` if fr == to == 0.
+		k = k + fr + to
+		ps = ps[1:]
 	}
 }
 

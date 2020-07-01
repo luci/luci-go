@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/ttq"
+	"go.chromium.org/luci/ttq/internal/partition"
 
 	"github.com/googleapis/gax-go"
 	. "github.com/smartystreets/goconvey/convey"
@@ -162,6 +163,27 @@ func TestAddTask(t *testing.T) {
 				So(latestOf(metricTasksCreated, "InvalidArgument", "happy", "db"), ShouldEqual, 1)
 				// Must remove reminder despite the error.
 				So(len(db.reminders), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestLeaseHelpers(t *testing.T) {
+	t.Parallel()
+
+	Convey("Lease Helpers", t, func() {
+
+		Convey("onlyLeased", func() {
+			reminders := []*Reminder{
+				// Each key be exactly 2*keySpaceBytes chars long.
+				&Reminder{Id: "00000000000000000000000000000001"},
+				&Reminder{Id: "00000000000000000000000000000005"},
+				&Reminder{Id: "00000000000000000000000000000009"},
+				&Reminder{Id: "0000000000000000000000000000000f"}, // ie 15
+			}
+			leased := partition.SortedPartitions{partition.FromInts(5, 9)}
+			So(onlyLeased(reminders, leased), ShouldResemble, []*Reminder{
+				&Reminder{Id: "00000000000000000000000000000005"},
 			})
 		})
 	})
