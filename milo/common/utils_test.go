@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -53,6 +54,13 @@ func TestTagGRPC(t *testing.T) {
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			So(grpcutil.Code(TagGRPC(cAnon, errGRPCInvalidArgument)), ShouldEqual, codes.InvalidArgument)
 			So(grpcutil.Code(TagGRPC(cUser, errGRPCInvalidArgument)), ShouldEqual, codes.InvalidArgument)
+		})
+
+		Convey("For invalid argument multi-errors", func() {
+			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
+			errMulti := errors.NewMultiError(errGRPCInvalidArgument)
+			So(grpcutil.Code(TagGRPC(cAnon, errMulti)), ShouldEqual, codes.InvalidArgument)
+			So(grpcutil.Code(TagGRPC(cUser, errMulti)), ShouldEqual, codes.InvalidArgument)
 		})
 	})
 }
