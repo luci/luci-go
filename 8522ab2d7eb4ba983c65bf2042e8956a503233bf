@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b00f907a_e1f7969f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-01T07:10:18Z",
+      "side": 1,
+      "message": "Good question.\n\nI believe the way I\u0027ve written it:\n* project B\u0027s config change will not be rejected\n* \"con\" in project A will start failing to resolve, which will block future config updates in project A.\n\nThis doesn\u0027t seem good though; I think a better solution is for \"con\" to get removed from the datastore, so it no longer shows up. I could also make the same change for consoles that get rejected for other reasons during the config update. I\u0027ll work on that tomorrow (assuming you agree).\n\nNot sure I really understand your final question, but no, there\u0027s no such ACL that I know of.",
+      "parentUuid": "ef03a67e_71627d16",
+      "range": {
+        "startLine": 12,
+        "startChar": 59,
+        "endLine": 12,
+        "endChar": 66
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e1cf0a9f_dfc09a92",
         "filename": "milo/common/config.go",
         "patchSetId": 9
@@ -59,6 +83,30 @@
       "writtenOn": "2020-07-01T06:58:11Z",
       "side": 1,
       "message": "Shouldn\u0027t these transactions also be parallelized?",
+      "range": {
+        "startLine": 631,
+        "startChar": 53,
+        "endLine": 631,
+        "endChar": 64
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cabeb612_36bac4f5",
+        "filename": "milo/common/config.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 631,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-01T07:10:18Z",
+      "side": 1,
+      "message": "Vadim\u0027s comment above said that the RPCs to LUCI-config were the reason he parallelised these, so I didn\u0027t do it here. But yeah, I guess there\u0027s no reason why not.\n\nActually, I don\u0027t fully know how datastore transactions interact with parallelism. Would it be more efficient to do the whole thing (all projects) in a single transaction, or parallel transactions (one per project)?",
+      "parentUuid": "8130fe70_e3302dc3",
       "range": {
         "startLine": 631,
         "startChar": 53,
