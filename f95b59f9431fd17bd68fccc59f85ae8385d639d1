@@ -22,6 +22,53 @@
       "revId": "f95b59f9431fd17bd68fccc59f85ae8385d639d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b145218_6bc9bfb2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-01T22:19:04Z",
+      "side": 1,
+      "message": "The existing logic resets the task stats every time tsmon.Flush() called, expecting that updateTaskStats() will be called before the next tsmon.Flush().\n\nHowever, the interval of tsmon.Flush() is \u00271m\u0027 in default, so that the following tsmon.Flush()s reports the reset data, which are 0, until the next updateTaskStats() runs.\n: https://screenshot.googleplex.com/qsG3UV8JCow\n\nA correct solution is to let updateTaskStats() resets the data before updating the metrics, and that\u0027s what this CL does.",
+      "parentUuid": "bdcccb43_145c0481",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 29
+      },
+      "revId": "f95b59f9431fd17bd68fccc59f85ae8385d639d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4246de38_530352db",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-01T22:19:04Z",
+      "side": 1,
+      "message": "We wouldn\u0027t need any of these, if we just reset the metric before span.Query().\n```\n  tsmon.Store(ctx).Reset(ctx, oldestTaskMetric)\n  tsmon.Store(ctx).Reset(ctx, taskCountMetric)\n  return span.Query(.....)\n```\n\nHowever, it has the following drawbacks.\n(1) It can still cause the graph to jump between 0 and the actual stat.\ntsmon.Flush() is invoked by a seperate goroutine, created in Server{}. If tsmon.Flush() is invoked after Reset(), but before span.Query() finishes its job.\n(2) the count of a task type in taskCountMetric will be empty, not 0, during the period where there is no task with the task type.\n\n----------\n(2) will improve the time-precision of task count metrics. By reporting the count with 0, the count will be dropped down to 0 in graphs, within 1 minute, however long the interpolation_gap of the window-alignment function is. However, without (2), the count of a task type will continue until the next report with \u003e 0, or the length of the max_interpolation_gap given in the window-alignment function.",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 4
+      },
+      "revId": "f95b59f9431fd17bd68fccc59f85ae8385d639d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
