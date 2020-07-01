@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "1b2edbff_9d584793",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-01T20:12:46Z",
+      "side": 1,
+      "message": "validateSearch is in the rpc package though, right? A user of this package may or may not have used validateSearch to validate the request. I think that the timestamps are the only things which may panic, right? If so, I\u0027d just say that it assumes CreateTime is unset or valid, something like that.",
+      "range": {
+        "startLine": 52,
+        "startChar": 48,
+        "endLine": 52,
+        "endChar": 62
+      },
+      "revId": "a3436a46b4a9b0284ab76d9b6947814f8428b2a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "79966b8c_c3a33823",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 7
