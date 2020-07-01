@@ -163,7 +163,9 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 
 // getBlame fetches blame information from Gitiles.
 // This requires the BuildSummary to be indexed in Milo.
-func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Commit, error) {
+func getBlame(c context.Context, host string, b *buildbucketpb.Build, timeout time.Duration) ([]*ui.Commit, error) {
+	nc, cancel := context.WithTimeout(c, timeout)
+	defer cancel()
 	commit := b.GetInput().GetGitilesCommit()
 	// No commit? No blamelist.
 	if commit == nil {
@@ -171,8 +173,8 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build) ([]*ui.Com
 	}
 	// TODO(hinoka): This converts a buildbucketpb.Commit into a string
 	// and back into a buildbucketpb.Commit.  That's a bit silly.
-	return simplisticBlamelist(c, &model.BuildSummary{
-		BuildKey:  MakeBuildKey(c, host, BuildAddress(b)),
+	return simplisticBlamelist(nc, &model.BuildSummary{
+		BuildKey:  MakeBuildKey(nc, host, BuildAddress(b)),
 		BuildSet:  []string{protoutil.GitilesBuildSet(commit)},
 		BuilderID: LegacyBuilderIDString(b.Builder),
 	})
@@ -359,7 +361,7 @@ var (
 
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
-func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBlamelist bool) (*ui.BuildPage, error) {
+func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, forceBlamelist bool) (*ui.BuildPage, error) {
 	now, _ := ptypes.TimestampProto(clock.Now(ctx.Context))
 
 	c := ctx.Context
@@ -372,39 +374,18 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		return nil, err
 	}
 
-	var b *buildbucketpb.Build
-	var blame []*ui.Commit
-	var blameErr error
-	if err = parallel.FanOutIn(func(ch chan<- func() error) {
-		ch <- func() (err error) {
-			fullbr := br // Copy request
-			fullbr.Fields = fullBuildMask
-			b, err = client.GetBuild(c, &fullbr)
-			return common.TagGRPC(c, err)
-		}
-
-		// Fetch a small build with just a tiny bit of information.
-		// We use this to get the Gitiles tag so that we can fetch
-		// related builds and blamelist in parallel.
-		smallbr := br // Copy request
-		smallbr.Fields = tagsAndGitilesMask
-		sb, err := client.GetBuild(c, &smallbr)
-		if err != nil {
-			return
-		}
-		ch <- func() error {
-			timeout := 1 * time.Second
-			if forceBlamelist {
-				timeout = 55 * time.Second
-			}
-			nc, cancel := context.WithTimeout(c, timeout)
-			defer cancel()
-			blame, blameErr = getBlame(nc, host, sb)
-			return nil
-		}
-	}); err != nil {
-		return nil, err
+	br.Fields = fullBuildMask
+	b, err := client.GetBuild(c, br)
+	if err != nil {
+		return nil, common.TagGRPC(c, err)
 	}
+
+	blameTimeout := 1 * time.Second
+	if forceBlamelist {
+		blameTimeout = 55 * time.Second
+	}
+	blame, blameErr := getBlame(c, host, b, blameTimeout)
+
 	link, err := getBugLink(ctx, b)
 	if err != nil {
 		return nil, err
