@@ -22,6 +22,30 @@
       "revId": "64bde123dd698289614acff96f157ef12de0f885",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a44d746_aac6a271",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/context.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-01T00:37:34Z",
+      "side": 1,
+      "message": "result ID is not needed. But * is probably better since it\u0027s shorter and close enough.",
+      "parentUuid": "964d6898_b5e1070e",
+      "range": {
+        "startLine": 71,
+        "startChar": 18,
+        "endLine": 71,
+        "endChar": 91
+      },
+      "revId": "64bde123dd698289614acff96f157ef12de0f885",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
