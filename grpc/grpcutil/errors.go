@@ -178,9 +178,27 @@ func CodeStatus(code codes.Code) int {
 // In addition to the functionality of grpc.Code, this will unwrap any wrapped
 // errors before asking for its code.
 //
-// If the error is a MultiError, this will return codes.Unknown.
+// If the error is a MultiError containing more than one type of error code,
+// this will return codes.Unknown.
 func Code(err error) codes.Code {
 	if code, ok := Tag.In(err); ok {
+		return code
+	}
+	// If it's a multi-error, see if all errors have the same code.
+	// Otherwise return codes.Unknown.
+	if multi, isMulti := err.(errors.MultiError); isMulti {
+		code := codes.OK
+		for _, err := range multi {
+			nextCode := grpc.Code(errors.Unwrap(err))
+			if code == codes.OK { // unset
+				code = nextCode
+				continue
+			}
+			if nextCode != code {
+				code = codes.Unknown
+				break
+			}
+		}
 		return code
 	}
 	// TODO(nodir): use status.FromError
