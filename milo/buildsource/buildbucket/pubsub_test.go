@@ -95,8 +95,15 @@ func TestPubSub(t *testing.T) {
 		}
 		datastore.Put(c, builderSummary)
 
+		// Initialize the appropriate project config.
+		datastore.Put(c, &common.Project{
+			ID:             "luci.fake.project",
+			BusyBuilderIDs: []string{"luci.fake.project/luci.fake.bucket/fake_busy_builder"},
+		})
+
 		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
 		buildBase := bbv1.LegacyApiCommonBuildMessage{
+			Project:   "luci.fake.project",
 			Bucket:    "luci.fake.bucket",
 			Tags:      []string{"builder:fake_builder"},
 			CreatedBy: string(identity.AnonymousIdentity),
@@ -215,6 +222,7 @@ func TestPubSub(t *testing.T) {
 			Convey("results in earlier update not being ingested", func() {
 				eBuild := bbv1.LegacyApiCommonBuildMessage{
 					Id:        2234,
+					Project:   "luci.fake.project",
 					Bucket:    "luci.fake.bucket",
 					Tags:      []string{"builder:fake_builder"},
 					CreatedBy: string(identity.AnonymousIdentity),
@@ -251,6 +259,37 @@ func TestPubSub(t *testing.T) {
 				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
 			})
 		})
-	})
 
+		Convey("Busy builders should be ignored", func() {
+			bKey := MakeBuildKey(c, "hostname", "3234")
+			eBuild := bbv1.LegacyApiCommonBuildMessage{
+				Id:        3234,
+				Project:   "luci.fake.project",
+				Bucket:    "luci.fake.bucket",
+				Tags:      []string{"builder:fake_busy_builder"},
+				CreatedBy: string(identity.AnonymousIdentity),
+				CreatedTs: bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour)),
+				StartedTs: bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour)),
+				UpdatedTs: bbv1.FormatTimestamp(RefTime.Add(4 * time.Hour)),
+				Status:    "STARTED",
+			}
+
+			h := httptest.NewRecorder()
+			r := &http.Request{Body: makeReq(eBuild)}
+			PubSubHandler(&router.Context{
+				Context: c,
+				Writer:  h,
+				Request: r,
+			})
+			So(h.Code, ShouldEqual, 200)
+
+			buildAct := model.BuildSummary{BuildKey: bKey}
+			err := datastore.Get(c, &buildAct)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+			blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_busy_builder"}
+			err = datastore.Get(c, &blder)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+	})
 }

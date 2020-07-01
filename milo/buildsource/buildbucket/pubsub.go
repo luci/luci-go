@@ -203,6 +203,15 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
+	proj, err := common.GetProject(c, build.Project)
+	if err != nil {
+		return errors.Annotate(err, "could not get project configuration").Err()
+	}
+	if proj.BuilderIsBusy(build.BuilderID()) {
+		logging.Infof(c, "This is from a busy builder, ignoring")
+		return nil
+	}
+
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
 	bs, err := getSummary(c, event.Hostname, build.Project, build.ID)
