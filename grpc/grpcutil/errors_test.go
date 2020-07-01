@@ -45,11 +45,31 @@ func TestCode(t *testing.T) {
 			So(Code(errWrapped), ShouldEqual, codes.NotFound)
 		})
 
-		Convey("For multi-errors", func() {
+		Convey("Multi-errors with multiple different codes return Unknown", func() {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti := lucierr.NewMultiError(errGRPCNotFound, errGRPCInvalidArgument)
 			So(Code(errMulti), ShouldEqual, codes.Unknown)
+		})
+
+		Convey("Multi-errors with one error return that error's code", func() {
+			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
+			errMulti := lucierr.NewMultiError(errGRPCInvalidArgument)
+			So(Code(errMulti), ShouldEqual, codes.InvalidArgument)
+		})
+
+		Convey("Multi-errors with the same code return that code", func() {
+			errGRPCInvalidArgument1 := status.Errorf(codes.InvalidArgument, "invalid argument")
+			errGRPCInvalidArgument2 := status.Errorf(codes.InvalidArgument, "invalid argument")
+			errMulti := lucierr.NewMultiError(errGRPCInvalidArgument1, errGRPCInvalidArgument2)
+			So(Code(errMulti), ShouldEqual, codes.InvalidArgument)
+		})
+
+		Convey("Nested multi-errors work correctly", func() {
+			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
+			errMulti1 := lucierr.NewMultiError(errGRPCInvalidArgument)
+			errMulti2 := lucierr.NewMultiError(errMulti1)
+			So(Code(errMulti2), ShouldEqual, codes.InvalidArgument)
 		})
 	})
 }
