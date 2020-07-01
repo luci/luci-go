@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "6a7ae8cd_baade5af",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T18:00:31Z",
+      "side": 1,
+      "message": "Having con be removed from datastore in the meantime sounds right to me (maybe some special tombstone so milo can render the console as \"there was a console here, but it\u0027s been removed from otherProject\"?).  That said, I think we do still want to reject new updates referencing consoles that don\u0027t exist (i.e. project A shouldn\u0027t be able to refer to consoles that don\u0027t exist; referring to \"otherProject/mainConsoul\" should be an error.)\n\nACL was just in case B\u0027s config updates would be blocked; If B cannot be blocked by A, then B doesn\u0027t need to grant any particular permissions to A.",
+      "parentUuid": "b00f907a_e1f7969f",
+      "range": {
+        "startLine": 12,
+        "startChar": 59,
+        "endLine": 12,
+        "endChar": 66
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e1cf0a9f_dfc09a92",
         "filename": "milo/common/config.go",
         "patchSetId": 9
@@ -107,6 +131,30 @@
       "side": 1,
       "message": "Vadim\u0027s comment above said that the RPCs to LUCI-config were the reason he parallelised these, so I didn\u0027t do it here. But yeah, I guess there\u0027s no reason why not.\n\nActually, I don\u0027t fully know how datastore transactions interact with parallelism. Would it be more efficient to do the whole thing (all projects) in a single transaction, or parallel transactions (one per project)?",
       "parentUuid": "8130fe70_e3302dc3",
+      "range": {
+        "startLine": 631,
+        "startChar": 53,
+        "endLine": 631,
+        "endChar": 64
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "785d6adb_b615aca5",
+        "filename": "milo/common/config.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 631,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T18:00:31Z",
+      "side": 1,
+      "message": "Datastore transactions which read/write independent entities groups are entirely independent.\n\nThe current maximum number of entity groups which can be be touched in a single transaction is 25 though.\n\nIf we KNOW that nothing else is writing to these entity groups, then _technically_ the most efficient way would be to group all of these into batches of 25 entity groups, then execute the batches in parallel. The downside is that each entity group has a maximum write rate of 1qps, and if something else IS poking at these entity groups, then the entire transaction batch needs to be retried.\n\nIMO, the best (and most \u0027logically correct\u0027) way would be to just do each per-project transaction in parallel. There\u0027s no reason to require that two projects are updated simultaneously, so there\u0027s no application level requirement to batch them (just silly datastore RPC overhead optimization potential, imo too micro to matter).",
+      "parentUuid": "cabeb612_36bac4f5",
       "range": {
         "startLine": 631,
         "startChar": 53,
