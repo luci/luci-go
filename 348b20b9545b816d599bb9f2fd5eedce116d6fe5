@@ -70,6 +70,30 @@
       "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "228f8966_4832ff47",
+        "filename": "common/tsmon/store/inmemory.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T21:31:06Z",
+      "side": 1,
+      "message": "O(tiny) sgtm :)\n\nLarger datastructure refactorings should definitely be a different CL. I was wondering if there was some structure (like the list being ordered) that we could exploit (e.g. by doing a binary search). If it\u0027s really tiny (like 1), then it\u0027d be more harm than good.",
+      "parentUuid": "02bcc850_879f06bd",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 30
+      },
+      "revId": "348b20b9545b816d599bb9f2fd5eedce116d6fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
