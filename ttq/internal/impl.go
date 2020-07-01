@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/ttq"
+	"go.chromium.org/luci/ttq/internal/partition"
 )
 
 // Reminder reminds to enqueue a task.
@@ -231,4 +232,19 @@ func (r *Reminder) createTaskRequest() (*taskspb.CreateTaskRequest, error) {
 		return nil, errors.Annotate(err, "failed to unmarshal the task").Err()
 	}
 	return req, nil
+}
+
+// onlyLeased shrinks the given slice of Reminders sorted by their ID to contain
+// only those inside the leased partitions.
+func onlyLeased(sorted []*Reminder, leased partition.SortedPartitions) []*Reminder {
+	reuse := sorted[:]
+	l := 0
+	keyOf := func(i int) string {
+		return sorted[i].Id
+	}
+	use := func(i, j int) {
+		l += copy(reuse[l:], sorted[i:j])
+	}
+	leased.OnlyIn(len(sorted), keyOf, use, keySpaceBytes)
+	return reuse[:l]
 }

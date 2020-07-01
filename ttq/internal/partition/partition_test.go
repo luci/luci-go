@@ -190,3 +190,42 @@ func TestSortedPartitionsBuilder(t *testing.T) {
 		So(b.IsEmpty(), ShouldBeTrue)
 	})
 }
+
+func TestOnlyIn(t *testing.T) {
+	t.Parallel()
+
+	Convey("SortedPartition.OnlyIn", t, func() {
+		var sp SortedPartitions
+
+		const keySpaceBytes = 1
+		copyIn := func(sorted ...string) []string {
+			// This is actually the intended use of the OnlyIn function.
+			reuse := sorted[:] // re-use existing sorted slice.
+			l := 0
+			key := func(i int) string {
+				return sorted[i]
+			}
+			use := func(i, j int) {
+				l += copy(reuse[l:], sorted[i:j])
+			}
+			sp.OnlyIn(len(sorted), key, use, keySpaceBytes)
+			return reuse[:l]
+		}
+
+		sp = SortedPartitions{FromInts(1, 3), FromInts(9, 16), FromInts(241, 242)}
+		So(copyIn("00"), ShouldResemble, []string{})
+		So(copyIn("02"), ShouldResemble, []string{"02"})
+
+		So(copyIn(
+			"00",
+			"02",
+			"03",
+			"0f", // 15
+			"10", // 16
+			"40", // 64
+			"f0", // 240
+			"f1", // 241
+		),
+			ShouldResemble, []string{"02", "0f", "f1"})
+	})
+}
