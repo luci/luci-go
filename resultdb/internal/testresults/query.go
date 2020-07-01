@@ -20,8 +20,10 @@ import (
 	"strings"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -31,6 +33,40 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// defaultListMask is the default field mask to use for QueryTestResults and
+// ListTestResults requests.
+// Initialized by init.
+var defaultListMask mask.Mask
+
+func init() {
+	var err error
+	defaultListMask, err = mask.FromFieldMask(&field_mask.FieldMask{
+		Paths: []string{
+			"name",
+			"test_id",
+			"result_id",
+			"variant",
+			"expected",
+			"status",
+			"start_time",
+			"duration",
+		},
+	}, &pb.TestResult{}, false, false)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// ListMask returns mask.Mask converted from field_mask.FieldMask.
+// It returns a default mask with all fields except summary_html if readMask is
+// empty.
+func ListMask(readMask *field_mask.FieldMask) (mask.Mask, error) {
+	if len(readMask.GetPaths()) == 0 {
+		return defaultListMask, nil
+	}
+	return mask.FromFieldMask(readMask, &pb.TestResult{}, false, false)
+}
+
 // Query specifies test results to fetch.
 type Query struct {
 	InvocationIDs     invocations.IDSet
@@ -38,6 +74,7 @@ type Query struct {
 	PageSize          int // must be positive
 	PageToken         string
 	SelectVariantHash bool
+	Mask              mask.Mask
 }
 
 func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(QueryItem) error) (err error) {
@@ -49,6 +86,18 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	}
 
 	var extraSelect []string
+
+	selectIfIncluded := func(column, field string) {
+		switch inc, err := q.Mask.Includes(field); {
+		case err != nil:
+			panic(err)
+		case inc != mask.Exclude:
+			extraSelect = append(extraSelect, column)
+		}
+	}
+	selectIfIncluded("tr.SummaryHtml", "summary_html")
+	selectIfIncluded("tr.Tags", "tags")
+
 	if q.SelectVariantHash {
 		extraSelect = append(extraSelect, "tr.VariantHash")
 	}
@@ -87,10 +136,8 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			tr.Variant,
 			tr.IsUnexpected,
 			tr.Status,
-			tr.SummaryHtml,
 			tr.StartTime,
 			tr.RunDurationUsec,
-			tr.Tags,
 			%s
 		FROM %s
 		WHERE InvocationId IN UNNEST(@invIDs)
@@ -145,13 +192,21 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			&tr.Variant,
 			&maybeUnexpected,
 			&tr.Status,
-			&summaryHTML,
 			&tr.StartTime,
 			&micros,
-			&tr.Tags,
 		}
-		if q.SelectVariantHash {
-			ptrs = append(ptrs, &item.VariantHash)
+
+		for _, v := range extraSelect {
+			switch v {
+			case "tr.SummaryHtml":
+				ptrs = append(ptrs, &summaryHTML)
+			case "tr.Tags":
+				ptrs = append(ptrs, &tr.Tags)
+			case "tr.VariantHash":
+				ptrs = append(ptrs, &item.VariantHash)
+			default:
+				panic("impossible")
+			}
 		}
 
 		err = b.FromSpanner(row, ptrs...)
@@ -163,6 +218,10 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
+		if err := q.Mask.Trim(tr); err != nil {
+			return errors.Annotate(
+				err, "error trimming fields for %s", item.TestResult.Name).Err()
+		}
 
 		return f(item)
 	})

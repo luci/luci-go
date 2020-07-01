@@ -46,6 +46,11 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 		return nil, appstatus.BadRequest(err)
 	}
 
+	readMask, err := testresults.ListMask(in.GetReadMask())
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
@@ -53,6 +58,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		InvocationIDs: invocations.NewIDSet(invocations.MustParseName(in.Invocation)),
+		Mask:          readMask,
 	}
 	trs, tok, err := q.Fetch(ctx, txn)
 	if err != nil {

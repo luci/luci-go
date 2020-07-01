@@ -100,6 +100,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          tr.Status,
 			"RunDurationUsec": 1e6*i + 234567,
+			"SummaryHtml":     span.Compressed("SummaryHtml"),
 		}
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
@@ -143,13 +144,14 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(invID, testID, resultID),
-			TestId:   testID,
-			ResultId: resultID,
-			Variant:  v,
-			Expected: status == pb.TestStatus_PASS,
-			Status:   status,
-			Duration: &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			Name:        pbutil.TestResultName(invID, testID, resultID),
+			TestId:      testID,
+			ResultId:    resultID,
+			Variant:     v,
+			Expected:    status == pb.TestStatus_PASS,
+			Status:      status,
+			Duration:    &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml: "SummaryHtml",
 		}
 	}
 	return trs
