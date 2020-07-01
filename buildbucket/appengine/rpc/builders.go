@@ -27,7 +27,8 @@ var _ pb.BuildersServer = &Builders{}
 // NewBuilders returns a new pb.BuildersServer.
 func NewBuilders() pb.BuildersServer {
 	return &pb.DecoratedBuilders{
-		Prelude: logDetails,
-		Service: &Builders{},
+		Prelude:  logDetails,
+		Service:  &Builders{},
+		Postlude: commonPostlude,
 	}
 }
