@@ -18,7 +18,7 @@ import sinon from 'sinon';
 
 import '../libs/extensions';
 import { chaiRecursiveDeepInclude } from '../libs/test_utils/chai_recursive_deep_include';
-import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb, TestExoneration, TestResult } from '../services/resultdb';
+import { QueryTestExonerationsRequest, QueryTestResultsRequest, ResultDb, TestExoneration, TestResult } from '../services/resultdb';
 import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from './test_loader';
 import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_node';
 
@@ -261,7 +261,7 @@ describe('test_loader', () => {
 
   describe('streamTestResultBatches', () => {
     it('should stream test results from multiple pages', async () => {
-      const req = {invocations: ['invocation']} as Partial<QueryTestResultRequest> as QueryTestResultRequest;
+      const req = {invocations: ['invocation']} as Partial<QueryTestResultsRequest> as QueryTestResultsRequest;
       const stub = sinon.stub();
       const res1 = {testResults: [testResult1, testResult2, testResult3, testResult4, testResult5 ], nextPageToken: 'token'};
       const res2 = {testResults: [testResult6, testResult7]};
