@@ -52,6 +52,14 @@ message Project {
   // If any specified placeholder cannot be satisfied then the link is
   // not displayed.
   BugTemplate build_bug_template = 5;
+
+  // BusyBuilderIds is the IDs of builder that are marked as busy.
+  // Build update events from the builders in this list will be ignored to
+  // to improve performance.
+  // This means the console page, builder groups page, and builders page of
+  // those builders will not work.
+  // Builders that post updates frequently (> 1Hz) should be added to this list.
+  repeated string busy_builder_ids = 7;
 }
 
 // BugTemplate defines how to make custom bug links to file Monorail
