@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef03a67e_71627d16",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T06:58:11Z",
+      "side": 1,
+      "message": "How does it work if:\n  project A defines external console (con) from project B (extCon)\n  project B deletes (extCon)\n\nWhat happens? Is project B\u0027s config change rejected? Is extCon just treated as an empty console?\n\nIIUC there\u0027s no ACL which B grants to A which allows A to define extCon, right?",
+      "range": {
+        "startLine": 12,
+        "startChar": 59,
+        "endLine": 12,
+        "endChar": 66
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1cf0a9f_dfc09a92",
+        "filename": "milo/common/config.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 477,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T06:58:11Z",
+      "side": 1,
+      "message": "good this was one of my questions :)",
+      "range": {
+        "startLine": 477,
+        "startChar": 72,
+        "endLine": 477,
+        "endChar": 78
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8130fe70_e3302dc3",
+        "filename": "milo/common/config.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 631,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-01T06:58:11Z",
+      "side": 1,
+      "message": "Shouldn\u0027t these transactions also be parallelized?",
+      "range": {
+        "startLine": 631,
+        "startChar": 53,
+        "endLine": 631,
+        "endChar": 64
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
