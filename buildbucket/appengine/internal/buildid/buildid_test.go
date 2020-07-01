@@ -85,3 +85,31 @@ func TestIdTimeSegment(t *testing.T) {
 		})
 	})
 }
+
+func TestMMayContainBuilds(t *testing.T) {
+	t.Parallel()
+
+	Convey("normal", t, func() {
+		low := time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC)
+		high := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
+		So(MayContainBuilds(low, high), ShouldBeTrue)
+	})
+
+	Convey("low time is larger than high time", t, func() {
+		low := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
+		high := time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC)
+		So(MayContainBuilds(low, high), ShouldBeFalse)
+	})
+
+	Convey("low and high time are nil", t, func() {
+		low := time.Time{}
+		high := time.Time{}
+		So(MayContainBuilds(low, high), ShouldBeTrue)
+	})
+
+	Convey("high time is less than beginningOfTheWorld", t, func() {
+		low := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
+		high := time.Unix(beginningOfTheWorld - 1, 0).UTC()
+		So(MayContainBuilds(low, high), ShouldBeFalse)
+	})
+}

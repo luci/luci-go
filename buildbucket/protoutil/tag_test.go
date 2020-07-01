@@ -97,19 +97,20 @@ func TestStringPairs(t *testing.T) {
 		})
 	})
 
-	Convey("Parse StringPairs to strings", t, func() {
+	Convey("StringPairMap", t, func() {
+		expected := make(strpair.Map)
 		var stringPairs []*pb.StringPair
-		So(ParseStringPairs(stringPairs), ShouldResemble, []string{})
+		So(StringPairMap(stringPairs), ShouldResemble, expected)
 
 		stringPairs = []*pb.StringPair{}
-		So(ParseStringPairs(stringPairs), ShouldResemble, []string{})
+		So(StringPairMap(stringPairs), ShouldResemble, expected)
 
 		stringPairs = []*pb.StringPair{
 			{Key: "a", Value: "1"},
 			{Key: "a", Value: "2"},
+			{Key: "b", Value: "1"},
 		}
-		actualStrs := ParseStringPairs(stringPairs)
-		exceptedStrs := []string{"a:1", "a:2"}
-		So(actualStrs, ShouldResemble, exceptedStrs)
+		expected = strpair.ParseMap([]string{"a:1", "a:2", "b:1"})
+		So(StringPairMap(stringPairs), ShouldResemble, expected)
 	})
 }
