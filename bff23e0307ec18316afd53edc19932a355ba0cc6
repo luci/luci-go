@@ -128,6 +128,24 @@
       "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f94af08b_555ae015",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T08:14:18Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "c525851f_cbadaf08",
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
