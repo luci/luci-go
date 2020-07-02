@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f62bf6d_f9997ec5",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T07:28:28Z",
+      "side": 1,
+      "message": "this variable is used only in L227. Why not inline it?",
+      "range": {
+        "startLine": 217,
+        "startChar": 2,
+        "endLine": 217,
+        "endChar": 8
+      },
+      "revId": "c656c6ac175e7eec8c5763fd6378806dd2aaa8be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
