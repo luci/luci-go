@@ -22,6 +22,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
@@ -71,20 +72,20 @@ func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
 	return mask.FromFieldMask(fields, &pb.Build{}, false, false)
 }
 
-// logAndReturnUnimplemented logs the method called, the proto response, and any
+// buildsServicePostlude logs the method called, the proto response, and any
 // error, but returns that the called method was unimplemented. Used to aid in
 // development. Users of this function must ensure called methods do not have
 // any side-effects. When removing this function, remember to ensure all methods
 // have correct ACLs checks.
 // TODO(crbug/1042991): Remove once methods are implemented.
-func logAndReturnUnimplemented(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	err = appstatus.GRPCifyAndLog(ctx, err)
+func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	err = commonPostlude(ctx, methodName, rsp, err)
 	if methodName == "GetBuild" {
 		logging.Debugf(ctx, "%q is returning %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 		return err
 	}
 	logging.Debugf(ctx, "%q would have returned %q with response %s", methodName, err, proto.MarshalTextString(rsp))
-	return appstatus.Errorf(codes.Unimplemented, "method not implemented")
+	return status.Errorf(codes.Unimplemented, "method not implemented")
 }
 
 // Builds implements pb.BuildsServer.
@@ -114,6 +115,6 @@ func NewBuilds() pb.BuildsServer {
 	return &pb.DecoratedBuilds{
 		Prelude:  logDetails,
 		Service:  &Builds{},
-		Postlude: logAndReturnUnimplemented,
+		Postlude: buildsServicePostlude,
 	}
 }

@@ -30,6 +30,11 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// commonPostlude converts an appstatus error to a gRPC error and logs it.
+func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	return appstatus.GRPCifyAndLog(ctx, err)
+}
+
 // notFound returns a generic error message indicating the resource requested
 // was not found with a hint that the user may not have permission to view
 // it. By not differentiating between "not found" and "permission denied"
