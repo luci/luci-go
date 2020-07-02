@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b63366b8_fc4cb9b0",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T03:01:23Z",
+      "side": 1,
+      "message": "nit: remove this \"to\" (you\u0027ve got it twice)",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "7b0cf484f03c98d2220a93773ab657af4264f4e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daa581b1_61ef129a",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T03:01:23Z",
+      "side": 1,
+      "message": "Since these pages don\u0027t belong to the builder, I suggest the following wording:\n\n\"This means that updates to these builders will not be reflected in consoles, the builders page, or the builder groups page.\"",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 34
+      },
+      "revId": "7b0cf484f03c98d2220a93773ab657af4264f4e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
