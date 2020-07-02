@@ -34,6 +34,24 @@
       "revId": "e6e5d47b2788df65aeff57a41372d522a835875b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c578b93c_dda323b7",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 528,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-02T05:59:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db9f1dfe_8deb10ed",
+      "revId": "e6e5d47b2788df65aeff57a41372d522a835875b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
