@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ec81bea_970cd091",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T03:05:12Z",
+      "side": 1,
+      "message": "nit: more efficient since you avoid the hashing op [k]\n\nfor _, ts :\u003d taskStats {\n  ts.taskCount \u003d 0\n}",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 28
+      },
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dafd653_ea08d6c9",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T03:05:12Z",
+      "side": 1,
+      "message": "last idea: maybe add a add comment here like \"// reset but not delete old metrics\"?",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 0
+      },
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58852dbc_3a667bb2",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T03:05:12Z",
+      "side": 1,
+      "message": "sorry, didn\u0027t notice earlier -- this should segfault/panic because taskStats[taskType] will be nil.\n\nis it worth adding test coverage? (not insisting, just asking)",
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
