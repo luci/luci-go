@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "f0311738_7cf282ee",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-02T01:56:21Z",
+      "side": 1,
+      "message": "Nits: Suggest to change 1Hz to 1/sec (I am bad at physics so I needed to google how much is 1 Hz) :P",
+      "revId": "41024dcd08800a27ac7630db57778695c88bc2e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f037ca17_2699c1a8",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 2
@@ -13,6 +30,24 @@
       "writtenOn": "2020-07-02T01:48:24Z",
       "side": 1,
       "message": "Can\u0027t think of a better name.\nAny suggestions?",
+      "revId": "41024dcd08800a27ac7630db57778695c88bc2e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e16b4291_bbe09bcb",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-02T01:56:21Z",
+      "side": 1,
+      "message": "Maybe \"ignored_builder_ids\"?",
+      "parentUuid": "f037ca17_2699c1a8",
       "revId": "41024dcd08800a27ac7630db57778695c88bc2e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
