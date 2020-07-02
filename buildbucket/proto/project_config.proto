@@ -81,6 +81,7 @@ message Builder {
   reserved 11; // build_numbers of the old format.
   reserved 13; // auto_builder_dimension of the old format.
   reserved 15; // experimental of the old format.
+  reserved 27; // description of the old format.
 
   // Describes a cache directory persisted on a bot.
   // Prerequisite reading in BuildInfra.Swarming.CacheEntry message in
@@ -522,10 +523,6 @@ message Builder {
 
   // Used to enable and configure ResultDB integration.
   ResultDB resultdb = 26;
-
-  // A short plain string that helps users understand the purpose of the
-  // builder.
-  string description = 27;
 
   // Description that helps users understand the purpose of the builder, in
   // HTML.
