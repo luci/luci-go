@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b557bea2_6dfc63cb",
+        "filename": "milo/buildsource/buildbucket/pubsub_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T03:10:13Z",
+      "side": 1,
+      "message": "Suggest having a builder ID here that actually looks like the input we want users to give.\n\nIIRC the two formats are:\n\u003cproject\u003e/\u003cbucket\u003e/\u003cbuilder\u003e, e.g. \"fakeproj/fakebucket/fake_ignored_builder\"\nor the legacy format:\nbuildbucket/luci.\u003cproject\u003e.\u003cbucket\u003e/\u003cbuilder\u003e, e.g. \"buildbucket/luci.fakeproj.fakebucket/fake_ignored_builder\"\n\nDoes your code support both? If so, suggest testing both. Otherwise let\u0027s just support the first one.",
+      "range": {
+        "startLine": 101,
+        "startChar": 32,
+        "endLine": 101,
+        "endChar": 87
+      },
+      "revId": "8ffb08b023118bbcbbf3620324a665e487c0a5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a7bc54d_37be6f54",
+        "filename": "milo/common/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T03:10:13Z",
+      "side": 1,
+      "message": "this is oddly capitalised, suggest just \"bbprotoutil\"\n\n(I realise this file is a bit inconsistent due to configInterface though)",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 4
+      },
+      "revId": "8ffb08b023118bbcbbf3620324a665e487c0a5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
