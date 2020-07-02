@@ -22,6 +22,30 @@
       "revId": "b5569301cc4a81deec2270698ba50ba2f6df160f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5502498a_b5763bd1",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-02T08:06:04Z",
+      "side": 1,
+      "message": "It\u0027s escaped, by default.\nThere should be no security concern. Just that the HTML is rendered as string.",
+      "parentUuid": "8f72e3d4_7d8cf89f",
+      "range": {
+        "startLine": 16,
+        "startChar": 33,
+        "endLine": 16,
+        "endChar": 64
+      },
+      "revId": "b5569301cc4a81deec2270698ba50ba2f6df160f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
