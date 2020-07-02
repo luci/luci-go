@@ -12,8 +12,8 @@
 {{ $hasChanges := .HasChanges }}
 
 <h1>Builder <a href="{{ pagedURL $request -1 "EMPTY" }}">{{.Builder.Id.Builder}}</a></h1>
-{{ if .Builder.Config.Description }}
-  <p id="builder-description">{{ .Builder.Config.Description }}</p>
+{{ if .Builder.Config.DescriptionHtml }}
+  <p id="builder-description">{{ .Builder.Config.DescriptionHtml }}</p>
 {{ end }}
 
 <div class="prelude">
