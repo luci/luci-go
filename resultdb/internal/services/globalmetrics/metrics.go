@@ -55,7 +55,8 @@ var (
 		nil,
 		field.String("type")) // tasks.Type
 
-	taskStats = &taskStatPerType{}
+	tsLock    sync.Mutex
+	taskStats = map[string]*taskStat{}
 )
 
 // Options is global metrics server configuration.
@@ -71,25 +72,6 @@ func InitServer(srv *server.Server, opts Options) {
 		interval = 5 * time.Minute
 	}
 
-	tsmon.RegisterCallbackIn(srv.Context, func(ctx context.Context) {
-		taskStats.Range(func(taskType string, stat *taskStat) bool {
-			// reset the stat of each task type so that the stat of each task type can
-			// continue being reported with the default values, even if it stopped being
-			// present in the output of the SQL query.
-			s := stat.CloneAndReset()
-
-			// reset the oldest task creation time if there no longer exists any tasks
-			// with the type.
-			if s.taskCount == 0 {
-				tsmon.Store(ctx).Reset(ctx, oldestTaskMetric)
-			} else {
-				oldestTaskMetric.Set(ctx, s.oldestCreateTime.Unix(), taskType)
-			}
-			taskCountMetric.Set(ctx, s.taskCount, taskType)
-			return true
-		})
-	})
-
 	srv.RunInBackground("resultdb.tasks", func(ctx context.Context) {
 		cron.Run(ctx, interval, updateTaskStats)
 	})
@@ -100,6 +82,14 @@ func InitServer(srv *server.Server, opts Options) {
 }
 
 func updateTaskStats(ctx context.Context) error {
+	tsLock.Lock()
+	defer tsLock.Unlock()
+	// reset the count of each taskType, so that the count of a type will continue being
+	// reported with 0 even if the type is not present in the output of the Spanner query.
+	for _, stat := range taskStats {
+		stat.count = 0
+	}
+
 	st := spanner.NewStatement(`
 		SELECT TaskType, MIN(CreateTime), COUNT(*)
 		FROM InvocationTasks
@@ -107,16 +97,34 @@ func updateTaskStats(ctx context.Context) error {
 	`)
 
 	var b span.Buffer
-	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var taskType string
 		var minCreateTime time.Time
 		var count int64
 		if err := b.FromSpanner(row, &taskType, &minCreateTime, &count); err != nil {
 			return err
 		}
-		taskStats.Update(taskType, count, minCreateTime)
+
+		if stat, ok := taskStats[taskType]; ok {
+			stat.count = count
+			stat.oldestCreateTime = minCreateTime
+		} else {
+			taskStats[taskType] = &taskStat{count, minCreateTime}
+		}
 		return nil
 	})
+
+	for taskType, stat := range taskStats {
+		// delete the stream of the task type from oldestTaskMetric, if count == 0.
+		if stat.count == 0 {
+			tsmon.Store(ctx).Del(ctx, oldestTaskMetric, []interface{}{taskType})
+		} else {
+			oldestTaskMetric.Set(ctx, stat.oldestCreateTime.Unix(), taskType)
+		}
+		// update the count metric always.
+		taskCountMetric.Set(ctx, stat.count, taskType)
+	}
+	return err
 }
 
 func updateExpiredResultsMetrics(ctx context.Context) error {
@@ -155,40 +163,7 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 	return
 }
 
-type taskStatPerType struct {
-	m sync.Map
-}
-
-func (t *taskStatPerType) Update(taskType string, cnt int64, oldestCreateTime time.Time) {
-	stat, loaded := t.m.LoadOrStore(
-		taskType, &taskStat{sync.Mutex{}, cnt, oldestCreateTime})
-	if loaded {
-		stat.(*taskStat).Update(cnt, oldestCreateTime)
-	}
-}
-
-func (t *taskStatPerType) Range(fn func(taskType string, stat *taskStat) bool) {
-	t.m.Range(func(k, v interface{}) bool { return fn(k.(string), v.(*taskStat)) })
-}
-
 type taskStat struct {
-	lock             sync.Mutex
-	taskCount        int64
+	count            int64
 	oldestCreateTime time.Time
-}
-
-func (s *taskStat) Update(cnt int64, oldestCreateTime time.Time) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.taskCount = cnt
-	s.oldestCreateTime = oldestCreateTime
-}
-
-func (s *taskStat) CloneAndReset() *taskStat {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	ret := &taskStat{sync.Mutex{}, s.taskCount, s.oldestCreateTime}
-	s.taskCount = 0
-	s.oldestCreateTime = time.Time{}
-	return ret
 }
