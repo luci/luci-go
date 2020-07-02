@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f037ca17_2699c1a8",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-02T01:48:24Z",
+      "side": 1,
+      "message": "Can\u0027t think of a better name.\nAny suggestions?",
+      "revId": "41024dcd08800a27ac7630db57778695c88bc2e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
