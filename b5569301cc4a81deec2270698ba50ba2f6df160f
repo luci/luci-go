@@ -70,6 +70,30 @@
       "revId": "b5569301cc4a81deec2270698ba50ba2f6df160f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dd56198_a9927925",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T08:21:39Z",
+      "side": 1,
+      "message": "Weiwei, are you saying that right now it renders as a string but you\u0027ll convert it to render as sanitized HTML in a follow-up CL?",
+      "parentUuid": "424e3638_4762b552",
+      "range": {
+        "startLine": 16,
+        "startChar": 33,
+        "endLine": 16,
+        "endChar": 64
+      },
+      "revId": "b5569301cc4a81deec2270698ba50ba2f6df160f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
