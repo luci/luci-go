@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "5044de43_7974687f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T04:47:30Z",
+      "side": 1,
+      "message": "This change turned out to be significantly more complex and difficult than I thought, so I\u0027m going to tackle it in a follow-up CL.\n\nIf we want to have different behaviour for these two cases:\n1. New external console is added, doesn\u0027t resolve\n2. External console starts failing to resolve after the target console is deleted\n\nthen we can no longer determine the required Datastore mutations based solely on the config we see. We have to:\n* Compute which consoles should be deleted *before* adding others\n* If an external console fails to resolve, check if it refers a target in the \"deleted list\"\n* If so, write a tombstone to Datastore for that external console\n* If not, read the console from Datastore to see if there was a tombstone already\n* If there was a tombstone, continue processing consoles for the project\n* If there was no tombstone, reject the config update\n\nThis is getting complex enough that I\u0027m not sure it\u0027s even worth it. By the way, what happens when a Milo config change is rejected? Do the project owners get notified in some way or is it just invisible? Is there any way for the project owners to find out why updates are being rejected short of talking to LUCI team?",
+      "parentUuid": "6a7ae8cd_baade5af",
+      "range": {
+        "startLine": 12,
+        "startChar": 59,
+        "endLine": 12,
+        "endChar": 66
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e1cf0a9f_dfc09a92",
         "filename": "milo/common/config.go",
         "patchSetId": 9
@@ -164,6 +188,30 @@
       "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acb451c3_a82655cb",
+        "filename": "milo/common/config.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 631,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T04:47:30Z",
+      "side": 1,
+      "message": "So I attempted to do this, but kept running into \"datastore: concurrent transaction\" failures in the unit tests. Couldn\u0027t figure out why :/\n\nI\u0027ll look into this again after submitting and will convert it to parallel in a follow-up CL if I can get it working.",
+      "parentUuid": "785d6adb_b615aca5",
+      "range": {
+        "startLine": 631,
+        "startChar": 53,
+        "endLine": 631,
+        "endChar": 64
+      },
+      "revId": "8522ab2d7eb4ba983c65bf2042e8956a503233bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
