@@ -97,6 +97,15 @@ func (b *Build) SchedulingDuration() (duration time.Duration, ok bool) {
 	return b.StartTime.Sub(b.CreationTime), true
 }
 
+// BuilderID returns the builder ID of the build.
+func (b *Build) BuilderID() *pb.BuilderID {
+	return &pb.BuilderID{
+		Project: b.Project,
+		Bucket:  b.Bucket,
+		Builder: b.Builder,
+	}
+}
+
 // Properties is data provided by users, opaque to LUCI services.
 // The value must be JSON marshalable/unmarshalable into/out from a
 // JSON object.

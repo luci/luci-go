@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbprotoutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -58,11 +60,26 @@ type Project struct {
 	HasConfig bool
 	ACL       ACL `gae:",noindex"`
 
-	LogoURL          string
-	BuildBugTemplate config.BugTemplate
+	LogoURL           string
+	BuildBugTemplate  config.BugTemplate
+	IgnoredBuilderIDs []string
 
 	// Tolerate unknown fields when fetching entities.
 	_ datastore.PropertyMap `gae:"-,extra"`
+}
+
+// BuilderIsIgnored checks if the builder is marked as ignored in this project.
+func (p *Project) BuilderIsIgnored(builderID *buildbucketpb.BuilderID) bool {
+	builderIDStr := bbprotoutil.FormatBuilderID(builderID)
+	if p == nil {
+		return false
+	}
+	for _, bid := range p.IgnoredBuilderIDs {
+		if bid == builderIDStr {
+			return true
+		}
+	}
+	return false
 }
 
 // ACL lists groups and identities that are allowed to see consoles in
@@ -427,6 +444,8 @@ func updateProject(c context.Context, cfg *configInterface.Config) (stringset.Se
 	// Have the Milo config! Use it to update console entities.
 	project.HasConfig = true
 	project.LogoURL = miloCfg.LogoUrl
+	project.IgnoredBuilderIDs = miloCfg.IgnoredBuilderIds
+
 	if miloCfg.BuildBugTemplate != nil {
 		project.BuildBugTemplate = *miloCfg.BuildBugTemplate
 	}
