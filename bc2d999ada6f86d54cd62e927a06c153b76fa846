@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ce31210d_65393a06",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-02T02:46:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c75cc463_a2606788",
+      "range": {
+        "startLine": 58,
+        "startChar": 11,
+        "endLine": 58,
+        "endChar": 12
+      },
+      "revId": "bc2d999ada6f86d54cd62e927a06c153b76fa846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac7821bc_324a257b",
         "filename": "resultdb/internal/services/globalmetrics/metrics.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "bc2d999ada6f86d54cd62e927a06c153b76fa846",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2644c527_96e99a78",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-02T02:46:43Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "ac7821bc_324a257b",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 24
+      },
+      "revId": "bc2d999ada6f86d54cd62e927a06c153b76fa846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
