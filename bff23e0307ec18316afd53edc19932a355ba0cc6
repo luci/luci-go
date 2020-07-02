@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4a19c911_fc9ca8a7",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-02T05:18:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ec81bea_970cd091",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 28
+      },
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5dafd653_ea08d6c9",
         "filename": "resultdb/internal/services/globalmetrics/metrics.go",
         "patchSetId": 9
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "59f2d994_c2d62de8",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-02T05:18:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5dafd653_ea08d6c9",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 0
+      },
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58852dbc_3a667bb2",
         "filename": "resultdb/internal/services/globalmetrics/metrics.go",
         "patchSetId": 9
@@ -62,6 +110,24 @@
       "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c525851f_cbadaf08",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-02T05:18:59Z",
+      "side": 1,
+      "message": "Unit tests added. I should have added tests in the first place.",
+      "parentUuid": "58852dbc_3a667bb2",
+      "revId": "bff23e0307ec18316afd53edc19932a355ba0cc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
