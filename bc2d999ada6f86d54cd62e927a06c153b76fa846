@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c75cc463_a2606788",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T01:54:13Z",
+      "side": 1,
+      "message": "nit: \u003d and {} are not necessary here.",
+      "range": {
+        "startLine": 58,
+        "startChar": 11,
+        "endLine": 58,
+        "endChar": 12
+      },
+      "revId": "bc2d999ada6f86d54cd62e927a06c153b76fa846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac7821bc_324a257b",
+        "filename": "resultdb/internal/services/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T01:54:13Z",
+      "side": 1,
+      "message": "you don\u0027t need a copy any more. Just modify it in place resetting taskCount to 0.",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 24
+      },
+      "revId": "bc2d999ada6f86d54cd62e927a06c153b76fa846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
