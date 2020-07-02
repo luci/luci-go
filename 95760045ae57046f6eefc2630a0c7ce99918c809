@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "401ba4fa_491d01ac",
+        "filename": "lucicfg/version.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T08:10:35Z",
+      "side": 1,
+      "message": "👍 since this is nominally a breaking change.",
+      "range": {
+        "startLine": 27,
+        "startChar": 14,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "95760045ae57046f6eefc2630a0c7ce99918c809",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
