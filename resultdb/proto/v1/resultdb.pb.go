@@ -169,6 +169,8 @@ type ListTestResultsRequest struct {
 	// Fields to include in the response.
 	// If not set, the default mask is used where summary_html and tags are
 	// excluded.
+	// Test result names will always be included even if "name" is not a part of
+	// the mask.
 	ReadMask *field_mask.FieldMask `protobuf:"bytes,4,opt,name=read_mask,json=readMask,proto3" json:"read_mask,omitempty"`
 }
 
@@ -514,6 +516,8 @@ type QueryTestResultsRequest struct {
 	// Fields to include in the response.
 	// If not set, the default mask is used where summary_html and tags are
 	// excluded.
+	// Test result names will always be included even if "name" is not a part of
+	// the mask.
 	ReadMask *field_mask.FieldMask `protobuf:"bytes,6,opt,name=read_mask,json=readMask,proto3" json:"read_mask,omitempty"`
 }
 
