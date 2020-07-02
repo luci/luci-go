@@ -214,7 +214,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			return err
 		}
 
-		tr.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
 		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
@@ -222,6 +222,9 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			return errors.Annotate(
 				err, "error trimming fields for %s", item.TestResult.Name).Err()
 		}
+		// Always include name in tr because name is needed to calculate
+		// page token.
+		tr.Name = trName
 
 		return f(item)
 	})
