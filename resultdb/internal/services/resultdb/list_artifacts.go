@@ -30,6 +30,17 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+func verifyListArtifactsPermission(ctx context.Context, parent string) (inputErr, permErr error) {
+	invIDStr, inputErr := pbutil.ParseInvocationName(parent)
+	if inputErr != nil {
+		invIDStr, _, _, inputErr = pbutil.ParseTestResultName(parent)
+	}
+	if inputErr != nil {
+		return inputErr, nil
+	}
+	return nil, verifyPermission(ctx, permListArtifacts, invocations.ID(invIDStr))
+}
+
 func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 	if pbutil.ValidateInvocationName(req.Parent) != nil && pbutil.ValidateTestResultName(req.Parent) != nil {
 		return errors.Reason("parent: neither valid invocation name nor valid test result name").Err()
@@ -44,8 +55,19 @@ func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 
 // ListArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+	inputErr, permErr := verifyListArtifactsPermission(ctx, in.Parent)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateListArtifactsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was a problem here, the validation call above should
+		// have returned and error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	// Prepare the query.

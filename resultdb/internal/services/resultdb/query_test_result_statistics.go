@@ -29,8 +29,19 @@ import (
 
 // QueryTestResultStatistics implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+	inputErr, permErr := verifyQueryTestResultsPermissions(ctx, in.Invocations)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateQueryRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	// Open a transaction.

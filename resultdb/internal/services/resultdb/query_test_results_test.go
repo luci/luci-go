@@ -20,6 +20,10 @@ import (
 
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -83,14 +87,20 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 
 func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permListTestResults},
+			},
+		})
 
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertTRs := insert.TestResults
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insertInv("a", "b"),
-			insertInv("b", "c"),
-			insertInv("c"),
+			insertInv("x", map[string]interface{}{"Realm": "secretproject:testrealm"}, "a"),
+			insertInv("a", map[string]interface{}{"Realm": "testproject:testrealm"}, "b"),
+			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
+			insertInv("c", map[string]interface{}{"Realm": "otherproject:testrealm"}),
 			insertTRs("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insertTRs("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insertTRs("c", "C", nil, pb.TestStatus_PASS),
@@ -99,6 +109,22 @@ func TestQueryTestResults(t *testing.T) {
 		srv := newTestResultDBService()
 
 		Convey(`Without readMask`, func() {
+			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/a"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TestResults, ShouldHaveLength, 5)
+		})
+
+		Convey(`Permission denied`, func() {
+			_, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/x"},
+			})
+
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
+
+		Convey(`Valid`, func() {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
 			})

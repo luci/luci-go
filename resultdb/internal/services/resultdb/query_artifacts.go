@@ -31,6 +31,18 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// verifyQueryArtifactsPermissions checks permission to list artifacts on each of the
+// invocation names given, more specifically, on their realms.
+func verifyQueryArtifactsPermissions(ctx context.Context, invNames []string) (inputErr, permErr error) {
+	for _, n := range invNames {
+		inputErr, permErr := verifyPermissionInvName(ctx, permListArtifacts, n)
+		if inputErr != nil || permErr != nil {
+			return inputErr, permErr
+		}
+	}
+	return nil, nil
+}
+
 // validateQueryArtifactsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
@@ -42,8 +54,19 @@ func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 
 // QueryArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
+	inputErr, permErr := verifyQueryArtifactsPermissions(ctx, in.Invocations)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateQueryArtifactsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	// Open a transaction.

@@ -42,8 +42,19 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 
 // ListTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
+	inputErr, permErr := verifyPermissionInvName(ctx, permListTestResults, in.Invocation)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateListTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	readMask, err := testresults.ListMask(in.GetReadMask())
