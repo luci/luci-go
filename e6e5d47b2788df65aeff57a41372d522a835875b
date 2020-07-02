@@ -16,6 +16,24 @@
       "revId": "e6e5d47b2788df65aeff57a41372d522a835875b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db9f1dfe_8deb10ed",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 528,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-02T05:40:58Z",
+      "side": 1,
+      "message": "Suggest increasing the field number and marking 27 as reserved just to be on the safe side.",
+      "parentUuid": "f0c7d161_ce4672f5",
+      "revId": "e6e5d47b2788df65aeff57a41372d522a835875b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
