@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "739c3dae_cb66804d",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-02T03:14:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b63366b8_fc4cb9b0",
+      "range": {
+        "startLine": 58,
+        "startChar": 5,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "7b0cf484f03c98d2220a93773ab657af4264f4e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "daa581b1_61ef129a",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "7b0cf484f03c98d2220a93773ab657af4264f4e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d34e12b1_242181af",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-02T03:14:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "daa581b1_61ef129a",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 34
+      },
+      "revId": "7b0cf484f03c98d2220a93773ab657af4264f4e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
