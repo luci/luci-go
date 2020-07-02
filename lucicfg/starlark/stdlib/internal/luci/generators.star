@@ -333,7 +333,7 @@ def _buildbucket_builders(bucket, swarming_host):
         exe, recipe, properties = _handle_executable(node)
         out.append(buildbucket_pb.Builder(
             name = node.props.name,
-            description = node.props.description,
+            description_html = node.props.description_html,
             swarming_host = node.props.swarming_host or swarming_host,
             exe = exe,
             recipe = recipe,

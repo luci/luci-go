@@ -29,7 +29,7 @@ def _builder(
         *,
         name = None,
         bucket = None,
-        description = None,
+        description_html = None,
         executable = None,
 
         # Execution environment parameters.
@@ -112,7 +112,7 @@ def _builder(
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: name of the builder, will show up in UIs and logs. Required.
       bucket: a bucket the builder is in, see luci.bucket(...) rule. Required.
-      description: a short plain string, will show up in UIs.
+      description_html: description of the builder, will show up in UIs.
       executable: an executable to run, e.g. a luci.recipe(...) or
         luci.executable(...). Required.
 
@@ -214,7 +214,7 @@ def _builder(
     props = {
         "name": name,
         "bucket": bucket_key.id,
-        "description": validate.string("description", description, required = False),
+        "description_html": validate.string("description_html", description_html, required = False),
         "project": "",  # means "whatever is being defined right now"
         "properties": validate.str_dict("properties", properties),
         "service_account": validate.string("service_account", service_account, required = False),
