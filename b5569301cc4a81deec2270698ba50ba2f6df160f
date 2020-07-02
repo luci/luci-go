@@ -46,6 +46,30 @@
       "revId": "b5569301cc4a81deec2270698ba50ba2f6df160f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "424e3638_4762b552",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-02T08:14:27Z",
+      "side": 1,
+      "message": "I\u0027m confused. If HTML is rendered as a string, then why support HTML?",
+      "parentUuid": "5502498a_b5763bd1",
+      "range": {
+        "startLine": 16,
+        "startChar": 33,
+        "endLine": 16,
+        "endChar": 64
+      },
+      "revId": "b5569301cc4a81deec2270698ba50ba2f6df160f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
