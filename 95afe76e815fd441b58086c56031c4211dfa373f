@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71630028_b6330dd0",
+        "filename": "resultdb/internal/services/resultdb/get_artifact.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T02:13:26Z",
+      "side": 1,
+      "message": "i think it would be much simpler if this function returned one error:\n- return appstatus.BadRequest(inputErr) in L35\n- no longer need L60-65\n\napplies to other RPCs too",
+      "range": {
+        "startLine": 32,
+        "startChar": 70,
+        "endLine": 32,
+        "endChar": 92
+      },
+      "revId": "95afe76e815fd441b58086c56031c4211dfa373f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42bcdda3_d1c93df4",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T02:13:26Z",
+      "side": 1,
+      "message": "does it make sense to extract L45-47 to a separate func to reuse it here?",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 2
+      },
+      "revId": "95afe76e815fd441b58086c56031c4211dfa373f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9335b64_f6752b3e",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T02:13:26Z",
+      "side": 1,
+      "message": "strictly speaking, the requester did not specify the realm (they specified invocation name), so here we are releasing the realm name (that they might not know) which might have info that the requester should not see (e.g. if realm has a confidential codename)\n\nso i recommend \"in realm of invocation %s\"",
+      "range": {
+        "startLine": 60,
+        "startChar": 95,
+        "endLine": 60,
+        "endChar": 97
+      },
+      "revId": "95afe76e815fd441b58086c56031c4211dfa373f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6687d2bd_bcc8a173",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T02:13:26Z",
+      "side": 1,
+      "message": "nit: it\u0027s ok to use %s here because we know that permission names do not need to be quoted. they aren\u0027t user input",
+      "range": {
+        "startLine": 60,
+        "startChar": 84,
+        "endLine": 60,
+        "endChar": 85
+      },
+      "revId": "95afe76e815fd441b58086c56031c4211dfa373f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a957bf4a_053360b4",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T02:13:26Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 68,
+        "startChar": 94,
+        "endLine": 68,
+        "endChar": 120
+      },
+      "revId": "95afe76e815fd441b58086c56031c4211dfa373f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "578d952e_b1065535",
+        "filename": "resultdb/internal/services/resultdb/query_test_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-02T02:13:26Z",
+      "side": 1,
+      "message": "this is duplicated 3 times. Why not change verifyPermissionInvName to accept variadic inv names",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 0
+      },
+      "revId": "95afe76e815fd441b58086c56031c4211dfa373f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
