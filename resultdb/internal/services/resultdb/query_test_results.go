@@ -32,6 +32,18 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// verifyQueryTestResultsPermissions checks permission to list test results on
+// each of the invocation names given, more specifically, on their realms.
+func verifyQueryTestResultsPermissions(ctx context.Context, invNames []string) (inputErr, permErr error) {
+	for _, n := range invNames {
+		inputErr, permErr := verifyPermissionInvName(ctx, permListTestResults, n)
+		if inputErr != nil || permErr != nil {
+			return inputErr, permErr
+		}
+	}
+	return nil, nil
+}
+
 // queryRequest is implemented by *pb.QueryTestResultsRequest,
 // *pb.QueryTestExonerationsRequest and *pb.QueryTestResultStatisticsRequest.
 type queryRequest interface {
@@ -85,8 +97,19 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 
 // QueryTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+	inputErr, permErr := verifyQueryTestResultsPermissions(ctx, in.Invocations)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateQueryTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	// Open a transaction.

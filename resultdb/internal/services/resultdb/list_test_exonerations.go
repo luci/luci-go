@@ -42,8 +42,19 @@ func validateListTestExonerationsRequest(req *pb.ListTestExonerationsRequest) er
 
 // ListTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTestExonerationsRequest) (*pb.ListTestExonerationsResponse, error) {
+	inputErr, permErr := verifyPermissionInvName(ctx, permListTestExonerations, in.Invocation)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateListTestExonerationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	q := exonerations.Query{

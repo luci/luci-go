@@ -31,6 +31,19 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// verifyQueryTestExonerationsPermissions checks permission to list test
+// exonerations on each of the invocation names given, more specifically,
+// on their realms.
+func verifyQueryTestExonerationsPermissions(ctx context.Context, invNames []string) (inputErr, permErr error) {
+	for _, n := range invNames {
+		inputErr, permErr := verifyPermissionInvName(ctx, permListTestExonerations, n)
+		if inputErr != nil || permErr != nil {
+			return inputErr, permErr
+		}
+	}
+	return nil, nil
+}
+
 // validateQueryTestExonerationsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) error {
@@ -43,8 +56,19 @@ func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) 
 
 // QueryTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error) {
+	inputErr, permErr := verifyQueryTestExonerationsPermissions(ctx, in.Invocations)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateQueryTestExonerationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	// Open a transaction.

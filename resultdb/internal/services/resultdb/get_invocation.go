@@ -41,8 +41,19 @@ func validateGetInvocationRequest(req *pb.GetInvocationRequest) error {
 
 // GetInvocation implements pb.ResultDBServer.
 func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+	inputErr, permErr := verifyPermissionInvName(ctx, permReadInvocation, in.Name)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateGetInvocationRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	txn := span.Client(ctx).ReadOnlyTransaction()

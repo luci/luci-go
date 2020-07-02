@@ -23,10 +23,20 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+func verifyArtifactReadPermission(ctx context.Context, name string) (inputErr, permErr error) {
+	invIDStr, _, _, _, inputErr := pbutil.ParseArtifactName(name)
+	if inputErr != nil {
+		return inputErr, nil
+	}
+
+	return nil, verifyPermission(ctx, permReadArtifact, invocations.ID(invIDStr))
+}
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 	if err := pbutil.ValidateArtifactName(req.Name); err != nil {
@@ -38,8 +48,19 @@ func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 
 // GetArtifact implements pb.ResultDBServer.
 func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
+	inputErr, permErr := verifyArtifactReadPermission(ctx, in.Name)
+	if permErr != nil {
+		return nil, permErr
+	}
+
 	if err := validateGetArtifactRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if inputErr != nil {
+		// If there was problem with the input, the validation call above should have
+		// returned an error and the execution not reached this point.
+		panic(inputErr)
 	}
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
