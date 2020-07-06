@@ -27,7 +27,6 @@ package ttqspanner
 
 import (
 	"context"
-	"errors"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/spanner"
@@ -64,21 +63,18 @@ func New(c *cloudtasks.Client, opts ttq.Options, sp *spanner.Client) (*TTQ, erro
 // Reserves a ttq.Options.BaseURL path component in the given router for its own
 // use.
 // Do read the documentation about the required cron setup in ttq.Options:
-//   TODO(tandrii): link
-//
-// Panics if called twice.
-func (t *TTQ) InstallRoutes(r *router.Router, pathPrefix string, mw router.MiddlewareChain) {
-	// TODO(tandrii): implement.
+//   https://godoc.org/go.chromium.org/luci/ttq#Options
+func (t *TTQ) InstallRoutes(r *router.Router, pathPrefix string) {
+	t.impl.InstallRoutes(r)
 }
 
 // AddTask guarantees eventual creation of a task in Cloud Tasks if the current
 // transaction completes successfully.
 //
 // The returned ttq.PostProcess should be called after the successful
-// transaction. See ttq.PostProcess
-//   TODO(tandrii): link
+// transaction. See https://godoc.org/go.chromium.org/luci/ttq#PostProcess
 // documentation for more info.
 func (t *TTQ) AddTask(ctx context.Context, txn *spanner.ReadWriteTransaction, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
-	// TODO(tandrii): implement.
-	return nil, errors.New("not implemented")
+	// TODO(tandrii): stick Spanner txn into context.
+	return t.impl.AddTask(ctx, req)
 }
