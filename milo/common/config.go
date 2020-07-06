@@ -646,23 +646,33 @@ func UpdateProjects(c context.Context) error {
 
 	// Now process the consoles for each project and push them to Datastore, resolving
 	// external console references along the way.
-	for _, res := range resultsList {
-		// If there was an error fetching this project, don't apply any Datastore changes.
-		if res.err != nil {
-			continue
-		}
-		// Apply datastore changes in a single transaction per project.
-		err := datastore.RunInTransaction(c, func(c context.Context) error {
-			toPut, err := prepareConsolesUpdate(c, knownProjects, res.project, res.miloCfg, res.miloCfgMeta)
-			if err != nil {
-				return err
+	err = parallel.FanOutIn(func(tasks chan<- func() error) {
+		for _, res := range resultsList {
+			res := res
+			// If there was an error fetching this project, don't apply any Datastore changes.
+			if res.err != nil {
+				continue
 			}
-			toPut = append(toPut, res.project)
-			return datastore.Put(c, toPut)
-		}, nil)
-		if err != nil {
-			merr = append(merr, errors.Annotate(err, "when applying config rev %q of %q", res.miloCfgMeta.Revision, res.miloCfgMeta.ConfigSet).Err())
+			tasks <- func() error {
+				// Apply datastore changes in a single transaction per project.
+				err := datastore.RunInTransaction(c, func(c context.Context) error {
+					toPut, err := prepareConsolesUpdate(c, knownProjects, res.project, res.miloCfg, res.miloCfgMeta)
+					if err != nil {
+						return err
+					}
+					toPut = append(toPut, res.project)
+					return datastore.Put(c, toPut)
+				}, nil)
+				if res.miloCfgMeta != nil {
+					return errors.Annotate(err, "when applying config rev %q of %q", res.miloCfgMeta.Revision, res.miloCfgMeta.ConfigSet).Err()
+				} else {
+					return errors.Annotate(err, "when updating config for %q", res.project.ID).Err()
+				}
+			}
 		}
+	})
+	if err != nil {
+		merr = append(merr, err.(errors.MultiError)...)
 	}
 
 	toDelete := []*datastore.Key{}
