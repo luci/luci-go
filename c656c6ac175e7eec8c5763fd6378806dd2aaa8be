@@ -46,6 +46,30 @@
       "revId": "c656c6ac175e7eec8c5763fd6378806dd2aaa8be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac8991e8_30d82998",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-06T20:08:58Z",
+      "side": 1,
+      "message": "please a code comment about this. it was not clear from the code.",
+      "parentUuid": "54d167cc_23e5c0b8",
+      "range": {
+        "startLine": 217,
+        "startChar": 2,
+        "endLine": 217,
+        "endChar": 8
+      },
+      "revId": "c656c6ac175e7eec8c5763fd6378806dd2aaa8be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
