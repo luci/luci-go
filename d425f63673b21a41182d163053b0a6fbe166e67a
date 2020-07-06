@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cfba8a90_0e1ba8fb",
+        "filename": "resultdb/internal/services/resultdb/get_artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-06T23:20:20Z",
+      "side": 1,
+      "message": "Naming nit: verifyReadArtifactPermission to be consistent with other similar functions?",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 33
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f23fc654_b068b5be",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-06T23:20:20Z",
+      "side": 1,
+      "message": "How about also return invID here? Something like:\n\nfunc getInvocationIDFromParent(parent string) (invocations.ID, error) {\n  invIDStr, inputErr :\u003d pbutil.ParseInvocationName(parent)\n  if inputErr !\u003d nil {\n    invIDStr, _, _, inputErr \u003d pbutil.ParseTestResultName(parent)\n  }\n  if inputErr !\u003d nil {\n    return nil, inputErr\n  }\n  return invocations.ID(invIDStr), nil\n}\n\nSo that we don\u0027t need to parse parent multiple times",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 1
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ea5ea70_d2d06ff9",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-06T23:20:20Z",
+      "side": 1,
+      "message": "This should have been validated in verifyListArtifactsPermission, why do we need to validate it again?",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 2
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
