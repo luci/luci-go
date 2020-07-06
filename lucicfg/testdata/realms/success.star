@@ -3,7 +3,6 @@ lucicfg.enable_experiment("crbug.com/1085650")
 luci.project(
     name = "proj",
     buildbucket = "cr-buildbucket.appspot.com",
-    swarming = "chromium-swarm.appspot.com",
     bindings = [
         luci.binding(
             roles = "role/a",
@@ -124,7 +123,6 @@ luci.realm(
 # === cr-buildbucket.cfg
 # buckets {
 #   name: "bucket"
-#   swarming {}
 # }
 # ===
 #

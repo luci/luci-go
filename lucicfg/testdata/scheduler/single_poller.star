@@ -2,7 +2,6 @@ luci.project(
     name = "project",
     buildbucket = "cr-buildbucket.appspot.com",
     scheduler = "luci-scheduler.appspot.com",
-    swarming = "chromium-swarm.appspot.com",
 )
 
 luci.bucket(name = "ci")
@@ -19,7 +18,6 @@ luci.gitiles_poller(
 # === cr-buildbucket.cfg
 # buckets {
 #   name: "ci"
-#   swarming {}
 # }
 # ===
 #
