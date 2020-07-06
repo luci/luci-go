@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a57164da_dac11462",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-06T05:45:36Z",
+      "side": 1,
+      "message": "Could this cause deadlocks if multiple processes are trying to update the same consoles?",
+      "revId": "8d5255d88245910e913dd6097f5817484b28b175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
