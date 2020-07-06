@@ -33,6 +33,23 @@
       "revId": "384b0f8e72802aeb560a1ed98747b872b4abda20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7e76e6bf_0e748345",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-06T19:45:35Z",
+      "side": 1,
+      "message": "👍 thank you!\n\nplease delete all fix*FieldMask* methods, too, in a follow up",
+      "revId": "384b0f8e72802aeb560a1ed98747b872b4abda20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
