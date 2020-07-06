@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "882bfbec_2ccce58c",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-06T18:25:05Z",
+      "side": 1,
+      "message": "In general, please, document the format, it is sadly messy in LUCI land. Is it proj/buck/bldr or proj:buck/bldr or just buck:bldr.\n\nHowever, Based on examples in lucicfg CL https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2283182, i see this proj/buck/bldr,\nwhich removes isolation between projects. This should be scoped to the current project, only.\n\nFurthermore, isn\u0027t this a temporary feature? If so, please document this fact as well as file a bug to fix actual performance bug in Milo and reference it here:\n\nTODO(crbug/...): fix performance \u0026 remove this option.",
+      "revId": "448217aee33adbbb7e0cfd2cde33332297d8b2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
