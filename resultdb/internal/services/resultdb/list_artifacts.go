@@ -30,9 +30,29 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
-	if pbutil.ValidateInvocationName(req.Parent) != nil && pbutil.ValidateTestResultName(req.Parent) != nil {
+func verifyListArtifactsPermission(ctx context.Context, parent string) error {
+	if err := validateParent(parent); err != nil {
+		return appstatus.BadRequest(err)
+	}
+
+	invIDStr, err := pbutil.ParseInvocationName(parent)
+	if err != nil {
+		invIDStr, _, _, _ = pbutil.ParseTestResultName(parent)
+	}
+
+	return verifyPermission(ctx, permListArtifacts, invocations.ID(invIDStr))
+}
+
+func validateParent(parent string) error {
+	if pbutil.ValidateInvocationName(parent) != nil && pbutil.ValidateTestResultName(parent) != nil {
 		return errors.Reason("parent: neither valid invocation name nor valid test result name").Err()
+	}
+	return nil
+}
+
+func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
+	if err := validateParent(req.Parent); err != nil {
+		return err
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
@@ -44,6 +64,10 @@ func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 
 // ListArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+	if err := verifyListArtifactsPermission(ctx, in.Parent); err != nil {
+		return nil, err
+	}
+
 	if err := validateListArtifactsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

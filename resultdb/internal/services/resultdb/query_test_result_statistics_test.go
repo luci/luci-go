@@ -18,30 +18,50 @@ import (
 	"testing"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryTestResultStatistics(t *testing.T) {
 	Convey(`QueryTestResultStatistics`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permListTestResults},
+			},
+		})
 
 		testutil.MustApply(ctx,
-			insert.Invocation("a", pb.Invocation_FINALIZED, nil),
+			insert.Invocation(
+				"x", pb.Invocation_FINALIZED, map[string]interface{}{
+					"Realm": "secretproject:testrealm",
+				}),
+			insert.Invocation(
+				"a", pb.Invocation_FINALIZED, map[string]interface{}{
+					"Realm": "testproject:testrealm",
+				}),
 			insert.Invocation(
 				"b", pb.Invocation_FINALIZED, map[string]interface{}{
 					"TestResultCount": 5,
+					"Realm":           "otherproject:testrealm",
 				}),
 			insert.Invocation(
 				"c", pb.Invocation_FINALIZED, map[string]interface{}{
 					"TestResultCount": 10,
+					"Realm":           "otherproject:testrealm",
 				}),
 			insert.Invocation(
 				"d", pb.Invocation_FINALIZED, map[string]interface{}{
 					"TestResultCount": 20,
+					"Realm":           "otherproject:testrealm",
 				}),
 			insert.Inclusion("a", "b"),
 			insert.Inclusion("a", "c"),
@@ -52,11 +72,21 @@ func TestQueryTestResultStatistics(t *testing.T) {
 		)
 
 		srv := newTestResultDBService()
-		res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
-			Invocations: []string{"invocations/a"},
+
+		Convey(`Permission denied`, func() {
+			_, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
+				Invocations: []string{"invocations/x"},
+			})
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
-		So(err, ShouldBeNil)
-		So(res.TotalTestResults, ShouldEqual, 35)
+
+		Convey(`Valid`, func() {
+			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
+				Invocations: []string{"invocations/a"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TotalTestResults, ShouldEqual, 35)
+		})
 	})
 
 }
