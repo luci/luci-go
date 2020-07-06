@@ -53,21 +53,13 @@ func SortStringPairs(pairs []*pb.StringPair) {
 	})
 }
 
-// ParseStringPair parses StringPair to "<key>:<value>".
-func ParseStringPair(p *pb.StringPair) string {
-	if p == nil {
-		return ""
+// StringPairMap converts a slice of StringPair messages to a strpair.Map.
+func StringPairMap(pairs []*pb.StringPair) strpair.Map {
+	m := make(strpair.Map)
+	for _, pair := range pairs {
+		m.Add(pair.Key, pair.Value)
 	}
-	return fmt.Sprintf("%s:%s", p.Key, p.Value)
-}
-
-// ParseStringPair parses a list of StringPairs.
-func ParseStringPairs(p []*pb.StringPair) []string {
-	strs := make([]string, len(p))
-	for i, pair := range p {
-		strs[i] = ParseStringPair(pair)
-	}
-	return strs
+	return m
 }
 
 // BuildSets returns all of the buildsets of the build.
