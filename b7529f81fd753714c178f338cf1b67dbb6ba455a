@@ -761,6 +761,24 @@
     },
     {
       "key": {
+        "uuid": "696e67ca_9e266264",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-06T22:50:37Z",
+      "side": 1,
+      "message": "Appreciate your advice. I\u0027m thinking to put the future functions - SearchOnBuilds and SearchOnTagIndex inside query.go. As these two functions actually DIRECTLY perform real Fetch() functionality. The searchBuild() in this CL is just doing a routing to determine with kind of fetching flows to go. I\u0027ll write a following CL about SearchOnBuilds function and we can see if it\u0027s reasonable.",
+      "parentUuid": "de45e53c_66c37761",
+      "revId": "b7529f81fd753714c178f338cf1b67dbb6ba455a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea155290_b5a06e17",
         "filename": "buildbucket/appengine/rpc/search_builds_test.go",
         "patchSetId": 4
