@@ -97,20 +97,14 @@ type Server struct {
 	// included in the response.
 	AccessControl func(c context.Context, origin string) bool
 
-	// HackFixFieldMasksForJSON indicates whether to attempt a workaround for
-	// https://github.com/golang/protobuf/issues/745 when the request has
-	// Content-Type: application/json. This hack is scheduled for removal.
-	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-	HackFixFieldMasksForJSON bool
-
 	// UnaryServerInterceptor provides a hook to intercept the execution of
 	// a unary RPC on the server. It is the responsibility of the interceptor to
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	mu                   sync.RWMutex
-	services             map[string]*service
-	overrides            map[string]map[string]Override
+	mu        sync.RWMutex
+	services  map[string]*service
+	overrides map[string]map[string]Override
 }
 
 type service struct {
@@ -335,7 +329,7 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 			return grpcutil.Errf(codes.Internal, "input message is nil")
 		}
 		// Do not collapse it to one line. There is implicit err type conversion.
-		if perr := readMessage(c.Request, in.(proto.Message), s.HackFixFieldMasksForJSON); perr != nil {
+		if perr := readMessage(c.Request, in.(proto.Message)); perr != nil {
 			return perr
 		}
 		return nil
