@@ -16,6 +16,24 @@
       "revId": "8d5255d88245910e913dd6097f5817484b28b175",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1451722_e827e318",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-07-06T05:50:58Z",
+      "side": 1,
+      "message": "It\u0027s parallellised by project, so that should never be the case.",
+      "parentUuid": "a57164da_dac11462",
+      "revId": "8d5255d88245910e913dd6097f5817484b28b175",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
