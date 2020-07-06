@@ -70,6 +70,9 @@ consoles {
     short_name: "snb"
   }
 }
+
+ignored_builder_ids: "proj/a/id"
+ignored_builder_ids: "proj/a/c"
 `
 
 const miloOut = `consoles: <
@@ -103,6 +106,8 @@ consoles: <
     tree_status_host: "t1"
   >
 >
+ignored_builder_ids: "proj/a/id"
+ignored_builder_ids: "proj/a/c"
 `
 
 func TestMilo(t *testing.T) {

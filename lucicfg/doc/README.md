@@ -1593,6 +1593,7 @@ luci.milo(
     monorail_components = None,
     bug_summary = None,
     bug_description = None,
+    ignored_builder_ids = None,
 )
 ```
 
@@ -1635,6 +1636,7 @@ displayed.
 * **monorail_components**: a list of the Monorail component to assign to a new bug, in the hierarchical `>`-separated format, e.g. `Infra>Client>ChromeOS>CI`. Required if `monorail_project` is set, otherwise must not be used.
 * **bug_summary**: string with a text template for generating new bug's summary given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
 * **bug_description**: string with a text template for generating new bug's description given a builder on whose page a user clicked the bug link. Must not be used if `monorail_project` is unset.
+* **ignored_builder_ids**: a list of builder IDs to be ignored by pubsub handler. Build update events from the builders in this list will be ignored to improve performance.
 
 
 

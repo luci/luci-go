@@ -40,6 +40,7 @@ luci.milo(
     monorail_components = ["Stuff>Hard"],
     bug_summary = "Bug summary",
     bug_description = "Everything is broken",
+    ignored_builder_ids = ["proj/bucket/ignored_builder1", "proj/bucket/ignored_builder2"],
 )
 
 # Recipes.
@@ -850,6 +851,8 @@ lucicfg.emit(
 #   monorail_project: "tutu, all aboard"
 #   components: "Stuff>Hard"
 # }
+# ignored_builder_ids: "proj/bucket/ignored_builder1"
+# ignored_builder_ids: "proj/bucket/ignored_builder2"
 # ===
 #
 # === luci-notify.cfg

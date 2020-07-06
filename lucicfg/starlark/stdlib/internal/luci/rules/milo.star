@@ -29,7 +29,8 @@ def _milo(
         monorail_project = None,
         monorail_components = None,
         bug_summary = None,
-        bug_description = None):
+        bug_description = None,
+        ignored_builder_ids = None):
     r"""Defines optional configuration of the Milo service for this project.
 
     Milo service is a public user interface for displaying (among other things)
@@ -77,6 +78,9 @@ def _milo(
       bug_description: string with a text template for generating new bug's
         description given a builder on whose page a user clicked the bug link.
         Must not be used if `monorail_project` is unset.
+      ignored_builder_ids: a list of builder IDs to be ignored by pubsub
+        handler. Build update events from the builders in this list will be
+        ignored to improve performance.
     """
     mon_proj = validate.string("monorail_project", monorail_project, required = False)
 
@@ -96,6 +100,10 @@ def _milo(
         if bug_desc:
             fail('"bug_description" is ignored if "monorail_project" is not set')
 
+    ignored_builders = validate.list("ignored_builder_ids", ignored_builder_ids, required = False)
+    for b in ignored_builders:
+        validate.string("ignored_builder_ids", b)
+
     key = keys.milo()
     graph.add_node(key, props = {
         "logo": validate.string("logo", logo, regexp = _ALLOWED_STORAGE_RE, required = False),
@@ -104,6 +112,7 @@ def _milo(
         "monorail_components": mon_comps,
         "bug_summary": bug_summ,
         "bug_description": bug_desc,
+        "ignored_builder_ids": ignored_builders,
     })
     graph.add_edge(keys.project(), key)
 

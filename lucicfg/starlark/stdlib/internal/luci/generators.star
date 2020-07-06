@@ -649,6 +649,7 @@ def gen_milo_cfg(ctx):
     opts = struct(
         logo = milo_node.props.logo if milo_node else None,
         favicon = milo_node.props.favicon if milo_node else None,
+        ignored_builder_ids = milo_node.props.ignored_builder_ids if milo_node else None,
     )
 
     # Keep the order of views as they were defined, for Milo's list of consoles.
@@ -675,6 +676,7 @@ def gen_milo_cfg(ctx):
             _milo_console_pb(view, opts, project_name)
             for view in views
         ],
+        ignored_builder_ids = opts.ignored_builder_ids,
     ))
 
 def _milo_check_connections():
