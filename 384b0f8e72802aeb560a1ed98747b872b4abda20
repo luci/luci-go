@@ -50,6 +50,24 @@
       "revId": "384b0f8e72802aeb560a1ed98747b872b4abda20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6fe1c200_0504dac7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-06T21:38:44Z",
+      "side": 1,
+      "message": "There\u0027s actually one more place to clean up (i.e. switch to protojson): https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/cli/batch.go;l\u003d73?q\u003dFixFieldMasksBeforeUnmarshal\u0026ss\u003dchromium%2Finfra%2Finfra\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n\nI\u0027ll follow up on that.",
+      "parentUuid": "7e76e6bf_0e748345",
+      "revId": "384b0f8e72802aeb560a1ed98747b872b4abda20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
