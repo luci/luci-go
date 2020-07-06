@@ -292,19 +292,15 @@ def gen_buildbucket_cfg(ctx):
     if not buckets:
         return
 
-    buildbucket = get_service("buildbucket", "defining buckets")
-    swarming = get_service("swarming", "defining builders")
-
     cfg = buildbucket_pb.BuildbucketCfg()
+    buildbucket = get_service("buildbucket", "defining buckets")
     set_config(ctx, buildbucket.cfg_file, cfg)
 
     for bucket in buckets:
         cfg.buckets.append(buildbucket_pb.Bucket(
             name = bucket.props.name,
             acls = _buildbucket_acls(get_bucket_acls(bucket)),
-            swarming = buildbucket_pb.Swarming(
-                builders = _buildbucket_builders(bucket, swarming.host),
-            ),
+            swarming = _buildbucket_builders(bucket),
         ))
 
 def _buildbucket_acls(elementary):
@@ -326,15 +322,21 @@ def _buildbucket_identity(a):
         return "project:" + a.project
     fail("impossible")
 
-def _buildbucket_builders(bucket, swarming_host):
-    """luci.bucket(...) node => [buildbucket_pb.Builder]."""
-    out = []
+def _buildbucket_builders(bucket):
+    """luci.bucket(...) node => buildbucket_pb.Swarming or None."""
+    def_swarming_host = None
+    builders = []
     for node in graph.children(bucket.key, kinds.BUILDER):
+        swarming_host = node.props.swarming_host
+        if not swarming_host:
+            if not def_swarming_host:
+                def_swarming_host = get_service("swarming", "defining builders").host
+            swarming_host = def_swarming_host
         exe, recipe, properties = _handle_executable(node)
-        out.append(buildbucket_pb.Builder(
+        builders.append(buildbucket_pb.Builder(
             name = node.props.name,
             description_html = node.props.description_html,
-            swarming_host = node.props.swarming_host or swarming_host,
+            swarming_host = swarming_host,
             exe = exe,
             recipe = recipe,
             properties = properties,
@@ -353,7 +355,7 @@ def _buildbucket_builders(bucket, swarming_host):
             ),
             resultdb = node.props.resultdb,
         ))
-    return out
+    return buildbucket_pb.Swarming(builders = builders) if builders else None
 
 def _handle_executable(node):
     """Handle a builder node's executable node.
