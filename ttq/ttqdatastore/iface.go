@@ -34,7 +34,6 @@ package ttqdatastore
 
 import (
 	"context"
-	"errors"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
@@ -70,23 +69,19 @@ func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 // Reserves a ttq.Options.BaseURL path component in the given router for its own
 // use.
 // Do read the documentation about the required cron setup in ttq.Options:
-//   TODO(tandrii): link
-//
-// Panics if called twice.
-func (t *TTQ) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
-	// TODO(tandrii): implement.
+//   https://godoc.org/go.chromium.org/luci/ttq#Options
+func (t *TTQ) InstallRoutes(r *router.Router) {
+	t.impl.InstallRoutes(r)
 }
 
 // AddTask guarantees eventual creation of a task in Cloud Tasks if the current
 // transaction completes successfully.
 //
 // The returned ttq.PostProcess should be called after the successful
-// transaction. See ttq.PostProcess
-//   TODO(tandrii): link
+// transaction. See https://godoc.org/go.chromium.org/luci/ttq#PostProcess
 // documentation for more info.
 //
 // Panics if not called with a transaction context.
 func (t *TTQ) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
-	// TODO(tandrii): implement.
-	return nil, errors.New("not implemented")
+	return t.impl.AddTask(ctx, req)
 }
