@@ -132,7 +132,6 @@ func TestQueryTestResults(t *testing.T) {
 				PageSize:    1,
 				ReadMask: &field_mask.FieldMask{
 					Paths: []string{
-						"name",
 						"status",
 						"summary_html",
 					}},
