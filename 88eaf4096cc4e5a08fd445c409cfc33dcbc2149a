@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d1e4942_f88829aa",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-06T18:34:55Z",
+      "side": 1,
+      "message": "not needed in prod code (see common.GetProject -- it never returns nil Project)",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 2
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5609331b_963bb013",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-06T18:34:55Z",
+      "side": 1,
+      "message": "missing validation for this slice in validateProjectCfg (but first please see my comments for the .proto CL)",
+      "range": {
+        "startLine": 447,
+        "startChar": 29,
+        "endLine": 447,
+        "endChar": 54
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
