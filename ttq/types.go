@@ -126,6 +126,10 @@ type Options struct {
 	// TasksPerSweepShard caps maximum number of tasks that a shard task will
 	// process. Defaults to 2048.
 	TasksPerSweepShard uint
+
+	// Internally cached options.
+
+	pathPrefix string
 }
 
 // Validate validates option values and applies defaults in place.
@@ -141,6 +145,8 @@ func (s *Options) Validate() error {
 		return errors.Reason("BaseURL %q must have path component", s.BaseURL).Err()
 	case strings.HasSuffix(u.Path, "/"):
 		return errors.Reason("BaseURL %q must not end with /", s.BaseURL).Err()
+	default:
+		s.pathPrefix = u.Path
 	}
 
 	// Quick check for typical mistakes in the Queue now.
@@ -177,6 +183,24 @@ func (s *Options) Validate() error {
 		s.TasksPerSweepShard = 2048
 	}
 	return nil
+}
+
+// PathPrefix returns URL path from BaseURL.
+//
+// If Options are invalid, behavior is undefined.
+func (s *Options) PathPrefix() string {
+	if s.pathPrefix == "" {
+		if err := s.Validate(); err != nil {
+			panic(err)
+		}
+	}
+	return s.pathPrefix
+}
+
+// CronPathPrefix returns path prefix that externally configured cron is
+// supposed to HTTP GET.
+func (s *Options) CronPathPrefix() string {
+	return s.pathPrefix + "/cron"
 }
 
 const (
