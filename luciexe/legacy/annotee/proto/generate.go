@@ -14,14 +14,8 @@
 
 //go:generate cproto
 
-// Package milo contains Milo protobuf definitions.
+// Package annopb contains protobuf definitions for legacy annotation.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package milo
-
-import (
-	"github.com/golang/protobuf/proto"
-)
-
-var _ = proto.Marshal
+package annopb

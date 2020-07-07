@@ -18,10 +18,10 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
@@ -35,8 +35,8 @@ func toLogDogStream(stream streamclient.FakeStreamData) (*rawpresentation.Stream
 	}
 
 	if result.IsDatagram {
-		result.Data = &miloProto.Step{}
-		// Assume this is a miloProto.Step.
+		result.Data = &annopb.Step{}
+		// Assume this is a annopb.Step.
 		if err := proto.Unmarshal([]byte(stream.GetStreamData()), result.Data); err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func parseAnnotations(c streamclient.FakeClient) (*rawpresentation.Streams, erro
 	return parser.ToLogDogStreams()
 }
 
-func (c annotationParser) addLogDogTextStream(s *rawpresentation.Streams, ls *miloProto.LogdogStream) error {
+func (c annotationParser) addLogDogTextStream(s *rawpresentation.Streams, ls *annopb.LogdogStream) error {
 	var keys []string
 	for k := range c.stream {
 		keys = append(keys, k)
@@ -84,7 +84,7 @@ func (c annotationParser) addLogDogTextStream(s *rawpresentation.Streams, ls *mi
 
 // addToStreams adds the set of stream with a given base path to the logdog
 // stream map.  A base path is assumed to have a stream named "annotations".
-func (c annotationParser) addToStreams(s *rawpresentation.Streams, anno *miloProto.Step) error {
+func (c annotationParser) addToStreams(s *rawpresentation.Streams, anno *annopb.Step) error {
 	if lds := anno.StdoutStream; lds != nil {
 		if err := c.addLogDogTextStream(s, lds); err != nil {
 			return fmt.Errorf(

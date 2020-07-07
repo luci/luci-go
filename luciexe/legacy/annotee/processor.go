@@ -30,11 +30,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 
 const (
@@ -135,10 +135,10 @@ type Options struct {
 
 	// AnnotationUpdated is synchronously called when the annotation message
 	// changes.
-	// miloStepBinary is binary-serialized milo.Step.
-	// miloStepBinary must not be mutated.
+	// stepBinary is binary-serialized annopb.Step.
+	// stepBinary must not be mutated.
 	// The call blocks writing datagrams to the output stream.
-	AnnotationUpdated func(miloStepBinary []byte)
+	AnnotationUpdated func(stepBinary []byte)
 }
 
 // Processor consumes data from a list of Stream entries and interacts with the
@@ -199,7 +199,7 @@ func (p *Processor) initialize() (err error) {
 	// Create our annotation stream.
 	p.annotationStream, err = p.o.Client.NewDatagramStream(
 		p.ctx, annotationPath,
-		streamclient.WithContentType(milo.ContentTypeAnnotations))
+		streamclient.WithContentType(annopb.ContentTypeAnnotations))
 	if err != nil {
 		log.WithError(err).Errorf(p.ctx, "Failed to create annotation stream.")
 		return
@@ -663,12 +663,12 @@ func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 	if created {
 		switch s.Name {
 		case STDOUT:
-			if h.step.SetSTDOUTStream(&milo.LogdogStream{Name: string(name)}) {
+			if h.step.SetSTDOUTStream(&annopb.LogdogStream{Name: string(name)}) {
 				h.updated(annotation.UpdateIterative)
 			}
 
 		case STDERR:
-			if h.step.SetSTDERRStream(&milo.LogdogStream{Name: string(name)}) {
+			if h.step.SetSTDERRStream(&annopb.LogdogStream{Name: string(name)}) {
 				h.updated(annotation.UpdateIterative)
 			}
 		}

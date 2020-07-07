@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -39,6 +38,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
 	"go.chromium.org/luci/luciexe"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -57,7 +57,7 @@ type AnnotationStream struct {
 	Client *coordinator.Client
 
 	// The cached Step object
-	step *miloProto.Step
+	step *annopb.Step
 
 	// Build is the build.proto, if this annotation stream is Build messages
 	// instead of Step messages.
@@ -126,19 +126,19 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 	var followup func()
 
 	switch state.Desc.ContentType {
-	case miloProto.ContentTypeAnnotations:
-		var step miloProto.Step
+	case annopb.ContentTypeAnnotations:
+		var step annopb.Step
 		toUnmarshal = &step
 		followup = func() {
 			var latestEndedTime time.Time
 			for _, sub := range step.Substep {
 				switch t := sub.Substep.(type) {
-				case *miloProto.Step_Substep_AnnotationStream:
+				case *annopb.Step_Substep_AnnotationStream:
 					// TODO(hinoka,dnj): Implement recursive / embedded substream fetching if
 					// specified.
 					log.Warningf(c, "Annotation stream links LogDog substream [%+v], not supported!", t.AnnotationStream)
 
-				case *miloProto.Step_Substep_Step:
+				case *annopb.Step_Substep_Step:
 					endedTime := google.TimeFromProto(t.Step.Ended)
 					if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
 						latestEndedTime = endedTime
@@ -247,9 +247,9 @@ func NewURLBuilder(addr *types.StreamAddr) *ViewerURLBuilder {
 }
 
 // BuildLink implements URLBuilder.
-func (b *ViewerURLBuilder) BuildLink(l *miloProto.AnnotationLink) *ui.Link {
+func (b *ViewerURLBuilder) BuildLink(l *annopb.AnnotationLink) *ui.Link {
 	switch t := l.Value.(type) {
-	case *miloProto.AnnotationLink_LogdogStream:
+	case *annopb.AnnotationLink_LogdogStream:
 		ls := t.LogdogStream
 
 		server := ls.Server
@@ -269,7 +269,7 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.AnnotationLink) *ui.Link {
 		}
 		return link
 
-	case *miloProto.AnnotationLink_Url:
+	case *annopb.AnnotationLink_Url:
 		link := ui.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 		if link.Label == "" {
 			link.Label = "unnamed"
@@ -328,7 +328,7 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 
 // ReadAnnotations synchronously reads and decodes the latest Step information
 // from the provided StreamAddr.
-func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
+func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*annopb.Step, error) {
 	log.Infof(c, "Loading build from LogDog stream at: %s", addr)
 
 	client, err := NewClient(c, addr.Host)
@@ -349,7 +349,7 @@ func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*miloProto.Step
 		return nil, err
 	}
 	if as.step == nil {
-		return nil, errors.New("stream does not contain milo.Step")
+		return nil, errors.New("stream does not contain annopb.Step")
 	}
 	return as.step, nil
 }

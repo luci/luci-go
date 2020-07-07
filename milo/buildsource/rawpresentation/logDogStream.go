@@ -15,7 +15,7 @@
 package rawpresentation
 
 import (
-	miloProto "go.chromium.org/luci/common/proto/milo"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 
 // Streams represents a group of LogDog Streams with a single entry point.
@@ -29,8 +29,8 @@ type Streams struct {
 }
 
 // Stream represents a single LogDog style stream, which can contain either
-// annotations (assumed to be MiloProtos) or text.  Other types of annotations are
-// not supported.
+// annotations (assumed to be annopb.Step) or text.  Other types of annotations
+// are not supported.
 type Stream struct {
 	// Server is the LogDog server this stream originated from.
 	Server string
@@ -38,11 +38,12 @@ type Stream struct {
 	Prefix string
 	// Path is the final part of the LogDog path of the Stream.
 	Path string
-	// IsDatagram is true if this is a MiloProto. False implies that this is a text log.
+	// IsDatagram is true if this is an annopb.Step. False implies that this is a
+	// text log.
 	IsDatagram bool
-	// Data is the miloProto.Step of the Stream, if IsDatagram is true.  Otherwise
+	// Data is the annopb.Step of the Stream, if IsDatagram is true.  Otherwise
 	// this is nil.
-	Data *miloProto.Step
+	Data *annopb.Step
 	// Text is the text of the Stream, if IsDatagram is false.  Otherwise
 	// this is an empty string.
 	Text string

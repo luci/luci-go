@@ -22,7 +22,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 
-	miloProto "go.chromium.org/luci/common/proto/milo"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
@@ -32,30 +32,30 @@ type URLBuilder interface {
 	// LinkURL returns the URL associated with the supplied Link.
 	//
 	// If no URL could be built for that Link, nil will be returned.
-	BuildLink(l *miloProto.AnnotationLink) *ui.Link
+	BuildLink(l *annopb.AnnotationLink) *ui.Link
 }
 
-// miloBuildStep converts a logdog/milo step to a BuildComponent struct.
+// miloBuildStep converts a logdog/annopb step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, includeChildren bool) ui.BuildComponent {
+func miloBuildStep(c context.Context, ub URLBuilder, anno *annopb.Step, includeChildren bool) ui.BuildComponent {
 
 	comp := ui.BuildComponent{
 		Label: ui.NewLink(anno.Name, "", anno.Name),
 	}
 	switch anno.Status {
-	case miloProto.Status_RUNNING:
+	case annopb.Status_RUNNING:
 		comp.Status = model.Running
 
-	case miloProto.Status_SUCCESS:
+	case annopb.Status_SUCCESS:
 		comp.Status = model.Success
 
-	case miloProto.Status_FAILURE:
+	case annopb.Status_FAILURE:
 		if fd := anno.GetFailureDetails(); fd != nil {
 			switch fd.Type {
-			case miloProto.FailureDetails_EXCEPTION, miloProto.FailureDetails_INFRA:
+			case annopb.FailureDetails_EXCEPTION, annopb.FailureDetails_INFRA:
 				comp.Status = model.InfraFailure
 
-			case miloProto.FailureDetails_EXPIRED:
+			case annopb.FailureDetails_EXPIRED:
 				comp.Status = model.Expired
 
 			default:
@@ -69,7 +69,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 			comp.Status = model.Failure
 		}
 
-	case miloProto.Status_PENDING:
+	case annopb.Status_PENDING:
 		comp.Status = model.NotRun
 
 		// Missing the case of waiting on unfinished dependency...
@@ -78,11 +78,11 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 	}
 
 	// Main link is a link to the stdout.
-	var stdoutLink *miloProto.AnnotationLink
+	var stdoutLink *annopb.AnnotationLink
 	if anno.StdoutStream != nil {
-		stdoutLink = &miloProto.AnnotationLink{
+		stdoutLink = &annopb.AnnotationLink{
 			Label: "stdout",
-			Value: &miloProto.AnnotationLink_LogdogStream{
+			Value: &annopb.AnnotationLink_LogdogStream{
 				LogdogStream: anno.StdoutStream,
 			},
 		}
@@ -93,7 +93,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 
 		// If we also have a STDOUT stream, add it to our OtherLinks.
 		if stdoutLink != nil {
-			anno.OtherLinks = append([]*miloProto.AnnotationLink{stdoutLink}, anno.OtherLinks...)
+			anno.OtherLinks = append([]*annopb.AnnotationLink{stdoutLink}, anno.OtherLinks...)
 		}
 	} else if stdoutLink != nil {
 		comp.MainLink = ui.LinkSet{ub.BuildLink(stdoutLink)}
@@ -101,9 +101,9 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 
 	// Add STDERR link, if available.
 	if anno.StderrStream != nil {
-		anno.OtherLinks = append(anno.OtherLinks, &miloProto.AnnotationLink{
+		anno.OtherLinks = append(anno.OtherLinks, &annopb.AnnotationLink{
 			Label: "stderr",
-			Value: &miloProto.AnnotationLink_LogdogStream{
+			Value: &annopb.AnnotationLink_LogdogStream{
 				LogdogStream: anno.StderrStream,
 			},
 		})
@@ -141,11 +141,11 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 
 	// Process nested steps.
 	for _, substep := range ss {
-		var subanno *miloProto.Step
+		var subanno *annopb.Step
 		switch s := substep.GetSubstep().(type) {
-		case *miloProto.Step_Substep_Step:
+		case *annopb.Step_Substep_Step:
 			subanno = s.Step
-		case *miloProto.Step_Substep_AnnotationStream:
+		case *annopb.Step_Substep_AnnotationStream:
 			panic("Non-inline substeps not supported")
 		default:
 			panic(fmt.Errorf("unknown type %v", s))
@@ -157,7 +157,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, inclu
 	return comp
 }
 
-func addPropGroups(groups *[]*ui.PropertyGroup, bs *ui.BuildComponent, anno *miloProto.Step) {
+func addPropGroups(groups *[]*ui.PropertyGroup, bs *ui.BuildComponent, anno *annopb.Step) {
 	propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
 	for _, prop := range anno.Property {
 		propGroup.Property = append(propGroup.Property, &ui.Property{
@@ -174,7 +174,7 @@ func addPropGroups(groups *[]*ui.PropertyGroup, bs *ui.BuildComponent, anno *mil
 
 // SubStepsToUI converts a slice of annotation substeps to ui.BuildComponent and
 // slice of ui.PropertyGroups.
-func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_Substep) ([]*ui.BuildComponent, []*ui.PropertyGroup) {
+func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*annopb.Step_Substep) ([]*ui.BuildComponent, []*ui.PropertyGroup) {
 	components := make([]*ui.BuildComponent, 0, len(substeps))
 	propGroups := make([]*ui.PropertyGroup, 0, len(substeps)+1) // This is the max number or property groups.
 	for _, substepContainer := range substeps {
@@ -195,7 +195,7 @@ func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_S
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
 // build.Summary.Finished must be set.
 func AddLogDogToBuild(
-	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *ui.MiloBuildLegacy) {
+	c context.Context, ub URLBuilder, mainAnno *annopb.Step, build *ui.MiloBuildLegacy) {
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cacheable.

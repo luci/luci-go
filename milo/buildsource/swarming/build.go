@@ -36,13 +36,13 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe/legacy/annotee"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -316,54 +316,54 @@ func AddBanner(build *ui.MiloBuildLegacy, tags strpair.Map) {
 
 // addTaskToMiloStep augments a Milo Annotation Protobuf with state from the
 // Swarming task.
-func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, step *miloProto.Step) error {
-	step.Link = &miloProto.AnnotationLink{
+func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, step *annopb.Step) error {
+	step.Link = &annopb.AnnotationLink{
 		Label: "Task " + sr.TaskId,
-		Value: &miloProto.AnnotationLink_Url{
+		Value: &annopb.AnnotationLink_Url{
 			Url: TaskPageURL(host, sr.TaskId).String(),
 		},
 	}
 
 	switch sr.State {
 	case TaskRunning:
-		step.Status = miloProto.Status_RUNNING
+		step.Status = annopb.Status_RUNNING
 
 	case TaskPending:
-		step.Status = miloProto.Status_PENDING
+		step.Status = annopb.Status_PENDING
 
 	case TaskExpired, TaskTimedOut, TaskBotDied:
-		step.Status = miloProto.Status_FAILURE
+		step.Status = annopb.Status_FAILURE
 
 		switch sr.State {
 		case TaskExpired:
-			step.FailureDetails = &miloProto.FailureDetails{
-				Type: miloProto.FailureDetails_EXPIRED,
+			step.FailureDetails = &annopb.FailureDetails{
+				Type: annopb.FailureDetails_EXPIRED,
 				Text: "Task expired",
 			}
 		case TaskTimedOut:
-			step.FailureDetails = &miloProto.FailureDetails{
-				Type: miloProto.FailureDetails_INFRA,
+			step.FailureDetails = &annopb.FailureDetails{
+				Type: annopb.FailureDetails_INFRA,
 				Text: "Task timed out",
 			}
 		case TaskBotDied:
-			step.FailureDetails = &miloProto.FailureDetails{
-				Type: miloProto.FailureDetails_INFRA,
+			step.FailureDetails = &annopb.FailureDetails{
+				Type: annopb.FailureDetails_INFRA,
 				Text: "Bot died",
 			}
 		}
 
 	case TaskCanceled, TaskKilled:
 		// Canceled build is user action, so it is not an infra failure.
-		step.Status = miloProto.Status_FAILURE
-		step.FailureDetails = &miloProto.FailureDetails{
-			Type: miloProto.FailureDetails_CANCELLED,
+		step.Status = annopb.Status_FAILURE
+		step.FailureDetails = &annopb.FailureDetails{
+			Type: annopb.FailureDetails_CANCELLED,
 			Text: "Task canceled by user",
 		}
 
 	case TaskNoResource:
-		step.Status = miloProto.Status_FAILURE
-		step.FailureDetails = &miloProto.FailureDetails{
-			Type: miloProto.FailureDetails_EXPIRED,
+		step.Status = annopb.Status_FAILURE
+		step.FailureDetails = &annopb.FailureDetails{
+			Type: annopb.FailureDetails_EXPIRED,
 			Text: "No resource available on Swarming",
 		}
 
@@ -371,16 +371,16 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 
 		switch {
 		case sr.InternalFailure:
-			step.Status = miloProto.Status_FAILURE
-			step.FailureDetails = &miloProto.FailureDetails{
-				Type: miloProto.FailureDetails_INFRA,
+			step.Status = annopb.Status_FAILURE
+			step.FailureDetails = &annopb.FailureDetails{
+				Type: annopb.FailureDetails_INFRA,
 			}
 
 		case sr.Failure:
-			step.Status = miloProto.Status_FAILURE
+			step.Status = annopb.Status_FAILURE
 
 		default:
-			step.Status = miloProto.Status_SUCCESS
+			step.Status = annopb.Status_SUCCESS
 		}
 
 	default:
@@ -614,7 +614,7 @@ func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr,
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuildLegacy, error) {
 	var build ui.MiloBuildLegacy
-	var step miloProto.Step
+	var step annopb.Step
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
@@ -802,9 +802,9 @@ const URLBase = "/swarming/task"
 // It should be the swarming task id.
 type swarmingURLBuilder string
 
-func (b swarmingURLBuilder) BuildLink(l *miloProto.AnnotationLink) *ui.Link {
+func (b swarmingURLBuilder) BuildLink(l *annopb.AnnotationLink) *ui.Link {
 	switch t := l.Value.(type) {
-	case *miloProto.AnnotationLink_LogdogStream:
+	case *annopb.AnnotationLink_LogdogStream:
 		ls := t.LogdogStream
 
 		link := ui.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name), "")
@@ -814,7 +814,7 @@ func (b swarmingURLBuilder) BuildLink(l *miloProto.AnnotationLink) *ui.Link {
 		link.AriaLabel = fmt.Sprintf("log link for %s", link.Label)
 		return link
 
-	case *miloProto.AnnotationLink_Url:
+	case *annopb.AnnotationLink_Url:
 		return ui.NewLink(l.Label, t.Url, fmt.Sprintf("step link for %s", l.Label))
 
 	default:
