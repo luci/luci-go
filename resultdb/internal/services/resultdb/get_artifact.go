@@ -23,10 +23,20 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+func verifyReadArtifactPermission(ctx context.Context, name string) error {
+	invIDStr, _, _, _, inputErr := pbutil.ParseArtifactName(name)
+	if inputErr != nil {
+		return appstatus.BadRequest(inputErr)
+	}
+
+	return verifyPermission(ctx, permReadArtifact, invocations.ID(invIDStr))
+}
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 	if err := pbutil.ValidateArtifactName(req.Name); err != nil {
@@ -38,6 +48,10 @@ func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 
 // GetArtifact implements pb.ResultDBServer.
 func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
+	if err := verifyReadArtifactPermission(ctx, in.Name); err != nil {
+		return nil, err
+	}
+
 	if err := validateGetArtifactRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

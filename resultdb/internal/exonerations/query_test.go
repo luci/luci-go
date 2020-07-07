@@ -35,8 +35,8 @@ func TestQueryTestExonerations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.FinalizedInvocationWithInclusions("a"),
-			insert.FinalizedInvocationWithInclusions("b"),
+			insert.FinalizedInvocationWithInclusions("a", nil),
+			insert.FinalizedInvocationWithInclusions("b", nil),
 			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), 2),
 			insert.TestExonerations("b", "C", pbutil.Variant("v", "c"), 1),
 		)...)

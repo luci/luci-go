@@ -18,6 +18,10 @@ import (
 	"testing"
 
 	durpb "github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -58,9 +62,18 @@ func TestValidateQueryArtifactsRequest(t *testing.T) {
 
 func TestQueryArtifacts(t *testing.T) {
 	Convey(`QueryArtifacts`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permListArtifacts},
+			},
+		})
 
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+		)
 		req := &pb.QueryArtifactsRequest{
 			Invocations:         []string{"invocations/inv1"},
 			PageSize:            100,
@@ -83,6 +96,12 @@ func TestQueryArtifacts(t *testing.T) {
 			}
 			return names
 		}
+
+		Convey(`Permission denied`, func() {
+			req.Invocations = []string{"invocations/invx"}
+			_, err := srv.QueryArtifacts(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
 
 		Convey(`Reads both invocation and test result artifacts`, func() {
 			testutil.MustApply(ctx,

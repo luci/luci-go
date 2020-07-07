@@ -42,6 +42,10 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 
 // ListTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
+	if err := verifyPermissionInvNames(ctx, permListTestResults, in.Invocation); err != nil {
+		return nil, err
+	}
+
 	if err := validateListTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
