@@ -141,6 +141,30 @@
       "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f82cdcc_cc02fa3f",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-07T13:30:51Z",
+      "side": 1,
+      "message": "I see. Thanks. Opened a new CL to address the issues.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2278783",
+      "parentUuid": "befa440a_1a8e9a70",
+      "range": {
+        "startLine": 447,
+        "startChar": 29,
+        "endLine": 447,
+        "endChar": 54
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
