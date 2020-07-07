@@ -41,13 +41,14 @@ const upstartTmpl = "swarming-start-bot.conf.tmpl"
 // upstartSrv is the name of the Swarming bot upstart service.
 const upstartSrv = "swarming-start-bot"
 
-// autostart configures the given Swarming bot code to be executed on startup
-// for the given user, then starts the Swarming bot process.
+// autostart configures the given Swarming bot code to be executed by the given
+// python on startup for the given user, then starts the Swarming bot process.
 // Implements PlatformStrategy.
-func (*UpstartStrategy) autostart(c context.Context, path, user string) error {
+func (*UpstartStrategy) autostart(c context.Context, path, user string, python string) error {
 	subs := map[string]string{
 		"BotCode": path,
 		"User":    user,
+		"Python":  python,
 	}
 	s, err := substitute(c, string(GetAsset(upstartTmpl)), subs)
 	if err != nil {
