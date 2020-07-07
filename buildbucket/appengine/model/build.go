@@ -82,7 +82,10 @@ type Build struct {
 	CreateTime time.Time `gae:"create_time"`
 	// Experimental, if true, means to exclude from monitoring and search results
 	// (unless specifically requested in search results).
-	Experimental        bool      `gae:"experimental"`
+	Experimental bool `gae:"experimental"`
+	// Experiments is a slice of experiments enabled or disabled on this build.
+	// Each element should look like "[-+]$experiment_name".
+	Experiments         []string  `gae:"experiments"`
 	Incomplete          bool      `gae:"incomplete"`
 	IsLuci              bool      `gae:"is_luci"`
 	ResultDBUpdateToken string    `gae:"resultdb_update_token,noindex"`
