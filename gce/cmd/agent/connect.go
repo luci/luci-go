@@ -37,6 +37,8 @@ type connectCmd struct {
 	provider string
 	// user is the name of the local user to start the Swarming bot process as.
 	user string
+	// python is the path to the python to start the Swarming bot process.
+	python string
 }
 
 // validateFlags validates parsed command line flags.
@@ -96,7 +98,7 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 
 	swr := getSwarming(c)
 	swr.server = cmd.server
-	if err := swr.Configure(c, cmd.dir, cmd.user); err != nil {
+	if err := swr.Configure(c, cmd.dir, cmd.user, cmd.python); err != nil {
 		logging.Errorf(c, "%s", err.Error())
 		return 1
 	}
@@ -116,6 +118,7 @@ func newConnectCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.provider, "provider", "", "Provider server URL to retrieve Swarming server URL from.")
 			cmd.Flags.StringVar(&cmd.server, "server", "", "Deprecated. Use -provider.")
 			cmd.Flags.StringVar(&cmd.user, "user", "", "Name of the local user to start the Swarming bot process as.")
+			cmd.Flags.StringVar(&cmd.user, "python", "", "Path to the python to start the Swarming bot process.")
 			return cmd
 		},
 	}
