@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1af811b4_966b1974",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "Are you saying since cron is idempotent, it is fine to expose it publicly to script kiddies on the Internet? I disagree with this. DoS (by exhausting Cloud Tasks quota) or just burning money through repeated calls to the cron handler is a real thing. It needs some authentication and it can\u0027t be provided by callers of InstallRoutes via `r` since it is likely different from authentication needed by task queue handlers.\n\nConsider maybe splitting InstallRoutes into two methods.",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 73
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b233829f_ff540469",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "Note: it may need some changes for Cloud Tasks. IIUC, Cloud PubSub always uses \"https://host-name\" as an audience, but Cloud Tasks by default use \"https://host-name/full/handler/uri\". We may need to relax AudienceMatchesHost to ignore URL path in the audience and verify only the host part.",
+      "range": {
+        "startLine": 122,
+        "startChar": 26,
+        "endLine": 122,
+        "endChar": 45
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "327c5929_c63c1e78",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "This thing still needs to check auth.CurrentIdentity() \u003d\u003d info.ServiceAccountName. The middleware does authentication only, there\u0027s still need to do authorization. Otherwise virtually anyone can still call this handler (since anyone can mint OpenID tokens with arbitrary audience for service accounts they control).",
+      "range": {
+        "startLine": 127,
+        "startChar": 82,
+        "endLine": 127,
+        "endChar": 97
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c3161a2_c60fe36c",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "Consider converting this to a POST request and passing arguments in a more structured way via a request body. I personally like JSON for this (instead of protos) since Cloud Tasks UI allows you to view task bodies as text. E.g. just add a bunch of `json` annotations to sweepWorkItem struct and serialize/deserialize it directly.\n\nThat way you can add/remove arguments with relative ease. URL still can contain them for easier adhoc debugging and logs, just don\u0027t use them.",
+      "range": {
+        "startLine": 127,
+        "startChar": 34,
+        "endLine": 127,
+        "endChar": 70
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0122413d_f08793cc",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "I\u0027m not a fan of this. I can lookup the name of the third argument by looking at the function, since it defined just few lines below. What would have been more useful is a documentation what \"when\" actually means in the function comment. Without it I need to scan the function implementation.",
+      "range": {
+        "startLine": 178,
+        "startChar": 1,
+        "endLine": 178,
+        "endChar": 19
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ec5cccd_95df43b4",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "This thing has unbounded parallelism and caused issues in Milo and Logdog (mostly OOMs). How many work items is there?",
+      "range": {
+        "startLine": 184,
+        "startChar": 8,
+        "endLine": 184,
+        "endChar": 25
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2a36f55_5c008703",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": ":-/",
+      "range": {
+        "startLine": 245,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 50
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "885a4c61_4b064214",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "remove, http.Error sets it itself and it is set already for non-error case",
+      "range": {
+        "startLine": 371,
+        "startChar": 1,
+        "endLine": 371,
+        "endChar": 70
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7527280b_fcd16d1a",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "return after this line to avoid logging and calling http.Error(...)",
+      "range": {
+        "startLine": 378,
+        "startChar": 2,
+        "endLine": 378,
+        "endChar": 33
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5618894e_49c856f3",
+        "filename": "ttq/types.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "Well, it is quite defined, it panics. \"Panics if options are invalid\".",
+      "range": {
+        "startLine": 190,
+        "startChar": 3,
+        "endLine": 190,
+        "endChar": 49
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a8fad4f_48c7fc7b",
+        "filename": "ttq/types.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-07T06:23:37Z",
+      "side": 1,
+      "message": "s.PathPrefix() ?",
+      "range": {
+        "startLine": 203,
+        "startChar": 10,
+        "endLine": 203,
+        "endChar": 20
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
