@@ -16,6 +16,24 @@
       "revId": "13b83726a235f369b4c8413e0388a9d3c67f973f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3428268b_71c4600d",
+        "filename": "gce/cmd/agent/systemd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-07T08:07:16Z",
+      "side": 1,
+      "message": "I was also wondering defaults should be set in connect.go.\nBut Windows have a different default. So I think this is natural since the default is decided by each strategy.",
+      "parentUuid": "58365bee_161d2b43",
+      "revId": "13b83726a235f369b4c8413e0388a9d3c67f973f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
