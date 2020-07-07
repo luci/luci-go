@@ -65,6 +65,13 @@ func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
 	if cfg.DrainingStartTime != "" {
 		if _, err := time.Parse(time.RFC3339, cfg.DrainingStartTime); err != nil {
 			ctx.Errorf("failed to parse draining_start_time %q as RFC3339 format: %s", cfg.DrainingStartTime, err)
+		} else {
+			// TODO(crbug/1102635): remove this check as only Python CQ code can't
+			// handle strings without "Z".
+			if !strings.HasSuffix(cfg.DrainingStartTime, "Z") {
+				ctx.Errorf("draining_start_time %q should be in UTC timezone and end with 'Z'"+
+					", for example '2020-07-06T21:00:30Z'", cfg.DrainingStartTime)
+			}
 		}
 	}
 	if cfg.CqStatusHost != "" {

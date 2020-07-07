@@ -128,6 +128,11 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, `failed to parse draining_start_time "meh" as RFC3339 format`)
 			})
+			Convey("Bad draining time for Python CQ", func() {
+				cfg.DrainingStartTime = "2020-07-06T21:00:30+01:00"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, `end with 'Z'`)
+			})
 			Convey("Bad cq_status_host", func() {
 				cfg.CqStatusHost = "h://@test:123//not//://@adsfhost."
 				validateProjectConfig(vctx, &cfg)
