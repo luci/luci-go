@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6421e8bb_108151bc",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-07T09:13:36Z",
+      "side": 1,
+      "message": "I prefer to use if over map\n```\nvar python string\nif runtime.GOOS \u003d\u003d \"windows\" {\n  python \u003d ...\n} else {\n  python \u003d ...\n}\ncmd.Flags.StringVar(...)\n```\n\nor use lambda?",
+      "revId": "b95614e8f2fe7e58afd23ebd9bd595c7e901b495",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
