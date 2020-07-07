@@ -97,8 +97,11 @@ func TestPubSub(t *testing.T) {
 
 		// Initialize the appropriate project config.
 		datastore.Put(c, &common.Project{
-			ID:                "fakeproj",
-			IgnoredBuilderIDs: []string{"fakeproj/fakebucket/fake_ignored_builder"},
+			ID:                "luci.fake.project",
+			IgnoredBuilderIDs: []string{"luci.fake.bucket/fake_ignored_builder"},
+		})
+		datastore.Put(c, &model.BuildSummary{
+			BuilderID: "luci.fake.project/luci.fake.bucket/fake_ignored_builder",
 		})
 
 		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
@@ -261,17 +264,35 @@ func TestPubSub(t *testing.T) {
 		})
 
 		Convey("Builders in IgnoredBuilderIds should be ignored", func() {
+			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
+			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
+			updated, _ := ptypes.TimestampProto(RefTime.Add(5 * time.Hour))
+
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id:         3234,
+				Status:     buildbucketpb.Status_SUCCESS,
+				CreateTime: created,
+				StartTime:  started,
+				UpdateTime: updated,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "fake",
+					Bucket:  "bucket",
+					Builder: "fake_ignored_builder",
+				},
+			}, nil).AnyTimes()
+
 			bKey := MakeBuildKey(c, "hostname", "3234")
 			eBuild := bbv1.LegacyApiCommonBuildMessage{
 				Id:        3234,
-				Project:   "fakeproj",
-				Bucket:    "fakebucket",
+				Project:   "luci.fake.project",
+				Bucket:    "luci.fake.bucket",
 				Tags:      []string{"builder:fake_ignored_builder"},
 				CreatedBy: string(identity.AnonymousIdentity),
 				CreatedTs: bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour)),
 				StartedTs: bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour)),
 				UpdatedTs: bbv1.FormatTimestamp(RefTime.Add(4 * time.Hour)),
-				Status:    "STARTED",
+				Status:    "COMPLETED",
+				Result:    "SUCCESS",
 			}
 
 			h := httptest.NewRecorder()
