@@ -29,6 +29,10 @@ import (
 
 // QueryTestResultStatistics implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+	if err := verifyPermissionInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
+		return nil, err
+	}
+
 	if err := validateQueryRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

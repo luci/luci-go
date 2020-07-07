@@ -17,6 +17,11 @@ package resultdb
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -48,14 +53,20 @@ func TestValidateListTestExonerationsRequest(t *testing.T) {
 
 func TestListTestExonerations(t *testing.T) {
 	Convey(`ListTestExonerations`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permListTestExonerations},
+			},
+		})
 
 		// Insert some TestExonerations.
 		invID := invocations.ID("inv")
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
-			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
+			insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          testID,
@@ -100,6 +111,12 @@ func TestListTestExonerations(t *testing.T) {
 			},
 		}
 		srv := newTestResultDBService()
+
+		Convey(`Permission denied`, func() {
+			req := &pb.ListTestExonerationsRequest{Invocation: "invocations/invx"}
+			_, err := srv.ListTestExonerations(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
 
 		Convey(`Basic`, func() {
 			req := &pb.ListTestExonerationsRequest{Invocation: "invocations/inv"}

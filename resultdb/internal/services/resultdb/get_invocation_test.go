@@ -18,7 +18,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -53,33 +57,54 @@ func TestValidateGetInvocationRequest(t *testing.T) {
 
 func TestGetInvocation(t *testing.T) {
 	Convey(`GetInvocation`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permReadInvocation},
+			},
+		})
 		ct := testclock.TestRecentTimeUTC
 		deadline := ct.Add(time.Hour)
-
-		// Insert some Invocations.
-		testutil.MustApply(ctx,
-			insert.Invocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
-				"CreateTime": ct,
-				"Deadline":   deadline,
-			}),
-			insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
-			insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
-			insert.Inclusion("including", "included0"),
-			insert.Inclusion("including", "included1"),
-		)
-
-		// Fetch back the top-level Invocation.
 		srv := newTestResultDBService()
-		req := &pb.GetInvocationRequest{Name: "invocations/including"}
-		inv, err := srv.GetInvocation(ctx, req)
-		So(err, ShouldBeNil)
-		So(inv, ShouldResembleProto, &pb.Invocation{
-			Name:                "invocations/including",
-			State:               pb.Invocation_ACTIVE,
-			CreateTime:          pbutil.MustTimestampProto(ct),
-			Deadline:            pbutil.MustTimestampProto(deadline),
-			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
+
+		Convey(`Valid`, func() {
+
+			// Insert some Invocations.
+			testutil.MustApply(ctx,
+				insert.Invocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
+					"CreateTime": ct,
+					"Deadline":   deadline,
+					"Realm":      "testproject:testrealm",
+				}),
+				insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
+				insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
+				insert.Inclusion("including", "included0"),
+				insert.Inclusion("including", "included1"),
+			)
+
+			// Fetch back the top-level Invocation.
+			req := &pb.GetInvocationRequest{Name: "invocations/including"}
+			inv, err := srv.GetInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(inv, ShouldResembleProto, &pb.Invocation{
+				Name:                "invocations/including",
+				State:               pb.Invocation_ACTIVE,
+				CreateTime:          pbutil.MustTimestampProto(ct),
+				Deadline:            pbutil.MustTimestampProto(deadline),
+				IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
+				Realm:               "testproject:testrealm",
+			})
+		})
+
+		Convey(`Permission denied`, func() {
+			testutil.MustApply(ctx,
+				insert.Invocation("secret", pb.Invocation_ACTIVE, map[string]interface{}{
+					"Realm": "secretproject:testrealm",
+				}),
+			)
+			req := &pb.GetInvocationRequest{Name: "invocations/secret"}
+			_, err := srv.GetInvocation(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 	})
 }

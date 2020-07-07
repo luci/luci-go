@@ -19,8 +19,13 @@ import (
 	"strconv"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -53,14 +58,28 @@ func TestValidateListTestResultsRequest(t *testing.T) {
 
 func TestListTestResults(t *testing.T) {
 	Convey(`ListTestResults`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permListTestResults},
+			},
+		})
 
 		// Insert some TestResults.
-		testutil.MustApply(ctx, insert.Invocation("req", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx,
+			insert.Invocation("req", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("reqx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+		)
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 
 		srv := newTestResultDBService()
+
+		Convey(`Permission denied`, func() {
+			req := &pb.ListTestResultsRequest{Invocation: "invocations/reqx"}
+			_, err := srv.ListTestResults(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
 
 		Convey(`Works`, func() {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/req", PageSize: 1}

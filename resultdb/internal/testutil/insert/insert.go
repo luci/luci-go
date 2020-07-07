@@ -59,13 +59,13 @@ func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[st
 }
 
 // FinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
-func FinalizedInvocationWithInclusions(id invocations.ID, included ...invocations.ID) []*spanner.Mutation {
-	return InvocationWithInclusions(id, pb.Invocation_FINALIZED, included...)
+func FinalizedInvocationWithInclusions(id invocations.ID, extraValues map[string]interface{}, included ...invocations.ID) []*spanner.Mutation {
+	return InvocationWithInclusions(id, pb.Invocation_FINALIZED, extraValues, included...)
 }
 
 // InvocationWithInclusions returns mutations to insert an invocation with inclusions.
-func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, included ...invocations.ID) []*spanner.Mutation {
-	ms := []*spanner.Mutation{Invocation(id, state, nil)}
+func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, extraValues map[string]interface{}, included ...invocations.ID) []*spanner.Mutation {
+	ms := []*spanner.Mutation{Invocation(id, state, extraValues)}
 	for _, incl := range included {
 		ms = append(ms, Inclusion(id, incl))
 	}

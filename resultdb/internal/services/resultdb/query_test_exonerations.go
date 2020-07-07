@@ -43,6 +43,10 @@ func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) 
 
 // QueryTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error) {
+	if err := verifyPermissionInvNames(ctx, permListTestExonerations, in.Invocations...); err != nil {
+		return nil, err
+	}
+
 	if err := validateQueryTestExonerationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

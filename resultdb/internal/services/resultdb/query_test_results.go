@@ -85,6 +85,10 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 
 // QueryTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+	if err := verifyPermissionInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
+		return nil, err
+	}
+
 	if err := validateQueryTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

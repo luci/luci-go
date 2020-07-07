@@ -25,18 +25,34 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// parseParent parses the parent argument as either an invocation name or a
+// test result name and returns the corresponding invocation id, a parent id
+// regex suitable for artifacts.Query and an error if the arg is not a valid.
+func parseParent(parent string) (invocations.ID, string, error) {
+	if invIDStr, err := pbutil.ParseInvocationName(parent); err == nil {
+		// Fetch only invocation-level artifacts. They have empty ParentId.
+		return invocations.ID(invIDStr), "^$", nil
+	}
+	invIDStr, testID, resultID, err := pbutil.ParseTestResultName(parent)
+	if err != nil {
+		return "", "", appstatus.BadRequest(
+			errors.Reason("parent: neither valid invocation name nor valid test result name").Err())
+	}
+	return invocations.ID(invIDStr), regexp.QuoteMeta(artifacts.ParentID(testID, resultID)), nil
+}
+
 func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
-	if pbutil.ValidateInvocationName(req.Parent) != nil && pbutil.ValidateTestResultName(req.Parent) != nil {
-		return errors.Reason("parent: neither valid invocation name nor valid test result name").Err()
+	// Do not assume that parent is already validated for permissions checking.
+	if _, _, err := parseParent(req.Parent); err != nil {
+		return err
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return appstatus.BadRequest(errors.Annotate(err, "page_size").Err())
 	}
 
 	return nil
@@ -44,24 +60,25 @@ func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 
 // ListArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+	invID, parentIDRegexp, err := parseParent(in.Parent)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := verifyPermission(ctx, permListArtifacts, invID); err != nil {
+		return nil, err
+	}
+
 	if err := validateListArtifactsRequest(in); err != nil {
-		return nil, appstatus.BadRequest(err)
+		return nil, err
 	}
 
 	// Prepare the query.
 	q := artifacts.Query{
-		PageSize:  pagination.AdjustPageSize(in.PageSize),
-		PageToken: in.PageToken,
-	}
-	if invIDStr, err := pbutil.ParseInvocationName(in.Parent); err == nil {
-		q.InvocationIDs = invocations.NewIDSet(invocations.ID(invIDStr))
-		// Fetch only invocation-level artifacts. They have empty ParentId.
-		q.ParentIDRegexp = "^$"
-	} else {
-		// in.Parent must be a test result name.
-		invID, testID, resultID := testresults.MustParseName(in.Parent)
-		q.InvocationIDs = invocations.NewIDSet(invID)
-		q.ParentIDRegexp = regexp.QuoteMeta(artifacts.ParentID(testID, resultID))
+		PageSize:       pagination.AdjustPageSize(in.PageSize),
+		PageToken:      in.PageToken,
+		InvocationIDs:  invocations.NewIDSet(invID),
+		ParentIDRegexp: parentIDRegexp,
 	}
 
 	// Read artifacts.

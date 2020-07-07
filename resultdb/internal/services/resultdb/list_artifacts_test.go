@@ -17,6 +17,11 @@ package resultdb
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -65,9 +70,17 @@ func TestValidateListArtifactsRequest(t *testing.T) {
 
 func TestListArtifacts(t *testing.T) {
 	Convey(`ListArtifacts`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permListArtifacts},
+			},
+		})
 
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx,
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+		)
 		req := &pb.ListArtifactsRequest{
 			Parent:   "invocations/inv1",
 			PageSize: 100,
@@ -89,6 +102,12 @@ func TestListArtifacts(t *testing.T) {
 			}
 			return names
 		}
+
+		Convey(`Permission denied`, func() {
+			req.Parent = "invocations/invx/tests/t%20t/results/r"
+			_, err := srv.ListArtifacts(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
 
 		Convey(`With both invocation and test result artifacts`, func() {
 			testutil.MustApply(ctx,
