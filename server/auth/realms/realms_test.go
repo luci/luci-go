@@ -26,10 +26,12 @@ func TestValidateProjectName(t *testing.T) {
 
 	Convey("Works", t, func() {
 		So(ValidateProjectName("something-blah"), ShouldBeNil)
+		So(ValidateProjectName("@internal"), ShouldBeNil)
 
 		So(ValidateProjectName("something-BLAH"), ShouldNotBeNil)
 		So(ValidateProjectName(""), ShouldNotBeNil)
 		So(ValidateProjectName(":"), ShouldNotBeNil)
+		So(ValidateProjectName("@blah"), ShouldNotBeNil)
 	})
 }
 
@@ -46,8 +48,14 @@ func TestValidateRealmName(t *testing.T) {
 		So(call("something-blah:@root"), ShouldBeNil)
 		So(call("something-blah:@legacy"), ShouldBeNil)
 
+		So(call("@internal:realm"), ShouldBeNil)
+		So(call("@internal:a/b/c"), ShouldBeNil)
+		So(call("@internal:@root"), ShouldBeNil)
+		So(call("@internal:@legacy"), ShouldBeNil)
+
 		So(call("realm"), ShouldErrLike, "should be <project>:<realm>")
 		So(call("BLAH:realm"), ShouldErrLike, "bad project name")
+		So(call("@blah:zzz"), ShouldErrLike, "bad project name")
 		So(call("blah:"), ShouldErrLike, "the realm name should match")
 		So(call("blah:@zzz"), ShouldErrLike, "the realm name should match")
 	})

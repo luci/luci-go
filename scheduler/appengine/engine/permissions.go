@@ -67,7 +67,7 @@ func checkPermission(ctx context.Context, job *Job, perm realms.Permission) erro
 	// Fallback to the @legacy realm if the job entity isn't updated yet.
 	realm := job.RealmID
 	if realm == "" {
-		realm = realms.Join(job.ProjectID, realms.Legacy)
+		realm = realms.Join(job.ProjectID, realms.LegacyRealm)
 	}
 
 	// Check realms ACL and compare it to `legacyResult`. The result and errors
