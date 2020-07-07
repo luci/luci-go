@@ -71,9 +71,6 @@ type Project struct {
 // BuilderIsIgnored checks if the builder is marked as ignored in this project.
 func (p *Project) BuilderIsIgnored(builderID *buildbucketpb.BuilderID) bool {
 	builderIDStr := bbprotoutil.FormatBuilderID(builderID)
-	if p == nil {
-		return false
-	}
 	for _, bid := range p.IgnoredBuilderIDs {
 		if bid == builderIDStr {
 			return true
@@ -919,6 +916,14 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 	}
 	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
 		ctx.Errorf("invalid logo url %q, must begin with https://storage.googleapis.com/", proj.LogoUrl)
+	}
+
+	for i, builderID := range proj.IgnoredBuilderIds {
+		ctx.Enter("ignored builder ID #%d (%s)", i, builderID)
+		if strings.Count(builderID, "/") != 1 {
+			ctx.Errorf("invaid builder ID, must be <bucket>/<builder>")
+		}
+		ctx.Exit()
 	}
 
 	return nil
