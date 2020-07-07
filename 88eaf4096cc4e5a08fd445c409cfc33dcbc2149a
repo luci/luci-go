@@ -117,6 +117,30 @@
       "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "befa440a_1a8e9a70",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-07T03:40:59Z",
+      "side": 1,
+      "message": "(That said, it looks like the bucket regex and builder name charset are here https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/errors.py;l\u003d14?q\u003dre.compile\u0026ss\u003dchromium%2Finfra%2Finfra:appengine%2Fcr-buildbucket%2F\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F)",
+      "parentUuid": "ecf67f64_c0ddfdad",
+      "range": {
+        "startLine": 447,
+        "startChar": 29,
+        "endLine": 447,
+        "endChar": 54
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
