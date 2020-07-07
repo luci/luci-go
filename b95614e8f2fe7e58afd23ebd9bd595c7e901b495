@@ -16,6 +16,24 @@
       "revId": "b95614e8f2fe7e58afd23ebd9bd595c7e901b495",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aed1b16_660db779",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-07T09:24:23Z",
+      "side": 1,
+      "message": "added a function to return the default python.",
+      "parentUuid": "6421e8bb_108151bc",
+      "revId": "b95614e8f2fe7e58afd23ebd9bd595c7e901b495",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
