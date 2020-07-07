@@ -52,6 +52,24 @@
       "revId": "13b83726a235f369b4c8413e0388a9d3c67f973f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fd48579_7c9b0c1e",
+        "filename": "gce/cmd/agent/systemd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-07T09:06:41Z",
+      "side": 1,
+      "message": "Updated the CL. PTAL.",
+      "parentUuid": "0133c4c2_534afb30",
+      "revId": "13b83726a235f369b4c8413e0388a9d3c67f973f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
