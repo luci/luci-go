@@ -14,11 +14,8 @@
 
 """Defines luci.custom_role(...) rule."""
 
-load("@stdlib//internal/graph.star", "graph")
-load("@stdlib//internal/lucicfg.star", "lucicfg")
-load("@stdlib//internal/validate.star", "validate")
-load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/realms.star", "realms")
+load("@stdlib//internal/lucicfg.star", "lucicfg")
 
 def _custom_role(
         ctx,
@@ -52,41 +49,11 @@ def _custom_role(
         available permissions and their meaning.
     """
     realms.experiment.require()
-
-    name = validate.string("name", name)
-    if not name.startswith("customRole/"):
-        fail('bad "name": %r must start with "customRole/"' % (name,))
-
-    # Each element of `extends` is either a string 'role/...' or
-    # 'customRole/...', or a reference to luci.custom_role(...) node. We link to
-    # all custom role nodes to make sure they are defined and to check for
-    # cycles.
-    extends_strs = []  # 'role/...' and 'customRole/...'
-    parents_keys = []  # keys of custom roles only
-    for r in validate.list("extends", extends):
-        if graph.is_keyset(r) and r.has(kinds.CUSTOM_ROLE):
-            key = r.get(kinds.CUSTOM_ROLE)
-            extends_strs.append(key.id)  # grab its string name
-            parents_keys.append(key)
-        elif type(r) == "string":
-            if not r.startswith("role/") and not r.startswith("customRole/"):
-                fail('bad "extends": %r should start with "role/" or "customeRole/"' % (r,))
-            extends_strs.append(r)
-            if r.startswith("customRole/"):
-                parents_keys.append(keys.custom_role(r))
-        else:
-            fail('bad "extends": %r is not a string nor a luci.custom_role(...)' % (r,))
-
-    key = keys.custom_role(name)
-    graph.add_node(key, props = {
-        "name": name,
-        "extends": sorted(set(extends_strs)),
-        "permissions": sorted(set(validate.str_list("permissions", permissions))),
-    }, idempotent = True)
-    graph.add_edge(keys.project(), key)
-    for parent in parents_keys:
-        graph.add_edge(parent, key, title = "extends")
-
-    return graph.keyset(key)
+    return realms.custom_role(
+        impl = realms.default_impl,
+        name = name,
+        extends = extends,
+        permissions = permissions,
+    )
 
 custom_role = lucicfg.rule(impl = _custom_role)
