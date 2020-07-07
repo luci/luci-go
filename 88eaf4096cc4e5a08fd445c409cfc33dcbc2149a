@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "de4bfe4f_4311d116",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-07T02:31:22Z",
+      "side": 1,
+      "message": "Ack. Will fix in another CL.",
+      "parentUuid": "9d1e4942_f88829aa",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 2
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5609331b_963bb013",
         "filename": "milo/common/config.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2020-07-06T18:34:55Z",
       "side": 1,
       "message": "missing validation for this slice in validateProjectCfg (but first please see my comments for the .proto CL)",
+      "range": {
+        "startLine": 447,
+        "startChar": 29,
+        "endLine": 447,
+        "endChar": 54
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33a834c5_8d999cf6",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-07T02:31:22Z",
+      "side": 1,
+      "message": "Will fix in another Cl.\nAnd could you tell me what is the valid character set for bucket name and builder name? It\u0027s not defined in builder.proto.",
+      "parentUuid": "5609331b_963bb013",
       "range": {
         "startLine": 447,
         "startChar": 29,
