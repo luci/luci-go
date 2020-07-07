@@ -34,6 +34,24 @@
       "revId": "13b83726a235f369b4c8413e0388a9d3c67f973f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0133c4c2_534afb30",
+        "filename": "gce/cmd/agent/systemd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-07T08:11:19Z",
+      "side": 1,
+      "message": "But you can set different default depends on OS.\nAlso I think it is bit nice if actual default is shown in help.",
+      "parentUuid": "3428268b_71c4600d",
+      "revId": "13b83726a235f369b4c8413e0388a9d3c67f973f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
