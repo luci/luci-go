@@ -318,7 +318,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		extraArgs = args
 	}
 
-	if c.taskName != "" {
+	if c.taskName == "" {
 		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
 	}
 
