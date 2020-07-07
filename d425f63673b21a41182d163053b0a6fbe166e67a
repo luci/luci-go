@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "049174e0_bc1e5f06",
+        "filename": "resultdb/internal/services/resultdb/get_artifact.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-07T20:16:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cfba8a90_0e1ba8fb",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 33
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f23fc654_b068b5be",
         "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f8cdf77_c3c30940",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-07T20:16:19Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "f23fc654_b068b5be",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 1
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -92,6 +140,30 @@
       "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3d39c04_9c39b789",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-07T20:16:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "592fdc83_9b67223f",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 2
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
