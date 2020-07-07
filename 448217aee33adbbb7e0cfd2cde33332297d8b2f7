@@ -16,6 +16,24 @@
       "revId": "448217aee33adbbb7e0cfd2cde33332297d8b2f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e98dec21_3f505689",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-07T01:08:56Z",
+      "side": 1,
+      "message": "Noted. I\u0027ll add the comments in another CL.\n\u003e Is it proj/buck/bldr or proj:buck/bldr or just buck:bldr.\nDo those formats have special meanings?\nHow should I decide which format to use?",
+      "parentUuid": "882bfbec_2ccce58c",
+      "revId": "448217aee33adbbb7e0cfd2cde33332297d8b2f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
