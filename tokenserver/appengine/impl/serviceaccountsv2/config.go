@@ -41,6 +41,9 @@ type projectAccountPair struct {
 
 // CanProjectUseAccount returns true if the given project is allowed to mint
 // tokens of the given service account.
+//
+// The project name is extracted from a realm name and it can be "@internal"
+// for internal realms.
 func (m *Mapping) CanProjectUseAccount(project, account string) bool {
 	_, yes := m.pairs[projectAccountPair{project, account}]
 	return yes

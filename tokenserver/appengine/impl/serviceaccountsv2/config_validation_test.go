@@ -54,6 +54,11 @@ func TestValidation(t *testing.T) {
 				mapping {
 					project: "proj4"
 				}
+
+				mapping {
+					project: "@internal"
+					service_account: "sa4@example.com"
+				}
 			`,
 		},
 

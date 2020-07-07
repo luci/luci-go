@@ -18,6 +18,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
@@ -48,7 +49,7 @@ func validateMappingCfg(ctx *validation.Context, cfg *admin.ServiceAccountsProje
 			ctx.Errorf("at least one project must be given")
 		}
 		for _, project := range m.Project {
-			if _, err := identity.MakeIdentity("project:" + project); err != nil {
+			if err := realms.ValidateProjectName(project); err != nil {
 				ctx.Errorf("bad project %q: %s", project, err)
 			} else if !seenProjects.Add(project) {
 				ctx.Errorf("project %q appears in more that one mapping", project)
