@@ -68,6 +68,30 @@
       "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "592fdc83_9b67223f",
+        "filename": "resultdb/internal/services/resultdb/list_artifacts.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-07T06:21:22Z",
+      "side": 1,
+      "message": "i think this is done here to avoid an assumption that it has been done elsewhere, i.e. this func knows nothing about verifyListArtifactsPermission",
+      "parentUuid": "4ea5ea70_d2d06ff9",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 2
+      },
+      "revId": "d425f63673b21a41182d163053b0a6fbe166e67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
