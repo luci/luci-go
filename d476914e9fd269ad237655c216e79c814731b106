@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d41f06f9_f1883e25",
+        "filename": "milo/buildsource/buildbucket/pubsub_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-07T17:49:28Z",
+      "side": 1,
+      "message": "I think just \u0027fake.project\u0027? The \u0027luci.\u0027 prefix was a hack to allow luci projects and buildbot masters to live in the same namespace.",
+      "range": {
+        "startLine": 100,
+        "startChar": 28,
+        "endLine": 100,
+        "endChar": 32
+      },
+      "revId": "d476914e9fd269ad237655c216e79c814731b106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee533a8e_780b4933",
+        "filename": "milo/buildsource/buildbucket/pubsub_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-07T17:49:28Z",
+      "side": 1,
+      "message": "note that this formulation is Buildbucket v1 and implies that \u0027fake\u0027 is the project id. In user\u0027s configuration this should look like \u0027bucket/fake_ignored_builder\u0027, because the project id (i.e. \u0027fake.project\u0027) is already known when the config is parsed, and this builderid should be relative to that.",
+      "range": {
+        "startLine": 101,
+        "startChar": 32,
+        "endLine": 101,
+        "endChar": 48
+      },
+      "revId": "d476914e9fd269ad237655c216e79c814731b106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
