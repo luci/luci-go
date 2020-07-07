@@ -430,15 +430,16 @@ func convertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix, lo
 		}
 		return results, nil
 	}
-	logging.Warningf(ctx, "did not recognize as JSON Test Results: %s", jsonErr)
 
 	if locationPrefix != "" {
-		// The code below ignores locationPrefix.
-		// This must never happen.
-		// Steping back, the code in this package could be better, but it is
+		// The code below ignores locationPrefix, which means the output.json should
+		// be for JTR test results but it was failed to parse. Return jsonErr right
+		// away.
+		// Stepping back, the code in this package could be better, but it is
 		// deprecated, so it is not worth to improve it.
-		panic("locationPrefix is not empty for non-JTR test result")
+		return nil, jsonErr
 	}
+	logging.Warningf(ctx, "did not recognize as JSON Test Results: %s", jsonErr)
 
 	// Try to convert the buffer treating its format as that of GTests.
 	gtestFormat := &formats.GTestResults{}
