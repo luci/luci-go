@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4d03b9b_08d6d9e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-07T21:17:07Z",
+      "side": 1,
+      "message": "Tiny CL. PTAL. Thank you!",
+      "revId": "ce46c36f312af8bdd179128737e9240729d6ef6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
