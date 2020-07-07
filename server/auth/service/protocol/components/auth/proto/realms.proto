@@ -25,13 +25,15 @@ option go_package = "go.chromium.org/luci/server/auth/service/protocol;protocol"
 // AuthDB) by the LUCI Auth service.
 //
 // Note that this is a denormalized internal representation of realms which is
-// derived from the high level user-facing representation (supplied by users via
-// realms.cfg project configs). In particular, the internal representation
-// doesn't have a notion of roles or realm inheritance. These concepts are
-// handled by the LUCI Auth service and individual downstream services generally
-// **must not care** how it works. Instead they should follow the rules outlined
-// in comments in this file (or equivalently just use the Realms API exposed by
-// the LUCI auth libraries).
+// derived from the high level user-facing representation supplied via multiple
+// realms.cfg config files in various config sets. See comments for Realm
+// message for details.
+//
+// The internal representation doesn't have a notion of roles or realm
+// inheritance. These concepts are handled by the LUCI Auth service and
+// individual downstream services generally **must not care** how it works.
+// Instead they should follow the rules outlined in comments in this file (or
+// equivalently just use the Realms API exposed by the LUCI auth libraries).
 message Realms {
   // API version is incremented whenever the semantic meaning of Realms message
   // changes in some backward incompatible way (e.g. some message grows a new
@@ -81,9 +83,11 @@ message Realms {
 // natural.
 //
 // A permission can be marked as "internal". Internal permissions are not
-// allowed to appear in custom roles in user-defined realms.cfg file. They can
-// only be added to predefined roles by the LUCI Auth service itself. They can
-// be used to setup trust for internal interactions between LUCI components.
+// allowed to appear in custom roles in user-defined project realms.cfg files.
+// They can be used in internal realms (defined in realms.cfg in the LUCI Auth
+// service config set, see comments for Realm message) and they are added to
+// some predefined roles by the LUCI Auth service itself. They are used to setup
+// ACLs for internal interactions between LUCI components.
 //
 // Each individual LUCI service should document what permissions it checks and
 // when. It becomes a part of service's public API. Usually services should
@@ -101,17 +105,32 @@ message Realms {
 // result, and produce a warning in service's logs.
 message Permission {
   string name = 1;  // "<service>.<subject>.<verb>"
-  bool internal = 2; // internal permissions cannot be used in realms.cfg
+  bool internal = 2; // internal permissions cannot be used in project realms
 }
 
 
 // Realm is a named collection of (<principal>, <permission>) pairs.
 //
-// A realm name has form "<project>:<realm>", where "<project>" is a name of
-// the LUCI project that defined the realm, and "<realm>" is a user-provided
-// name of the realm from realms.cfg project config file.
+// Realms are primarily defined in realms.cfg project config files. Such realms
+// are called project realms. They are controlled by respective **project**
+// owners and used to define ACLs for resources owned by these projects.
 //
-// A LUCI resource can point to exactly one realm by referring to its
+// There's a special set of realms (called internal realms or, sometimes, global
+// realms) that are defined in realms.cfg in the LUCI Auth service config set.
+// They are controlled by LUCI **deployment** owners and used to define ACLs for
+// resources that are associated with LUCI deployment or LUCI services (and do
+// not belong to any particular LUCI project). They are also allowed to use
+// internal roles and permissions to define administrative-level ACLs (i.e. ACLs
+// that transcend project boundaries).
+//
+// A full realm name has form "<project>:<realm>", where:
+//   * "<project>" is a name of the LUCI project that defined the realm or
+//     literal "@internal" for internal realms.
+//   * "<realm>" is a name of the realm from a realms.cfg config file. This name
+//     is also known as a project-scoped name, since it makes sense only within
+//     a scope of some concrete LUCI project.
+//
+// A LUCI resource can point to exactly one realm by referring to its full
 // "<project>:<realm>" name. Such reference can either be calculated on the fly
 // from other resource's properties, or be stored alongside the resource's data.
 // We say that such resource "belongs to the realm" or "lives in the realm" or
@@ -143,16 +162,16 @@ message Permission {
 // permissions and the overall realm permissions is a union of all such subsets.
 // Subsets defined by bindings may potentially intersect or be empty.
 //
-// The LUCI Auth service constructs bindings by interpreting realms.cfg project
-// configuration file using some set of rules. Individual LUCI services **must
-// not care** about what these rules really are. They should use only the end
-// result (in the form of bindings) provided in the Realm message. This allows
-// to decouple the high-level user-facing language for defining permissions from
-// the implementation of each individual LUCI service that checks permissions.
+// The LUCI Auth service constructs bindings by interpreting realms.cfg files
+// using some set of rules. Individual LUCI services **must not care** about
+// what these rules really are. They should use only the end result (in the form
+// of bindings) provided in the Realm message. This allows to decouple the
+// high-level user-facing language for defining permissions from the
+// implementation of each individual LUCI service that checks permissions.
 message Realm {
   // Name of the realm as "<project>:<realm>" string, where:
-  //   "<project>" is a LUCI project name, matches `^[a-z0-9\-_]{1,100}$`.
-  //   "<realm>" matches `^[a-z0-9_\.\-/]{1,400}|@root|@legacy$`.
+  //   "<project>" matches `^([a-z0-9\-_]{1,100}|@internal)$`.
+  //   "<realm>" matches `^([a-z0-9_\.\-/]{1,400}|@root|@legacy)$`.
   string name = 1;
 
   // A list of bindings in lexicographical order of their `permissions` fields.

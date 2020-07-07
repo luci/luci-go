@@ -233,7 +233,7 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 				return false, errors.Annotate(err, "when checking %q", perm).Err()
 			}
 			project, _ := realms.Split(realm)
-			root := realms.Join(project, realms.Root)
+			root := realms.Join(project, realms.RootRealm)
 			if realm == root {
 				logging.Warningf(c, "Checking %q in a non-existing root realm %q: denying", perm, realm)
 				continue

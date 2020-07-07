@@ -43,7 +43,15 @@ const (
 )
 
 const (
-	// Root is an alias for "@root".
+	// InternalProject is an alias for "@internal".
+	//
+	// There's a special set of realms (called internal realms or, sometimes,
+	// global realms) that are defined in realms.cfg in the LUCI Auth service
+	// config set. They are not part of any particular LUCI project. Their full
+	// name have form "@internal:<realm>".
+	InternalProject = "@internal"
+
+	// RootRealm is an alias for "@root".
 	//
 	// The root realm is implicitly included into all other realms (including
 	// "@legacy"), and it is also used as a fallback when a resource points to
@@ -57,9 +65,9 @@ const (
 	// any of the realms it receives do not exist. You still can pass a root realm
 	// to HasPermission() if you specifically want to check the root realm
 	// permissions.
-	Root = "@root"
+	RootRealm = "@root"
 
-	// Legacy is an alias for "@legacy".
+	// LegacyRealm is an alias for "@legacy".
 	//
 	// The legacy realm should be used for legacy resources created before the
 	// realms mechanism was introduced in case the service can't figure out a more
@@ -69,10 +77,10 @@ const (
 	// Unlike the situation with root realms, HasPermission() has no special
 	// handling of legacy realms. You should always pass them to HasPermission()
 	// explicitly when checking permissions of legacy resources.
-	Legacy = "@legacy"
+	LegacyRealm = "@legacy"
 )
 
-// ValidateRealmName returns an error if a realm name is not valid.
+// ValidateRealmName validates a realm name (either full or project-scoped).
 //
 // If `scope` is GlobalScope, `realm` is expected to have the form
 // "<project>:<realm>". If `scope` is ProjectScope, `realm` is expected to have
@@ -81,8 +89,8 @@ const (
 // In either case "<realm>" is tested against `^[a-z0-9_\.\-/]{1,400}$` and
 // compared to literals "@root" and "@legacy".
 //
-// When validating globally scoped names, "<project>" is tested against
-// `^[a-z0-9\-_]{1,100}$` (via ValidateProjectName).
+// When validating globally scoped names, "<project>" is tested using
+// ValidateProjectName.
 func ValidateRealmName(realm string, scope RealmNameScope) error {
 	if scope == GlobalScope {
 		idx := strings.IndexRune(realm, ':')
@@ -97,18 +105,22 @@ func ValidateRealmName(realm string, scope RealmNameScope) error {
 		panic(fmt.Sprintf("invalid RealmNameScope %q", scope))
 	}
 
-	if realm != Root && realm != Legacy && !realmNameRe.MatchString(realm) {
-		return errors.Reason("bad %s realm name %q - the realm name should match %q or be %q or %q", scope, realm, realmNameRe, Root, Legacy).Err()
+	if realm != RootRealm && realm != LegacyRealm && !realmNameRe.MatchString(realm) {
+		return errors.Reason("bad %s realm name %q - the realm name should match %q or be %q or %q",
+			scope, realm, realmNameRe, RootRealm, LegacyRealm).Err()
 	}
 
 	return nil
 }
 
-// ValidateProjectName returns an error if the project name is not valid.
+// ValidateProjectName validates a project portion of a full realm name.
 //
-// It should match `^[a-z0-9\-_]{1,100}$`.
+// It should match `^[a-z0-9\-_]{1,100}$` or be "@internal".
 func ValidateProjectName(project string) error {
-	if !projectNameRe.MatchString(project) {
+	// Note: we don't mention @internal in the error message intentionally.
+	// Internal realms are uncommon and mentioning them in a generic error message
+	// will just confuse users.
+	if project != InternalProject && !projectNameRe.MatchString(project) {
 		return errors.Reason("bad project name %q - should match %q", project, projectNameRe).Err()
 	}
 	return nil

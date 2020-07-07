@@ -267,7 +267,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		realm := job.Realm
 		if realm == "" {
-			realm = realms.Legacy
+			realm = realms.LegacyRealm
 		}
 		schedule := job.Schedule
 		if schedule == "" {
@@ -319,7 +319,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		realm := trigger.Realm
 		if realm == "" {
-			realm = realms.Legacy
+			realm = realms.LegacyRealm
 		}
 		schedule := trigger.Schedule
 		if schedule == "" {
