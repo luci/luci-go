@@ -93,6 +93,30 @@
       "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf67f64_c0ddfdad",
+        "filename": "milo/common/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-07T03:39:28Z",
+      "side": 1,
+      "message": "From milo\u0027s PoV I think this should be opaque? i.e. it just needs to validate that there\u0027s exactly one \u0027/\u0027 in the string.",
+      "parentUuid": "33a834c5_8d999cf6",
+      "range": {
+        "startLine": 447,
+        "startChar": 29,
+        "endLine": 447,
+        "endChar": 54
+      },
+      "revId": "88eaf4096cc4e5a08fd445c409cfc33dcbc2149a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
