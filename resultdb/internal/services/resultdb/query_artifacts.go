@@ -42,6 +42,10 @@ func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 
 // QueryArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
+	if err := verifyPermissionInvNames(ctx, permListArtifacts, in.Invocations...); err != nil {
+		return nil, err
+	}
+
 	if err := validateQueryArtifactsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

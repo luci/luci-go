@@ -42,9 +42,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Includes two ACTIVE`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
-				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE),
-				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b", "c"),
+				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil),
+				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil),
 			)...)
 
 			assertReady("a", false)
@@ -52,9 +52,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Includes ACTIVE and FINALIZED`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
-				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE),
-				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZED),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b", "c"),
+				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil),
+				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZED, nil),
 			)...)
 
 			assertReady("a", false)
@@ -62,9 +62,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`INCLUDES ACTIVE and FINALIZING`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b", "c"),
-				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE),
-				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b", "c"),
+				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil),
+				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING, nil),
 			)...)
 
 			assertReady("a", false)
@@ -72,9 +72,9 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`INCLUDES FINALIZING which includes ACTIVE`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b"),
-				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, "c"),
-				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b"),
+				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, nil, "c"),
+				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil),
 			)...)
 
 			assertReady("a", false)
@@ -82,7 +82,7 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Cycle with one node`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "a"),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "a"),
 			)...)
 
 			assertReady("a", true)
@@ -90,8 +90,8 @@ func TestShouldFinalize(t *testing.T) {
 
 		Convey(`Cycle with two nodes`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, "b"),
-				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, "a"),
+				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b"),
+				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, nil, "a"),
 			)...)
 
 			assertReady("a", true)
@@ -105,7 +105,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING),
+				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
 
 			err := finalizeInvocation(ctx, "x")
@@ -123,10 +123,10 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Enqueues more finalizing tasks`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, "x"),
-				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, "x"),
-				insert.InvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, "x"),
-				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING),
+				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, nil, "x"),
+				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, nil, "x"),
+				insert.InvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, nil, "x"),
+				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
 
 			err := finalizeInvocation(ctx, "x")
