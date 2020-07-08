@@ -16,6 +16,57 @@
       "revId": "35b36b61e864393a81c9d4fbca482a9814da06ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4170828a_a4f60bdf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-08T02:12:46Z",
+      "side": 1,
+      "message": "still lgtm.",
+      "revId": "35b36b61e864393a81c9d4fbca482a9814da06ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4debff77_fa6e971c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-08T02:12:46Z",
+      "side": 1,
+      "message": "curious, does this ever happen today? If not, perhaps this should be a warning.",
+      "revId": "35b36b61e864393a81c9d4fbca482a9814da06ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "509ca77d_c8d4f9fc",
+        "filename": "milo/buildsource/buildbucket/pubsub_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-08T02:12:46Z",
+      "side": 1,
+      "message": "why not t.Parallel()?",
+      "revId": "35b36b61e864393a81c9d4fbca482a9814da06ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
