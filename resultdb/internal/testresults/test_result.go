@@ -72,7 +72,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 	var maybeUnexpected spanner.NullBool
 	var micros spanner.NullInt64
 	var summaryHTML span.Compressed
-	var testLocationFileName spanner.NullString
+	var testLocationFile spanner.NullString
 	var testLocationLine spanner.NullInt64
 	err := span.ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":              &tr.Variant,
@@ -82,7 +82,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 		"StartTime":            &tr.StartTime,
 		"RunDurationUsec":      &micros,
 		"Tags":                 &tr.Tags,
-		"TestLocationFileName": &testLocationFileName,
+		"TestLocationFileName": &testLocationFile,
 		"TestLocationLine":     &testLocationLine,
 	})
 	switch {
@@ -96,7 +96,14 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 	tr.SummaryHtml = string(summaryHTML)
 	populateExpectedField(tr, maybeUnexpected)
 	populateDurationField(tr, micros)
-	populateTestLocation(tr, testLocationFileName, testLocationLine)
+
+	if testLocationFile.Valid {
+		tr.TestLocation = &pb.TestLocation{
+			FileName: testLocationFile.StringVal,
+			Line:     int32(testLocationLine.Int64),
+		}
+	}
+
 	return tr, nil
 }
 
@@ -109,13 +116,4 @@ func populateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
 
 func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
-}
-
-func populateTestLocation(tr *pb.TestResult, fileName spanner.NullString, line spanner.NullInt64) {
-	if fileName.Valid {
-		tr.TestLocation = &pb.TestLocation{
-			FileName: fileName.StringVal,
-			Line:     int32(line.Int64),
-		}
-	}
 }
