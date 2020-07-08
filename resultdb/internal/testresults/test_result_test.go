@@ -65,15 +65,17 @@ func TestRead(t *testing.T) {
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 			span.InsertMap("TestResults", map[string]interface{}{
-				"InvocationId":    invID,
-				"TestId":          "t t",
-				"ResultId":        "r",
-				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":     "deadbeef",
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"IsUnexpected":    true,
-				"Status":          pb.TestStatus_FAIL,
-				"RunDurationUsec": 1234567,
+				"InvocationId":         invID,
+				"TestId":               "t t",
+				"ResultId":             "r",
+				"Variant":              pbutil.Variant("k1", "v1", "k2", "v2"),
+				"VariantHash":          "deadbeef",
+				"CommitTimestamp":      spanner.CommitTimestamp,
+				"IsUnexpected":         true,
+				"Status":               pb.TestStatus_FAIL,
+				"RunDurationUsec":      1234567,
+				"TestLocationFileName": "//a_test.go",
+				"TestLocationLine":     54,
 			}),
 		)
 
@@ -88,6 +90,10 @@ func TestRead(t *testing.T) {
 			Expected: false,
 			Status:   pb.TestStatus_FAIL,
 			Duration: &durpb.Duration{Seconds: 1, Nanos: 234567000},
+			TestLocation: &pb.TestLocation{
+				FileName: "//a_test.go",
+				Line:     54,
+			},
 		})
 	})
 }
