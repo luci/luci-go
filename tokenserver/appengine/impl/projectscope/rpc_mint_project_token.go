@@ -106,7 +106,9 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 	if err != nil {
 		switch {
 		case err == projectidentity.ErrNotFound:
-			logging.WithError(err).Errorf(c, "no project identity for project %s", req.LuciProject)
+			// TODO(tandrii): upgrade to Errorf once project scoped identity migration
+			// is re-started.
+			logging.WithError(err).Warningf(c, "no project identity for project %s", req.LuciProject)
 			return nil, status.Errorf(codes.NotFound, "unable to find project identity for project %s", req.LuciProject)
 		case err != nil:
 			logging.WithError(err).Errorf(c, "error while looking for scoped identity of project %s", req.LuciProject)
