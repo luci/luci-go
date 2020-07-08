@@ -153,9 +153,13 @@ type inserter interface {
 	Put(ctx context.Context, src interface{}) error
 }
 
+// table is implemented by *bigquery.Table.
+// See its documentation for description of the methods below.
 type table interface {
-	// Metadata fetches the metadata for the table.
+	FullyQualifiedName() string
 	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
+	Create(ctx context.Context, md *bigquery.TableMetadata) error
+	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error)
 }
 
 // bqInserter is an implementation of inserter.
@@ -207,91 +211,115 @@ func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryE
 	}))
 }
 
-// checkBqTable returns true if the table should be created.
-func checkBqTable(ctx context.Context, bqExport *pb.BigQueryExport, t table) (bool, error) {
-	type cacheKey struct {
-		project string
-		dataset string
-		table   string
-	}
-
-	shouldCreateTable := false
-	key := cacheKey{
-		project: bqExport.Project,
-		dataset: bqExport.Dataset,
-		table:   bqExport.Table,
-	}
-
-	v, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, key, func() (interface{}, time.Duration, error) {
+// ensureBQTable creates a BQ table if it doesn't exist and updates its schema
+// if it is stale.
+func ensureBQTable(ctx context.Context, t table) error {
+	// Note: creating/updating the table inside GetOrCreate ensures that different
+	// goroutines do not attempt to create/update the same table concurrently.
+	_, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (interface{}, time.Duration, error) {
 		_, err := t.Metadata(ctx)
 		apiErr, ok := err.(*googleapi.Error)
 		switch {
 		case ok && apiErr.Code == http.StatusNotFound:
-			// Table doesn't exist, no need to cache this.
-			shouldCreateTable = true
-			return nil, 0, err
+			// Table doesn't exist. Create it and cache its existence for 5 minutes.
+			return nil, 5 * time.Minute, createBQTable(ctx, t)
+
 		case ok && apiErr.Code == http.StatusForbidden:
 			// No read table permission.
 			return tasks.PermanentFailure.Apply(err), time.Minute, nil
+
 		case err != nil:
-			// The err is not a special case above, no need to cache this.
 			return nil, 0, err
-		default:
-			// Table exists and is accessible.
-			return nil, 5 * time.Minute, nil
 		}
+
+		// Table exists and is accessible.
+		// Ensure its schema is up to date and remember that for 5 minutes.
+		return nil, 5 * time.Minute, ensureBQTableFields(ctx, t)
 	})
 
-	switch {
-	case shouldCreateTable:
-		return true, nil
-	case err != nil:
-		return false, err
-	case v != nil:
-		return false, v.(error)
-	default:
-		return false, nil
-	}
+	return err
 }
 
-// ensureBQTable creates a BQ table if it doesn't exist.
-func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.BigQueryExport) error {
-	t := client.Dataset(bqExport.Dataset).Table(bqExport.Table)
-
-	// Check the existence of table.
-	switch shouldCreateTable, err := checkBqTable(ctx, bqExport, t); {
-	case err != nil:
-		return err
-	case !shouldCreateTable:
-		return nil
-	}
-
-	// Table doesn't exist. Create one.
-	schema, err := bigquery.InferSchema(&TestResultRow{})
-	if err != nil {
-		panic(err)
-	}
-	err = t.Create(ctx, &bigquery.TableMetadata{
+func createBQTable(ctx context.Context, t table) error {
+	err := t.Create(ctx, &bigquery.TableMetadata{
 		TimePartitioning: &bigquery.TimePartitioning{
 			Field:      "partition_time",
 			Expiration: partitionExpirationTime,
 		},
-		Schema: schema,
+		Schema: testResultRowSchema,
 	})
 	apiErr, ok := err.(*googleapi.Error)
 	switch {
-	case err == nil:
-		logging.Infof(ctx, "Created BigQuery table %s.%s.%s", bqExport.Project, bqExport.Dataset, bqExport.Table)
-		return nil
 	case ok && apiErr.Code == http.StatusConflict:
 		// Table just got created. This is fine.
 		return nil
 	case ok && apiErr.Code == http.StatusForbidden:
 		// No create table permission.
 		return tasks.PermanentFailure.Apply(err)
-	default:
+	case err != nil:
 		return err
+	default:
+		logging.Infof(ctx, "Created BigQuery table %s", t.FullyQualifiedName())
+		return nil
 	}
+}
+
+// ensureBQTableFields adds missing fields to t.
+func ensureBQTableFields(ctx context.Context, t table) error {
+	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		// We should retrieve Metadata in a retry loop because of the ETag check
+		// below.
+		md, err := t.Metadata(ctx)
+		if err != nil {
+			return err
+		}
+
+		combinedSchema := md.Schema
+
+		// Append fields missing in the actual schema.
+		mutated := false
+		var appendMissing func(schema, newSchema bigquery.Schema) bigquery.Schema
+		appendMissing = func(schema, newFields bigquery.Schema) bigquery.Schema {
+			indexed := make(map[string]*bigquery.FieldSchema, len(schema))
+			for _, c := range schema {
+				indexed[c.Name] = c
+			}
+
+			for _, newField := range newFields {
+				if existingField := indexed[newField.Name]; existingField == nil {
+					// The field is missing.
+					schema = append(schema, newField)
+					mutated = true
+				} else {
+					existingField.Schema = appendMissing(existingField.Schema, newField.Schema)
+				}
+			}
+			return schema
+		}
+
+		// Relax the new fields because we cannot add new required fields.
+		combinedSchema = appendMissing(combinedSchema, testResultRowSchema.Relax())
+		if !mutated {
+			// Nothing to update.
+			return nil
+		}
+
+		_, err = t.Update(ctx, bigquery.TableMetadataToUpdate{Schema: combinedSchema}, md.ETag)
+		apiErr, ok := err.(*googleapi.Error)
+		switch {
+		case ok && apiErr.Code == http.StatusConflict:
+			// ETag became stale since we requested it. Try again.
+			return transient.Tag.Apply(err)
+
+		case err != nil:
+			return err
+
+		default:
+			logging.Infof(ctx, "Updated BigQuery table %s", t.FullyQualifiedName())
+			return nil
+		}
+	}, nil)
+
 }
 
 type testVariantKey struct {
@@ -512,7 +540,8 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	}
 	defer client.Close()
 
-	if err := ensureBQTable(ctx, client, bqExport); err != nil {
+	table := client.Dataset(bqExport.Dataset).Table(bqExport.Table)
+	if err := ensureBQTable(ctx, table); err != nil {
 		return err
 	}
 

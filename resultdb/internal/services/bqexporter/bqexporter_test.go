@@ -123,14 +123,37 @@ func TestExportToBigQuery(t *testing.T) {
 	})
 }
 
-type mockTable struct {
-	err       error
-	callCount int
+type tableMock struct {
+	fullyQualifiedName string
+
+	md      *bigquery.TableMetadata
+	mdCalls int
+	mdErr   error
+
+	createMD  *bigquery.TableMetadata
+	createErr error
+
+	updateMD  *bigquery.TableMetadataToUpdate
+	updateErr error
 }
 
-func (t *mockTable) Metadata(ctx context.Context) (*bigquery.TableMetadata, error) {
-	t.callCount++
-	return nil, t.err
+func (t *tableMock) FullyQualifiedName() string {
+	return t.fullyQualifiedName
+}
+
+func (t *tableMock) Metadata(ctx context.Context) (*bigquery.TableMetadata, error) {
+	t.mdCalls++
+	return t.md, t.mdErr
+}
+
+func (t *tableMock) Create(ctx context.Context, md *bigquery.TableMetadata) error {
+	t.createMD = md
+	return t.createErr
+}
+
+func (t *tableMock) Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error) {
+	t.updateMD = &md
+	return t.md, t.updateErr
 }
 
 func TestBqTableCache(t *testing.T) {
@@ -140,65 +163,62 @@ func TestBqTableCache(t *testing.T) {
 		tc := clock.Get(ctx).(testclock.TestClock)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey(`table not exist`, func() {
-			t := &mockTable{
-				err: &googleapi.Error{
-					Code: http.StatusNotFound,
+		t := &tableMock{
+			fullyQualifiedName: "project.dataset.table",
+			md:                 &bigquery.TableMetadata{},
+		}
+
+		Convey(`Table does not exist`, func() {
+			t.mdErr = &googleapi.Error{Code: http.StatusNotFound}
+			err := ensureBQTable(ctx, t)
+			So(err, ShouldBeNil)
+			So(t.createMD.Schema, ShouldResemble, testResultRowSchema)
+		})
+
+		Convey(`Table is missing fields`, func() {
+			t.md.Schema = bigquery.Schema{
+				{
+					Name: "legacy",
+				},
+				{
+					Name:   "exported",
+					Schema: bigquery.Schema{{Name: "legacy"}},
 				},
 			}
-			bqExport := &pb.BigQueryExport{
-				Project: "project",
-				Dataset: "dataset",
-				Table:   "not_exist",
-			}
-			shouldCreateTable, err := checkBqTable(ctx, bqExport, t)
-			So(shouldCreateTable, ShouldBeTrue)
+			err := ensureBQTable(ctx, t)
 			So(err, ShouldBeNil)
+
+			So(t.updateMD, ShouldNotBeNil) // The table was updated.
+			So(len(t.updateMD.Schema), ShouldBeGreaterThan, 3)
+			So(t.updateMD.Schema[0].Name, ShouldEqual, "legacy")
+			So(t.updateMD.Schema[1].Name, ShouldEqual, "exported")
+			So(t.updateMD.Schema[1].Schema[0].Name, ShouldEqual, "legacy")
+			So(t.updateMD.Schema[1].Schema[1].Name, ShouldEqual, "id") // new field
+			So(t.updateMD.Schema[1].Schema[1].Required, ShouldBeFalse) // relaxed
 		})
 
-		// Random error should not be cached.
-		Convey(`random error`, func() {
-			t := &mockTable{
-				err: fmt.Errorf("random error"),
-			}
-			bqExport := &pb.BigQueryExport{
-				Project: "project",
-				Dataset: "dataset",
-				Table:   "random",
-			}
-			_, err := checkBqTable(ctx, bqExport, t)
-			So(err, ShouldErrLike, "random error")
-			So(t.callCount, ShouldEqual, 1)
-
-			// Confirms the error is expired in a very short time.
-			_, err = checkBqTable(ctx, bqExport, t)
-			So(err, ShouldErrLike, "random error")
-			So(t.callCount, ShouldEqual, 2)
+		Convey(`Table is up to date`, func() {
+			t.md.Schema = testResultRowSchema
+			err := ensureBQTable(ctx, t)
+			So(err, ShouldBeNil)
+			So(t.updateMD, ShouldBeNil) // we did not try to update it
 		})
 
-		Convey(`no error`, func() {
-			t := &mockTable{
-				err: nil,
-			}
-			bqExport := &pb.BigQueryExport{
-				Project: "project",
-				Dataset: "dataset",
-				Table:   "pass",
-			}
-			_, err := checkBqTable(ctx, bqExport, t)
+		Convey(`Cache is working`, func() {
+			err := ensureBQTable(ctx, t)
 			So(err, ShouldBeNil)
-			So(t.callCount, ShouldEqual, 1)
+			calls := t.mdCalls
 
 			// Confirms the cache is working.
-			_, err = checkBqTable(ctx, bqExport, t)
+			err = ensureBQTable(ctx, t)
 			So(err, ShouldBeNil)
-			So(t.callCount, ShouldEqual, 1)
+			So(t.mdCalls, ShouldEqual, calls) // no more new calls were made.
 
 			// Confirms the cache is expired as expected.
 			tc.Add(6 * time.Minute)
-			_, err = checkBqTable(ctx, bqExport, t)
+			err = ensureBQTable(ctx, t)
 			So(err, ShouldBeNil)
-			So(t.callCount, ShouldEqual, 2)
+			So(t.mdCalls, ShouldBeGreaterThan, calls) // new calls were made.
 		})
 	})
 }

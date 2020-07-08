@@ -26,6 +26,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+var testResultRowSchema bigquery.Schema
+
+func init() {
+	var err error
+	if testResultRowSchema, err = bigquery.InferSchema(&TestResultRow{}); err != nil {
+		panic(err)
+	}
+}
+
 // Row size limit is 1Mib according to
 // https://cloud.google.com/bigquery/quotas#streaming_inserts
 // Cap the summaryHTML's length to 0.6M to ensure the row size is under
