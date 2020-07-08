@@ -97,13 +97,13 @@ func TestPubSub(t *testing.T) {
 
 		// Initialize the appropriate project config.
 		datastore.Put(c, &common.Project{
-			ID:                "fakeproj",
-			IgnoredBuilderIDs: []string{"fakeproj/fakebucket/fake_ignored_builder"},
+			ID:                "fake",
+			IgnoredBuilderIDs: []string{"bucket/fake_ignored_builder"},
 		})
 
 		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
 		buildBase := bbv1.LegacyApiCommonBuildMessage{
-			Project:   "luci.fake.project",
+			Project:   "fake",
 			Bucket:    "luci.fake.bucket",
 			Tags:      []string{"builder:fake_builder"},
 			CreatedBy: string(identity.AnonymousIdentity),
@@ -222,7 +222,7 @@ func TestPubSub(t *testing.T) {
 			Convey("results in earlier update not being ingested", func() {
 				eBuild := bbv1.LegacyApiCommonBuildMessage{
 					Id:        2234,
-					Project:   "luci.fake.project",
+					Project:   "fake",
 					Bucket:    "luci.fake.bucket",
 					Tags:      []string{"builder:fake_builder"},
 					CreatedBy: string(identity.AnonymousIdentity),
@@ -261,17 +261,36 @@ func TestPubSub(t *testing.T) {
 		})
 
 		Convey("Builders in IgnoredBuilderIds should be ignored", func() {
+			created, _ := ptypes.TimestampProto(RefTime.Add(2 * time.Hour))
+			started, _ := ptypes.TimestampProto(RefTime.Add(3 * time.Hour))
+			updated, _ := ptypes.TimestampProto(RefTime.Add(5 * time.Hour))
+
+			builderID := buildbucketpb.BuilderID{
+				Project: "fake",
+				Bucket:  "bucket",
+				Builder: "fake_ignored_builder",
+			}
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id:         3234,
+				Status:     buildbucketpb.Status_SUCCESS,
+				CreateTime: created,
+				StartTime:  started,
+				UpdateTime: updated,
+				Builder:    &builderID,
+			}, nil).AnyTimes()
+
 			bKey := MakeBuildKey(c, "hostname", "3234")
 			eBuild := bbv1.LegacyApiCommonBuildMessage{
 				Id:        3234,
-				Project:   "fakeproj",
-				Bucket:    "fakebucket",
+				Project:   "fake",
+				Bucket:    "luci.fake.bucket",
 				Tags:      []string{"builder:fake_ignored_builder"},
 				CreatedBy: string(identity.AnonymousIdentity),
 				CreatedTs: bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour)),
 				StartedTs: bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour)),
 				UpdatedTs: bbv1.FormatTimestamp(RefTime.Add(4 * time.Hour)),
-				Status:    "STARTED",
+				Status:    "COMPLETED",
+				Result:    "SUCCESS",
 			}
 
 			h := httptest.NewRecorder()
@@ -287,7 +306,7 @@ func TestPubSub(t *testing.T) {
 			err := datastore.Get(c, &buildAct)
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
-			blder := model.BuilderSummary{BuilderID: "buildbucket/luci.fake.bucket/fake_ignored_builder"}
+			blder := model.BuilderSummary{BuilderID: LegacyBuilderIDString(&builderID)}
 			err = datastore.Get(c, &blder)
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
