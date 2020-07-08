@@ -382,7 +382,7 @@ func (gcs defaultGCSHandler) Push(ctx context.Context, i *Client, status isolate
 		}
 
 		base64MD5 := "md5=" + base64.StdEncoding.EncodeToString(c.h.Sum(nil))
-		xGoogHash := resp.Header.Values("x-goog-hash")
+		xGoogHash := resp.Header["X-Goog-Hash"]
 		verified := false
 		for _, value := range xGoogHash {
 			if value == base64MD5 {
