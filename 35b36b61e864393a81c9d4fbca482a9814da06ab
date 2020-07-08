@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c06cf0e3_eb5b81f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-08T02:07:55Z",
+      "side": 1,
+      "message": "Sorry for the changes after approval.\nDidn\u0027t realise the difference between the old and new bucket/builder ID format.\nI migrated `build.ParseMessage` to `BuildToV2` so\n1. new format can be used in config.\n2. we have one less place use the legacy Build struct. (I believe this is the last one)\n",
+      "revId": "35b36b61e864393a81c9d4fbca482a9814da06ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
