@@ -17,7 +17,7 @@
 // Copied from:
 //
 // Repo: https://chromium.googlesource.com/infra/luci/luci-py/
-// Revision: be7f51a69f7ed3d1d61424e0150f65a932453735
+// Revision: cf81dfcd9a7db0fb2e8c224f283ebe2cbbe76133
 // Path: appengine/components/components/config/proto/*.proto
 //
 // Modification: added luci.file_metadata annotation.
