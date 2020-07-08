@@ -15,14 +15,23 @@
 package search
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"go.chromium.org/luci/common/proto/mask"
+
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/paged"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
+	"go.chromium.org/luci/buildbucket/appengine/internal/utils"
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -95,6 +104,64 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		s.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
 	}
 	return s
+}
+
+// FetchOnBuilds returns the SearchBuildsResponse matching the query and the field mask.
+func (q *Query) FetchOnBuilds(ctx context.Context, mask mask.Mask) (*pb.SearchBuildsResponse, error) {
+	// TODO(crbug/1090540): Fetch accessible buckets once the related function is implemented, if bucketId is nil.
+
+	logging.Debugf(ctx, "FetchOnBuilds...")
+	dq := datastore.NewQuery(model.BuildKind).Order("__key__")
+
+	for _, tag := range q.Tags.Format() {
+		dq = dq.Eq("tags", tag)
+	}
+
+	if q.Status != pb.Status_STATUS_UNSPECIFIED {
+		dq.Eq("status_v2", q.Status)
+	}
+
+	// TODO(crbug/1090540): make create_by indexed ???
+	if q.CreatedBy != identity.Identity("") {
+		dq = dq.Eq("created_by", []byte(q.CreatedBy))
+	}
+
+	switch {
+	case q.Builder.GetBuilder() != "":
+		dq = dq.Eq("builder_id", utils.ToBuilderId(q.Builder.GetProject(), q.Builder.GetBucket(), q.Builder.GetBuilder()))
+	case q.Builder.GetBucket() != "":
+		dq = dq.Eq("bucket_id", utils.ToBucketId(q.Builder.GetProject(), q.Builder.GetBucket()))
+	case q.Builder.GetProject() != "":
+		dq = dq.Eq("project", q.Builder.GetProject())
+	}
+
+	switch idLow, idHigh := buildid.IdRange(q.StartTime, q.EndTime); {
+	case q.BuildIdLow != nil:
+		dq = dq.Gte("__key__", datastore.KeyForObj(ctx, &model.Build{ID:*q.BuildIdLow}))
+		fallthrough
+	case q.BuildIdHigh != nil:
+		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID:*q.BuildIdHigh}))
+	case idLow != 0:
+		dq = dq.Gte("__key__", datastore.KeyForObj(ctx, &model.Build{ID:idLow}))
+		fallthrough
+	case idHigh != 0:
+		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID:idHigh}))
+	}
+
+	logging.Debugf(ctx, "datastore query for FetchOnBuilds: %s", dq.String())
+	rsp := &pb.SearchBuildsResponse{}
+	if err := paged.Query(ctx, q.PageSize, q.StartCursor, rsp, dq, func(build *model.Build) error {
+		pbBuild, ierr:= build.ToProto(ctx, mask)
+		if ierr != nil {
+			return ierr
+		}
+		rsp.Builds = append(rsp.Builds, pbBuild)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return rsp, nil
 }
 
 // fixPageSize ensures the size is positive and less than or equal to maxPageSize.
