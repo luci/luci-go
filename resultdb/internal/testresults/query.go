@@ -92,6 +92,8 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	}
 	selectIfIncluded("tr.SummaryHtml", "summary_html")
 	selectIfIncluded("tr.Tags", "tags")
+	selectIfIncluded("tr.TestLocationFileName", "test_location")
+	selectIfIncluded("tr.TestLocationLine", "test_location")
 
 	if q.SelectVariantHash {
 		extraSelect = append(extraSelect, "tr.VariantHash")
@@ -177,6 +179,8 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
+		var testLocationFileName spanner.NullString
+		var testLocationLine spanner.NullInt64
 		tr := &pb.TestResult{}
 		item := QueryItem{TestResult: tr}
 
@@ -199,6 +203,10 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 				ptrs = append(ptrs, &tr.Tags)
 			case "tr.VariantHash":
 				ptrs = append(ptrs, &item.VariantHash)
+			case "tr.TestLocationFileName":
+				ptrs = append(ptrs, &testLocationFileName)
+			case "tr.TestLocationLine":
+				ptrs = append(ptrs, &testLocationLine)
 			default:
 				panic("impossible")
 			}
@@ -215,6 +223,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
+		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := q.Mask.Trim(tr); err != nil {
 			return errors.Annotate(
 				err, "error trimming fields for %s", item.TestResult.Name).Err()

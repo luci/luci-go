@@ -89,6 +89,19 @@ func TestQueryTestResults(t *testing.T) {
 			So(actual, ShouldResembleProto, expected)
 		})
 
+		Convey(`Test location`, func() {
+			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestStatus_PASS)
+			expected[0].TestLocation = &pb.TestLocation{
+				FileName: "//a_test.go",
+				Line:     54,
+			}
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+
+			actual, _ := mustFetch(q)
+			So(actual, ShouldResembleProto, expected)
+		})
+
 		Convey(`Expectancy filter`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, testutil.CombineMutations(
