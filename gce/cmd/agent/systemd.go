@@ -41,13 +41,14 @@ const systemdTmpl = "swarming-start-bot.service.tmpl"
 // systemdSrv is the name of the Swarming bot systemd service.
 const systemdSrv = "swarming-start-bot"
 
-// autostart configures the given Swarming bot code to be executed on startup
-// for the given user, then starts the Swarming bot process.
+// autostart configures the given Swarming bot code to be executed by the given
+// python on startup for the given user, then starts the Swarming bot process.
 // Implements PlatformStrategy.
-func (*SystemdStrategy) autostart(c context.Context, path, user string) error {
+func (*SystemdStrategy) autostart(c context.Context, path, user string, python string) error {
 	subs := map[string]string{
 		"BotCode": path,
 		"User":    user,
+		"Python":  python,
 	}
 	s, err := substitute(c, string(GetAsset(systemdTmpl)), subs)
 	if err != nil {

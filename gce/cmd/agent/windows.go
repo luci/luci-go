@@ -40,13 +40,14 @@ const startupTmpl = "swarming-start-bot.bat.tmpl"
 // startupTask is the name of the Swarming bot startup task.
 const startupTask = "swarming-start-bot"
 
-// autostart configures the given Swarming bot code to be executed on startup
-// for the given user, then starts the Swarming bot process.
+// autostart configures the given Swarming bot code to be executed by the given
+// python on startup for the given user, then starts the Swarming bot process.
 // Implements PlatformStrategy.
-func (*WindowsStrategy) autostart(c context.Context, path, user string) error {
+func (*WindowsStrategy) autostart(c context.Context, path, user string, python string) error {
 	subs := map[string]string{
 		"BotCode": path,
 		"User":    user,
+		"Python":  python,
 	}
 	s, err := substitute(c, string(GetAsset(startupTmpl)), subs)
 	if err != nil {

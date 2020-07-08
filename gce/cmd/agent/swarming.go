@@ -80,7 +80,7 @@ func (s *SwarmingClient) fetch(c context.Context, path, user string) error {
 }
 
 // Configure fetches the Swarming bot code and configures it to run on startup.
-func (s *SwarmingClient) Configure(c context.Context, dir, user string) error {
+func (s *SwarmingClient) Configure(c context.Context, dir, user string, python string) error {
 	// 0755 allows the directory structure to be read and listed by all users.
 	// Useful when SSHing fo the instance.
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -101,5 +101,5 @@ func (s *SwarmingClient) Configure(c context.Context, dir, user string) error {
 	if err := s.fetch(c, zip, user); err != nil {
 		return err
 	}
-	return s.autostart(c, zip, user)
+	return s.autostart(c, zip, user, python)
 }

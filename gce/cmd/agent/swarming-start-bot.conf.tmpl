@@ -9,5 +9,5 @@ stop on shutdown
 limit nofile 50000 50000
 
 script
-  /usr/bin/sudo -H -u {{.User}} SWARMING_EXTERNAL_BOT_SETUP=1 /usr/bin/python {{.BotCode}} start_bot
+  /usr/bin/sudo -H -u {{.User}} SWARMING_EXTERNAL_BOT_SETUP=1 {{.Python}} {{.BotCode}} start_bot
 end script
