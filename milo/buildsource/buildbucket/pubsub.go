@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -186,35 +185,33 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 
-	build := deprecated.Build{}
-	if err := build.ParseMessage(&event.Build); err != nil {
+	build, err := deprecated.BuildToV2(&event.Build)
+	if err != nil {
 		return errors.Annotate(err, "could not parse deprecated.Build").Err()
 	}
 
-	bucket = build.Bucket
 	status = build.Status.String()
-	isLUCI = strings.HasPrefix(bucket, "luci.")
 
-	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
-		event.Hostname, bucket, build.Builder, status, build)
+	logging.Debugf(c, "Received from %s: build %s/%s/%s/%d (%s)\n%v",
+		event.Hostname, build.Builder.Project, build.Builder.Bucket, build.Builder.Builder, build.Id, status, build)
 
-	if !isLUCI || build.Builder == "" {
+	if build.Builder.Bucket == "" {
 		logging.Infof(c, "This is not an ingestable build, ignoring")
 		return nil
 	}
 
-	proj, err := common.GetProject(c, build.Project)
+	proj, err := common.GetProject(c, build.Builder.Project)
 	if err != nil {
 		return errors.Annotate(err, "could not get project configuration").Err()
 	}
-	if proj.BuilderIsIgnored(build.BuilderID()) {
+	if proj.BuilderIsIgnored(build.Builder) {
 		logging.Infof(c, "This is from an ignored builder, ignoring")
 		return nil
 	}
 
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
-	bs, err := getSummary(c, event.Hostname, build.Project, build.ID)
+	bs, err := getSummary(c, event.Hostname, build.Builder.Project, build.Id)
 	if err != nil {
 		return err
 	}

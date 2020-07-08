@@ -70,6 +70,10 @@ type Project struct {
 	// This means that updates to these builders will not be reflected in
 	// consoles, the builders page, or the builder groups page.
 	// Builders that post updates frequently (> 1/s) should be added to this list.
+	// ID format: <bucket>/<builder>
+	//
+	// TODO(crbug.com/1099036): deprecate this once a long term solution is
+	// implemented.
 	IgnoredBuilderIds []string `protobuf:"bytes,7,rep,name=ignored_builder_ids,json=ignoredBuilderIds,proto3" json:"ignored_builder_ids,omitempty"`
 }
 

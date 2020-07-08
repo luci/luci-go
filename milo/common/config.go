@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbprotoutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -70,10 +69,7 @@ type Project struct {
 
 // BuilderIsIgnored checks if the builder is marked as ignored in this project.
 func (p *Project) BuilderIsIgnored(builderID *buildbucketpb.BuilderID) bool {
-	builderIDStr := bbprotoutil.FormatBuilderID(builderID)
-	if p == nil {
-		return false
-	}
+	builderIDStr := fmt.Sprintf("%s/%s", builderID.Bucket, builderID.Builder)
 	for _, bid := range p.IgnoredBuilderIDs {
 		if bid == builderIDStr {
 			return true
@@ -929,6 +925,14 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 	}
 	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
 		ctx.Errorf("invalid logo url %q, must begin with https://storage.googleapis.com/", proj.LogoUrl)
+	}
+
+	for i, builderID := range proj.IgnoredBuilderIds {
+		ctx.Enter("ignored builder ID #%d (%s)", i, builderID)
+		if strings.Count(builderID, "/") != 1 {
+			ctx.Errorf("invaid builder ID, the format must be <bucket>/<builder>")
+		}
+		ctx.Exit()
 	}
 
 	return nil
