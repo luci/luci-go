@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
@@ -131,21 +132,21 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	_, err := getFieldMask(req.GetFields())
+	m, err := getBuildsSubMask(req.GetFields())
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
 
 	// TODO(crbug/1042991): Search for the requested builds.
-	_, err = searchBuilds(ctx, search.NewQuery(req))
+	rsp, err := searchBuilds(ctx, search.NewQuery(req), m)
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return rsp, nil
 }
 
 // searchBuilds is an internal func to perform main search builds business logic.
-func searchBuilds(ctx context.Context, q *search.Query) (*pb.SearchBuildsResponse, error) {
+func searchBuilds(ctx context.Context, q *search.Query, mask mask.Mask) (*pb.SearchBuildsResponse, error) {
 	if !buildid.MayContainBuilds(q.StartTime, q.EndTime) {
 		return &pb.SearchBuildsResponse{}, nil
 	}
@@ -174,7 +175,7 @@ func searchBuilds(ctx context.Context, q *search.Query) (*pb.SearchBuildsRespons
 
 	// TODO(crbug/1090540): implement the function querySearch().
 	logging.Debugf(ctx, "Querying search on Build.")
-	return nil, nil
+	return q.FetchOnBuilds(ctx, mask)
 }
 
 // indexedTags returns the indexed tags.

@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/impl/memory"
@@ -344,6 +345,72 @@ func TestSearchBuilds(t *testing.T) {
 			_, err := srv.SearchBuilds(ctx, &pb.SearchBuildsRequest{})
 			So(log, memlogger.ShouldHaveLog, logging.Debug, "Querying search on Build.")
 			So(err, ShouldBeNil)
+		})
+
+		Convey("query search on Builds", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:user"),
+			})
+			So(datastore.Put(ctx, &model.Bucket{
+				ID:     "bucket",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto: pb.Bucket{
+					Acls: []*pb.Acl{
+						{
+							Identity: "user:user",
+							Role:     pb.Acl_READER,
+						},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				BuilderID: "project/bucket/builder",
+				Tags: []string{"k1:v1", "k2:v2"},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder2",
+					},
+				},
+				BuilderID: "project/bucket/builder2",
+			}), ShouldBeNil)
+			req.Fields = &field_mask.FieldMask{Paths: []string{"builds.*.id", "builds.*.tags"}}
+			req.Predicate.Tags = []*pb.StringPair{
+				{Key: "k1", Value: "v1"},
+				{Key: "k2", Value: "v2"},
+			}
+			rsp, err := srv.SearchBuilds(ctx, req)
+			So(err, ShouldBeNil)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds:[]*pb.Build{
+					{
+						Id: 1,
+						Tags: []*pb.StringPair {
+							{
+								Key: "k1",
+								Value: "v1",
+							},
+							{
+								Key: "k2",
+								Value: "v2",
+							},
+						},
+					},
+				},
+			}
+			So(rsp, ShouldResembleProto, expectedRsp)
 		})
 	})
 }
