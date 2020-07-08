@@ -28,11 +28,9 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
-	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server"
@@ -50,20 +48,6 @@ import (
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
 var bqTableCache = caching.RegisterLRUCache(50)
-
-// readMask is the field mask to use when querying test results.
-// Initialized by init.
-var readMask mask.Mask
-
-func init() {
-	var err error
-	readMask, err = mask.FromFieldMask(&field_mask.FieldMask{
-		Paths: []string{"*"},
-	}, &pb.TestResult{}, false, false)
-	if err != nil {
-		panic(err)
-	}
-}
 
 // Options is bqexpoerter configuration.
 type Options struct {
@@ -509,7 +493,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		Predicate:         bqExport.GetTestResults().GetPredicate(),
 		InvocationIDs:     invIDs,
 		SelectVariantHash: true,
-		Mask:              readMask,
+		Mask:              testresults.AllFields,
 	}
 	eg.Go(func() error {
 		defer close(batchC)
