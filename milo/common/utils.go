@@ -17,9 +17,11 @@ package common
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 
@@ -45,6 +47,19 @@ func MergeStrings(sss ...[]string) []string {
 	}
 	sort.Strings(result)
 	return result
+}
+
+// ObfuscateEmail converts a string containing email address email@address.com
+// into email<junk>@address.com.
+func ObfuscateEmail(email string) template.HTML {
+	email = template.HTMLEscapeString(email)
+	return template.HTML(strings.Replace(
+		email, "@", "<span style=\"display:none\">ohnoyoudont</span>@", -1))
+}
+
+// ShortenEmail shortens Google emails.
+func ShortenEmail(email string) string {
+	return strings.Replace(email, "@google.com", "", -1)
 }
 
 // TagGRPC annotates some gRPC with Milo specific semantics, specifically:
