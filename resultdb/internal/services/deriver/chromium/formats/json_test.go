@@ -238,9 +238,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 3e8},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t1.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c1/c2/t1.html",
 						"test_name", "c1/c2/t1.html",
 					),
 				},
@@ -252,9 +254,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 2e8},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t1.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c1/c2/t1.html",
 						"test_name", "c1/c2/t1.html",
 					),
 				},
@@ -266,9 +270,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 1e8},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t1.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c1/c2/t1.html",
 						"test_name", "c1/c2/t1.html",
 					),
 				},
@@ -282,9 +288,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 5e7},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t2.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c1/c2/t2.html",
 						"test_name", "c1/c2/t2.html",
 					),
 				},
@@ -295,9 +303,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_FAIL,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 5e7},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t2.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "FAIL",
-						"test_location", "//prefix/c1/c2/t2.html",
 						"test_name", "c1/c2/t2.html",
 					),
 				},
@@ -308,9 +318,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
 					Duration: &duration.Duration{Nanos: 5e7},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t2.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c1/c2/t2.html",
 						"test_name", "c1/c2/t2.html",
 					),
 				},
@@ -321,9 +333,11 @@ func TestJSONConversions(t *testing.T) {
 					Status:   pb.TestStatus_CRASH,
 					Expected: false,
 					Duration: &duration.Duration{Nanos: 5e7},
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c1/c2/t2.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "CRASH",
-						"test_location", "//prefix/c1/c2/t2.html",
 						"test_name", "c1/c2/t2.html",
 					),
 				},
@@ -335,9 +349,11 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t3.html",
 					Status:   pb.TestStatus_FAIL,
 					Expected: false,
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c2/t3.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "FAIL",
-						"test_location", "//prefix/c2/t3.html",
 						"test_name", "c2/t3.html",
 					),
 					SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
@@ -354,10 +370,12 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t4.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c2/t4.html",
+					},
 					Duration: &duration.Duration{Nanos: 3e8},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c2/t4.html",
 						"test_name", "c2/t4.html"),
 				},
 			},
@@ -366,9 +384,11 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t4.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c2/t4.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c2/t4.html",
 						"test_name", "c2/t4.html",
 					),
 				},
@@ -378,9 +398,11 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t4.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c2/t4.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c2/t4.html",
 						"test_name", "c2/t4.html",
 					),
 				},
@@ -392,9 +414,11 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t5.html",
 					Status:   pb.TestStatus_SKIP,
 					Expected: true,
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c2/t5.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "SKIP",
-						"test_location", "//prefix/c2/t5.html",
 						"test_name", "c2/t5.html",
 					),
 				},
@@ -406,9 +430,11 @@ func TestJSONConversions(t *testing.T) {
 					TestId:   "ninja://tests/c2/t6.html",
 					Status:   pb.TestStatus_PASS,
 					Expected: true,
+					TestLocation: &pb.TestLocation{
+						FileName: "//prefix/c2/t6.html",
+					},
 					Tags: pbutil.StringPairs(
 						"json_format_status", "PASS",
-						"test_location", "//prefix/c2/t6.html",
 						"test_name", "c2/t6.html",
 					),
 				},
