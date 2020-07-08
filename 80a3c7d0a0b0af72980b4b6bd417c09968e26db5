@@ -33,6 +33,24 @@
       "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1b13f06_0b75fed0",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-08T09:30:39Z",
+      "side": 1,
+      "message": "I agree to require the python path.\nAren\u0027t all json files in the config repo?",
+      "parentUuid": "d30b963d_5c205941",
+      "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
