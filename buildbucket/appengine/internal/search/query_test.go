@@ -15,18 +15,26 @@
 package search
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/proto/mask"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestNewSearchQuery(t *testing.T) {
@@ -172,5 +180,141 @@ func TestMustTimestamp(t *testing.T) {
 	Convey("nil timestamp", t, func() {
 		res := mustTimestamp(nil)
 		So(res.IsZero(), ShouldBeTrue)
+	})
+}
+
+func TestNewFetchOnBuilds(t *testing.T) {
+	t.Parallel()
+
+	Convey("FetchOnBuilds", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx = memlogger.Use(ctx)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		So(datastore.Put(ctx, &model.Build{
+			ID: 100,
+			Proto: pb.Build{
+				Id: 100,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder1",
+				},
+			},
+			Status: pb.Status_SUCCESS,
+			Project: "project",
+			BuilderID: "project/bucket/builder1",
+			Tags: []string{"k1:v1", "k2:v2"},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			ID: 200,
+			Proto: pb.Build{
+				Id: 200,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder2",
+				},
+			},
+			Status: pb.Status_CANCELED,
+			Project: "project",
+			BuilderID: "project/bucket/builder2",
+		}), ShouldBeNil)
+
+		mask, _ := mask.FromFieldMask(&field_mask.FieldMask{Paths: []string{"id", "builder"}}, &pb.Build{}, false, false)
+		Convey("found one", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder1",
+					},
+					Status: pb.Status_SUCCESS,
+					Tags: []*pb.StringPair{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
+					},
+					Build: &pb.BuildRange{
+						StartBuildId: 200,
+						EndBuildId:   100,
+					},
+				},
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.FetchOnBuilds(ctx, mask)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("found by create time", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID: 8764414515958775808,
+				Proto: pb.Build{
+					Id: 8764414515958775808,
+				},
+			}), ShouldBeNil)
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					CreateTime: &pb.TimeRange{
+						StartTime: &timestamp.Timestamp{Seconds: 1592701200},
+						EndTime:   &timestamp.Timestamp{Seconds: 1700000000},
+					},
+				},
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.FetchOnBuilds(ctx, mask)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 8764414515958775808,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("pagination", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Builder: &pb.BuilderID{
+						Project: "project",
+					},
+				},
+				PageSize: 1,
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.FetchOnBuilds(ctx, mask)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp.Builds, ShouldResembleProto, expectedRsp.Builds)
+			So(actualRsp.NextPageToken, ShouldNotBeEmpty)
+		})
 	})
 }
