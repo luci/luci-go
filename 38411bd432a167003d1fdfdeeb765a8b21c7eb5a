@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a606835_6bde5c11",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:28:23Z",
+      "side": 1,
+      "message": "i think we could inline only the relevant parts, e.g. \nlike this https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/luci_notify/notify/pubsub.go;l\u003d389?q\u003dpubsub.go%20f:luci_notify",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 11
+      },
+      "revId": "38411bd432a167003d1fdfdeeb765a8b21c7eb5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
