@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41f5f6cb_e38e39ee",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-08T00:00:48Z",
+      "side": 1,
+      "message": "PTAL, it is 99% just code moves.\n\nHere\u0027s companion CL that uses this stuff: https://chrome-internal-review.googlesource.com/c/infradata/config/+/3153960",
+      "revId": "dc04aad75bc334d9c2c989aff950183b0eec67dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5c17b812_5946d3e0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/realms.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-08T00:00:48Z",
+      "side": 1,
+      "message": "this abstracts `kinds` and `keys` from @stdlib//internal/luci/common.star so they can be substituted.",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 1
+      },
+      "revId": "dc04aad75bc334d9c2c989aff950183b0eec67dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0749579_e9f07147",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/realms.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-08T00:00:48Z",
+      "side": 1,
+      "message": "here\u0027s the only realm change, the rest of this code is 99% identical to previous code with only changes are `keys.something \u003d\u003e impl.keys.something\" and \"kinds.SOMETHING \u003d\u003e impl.kinds.something\".",
+      "range": {
+        "startLine": 96,
+        "startChar": 46,
+        "endLine": 96,
+        "endChar": 65
+      },
+      "revId": "dc04aad75bc334d9c2c989aff950183b0eec67dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
