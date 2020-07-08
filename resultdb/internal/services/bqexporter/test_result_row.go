@@ -120,7 +120,7 @@ type TestResultRow struct {
 	PartitionTime time.Time `bigquery:"partition_time"`
 
 	// TestLocation is the location of the test definition.
-	TestLocation TestLocation `bigquery:"test_location"`
+	TestLocation *TestLocation `bigquery:"test_location"`
 }
 
 // TestLocation is a location of a test definition, e.g. the file name.
@@ -177,48 +177,70 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 	}
 }
 
-// generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func (b *bqExporter) generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool, variantHash string) *bigquery.StructSaver {
-	trr := &TestResultRow{
-		ExportedInvocation: invocationProtoToInvocation(exported),
-		ParentInvocation:   invocationProtoToInvocation(parent),
+// rowInput is information required to generate a TestResult BigQuery row.
+type rowInput struct {
+	exported    *pb.Invocation
+	parent      *pb.Invocation
+	tr          *pb.TestResult
+	exonerated  bool
+	variantHash string
+}
+
+func (i *rowInput) row() *TestResultRow {
+	tr := i.tr
+
+	ret := &TestResultRow{
+		ExportedInvocation: invocationProtoToInvocation(i.exported),
+		ParentInvocation:   invocationProtoToInvocation(i.parent),
 		TestID:             tr.TestId,
 		ResultID:           tr.ResultId,
 		Variant:            variantToStringPairs(tr.Variant),
-		VariantHash:        variantHash,
+		VariantHash:        i.variantHash,
 		Expected:           tr.Expected,
 		Status:             tr.Status.String(),
 		SummaryHTML:        tr.SummaryHtml,
 		Tags:               stringPairProtosToStringPairs(tr.Tags),
-		Exonerated:         exonerated,
-		PartitionTime:      pbutil.MustTimestamp(exported.CreateTime),
+		Exonerated:         i.exonerated,
+		PartitionTime:      pbutil.MustTimestamp(i.exported.CreateTime),
 	}
 
 	if tr.StartTime != nil {
-		trr.StartTime = bigquery.NullTimestamp{
+		ret.StartTime = bigquery.NullTimestamp{
 			Timestamp: pbutil.MustTimestamp(tr.StartTime),
 			Valid:     true,
 		}
 	}
 
 	if tr.Duration != nil {
-		trr.Duration = bigquery.NullFloat64{
+		ret.Duration = bigquery.NullFloat64{
 			Float64: pbutil.MustDuration(tr.Duration).Seconds(),
 			Valid:   true,
 		}
 	}
 
-	if len(trr.SummaryHTML) > maxSummaryLength {
-		trr.SummaryHTML = "[Trimmed] " + trr.SummaryHTML[:maxSummaryLength]
+	if len(ret.SummaryHTML) > maxSummaryLength {
+		ret.SummaryHTML = "[Trimmed] " + ret.SummaryHTML[:maxSummaryLength]
 	}
 
-	ret := &bigquery.StructSaver{Struct: trr}
+	if tr.TestLocation != nil {
+		ret.TestLocation = &TestLocation{
+			FileName: tr.TestLocation.FileName,
+			Line:     int(tr.TestLocation.Line),
+		}
+	}
+
+	return ret
+}
+
+// generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
+func (b *bqExporter) generateBQRow(input *rowInput) *bigquery.StructSaver {
+	ret := &bigquery.StructSaver{Struct: input.row()}
 
 	if b.UseInsertIDs {
 		// InsertID cannot exceed 128 bytes.
 		// https://cloud.google.com/bigquery/quotas#streaming_inserts
 		// Use SHA512 which is exactly 128 bytes in hex.
-		hash := sha512.Sum512([]byte(tr.Name))
+		hash := sha512.Sum512([]byte(input.tr.Name))
 		ret.InsertID = hex.EncodeToString(hash[:])
 	} else {
 		ret.InsertID = bigquery.NoDedupeID
