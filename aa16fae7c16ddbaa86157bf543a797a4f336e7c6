@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "13e3fca3_7cfbbbb2",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:52:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14e50d59_40c3717b",
+      "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a67190a5_f765fb22",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 4
@@ -50,6 +68,24 @@
       "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6bc1c3a_624443bb",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:52:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a67190a5_f765fb22",
+      "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -73,6 +109,30 @@
       "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85c1b6ac_4dd9549e",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:52:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4100858_14ad0a79",
+      "range": {
+        "startLine": 114,
+        "startChar": 50,
+        "endLine": 114,
+        "endChar": 51
+      },
+      "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
