@@ -69,6 +69,24 @@
       "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fb4b443_7130dd7c",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-08T09:51:59Z",
+      "side": 1,
+      "message": "I see. OK.",
+      "parentUuid": "944625c5_c94274f4",
+      "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
