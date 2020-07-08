@@ -1086,10 +1086,23 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ensure [options]",
 		ShortDesc: "installs, removes and updates packages in one go",
-		LongDesc: "Installs, removes and updates packages in one go.\n\n" +
-			"Supposed to be used from scripts and automation. Alternative to 'init', " +
-			"'install' and 'remove'. As such, it doesn't try to discover site root " +
-			"directory on its own.",
+		LongDesc: `Installs, removes and updates packages in one go.
+
+Prepare an 'ensure file' by listing packages and their versions, each on their
+own line, e.g.:
+
+    some/package/name/${platform}  version:1.2.3
+    other/package                  some_ref
+
+Then use the ensure command to read this ensure file and 'ensure' that a given
+folder has the packages at the versions specified:
+
+    cipd ensure -root a/directory -ensure-file ensure_file
+
+For the full syntax of the ensure file, see:
+
+   https://go.chromium.org/luci/cipd/client/cipd/ensure
+`,
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureRun{}
 			c.registerBaseFlags()
