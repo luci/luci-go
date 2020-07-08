@@ -212,7 +212,7 @@ func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryE
 }
 
 // ensureBQTable creates a BQ table if it doesn't exist and updates its schema
-// if it stale.
+// if it is stale.
 func ensureBQTable(ctx context.Context, t table) error {
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
@@ -297,7 +297,7 @@ func ensureBQTableFields(ctx context.Context, t table) error {
 			return schema
 		}
 
-		// Relax the new fields because we cannot add new required fields.
+		// Relax the new fields becuse we cannot add new required fields.
 		combinedSchema = appendMissing(combinedSchema, testResultRowSchema.Relax())
 		if !mutated {
 			// Nothing to update.
