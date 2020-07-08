@@ -28,6 +28,11 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+const (
+	// BuildKind is a Build entity's kind in the datastore.
+	BuildKind = "Build"
+)
+
 // isHiddenTag returns whether the given tag should be hidden by ToProto.
 func isHiddenTag(key string) bool {
 	// build_address is reserved by the server so that the TagIndex infrastructure

@@ -16,18 +16,14 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"testing"
-
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -274,7 +270,7 @@ func TestSearchBuilds(t *testing.T) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
-		log := logging.Get(ctx).(*memlogger.MemLogger)
+		// log := logging.Get(ctx).(*memlogger.MemLogger)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -286,7 +282,9 @@ func TestSearchBuilds(t *testing.T) {
 					Builder: "builder",
 				},
 			},
+			Fields: &field_mask.FieldMask{Paths: []string{"builds.*.id", "builds.*.status"}},
 		}
+		/*
 		Convey("No permission for requested bucketId", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.Identity("user:user"),
@@ -340,10 +338,74 @@ func TestSearchBuilds(t *testing.T) {
 			So(log, memlogger.ShouldHaveLog, logging.Debug, "Searching builds on TagIndex")
 			So(err, ShouldBeNil)
 		})
+
 		Convey("empty request", func() {
 			_, err := srv.SearchBuilds(ctx, &pb.SearchBuildsRequest{})
 			So(log, memlogger.ShouldHaveLog, logging.Debug, "Querying search on Build.")
+			So(log, memlogger.ShouldHaveLog, logging.Debug, "FetchOnBuilds...")
 			So(err, ShouldBeNil)
+		})
+		*/
+
+
+		Convey("should have response", func() {
+			So(datastore.Put(ctx, &model.Bucket{
+				ID:     "bucket",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto: pb.Bucket{
+					Acls: []*pb.Acl{
+						{
+							Identity: "user:user",
+							Role:     pb.Acl_READER,
+						},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Tags: []*pb.StringPair{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
+					},
+				},
+				BuilderID: "project/bucket/builder",
+				Tags: []string{"k1:v1", "k2:v2"},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder2",
+					},
+				},
+			}), ShouldBeNil)
+			req.Predicate.Tags = []*pb.StringPair{
+				{Key: "k1", Value: "v1"},
+				{Key: "k2", Value: "v2"},
+			}
+			rsp, err := srv.SearchBuilds(ctx, req)
+			So(err, ShouldBeNil)
+			b1 := &pb.Build{
+				Id: 1,
+				// Builder: &pb.BuilderID{
+				// 	Project: "project",
+				// 	Bucket:  "bucket",
+				// 	Builder: "builder",
+				// },
+				// Input: &pb.Build_Input{},
+			}
+			res1 := &pb.SearchBuildsResponse{Builds:[]*pb.Build{b1}}
+			fmt.Println("the response " + rsp.String())
+			So(rsp, ShouldResembleProto, res1)
+
 		})
 	})
 }
