@@ -51,6 +51,24 @@
       "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "944625c5_c94274f4",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T09:40:38Z",
+      "side": 1,
+      "message": "Those files don\u0027t account for all usages of this binary. Fuschia does their own setup:\nhttps://turquoise-internal.googlesource.com/infra/salt/+/refs/heads/master/salt/luci/gce_provider/\n\nMaybe we can just ask them to change it once we release the new agent to stable.",
+      "parentUuid": "f1b13f06_0b75fed0",
+      "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
