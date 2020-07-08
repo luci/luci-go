@@ -297,7 +297,7 @@ func ensureBQTableFields(ctx context.Context, t table) error {
 			return schema
 		}
 
-		// Relax the new fields because we cannot add new required fields.
+		// Relax the new fields becuse we cannot add new required fields.
 		combinedSchema = appendMissing(combinedSchema, testResultRowSchema.Relax())
 		if !mutated {
 			// Nothing to update.

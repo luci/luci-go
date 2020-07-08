@@ -56,6 +56,9 @@ message TestResult {
   // Artifacts to upload and associate with this test result.
   // The map key is an artifact id.
   map<string, Artifact> artifacts = 9;
+
+  // Equivalent of luci.resultdb.v1.TestResult.test_location.
+  luci.resultdb.v1.TestLocation test_location = 10;
 }
 
 // A local equivalent of luci.resultdb.Artifact message
