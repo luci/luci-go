@@ -68,13 +68,13 @@ var funcMap = template.FuncMap{
 	"localTime":        localTime,
 	"localTimestamp":   localTimestamp,
 	"localTimeTooltip": localTimeTooltip,
-	"obfuscateEmail":   obfuscateEmail,
+	"obfuscateEmail":   common.ObfuscateEmail,
 	"pagedURL":         pagedURL,
 	"parseRFC3339":     parseRFC3339,
 	"percent":          percent,
 	"prefix":           prefix,
 	"renderMarkdown":   renderMarkdown,
-	"shortenEmail":     shortenEmail,
+	"shortenEmail":     common.ShortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
 	"toLower":          strings.ToLower,
@@ -316,14 +316,6 @@ func toTime(ts *timestamp.Timestamp) (result time.Time) {
 	return
 }
 
-// obfuscateEmail converts a string containing email address email@address.com
-// into email<junk>@address.com.
-func obfuscateEmail(email string) template.HTML {
-	email = template.HTMLEscapeString(email)
-	return template.HTML(strings.Replace(
-		email, "@", "<span style=\"display:none\">ohnoyoudont</span>@", -1))
-}
-
 // parseRFC3339 parses time represented as a RFC3339 or RFC3339Nano string.
 // If cannot parse, returns zero time.
 func parseRFC3339(s string) time.Time {
@@ -347,11 +339,6 @@ func formatTime(t time.Time) string {
 // smart enough to do that.
 func sub(a, b int) int {
 	return a - b
-}
-
-// shortenEmail shortens Google emails.
-func shortenEmail(email string) string {
-	return strings.Replace(email, "@google.com", "", -1)
 }
 
 // prefix abbriviates a string into specified number of characters.

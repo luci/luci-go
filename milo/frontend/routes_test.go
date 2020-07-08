@@ -205,13 +205,10 @@ func consoleTestData() []TestBundle {
 					Name:    "Test",
 					Project: "Testing",
 					Header: &ui.ConsoleHeader{
-						Oncalls: []ui.Oncall{
+						Oncalls: []*ui.OncallSummary{
 							{
-								Name: "Sheriff",
-								Emails: []string{
-									"test@example.com",
-									"watcher@example.com",
-								},
+								Name:      "Sheriff",
+								Oncallers: template.HTML("test (primary), watcher (secondary)"),
 							},
 						},
 						Links: []ui.LinkGroup{

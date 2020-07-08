@@ -140,10 +140,8 @@ type TreeStatus struct {
 
 // Oncall represents an oncall role with the current individuals in that role, represented
 // by their email addresses.
+// This struct represents the JSON format in which we receive rotation data.
 type Oncall struct {
-	// Name is the name of the oncall role.  This is set by Milo.
-	Name string `json:"-"`
-
 	// Primary is the username of the primary oncall.  This is used in lieu of emails.
 	// This is filled in from the remote JSON.
 	Primary string
@@ -155,6 +153,17 @@ type Oncall struct {
 	// Emails is a list of email addresses for the individuals who are currently in
 	// that role.  This is loaded from the sheriffing json.
 	Emails []string
+}
+
+type OncallSummary struct {
+	// Name is the name of the oncall role.  This is set in the Milo config.
+	Name string
+
+	// Oncallers is an HTML template containing the usernames (for Googlers) or email addresses
+	// (for external contributors) of current oncallers. External emails are obfuscated to make
+	// them harder to scrape. If specified in the config, displays "(primary)" and "(secondary)"
+	// after the oncaller names. Displays "<none>" if no-one is oncall.
+	Oncallers template.HTML
 }
 
 // LinkGroup represents a set of links grouped together by some category.
@@ -181,7 +190,7 @@ type ConsoleGroup struct {
 type ConsoleHeader struct {
 	// Oncalls is a list of oncall roles and the current people who fill that role
 	// that will be displayed in the header..
-	Oncalls []Oncall
+	Oncalls []*OncallSummary
 
 	// Links is a list of link groups to be displayed in the header.
 	Links []LinkGroup

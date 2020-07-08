@@ -110,6 +110,11 @@ message Oncall {
   //   ]
   // }
   string url = 2;
+
+  // ShowPrimarySecondaryLabels specifies whether the oncaller names
+  // should have "(primary)" and "(secondary)" appended to them if there
+  // are more than one.
+  bool show_primary_secondary_labels = 3;
 }
 
 // LinkGroup is a list of links, optionally given a name.

@@ -343,23 +343,61 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 }
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
-func getOncallData(c context.Context, name, url string) (ui.Oncall, error) {
+func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
 	result := ui.Oncall{}
-	err := getJSONData(c, url, 10*time.Minute, &result)
-	// Set the name, this is not loaded from the sheriff JSON.
-	result.Name = name
-	return result, err
+	err := getJSONData(c, config.Url, 10*time.Minute, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &ui.OncallSummary{
+		Name:      config.Name,
+		Oncallers: renderOncallers(config, &result),
+	}, nil
 }
 
-func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]ui.Oncall, error) {
+// renderOncallers renders a summary string to be displayed in the UI, showing
+// the current oncallers.
+func renderOncallers(config *config.Oncall, jsonResult *ui.Oncall) template.HTML {
+	var oncallers string
+	if len(jsonResult.Emails) == 1 {
+		oncallers = jsonResult.Emails[0]
+	} else if len(jsonResult.Emails) > 1 {
+		if config.ShowPrimarySecondaryLabels {
+			var sb strings.Builder
+			fmt.Fprintf(&sb, "%v (primary)", jsonResult.Emails[0])
+			for _, oncaller := range jsonResult.Emails[1:] {
+				fmt.Fprintf(&sb, ", %v (secondary)", oncaller)
+			}
+			oncallers = sb.String()
+		} else {
+			oncallers = strings.Join(jsonResult.Emails, ", ")
+		}
+	} else if jsonResult.Primary != "" {
+		if len(jsonResult.Secondaries) > 0 {
+			var sb strings.Builder
+			fmt.Fprintf(&sb, "%v (primary)", jsonResult.Primary)
+			for _, oncaller := range jsonResult.Secondaries {
+				fmt.Fprintf(&sb, ", %v (secondary)", oncaller)
+			}
+			oncallers = sb.String()
+		} else {
+			oncallers = jsonResult.Primary
+		}
+	} else {
+		return "<none>"
+	}
+	return common.ObfuscateEmail(common.ShortenEmail(oncallers))
+}
+
+func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]*ui.OncallSummary, error) {
 	// Get oncall data from URLs.
-	oncalls := make([]ui.Oncall, len(config))
+	oncalls := make([]*ui.OncallSummary, len(config))
 	err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for i, oc := range config {
 			i := i
 			oc := oc
 			ch <- func() (err error) {
-				oncalls[i], err = getOncallData(c, oc.Name, oc.Url)
+				oncalls[i], err = getOncallData(c, oc)
 				return
 			}
 		}
@@ -380,7 +418,7 @@ func consoleHeader(c context.Context, project string, header *config.Header) (*u
 		return nil, nil
 	}
 
-	var oncalls []ui.Oncall
+	var oncalls []*ui.OncallSummary
 	var treeStatus *ui.TreeStatus
 	// Get the oncall and tree status concurrently.
 	if err := parallel.FanOutIn(func(ch chan<- func() error) {
