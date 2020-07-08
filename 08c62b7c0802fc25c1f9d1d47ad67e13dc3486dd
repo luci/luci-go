@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f663919e_b1629912",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-08T18:11:12Z",
+      "side": 1,
+      "message": "IIUC we still don\u0027t recommend \u0027init/install\u0027 etc.? If we do recommend them I can change this CL to promote them to show up in `cipd help`.",
+      "revId": "08c62b7c0802fc25c1f9d1d47ad67e13dc3486dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
