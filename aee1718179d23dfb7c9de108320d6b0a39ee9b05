@@ -19,6 +19,109 @@
     },
     {
       "key": {
+        "uuid": "cbafd88b_4b8d30ca",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "what does this suffix mean?",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 29
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57e428d3_3b52ab16",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "not sure this will end up useful in logs",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cad917e_7b6a1c25",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "was there a reason why CreatedBy is marked as noindex? \nFWIU we cannot use ScheduleBuild/CancelBuild/UpdateBuild or other mutations in Go until noindex is removed",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38fd0681_01f26ea0",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "just \"\"",
+      "range": {
+        "startLine": 125,
+        "startChar": 19,
+        "endLine": 125,
+        "endChar": 40
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c6d5395_d2119002",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "this won\u0027t work because python\u0027s encodes identity in some weird way and that encoding is not implemented here.\n\nFWIW I think that encoding just complicates things. it would be simpler to not have it, so I\u0027d probably update python code to use a simple string and migrate the builds in the datastore",
+      "range": {
+        "startLine": 126,
+        "startChar": 27,
+        "endLine": 126,
+        "endChar": 46
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c574017_dd2fc6b4",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -36,6 +139,75 @@
     },
     {
       "key": {
+        "uuid": "819b98ec_36a39f5e",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "nit: maybe add a helper function that accepts a BuilderID message",
+      "range": {
+        "startLine": 131,
+        "startChar": 33,
+        "endLine": 131,
+        "endChar": 44
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b48226b6_4d634a73",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "fallthough does not check `case q.BuildIdHigh !\u003d nil:` condition\nhttps://play.golang.org/p/GDOaiI4jd4k\n\nso L143 will panic if BuildIdHigh is nil\n\nsame below",
+      "range": {
+        "startLine": 141,
+        "startChar": 2,
+        "endLine": 141,
+        "endChar": 13
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "664bcbcd_385e2b11",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "nit: is this code gofmt`d? it seems a space is missing",
+      "range": {
+        "startLine": 145,
+        "startChar": 65,
+        "endLine": 145,
+        "endChar": 66
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c8655ea3_ed8579ef",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -47,6 +219,155 @@
       "writtenOn": "2020-07-08T23:28:28Z",
       "side": 1,
       "message": "I find it slightly hard to read this way. Can you add a comment or something, that you can only search by one of these pairs?\n\nWhat sets q.BuildIdLow/High? I forgot. I mean why are you checking these properties and also calling buildid.IdRange, shouldn\u0027t IdRange have been used to set these properties in the first place?",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b401e1bf_d478058c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "nit: combined assignment-and-condition in an if statement becomes hard to read if the assignment is multi-line.\nI recommend splitting",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d70f3437_ed41cbb5",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "this isn\u0027t very efficient because it makes an RPC to load steps/properties for each build individually, sequentially.\nit would be more efficient to do in parallel. \n\nNote that in python, search is not responsible for to-proto conversion.\nthe proto conversion happens later and in batches",
+      "range": {
+        "startLine": 154,
+        "startChar": 17,
+        "endLine": 154,
+        "endChar": 42
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb74c08c_028e12f4",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "why not \"err\"?",
+      "range": {
+        "startLine": 154,
+        "startChar": 11,
+        "endLine": 154,
+        "endChar": 15
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4afb5bb5_262cf055",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "ID",
+      "range": {
+        "startLine": 22,
+        "startChar": 14,
+        "endLine": 22,
+        "endChar": 16
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f8cb75e_4816d8df",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/protoutil/builder.go;l\u003d49",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dddb3144_89adf6cf",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "ID\n\nI recommend moving the func to protoutil since it has nothing to do with appengine-part of buildbucket",
+      "range": {
+        "startLine": 27,
+        "startChar": 13,
+        "endLine": 27,
+        "endChar": 15
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef294c0e_5ec5ebd8",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T23:49:58Z",
+      "side": 1,
+      "message": "why mask isn\u0027t a part of the query?",
+      "range": {
+        "startLine": 149,
+        "startChar": 56,
+        "endLine": 149,
+        "endChar": 70
+      },
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
