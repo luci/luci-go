@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "11b5f8f6_e1aa7c98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-08T22:03:01Z",
+      "side": 1,
+      "message": "Hi, can you help to review it? I\u0027ve deployed and tested it on dev which works as expected, except a field mask decoding issue(https://screenshot.googleplex.com/fJcdoRGHaG3). That decoding issue is due to the protojson.Unmarshal in /prpc and is unrelated to this CL, which I\u0027m seeking a solution.",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
