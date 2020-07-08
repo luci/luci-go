@@ -64,6 +64,7 @@ type Artifact struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A local identifier of the artifact, unique within the parent resource.
 	// MAY have slashes, but MUST NOT start with a slash.
+	// SHOULD not use backslashes.
 	// Regex: ^[[:word:]]([[:print:]]{0,254}[[:word:]])?$
 	ArtifactId string `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
 	// A signed short-lived URL to fetch the contents of the artifact.

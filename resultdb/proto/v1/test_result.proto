@@ -110,6 +110,24 @@ message TestResult {
   // It might describe this particular execution or the test case.
   repeated StringPair tags = 10
       [ (google.api.field_behavior) = IMMUTABLE ];
+
+  // Where the test is defined, e.g. the file name.
+  TestLocation test_location = 11;
+}
+
+// Location of the test definition.
+message TestLocation {
+  reserved 1; // We might want to add repo URL later.
+
+  // Name of the file where the test is defined.
+  // For files in a repository, must start with "//"
+  // Example: "//components/payments/core/payment_request_data_util_unittest.cc"
+  // Max length: 512.
+  // SHOULD not use backslashes.
+  string file_name = 2;
+
+  // One-based line number where the test is defined.
+  int32 line = 3;
 }
 
 // Machine-readable status of a test result.
