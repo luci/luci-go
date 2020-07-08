@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "0e1c56a5_b260c66b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-08T04:20:42Z",
+      "side": 1,
+      "message": "I like this!",
+      "revId": "dc04aad75bc334d9c2c989aff950183b0eec67dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c17b812_5946d3e0",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/realms.star",
         "patchSetId": 1
@@ -30,6 +47,30 @@
       "writtenOn": "2020-07-08T00:00:48Z",
       "side": 1,
       "message": "this abstracts `kinds` and `keys` from @stdlib//internal/luci/common.star so they can be substituted.",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 1
+      },
+      "revId": "dc04aad75bc334d9c2c989aff950183b0eec67dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6a6da667_ffd37486",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/realms.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-08T04:20:42Z",
+      "side": 1,
+      "message": "Comment 👍 and I think deserves to be in code, too.",
+      "parentUuid": "5c17b812_5946d3e0",
       "range": {
         "startLine": 58,
         "startChar": 0,
