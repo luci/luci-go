@@ -13,6 +13,8 @@ syntax = "proto3";
 
 package config;
 
+// DEPRECATED. DO NOT USE because the Gitiles URL is ambiguous due to lack of
+// separation between the Git's ref and the location within the Git repo.
 // Used to specify project/service configuration location.
 message ConfigSetLocation {
   // Depending on repository type, config service imports configuration files
@@ -25,8 +27,53 @@ message ConfigSetLocation {
   }
   // URL of the repository where project-wide configurations are stored.
   string url = 1;
-  // Type of the configuration repository, e.g. GITILES.
+  // Optional. Type of the configuration repository, e.g. GITILES.
   StorageType storage_type = 2;
+}
+
+// Use to specify configuration stored in Git repository importable via Gitiles
+// API.
+message GitilesLocation {
+  // URL of the Git repository.
+  // Must not end with "/".
+  // Must not end with ".git".
+  // Must not have "/a/" prefix of a path component.
+  //
+  // Example:
+  //   OK:
+  //     https://chromium.googlesource.com/infra/infra
+  //   Not OK:
+  //     https://chromium.googlesource.com/a/infra/infra
+  //     https://chromium.googlesource.com/infra/infra/
+  //     https://chromium.googlesource.com/infra/infra.git
+  string repo = 1;
+  // Ref of the Git repository.
+  // Must be a fully qualifed ref starting with "refs/".
+  //
+  // Example:
+  //   OK:
+  //     refs/heads/branch
+  //     refs/heads/infra/config
+  //     refs/branch-heads/beta
+  //   Not OK:
+  //     master
+  //     HEAD
+  //     origin/main
+  //     tags/123
+  string ref = 2;
+  // Path to the directory inside Git repository where configurations are stored.
+  // Optional. If not specified, defaults to top-level folder of the git repo.
+  // Must not start or end with "/".
+  //
+  // Example:
+  //   OK:
+  //     infra/config/generated
+  //       (empty string)
+  //   NOT OK:
+  //     /
+  //     /config
+  //     infra/config/
+  string path = 3;
 }
 
 // Used to define project specific identities for LUCI to act on behalf when
@@ -50,8 +97,16 @@ message IdentityConfig {
 message Project {
   // Globally unique id of the project.
   string id = 1;
+
   // Where to import "projects/<id>" config set from.
-  ConfigSetLocation config_location = 2;
+  oneof location {
+    // DEPRECATED. Use `gitiles_location` instead.
+    // Where to import "projects/<id>" config set from.
+    ConfigSetLocation config_location = 2;
+
+    GitilesLocation gitiles_location = 4;
+  }
+
   // IdentityConfig determines what identities are used when LUCI acts on
   // behalf of the project towards external services.
   IdentityConfig identity_config = 3;
@@ -69,16 +124,19 @@ message ProjectsCfg {
 
 // Describes one luci service.
 message Service {
+  reserved 3;
+  reserved 'config_location';
+
+  message JWTAuth {
+    // Value for the 'aud' field in the JSON Web Token claim.
+    string audience = 1;
+  }
+
   // Globally unique id of the service. Required.
   // Used in "services/<service_id>" config set name.
   string id = 1;
   // Email addresses of responsible and point-of-contacts for the service.
   repeated string owners = 2;
-  // Where to import "services/<id>" config set from. If config_location.url is
-  // relative, it is relative to the current configuration file.
-  // If not specified, defaults to "../<id>/".
-  // Not yet implemented.
-  ConfigSetLocation config_location = 3;
   // An HTTPS endpoint that returns JSON-encoded ServiceDynamicMetadata in body.
   string metadata_url = 4;
   // A list of identities that have access to this service's configs.
@@ -89,6 +147,10 @@ message Service {
   //
   // If not specified, only admins and trusted services have access.
   repeated string access = 5;
+
+  // If set, use JWT auth in requests to services. This is usually used for
+  // Cloud Endpoints v2 support.
+  JWTAuth jwt_auth = 6;
 }
 
 // Machine-generated service metadata, exposed by a service endpoint.
@@ -117,6 +179,9 @@ message ServicesCfg {
 // Schema of acl.cfg file.
 // Next tag: 8.
 message AclCfg {
+  reserved 4;
+  reserved 'config_get_by_hash_group';
+
   // Name of the group that has access to all projects/* config sets.
   // Only trusted services should be in this group.
   string project_access_group = 2;
@@ -125,8 +190,6 @@ message AclCfg {
   string service_access_group = 7;
   // Name of the group that has admin access to the app.
   string admin_group = 3;
-  // Name of the group that can access configs by hash.
-  string config_get_by_hash_group = 4;
   // Name of the group that may call validation API.
   string validation_group = 5;
   // Name of the group that may call reimport API.

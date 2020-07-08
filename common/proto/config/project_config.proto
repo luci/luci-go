@@ -30,6 +30,9 @@ message ProjectCfg {
   repeated string access = 2;
 }
 
+// DEPRECATED. DO NOT USE in your project. Contact luci-team@ if you have a need
+// for this.
+//
 // Schema of refs.cfg.
 message RefsCfg {
   message Ref {
