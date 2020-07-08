@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1f8ea68f_d8ddcedd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-08T19:44:42Z",
+      "side": 1,
+      "message": "PTAL\n\nNew fields were added to nodir tables: https://screenshot.googleplex.com/phVAifntfCT",
+      "revId": "6b5363dac8bb20cbdd5b92712055d057029ff288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
