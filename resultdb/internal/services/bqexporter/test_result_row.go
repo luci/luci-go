@@ -118,6 +118,16 @@ type TestResultRow struct {
 	// mentions "The partitioning column must be a top-level field."
 	// So we keep this column here instead of adding the CreateTime to Invocation.
 	PartitionTime time.Time `bigquery:"partition_time"`
+
+	// TestLocation is the location of the test definition.
+	TestLocation TestLocation `bigquery:"test_location"`
+}
+
+// TestLocation is a location of a test definition, e.g. the file name.
+// For field description, see the comments in the TestLocation protobuf message.
+type TestLocation struct {
+	FileName string `bigquery:"file_name"`
+	Line     int    `bigquery:"line"`
 }
 
 // Name returns test result name.
