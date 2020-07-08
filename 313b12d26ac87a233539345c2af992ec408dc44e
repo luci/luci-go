@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f6da124_23e817ff",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-08T02:24:48Z",
+      "side": 1,
+      "message": "can you add %d build.ID here? IMO, it\u0027s more useful for debugging than other stuff.",
+      "range": {
+        "startLine": 195,
+        "startChar": 43,
+        "endLine": 195,
+        "endChar": 44
+      },
+      "revId": "313b12d26ac87a233539345c2af992ec408dc44e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
