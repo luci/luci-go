@@ -72,14 +72,18 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 	var maybeUnexpected spanner.NullBool
 	var micros spanner.NullInt64
 	var summaryHTML span.Compressed
+	var testLocationFile spanner.NullString
+	var testLocationLine spanner.NullInt64
 	err := span.ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
-		"Variant":         &tr.Variant,
-		"IsUnexpected":    &maybeUnexpected,
-		"Status":          &tr.Status,
-		"SummaryHTML":     &summaryHTML,
-		"StartTime":       &tr.StartTime,
-		"RunDurationUsec": &micros,
-		"Tags":            &tr.Tags,
+		"Variant":              &tr.Variant,
+		"IsUnexpected":         &maybeUnexpected,
+		"Status":               &tr.Status,
+		"SummaryHTML":          &summaryHTML,
+		"StartTime":            &tr.StartTime,
+		"RunDurationUsec":      &micros,
+		"Tags":                 &tr.Tags,
+		"TestLocationFilename": &testLocationFile,
+		"TestLocationLine":     &testLocationLine,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -92,6 +96,14 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 	tr.SummaryHtml = string(summaryHTML)
 	populateExpectedField(tr, maybeUnexpected)
 	populateDurationField(tr, micros)
+
+	if testLocationFile.Valid {
+		tr.TestLocation = &pb.TestLocation{
+			Filename: testLocationFile.StringVal,
+			Line:     int32(testLocationLine.Int64),
+		}
+	}
+
 	return tr, nil
 }
 
