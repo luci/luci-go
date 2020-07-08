@@ -40,11 +40,7 @@ func TestBuild(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		m, err := mask.FromFieldMask(&field_mask.FieldMask{
-			// Empty mask is the same as "*".
-			Paths: []string{},
-		}, &pb.Build{}, false, false)
-		So(err, ShouldBeNil)
+		m := mask.All(&pb.Build{})
 
 		Convey("read/write", func() {
 			So(datastore.Put(ctx, &Build{
@@ -129,20 +125,14 @@ func TestBuild(t *testing.T) {
 
 			Convey("mask", func() {
 				Convey("include", func() {
-					m, err := mask.FromFieldMask(&field_mask.FieldMask{
-						Paths: []string{"id"},
-					}, &pb.Build{}, false, false)
-					So(err, ShouldBeNil)
+					m := mask.MustFromReadMask(&field_mask.FieldMask{Paths: []string{"id"}}, &pb.Build{})
 					p, err := b.ToProto(ctx, m)
 					So(err, ShouldBeNil)
 					So(p.Id, ShouldEqual, 1)
 				})
 
 				Convey("exclude", func() {
-					m, err := mask.FromFieldMask(&field_mask.FieldMask{
-						Paths: []string{"builder"},
-					}, &pb.Build{}, false, false)
-					So(err, ShouldBeNil)
+					m := mask.MustFromReadMask(&field_mask.FieldMask{Paths: []string{"builder"}}, &pb.Build{})
 					p, err := b.ToProto(ctx, m)
 					So(err, ShouldBeNil)
 					So(p.Id, ShouldEqual, 0)
