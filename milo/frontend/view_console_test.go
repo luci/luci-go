@@ -38,7 +38,7 @@ func TestRenderOncallers(t *testing.T) {
 					Secondaries: []string{},
 				}
 
-				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`<none>`))
+				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`&lt;none&gt;`))
 			})
 			Convey("No-one oncall with 'None' string", func() {
 				response := ui.Oncall{
@@ -88,7 +88,7 @@ func TestRenderOncallers(t *testing.T) {
 					Emails: []string{},
 				}
 
-				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`<none>`))
+				So(renderOncallers(&oncallConfig, &response), ShouldEqual, template.HTML(`&lt;none&gt;`))
 			})
 
 			Convey("Primary only", func() {

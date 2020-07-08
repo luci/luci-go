@@ -384,7 +384,7 @@ func renderOncallers(config *config.Oncall, jsonResult *ui.Oncall) template.HTML
 			oncallers = jsonResult.Primary
 		}
 	} else {
-		return "<none>"
+		oncallers = "<none>"
 	}
 	return common.ObfuscateEmail(common.ShortenEmail(oncallers))
 }
