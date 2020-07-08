@@ -16,6 +16,63 @@
       "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14e50d59_40c3717b",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T23:38:20Z",
+      "side": 1,
+      "message": "Can you add that Masks are generally constructed by calling the functions in this package which return a Mask? I mean since the zero mask is invalid and it has no exported fields.",
+      "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a67190a5_f765fb22",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T23:38:20Z",
+      "side": 1,
+      "message": "is a shortcut for",
+      "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4100858_14ad0a79",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T23:38:20Z",
+      "side": 1,
+      "message": "Remove \"a \" or \" a\" (your choice). Or I think \"the field mask as\" would fit too.",
+      "range": {
+        "startLine": 114,
+        "startChar": 50,
+        "endLine": 114,
+        "endChar": 51
+      },
+      "revId": "aa16fae7c16ddbaa86157bf543a797a4f336e7c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
