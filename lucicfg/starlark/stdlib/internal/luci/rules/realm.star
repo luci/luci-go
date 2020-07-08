@@ -14,11 +14,8 @@
 
 """Defines luci.realm(...) rule."""
 
-load("@stdlib//internal/graph.star", "graph")
-load("@stdlib//internal/lucicfg.star", "lucicfg")
-load("@stdlib//internal/validate.star", "validate")
-load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/realms.star", "realms")
+load("@stdlib//internal/lucicfg.star", "lucicfg")
 
 def _realm(
         ctx,
@@ -114,36 +111,11 @@ def _realm(
       bindings: a list of luci.binding(...) to add to the realm.
     """
     realms.experiment.require()
-
-    name = validate.string(
-        "name",
-        name,
-        regexp = r"^([a-z0-9_\.\-/]{1,400}|@root|@legacy)$",
+    return realms.realm(
+        impl = realms.default_impl,
+        name = name,
+        extends = extends,
+        bindings = bindings,
     )
-
-    # Implicitly add '@root' to parents (unless we are defining it).
-    if extends and type(extends) != "list":
-        extends = [extends]
-    parents = [keys.realm(r) for r in extends or []]
-    if name != "@root":
-        parents.append(keys.realm("@root"))
-
-    # '@root' must be at the root of the inheritance tree.
-    if name == "@root" and len(parents):
-        fail("@root realm can't extend other realms")
-
-    key = keys.realm(name)
-    graph.add_node(key, props = {"name": name})
-    graph.add_edge(keys.project(), key)
-    for parent in parents:
-        graph.add_edge(parent, key, title = "extends")
-
-    for b in validate.list("bindings", bindings):
-        if graph.is_keyset(b) and b.has(kinds.BINDING):
-            graph.add_edge(key, b.get(kinds.BINDING))
-        else:
-            fail('bad "bindings": %s is not a luci.binding(...)' % (b,))
-
-    return graph.keyset(key)
 
 realm = lucicfg.rule(impl = _realm)

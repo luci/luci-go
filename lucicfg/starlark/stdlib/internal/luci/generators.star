@@ -20,6 +20,7 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "kinds", "triggerer")
 load("@stdlib//internal/luci/lib/acl.star", "acl", "aclimpl")
+load("@stdlib//internal/luci/lib/realms.star", "realms")
 load(
     "@stdlib//internal/luci/proto.star",
     "buildbucket_pb",
@@ -29,7 +30,6 @@ load(
     "logdog_pb",
     "milo_pb",
     "notify_pb",
-    "realms_pb",
     "scheduler_pb",
 )
 load("@proto//google/protobuf/duration.proto", duration_pb = "google.protobuf")
@@ -187,60 +187,12 @@ def gen_realms_cfg(ctx):
       ctx: the generator context.
     """
     proj = get_project(required = False)
-    if not proj or not proj.props.realms_enabled:
-        return
-
-    # Discover bindings not attached to any realm. They likely indicate a bug.
-    for b in graph.children(keys.bindings_root()):
-        if not graph.parents(b.key, kinds.REALM):
-            error("the binding %s is not added to any realm" % b, trace = b.trace)
-
-    cfg_name = "realms-dev.cfg" if proj.props.dev else "realms.cfg"
-    set_config(ctx, cfg_name, realms_pb.RealmsCfg(
-        realms = [
-            _realms_realm(r)
-            for r in graph.children(proj.key, kinds.REALM)
-        ],
-        custom_roles = [
-            _realms_custom_role(r)
-            for r in graph.children(proj.key, kinds.CUSTOM_ROLE)
-        ],
-    ))
-
-def _realms_realm(realm):
-    """Given a REALM node returns realms_pb.Realm."""
-    per_role = {}
-    for b in graph.children(realm.key, kinds.BINDING):
-        for role in b.props.roles:
-            principals = []
-            principals.extend(["group:" + g for g in b.props.groups])
-            principals.extend(["user:" + u for u in b.props.users])
-            principals.extend(["project:" + p for p in b.props.projects])
-            if role in per_role:
-                per_role[role] = per_role[role].union(principals)
-            else:
-                per_role[role] = set(principals)
-
-    parents = graph.parents(realm.key, kinds.REALM)
-    return realms_pb.Realm(
-        name = realm.props.name,
-        extends = [p.props.name for p in parents if p.props.name != "@root"],
-        bindings = [
-            realms_pb.Binding(
-                role = role,
-                principals = sorted(per_role[role]),
-            )
-            for role in sorted(per_role)
-        ],
-    )
-
-def _realms_custom_role(role):
-    """Given a CUSTOM_ROLE node returns realms_pb.CustomRole."""
-    return realms_pb.CustomRole(
-        name = role.props.name,
-        extends = role.props.extends,
-        permissions = role.props.permissions,
-    )
+    if proj and proj.props.realms_enabled:
+        set_config(
+            ctx = ctx,
+            path = "realms-dev.cfg" if proj.props.dev else "realms.cfg",
+            cfg = realms.generate_realms_cfg(realms.default_impl),
+        )
 
 ################################################################################
 ## logdog.cfg.
