@@ -18,7 +18,10 @@ import (
 	"sort"
 	"testing"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/common/proto/mask"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -37,11 +40,17 @@ func TestQueryTestResults(t *testing.T) {
 
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 
+		readMask, err := mask.FromFieldMask(&field_mask.FieldMask{
+			Paths: []string{"*"},
+		}, &pb.TestResult{}, false, false)
+		if err != nil {
+			panic(err)
+		}
 		q := &Query{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
 			InvocationIDs: invocations.NewIDSet("inv1"),
-			Mask:          AllFields,
+			Mask:          readMask,
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
@@ -84,19 +93,6 @@ func TestQueryTestResults(t *testing.T) {
 				insert.TestResultMessages(expected),
 				insert.TestResults("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 			)...)
-
-			actual, _ := mustFetch(q)
-			So(actual, ShouldResembleProto, expected)
-		})
-
-		Convey(`Test location`, func() {
-			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestStatus_PASS)
-			expected[0].TestLocation = &pb.TestLocation{
-				FileName: "//a_test.go",
-				Line:     54,
-			}
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
 
 			actual, _ := mustFetch(q)
 			So(actual, ShouldResembleProto, expected)

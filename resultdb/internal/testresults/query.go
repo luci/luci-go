@@ -33,21 +33,29 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// AllFields is a field mask that selects all TestResults fields.
-var AllFields = mask.All(&pb.TestResult{})
-
 // defaultListMask is the default field mask to use for QueryTestResults and
 // ListTestResults requests.
-var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
-	"name",
-	"test_id",
-	"result_id",
-	"variant",
-	"expected",
-	"status",
-	"start_time",
-	"duration",
-)
+// Initialized by init.
+var defaultListMask mask.Mask
+
+func init() {
+	var err error
+	defaultListMask, err = mask.FromFieldMask(&field_mask.FieldMask{
+		Paths: []string{
+			"name",
+			"test_id",
+			"result_id",
+			"variant",
+			"expected",
+			"status",
+			"start_time",
+			"duration",
+		},
+	}, &pb.TestResult{}, false, false)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // ListMask returns mask.Mask converted from field_mask.FieldMask.
 // It returns a default mask with all fields except summary_html if readMask is
@@ -78,12 +86,9 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	}
 
 	var extraSelect []string
-	readMask := q.Mask
-	if readMask.IsEmpty() {
-		readMask = defaultListMask
-	}
+
 	selectIfIncluded := func(column, field string) {
-		switch inc, err := readMask.Includes(field); {
+		switch inc, err := q.Mask.Includes(field); {
 		case err != nil:
 			panic(err)
 		case inc != mask.Exclude:
@@ -92,8 +97,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	}
 	selectIfIncluded("tr.SummaryHtml", "summary_html")
 	selectIfIncluded("tr.Tags", "tags")
-	selectIfIncluded("tr.TestLocationFileName", "test_location")
-	selectIfIncluded("tr.TestLocationLine", "test_location")
 
 	if q.SelectVariantHash {
 		extraSelect = append(extraSelect, "tr.VariantHash")
@@ -179,8 +182,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
-		var testLocationFileName spanner.NullString
-		var testLocationLine spanner.NullInt64
 		tr := &pb.TestResult{}
 		item := QueryItem{TestResult: tr}
 
@@ -203,10 +204,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 				ptrs = append(ptrs, &tr.Tags)
 			case "tr.VariantHash":
 				ptrs = append(ptrs, &item.VariantHash)
-			case "tr.TestLocationFileName":
-				ptrs = append(ptrs, &testLocationFileName)
-			case "tr.TestLocationLine":
-				ptrs = append(ptrs, &testLocationLine)
 			default:
 				panic("impossible")
 			}
@@ -223,7 +220,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
-		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := q.Mask.Trim(tr); err != nil {
 			return errors.Annotate(
 				err, "error trimming fields for %s", item.TestResult.Name).Err()
