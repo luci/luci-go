@@ -45,7 +45,7 @@ func TestDecoding(t *testing.T) {
 				Header: http.Header{},
 			}
 			req.Header.Set("Content-Type", contentType)
-			return readMessage(req, &msg)
+			return readMessage(req, &msg, true)
 		}
 
 		testLucy := func(contentType string, body []byte) {

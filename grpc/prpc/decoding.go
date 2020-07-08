@@ -15,17 +15,20 @@
 package prpc
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/clock"
+	luciproto "go.chromium.org/luci/common/proto"
 )
 
 // This file implements decoding of HTTP requests to RPC parameters.
@@ -34,7 +37,10 @@ const headerContentType = "Content-Type"
 
 // readMessage decodes a protobuf message from an HTTP request.
 // Does not close the request body.
-func readMessage(r *http.Request, msg proto.Message) *protocolError {
+// fixFieldMasksForJSON indicates whether to attempt a workaround for
+// https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
+// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) *protocolError {
 	format, err := FormatFromContentType(r.Header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
@@ -49,7 +55,16 @@ func readMessage(r *http.Request, msg proto.Message) *protocolError {
 	// Do not redefine "err" below.
 
 	case FormatJSONPB:
-		err = protojson.Unmarshal(buf, proto.MessageV2(msg))
+		if fixFieldMasksForJSON {
+			t := reflect.TypeOf(msg)
+			if t.Kind() == reflect.Ptr {
+				t = t.Elem()
+			}
+			buf, err = luciproto.FixFieldMasksBeforeUnmarshal(buf, t)
+		}
+		if err == nil {
+			err = jsonpb.Unmarshal(bytes.NewBuffer(buf), msg)
+		}
 
 	case FormatText:
 		err = proto.UnmarshalText(string(buf), msg)
