@@ -70,7 +70,7 @@ func TestV1(t *testing.T) {
 		}
 	})
 
-	Convey("StatusToV2", t, func() {
+	Convey("statusToV2", t, func() {
 		cases := map[pb.Status]*v1.LegacyApiCommonBuildMessage{
 			0: {},
 
@@ -109,7 +109,7 @@ func TestV1(t *testing.T) {
 			expected := expected
 			build := build
 			Convey(expected.String(), func() {
-				actual, err := StatusToV2(build)
+				actual, err := statusToV2(build)
 				So(err, ShouldBeNil)
 				So(actual, ShouldEqual, expected)
 			})

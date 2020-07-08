@@ -16,7 +16,6 @@ package deprecated
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -35,15 +34,15 @@ import (
 
 // This file implements v1<->v2 interoperation.
 
-// MalformedBuild tag is present in an error if the build was malformed.
-var MalformedBuild = errors.BoolTag{Key: errors.NewTagKey("malformed buildbucket v1 build")}
+// malformedBuild tag is present in an error if the build was malformed.
+var malformedBuild = errors.BoolTag{Key: errors.NewTagKey("malformed buildbucket v1 build")}
 
-// StatusToV2 converts v1 build's Status, Result, FailureReason and
+// statusToV2 converts v1 build's Status, Result, FailureReason and
 // CancelationReason to v2 Status enum.
 //
 // If build.Status is "", returns (Status_STATUS_UNSPECIFIED, nil).
 // Useful with partial buildbucket responses.
-func StatusToV2(build *v1.LegacyApiCommonBuildMessage) (pb.Status, error) {
+func statusToV2(build *v1.LegacyApiCommonBuildMessage) (pb.Status, error) {
 	switch build.Status {
 	case "":
 		return pb.Status_STATUS_UNSPECIFIED, nil
@@ -66,7 +65,7 @@ func StatusToV2(build *v1.LegacyApiCommonBuildMessage) (pb.Status, error) {
 			case "INFRA_FAILURE", "BUILDBUCKET_FAILURE", "INVALID_BUILD_DEFINITION":
 				return pb.Status_INFRA_FAILURE, nil
 			default:
-				return 0, errors.Reason("unexpected failure reason %q", build.FailureReason).Tag(MalformedBuild).Err()
+				return 0, errors.Reason("unexpected failure reason %q", build.FailureReason).Tag(malformedBuild).Err()
 			}
 
 		case "CANCELED":
@@ -76,15 +75,15 @@ func StatusToV2(build *v1.LegacyApiCommonBuildMessage) (pb.Status, error) {
 			case "TIMEOUT":
 				return pb.Status_INFRA_FAILURE, nil
 			default:
-				return 0, errors.Reason("unexpected cancellation reason %q", build.CancelationReason).Tag(MalformedBuild).Err()
+				return 0, errors.Reason("unexpected cancellation reason %q", build.CancelationReason).Tag(malformedBuild).Err()
 			}
 
 		default:
-			return 0, errors.Reason("unexpected result %q", build.Result).Tag(MalformedBuild).Err()
+			return 0, errors.Reason("unexpected result %q", build.Result).Tag(malformedBuild).Err()
 		}
 
 	default:
-		return 0, errors.Reason("unexpected status %q", build.Status).Tag(MalformedBuild).Err()
+		return 0, errors.Reason("unexpected status %q", build.Status).Tag(malformedBuild).Err()
 	}
 }
 
@@ -108,7 +107,7 @@ func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 	params := &v1Params{}
 	if msg.ParametersJson != "" {
 		if err = json.NewDecoder(strings.NewReader(msg.ParametersJson)).Decode(params); err != nil {
-			return nil, errors.Annotate(err, "ParametersJson is invalid").Tag(MalformedBuild).Err()
+			return nil, errors.Annotate(err, "ParametersJson is invalid").Tag(malformedBuild).Err()
 		}
 	}
 
@@ -121,7 +120,7 @@ func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 	}{}
 	if msg.ResultDetailsJson != "" {
 		if err = json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(resultDetails); err != nil {
-			return nil, errors.Annotate(err, "ResultDetailsJson is invalid").Tag(MalformedBuild).Err()
+			return nil, errors.Annotate(err, "ResultDetailsJson is invalid").Tag(malformedBuild).Err()
 		}
 	}
 
@@ -131,11 +130,11 @@ func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 	if address != "" {
 		_, _, _, _, number, err = v1.ParseBuildAddress(address)
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid build address %q", address).Tag(MalformedBuild).Err()
+			return nil, errors.Annotate(err, "invalid build address %q", address).Tag(malformedBuild).Err()
 		}
 	}
 
-	status, err := StatusToV2(msg)
+	status, err := statusToV2(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -176,10 +175,10 @@ func BuildToV2(msg *v1.LegacyApiCommonBuildMessage) (b *pb.Build, err error) {
 	}
 
 	if b.Input.Properties, err = propertiesToV2(params.Properties); err != nil {
-		return nil, errors.Annotate(err, "invalid input properties").Tag(MalformedBuild).Err()
+		return nil, errors.Annotate(err, "invalid input properties").Tag(malformedBuild).Err()
 	}
 	if b.Output.Properties, err = propertiesToV2(resultDetails.Properties); err != nil {
-		return nil, errors.Annotate(err, "invalid output properties").Tag(MalformedBuild).Err()
+		return nil, errors.Annotate(err, "invalid output properties").Tag(malformedBuild).Err()
 	}
 
 	b.Infra.Swarming.BotDimensions = make([]*pb.StringPair, 0, len(resultDetails.TaskResult.BotDimensions))
@@ -211,7 +210,7 @@ func tagsToV2(dest *pb.Build, tags []string) error {
 				dest.Input.GerritChanges = append(dest.Input.GerritChanges, bs)
 			case *pb.GitilesCommit:
 				if dest.Input.GitilesCommit != nil {
-					return errors.Reason("more than one gitiles commit buildset").Tag(MalformedBuild).Err()
+					return errors.Reason("more than one gitiles commit buildset").Tag(malformedBuild).Err()
 				}
 				dest.Input.GitilesCommit = bs
 			default:
@@ -260,11 +259,6 @@ func BucketNameToV2(v1Bucket string) (project string, bucket string) {
 	return p[1], p[2]
 }
 
-// BucketNameToV1 returns legacy (long) bucket name for a LUCI bucket.
-func BucketNameToV1(project, bucket string) string {
-	return fmt.Sprintf("luci.%s.%s", project, bucket)
-}
-
 // builderToV2 attempts to parse as many fields into bucket and project as possible,
 // and do project name validation if the project is available.
 func builderToV2(msg *v1.LegacyApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *pb.BuilderID, err error) {
@@ -276,7 +270,7 @@ func builderToV2(msg *v1.LegacyApiCommonBuildMessage, tags strpair.Map, params *
 	ret.Project, ret.Bucket = BucketNameToV2(msg.Bucket)
 	if msg.Project != "" && ret.Project != "" && ret.Project != msg.Project {
 		err = errors.Reason(
-			"message project %q does not match bucket project %q", msg.Project, ret.Project).Tag(MalformedBuild).Err()
+			"message project %q does not match bucket project %q", msg.Project, ret.Project).Tag(malformedBuild).Err()
 	}
 	return
 }
