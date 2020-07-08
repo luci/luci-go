@@ -15,12 +15,15 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 
-	"google.golang.org/protobuf/encoding/protojson"
+	"go.chromium.org/luci/common/proto"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -67,9 +70,12 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 	if err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to read stdin").Err())
 	}
-
+	requestBytes, err = proto.FixFieldMasksBeforeUnmarshal(requestBytes, reflect.TypeOf(pb.BatchRequest{}))
+	if err != nil {
+		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
+	}
 	req := &pb.BatchRequest{}
-	if err := protojson.Unmarshal(requestBytes, req); err != nil {
+	if err := jsonpb.Unmarshal(bytes.NewReader(requestBytes), req); err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
@@ -78,12 +84,8 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, err)
 	}
 
-	jsonRes, err := protojson.Marshal(res)
-	if err != nil {
-		return r.done(ctx, err)
-	}
-
-	if _, err := os.Stdout.Write(jsonRes); err != nil {
+	m := &jsonpb.Marshaler{}
+	if err := m.Marshal(os.Stdout, res); err != nil {
 		return r.done(ctx, err)
 	}
 
