@@ -73,22 +73,7 @@
             {{ .Name }}
           </div>
           <div class="console-header-group-content">
-            {{ $numEmails := (len .Emails) }}
-            {{ if gt $numEmails 0 }}
-              {{ range $i, $email := .Emails }}
-                <span>{{ . | shortenEmail | obfuscateEmail }}{{ if lt $i (sub $numEmails 1) }},{{ end }}</span>
-              {{ end }}
-            {{ else if .Primary }}
-              <span>{{ .Primary }}</span>
-              {{if .Secondaries }}
-                (primary)
-                {{ range .Secondaries }}
-                  <span>, {{ . }} (secondary)</span>
-                {{ end }}
-              {{ end }}
-            {{ else }}
-              <span>&lt;none&gt;</span>
-            {{ end }}
+            {{ .Oncallers }}
           </div>
         </div>
       {{ end }}
