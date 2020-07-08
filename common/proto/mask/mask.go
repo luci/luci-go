@@ -67,6 +67,8 @@ import (
 //  "a"    "b"
 //         /
 //       "c"
+//
+// Zero value is not valid.
 type Mask struct {
 	// descriptor is the proto descriptor of the message of the field this node
 	// represents. If the field kind is not a message, then descriptor is nil and
@@ -95,8 +97,8 @@ type Mask struct {
 //
 // If isUpdateMask is set to true, a repeated field is allowed only as the last
 // field in a path string.
-func FromFieldMask(fieldMask *field_mask.FieldMask, targeMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (Mask, error) {
-	descriptor := proto.MessageReflect(targeMsg).Descriptor()
+func FromFieldMask(fieldMask *field_mask.FieldMask, targetMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (Mask, error) {
+	descriptor := proto.MessageReflect(targetMsg).Descriptor()
 	parsedPaths := make([]path, len(fieldMask.GetPaths()))
 	for i, p := range fieldMask.GetPaths() {
 		parsedPath, err := parsePath(p, descriptor, isFieldNameJSON)
@@ -106,6 +108,25 @@ func FromFieldMask(fieldMask *field_mask.FieldMask, targeMsg proto.Message, isFi
 		parsedPaths[i] = parsedPath
 	}
 	return fromParsedPaths(parsedPaths, descriptor, isUpdateMask)
+}
+
+// MustFromReadMask is a shortcut FromFieldMask with isFieldNameJSON and
+// isUpdateMask as false, that accepts field mask a variadic paths and
+// that panics if the mask is invalid.
+// It is useful when the mask is hardcoded.
+func MustFromReadMask(targetMsg proto.Message, paths ...string) Mask {
+	ret, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, targetMsg, false, false)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+var all = &field_mask.FieldMask{Paths: []string{"*"}}
+
+// All returns a field mask that selects all fields.
+func All(targetMsg proto.Message) Mask {
+	return MustFromReadMask(all, targetMsg)
 }
 
 // fromParsedPaths constructs a mask tree from a slice of parsed paths.

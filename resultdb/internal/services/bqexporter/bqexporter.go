@@ -28,7 +28,6 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
-	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -53,17 +52,7 @@ var bqTableCache = caching.RegisterLRUCache(50)
 
 // readMask is the field mask to use when querying test results.
 // Initialized by init.
-var readMask mask.Mask
-
-func init() {
-	var err error
-	readMask, err = mask.FromFieldMask(&field_mask.FieldMask{
-		Paths: []string{"*"},
-	}, &pb.TestResult{}, false, false)
-	if err != nil {
-		panic(err)
-	}
-}
+var readMask = mask.All(&pb.TestResult{})
 
 // Options is bqexpoerter configuration.
 type Options struct {
