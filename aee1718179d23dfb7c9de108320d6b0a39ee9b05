@@ -16,6 +16,57 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8c574017_dd2fc6b4",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T23:28:28Z",
+      "side": 1,
+      "message": "Get* is only needed in case the proto is nil. If q.Builder.GetBuilder() !\u003d \"\", this implies q.Builder !\u003d nil, so you can use q.Builder.Project, q.Builder.Bucket, and q.Builder.Builder directly. Same below.",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8655ea3_ed8579ef",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T23:28:28Z",
+      "side": 1,
+      "message": "I find it slightly hard to read this way. Can you add a comment or something, that you can only search by one of these pairs?\n\nWhat sets q.BuildIdLow/High? I forgot. I mean why are you checking these properties and also calling buildid.IdRange, shouldn\u0027t IdRange have been used to set these properties in the first place?",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "254f2359_2ce98ca9",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T23:28:28Z",
+      "side": 1,
+      "message": "This is if the bucket is known up front. If the search parameters don\u0027t give the bucket, do we need to check every build found by the search query to see if the user has permission to view it?",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
