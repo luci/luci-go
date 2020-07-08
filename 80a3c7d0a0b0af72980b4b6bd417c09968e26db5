@@ -16,6 +16,23 @@
       "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d30b963d_5c205941",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-08T09:02:15Z",
+      "side": 1,
+      "message": "I should have made this required instead of hard-coding it in the templates. I think having an OS-based default flag is not great. After this lands we could update every metadata JSON to specify the flag and then make it required here.\n\nBut we might have to coordinate with Fuchsia too, I think they are using this binary as well. In which case it might be too much trouble.",
+      "revId": "80a3c7d0a0b0af72980b4b6bd417c09968e26db5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
