@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f517e7f_081123ba",
+        "filename": "client/cmd/swarming/lib/trigger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-09T09:26:27Z",
+      "side": 1,
+      "message": "you need to use int64 here?",
+      "range": {
+        "startLine": 158,
+        "startChar": 16,
+        "endLine": 158,
+        "endChar": 19
+      },
+      "revId": "8dfde84ef14e12e9d8d68c8b089bc1be2aacc65f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
