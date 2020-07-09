@@ -84,7 +84,7 @@ func ValidateSummaryHTML(summary string) error {
 	return nil
 }
 
-// ValidateStartWithDuration returns a non-nil error if startTime and duration are invalid.
+// ValidateStartTimeWithDuration returns a non-nil error if startTime and duration are invalid.
 func ValidateStartTimeWithDuration(now time.Time, startTime *tspb.Timestamp, duration *dpb.Duration) error {
 	t, err := ptypes.Timestamp(startTime)
 	if startTime != nil && err != nil {
@@ -122,8 +122,23 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
+	case msg.TestLocation != nil && ec.isErr(ValidateTestLocation(msg.TestLocation), "test_location"):
 	}
 	return err
+}
+
+// ValidateTestLocation returns a non-nil error if loc is invalid.
+func ValidateTestLocation(loc *pb.TestLocation) error {
+	switch {
+	case loc.FileName == "":
+		return errors.Reason("file_name: unspecified").Err()
+	case len(loc.FileName) > 512:
+		return errors.Reason("file_name: length exceeds 512").Err()
+	case loc.Line < 0:
+		return errors.Reason("line: must not be negative").Err()
+	}
+
+	return nil
 }
 
 // ParseTestResultName extracts the invocation ID, unescaped test id, and

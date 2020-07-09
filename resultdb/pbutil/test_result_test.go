@@ -44,7 +44,11 @@ func validTestResult(now time.Time) *pb.TestResult {
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
 		Duration:    ptypes.DurationProto(time.Minute),
-		Tags:        StringPairs("k1", "v1"),
+		TestLocation: &pb.TestLocation{
+			FileName: "//a_test.go",
+			Line:     54,
+		},
+		Tags: StringPairs("k1", "v1"),
 	}
 }
 
@@ -228,6 +232,23 @@ func TestValidateTestResult(t *testing.T) {
 		Convey("with invalid StringPairs", func() {
 			msg.Tags = StringPairs("", "")
 			So(validate(msg), ShouldErrLike, `"":"": key: unspecified`)
+		})
+
+		Convey("Test location", func() {
+			Convey("filename", func() {
+				Convey("unspecified", func() {
+					msg.TestLocation.FileName = ""
+					So(validate(msg), ShouldErrLike, "test_location: file_name: unspecified")
+				})
+				Convey("too long", func() {
+					msg.TestLocation.FileName = strings.Repeat("super long", 100)
+					So(validate(msg), ShouldErrLike, "test_location: file_name: length exceeds 512")
+				})
+			})
+			Convey("line", func() {
+				msg.TestLocation.Line = -1
+				So(validate(msg), ShouldErrLike, "test_location: line: must not be negative")
+			})
 		})
 	})
 }
