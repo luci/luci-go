@@ -103,10 +103,16 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		testutil.MustApply(ctx, insert.Invocation("inserted", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, insert.Invocation("active", pb.Invocation_ACTIVE, nil))
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {
 				err := shouldWriteInvocation(ctx, span.Client(ctx).Single(), "inserted")
+				So(err, ShouldEqual, errAlreadyExists)
+			})
+
+			Convey(`if we already have a non-finalized invocation`, func() {
+				err := shouldWriteInvocation(ctx, span.Client(ctx).Single(), "active")
 				So(err, ShouldEqual, errAlreadyExists)
 			})
 
