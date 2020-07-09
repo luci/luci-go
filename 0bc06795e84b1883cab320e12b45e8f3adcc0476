@@ -39,6 +39,30 @@
       "revId": "0bc06795e84b1883cab320e12b45e8f3adcc0476",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb2eb07e_26b05bcf",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-09T19:36:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d89c3ac_fc52fc93",
+      "range": {
+        "startLine": 60,
+        "startChar": 38,
+        "endLine": 60,
+        "endChar": 40
+      },
+      "revId": "0bc06795e84b1883cab320e12b45e8f3adcc0476",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
