@@ -33,29 +33,21 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// AllFields is a field mask that selects all TestResults fields.
+var AllFields = mask.All(&pb.TestResult{})
+
 // defaultListMask is the default field mask to use for QueryTestResults and
 // ListTestResults requests.
-// Initialized by init.
-var defaultListMask mask.Mask
-
-func init() {
-	var err error
-	defaultListMask, err = mask.FromFieldMask(&field_mask.FieldMask{
-		Paths: []string{
-			"name",
-			"test_id",
-			"result_id",
-			"variant",
-			"expected",
-			"status",
-			"start_time",
-			"duration",
-		},
-	}, &pb.TestResult{}, false, false)
-	if err != nil {
-		panic(err)
-	}
-}
+var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
+	"name",
+	"test_id",
+	"result_id",
+	"variant",
+	"expected",
+	"status",
+	"start_time",
+	"duration",
+)
 
 // ListMask returns mask.Mask converted from field_mask.FieldMask.
 // It returns a default mask with all fields except summary_html if readMask is
@@ -86,9 +78,12 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	}
 
 	var extraSelect []string
-
+	readMask := q.Mask
+	if readMask.IsEmpty() {
+		readMask = defaultListMask
+	}
 	selectIfIncluded := func(column, field string) {
-		switch inc, err := q.Mask.Includes(field); {
+		switch inc, err := readMask.Includes(field); {
 		case err != nil:
 			panic(err)
 		case inc != mask.Exclude:

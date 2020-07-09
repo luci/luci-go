@@ -18,10 +18,7 @@ import (
 	"sort"
 	"testing"
 
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
-
-	"go.chromium.org/luci/common/proto/mask"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -40,17 +37,11 @@ func TestQueryTestResults(t *testing.T) {
 
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 
-		readMask, err := mask.FromFieldMask(&field_mask.FieldMask{
-			Paths: []string{"*"},
-		}, &pb.TestResult{}, false, false)
-		if err != nil {
-			panic(err)
-		}
 		q := &Query{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
 			InvocationIDs: invocations.NewIDSet("inv1"),
-			Mask:          readMask,
+			Mask:          AllFields,
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {

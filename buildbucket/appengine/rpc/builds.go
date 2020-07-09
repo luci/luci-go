@@ -34,35 +34,23 @@ import (
 var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
 
 // defMask is the default field mask to use for GetBuild requests.
-// Initialized by init.
-var defMask mask.Mask
-
-func init() {
-	var err error
-	defMask, err = mask.FromFieldMask(&field_mask.FieldMask{
-		Paths: []string{
-			"builder",
-			"canary",
-			"create_time",
-			"created_by",
-			"critical",
-			"end_time",
-			"id",
-			"input.experimental",
-			"input.gerrit_changes",
-			"input.gitiles_commit",
-			"number",
-			"start_time",
-			"status",
-			"status_details",
-			"update_time",
-			// TODO(nodir): Add user_duration.
-		},
-	}, &pb.Build{}, false, false)
-	if err != nil {
-		panic(err)
-	}
-}
+var defMask = mask.MustFromReadMask(&pb.Build{},
+	"builder",
+	"canary",
+	"create_time",
+	"created_by",
+	"critical",
+	"end_time",
+	"id",
+	"input.experimental",
+	"input.gerrit_changes",
+	"input.gitiles_commit",
+	"number",
+	"start_time",
+	"status",
+	"status_details",
+	"update_time",
+)
 
 // TODO(crbug/1042991): Move to a common location.
 func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
