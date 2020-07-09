@@ -34,6 +34,24 @@
       "revId": "ccac855e231dd5005a4b8ffec7ddff736cf2cb13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5bfdc9c8_eb13abaf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-09T07:49:21Z",
+      "side": 1,
+      "message": "I see. I will attemp to land this CL, then. Thanks!",
+      "parentUuid": "0423064c_e147e717",
+      "revId": "ccac855e231dd5005a4b8ffec7ddff736cf2cb13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
