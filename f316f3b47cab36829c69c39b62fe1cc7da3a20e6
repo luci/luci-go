@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "975e84c6_ab05bdee",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-09T02:47:44Z",
+      "side": 1,
+      "message": "Better to split the value and check if any of them is equal to base64MD5?",
+      "range": {
+        "startLine": 388,
+        "startChar": 14,
+        "endLine": 388,
+        "endChar": 22
+      },
+      "revId": "f316f3b47cab36829c69c39b62fe1cc7da3a20e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
