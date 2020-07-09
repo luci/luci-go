@@ -170,8 +170,8 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id invocations.ID)
 		return err
 
 	case state != pb.Invocation_FINALIZED:
-		return errors.Reason(
-			"attempting to derive an existing non-finalized invocation").Err()
+		logging.Debugf(ctx, "attempting to derive an existing non-finalized invocation")
+		return errAlreadyExists
 
 	default:
 		// The invocation exists and is finalized, so no need to write it.
