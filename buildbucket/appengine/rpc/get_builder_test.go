@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -57,7 +56,7 @@ func TestGetBuilder(t *testing.T) {
 
 		Convey(`No permissions`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
+				Identity: "user:user",
 			})
 			So(datastore.Put(
 				ctx,
@@ -78,7 +77,7 @@ func TestGetBuilder(t *testing.T) {
 
 		Convey(`End to end`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
+				Identity: "user:user",
 			})
 			So(datastore.Put(
 				ctx,
