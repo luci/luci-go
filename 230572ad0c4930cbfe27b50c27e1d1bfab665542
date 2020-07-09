@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ccf68d7f_b7d4ed66",
+        "filename": "resultdb/internal/services/globalmetrics/metrics_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T07:29:21Z",
+      "side": 1,
+      "message": "nit: blank line between third-party and first-party imports",
+      "revId": "230572ad0c4930cbfe27b50c27e1d1bfab665542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20a5de9a_87c8c75e",
+        "filename": "resultdb/internal/services/globalmetrics/metrics_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T07:29:21Z",
+      "side": 1,
+      "message": "it is returned by MustApply",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 9
+      },
+      "revId": "230572ad0c4930cbfe27b50c27e1d1bfab665542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
