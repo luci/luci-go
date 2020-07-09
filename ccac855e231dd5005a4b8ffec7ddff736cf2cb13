@@ -16,6 +16,24 @@
       "revId": "ccac855e231dd5005a4b8ffec7ddff736cf2cb13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0423064c_e147e717",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T07:44:08Z",
+      "side": 1,
+      "message": "that test enabled logging, so random stuff gets logged. Those aren\u0027t test failures.\n\nthe test failure that I see appears to be a transient error.",
+      "parentUuid": "ecc46080_113882f9",
+      "revId": "ccac855e231dd5005a4b8ffec7ddff736cf2cb13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
