@@ -30,7 +30,7 @@ func TestUpdateTaskStats(t *testing.T) {
 		ctx, _ := tsmon.WithDummyInMemory(testutil.SpannerTestContext(t))
 		now := clock.Now(ctx).UTC()
 
-		testutil.MustApply(ctx,
+		ct := testutil.MustApply(ctx,
 			tasks.Enqueue(tasks.BQExport, "task1", "inv", "payload", now),
 			tasks.Enqueue(tasks.BQExport, "task2", "inv", "payload", now),
 			tasks.Enqueue(tasks.TryFinalizeInvocation, "task3", "inv", "payload", now),
@@ -55,21 +55,21 @@ func TestUpdateTaskStats(t *testing.T) {
 
 		Convey("reports oldest-task-age metric", func() {
 			So(updateTaskStats(ctx), ShouldBeNil)
-			So(oldestTaskMetric.Get(ctx, string(tasks.BQExport)), ShouldEqual, now.Unix())
-			So(oldestTaskMetric.Get(ctx, string(tasks.TryFinalizeInvocation)), ShouldEqual, now.Unix())
+			So(oldestTaskMetric.Get(ctx, string(tasks.BQExport)), ShouldEqual, ct.Unix())
+			So(oldestTaskMetric.Get(ctx, string(tasks.TryFinalizeInvocation)), ShouldEqual, ct.Unix())
 		})
 
 		Convey("stops reporting oldest-task-age, if task-count == 0", func() {
 			So(updateTaskStats(ctx), ShouldBeNil)
-			So(oldestTaskMetric.Get(ctx, string(tasks.BQExport)), ShouldEqual, now.Unix())
-			So(oldestTaskMetric.Get(ctx, string(tasks.TryFinalizeInvocation)), ShouldEqual, now.Unix())
+			So(oldestTaskMetric.Get(ctx, string(tasks.BQExport)), ShouldEqual, ct.Unix())
+			So(oldestTaskMetric.Get(ctx, string(tasks.TryFinalizeInvocation)), ShouldEqual, ct.Unix())
 
 			tasks.Delete(ctx, tasks.TryFinalizeInvocation, "task3")
 			tasks.Delete(ctx, tasks.TryFinalizeInvocation, "task4")
 			tasks.Delete(ctx, tasks.TryFinalizeInvocation, "task5")
 
 			So(updateTaskStats(ctx), ShouldBeNil)
-			So(oldestTaskMetric.Get(ctx, string(tasks.BQExport)), ShouldEqual, now.Unix())
+			So(oldestTaskMetric.Get(ctx, string(tasks.BQExport)), ShouldEqual, ct.Unix())
 			// metric.Get() returns the zero value of the metric value type, if there is
 			// no matching cell for the fields. Thus, tsmon.Store.Get() should be used
 			// to find whether the cell no longer exists or not.
