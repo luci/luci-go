@@ -16,20 +16,20 @@
 import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import { AppState } from '../../context/app_state_provider';
 import { consumeContext, provideContext } from '../../libs/context';
 import * as iter from '../../libs/iter_utils';
 import { streamTestBatches, streamTestExonerationBatches, streamTestResultBatches, streamVariantBatches, TestLoader } from '../../models/test_loader';
 import { TestNode, VariantStatus } from '../../models/test_node';
 import { Expectancy, Invocation } from '../../services/resultdb';
+import { AppState } from '../app_state/app_state';
 
 /**
- * Records state of the invocation page.
+ * Records state of an invocation.
  */
-export class InvocationPageState {
-  @observable.ref appState!: AppState;
+export class InvocationState {
   @observable.ref invocationId = '';
-  @observable.ref selectedTabId = '';
+
+  constructor(private appState: AppState) {}
 
   @computed
   get invocationName(): string {
@@ -112,5 +112,5 @@ export class InvocationPageState {
   get testLoader() { return new TestLoader(TestNode.newRoot(), this.testIterFn()); }
 }
 
-export const consumePageState = consumeContext<'pageState', InvocationPageState>('pageState');
-export const providePageState = provideContext<'pageState', InvocationPageState>('pageState');
+export const consumeInvocationState = consumeContext<'invocationState', InvocationState>('invocationState');
+export const provideInvocationState = provideContext<'invocationState', InvocationState>('invocationState');
