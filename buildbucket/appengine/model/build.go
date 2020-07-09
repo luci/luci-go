@@ -99,6 +99,11 @@ type Build struct {
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
 }
 
+// HasEnded returns whether this build has finished (with any terminal status).
+func (b *Build) HasEnded() bool {
+	return b.Proto.Status > pb.Status_ENDED_MASK
+}
+
 // ToProto returns the *pb.Build representation of this build.
 // TODO(crbug/1042991): Support field masks.
 func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
