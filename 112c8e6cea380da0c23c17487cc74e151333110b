@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "ba544050_4c5e23e0",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cfbfebf_643713f0",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1bfbd83_10778093",
         "filename": "buildbucket/appengine/rpc/cancel_build.go",
         "patchSetId": 1
@@ -51,6 +69,24 @@
       "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8841d0b_8178f5e9",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "Why do today what you can put off until tomorrow?",
+      "parentUuid": "f1bfbd83_10778093",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +130,48 @@
     },
     {
       "key": {
+        "uuid": "03357073_0be890d3",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6583571_94850471",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ef0f331_0424aaa1",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "GetHostname is because Swarming field may be uninitialized. GetSwarming is only needed if Proto is nil, which is impossible because it\u0027s not a pointer. Not using GetTaskId specifically because by the time it\u0027s evaluated, it\u0027s implied that Swarming is not nil.",
+      "parentUuid": "b9eb50b2_35ff900d",
+      "range": {
+        "startLine": 91,
+        "startChar": 15,
+        "endLine": 91,
+        "endChar": 23
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "98084206_bf7ee647",
         "filename": "buildbucket/appengine/rpc/cancel_build.go",
         "patchSetId": 1
@@ -114,6 +192,30 @@
       "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c191cb61_5113d614",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "98084206_bf7ee647",
+      "range": {
+        "startLine": 96,
+        "startChar": 15,
+        "endLine": 96,
+        "endChar": 23
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +242,30 @@
     },
     {
       "key": {
+        "uuid": "4dbff4d5_718cd136",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "I was actually testing something with this. I wanted to make sure the time is converted to UTC. So, if I remove .UTC() but keep it as TestRecentTimeLocal, there is no change to EndTime.",
+      "parentUuid": "3c53a83d_ee088e52",
+      "range": {
+        "startLine": 119,
+        "startChar": 21,
+        "endLine": 119,
+        "endChar": 46
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ba99c7d_c6c056d1",
         "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
         "patchSetId": 1
@@ -160,6 +286,30 @@
       "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "303e95cb_d8678e51",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T08:06:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ba99c7d_c6c056d1",
+      "range": {
+        "startLine": 167,
+        "startChar": 15,
+        "endLine": 167,
+        "endChar": 45
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
