@@ -41,23 +41,25 @@ func TestValidation(t *testing.T) {
 			Cfg: `
 				mapping {
 					project: "proj1"
+					service_account: "exclusive-1@example.com"
+					service_account: "exclusive-2@example.com"
+				}
+
+				mapping {
+					project: "proj1"
 					project: "proj2"
-					service_account: "sa1@example.com"
-					service_account: "sa2@example.com"
+					service_account: "shared-1@example.com"
+					service_account: "shared-2@example.com"
 				}
 
 				mapping {
 					project: "proj3"
-					service_account: "sa3@example.com"
-				}
-
-				mapping {
-					project: "proj4"
+					service_account: "exclusive-3@example.com"
 				}
 
 				mapping {
 					project: "@internal"
-					service_account: "sa4@example.com"
+					service_account: "exclusive-4@example.com"
 				}
 			`,
 		},
@@ -77,12 +79,23 @@ func TestValidation(t *testing.T) {
 			Errors: []string{"at least one project must be given"},
 		},
 
+		// Empty list of accounts is not OK.
+		{
+			Cfg: `
+				mapping {
+					project: "proj"
+				}
+			`,
+			Errors: []string{"at least one service account must be given"},
+		},
+
 		// Bad project names.
 		{
 			Cfg: `
 				mapping {
 					project: ""
 					project: "  "
+					service_account: "sa@example.com"
 				}
 			`,
 			Errors: []string{
@@ -103,21 +116,6 @@ func TestValidation(t *testing.T) {
 			Errors: []string{
 				`bad service_account ""`,
 				`bad service_account "not-email"`,
-			},
-		},
-
-		// Multiple mappings with the same project.
-		{
-			Cfg: `
-				mapping {
-					project: "proj1"
-				}
-				mapping {
-					project: "proj1"
-				}
-			`,
-			Errors: []string{
-				`project "proj1" appears in more that one mapping`,
 			},
 		},
 
