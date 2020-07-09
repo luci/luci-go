@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8b567ce_2578e7fd",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-09T02:31:14Z",
+      "side": 1,
+      "message": "Reasonable assumption? Python is explicit about which statuses are non-terminal.",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
