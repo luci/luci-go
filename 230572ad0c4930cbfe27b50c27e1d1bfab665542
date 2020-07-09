@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4a9b09c4_f1642b1f",
+        "filename": "resultdb/internal/services/globalmetrics/metrics_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-09T07:40:45Z",
+      "side": 1,
+      "message": "Acked, but the spanner import has been removed.",
+      "parentUuid": "ccf68d7f_b7d4ed66",
+      "revId": "230572ad0c4930cbfe27b50c27e1d1bfab665542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20a5de9a_87c8c75e",
         "filename": "resultdb/internal/services/globalmetrics/metrics_test.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "230572ad0c4930cbfe27b50c27e1d1bfab665542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86c29168_60a3bb3e",
+        "filename": "resultdb/internal/services/globalmetrics/metrics_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-09T07:40:45Z",
+      "side": 1,
+      "message": "😂",
+      "parentUuid": "20a5de9a_87c8c75e",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 9
+      },
+      "revId": "230572ad0c4930cbfe27b50c27e1d1bfab665542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

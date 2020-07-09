@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ecc46080_113882f9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-07-09T07:40:45Z",
+      "side": 1,
+      "message": "Thanks for a quick review.\nI have no idea how the following test failed.\n: https://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8875270353956554976/+/u/go_test/stdout\n\n```\nprpc: responding with AlreadyExists error: invocations/u-inv already exists\n\n{\"error\":\"rpc error: code \u003d AlreadyExists desc \u003d invocations/u-inv already exists\", \"host\":\"127.0.0.1:43649\", \"method\":\"BatchCreateInvocations\", \"service\":\"luci.resultdb.v1.Recorder\"}\n.............\n```\n\nDoesn\u0027t the test create a new spanner database instance for each run? Please let me know if you have an idea of how it could happen. Thanks",
+      "revId": "ccac855e231dd5005a4b8ffec7ddff736cf2cb13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
