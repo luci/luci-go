@@ -26,7 +26,7 @@ const notFoundRoute: Route = {
   },
 };
 
-const appRoot = document.getElementById('app-root')!;
+const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot);
 router.setRoutes({
   path: '/',
@@ -118,7 +118,7 @@ router.setRoutes({
   ],
 });
 
-appRoot.addEventListener('error', (event) => {
+appRoot?.addEventListener('error', (event) => {
   const searchParams = new URLSearchParams({
     reason: event.message,
     sourceUrl: window.location.toString(),
