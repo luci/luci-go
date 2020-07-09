@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21a69265_ef8295e7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1434885
+      },
+      "writtenOn": "2020-07-09T07:13:43Z",
+      "side": 1,
+      "message": "Sorry, i\u0027ll have to ask you to help trigger CQ+1/+2...",
+      "revId": "b11a7c45b7740f95b5a0232df2598722b3d2e83e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
