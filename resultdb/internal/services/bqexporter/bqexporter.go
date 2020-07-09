@@ -356,7 +356,13 @@ func (b *bqExporter) queryTestResults(
 	err = q.Run(ctx, txn, func(tr testresults.QueryItem) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
-		rows = append(rows, b.generateBQRow(invs[exportedID], invs[parentID], tr.TestResult, exonerated, tr.VariantHash))
+		rows = append(rows, b.generateBQRow(&rowInput{
+			exported:    invs[exportedID],
+			parent:      invs[parentID],
+			tr:          tr.TestResult,
+			exonerated:  exonerated,
+			variantHash: tr.VariantHash,
+		}))
 		batchSize += proto.Size(tr)
 		rowCount++
 		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
