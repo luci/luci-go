@@ -275,6 +275,38 @@ Escape hatch is to specify -allow-command-and-relative-cwd flag.
 	return deps, rootDir, isol, nil
 }
 
+// ProcessIsolateForCAS works similarly to ProcessIsolate. However, it is
+// simpler in that it returns a list of dependency *relative* paths and the
+// root directory, which are the necessary input to upload to RBE-CAS.
+func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
+	content, err := ioutil.ReadFile(opts.Isolate)
+	if err != nil {
+		return nil, "", err
+	}
+	_, deps, _, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
+	if err != nil {
+		return nil, "", err
+	}
+
+	deps, rootDir, err := processDependencies(deps, isolateDir, opts)
+	if err != nil {
+		return nil, "", err
+	}
+	relDeps := make([]string, len(deps))
+	for i, dep := range deps {
+		rel, err := filepath.Rel(rootDir, dep)
+		if err != nil {
+			return nil, "", err
+		}
+		if strings.HasSuffix(dep, osPathSeparator) && !strings.HasSuffix(rel, osPathSeparator) {
+			// Make it consistent with the isolated format such that directory paths must end with osPathSeparator.
+			rel += osPathSeparator
+		}
+		relDeps[i] = rel
+	}
+	return relDeps, rootDir, err
+}
+
 func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.PendingItem, error) {
 	end := tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":loading", nil)
 	deps, rootDir, i, err := ProcessIsolate(opts)
