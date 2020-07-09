@@ -52,7 +52,7 @@ func New(c *cloudtasks.Client, opts ttq.Options, sp *spanner.Client) (*TTQ, erro
 	return &TTQ{impl: internal.Impl{
 		Options:     opts,
 		DB:          &db{client: sp},
-		TasksClient: c,
+		TasksClient: internal.UnborkTasksClient(c),
 	}}, nil
 }
 

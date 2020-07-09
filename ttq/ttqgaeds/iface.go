@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ttqdatastore implements task enqueueing into Cloud Tasks with
-// transactional semantics from inside a Cloud Datastore transaction.
+// Package ttqgaeds implements task enqueueing into Cloud Tasks with
+// transactional semantics from inside a Cloud Datastore transaction
+// running on AppEngine (v1 or v2).
 //
 // Limitations:
 //   * Does NOT support named tasks, for which Cloud Tasks provides
@@ -30,11 +31,10 @@
 // https://godoc.org/go.chromium.org/luci/server/gaeemulation
 // and
 // https://godoc.org/go.chromium.org/gae/impl/cloud.
-package ttqdatastore
+package ttqgaeds
 
 import (
 	"context"
-	"errors"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
@@ -42,39 +42,40 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal"
+	"go.chromium.org/luci/ttq/internal/dbds"
+	"go.chromium.org/luci/ttq/internal/sweepdrivergae"
 )
 
-// TTQ implements transaction task enqueueing with Datastore backend.
+// TTQ provides transaction task enqueueing with Datastore backend on AppEngine.
+//
+// Designed to be the least disruptive replacement for transaction task enqueing
+// on classic AppEngine.
 type TTQ struct {
 	impl internal.Impl
 }
 
-// New creates a new TTQ for Datastore.
-// You must also call InstallRoutes in at least one of your app's microservices.
+// New creates a new TTQ for Datastore on AppEngine.
+// You must also call SetupSweeping in at least one of your app's microservices.
 func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
 	return &TTQ{impl: internal.Impl{
 		Options:     opts,
-		DB:          &db{},
-		TasksClient: c,
+		DB:          &dbds.DB{},
+		TasksClient: internal.UnborkTasksClient(c),
 	}}, nil
 }
 
-// InstallRoutes installs handlers for sweeping to ensure correctness.
-//
-// Users must ensure at least one of their microservices calls InstallRoutes.
-//
-// Requires a ttq.Options.Queue to be available.
-// Reserves a ttq.Options.BaseURL path component in the given router for its own
-// use.
-// Do read the documentation about the required cron setup in ttq.Options:
-//   TODO(tandrii): link
+// SetupSweeping establishes routes for sweeping.
+// Please, read sweepdrivergae.Factory
+//     https://go.chromium.org/luci/ttq/internal/sweepdriversgae/#Factory
+// documentation for one time setup and the meaning of arguments.
 //
 // Panics if called twice.
-func (t *TTQ) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
-	// TODO(tandrii): implement.
+func (t *TTQ) SetupSweeping(r *router.Router, mw router.MiddlewareChain,
+	pathPrefix, queue string) {
+	t.impl.SetupSweeping(sweepdrivergae.Factory(r, mw, pathPrefix, queue, t.impl.TasksClient))
 }
 
 // AddTask guarantees eventual creation of a task in Cloud Tasks if the current
@@ -82,11 +83,10 @@ func (t *TTQ) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
 //
 // The returned ttq.PostProcess should be called after the successful
 // transaction. See ttq.PostProcess
-//   TODO(tandrii): link
+//     https://godoc.org/go.chromium.org/luci/ttq#PostProcess
 // documentation for more info.
 //
 // Panics if not called with a transaction context.
 func (t *TTQ) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
-	// TODO(tandrii): implement.
-	return nil, errors.New("not implemented")
+	return t.impl.AddTask(ctx, req)
 }
