@@ -16,6 +16,23 @@
       "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "471a00ae_2e0ab7f6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-09T04:15:25Z",
+      "side": 1,
+      "message": "What\u0027s the client\u0027s expected behavior in this case?",
+      "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
