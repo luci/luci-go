@@ -51,6 +51,23 @@
       "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e8553308_ba940ae3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-09T05:40:59Z",
+      "side": 1,
+      "message": "(for some reason I thought that the client would try to WRITE to this derived invocation, but IIUC it\u0027ll just adopt this as the in-progress invocation to include/read from?)",
+      "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
