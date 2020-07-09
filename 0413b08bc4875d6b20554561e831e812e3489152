@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "747c6f54_0190aa01",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "Sloppy thinking on my part, agree with you now.",
+      "parentUuid": "1af811b4_966b1974",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 73
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b233829f_ff540469",
         "filename": "ttq/internal/impl.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2020-07-07T06:23:37Z",
       "side": 1,
       "message": "Note: it may need some changes for Cloud Tasks. IIUC, Cloud PubSub always uses \"https://host-name\" as an audience, but Cloud Tasks by default use \"https://host-name/full/handler/uri\". We may need to relax AudienceMatchesHost to ignore URL path in the audience and verify only the host part.",
+      "range": {
+        "startLine": 122,
+        "startChar": 26,
+        "endLine": 122,
+        "endChar": 45
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8764f9f8_435132ce",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "I actually tested this and it worked.\nBut I checked AudienceMatchesHost: you\u0027ve already coded it to allow paths: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/auth/openid/id_token_method.go;l\u003d69?q\u003dfunc%20AudienceMatchesHost\u0026ss\u003dchromium\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n\nI\u0027ve removed this code from this CL, but this will be the basis for GKE impl of SweepDriver.",
+      "parentUuid": "b233829f_ff540469",
       "range": {
         "startLine": 122,
         "startChar": 26,
@@ -117,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "61de2a70_4a78cbfe",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "we happen to disagree 50% here -- I do prefer to grok func args w/o having to lookup func doc (if possible, of course). Added doc, thought calling code is no longer existing.",
+      "parentUuid": "0122413d_f08793cc",
+      "range": {
+        "startLine": 178,
+        "startChar": 1,
+        "endLine": 178,
+        "endChar": 19
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ec5cccd_95df43b4",
         "filename": "ttq/internal/impl.go",
         "patchSetId": 6
@@ -137,6 +209,30 @@
       "revId": "0413b08bc4875d6b20554561e831e812e3489152",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf8ce238_1c82c8e3",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "here, bounded by 100 just because more should never be necessary (else this impl will likely won\u0027t scale anyway)\n  https://chromium.googlesource.com/infra/luci/luci-go/+/master/ttq/types.go#180\nbut in practice this is 16. Bounded by 16 to be sure.",
+      "parentUuid": "1ec5cccd_95df43b4",
+      "range": {
+        "startLine": 184,
+        "startChar": 8,
+        "endLine": 184,
+        "endChar": 25
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +282,30 @@
     },
     {
       "key": {
+        "uuid": "6f31a914_6d9a8b6c",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "885a4c61_4b064214",
+      "range": {
+        "startLine": 371,
+        "startChar": 1,
+        "endLine": 371,
+        "endChar": 70
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7527280b_fcd16d1a",
         "filename": "ttq/internal/impl.go",
         "patchSetId": 6
@@ -206,6 +326,30 @@
       "revId": "0413b08bc4875d6b20554561e831e812e3489152",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7dc0d3d0_0dbb1bd4",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7527280b_fcd16d1a",
+      "range": {
+        "startLine": 378,
+        "startChar": 2,
+        "endLine": 378,
+        "endChar": 33
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -232,6 +376,30 @@
     },
     {
       "key": {
+        "uuid": "7f103019_085cadb5",
+        "filename": "ttq/types.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "Originally, it was exactly that but then I noticed that I can invalidate object after PathPrefix() has been called, s.t. later PathPrefix() won\u0027t panic.\n\nUpdate: this code was deleted.",
+      "parentUuid": "5618894e_49c856f3",
+      "range": {
+        "startLine": 190,
+        "startChar": 3,
+        "endLine": 190,
+        "endChar": 49
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1a8fad4f_48c7fc7b",
         "filename": "ttq/types.go",
         "patchSetId": 6
@@ -252,6 +420,30 @@
       "revId": "0413b08bc4875d6b20554561e831e812e3489152",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25e9b6db_026c3cf0",
+        "filename": "ttq/types.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a8fad4f_48c7fc7b",
+      "range": {
+        "startLine": 203,
+        "startChar": 10,
+        "endLine": 203,
+        "endChar": 20
+      },
+      "revId": "0413b08bc4875d6b20554561e831e812e3489152",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

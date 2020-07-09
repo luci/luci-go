@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a3dac27_47b179cf",
+        "filename": "ttq/internal/dbds/ds.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "I\u0027m not proud of my naming, but it does the job.\nas I\u0027m writing this comment, I am thinking that 2 folders deep structure of packages is better:\n  internal/dbs/ds/\n  internal/dbs/spanner\n  internal/sweepdrivers/gae\n  internal/sweepdrivers/gke\nI\u0027d still need to name these packages at import time with something ugly, but at least filepath will be easier to read. LMK if you have a better idea.",
+      "range": {
+        "startLine": 16,
+        "startChar": 8,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73f9b7bb_f33e553e",
+        "filename": "ttq/internal/sweepdrivergae/sw.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "oops, will fix in the next patchset.",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 3
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82f8bb36_c27b89b5",
+        "filename": "ttq/internal/sweeptq.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "decided to make it a proto s.t. potentially one can use server/tq (once it exists) in the SweeperDriver implementation.",
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b092b50_5b4eae74",
+        "filename": "ttq/types.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T13:10:09Z",
+      "side": 1,
+      "message": "Strictly speaking, I can get rid of this and rely on on SweepDriver to trigger cron with the desired period, but I\u0027m afraid users will increase frequency when hitting problems, which will probably make things worse. So, I\u0027m keeping this and enforcing reasonable frequency via TaskQueue deduplication. Thoughts?",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 0
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
