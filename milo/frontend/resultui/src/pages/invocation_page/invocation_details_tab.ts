@@ -17,10 +17,11 @@ import '@material/mwc-icon';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed } from 'mobx';
+import { computed, observable } from 'mobx';
 
+import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { router } from '../../routes';
-import { consumePageState, InvocationPageState } from './context';
 
 
 function stripInvocationPrefix(invocationName: string): string {
@@ -28,24 +29,25 @@ function stripInvocationPrefix(invocationName: string): string {
 }
 
 export class InvocationDetailsTabElement extends MobxLitElement {
-  pageState!: InvocationPageState;
+  @observable.ref appState!: AppState;
+  @observable.ref invocationState!: InvocationState;
 
   @computed
   private get hasIncludedInvocations() {
-    return (this.pageState.invocation!.includedInvocations || []).length > 0;
+    return (this.invocationState.invocation!.includedInvocations || []).length > 0;
   }
   @computed
   private get hasTags() {
-    return (this.pageState.invocation!.tags || []).length > 0;
+    return (this.invocationState.invocation!.tags || []).length > 0;
   }
 
   connectedCallback() {
     super.connectedCallback();
-    this.pageState.selectedTabId = 'invocation-details';
+    this.appState.selectedTabId = 'invocation-details';
   }
 
   protected render() {
-    const invocation = this.pageState.invocation;
+    const invocation = this.invocationState.invocation;
     if (invocation === null) {
       return html``;
     }
@@ -101,5 +103,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
 }
 
 customElement('tr-invocation-details-tab')(
-  consumePageState(InvocationDetailsTabElement),
+  consumeInvocationState(
+    consumeAppState(InvocationDetailsTabElement),
+  ),
 );

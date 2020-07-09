@@ -15,8 +15,9 @@
 import { Route, Router } from '@vaadin/router';
 
 import './components/page_layout';
-import './context/app_state_provider';
+import './context/app_state/app_state_provider';
 import './context/config_provider';
+import './context/invocation_state/invocation_state_provider';
 
 const notFoundRoute: Route = {
   path: '/:path*',
@@ -57,59 +58,65 @@ router.setRoutes({
           component: 'tr-app-state-provider',
           children: [
             {
-              path: '/inv/:invocation_id',
-              name: 'invocation',
-              action: async (_ctx, cmd) => {
-                await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
-                return cmd.component('tr-invocation-page');
-              },
+              path: '/',
+              component: 'tr-invocation-state-provider',
               children: [
                 {
-                  path: '/',
-                  redirect: '/inv/:invocation_id/test-results',
+                  path: '/inv/:invocation_id',
+                  name: 'invocation',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "invocation_page" */ './pages/invocation_page');
+                    return cmd.component('tr-invocation-page');
+                  },
+                  children: [
+                    {
+                      path: '/',
+                      redirect: '/inv/:invocation_id/test-results',
+                    },
+                    {
+                      path: 'test-results',
+                      name: 'test-results',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "test_results_tab" */ './pages/invocation_page/test_results_tab');
+                        return cmd.component('tr-test-results-tab');
+                      },
+                    },
+                    {
+                      path: '/invocation-details',
+                      name: 'invocation-details',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "invocation_details_tab" */ './pages/invocation_page/invocation_details_tab');
+                        return cmd.component('tr-invocation-details-tab');
+                      },
+                    },
+                    notFoundRoute,
+                  ],
                 },
                 {
-                  path: 'test-results',
-                  name: 'test-results',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "test_results_tab" */ './pages/invocation_page/test_results_tab');
-                    return cmd.component('tr-test-results-tab');
-                  },
-                },
-                {
-                  path: '/invocation-details',
-                  name: 'invocation-details',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "invocation_details_tab" */ './pages/invocation_page/invocation_details_tab');
-                    return cmd.component('tr-invocation-details-tab');
-                  },
+                  path: '/artifact',
+                  children: [
+                    {
+                      path: '/text-diff/:artifact_name',
+                      name: 'text-diff-artifact',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "text_diff_artifact_page" */ './pages/artifact/text_diff_artifact_page');
+                        return cmd.component('tr-text-diff-artifact-page');
+                      },
+                    },
+                    {
+                      path: '/image-diff/:artifact_name',
+                      name: 'image-diff-artifact',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "image_diff_artifact_page" */ './pages/artifact/image_diff_artifact_page');
+                        return cmd.component('tr-image-diff-artifact-page');
+                      },
+                    },
+                    notFoundRoute,
+                  ],
                 },
                 notFoundRoute,
               ],
             },
-            {
-              path: '/artifact',
-              children: [
-                {
-                  path: '/text-diff/:artifact_name',
-                  name: 'text-diff-artifact',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "text_diff_artifact_page" */ './pages/artifact/text_diff_artifact_page');
-                    return cmd.component('tr-text-diff-artifact-page');
-                  },
-                },
-                {
-                  path: '/image-diff/:artifact_name',
-                  name: 'image-diff-artifact',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "image_diff_artifact_page" */ './pages/artifact/image_diff_artifact_page');
-                    return cmd.component('tr-image-diff-artifact-page');
-                  },
-                },
-                notFoundRoute,
-              ],
-            },
-            notFoundRoute,
           ],
         },
         notFoundRoute,
