@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ae84e715_6c830a0b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T05:06:39Z",
+      "side": 1,
+      "message": "oh yeah, LGTM",
+      "revId": "0bc06795e84b1883cab320e12b45e8f3adcc0476",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5d89c3ac_fc52fc93",
+        "filename": "tokenserver/appengine/impl/serviceaccountsv2/config_validation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-09T05:06:39Z",
+      "side": 1,
+      "message": "as a",
+      "range": {
+        "startLine": 60,
+        "startChar": 38,
+        "endLine": 60,
+        "endChar": 40
+      },
+      "revId": "0bc06795e84b1883cab320e12b45e8f3adcc0476",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
