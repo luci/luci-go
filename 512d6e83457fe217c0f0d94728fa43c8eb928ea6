@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a58be700_3167a242",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-09T08:31:00Z",
+      "side": 1,
+      "message": "better to only saying CAS",
+      "range": {
+        "startLine": 281,
+        "startChar": 22,
+        "endLine": 281,
+        "endChar": 28
+      },
+      "revId": "512d6e83457fe217c0f0d94728fa43c8eb928ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
