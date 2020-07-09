@@ -105,6 +105,10 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
 		}
+		if tr.TestLocation != nil {
+			mutMap["TestLocationFileName"] = tr.TestLocation.FileName
+			mutMap["TestLocationLine"] = int(tr.TestLocation.Line)
+		}
 
 		ms[i] = span.InsertMap("TestResults", mutMap)
 	}

@@ -347,7 +347,16 @@ func TestBatchInsertTestResults(t *testing.T) {
 		results := []*chromium.TestResult{
 			{TestResult: &pb.TestResult{TestId: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS}},
 			{TestResult: &pb.TestResult{TestId: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL}},
-			{TestResult: &pb.TestResult{TestId: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH}},
+			{
+				TestResult: &pb.TestResult{
+					TestId:   "Foo.DoBar",
+					ResultId: "2",
+					Status:   pb.TestStatus_CRASH,
+					TestLocation: &pb.TestLocation{
+						FileName: "//a_test.go",
+					},
+				},
+			},
 		}
 		deriver := newTestDeriverServer()
 

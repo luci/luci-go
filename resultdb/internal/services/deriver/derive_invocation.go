@@ -381,6 +381,12 @@ func insertOrUpdateTestResult(invID invocations.ID, tr *pb.TestResult) *spanner.
 		trMap["IsUnexpected"] = true
 	}
 
+	if tr.TestLocation != nil {
+		trMap["TestLocationFileName"] = tr.TestLocation.FileName
+		// Spanner client does not support int32
+		trMap["TestLocationLine"] = int(tr.TestLocation.Line)
+	}
+
 	return span.InsertOrUpdateMap("TestResults", trMap)
 }
 

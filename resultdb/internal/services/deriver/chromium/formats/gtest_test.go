@@ -207,7 +207,10 @@ func TestGTestConversions(t *testing.T) {
 				}
 				tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
 				So(err, ShouldBeNil)
-				So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("test_location", "//TestFile:54")), ShouldBeTrue)
+				So(tr.TestLocation, ShouldResembleProto, &pb.TestLocation{
+					FileName: "//TestFile",
+					Line:     54,
+				})
 			})
 			Convey(`Clean path`, func() {
 				results := &GTestResults{
@@ -220,7 +223,10 @@ func TestGTestConversions(t *testing.T) {
 				}
 				tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
 				So(err, ShouldBeNil)
-				So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("test_location", "//TestFile:54")), ShouldBeTrue)
+				So(tr.TestLocation, ShouldResembleProto, &pb.TestLocation{
+					FileName: "//TestFile",
+					Line:     54,
+				})
 			})
 		})
 

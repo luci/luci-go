@@ -354,9 +354,11 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*TestResult, testID, 
 				TestId:   testID,
 				Expected: expectedSet.Has(runStatus),
 				Status:   status,
+				TestLocation: &pb.TestLocation{
+					FileName: ensureLeadingDoubleSlash(locationPrefix + testName),
+				},
 				Tags: pbutil.StringPairs(
 					"json_format_status", runStatus,
-					"test_location", ensureLeadingDoubleSlash(locationPrefix+testName),
 					"test_name", testName,
 				),
 			},
