@@ -33,6 +33,24 @@
       "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e5442a7_e2498f67",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:29:21Z",
+      "side": 1,
+      "message": "the callsite returns the existing invocation. This error never reaches the client of the application",
+      "parentUuid": "471a00ae_2e0ab7f6",
+      "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
