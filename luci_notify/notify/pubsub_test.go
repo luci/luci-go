@@ -38,6 +38,7 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 	apicfg "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
@@ -69,8 +70,9 @@ func (MockCloudTasksClient) LocationID() string {
 func (c *MockCloudTasksClient) CreateTask(ctx context.Context, queue string, task *taskspb.Task) (*taskspb.Task, error) {
 	if c.seen.Add(task.Name) {
 		c.Tasks = append(c.Tasks, task)
+		return task, nil
 	}
-	return task, nil
+	return nil, grpcutil.AlreadyExists
 }
 
 func extractEmailTask(task *taskspb.Task) (*internal.EmailTask, error) {

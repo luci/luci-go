@@ -51,6 +51,8 @@ import (
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type CloudTasksClient interface {
@@ -492,7 +494,11 @@ func Notify(c context.Context, ct CloudTasksClient, recipients []EmailNotify, te
 			},
 		}
 		if _, err := ct.CreateTask(c, "email", task); err != nil {
-			return err
+			// AlreadyExists should be ignored since these tasks
+			// were already processed recently.
+			if status.Code(err) != codes.AlreadyExists {
+				return err
+			}
 		}
 	}
 	return nil
