@@ -68,6 +68,24 @@
       "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "65a2aeec_ae4ae1fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-09T05:46:06Z",
+      "side": 1,
+      "message": "The client would try to derive the invocation if it doesn\u0027t exist, or just gets the existing invocation back.",
+      "parentUuid": "e8553308_ba940ae3",
+      "revId": "69cf89fe2fede1b12a4e772cea6f2e52616feb93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
