@@ -81,22 +81,25 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		runDuration.Valid = true
 	}
 
-	mutation := spanner.InsertOrUpdateMap(
-		"TestResults",
-		span.ToSpannerMap(map[string]interface{}{
-			"InvocationId":    invID,
-			"TestId":          ret.TestId,
-			"ResultId":        ret.ResultId,
-			"Variant":         ret.Variant,
-			"VariantHash":     pbutil.VariantHash(ret.Variant),
-			"CommitTimestamp": spanner.CommitTimestamp,
-			"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !body.Expected},
-			"Status":          ret.Status,
-			"SummaryHTML":     span.Compressed(ret.SummaryHtml),
-			"StartTime":       ret.StartTime,
-			"RunDurationUsec": runDuration,
-			"Tags":            ret.Tags,
-		}),
-	)
+	row := map[string]interface{}{
+		"InvocationId":    invID,
+		"TestId":          ret.TestId,
+		"ResultId":        ret.ResultId,
+		"Variant":         ret.Variant,
+		"VariantHash":     pbutil.VariantHash(ret.Variant),
+		"CommitTimestamp": spanner.CommitTimestamp,
+		"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !body.Expected},
+		"Status":          ret.Status,
+		"SummaryHTML":     span.Compressed(ret.SummaryHtml),
+		"StartTime":       ret.StartTime,
+		"RunDurationUsec": runDuration,
+		"Tags":            ret.Tags,
+	}
+	if ret.TestLocation != nil {
+		row["TestLocationFileName"] = ret.TestLocation.FileName
+		// Spanner client does not support int32
+		row["TestLocationLine"] = int(ret.TestLocation.Line)
+	}
+	mutation := spanner.InsertOrUpdateMap("TestResults", span.ToSpannerMap(row))
 	return ret, mutation
 }
