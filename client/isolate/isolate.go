@@ -165,6 +165,58 @@ func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingIte
 	return f
 }
 
+func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions) ([]string, string, error) {
+	// Expand variables in the deps, and convert each path to an absolute form.
+	for i := range deps {
+		dep, err := ReplaceVariables(deps[i], opts)
+		if err != nil {
+			return nil, "", err
+		}
+		deps[i] = filepath.Join(isolateDir, dep)
+	}
+
+	// Find the root directory of all the files (the root might be above isolateDir).
+	rootDir := isolateDir
+	resultDeps := make([]string, 0, len(deps))
+	for _, dep := range deps {
+		// Check if the dep is outside isolateDir.
+		info, err := os.Stat(dep)
+		if err != nil {
+			if !opts.AllowMissingFileDir {
+				return nil, "", err
+			}
+			log.Printf("Ignore missing dep: %s, err: %v", dep, err)
+			continue
+		}
+		base := filepath.Dir(dep)
+		if info.IsDir() {
+			base = dep
+			// Downstream expects the dependency of a directory to always end
+			// with '/', but filepath.Join() removes that, so we add it back.
+			dep += osPathSeparator
+		}
+		resultDeps = append(resultDeps, dep)
+		for {
+			rel, err := filepath.Rel(rootDir, base)
+			if err != nil {
+				return nil, "", err
+			}
+			if !strings.HasPrefix(rel, "..") {
+				break
+			}
+			newRootDir := filepath.Dir(rootDir)
+			if newRootDir == rootDir {
+				return nil, "", errors.New("failed to find root dir")
+			}
+			rootDir = newRootDir
+		}
+	}
+	if rootDir != isolateDir {
+		log.Printf("Root: %s", rootDir)
+	}
+	return resultDeps, rootDir, nil
+}
+
 // ProcessIsolate parses an isolate file, returning the list of dependencies
 // (both files and directories), the root directory and the initial Isolated struct.
 func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated, error) {
@@ -184,56 +236,10 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 		}
 	}
 
-	// Expand variables in the deps, and convert each path to an absolute form.
-	for i := range deps {
-		dep, err := ReplaceVariables(deps[i], opts)
-		if err != nil {
-			return nil, "", nil, err
-		}
-		deps[i] = filepath.Join(isolateDir, dep)
+	deps, rootDir, err := processDependencies(deps, isolateDir, opts)
+	if err != nil {
+		return nil, "", nil, err
 	}
-
-	// Find the root directory of all the files (the root might be above isolateDir).
-	rootDir := isolateDir
-	filteredDeps := make([]string, 0, len(deps))
-	for _, dep := range deps {
-		// Check if the dep is outside isolateDir.
-		info, err := os.Stat(dep)
-		if err != nil {
-			if !opts.AllowMissingFileDir {
-				return nil, "", nil, err
-			}
-			log.Printf("Ignore missing dep: %s, err: %v", dep, err)
-			continue
-		}
-		base := filepath.Dir(dep)
-		if info.IsDir() {
-			base = dep
-			// Downstream expects the dependency of a directory to always end
-			// with '/', but filepath.Join() removes that, so we add it back.
-			dep += osPathSeparator
-		}
-		filteredDeps = append(filteredDeps, dep)
-		for {
-			rel, err := filepath.Rel(rootDir, base)
-			if err != nil {
-				return nil, "", nil, err
-			}
-			if !strings.HasPrefix(rel, "..") {
-				break
-			}
-			newRootDir := filepath.Dir(rootDir)
-			if newRootDir == rootDir {
-				return nil, "", nil, errors.New("failed to find root dir")
-			}
-			rootDir = newRootDir
-		}
-	}
-	deps = filteredDeps
-	if rootDir != isolateDir {
-		log.Printf("Root: %s", rootDir)
-	}
-
 	// Prepare the .isolated struct.
 	isol := &isolated.Isolated{
 		Algo:     "sha-1",
