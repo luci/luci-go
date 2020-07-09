@@ -133,6 +133,8 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			tr.Status,
 			tr.StartTime,
 			tr.RunDurationUsec,
+			tr.TestLocationFileName,
+			tr.TestLocationLine,
 			%s
 		FROM %s
 		WHERE InvocationId IN UNNEST(@invIDs)
@@ -177,6 +179,8 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
+		var testLocationFileName spanner.NullString
+		var testLocationLine spanner.NullInt64
 		tr := &pb.TestResult{}
 		item := QueryItem{TestResult: tr}
 
@@ -189,6 +193,8 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			&tr.Status,
 			&tr.StartTime,
 			&micros,
+			&testLocationFileName,
+			&testLocationLine,
 		}
 
 		for _, v := range extraSelect {
@@ -215,6 +221,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
+		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := q.Mask.Trim(tr); err != nil {
 			return errors.Annotate(
 				err, "error trimming fields for %s", item.TestResult.Name).Err()

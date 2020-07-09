@@ -336,7 +336,10 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 		// the correct path. Strip the prefix.
 		file := stripLeadingDoubleDots(loc.File)
 		file = ensureLeadingDoubleSlash(file)
-		tr.Tags = append(tr.Tags, pbutil.StringPair("test_location", fmt.Sprintf("%s:%d", file, loc.Line)))
+		tr.TestLocation = &pb.TestLocation{
+			FileName: file,
+			Line:     int32(loc.Line),
+		}
 	}
 
 	return tr, nil
