@@ -20,20 +20,36 @@ import sinon from 'sinon';
 
 import '.';
 import { InvocationPageElement } from '.';
-import { AppState } from '../../context/app_state_provider';
+import { AppState } from '../../context/app_state/app_state';
+import { InvocationState } from '../../context/invocation_state/invocation_state';
 
 
 describe('Invocation Test Page', () => {
   it('should get invocation ID from URL', async () => {
-    const page = await fixture<InvocationPageElement>(html`<tr-invocation-page .appState=${new AppState()}></tr-invocation-page>`);
+    const appState = new AppState();
+    const invocationState = new InvocationState(appState);
+    const page = await fixture<InvocationPageElement>(html`
+      <tr-invocation-page
+        .appState=${appState}
+        .invocationState=${invocationState}
+      ></tr-invocation-page>
+    `);
     const location = {params: {'invocation_id': 'invocation_id'}} as Partial<RouterLocation> as RouterLocation;
     const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
-    assert.strictEqual(page.pageState.invocationId, location.params['invocation_id']);
+    page.connectedCallback();
+    assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id']);
   });
 
   it('should redirect to "/not-found" when invocation_id is not provided', async () => {
-    const page = await fixture<InvocationPageElement>(html`<tr-invocation-page .appState=${new AppState()}></tr-invocation-page>`);
+    const appState = new AppState();
+    const invocationState = new InvocationState(appState);
+    const page = await fixture<InvocationPageElement>(html`
+      <tr-invocation-page
+        .appState=${appState}
+        .invocationState=${invocationState}
+      ></tr-invocation-page>
+    `);
     const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
     const redirect = sinon.spy();
     const cmd = {redirect} as Partial<Commands> as Commands;
