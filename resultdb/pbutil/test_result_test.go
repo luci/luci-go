@@ -160,7 +160,7 @@ func TestValidateTestResult(t *testing.T) {
 
 		Convey("with invalid TestID", func() {
 			badInputs := []string{
-				strings.Repeat("1", 256+1),
+				strings.Repeat("1", 512+1),
 				// [[:print:]] matches with [ -~] and [[:graph:]]
 				string(163),
 			}

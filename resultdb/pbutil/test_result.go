@@ -37,7 +37,7 @@ const (
 
 var (
 	resultIDRe       = regexpf("^%s$", resultIDPattern)
-	testIDRe         = regexp.MustCompile(`^[[:print:]]{1,256}$`)
+	testIDRe         = regexp.MustCompile(`^[[:print:]]{1,512}$`)
 	testResultNameRe = regexpf(
 		"^invocations/(%s)/tests/([^/]+)/results/(%s)$", invocationIDPattern,
 		resultIDPattern,
