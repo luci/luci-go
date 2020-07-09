@@ -12,28 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttqdatastore
+package internal
 
 import (
-	"context"
+	"strings"
 
-	"go.chromium.org/luci/ttq/internal"
+	"go.chromium.org/luci/common/errors"
 )
 
-type db struct {
-}
-
-var _ internal.Database = (*db)(nil)
-
-// Kind is used only for monitoring/logging purposes.
-func (d *db) Kind() string {
-	return "datastore"
-}
-
-func (d *db) SaveReminder(_ context.Context, _ *internal.Reminder) error {
-	panic("not implemented") // TODO: Implement
-}
-
-func (d *db) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
-	panic("not implemented") // TODO: Implement
+// ValidateQueueName does quick check for some necessary conditions.
+// It doesn't guarantee that queue is actually valid and exists.
+func ValidateQueueName(q string) error {
+	switch qs := strings.Split(q, "/"); {
+	case q == "":
+		return errors.New("queue name not given")
+	case len(qs) != 6 || qs[0] != "projects" || qs[2] != "locations" || qs[4] != "queues":
+		return errors.Reason("queue %q must be in format 'projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID'", q).Err()
+	}
+	return nil
 }

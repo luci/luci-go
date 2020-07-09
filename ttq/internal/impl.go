@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"io"
 	"sync/atomic"
@@ -31,7 +32,9 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
 )
@@ -61,6 +64,8 @@ type Impl struct {
 	Options     ttq.Options
 	DB          Database
 	TasksClient TasksClient
+
+	sweepDriver SweepDriver // installed by SetupSweeping.
 }
 
 // TasksClient decouples Impl from the Cloud Tasks client.
@@ -96,6 +101,52 @@ func (impl *Impl) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (
 			logging.Warningf(outCtx, "ttq happy path PostProcess %s failed: %s", r.Id, err)
 		}
 	}, nil
+}
+
+func (impl *Impl) SetupSweeping(f SweepDriverFactory) {
+	if impl.sweepDriver == nil {
+		panic("SetupSweeping must be called only once")
+	}
+	impl.sweepDriver = f(impl)
+}
+
+// SweepCron implements Sweepable.SweepCron.
+func (impl *Impl) SweepCron(ctx context.Context) error {
+	if impl.sweepDriver == nil {
+		panic("SetupSweeping must be called before Sweep")
+	}
+	u := partition.Universe(keySpaceBytes)
+	eta := clock.Now(ctx).Truncate(impl.Options.ScanInterval).Add(impl.Options.ScanInterval)
+	etaBinary, err := eta.MarshalBinary()
+	if err != nil {
+		return errors.Annotate(err, "failed to Time(%s).MarshalBinary", eta).Err()
+	}
+
+	dedupeKey := func(shard int) string {
+		h := sha256.New()
+		h.Write(etaBinary)
+		h.Write([]byte{byte(shard)})
+		return hex.EncodeToString(h.Sum(nil))
+	}
+
+	// 16 is the default number of shards.
+	return parallel.WorkPool(16, func(workChan chan<- func() error) {
+		for shard, part := range u.Split(int(impl.Options.Shards)) {
+			w := &SweepWorkItem{
+				Level:     0,
+				Shard:     int32(shard),
+				Partition: part.String(),
+				Eta:       google.NewTimestamp(eta),
+			}
+			key := dedupeKey(shard)
+			workChan <- func() error { return impl.sweepDriver.AsyncSweep(ctx, w, key) }
+		}
+	})
+}
+
+// SweepCron implements Sweepable.ExecSweepWorkItem.
+func (impl *Impl) ExecSweepWorkItem(ctx context.Context, w *SweepWorkItem) error {
+	return errors.New("Not implemented")
 }
 
 // Helpers.
@@ -143,13 +194,8 @@ func (impl *Impl) postProcess(ctx context.Context, r *Reminder, req *taskspb.Cre
 // createCloudTask tries to create a Cloud Task.
 // On AlreadyExists error, returns nil.
 // The returned error has transient.Tag applied if the error isn't permanent.
+// `when` is used to annotate monitoring metrics.
 func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRequest, when string) error {
-	// WORKAROUND(https://github.com/googleapis/google-cloud-go/issues/1577): if
-	// the passed context deadline is larger than 30s, the CreateTask call fails
-	// with InvalidArgument "The request deadline is ... The deadline cannot be
-	// more than 30s in the future." So, give it 20s.
-	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
-	defer cancel()
 	_, err := impl.TasksClient.CreateTask(ctx, req)
 	code := status.Code(err)
 	switch code {
@@ -167,10 +213,7 @@ func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRe
 		// which should not.
 		err = errors.Annotate(err, "failed to create Cloud Task").Tag(transient.Tag).Err()
 	}
-	if when != "ttq" {
-		// Monitor only tasks created for the user.
-		metricTasksCreated.Add(ctx, 1, code.String(), when, impl.DB.Kind())
-	}
+	metricTasksCreated.Add(ctx, 1, code.String(), when, impl.DB.Kind())
 	return err
 }
 
