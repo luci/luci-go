@@ -237,47 +237,42 @@ func TestSnapshotDB(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// A direct hit.
-		ok, err := db.HasPermission(c, "user:realm@example.com", perm1, []string{"proj:some/realm"})
+		ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeTrue)
 
 		// A hit through a group.
-		ok, err = db.HasPermission(c, "user:abc@example.com", perm1, []string{"proj:some/realm"})
+		ok, err = db.HasPermission(c, "user:abc@example.com", perm1, "proj:some/realm")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeTrue)
 
 		// Fallback to the root.
-		ok, err = db.HasPermission(c, "user:root@example.com", perm1, []string{"proj:unknown"})
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
-
-		// Checking all realms in the list.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"unknown:proj", "proj:some/realm"})
+		ok, err = db.HasPermission(c, "user:root@example.com", perm1, "proj:unknown")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeTrue)
 
 		// No permission.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm2, []string{"proj:some/realm"})
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm2, "proj:some/realm")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeFalse)
 
 		// Unknown root realm.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"unknown:@root"})
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "unknown:@root")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeFalse)
 
 		// Unknown permission.
-		ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, []string{"proj:some/realm"})
+		ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, "proj:some/realm")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeFalse)
 
 		// Empty realm.
-		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"proj:empty"})
+		ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "proj:empty")
 		So(err, ShouldBeNil)
 		So(ok, ShouldBeFalse)
 
 		// Invalid realm name.
-		_, err = db.HasPermission(c, "user:realm@example.com", perm1, []string{"@root"})
+		_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root")
 		So(err, ShouldErrLike, "bad global realm name")
 	})
 

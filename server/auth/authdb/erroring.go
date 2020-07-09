@@ -57,7 +57,7 @@ func (db ErroringDB) CheckMembership(c context.Context, id identity.Identity, gr
 
 // HasPermission returns true if the identity has the given permission in any
 // of the realms.
-func (db ErroringDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+func (db ErroringDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	logging.Errorf(c, "%s", db.Error)
 	return false, db.Error
 }

@@ -62,7 +62,7 @@ func (db UnconfiguredDB) CheckMembership(ctx context.Context, id identity.Identi
 	return nil, db.Error
 }
 
-func (db UnconfiguredDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+func (db UnconfiguredDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	db.log(ctx, "HasPermission")
 	return false, db.Error
 }

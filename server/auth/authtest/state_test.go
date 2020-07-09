@@ -66,7 +66,7 @@ func TestFakeState(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeTrue)
 
-		yes, err = db.HasPermission(ctx, "user:abc@def.com", testPerm, []string{"proj:realm1"})
+		yes, err = db.HasPermission(ctx, "user:abc@def.com", testPerm, "proj:realm1")
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeTrue)
 

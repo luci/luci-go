@@ -209,10 +209,10 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 
 // HasPermission returns true if the identity has the given permission in any
 // of the realms.
-func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realmsList []string) (ok bool, err error) {
+func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (ok bool, err error) {
 	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.HasPermission")
 	span.Attribute("cr.dev/permission", perm.Name())
-	span.Attribute("cr.dev/realms", strings.Join(realmsList, ", "))
+	span.Attribute("cr.dev/realm", realm)
 	defer func() { span.End(err) }()
 
 	// This may happen if the AuthDB proto has no Realms yet.
@@ -226,38 +226,36 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 		return false, nil
 	}
 
-	for _, realm := range realmsList {
-		// Verify such realm is defined in the DB or fallback to its @root.
-		if !db.realms.HasRealm(realm) {
-			if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
-				return false, errors.Annotate(err, "when checking %q", perm).Err()
-			}
-			project, _ := realms.Split(realm)
-			root := realms.Join(project, realms.RootRealm)
-			if realm == root {
-				logging.Warningf(c, "Checking %q in a non-existing root realm %q: denying", perm, realm)
-				continue
-			}
-			if !db.realms.HasRealm(root) {
-				logging.Warningf(c, "Checking %q in a non-existing realm %q that doesn't have a root realm (no such project?): denying", perm, realm)
-				continue
-			}
-			logging.Warningf(c, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
-			realm = root
+	// Verify such realm is defined in the DB or fallback to its @root.
+	if !db.realms.HasRealm(realm) {
+		if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+			return false, errors.Annotate(err, "when checking %q", perm).Err()
 		}
-
-		// For the given <realm, permission> pair, get indexes of groups with
-		// principals that have the permission (if any) and a set of identities
-		// mentioned in the realm ACL explicitly (not via a group).
-		switch groups, idents := db.realms.QueryAuthorized(realm, permIdx); {
-		case idents.Has(string(id)):
-			return true, nil // `id` was granted the permission explicitly in the ACL
-		case db.groups.IsMemberOfAny(id, groups):
-			return true, nil // `id` has the permission through a group
+		project, _ := realms.Split(realm)
+		root := realms.Join(project, realms.RootRealm)
+		if realm == root {
+			logging.Warningf(c, "Checking %q in a non-existing root realm %q: denying", perm, realm)
+			return false, nil
 		}
+		if !db.realms.HasRealm(root) {
+			logging.Warningf(c, "Checking %q in a non-existing realm %q that doesn't have a root realm (no such project?): denying", perm, realm)
+			return false, nil
+		}
+		logging.Warningf(c, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
+		realm = root
 	}
 
-	return false, nil
+	// For the given <realm, permission> pair, get indexes of groups with
+	// principals that have the permission (if any) and a set of identities
+	// mentioned in the realm ACL explicitly (not via a group).
+	switch groups, idents := db.realms.QueryAuthorized(realm, permIdx); {
+	case idents.Has(string(id)):
+		return true, nil // `id` was granted the permission explicitly in the ACL
+	case db.groups.IsMemberOfAny(id, groups):
+		return true, nil // `id` has the permission through a group
+	default:
+		return false, nil
+	}
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.

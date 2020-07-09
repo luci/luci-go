@@ -376,7 +376,7 @@ func (db *fakeDB) CheckMembership(c context.Context, id identity.Identity, group
 	panic("not implemented")
 }
 
-func (db *fakeDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+func (db *fakeDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	return false, errors.New("fakeDB: HasPermission is not implemented")
 }
 

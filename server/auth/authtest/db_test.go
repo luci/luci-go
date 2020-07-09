@@ -73,21 +73,21 @@ func TestFakeDB(t *testing.T) {
 		})
 
 		Convey("Permission checks work", func() {
-			resp, err := db.HasPermission(ctx, "user:abc@def.com", testPerm1, []string{"proj:realm"})
+			resp, err := db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:realm")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeTrue)
 
-			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, []string{"proj:realm"})
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, "proj:realm")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeTrue)
 
-			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm3, []string{"proj:realm"})
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm3, "proj:realm")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeFalse)
 
-			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, []string{"proj:unknown", "proj:realm"})
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:unknown")
 			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			So(resp, ShouldBeFalse)
 		})
 
 		Convey("IP whitelist checks work", func() {
@@ -111,7 +111,7 @@ func TestFakeDB(t *testing.T) {
 			_, err := db.IsMember(ctx, "user:abc@def.com", []string{"group-a"})
 			So(err, ShouldEqual, mockedErr)
 
-			_, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, []string{"proj:realm"})
+			_, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:realm")
 			So(err, ShouldEqual, mockedErr)
 
 			_, err = db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "wl")
