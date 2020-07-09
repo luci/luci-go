@@ -385,7 +385,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 	}
 
 	return &swarming.SwarmingRpcsNewTaskRequest{
-		ExpirationSecs: c.hardTimeout,
+		ExpirationSecs: c.expiration,
 		Name:           c.taskName,
 		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
 		Priority:       c.priority,
