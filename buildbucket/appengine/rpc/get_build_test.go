@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -71,7 +70,7 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("found", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: identity.Identity("user:user"),
+					Identity: "user:user",
 				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
@@ -192,7 +191,7 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("ok", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: identity.Identity("user:user"),
+					Identity: "user:user",
 				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",

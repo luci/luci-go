@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -289,7 +288,7 @@ func TestSearchBuilds(t *testing.T) {
 		}
 		Convey("No permission for requested bucketId", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
+				Identity: "user:user",
 			})
 			So(datastore.Put(
 				ctx,
@@ -311,7 +310,7 @@ func TestSearchBuilds(t *testing.T) {
 		// TODO(crbug/1090540): Add more tests after searchBuilds func completed.
 		Convey("search via TagIndex flow", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
+				Identity: "user:user",
 			})
 			So(datastore.Put(
 				ctx,
