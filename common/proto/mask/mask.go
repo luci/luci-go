@@ -69,7 +69,6 @@ import (
 //       "c"
 //
 // Zero value is not valid. Use IsEmpty() to check if the mask is zero.
-// Use functions in this package to construct a mask.
 type Mask struct {
 	// descriptor is the proto descriptor of the message of the field this node
 	// represents. If the field kind is not a message, then descriptor is nil and
@@ -111,8 +110,8 @@ func FromFieldMask(fieldMask *field_mask.FieldMask, targetMsg proto.Message, isF
 	return fromParsedPaths(parsedPaths, descriptor, isUpdateMask)
 }
 
-// MustFromReadMask is a shortcut for FromFieldMask with isFieldNameJSON and
-// isUpdateMask as false, that accepts the field mask as variadic paths and
+// MustFromReadMask is a shortcut FromFieldMask with isFieldNameJSON and
+// isUpdateMask as false, that accepts field mask a variadic paths and
 // that panics if the mask is invalid.
 // It is useful when the mask is hardcoded.
 func MustFromReadMask(targetMsg proto.Message, paths ...string) Mask {
