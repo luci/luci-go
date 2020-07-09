@@ -128,7 +128,7 @@ func newConnectCmd() *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.provider, "provider", "", "Provider server URL to retrieve Swarming server URL from.")
 			cmd.Flags.StringVar(&cmd.server, "server", "", "Deprecated. Use -provider.")
 			cmd.Flags.StringVar(&cmd.user, "user", "", "Name of the local user to start the Swarming bot process as.")
-			cmd.Flags.StringVar(&cmd.user, "python", defaultFlagPython(), "Path to the python to start the Swarming bot process.")
+			cmd.Flags.StringVar(&cmd.python, "python", defaultFlagPython(), "Path to the python to start the Swarming bot process.")
 			return cmd
 		},
 	}
