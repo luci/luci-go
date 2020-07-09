@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "60bb3d5a_fbfe9ac2",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state_provider.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-09T02:57:22Z",
+      "side": 1,
+      "message": "It gets called here. And whenever this.appState is updated.\nReference: https://mobx.js.org/refguide/autorun.html",
+      "parentUuid": "36240775_e43765b6",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d0ca72c_75004a43",
         "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2020-07-09T02:01:19Z",
       "side": 1,
       "message": "IMO, I think the previous one is easier to read. Up to you though.",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7089bcb1_2271d208",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-09T02:57:22Z",
+      "side": 1,
+      "message": "There\u0027s a name collision. So kind of have to rename it.\nOtherwise, I prefer the previous one too.",
+      "parentUuid": "5d0ca72c_75004a43",
       "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "f2f694c7_904e9b3b",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-09T02:57:22Z",
+      "side": 1,
+      "message": "invocation state is inserted in super.connectedCallback().\nThe context framework only works after the node is connected to DOM. It relies on the DOM structure to propagate the context.",
+      "parentUuid": "1077e5fc_c6b5ea63",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f02188b_344f31f4",
         "filename": "milo/frontend/resultui/src/routes.ts",
         "patchSetId": 5
@@ -67,6 +121,24 @@
       "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dd1dbc6_c31f7018",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-09T02:57:22Z",
+      "side": 1,
+      "message": "Webpack is able to split the code into several chunks.\nThis is the name of the webpack chunk.\nhttps://webpack.js.org/guides/code-splitting/#dynamic-imports",
+      "parentUuid": "6f02188b_344f31f4",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
