@@ -26,20 +26,21 @@ import { TestFilter } from '../../components/test_filter';
 import '../../components/test_nav_tree';
 import '../../components/variant_entry';
 import { VariantEntryElement } from '../../components/variant_entry';
-import { consumeContext } from '../../libs/context';
+import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { ReadonlyVariant, TestNode, VariantStatus } from '../../models/test_node';
-import { InvocationPageState } from './context';
 
 /**
  * Display a list of test results.
  */
 export class TestResultsTabElement extends MobxLitElement {
-  @observable.ref pageState!: InvocationPageState;
+  @observable.ref appState!: AppState;
+  @observable.ref invocationState!: InvocationState;
 
   private disposers: Array<() => void> = [];
   private async loadNextPage() {
     try {
-      await this.pageState.testLoader.loadNextPage();
+      await this.invocationState.testLoader.loadNextPage();
     } catch (e) {
       this.dispatchEvent(new ErrorEvent('error', {
         error: e,
@@ -54,7 +55,7 @@ export class TestResultsTabElement extends MobxLitElement {
   private get hasSingleVariant() {
     // this operation should be fast since the iterator is executed only when
     // there's only one test.
-    return this.pageState.selectedNode.testCount === 1 && [...this.pageState.selectedNode.tests()].length === 1;
+    return this.invocationState.selectedNode.testCount === 1 && [...this.invocationState.selectedNode.tests()].length === 1;
   }
 
   private toggleAllVariants(expand: boolean) {
@@ -64,15 +65,15 @@ export class TestResultsTabElement extends MobxLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.pageState.selectedTabId = 'test-results';
+    this.appState.selectedTabId = 'test-results';
 
     // When a new test loader is received, load the first page and reset the
     // selected node.
     this.disposers.push(reaction(
-      () => this.pageState.testLoader,
+      () => this.invocationState.testLoader,
       (testLoader) => {
         this.loadNextPage();
-        this.pageState.selectedNode = testLoader.node;
+        this.invocationState.selectedNode = testLoader.node;
       },
       {fireImmediately: true},
     ));
@@ -89,7 +90,7 @@ export class TestResultsTabElement extends MobxLitElement {
     const expectedVariants: ReadonlyVariant[] = [];
     const unexpectedVariants: ReadonlyVariant[] = [];
     const flakyVariants: ReadonlyVariant[] = [];
-    for (const test of this.pageState.selectedNode.tests()) {
+    for (const test of this.invocationState.selectedNode.tests()) {
       for (const variant of test.variants) {
         switch (variant.status) {
           case VariantStatus.Exonerated:
@@ -141,15 +142,15 @@ export class TestResultsTabElement extends MobxLitElement {
   }
 
   protected render() {
-    const state = this.pageState;
+    const state = this.invocationState;
 
     return html`
       <div id="header">
         <tr-test-filter
           .onFilterChanged=${(filter: TestFilter) => {
-            this.pageState.showExonerated = filter.showExonerated;
-            this.pageState.showExpected = filter.showExpected;
-            this.pageState.showFlaky = filter.showFlaky;
+            this.invocationState.showExonerated = filter.showExonerated;
+            this.invocationState.showExpected = filter.showExpected;
+            this.invocationState.showFlaky = filter.showFlaky;
           }}
         >
         </tr-test-filter>
@@ -259,7 +260,7 @@ export class TestResultsTabElement extends MobxLitElement {
 }
 
 customElement('tr-test-results-tab')(
-  consumeContext('pageState')(
-      TestResultsTabElement,
+  consumeInvocationState(
+      consumeAppState(TestResultsTabElement),
   ),
 );

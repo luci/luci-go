@@ -19,7 +19,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import { AppState, consumeAppState } from '../../context/app_state_provider';
+import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { ListArtifactsResponse, TestResult, TestStatus } from '../../services/resultdb';
 import './image_diff_artifact';

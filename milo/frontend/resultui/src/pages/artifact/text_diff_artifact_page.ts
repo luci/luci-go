@@ -20,7 +20,7 @@ import { computed, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '../../components/status_bar';
-import { AppState, consumeAppState } from '../../context/app_state_provider';
+import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
