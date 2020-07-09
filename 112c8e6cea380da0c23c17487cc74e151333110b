@@ -16,6 +16,150 @@
       "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cfbfebf_643713f0",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "https://pkg.go.dev/go.chromium.org/luci@v0.0.0-20200709041110-d32def75a506/buildbucket/protoutil?tab\u003ddoc#IsEnded\n\ni recommend studying public symbols outside of buildbucket/appengine,\nand contributing to that package if there is something that is not specific to appengine.",
+      "parentUuid": "a8b567ce_2578e7fd",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1bfbd83_10778093",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "this is not the last time we are going to fetch a bundle of build and build_infra. do you plan to extract this logic later?\n\ni understand the reasoning \"let\u0027s make it more structured when there is a need for more structure\" when there are unknowns (what if end up not needing), but this isn\u0027t the case because we already know (from the python impl) that we will need this in many places",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9eb50b2_35ff900d",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "GetSwarming()\n\nit might not have Swarming field initialized\n\nmaybe GetTaskId() too for consistency",
+      "range": {
+        "startLine": 91,
+        "startChar": 15,
+        "endLine": 91,
+        "endChar": 23
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6583571_94850471",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "we need to check bld.HasEnded() again, now in transaction",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98084206_bf7ee647",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "nil?",
+      "range": {
+        "startLine": 96,
+        "startChar": 15,
+        "endLine": 96,
+        "endChar": 23
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c53a83d_ee088e52",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "TestRecentTimeUTC\n\nsame below",
+      "range": {
+        "startLine": 119,
+        "startChar": 21,
+        "endLine": 119,
+        "endChar": 46
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ba99c7d_c6c056d1",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T05:57:48Z",
+      "side": 1,
+      "message": "just \"user:user\"",
+      "range": {
+        "startLine": 167,
+        "startChar": 15,
+        "endLine": 167,
+        "endChar": 45
+      },
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
