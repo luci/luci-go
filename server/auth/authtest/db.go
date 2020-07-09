@@ -179,7 +179,7 @@ func (db *FakeDB) CheckMembership(ctx context.Context, id identity.Identity, gro
 }
 
 // HasPermission is part of authdb.DB interface.
-func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
+func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	db.m.RLock()
 	defer db.m.RUnlock()
 
@@ -188,10 +188,8 @@ func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm 
 	}
 
 	if mocked := db.perID[id]; mocked != nil {
-		for _, realm := range realms {
-			if mocked.perms.Has(mockedPermKey(realm, perm)) {
-				return true, nil
-			}
+		if mocked.perms.Has(mockedPermKey(realm, perm)) {
+			return true, nil
 		}
 	}
 

@@ -124,7 +124,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		realm = "chromium:public"
 	}
 
-	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, []string{realm}); {
+	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm); {
 	case err != nil:
 		return err
 	case !allowed && realm != "chromium:public":
@@ -132,7 +132,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if !strings.HasPrefix(in.InvocationId, "u-") {
-		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, []string{realm}); {
+		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, realm); {
 		case err != nil:
 			return err
 		case !allowed:
@@ -141,7 +141,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if len(inv.GetBigqueryExports()) > 0 {
-		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, []string{realm}); {
+		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, realm); {
 		case err != nil:
 			return err
 		case !allowed:
@@ -150,7 +150,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if inv.GetProducerResource() != "" {
-		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, []string{realm}); {
+		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, realm); {
 		case err != nil:
 			return err
 		case !allowed:

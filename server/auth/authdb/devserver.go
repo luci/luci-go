@@ -54,10 +54,7 @@ func (DevServerDB) CheckMembership(c context.Context, id identity.Identity, grou
 	return groups, nil
 }
 
-func (DevServerDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realms []string) (bool, error) {
-	if len(realms) == 0 {
-		return false, nil
-	}
+func (DevServerDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
 	return id.Kind() != identity.Anonymous, nil
 }
 

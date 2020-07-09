@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strings"
 
 	"golang.org/x/oauth2"
 
@@ -131,19 +130,19 @@ func IsMember(c context.Context, groups ...string) (bool, error) {
 }
 
 // HasPermission returns true if the current caller has the given permission
-// in any of the realms.
+// in the realm.
 //
-// During the check any non-existing realm is replaced with the corresponding
-// root realm (e.g. if "projectA:some/realm" doesn't exist, "projectA:@root"
-// will be used in its place). If the project doesn't exist or is not using
-// realms yet, all its realms (including the root realm) are considered empty.
-// HasPermission returns false in this case.
+// A non-existing realm is replaced with the corresponding root realm (e.g. if
+// "projectA:some/realm" doesn't exist, "projectA:@root" will be used in its
+// place). If the project doesn't exist or is not using realms yet, all its
+// realms (including the root realm) are considered empty. HasPermission returns
+// false in this case.
 //
-// Returns errors only if the check itself has failed due to misconfiguration
-// or transient errors. This should usually result in an Internal error.
-func HasPermission(c context.Context, perm realms.Permission, realms []string) (bool, error) {
+// Returns an error only if the check itself failed due to a misconfiguration
+// or transient issues. This should usually result in an Internal error.
+func HasPermission(c context.Context, perm realms.Permission, realm string) (bool, error) {
 	if s := GetState(c); s != nil {
-		return s.DB().HasPermission(c, s.User().Identity, perm, realms)
+		return s.DB().HasPermission(c, s.User().Identity, perm, realm)
 	}
 	return false, ErrNotConfigured
 }
@@ -161,7 +160,7 @@ type HasPermissionDryRun struct {
 // Logs information about the call and any errors or discrepancies found.
 //
 // Accepts same arguments as HasPermission. Intentionally returns nothing.
-func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission, realms []string) {
+func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission, realm string) {
 	s := GetState(c)
 	if s == nil { // this should not really be happening at all
 		logging.Errorf(c, "HasPermissionDryRun: no state in the context")
@@ -173,12 +172,7 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 
 	// We use python naming convention in the log to make Go and Python dry run
 	// logs look identical in case we want to parse them.
-	realmsQuoted := make([]string, len(realms))
-	for i, r := range realms {
-		realmsQuoted[i] = fmt.Sprintf("%q", r)
-	}
-	logPfx := fmt.Sprintf("has_permission_dryrun(%q, [%s], %q), authdb=%d",
-		perm, strings.Join(realmsQuoted, ", "), ident, authdb.Revision(db))
+	logPfx := fmt.Sprintf("has_permission_dryrun(%q, %q, %q), authdb=%d", perm, realm, ident, authdb.Revision(db))
 	if dr.TrackingBug != "" {
 		logPfx = dr.TrackingBug + ": " + logPfx
 	}
@@ -190,7 +184,7 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 		return "DENY"
 	}
 
-	switch result, err := db.HasPermission(c, ident, perm, realms); {
+	switch result, err := db.HasPermission(c, ident, perm, realm); {
 	case err != nil:
 		logging.Errorf(c, "%s: error - want %s, got: %s", logPfx, allowDeny(dr.ExpectedResult), err)
 	case result != dr.ExpectedResult:

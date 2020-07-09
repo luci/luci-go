@@ -75,7 +75,7 @@ func checkPermission(ctx context.Context, job *Job, perm realms.Permission) erro
 	auth.HasPermissionDryRun{
 		ExpectedResult: legacyResult,
 		TrackingBug:    "crbug.com/1070761",
-	}.Execute(ctx, perm, []string{realm})
+	}.Execute(ctx, perm, realm)
 
 	// Use the legacy result for now.
 	if !legacyResult {

@@ -53,7 +53,7 @@ func verifyPermission(ctx context.Context, permission realms.Permission, id invo
 	if realm == "chromium:public" {
 		return nil
 	}
-	switch allowed, err := auth.HasPermission(ctx, permission, []string{realm}); {
+	switch allowed, err := auth.HasPermission(ctx, permission, realm); {
 	case err != nil:
 		return err
 	case !allowed:
