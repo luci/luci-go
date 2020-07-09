@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36240775_e43765b6",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state_provider.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-09T02:01:19Z",
+      "side": 1,
+      "message": "I understand this was copied from the old code, but just want to clarify the behavior here. Does the function \"this.invocationState \u003d new InvocationState(this.appState)\" gets call here, or in the disconnectedCallback?",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d0ca72c_75004a43",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-09T02:01:19Z",
+      "side": 1,
+      "message": "IMO, I think the previous one is easier to read. Up to you though.",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1077e5fc_c6b5ea63",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page/index.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-09T02:01:19Z",
+      "side": 1,
+      "message": "Not sure, is is ok to just set `this.invocationState.invocationId \u003d invocationId\" here? Or invocationState is not available yet?",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f02188b_344f31f4",
+        "filename": "milo/frontend/resultui/src/routes.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-09T02:01:19Z",
+      "side": 1,
+      "message": "Just for my own education, does the code inside the comment do anything?",
+      "revId": "43f7daf23018eeda11faa3b058cbf79df02cb796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
