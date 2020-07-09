@@ -562,6 +562,11 @@ func TestSubmask(t *testing.T) {
 			_, err := buildMask("msg.msg.str").Submask("str")
 			So(err, ShouldErrLike, "the given path \"str\" is excluded from mask")
 		})
+		Convey("when path ends with star", func() {
+			actual, err := buildMask("msgs.*.str").Submask("msgs.*")
+			So(err, ShouldBeNil)
+			assertMaskEqual(actual, buildMask("str"))
+		})
 	})
 }
 

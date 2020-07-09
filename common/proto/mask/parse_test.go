@@ -40,10 +40,10 @@ func TestParsePath(t *testing.T) {
 			tryParsePath("msgs").andExpectPath("msgs")
 		})
 		Convey("succeeds when parsing repeated field and path ends with star", func() {
-			// trailing star will be removed
-			tryParsePath("strs.*").andExpectPath("strs")
-			tryParsePath("nums.*").andExpectPath("nums")
-			tryParsePath("msgs.*").andExpectPath("msgs")
+			// trailing stars are kept
+			tryParsePath("strs.*").andExpectPath("strs", "*")
+			tryParsePath("nums.*").andExpectPath("nums", "*")
+			tryParsePath("msgs.*").andExpectPath("msgs", "*")
 		})
 		Convey("fails when parsing repeated field and path ends with index", func() {
 			tryParsePath("strs.1").andExpectErrorLike("expected a star following a repeated field; got token: \"1\"")
@@ -53,8 +53,7 @@ func TestParsePath(t *testing.T) {
 		Convey("succeeds when parsing map field (key type integer, scalar value)", func() {
 			tryParsePath("map_num_str.1").andExpectPath("map_num_str", "1")
 			tryParsePath("map_num_str.-1").andExpectPath("map_num_str", "-1")
-			// trailing star will be removed
-			tryParsePath("map_num_str.*").andExpectPath("map_num_str")
+			tryParsePath("map_num_str.*").andExpectPath("map_num_str", "*")
 		})
 		Convey("succeeds when parsing map field (key type string, scalar value)", func() {
 			// unquoted
@@ -64,13 +63,12 @@ func TestParsePath(t *testing.T) {
 			tryParsePath("map_str_num.`abcd`").andExpectPath("map_str_num", "abcd")
 			tryParsePath("map_str_num.`_ab.cd`").andExpectPath("map_str_num", "_ab.cd")
 			tryParsePath("map_str_num.`ab``cd`").andExpectPath("map_str_num", "ab`cd")
-			// trailing star will be removed
-			tryParsePath("map_str_num.*").andExpectPath("map_str_num")
+			tryParsePath("map_str_num.*").andExpectPath("map_str_num", "*")
 		})
 		Convey("succeeds when parsing map field (key type boolean, scalar value)", func() {
 			tryParsePath("map_bool_str.false").andExpectPath("map_bool_str", "false")
 			tryParsePath("map_bool_str.true").andExpectPath("map_bool_str", "true")
-			tryParsePath("map_bool_str.*").andExpectPath("map_bool_str")
+			tryParsePath("map_bool_str.*").andExpectPath("map_bool_str", "*")
 		})
 		Convey("fails when parsing map field with incompatible key type", func() {
 			tryParsePath("map_num_str.a").andExpectErrorLike("expected map key kind int32; got token: \"a\"")
@@ -84,8 +82,8 @@ func TestParsePath(t *testing.T) {
 		})
 		Convey("succeeds when parsing message field", func() {
 			tryParsePath("msg.str").andExpectPath("msg", "str")
-			tryParsePath("msg.*").andExpectPath("msg")
-			tryParsePath("msg.msg.msg.*").andExpectPath("msg", "msg", "msg")
+			tryParsePath("msg.*").andExpectPath("msg", "*")
+			tryParsePath("msg.msg.msg.*").andExpectPath("msg", "msg", "msg", "*")
 		})
 		Convey("fails when parsing message field and given a non-string field name", func() {
 			tryParsePath("msg.123").andExpectErrorLike("expected a field name of type string; got token: \"123\"")
