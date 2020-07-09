@@ -15,31 +15,11 @@
 import * as signin from '@chopsui/chops-signin';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { customElement, html, LitElement } from 'lit-element';
-import { action, computed, observable } from 'mobx';
+import { action } from 'mobx';
 
-import { consumeContext, provideContext } from '../libs/context';
-import { router } from '../routes';
-import { ResultDb } from '../services/resultdb';
-import { consumeResultDbHost } from './config_provider';
-
-/**
- * Records the app-level state.
- */
-export class AppState {
-  @observable.ref accessToken = '';
-  @observable.ref resultDbHost = '';
-
-  @computed
-  get resultDb(): ResultDb | null {
-    if (!this.accessToken || !this.resultDbHost) {
-      return null;
-    }
-    return new ResultDb(this.resultDbHost, this.accessToken);
-  }
-}
-
-export const consumeAppState = consumeContext<'appState', AppState>('appState');
-export const provideAppState = provideContext<'appState', AppState>('appState');
+import { router } from '../../routes';
+import { consumeResultDbHost } from '../config_provider';
+import { AppState, provideAppState } from './app_state';
 
 /**
  * Provides appState to be shared across the app.

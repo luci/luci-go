@@ -14,24 +14,24 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
-import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { css, customElement, html, property } from 'lit-element';
-import { autorun, computed, observable, when } from 'mobx';
+import { AfterEnterObserver, BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
+import { css, customElement, html } from 'lit-element';
+import { computed, observable } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
-import { AppState, consumeAppState } from '../../context/app_state_provider';
+import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { router } from '../../routes';
-import { InvocationState } from '../../services/resultdb';
-import { InvocationPageState, providePageState } from './context';
+import { InvocationState as InvState } from '../../services/resultdb';
 import './invocation_details_tab';
 
 const INVOCATION_STATE_DISPLAY_MAP = {
-  [InvocationState.Unspecified]: 'unspecified',
-  [InvocationState.Active]: 'active',
-  [InvocationState.Finalizing]: 'finalizing',
-  [InvocationState.Finalized]: 'finalized',
+  [InvState.Unspecified]: 'unspecified',
+  [InvState.Active]: 'active',
+  [InvState.Finalizing]: 'finalizing',
+  [InvState.Finalized]: 'finalized',
 };
 
 /**
@@ -41,43 +41,25 @@ const INVOCATION_STATE_DISPLAY_MAP = {
  * If invocation_id not provided, redirects to '/not-found'.
  * Otherwise, shows results for the invocation.
  */
-export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver, AfterEnterObserver {
   @observable.ref appState!: AppState;
-  @property() pageState = new InvocationPageState();
+  @observable.ref invocationState!: InvocationState;
 
+  private invocationId = '';
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const invocationId = location.params['invocation_id'];
     if (typeof invocationId !== 'string') {
       return cmd.redirect('/not-found');
     }
-    this.pageState.invocationId = invocationId;
+    this.invocationId = invocationId;
     return;
   }
-
-  private disposers: Array<() => void> = [];
-  connectedCallback() {
-    super.connectedCallback();
-    this.disposers.push(autorun(
-      () => this.pageState.appState = this.appState,
-    ));
-    this.disposers.push(when(
-      () => this.pageState.invocationReq.state === 'rejected',
-      () => this.dispatchEvent(new ErrorEvent('error', {
-        message: this.pageState.invocationReq.value.toString(),
-        composed: true,
-        bubbles: true,
-      })),
-    ));
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    for (const disposer of this.disposers) {
-      disposer();
-    }
+  onAfterEnter() {
+    this.invocationState.invocationId = this.invocationId;
   }
 
   private renderInvocationState() {
-    const invocation = this.pageState.invocation;
+    const invocation = this.invocationState.invocation;
     if (!invocation) {
       return null;
     }
@@ -101,7 +83,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         label: 'Test Results',
         href: router.urlForName(
           'test-results',
-          {'invocation_id': this.pageState.invocationId},
+          {'invocation_id': this.invocationState.invocationId},
         ),
       },
       {
@@ -109,14 +91,14 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         label: 'Invocation Details',
         href: router.urlForName(
           'invocation-details',
-          {'invocation_id': this.pageState.invocationId},
+          {'invocation_id': this.invocationState.invocationId},
         ),
       },
     ];
   }
 
   protected render() {
-    if (this.pageState.invocationId === '') {
+    if (this.invocationState.invocationId === '') {
       return html``;
     }
 
@@ -124,17 +106,17 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       <div id="test-invocation-summary">
         <div id="test-invocation-id">
           <span id="test-invocation-id-label">Invocation ID </span>
-          <span>${this.pageState.invocationId}</span>
+          <span>${this.invocationState.invocationId}</span>
         </div>
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
       <tr-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
-        .loading=${this.pageState.invocationReq.state === 'pending'}
+        .loading=${this.invocationState.invocationReq.state === 'pending'}
       ></tr-status-bar>
       <tr-tab-bar
         .tabs=${this.tabDefs}
-        .selectedTabId=${this.pageState.selectedTabId}
+        .selectedTabId=${this.appState.selectedTabId}
       ></tr-tab-bar>
       <slot></slot>
     `;
@@ -171,7 +153,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
 }
 
 customElement('tr-invocation-page')(
-  providePageState(
+  consumeInvocationState(
     consumeAppState(
       InvocationPageElement,
     ),
