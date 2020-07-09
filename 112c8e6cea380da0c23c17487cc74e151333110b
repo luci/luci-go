@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "4f37e67f_3d437cf1",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-09T22:51:27Z",
+      "side": 1,
+      "message": "this strategy might work for a single person team (as long as the person does not forget what they wrote yesterday)\n\nbut it does not work well for a team of multiple people - others might not know that this code was written in a non-generic place, so they might write it again. In the worst case, they would do the same, so identical code is written in a non-generic place for the second time and the code is still not reused.\n\nit is also easier to read and review more modular code",
+      "parentUuid": "c8841d0b_8178f5e9",
+      "revId": "112c8e6cea380da0c23c17487cc74e151333110b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b9eb50b2_35ff900d",
         "filename": "buildbucket/appengine/rpc/cancel_build.go",
         "patchSetId": 1
