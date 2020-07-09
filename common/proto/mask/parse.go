@@ -28,7 +28,7 @@ type path []string
 const pathDelimiter = '.'
 
 // parsePath parses a path string to a slice of segments (See grammar in pkg
-// doc). It also removes the trailing stars, e.g. parses ["a.*"] as ["a"].
+// doc).
 //
 // If isJSONName is true, parsing the field name using JSON field name instead
 // of its canonical form. However, the result segments in path will use
@@ -58,9 +58,6 @@ func parsePathWithContext(rawPath string, ctx *parseCtx, isJSONName bool) (path,
 		}
 	}
 
-	if n := len(ret); n > 0 && ret[n-1] == "*" {
-		return ret[:n-1], nil
-	}
 	return ret, nil
 }
 
