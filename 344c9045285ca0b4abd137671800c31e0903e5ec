@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0721f740_09f4d680",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1434885
+      },
+      "writtenOn": "2020-07-10T04:45:18Z",
+      "side": 1,
+      "message": "Thx! I\u0027ll go add the tests",
+      "parentUuid": "def40a1c_870cfbbf",
+      "revId": "344c9045285ca0b4abd137671800c31e0903e5ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf98ae74_badff565",
         "filename": "client/cas/utils.go",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "344c9045285ca0b4abd137671800c31e0903e5ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "164ed7be_5a7ec50d",
+        "filename": "client/cas/utils.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1434885
+      },
+      "writtenOn": "2020-07-10T04:45:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cf98ae74_badff565",
+      "revId": "344c9045285ca0b4abd137671800c31e0903e5ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
