@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "022aa4c8_597a9374",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-10T01:42:51Z",
+      "side": 1,
+      "message": "I think this is not what we want to do?",
+      "range": {
+        "startLine": 9,
+        "startChar": 83,
+        "endLine": 9,
+        "endChar": 153
+      },
+      "revId": "b1a7e1e5b0e0a6d8373bb2f20717dfeadfd1adca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
