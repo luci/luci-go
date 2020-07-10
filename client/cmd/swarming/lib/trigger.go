@@ -155,7 +155,7 @@ type triggerRun struct {
 	priority       int64
 	tags           common.Strings
 	user           string
-	expiration     int
+	expiration     int64
 	enableResultDB bool
 
 	// Other.
@@ -198,7 +198,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.Int64Var(&c.priority, "priority", 200, "The lower value, the more important the task.")
 	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
 	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
-	c.Flags.IntVar(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
+	c.Flags.Int64Var(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
 	c.Flags.BoolVar(&c.enableResultDB, "enable-resultdb", false, "Enable ResultDB for this task.")
 
 	// Other.
@@ -385,7 +385,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 	}
 
 	return &swarming.SwarmingRpcsNewTaskRequest{
-		ExpirationSecs: c.hardTimeout,
+		ExpirationSecs: c.expiration,
 		Name:           c.taskName,
 		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
 		Priority:       c.priority,
