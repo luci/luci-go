@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a380e6df_fd18229a",
+        "filename": "client/cas/chunker_deduper_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-10T05:29:17Z",
+      "side": 1,
+      "message": "I feel it is better to inline this.",
+      "revId": "8b7047f56ef0029ef4e68c162d9bcc66505666b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
