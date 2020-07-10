@@ -46,6 +46,30 @@
       "revId": "b1a7e1e5b0e0a6d8373bb2f20717dfeadfd1adca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8795d6e_c492fd40",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-10T01:56:42Z",
+      "side": 1,
+      "message": "\u003e Ah. Maybe i should:\n\u003e \n\u003e * still compute the merkle tree for *each* `.isolate` file.\n\nI think so.\n\n\u003e * maintain a set of digests for items being uploaded . That way we can filter out the chunkers whose digests are in this set\n\nI think so too.",
+      "parentUuid": "b04ac4ea_ac40a00f",
+      "range": {
+        "startLine": 9,
+        "startChar": 83,
+        "endLine": 9,
+        "endChar": 153
+      },
+      "revId": "b1a7e1e5b0e0a6d8373bb2f20717dfeadfd1adca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
