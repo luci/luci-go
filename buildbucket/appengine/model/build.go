@@ -48,9 +48,9 @@ type PubSubCallback struct {
 
 // Build is a representation of a build in the datastore.
 type Build struct {
-	_ datastore.PropertyMap `gae:"-,extra"`
-	_kind string `gae:"$kind,Build"`
-	ID    int64  `gae:"$id"`
+	_     datastore.PropertyMap `gae:"-,extra"`
+	_kind string                `gae:"$kind,Build"`
+	ID    int64                 `gae:"$id"`
 
 	// LegacyProperties are properties set for v1 legacy builds.
 	LegacyProperties
@@ -175,29 +175,4 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 		return nil, errors.Annotate(err, "error trimming fields for %q", key).Err()
 	}
 	return p, nil
-}
-
-// GetBuildAndBucket returns the build with the given ID as well as the bucket
-// it belongs to. Returns datastore.ErrNoSuchEntity if either is not found.
-func GetBuildAndBucket(ctx context.Context, id int64) (*Build, *Bucket, error) {
-	bld := &Build{
-		ID: id,
-	}
-	switch err := datastore.Get(ctx, bld); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, nil, err
-	case err != nil:
-		return nil, nil, errors.Annotate(err, "error fetching build with ID %d", id).Err()
-	}
-	bck := &Bucket{
-		ID:     bld.Proto.Builder.Bucket,
-		Parent: ProjectKey(ctx, bld.Proto.Builder.Project),
-	}
-	switch err := datastore.Get(ctx, bck); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, nil, err
-	case err != nil:
-		return nil, nil, errors.Annotate(err, "error fetching bucket %q", bld.BucketID).Err()
-	}
-	return bld, bck, nil
 }

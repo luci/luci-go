@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -152,7 +153,7 @@ func searchBuilds(ctx context.Context, q *search.Query) (*pb.SearchBuildsRespons
 
 	// Validate bucket ACL permission.
 	if q.Builder != nil && q.Builder.Bucket != "" {
-		if err := canRead(ctx, q.Builder.Project, q.Builder.Bucket); err != nil {
+		if err := perm.HasInBuilder(ctx, perm.BuildsList, q.Builder); err != nil {
 			return nil, err
 		}
 	}
@@ -178,7 +179,7 @@ func searchBuilds(ctx context.Context, q *search.Query) (*pb.SearchBuildsRespons
 }
 
 // indexedTags returns the indexed tags.
-func indexedTags(tags strpair.Map) []string{
+func indexedTags(tags strpair.Map) []string {
 	set := make(stringset.Set)
 	for k, vals := range tags {
 		if k != "buildset" && k != "build_address" {
@@ -190,7 +191,6 @@ func indexedTags(tags strpair.Map) []string{
 	}
 	return set.ToSortedSlice()
 }
-
 
 // TODO(crbug/1090540): implement search via tagIndex flow
 func tagIndexSearch(ctx context.Context, q *search.Query) (*pb.SearchBuildsResponse, error) {
