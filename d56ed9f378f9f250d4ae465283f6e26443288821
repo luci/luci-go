@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ce6da3a_a6626d1d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-10T03:51:55Z",
+      "side": 1,
+      "message": "Sorry I didn\u0027t notice this.",
+      "revId": "d56ed9f378f9f250d4ae465283f6e26443288821",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
