@@ -16,6 +16,24 @@
       "revId": "8b7047f56ef0029ef4e68c162d9bcc66505666b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5522d30_6a2c32a9",
+        "filename": "client/cas/chunker_deduper_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1434885
+      },
+      "writtenOn": "2020-07-10T05:32:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a380e6df_fd18229a",
+      "revId": "8b7047f56ef0029ef4e68c162d9bcc66505666b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
