@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3da4c371_4455c70b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-10T22:01:53Z",
+      "side": 1,
+      "message": "thank you deduping some of this code",
+      "revId": "0bcd0a63f39fd912ebbc6fa9c262e9e421326177",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c4687394_4acb0211",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-10T22:01:53Z",
+      "side": 1,
+      "message": "this is fairly generic. should we place it in appstatus?",
+      "revId": "0bcd0a63f39fd912ebbc6fa9c262e9e421326177",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
