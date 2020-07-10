@@ -105,6 +105,9 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bb.BbagentArgs.Build.Number = 0
 		bb.BbagentArgs.Build.Status = 0
 		bb.BbagentArgs.Build.UpdateTime = nil
+		if rdb := bb.BbagentArgs.Build.Infra.GetResultdb(); rdb != nil {
+			rdb.Invocation = ""
+		}
 
 		// drop the executable path; it's canonically represented by
 		// out.BBAgentArgs.PayloadPath and out.BBAgentArgs.Build.Exe.
