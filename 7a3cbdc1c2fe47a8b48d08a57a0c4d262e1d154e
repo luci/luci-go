@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "2fdb33fa_d9889c0d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-10T23:33:20Z",
+      "side": 1,
+      "message": "The check is at https://source.chromium.org/chromium/infra/infra/+/master:recipes-py/recipe_modules/resultdb/api.py;l\u003d36\n\nWe just need to clear invocation really",
+      "parentUuid": "c6f632ff_8e05b7c0",
+      "revId": "7a3cbdc1c2fe47a8b48d08a57a0c4d262e1d154e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b8978ba_a5c7736a",
         "filename": "led/job/jobcreate/create.go",
         "patchSetId": 1
