@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "c6f632ff_8e05b7c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-10T23:28:26Z",
+      "side": 1,
+      "message": "Or is something detecting \u0027is rdb enabled?\u0027 by having this message exist? If yes, then what would that thing do with both fields set to \"\"?",
+      "revId": "7a3cbdc1c2fe47a8b48d08a57a0c4d262e1d154e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b8978ba_a5c7736a",
         "filename": "led/job/jobcreate/create.go",
         "patchSetId": 1
