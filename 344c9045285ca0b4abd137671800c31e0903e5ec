@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "5de26a4f_b0c1b330",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1434885
+      },
+      "writtenOn": "2020-07-10T05:21:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0721f740_09f4d680",
+      "revId": "344c9045285ca0b4abd137671800c31e0903e5ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cf98ae74_badff565",
         "filename": "client/cas/utils.go",
         "patchSetId": 6
