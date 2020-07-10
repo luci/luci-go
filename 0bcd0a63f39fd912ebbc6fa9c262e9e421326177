@@ -33,6 +33,24 @@
       "revId": "0bcd0a63f39fd912ebbc6fa9c262e9e421326177",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33476d1a_df6d2358",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-10T22:05:23Z",
+      "side": 1,
+      "message": "I thought about that, but I don\u0027t want appstatus to depend on server/auth, seems backwards (appstatus is more \"low level\").",
+      "parentUuid": "c4687394_4acb0211",
+      "revId": "0bcd0a63f39fd912ebbc6fa9c262e9e421326177",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
