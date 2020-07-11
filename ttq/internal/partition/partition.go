@@ -69,25 +69,50 @@ func Universe(keySpaceBytes int) *Partition {
 }
 
 func FromString(s string) (*Partition, error) {
+	p := &Partition{}
+	return p, p.fromString(s)
+}
+
+func (p *Partition) fromString(s string) error {
 	i := strings.Index(s, "_")
 	if i <= 0 || i == len(s)-1 {
-		return nil, errors.Reason("partition %q has invalid format", s).Err()
+		return errors.Reason("partition %q has invalid format", s).Err()
 	}
-	p := &Partition{}
 	if err := setBigIntFromString(&p.Low, s[:i]); err != nil {
-		return nil, err
+		return err
 	}
 	if err := setBigIntFromString(&p.High, s[i+1:]); err != nil {
-		return nil, err
+		return err
 	}
 	if p.Low.Cmp(&p.High) > 0 {
-		return nil, errors.Reason("Partition %s is invalid", p.String()).Err()
+		return errors.Reason("Partition %s is invalid", p.String()).Err()
 	}
-	return p, nil
+	return nil
 }
 
 func (p Partition) String() string {
 	return fmt.Sprintf("%s_%s", p.Low.Text(16 /*hex*/), p.High.Text(16 /*hex*/))
+}
+
+func (p Partition) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s_%s"`, p.Low.Text(16 /*hex*/), p.High.Text(16 /*hex*/))), nil
+}
+
+func (p *Partition) UnmarshalJSON(bs []byte) error {
+	s := string(bs)
+	switch {
+	case s == `null`:
+		return nil
+	case len(s) < 2 || s[0] != '"' || s[len(s)-1] != '"':
+		return errors.Reason("invalid JSON-serialized partition %q", s).Err()
+	default:
+		tmp := Partition{}
+		if err := tmp.fromString(s[1 : len(s)-1]); err != nil {
+			return err
+		}
+		*p = tmp
+		return nil
+	}
 }
 
 func (p Partition) Copy() *Partition {
