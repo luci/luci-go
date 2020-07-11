@@ -412,6 +412,30 @@
     },
     {
       "key": {
+        "uuid": "4b4a78d9_1ca8f8ae",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:19:05Z",
+      "side": 1,
+      "message": "I use VSCode which formats code for me (I never run gofmt myself)\nother editors have automatic formatting too",
+      "parentUuid": "eff0d296_d6d3a9b5",
+      "range": {
+        "startLine": 145,
+        "startChar": 65,
+        "endLine": 145,
+        "endChar": 66
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8655ea3_ed8579ef",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
