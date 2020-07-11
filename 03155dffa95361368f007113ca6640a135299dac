@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a9d2501c_de78853c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-11T00:04:02Z",
+      "side": 1,
+      "message": "What\u0027s the process of releasing this change? \n\nPreviously in the related discussion (https://dynamite-preprod.sandbox.google.com/room/AAAAXGgrwSo/3NOyAJyPCTg), Robbie mentioned\n\n\"probably needs to be updated and a new led version rolled in depot_tools\n\n(luci-go -\u003e infra -\u003e builders -\u003e depot_tools)\n\"\n\nIIUC all steps are automated except I need to prepare a CL to roll led in depot_tools (similar to this one), is that right? \n\n",
+      "revId": "03155dffa95361368f007113ca6640a135299dac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
