@@ -60,6 +60,18 @@ func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
 	return mask.FromFieldMask(fields, &pb.Build{}, false, false)
 }
 
+// getBuildsSubMask returns the sub mask for "builds.*"
+func getBuildsSubMask(fields *field_mask.FieldMask) (mask.Mask, error) {
+	if len(fields.GetPaths()) == 0 {
+		return defMask, nil
+	}
+	m, err := mask.FromFieldMask(fields, &pb.SearchBuildsResponse{}, false, false)
+	if err != nil {
+		return mask.Mask{}, err
+	}
+	return m.Submask("builds.*")
+}
+
 // buildsServicePostlude logs the method called, the proto response, and any
 // error, but returns that the called method was unimplemented. Used to aid in
 // development. Users of this function must ensure called methods do not have
