@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/auth/identity"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/impl/memory"
@@ -218,7 +220,7 @@ func TestValidateSearchBuilds(t *testing.T) {
 
 		Convey("TagIndex token with non indexed tags", func() {
 			tags := []*pb.StringPair{
-				&pb.StringPair{Key:"k", Value:"v"},
+				&pb.StringPair{Key: "k", Value: "v"},
 			}
 			err := validatePageToken("id>123", tags)
 			So(err, ShouldErrLike, "invalid page_token")
@@ -264,7 +266,6 @@ func TestValidateSearchBuilds(t *testing.T) {
 		})
 	})
 }
-
 
 func TestSearchBuilds(t *testing.T) {
 	t.Parallel()
@@ -344,6 +345,77 @@ func TestSearchBuilds(t *testing.T) {
 			So(log, memlogger.ShouldHaveLog, logging.Debug, "Querying search on Build.")
 			So(err, ShouldBeNil)
 		})
+
+		Convey("query search on Builds", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:user"),
+			})
+			So(datastore.Put(ctx, &model.Bucket{
+				ID:     "bucket",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto: pb.Bucket{
+					Acls: []*pb.Acl{
+						{
+							Identity: "user:user",
+							Role:     pb.Acl_READER,
+						},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				BuilderID: "project/bucket/builder",
+				Tags:      []string{"k1:v1", "k2:v2"},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder2",
+					},
+				},
+				BuilderID: "project/bucket/builder2",
+			}), ShouldBeNil)
+			req.Fields = &field_mask.FieldMask{Paths: []string{"builds.*.id", "builds.*.tags"}}
+			req.Predicate.Tags = []*pb.StringPair{
+				{Key: "k1", Value: "v1"},
+				{Key: "k2", Value: "v2"},
+			}
+			rsp, err := srv.SearchBuilds(ctx, req)
+			So(err, ShouldBeNil)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "k1",
+								Value: "v1",
+							},
+							{
+								Key:   "k2",
+								Value: "v2",
+							},
+						},
+					},
+				},
+			}
+			So(rsp, ShouldResembleProto, expectedRsp)
+		})
 	})
 }
 func TestIndexedTags(t *testing.T) {
@@ -351,7 +423,7 @@ func TestIndexedTags(t *testing.T) {
 
 	Convey("tags", t, func() {
 		tags := strpair.Map{
-			"a": []string{"b"},
+			"a":        []string{"b"},
 			"buildset": []string{"b1"},
 		}
 		result := indexedTags(tags)
@@ -360,7 +432,7 @@ func TestIndexedTags(t *testing.T) {
 
 	Convey("duplicate tags", t, func() {
 		tags := strpair.Map{
-			"buildset": []string{"b1", "b1"},
+			"buildset":      []string{"b1", "b1"},
 			"build_address": []string{"address"},
 		}
 		result := indexedTags(tags)
