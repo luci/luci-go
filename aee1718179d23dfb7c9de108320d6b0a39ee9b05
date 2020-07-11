@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "e4dcce9b_f80014cd",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:18:29Z",
+      "side": 1,
+      "message": "to me, whether it uses OnBuild or OnTagIndex is an implementation detail of search. The exposing them both means that caller has to choose between the two. I think it would be simpler for the caller if there was one function Fetch() which chooses between the two. Note that this is how python version is implemented.",
+      "parentUuid": "b1db469a_3f5c410d",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 29
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "57e428d3_3b52ab16",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5

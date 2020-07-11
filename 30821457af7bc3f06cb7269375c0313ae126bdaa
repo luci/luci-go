@@ -16,6 +16,121 @@
       "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "37f39f00_7494a308",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:18:29Z",
+      "side": 1,
+      "message": "nit: this part is obvious from the return type",
+      "range": {
+        "startLine": 107,
+        "startChar": 49,
+        "endLine": 107,
+        "endChar": 104
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69e5a979_734cc204",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:18:29Z",
+      "side": 1,
+      "message": "dq \u003d\n\ntest is missing? please add a test for each kind of filter",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 4
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27f360d1_80ba2326",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:18:29Z",
+      "side": 1,
+      "message": "why not just -1 instead of nil\n\nit would not use heap unnecessary\n\nactually, same applies to q.BuildIdLow and q.BuildIfHigh\nBTW, they should be called BuildIDLow and BuildIDHigh with \"ID\" instead of \"Id\"",
+      "range": {
+        "startLine": 154,
+        "startChar": 30,
+        "endLine": 154,
+        "endChar": 31
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b90f4ed_37f280a4",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:18:29Z",
+      "side": 1,
+      "message": "nit: just \"idRange\" https://golang.org/doc/effective_go.html#Getters",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 26
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3627d2e6_87eb26ad",
+        "filename": "buildbucket/appengine/internal/search/query_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-11T02:18:29Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 48
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
