@@ -98,6 +98,63 @@ func (impl *Impl) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (
 	}, nil
 }
 
+// ScanItem defines keyspace to scan for possible work.
+type ScanItem struct {
+	// Shard number in range of [0 .. ttq.Options.Shards).
+	// Although Shard number can be calculated given the Partition and total
+	// number of shards (see ttq.Options.Shards), the latter may change during
+	// asynchroneous scan executions.
+	Shard int
+	// Partition specifies the range of keys to scan.
+	Partition *partition.Partition
+	// Level counts recursion level for monitoring/debugging purposes.
+	// Cron triggers tasks at level=0. If there is a big backlog,
+	// level=0 task will offload some work to level=1 tasks.
+	// level > 1 should not normally happen and indicates either a bug or a very
+	// overloaded system.
+	Level int
+}
+
+// PostProcessItem contains metadata of Reminders to be post processed from
+// certain range of keyspace.
+type PostProcessBatch struct {
+	// TODO(tandrii): implemnet.
+}
+
+// SweepAll intiates the sweeping process across the whole Reminders' keyspace.
+//
+// Caller is expected to call Scan() on each of the returned ScanItems.
+func (impl *Impl) SweepAll() []ScanItem {
+	ret := make([]ScanItem, 0, impl.Options.Shards)
+	u := partition.Universe(keySpaceBytes)
+	for shard, part := range u.Split(int(impl.Options.Shards)) {
+		ret = append(ret, ScanItem{
+			Partition: part,
+			Shard:     shard,
+			Level:     0,
+		})
+	}
+	return ret
+}
+
+// Scan scans the given part of Reminders' keyspace.
+//
+// If Scan is unable to complete the scan of the given part of keyspace,
+// it intelligently partitions the not yet scanned keyspace into several
+// ScanItem for the follow up.
+//
+// For the successfully scanned keyspace, Scan returns a PostProcessItem with
+// all the Reminders that need postprocessing.
+func (impl *Impl) Scan(ctx context.Context, w ScanItem) ([]ScanItem, PostProcessBatch, error) {
+	// TODO(tandrii): document & implement.
+	return nil, PostProcessBatch{}, errors.New("not implemented")
+}
+
+// TODO(tandrii): refine, document & implement.
+func (impl *Impl) PostProcessMany(ctx context.Context, w PostProcessBatch) error {
+	return errors.New("not implemented")
+}
+
 // Helpers.
 
 // postProcess enqueues a task and deletes a reminder.
@@ -143,13 +200,8 @@ func (impl *Impl) postProcess(ctx context.Context, r *Reminder, req *taskspb.Cre
 // createCloudTask tries to create a Cloud Task.
 // On AlreadyExists error, returns nil.
 // The returned error has transient.Tag applied if the error isn't permanent.
+// `when` is used to annotate monitoring metrics.
 func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRequest, when string) error {
-	// WORKAROUND(https://github.com/googleapis/google-cloud-go/issues/1577): if
-	// the passed context deadline is larger than 30s, the CreateTask call fails
-	// with InvalidArgument "The request deadline is ... The deadline cannot be
-	// more than 30s in the future." So, give it 20s.
-	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
-	defer cancel()
 	_, err := impl.TasksClient.CreateTask(ctx, req)
 	code := status.Code(err)
 	switch code {
@@ -167,10 +219,7 @@ func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRe
 		// which should not.
 		err = errors.Annotate(err, "failed to create Cloud Task").Tag(transient.Tag).Err()
 	}
-	if when != "ttq" {
-		// Monitor only tasks created for the user.
-		metricTasksCreated.Add(ctx, 1, code.String(), when, impl.DB.Kind())
-	}
+	metricTasksCreated.Add(ctx, 1, code.String(), when, impl.DB.Kind())
 	return err
 }
 
