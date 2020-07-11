@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "b1db469a_3f5c410d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Rename it to FetchOnBuild which means directly run query on Build datastore entity.\n\nI\u0027ll add another func FetchOnTagIndex in the same file as that func will also use the info in Query obj.",
+      "parentUuid": "cbafd88b_4b8d30ca",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 29
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "57e428d3_3b52ab16",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -56,6 +80,24 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8b8166a_d15ea1c4",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "removed. Used it as debugging info when testing on dev.",
+      "parentUuid": "57e428d3_3b52ab16",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +141,30 @@
     },
     {
       "key": {
+        "uuid": "5c1822eb_36967168",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38fd0681_01f26ea0",
+      "range": {
+        "startLine": 125,
+        "startChar": 19,
+        "endLine": 125,
+        "endChar": 40
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c6d5395_d2119002",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -119,6 +185,30 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4720174c_20e256a0",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Skipped the filtering by created_by for now and added a TODO to explain. \n\nLean to migrate to string in Py to unblock it.",
+      "parentUuid": "4c6d5395_d2119002",
+      "range": {
+        "startLine": 126,
+        "startChar": 27,
+        "endLine": 126,
+        "endChar": 46
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -162,6 +252,48 @@
     },
     {
       "key": {
+        "uuid": "e8139ed7_c429faed",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c574017_dd2fc6b4",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "210e28cb_464f3087",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "819b98ec_36a39f5e",
+      "range": {
+        "startLine": 131,
+        "startChar": 33,
+        "endLine": 131,
+        "endChar": 44
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b48226b6_4d634a73",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -182,6 +314,30 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40a2151d_5fc37e40",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "refactored",
+      "parentUuid": "b48226b6_4d634a73",
+      "range": {
+        "startLine": 141,
+        "startChar": 2,
+        "endLine": 141,
+        "endChar": 13
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -208,6 +364,30 @@
     },
     {
       "key": {
+        "uuid": "eff0d296_d6d3a9b5",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "thx for catching it.",
+      "parentUuid": "664bcbcd_385e2b11",
+      "range": {
+        "startLine": 145,
+        "startChar": 65,
+        "endLine": 145,
+        "endChar": 66
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8655ea3_ed8579ef",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -225,6 +405,24 @@
     },
     {
       "key": {
+        "uuid": "1ffc322c_597f04d3",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Yeah, we can only search by one of these pairs. Refactored the code to make it easier to understand.\n\nq.BuildIdLow/High are from the buildRange field in SearchBuildsRequest.",
+      "parentUuid": "c8655ea3_ed8579ef",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b401e1bf_d478058c",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -239,6 +437,24 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f19290e3_91df9300",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b401e1bf_d478058c",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -288,6 +504,54 @@
     },
     {
       "key": {
+        "uuid": "42a146ae_e20ff3ba",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Make sense.\n\nTo make it more efficient, It only clones the info directly from Build entity here. The loading steps/properties and trimming fields by mask will be done outside this function in parallel.\n\nThe reason to return the SearchBuildsResponse instead of a builds array is that it\u0027s required by paged.Query(...) which can handle pagination.",
+      "parentUuid": "d70f3437_ed41cbb5",
+      "range": {
+        "startLine": 154,
+        "startChar": 17,
+        "endLine": 154,
+        "endChar": 42
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26cb5f77_62951fb0",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb74c08c_028e12f4",
+      "range": {
+        "startLine": 154,
+        "startChar": 11,
+        "endLine": 154,
+        "endChar": 15
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4afb5bb5_262cf055",
         "filename": "buildbucket/appengine/internal/utils/utils.go",
         "patchSetId": 5
@@ -311,6 +575,30 @@
     },
     {
       "key": {
+        "uuid": "f5c9b04d_32e56267",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "removed it as FormatBuilderID exists in protoutil.",
+      "parentUuid": "4afb5bb5_262cf055",
+      "range": {
+        "startLine": 22,
+        "startChar": 14,
+        "endLine": 22,
+        "endChar": 16
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f8cb75e_4816d8df",
         "filename": "buildbucket/appengine/internal/utils/utils.go",
         "patchSetId": 5
@@ -325,6 +613,24 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99b2cbe3_631b7e5d",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f8cb75e_4816d8df",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -351,6 +657,30 @@
     },
     {
       "key": {
+        "uuid": "bf231eb8_88768ccc",
+        "filename": "buildbucket/appengine/internal/utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "Changed to ID to be consistent with the existing func, FormatBuilderID, in the same file.\n\nBut I think we don\u0027t have a standard for the form of id. Because I was suggested to use Id instead of ID as it\u0027s an abbreviation not an acronym in another CL. \nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2245241/4/buildbucket/appengine/model/utils.go#30",
+      "parentUuid": "dddb3144_89adf6cf",
+      "range": {
+        "startLine": 27,
+        "startChar": 13,
+        "endLine": 27,
+        "endChar": 15
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef294c0e_5ec5ebd8",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 5
@@ -374,6 +704,30 @@
     },
     {
       "key": {
+        "uuid": "5a956be1_8aff46da",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "See above. \nNot needed it anymore as the querying and to_proto will separate.",
+      "parentUuid": "ef294c0e_5ec5ebd8",
+      "range": {
+        "startLine": 149,
+        "startChar": 56,
+        "endLine": 149,
+        "endChar": 70
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "254f2359_2ce98ca9",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 5
@@ -388,6 +742,24 @@
       "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38f97842_ebd7e8dc",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-11T01:44:05Z",
+      "side": 1,
+      "message": "A TODO has been added at the beginning of FetchOnBuilds func, saying to fetch all accessible buckets for this user before querying (counterpart in py https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/search.py;l\u003d359). \n\nThe get_accessible_buckets() has not implemented in this repo yet. Thus, it needs another CL.",
+      "parentUuid": "254f2359_2ce98ca9",
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
