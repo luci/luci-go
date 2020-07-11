@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal"
+	spandb "go.chromium.org/luci/ttq/internal/databases/spanner"
 )
 
 // TTQ implements transaction task enqueueing with Spanner backend.
@@ -51,7 +52,7 @@ func New(c *cloudtasks.Client, opts ttq.Options, sp *spanner.Client) (*TTQ, erro
 	}
 	return &TTQ{impl: internal.Impl{
 		Options:     opts,
-		DB:          &db{client: sp},
+		DB:          &spandb.DB{Client: sp},
 		TasksClient: c,
 	}}, nil
 }
