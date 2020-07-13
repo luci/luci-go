@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "514c0b46_43af8291",
+        "filename": "ttq/internal/dbds/ds.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "I like incproc very much 😊\nAlso, I\u0027ve realized that SweepDriver should really incorporate leasing, too. In incproc, it\u0027ll be as simple mutex-protected map[shard]leases, but this is left for next CL as this one is already too large.",
+      "parentUuid": "05942328_f03d5521",
+      "range": {
+        "startLine": 16,
+        "startChar": 8,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cca03c90_c4d1bb30",
         "filename": "ttq/internal/helpers.go",
         "patchSetId": 8
@@ -69,6 +93,30 @@
       "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f89d2d1_0b6aae0e",
+        "filename": "ttq/internal/helpers.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cca03c90_c4d1bb30",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 32,
+        "endChar": 4
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "080f7acd_b46e2c8f",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1bd2d984_5793c88e",
+      "range": {
+        "startLine": 128,
+        "startChar": 2,
+        "endLine": 128,
+        "endChar": 30
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "653fc7a9_f5b7e20f",
         "filename": "ttq/internal/sweepdriver.go",
         "patchSetId": 8
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "e126dc41_3e50a91d",
+        "filename": "ttq/internal/sweepdriver.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "Done, i like your proposal.",
+      "parentUuid": "653fc7a9_f5b7e20f",
+      "range": {
+        "startLine": 21,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 39
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b26dbae5_3a79f207",
         "filename": "ttq/internal/sweepdrivergae/sw.go",
         "patchSetId": 8
@@ -129,6 +225,30 @@
       "writtenOn": "2020-07-09T21:20:53Z",
       "side": 1,
       "message": "This no longer works in GAEv2, better to remove it from the doc.",
+      "range": {
+        "startLine": 58,
+        "startChar": 13,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6753223_e766ac96",
+        "filename": "ttq/internal/sweepdrivergae/sw.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "Done, but I think my understanding of authorization process on GAEv2 for Cloud Tasks is still poor. Please correct my understanding:\n\n  These checks verify that a request came from Task Queue / Cron configured \u0026 managed by *this* cloud project\n    gaemiddleware.RequireTaskQueue(shortQueue)\n    gaemiddleware.RequireCron()\n  Hence,\n    * random user from the internet can\u0027t forge the queue/cron header\n    * cloud tasks queue in a different project can\u0027t forget these headers, either.\n  Although `login: admin` is nice for debugging on GAEv1, on GAEv2 we\u0027ll lose this.\n  To bring it back, we need to amend the above middlewares to alternatively authorize users from CrIA-based admin group.\n\nRight?",
+      "parentUuid": "b26dbae5_3a79f207",
       "range": {
         "startLine": 58,
         "startChar": 13,
@@ -161,6 +281,30 @@
       "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23bf3fa9_e5c067db",
+        "filename": "ttq/internal/sweepdrivergae/sw.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73f9b7bb_f33e553e",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 3
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -289,6 +433,30 @@
       "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3f30e30_a096d24c",
+        "filename": "ttq/types.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "I mean avoid more frequent runs than every minute. \nWell, I got rid of this. I think I\u0027ll revisit types.go Options again to move some of its doc into gaecron",
+      "parentUuid": "bc2c2cf1_de050090",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 0
+      },
+      "revId": "3bf9f8074d4dd21cfb7621f681781e7170c86b02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

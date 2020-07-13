@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6fd148db_f7139972",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-13T14:15:18Z",
+      "side": 1,
+      "message": "I\u0027ve reworked this per your proposal. I\u0027ve also rebased this on top of the building blocks for sweep pipeline:\n  Impl.SweepAll \u003d\u003e Impl.Scan \u003d\u003e Impl.PostProcessMany\n\nI really like `incproc` simplicity (or maybe I\u0027m really fond of dispatcher.Channel)\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2293247 (WIP)",
+      "revId": "039a879931cd094c15dd0e698ffaa596ce9ab0e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
