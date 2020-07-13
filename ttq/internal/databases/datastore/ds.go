@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttqdatastore
+// package datastore implements TTQ Database backend on top of Cloud Datastore.
+package datastore
 
 import (
 	"context"
@@ -20,20 +21,20 @@ import (
 	"go.chromium.org/luci/ttq/internal"
 )
 
-type db struct {
+type DB struct {
 }
 
-var _ internal.Database = (*db)(nil)
+var _ internal.Database = (*DB)(nil)
 
 // Kind is used only for monitoring/logging purposes.
-func (d *db) Kind() string {
+func (d *DB) Kind() string {
 	return "datastore"
 }
 
-func (d *db) SaveReminder(_ context.Context, _ *internal.Reminder) error {
+func (d *DB) SaveReminder(_ context.Context, _ *internal.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *db) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
+func (d *DB) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }
