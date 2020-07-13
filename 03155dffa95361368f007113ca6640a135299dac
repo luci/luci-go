@@ -16,6 +16,24 @@
       "revId": "03155dffa95361368f007113ca6640a135299dac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0edb8b59_d49fcb33",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-13T23:04:55Z",
+      "side": 1,
+      "message": "Correct; You\u0027ll need to manually roll this into depot_tools, everything else should be automatic.",
+      "parentUuid": "a9d2501c_de78853c",
+      "revId": "03155dffa95361368f007113ca6640a135299dac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
