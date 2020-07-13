@@ -33,6 +33,24 @@
       "revId": "8bebbd0c94925cb7164f564160e204bf2ef1fcb9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab187582_a417bba1",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:55:48Z",
+      "side": 1,
+      "message": "In future, it won\u0027t call ToProto(ctx, mask) directly. Nodir suggested to not populating builds proto SEQUENTIALLY. It may need to use goroutine to loading extra properties and trimming for each Build in parallel.\n\nI may need to extract some code from ToProto(ctx, mask) to a new function -  `FetchBuildBundle(ctx, buildKey, mask)` (https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/model/build.go;l\u003d120-177). Then add a new `PopulatePBBuildsAsyc(builds []*pb.Build)` in `rpc/builds.go` which will use goroutine and call the `FetchBuildBundle()`.",
+      "parentUuid": "803e3c19_e4d319e7",
+      "revId": "8bebbd0c94925cb7164f564160e204bf2ef1fcb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
