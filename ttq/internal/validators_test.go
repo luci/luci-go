@@ -12,27 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttq
+package internal
 
 import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestOptions(t *testing.T) {
+func TestValidateQueueName(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate", t, func() {
-		valid := Options{}
-		Convey("Valid", func() {
-			So(valid.Validate(), ShouldBeNil)
-			So(valid.Shards, ShouldEqual, 16)
-		})
-		Convey("Allow non default", func() {
-			valid.Shards = 17
-			So(valid.Validate(), ShouldBeNil)
-			So(valid.Shards, ShouldEqual, 17)
-		})
+	Convey("ValidateQueueName", t, func() {
+		So(ValidateQueueName("projects/example-project/locations/us-central1/queues/ttq"),
+			ShouldBeNil)
+		So(ValidateQueueName(""), ShouldErrLike, "name not given")
+		So(ValidateQueueName("bad"), ShouldErrLike, "must be in format")
 	})
 }
