@@ -18,9 +18,6 @@ import (
 	"context"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/server/auth"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -69,44 +66,4 @@ func BucketKey(ctx context.Context, project, bucket string) *datastore.Key {
 		ID:     bucket,
 		Parent: ProjectKey(ctx, project),
 	})
-}
-
-// NoRole indicates the user has no defined role in a bucket.
-const NoRole pb.Acl_Role = -1
-
-// GetRole returns the role of current identity in this bucket. Roles are
-// numerically comparable and role n implies roles [0, n-1] as well. May return
-// NoRole if the current identity has no defined role in this bucket.
-// TODO(crbug/1042991): Move elsewhere as needed.
-func (b *Bucket) GetRole(ctx context.Context) (pb.Acl_Role, error) {
-	id := auth.CurrentIdentity(ctx)
-	// Projects can do anything in their own buckets regardless of ACLs.
-	if id.Kind() == identity.Project && id.Value() == b.Parent.StringID() {
-		return pb.Acl_WRITER, nil
-	}
-	// Admins can do anything in all buckets regardless of ACLs.
-	switch is, err := auth.IsMember(ctx, "administrators"); {
-	case err != nil:
-		return NoRole, errors.Annotate(err, "failed to check group membership in %q", "administrators").Err()
-	case is:
-		return pb.Acl_WRITER, nil
-	}
-	role := NoRole
-	for _, rule := range b.Proto.Acls {
-		// Check this rule if it could potentially confer a higher role.
-		if rule.Role > role {
-			if rule.Identity == string(id) {
-				role = rule.Role
-			} else if id.Kind() == identity.User && rule.Identity == id.Email() {
-				role = rule.Role
-			} else if is, err := auth.IsMember(ctx, rule.Group); err != nil {
-				// Empty group membership checks always return false without
-				// any error so it doesn't matter if the group is unspecified.
-				return NoRole, errors.Annotate(err, "failed to check group membership in %q", rule.Group).Err()
-			} else if is {
-				role = rule.Role
-			}
-		}
-	}
-	return role, nil
 }

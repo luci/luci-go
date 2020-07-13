@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -52,21 +53,15 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid field mask")
 	}
-	bld, bck, err := model.GetBuildAndBucket(ctx, req.Id)
-	switch {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, notFound(ctx)
-	case err != nil:
+
+	bld, err := getBuild(ctx, req.Id)
+	if err != nil {
 		return nil, err
 	}
-	switch r, err := bck.GetRole(ctx); {
-	case err != nil:
+	if err := perm.HasInBuilder(ctx, perm.BuildsCancel, bld.Proto.Builder); err != nil {
 		return nil, err
-	case r < pb.Acl_READER:
-		return nil, notFound(ctx)
-	case r < pb.Acl_WRITER:
-		return nil, appstatus.Errorf(codes.PermissionDenied, "%q does not have permission to cancel builds in bucket %q", auth.CurrentIdentity(ctx), bld.BucketID)
 	}
+
 	// If the build has ended, there's nothing to cancel.
 	if protoutil.IsEnded(bld.Proto.Status) {
 		return bld.ToProto(ctx, m)
@@ -82,7 +77,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			case !ok:
 				return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
 			case merr[0] == datastore.ErrNoSuchEntity:
-				return notFound(ctx)
+				return perm.NotFoundErr(ctx)
 			case merr[0] != nil:
 				return errors.Annotate(merr[0], "failed to fetch build: %d", bld.ID).Err()
 			case merr[1] != nil && merr[1] != datastore.ErrNoSuchEntity:

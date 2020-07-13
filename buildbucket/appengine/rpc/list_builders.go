@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -48,7 +49,7 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 	}
 
 	// Check permissions.
-	if err := canRead(ctx, req.Project, req.Bucket); err != nil {
+	if err := perm.HasInBucket(ctx, perm.BuildersList, req.Project, req.Bucket); err != nil {
 		return nil, err
 	}
 

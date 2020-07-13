@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -42,7 +43,7 @@ func (*Builders) GetBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb
 		return nil, appstatus.BadRequest(err)
 	}
 
-	if err := canRead(ctx, req.Id.Project, req.Id.Bucket); err != nil {
+	if err := perm.HasInBuilder(ctx, perm.BuildersGet, req.Id); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +53,7 @@ func (*Builders) GetBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb
 	}
 	switch err := datastore.Get(ctx, builder); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, notFound(ctx)
+		return nil, perm.NotFoundErr(ctx)
 	case err != nil:
 		return nil, err
 	}

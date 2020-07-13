@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -67,7 +67,7 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		case err != nil:
 			return nil, err
 		case len(ents) == 0:
-			return nil, notFound(ctx)
+			return nil, perm.NotFoundErr(ctx)
 		case len(ents) == 1:
 			req.Id = ents[0].BuildID
 		default:
@@ -75,15 +75,12 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 			return nil, errors.Reason("unexpected number of results for build address %q: %d", addr, len(ents)).Err()
 		}
 	}
-	bld := &model.Build{ID: req.Id}
-	switch err := datastore.Get(ctx, bld); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, notFound(ctx)
-	case err != nil:
+
+	bld, err := getBuild(ctx, req.Id)
+	if err != nil {
 		return nil, err
 	}
-
-	if err := canRead(ctx, bld.Proto.Builder.Project, bld.Proto.Builder.Bucket); err != nil {
+	if err := perm.HasInBuilder(ctx, perm.BuildsGet, bld.Proto.Builder); err != nil {
 		return nil, err
 	}
 
