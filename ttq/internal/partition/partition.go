@@ -90,6 +90,27 @@ func (p Partition) String() string {
 	return fmt.Sprintf("%s_%s", p.Low.Text(16 /*hex*/), p.High.Text(16 /*hex*/))
 }
 
+func (p Partition) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s_%s"`, p.Low.Text(16 /*hex*/), p.High.Text(16 /*hex*/))), nil
+}
+
+func (p *Partition) UnmarshalJSON(bs []byte) error {
+	s := string(bs)
+	switch {
+	case s == `null`:
+		return nil
+	case len(s) < 2 || s[0] != '"' || s[len(s)-1] != '"':
+		return errors.Reason("invalid JSON-serialized partition %q", s).Err()
+	default:
+		if tmp, err := FromString(s[1 : len(s)-1]); err != nil {
+			return err
+		} else {
+			*p = *tmp
+			return nil
+		}
+	}
+}
+
 func (p Partition) Copy() *Partition {
 	r := &Partition{}
 	r.Low.Set(&p.Low)

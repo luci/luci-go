@@ -15,6 +15,7 @@
 package partition
 
 import (
+	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -50,6 +51,29 @@ func TestPartition(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			_, err = FromString("10_-1")
 			So(err, ShouldNotBeNil)
+		})
+
+		Convey("To/From JSON", func() {
+			Convey("works", func() {
+				in := FromInts(5, 64)
+				bytes, err := json.Marshal(in)
+				So(err, ShouldBeNil)
+				So(string(bytes), ShouldResemble, `"5_40"`)
+				out := &Partition{}
+				So(json.Unmarshal(bytes, out), ShouldBeNil)
+				So(out, ShouldResemble, in)
+			})
+			Convey("null", func() {
+				p := Partition{}
+				So(json.Unmarshal([]byte(`null`), &p), ShouldBeNil)
+				So(p, ShouldResemble, Partition{})
+			})
+			Convey("partial error doesn't mutate passed object", func() {
+				p := Partition{}
+				err := json.Unmarshal([]byte(`"10_badhighvalue"`), &p)
+				So(err, ShouldNotBeNil)
+				So(p, ShouldResemble, Partition{})
+			})
 		})
 
 		Convey("Span", func() {
