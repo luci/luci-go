@@ -12,40 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttq
+package internal
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestOptions(t *testing.T) {
+func TestValidateQueueName(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate", t, func() {
-		valid := Options{}
-		Convey("Valid", func() {
-			So(valid.Validate(), ShouldBeNil)
-			So(valid.ScanInterval, ShouldEqual, time.Minute)
-			So(valid.Shards, ShouldEqual, 16)
-		})
-		Convey("Allow non default", func() {
-			valid.Shards = 17
-			So(valid.Validate(), ShouldBeNil)
-			So(valid.Shards, ShouldEqual, 17)
-		})
-
-		Convey("ScanInterval", func() {
-			opts := valid
-			opts.ScanInterval = time.Minute - time.Second
-			So(opts.Validate(), ShouldErrLike, "must be at least 1 Minute")
-
-			opts.ScanInterval = 5*time.Minute + 7*time.Second
-			So(opts.Validate(), ShouldBeNil)
-			So(opts.ScanInterval, ShouldEqual, 5*time.Minute)
-		})
+	Convey("ValidateQueueName", t, func() {
+		So(ValidateQueueName("projects/example-project/locations/us-central1/queues/ttq"),
+			ShouldBeNil)
+		So(ValidateQueueName(""), ShouldErrLike, "name not given")
+		So(ValidateQueueName("bad"), ShouldErrLike, "must be in format")
 	})
 }

@@ -16,8 +16,6 @@ package ttq
 
 import (
 	"context"
-	"net/url"
-	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -41,9 +39,7 @@ type PostProcess func(context.Context)
 
 // Options configures operations of shared parts of the TTQ library.
 //
-// Only the Queue name and BaseURL must be specified.
-// All other options have defaults.
-//
+// All options have defaults.
 // If there is a need to override or change default values, please read
 // the overall rationale behind these default values below. Tuning one value
 // without regard to others may lead to unreliable sweeping exactly when your
@@ -78,48 +74,6 @@ type PostProcess func(context.Context)
 //  (d) With 16 shards * (9+1) * 2048 tasks/shard = 327K  >  5000*60 = 300K.
 type Options struct {
 
-	// BaseURL is the URL under which the TTQ library handlers will be installed.
-	// Required.
-	//
-	// The URL must be externally callable by Cloud Tasks.
-	// The TTQ library reserves full use of this URL prefix.
-	// The URL must have a path component. Fragment and query components as well
-	// as trailing slash are not allowed in the URL.
-	//
-	// When calling InstallRoutes of the specific implementation,
-	// TTQ library will install handlers on the path component of the URL.
-	// TODO(tandrii): add a PathPrefix option to avoid this limitation.
-	//
-	// For example, "https://my.example.com/internal/ttq".
-	//
-	// You must configure a cron job to issue HTTP GET on `BaseURL + "/cron"`
-	// at least every `ScanInterval` (see doc below). No authentication is
-	// required.
-	// Continuing the example above, cron should issue
-	// "GET https://my.example.com/internal/ttq/cron".
-	BaseURL string
-
-	// Queue is the full name of the Cloud Tasks queue to be used for sweeping.
-	// Required.
-	//
-	// Format: `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID`.
-	// The queue must already exist with a throughput of at least 10 QPS.
-	//
-	// Docs:
-	//  https://cloud.google.com/tasks/docs/reference/rest/v2/projects.locations.queues/create
-	//
-	// It doesn't matter how you create the queue, whether via queue.yaml or the
-	// API or gcloud SDK, but beware of
-	// https://cloud.google.com/tasks/docs/queue-yaml#pitfalls
-	//
-	// To find out which location an existing queue belongs to
-	//    $ gcloud tasks queues describe my-queue-name
-	//
-	// If the same queue is used for other purposes, beware that this may increase
-	// the latency of the sweeping process. Thus, a dedicated queue for sweeping
-	// is recommended.
-	Queue string
-
 	// ScanInterval defines how frequently the database will be scanned for stale
 	// tasks.
 	//
@@ -148,29 +102,6 @@ type Options struct {
 
 // Validate validates option values and applies defaults in place.
 func (s *Options) Validate() error {
-	switch u, err := url.Parse(s.BaseURL); {
-	case s.BaseURL == "":
-		return errors.New("BaseURL is required")
-	case err != nil:
-		return errors.Annotate(err, "invalid BaseURL %q", s.BaseURL).Err()
-	case u.Fragment != "" || u.RawQuery != "":
-		return errors.Reason("BaseURL %q must not have fragment and query components", s.BaseURL).Err()
-	case u.Path == "":
-		return errors.Reason("BaseURL %q must have path component", s.BaseURL).Err()
-	case strings.HasSuffix(u.Path, "/"):
-		return errors.Reason("BaseURL %q must not end with /", s.BaseURL).Err()
-	}
-
-	// Quick check for typical mistakes in the Queue now.
-	// Actual validity will only be known once cronjob creates the first sweeping
-	// tasks.
-	switch qs := strings.Split(s.Queue, "/"); {
-	case s.Queue == "":
-		return errors.New("Queue is required")
-	case len(qs) != 6 || qs[0] != "projects" || qs[2] != "locations" || qs[4] != "queues":
-		return errors.Reason("Queue %q must be in format 'projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID'", s.Queue).Err()
-	}
-
 	switch {
 	case s.ScanInterval == 0:
 		s.ScanInterval = time.Minute
@@ -202,6 +133,6 @@ func (s *Options) Validate() error {
 
 const (
 	// sweepScanIntervalGranularity is used for deduplication of sweeping shards.
-	// See also SweepOptions.ScanInterval.
+	// See also Options.ScanInterval.
 	sweepScanIntervalGranularity = time.Minute
 )
