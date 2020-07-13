@@ -90,6 +90,30 @@
     },
     {
       "key": {
+        "uuid": "40c5c3ed_9b7eb556",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "I\u0027m afraid I disagree with this. We\u0027ve discussed a bit in previous CL - https://screenshot.googleplex.com/A63rUpAcxkZ.\n\n1. We cannot just blindly convert from Py version without reasonably redesign. The repo/code structure is different. \nIn Python, we have a `api.py` containing all the APIs handlers (SearchBuilds/GetBuild/ScheduleBuild). Then we have `validation.py` for all validation and `search.py` for the detailed search logic. \n\nHowever in Go, the convention is different. We\u0027ve separated APIs handlers into different files like `Search_builds.go` and `get_build.go` instead of a central `api.go`, and put the further operation logic into the same file.  For example `list_builders.go`, we put the `validateListBuilders()` and detailed list operation `fetchBuilders()` into the same `list_builders.go`, which are called by `ListBuilders()`. \n\nIf we\u0027d like to put `fetch()` logic for SearchBuilds in a different file - query.go as in Python version, why we don\u0027t separate all the validation logic as well?\n\n2. Therefore, I\u0027d like to propose to put the `fetch()` related logic into the `search_builds.go` to be consistent with other RPC go handlers files. And we can rename the `internal/search/query.go` to `internal/model/searchquery.go`(may be a better name) to implies it contains intermediate objects used by this repro. We don\u0027t necessarily binding any DB operation onto those intermediate objects because there are not db model objects.",
+      "parentUuid": "e4dcce9b_f80014cd",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 29
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "57e428d3_3b52ab16",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -424,6 +448,30 @@
       "side": 1,
       "message": "I use VSCode which formats code for me (I never run gofmt myself)\nother editors have automatic formatting too",
       "parentUuid": "eff0d296_d6d3a9b5",
+      "range": {
+        "startLine": 145,
+        "startChar": 65,
+        "endLine": 145,
+        "endChar": 66
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d99f3e08_901bee2f",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "Yeah, I configured auto-gofmt in Intellij.",
+      "parentUuid": "4b4a78d9_1ca8f8ae",
       "range": {
         "startLine": 145,
         "startChar": 65,

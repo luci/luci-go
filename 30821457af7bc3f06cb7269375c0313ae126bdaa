@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "178e7a90_3fca8eb4",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37f39f00_7494a308",
+      "range": {
+        "startLine": 107,
+        "startChar": 49,
+        "endLine": 107,
+        "endChar": 104
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69e5a979_734cc204",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 7
@@ -62,6 +86,30 @@
       "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15f02393_1fdb45c7",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "Added tests on each filter.",
+      "parentUuid": "69e5a979_734cc204",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 4
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +159,54 @@
     },
     {
       "key": {
+        "uuid": "ade1dd1d_12f57ad8",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b90f4ed_37f280a4",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 26
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "df74612b_4fe96417",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "1.\nBoth works. But using *int64 will lead to less code. Otherwise, I have to do something like 1. this\n```\nlow, high :\u003d -1, -1\nif q.BuildIdLow !\u003d nil || q.BuildIdHigh !\u003d nil {\n  if q.BuildIdLow !\u003d nil {\n     low \u003d q.BuildIdLow\n  }\n   if q.BuildIdHigh !\u003d nil {\n     high \u003d q.BuildIdHigh\n  }\n  return low, high\n}\n```\n\n2. \nFor the reason why BuildIdLow instead of BuildIDLow, I\u0027d replied in one of your previous comments (https://screenshot.googleplex.com/rXjtuLDxwRK).\nI think we don\u0027t have a standard for the format of id. Because I was also suggested to use `Id` instead of `ID` as it\u0027s an abbreviation not an acronym in another CL. \nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2245241/4/buildbucket/appengine/model/utils.go#30",
+      "parentUuid": "27f360d1_80ba2326",
+      "range": {
+        "startLine": 154,
+        "startChar": 30,
+        "endLine": 154,
+        "endChar": 31
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3627d2e6_87eb26ad",
         "filename": "buildbucket/appengine/internal/search/query_test.go",
         "patchSetId": 7
@@ -131,6 +227,30 @@
       "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcab90e2_d518e468",
+        "filename": "buildbucket/appengine/internal/search/query_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3627d2e6_87eb26ad",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 48
+      },
+      "revId": "30821457af7bc3f06cb7269375c0313ae126bdaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

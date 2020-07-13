@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "31a17f61_4aefaac2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-13T19:25:50Z",
+      "side": 1,
+      "message": "Hi Nodir, I\u0027ve replied to your comments and made some code change. PTAL, thx.",
+      "revId": "8bebbd0c94925cb7164f564160e204bf2ef1fcb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
