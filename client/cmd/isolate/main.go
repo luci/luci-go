@@ -42,6 +42,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Commands: []*subcommands.Command{
 			lib.CmdArchive(defaultAuthOpts),
 			lib.CmdBatchArchive(defaultAuthOpts),
+			lib.CmdCASArchive(),
 			lib.CmdCheck(),
 			lib.CmdRemap(),
 			lib.CmdRun(),
