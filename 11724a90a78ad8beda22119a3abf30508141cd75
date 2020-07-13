@@ -33,6 +33,29 @@
       "revId": "11724a90a78ad8beda22119a3abf30508141cd75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "448db924_c8b1d681",
+        "filename": "ttq/internal/fakedb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-13T23:09:24Z",
+      "side": 1,
+      "message": "nit: Will the read lock ever be used? If not, can we just use `sync.Mutex`? Feel free to ignore if it is used somewhere.",
+      "range": {
+        "startLine": 25,
+        "startChar": 16,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "11724a90a78ad8beda22119a3abf30508141cd75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
