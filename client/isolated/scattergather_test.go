@@ -53,3 +53,13 @@ func TestScatterGatherAdd(t *testing.T) {
 		So(sc.Add(wd1, rp3unclean), ShouldNotBeNil)
 	})
 }
+
+func TestScatterGatherSet(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test that Set works in a good case.", t, func() {
+		sc := ScatterGather{}
+		So(sc.Set("C:\\windir:dir"), ShouldBeNil)
+		So(sc.String(), ShouldEqual, "map[C:\\windir:[dir]]")
+	})
+}

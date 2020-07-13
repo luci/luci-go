@@ -53,14 +53,14 @@ func (sc ScatterGather) Add(wd string, rel string) error {
 
 // Set implements the flags.Var interface.
 func (sc *ScatterGather) Set(value string) error {
-	parsed := strings.SplitN(value, ":", 2)
-	if len(parsed) != 2 {
+	colon := strings.LastIndexByte(value, ':')
+	if colon == -1 {
 		return errors.Reason("malformed input %q", value).Err()
 	}
 	if *sc == nil {
 		*sc = ScatterGather{}
 	}
-	return sc.Add(parsed[0], parsed[1])
+	return sc.Add(value[:colon], value[colon+1:])
 }
 
 // String implements the Stringer interface.
