@@ -12,27 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttq
+package internal
 
 import (
-	"testing"
+	"strings"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/errors"
 )
 
-func TestOptions(t *testing.T) {
-	t.Parallel()
-
-	Convey("Validate", t, func() {
-		valid := Options{}
-		Convey("Valid", func() {
-			So(valid.Validate(), ShouldBeNil)
-			So(valid.Shards, ShouldEqual, 16)
-		})
-		Convey("Allow non default", func() {
-			valid.Shards = 17
-			So(valid.Validate(), ShouldBeNil)
-			So(valid.Shards, ShouldEqual, 17)
-		})
-	})
+// ValidateQueueName does quick check for some necessary conditions.
+// It doesn't guarantee that queue is actually valid and exists.
+func ValidateQueueName(q string) error {
+	switch qs := strings.Split(q, "/"); {
+	case q == "":
+		return errors.New("queue name not given")
+	case len(qs) != 6 || qs[0] != "projects" || qs[2] != "locations" || qs[4] != "queues":
+		return errors.Reason("queue %q must be in format 'projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID'", q).Err()
+	}
+	return nil
 }
