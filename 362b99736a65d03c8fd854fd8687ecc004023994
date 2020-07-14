@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9ab93828_37e94324",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:56:49Z",
+      "side": 1,
+      "message": "Shall we also append an \u0027s\u0027 to the func name to indicates it returns a slice of reminders\u0027 metadata.",
+      "range": {
+        "startLine": 43,
+        "startChar": 13,
+        "endLine": 43,
+        "endChar": 30
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a515030d_153c3d2c",
         "filename": "ttq/internal/impl_test.go",
         "patchSetId": 2
