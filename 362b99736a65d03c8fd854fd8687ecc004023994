@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a515030d_153c3d2c",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:51:56Z",
+      "side": 1,
+      "message": "Is Payload is required for this test? If not, can we remove it? I don\u0027t see any there\u0027s any validation on the presence of payload.",
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b99d4752_5bec3557",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:51:56Z",
+      "side": 1,
+      "message": "Remove?",
+      "range": {
+        "startLine": 272,
+        "startChar": 45,
+        "endLine": 272,
+        "endChar": 47
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ec4f6af_41626c78",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:51:56Z",
+      "side": 1,
+      "message": "typo: allowed",
+      "range": {
+        "startLine": 294,
+        "startChar": 23,
+        "endLine": 294,
+        "endChar": 29
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47a7bd99_9d5d9c82",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:51:56Z",
+      "side": 1,
+      "message": "Why not define it in L292 as well? This value should not affect `Level-3 not allowed` test.",
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bd459e3_a43f04d2",
+        "filename": "ttq/types.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:51:56Z",
+      "side": 1,
+      "message": "nit: Though they are defined as `uint`, in most cases, they have to be converted to int in the internal pkgs. Maybe we can make them an `int` and put a check in `Validate` method to avoid those conversions?",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 25
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9a7dece_d88972e0",
+        "filename": "ttq/types.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T04:51:56Z",
+      "side": 1,
+      "message": "I think this should be 16 according to the documentation?",
+      "range": {
+        "startLine": 198,
+        "startChar": 26,
+        "endLine": 198,
+        "endChar": 30
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
