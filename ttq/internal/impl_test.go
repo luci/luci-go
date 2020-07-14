@@ -325,6 +325,53 @@ func TestScan(t *testing.T) {
 	})
 }
 
+func TestPostProcessBatch(t *testing.T) {
+	t.Parallel()
+
+	Convey("PostProcessBatch works", t, func() {
+		ctx := cryptorand.MockForTest(context.Background(), 111)
+		ctx, tclock := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+
+		db := FakeDB{}
+		fakeCT := fakeCloudTasks{}
+		impl := Impl{Options: ttq.Options{}, DB: &db, TasksClient: &fakeCT}
+
+		batch := make([]*Reminder, 10)
+		for i, _ := range batch {
+			r := genReminder(ctx)
+			So(db.SaveReminder(ctx, r), ShouldBeNil)
+			batch[i] = &Reminder{Id: r.Id, FreshUntil: r.FreshUntil}
+		}
+		tclock.Add(time.Hour)
+
+		Convey("Normal operation", func() {
+			err := impl.PostProcessBatch(ctx, batch, nil)
+			So(err, ShouldBeNil)
+			So(len(db.AllReminders()), ShouldEqual, 0)
+		})
+		Convey("Concurrent deletion", func() {
+			So(db.DeleteReminder(ctx, batch[0]), ShouldBeNil)
+			So(db.DeleteReminder(ctx, batch[9]), ShouldBeNil)
+			err := impl.PostProcessBatch(ctx, batch, nil)
+			So(err, ShouldBeNil)
+			So(len(db.AllReminders()), ShouldEqual, 0)
+		})
+		Convey("Task Creation failures", func() {
+			fakeCT.errs = []error{
+				status.Errorf(codes.Unavailable, "please retry"),
+				status.Errorf(codes.InvalidArgument, "user error"),
+			}
+			err := impl.PostProcessBatch(ctx, batch, nil)
+			So(err, ShouldNotBeNil)
+			merr := err.(errors.MultiError)
+			So(len(merr), ShouldEqual, 1)
+			So(merr[0], ShouldErrLike, "please retry")
+			So(len(db.AllReminders()), ShouldEqual, 1)
+		})
+	})
+}
+
 func TestLeaseHelpers(t *testing.T) {
 	t.Parallel()
 

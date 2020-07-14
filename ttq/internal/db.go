@@ -36,4 +36,13 @@ type Database interface {
 	// returned alongside the error. The caller will later call this method again
 	// to fetch the remaining of Reminders in range of [<lastReturned.Id+1> .. high).
 	FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*Reminder, error)
+
+	// FetchReminderPayloads fetches payloads of a batch of Reminders.
+	//
+	// The Reminder objects are re-used in the returned batch.
+	// If any Reminder is no longer found, it is silently omitted in the returned
+	// batch.
+	// In case of any other error, partial result of fetched Reminders so far
+	// should be returned alongside the error.
+	FetchReminderPayloads(context.Context, []*Reminder) ([]*Reminder, error)
 }

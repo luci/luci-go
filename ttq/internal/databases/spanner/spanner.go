@@ -45,3 +45,7 @@ func (d *DB) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
 func (d *DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) ([]*internal.Reminder, error) {
 	panic("not implemented") // TODO: Implement
 }
+
+func (d *DB) FetchReminderPayloads(_ context.Context, _ []*internal.Reminder) ([]*internal.Reminder, error) {
+	panic("not implemented") // TODO: Implement
+}
