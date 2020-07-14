@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/googleapis/gax-go"
+	gax "github.com/googleapis/gax-go/v2"
 	"golang.org/x/oauth2"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
 	"google.golang.org/grpc/codes"
