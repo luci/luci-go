@@ -132,17 +132,18 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	_, err := getFieldMask(req.GetFields())
+	_, err := getBuildsSubMask(req.GetFields())
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
 
-	// TODO(crbug/1042991): Search for the requested builds.
-	_, err = searchBuilds(ctx, search.NewQuery(req))
+	rsp, err := searchBuilds(ctx, search.NewQuery(req))
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+
+	// TODO(crbug/1042991): Loading the steps/properties and trimming the builds by mask.
+	return rsp, nil
 }
 
 // searchBuilds is an internal func to perform main search builds business logic.
@@ -173,9 +174,8 @@ func searchBuilds(ctx context.Context, q *search.Query) (*pb.SearchBuildsRespons
 		}
 	}
 
-	// TODO(crbug/1090540): implement the function querySearch().
 	logging.Debugf(ctx, "Querying search on Build.")
-	return nil, nil
+	return q.FetchOnBuild(ctx)
 }
 
 // indexedTags returns the indexed tags.
