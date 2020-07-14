@@ -15,21 +15,35 @@
 package search
 
 import (
+	"context"
+	"regexp"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/data/strpair"
 
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/paged"
+
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
 	defaultPageSize = 100
-	maxPageSize = 1000
+	maxPageSize     = 1000
+)
+
+var (
+	TagIndexCursorRegex = regexp.MustCompile(`^id>\d+$`)
 )
 
 // Query is the intermediate to store the arguments for ds search query.
@@ -95,6 +109,121 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		s.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
 	}
 	return s
+}
+
+// IndexedTags returns the indexed tags.
+func IndexedTags(tags strpair.Map) []string {
+	set := make(stringset.Set)
+	for k, vals := range tags {
+		if k != "buildset" && k != "build_address" {
+			continue
+		}
+		for _, val := range vals {
+			set.Add(strpair.Format(k, val))
+		}
+	}
+	return set.ToSortedSlice()
+}
+
+// Fetch performs main search builds logic.
+func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
+	if !buildid.MayContainBuilds(q.StartTime, q.EndTime) {
+		return &pb.SearchBuildsResponse{}, nil
+	}
+
+	// Validate bucket ACL permission.
+	if q.Builder != nil && q.Builder.Bucket != "" {
+		if err := perm.HasInBuilder(ctx, perm.BuildsList, q.Builder); err != nil {
+			return nil, err
+		}
+	}
+
+	// Determine which subflow - directly query on Builds or on TagIndex.
+	isTagIndexCursor := TagIndexCursorRegex.MatchString(q.StartCursor)
+	canUseTagIndex := len(IndexedTags(q.Tags)) != 0 && (q.StartCursor == "" || isTagIndexCursor)
+	if canUseTagIndex {
+		// TODO(crbug/1090540): test switch-case block after tagIndexSearch() is complete.
+		switch res, err := q.tagIndexSearch(ctx); {
+		case model.TagIndexIncomplete.In(err) && q.StartCursor == "":
+			logging.Warningf(ctx, "Falling back to querying search on builds.")
+		case err != nil:
+			return nil, err
+		default:
+			return res, nil
+		}
+	}
+
+	logging.Debugf(ctx, "Querying search on Build.")
+	return q.fetchOnBuild(ctx)
+}
+
+// fetchOnBuild fetches directly on Build entity.
+func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, error) {
+	// TODO(crbug/1090540): Fetch accessible buckets once the related function is implemented, if bucketId is nil.
+
+	dq := datastore.NewQuery(model.BuildKind).Order("__key__")
+
+	for _, tag := range q.Tags.Format() {
+		dq = dq.Eq("tags", tag)
+	}
+
+	if q.Status != pb.Status_STATUS_UNSPECIFIED {
+		dq = dq.Eq("status_v2", q.Status)
+	}
+
+	// TODO(crbug/1090540): filtering by created_by after it's been migrated to string.
+
+	switch {
+	case q.Builder.GetBuilder() != "":
+		dq = dq.Eq("builder_id", protoutil.FormatBuilderID(q.Builder))
+	case q.Builder.GetBucket() != "":
+		dq = dq.Eq("bucket_id", protoutil.FormatBucketID(q.Builder.Project, q.Builder.Bucket))
+	case q.Builder.GetProject() != "":
+		dq = dq.Eq("project", q.Builder.Project)
+	}
+
+	idLow, idHigh := q.idRange()
+	if idLow != nil {
+		dq = dq.Gte("__key__", datastore.KeyForObj(ctx, &model.Build{ID: *idLow}))
+	}
+	if idHigh != nil {
+		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: *idHigh}))
+	}
+
+	logging.Debugf(ctx, "datastore query for FetchOnBuild: %s", dq.String())
+	rsp := &pb.SearchBuildsResponse{}
+	err := paged.Query(ctx, q.PageSize, q.StartCursor, rsp, dq, func(build *model.Build) error {
+		rsp.Builds = append(rsp.Builds, build.ToSimpleBuildProto(ctx))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return rsp, nil
+}
+
+// TODO(crbug/1090540): implement search via tagIndex flow
+func (q *Query) tagIndexSearch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
+	logging.Debugf(ctx, "Searching builds on TagIndex")
+	return nil, nil
+}
+
+// idRange returns the id range from either q.BuildIdLow/q.BuildIdHigh or q.StartTime/q.EndTime.
+func (q *Query) idRange() (*int64, *int64) {
+	if q.BuildIdLow != nil || q.BuildIdHigh != nil {
+		return q.BuildIdLow, q.BuildIdHigh
+	}
+
+	var idLow, idHigh *int64
+	low, high := buildid.IdRange(q.StartTime, q.EndTime)
+	if low != 0 {
+		idLow = &low
+	}
+	if high != 0 {
+		idHigh = &high
+	}
+	return idLow, idHigh
 }
 
 // fixPageSize ensures the size is positive and less than or equal to maxPageSize.

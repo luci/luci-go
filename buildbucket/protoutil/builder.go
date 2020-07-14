@@ -64,3 +64,8 @@ func ParseBuilderID(s string) (*pb.BuilderID, error) {
 		Builder: parts[2],
 	}, nil
 }
+
+// FormatBucketID returns "{project}/{bucket}" string.
+func FormatBucketID(project, bucket string) string {
+	return fmt.Sprintf("%s/%s", project, bucket)
+}

@@ -16,25 +16,14 @@ package rpc
 
 import (
 	"context"
-	"regexp"
 	"strings"
 
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
-	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
-	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-)
-
-var (
-	tagIndexCursorRegex = regexp.MustCompile(`^id>\d+$`)
 )
 
 // validateChange validates the given Gerrit change.
@@ -105,7 +94,7 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 
 // validatePageToken checks if there are indexed tags when the token is TagIndex token.
 func validatePageToken(token string, tags []*pb.StringPair) error {
-	if tagIndexCursorRegex.MatchString(token) && len(indexedTags(protoutil.StringPairMap(tags))) == 0 {
+	if search.TagIndexCursorRegex.MatchString(token) && len(search.IndexedTags(protoutil.StringPairMap(tags))) == 0 {
 		return errors.Reason("invalid page_token").Err()
 	}
 	return nil
@@ -132,68 +121,16 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	_, err := getFieldMask(req.GetFields())
+	_, err := getBuildsSubMask(req.GetFields())
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
 
-	// TODO(crbug/1042991): Search for the requested builds.
-	_, err = searchBuilds(ctx, search.NewQuery(req))
+	rsp, err := search.NewQuery(req).Fetch(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
-}
 
-// searchBuilds is an internal func to perform main search builds business logic.
-func searchBuilds(ctx context.Context, q *search.Query) (*pb.SearchBuildsResponse, error) {
-	if !buildid.MayContainBuilds(q.StartTime, q.EndTime) {
-		return &pb.SearchBuildsResponse{}, nil
-	}
-
-	// Validate bucket ACL permission.
-	if q.Builder != nil && q.Builder.Bucket != "" {
-		if err := perm.HasInBuilder(ctx, perm.BuildsList, q.Builder); err != nil {
-			return nil, err
-		}
-	}
-
-	// Determine which subflow - directly query on Builds or on TagIndex.
-	isTagIndexCursor := tagIndexCursorRegex.MatchString(q.StartCursor)
-	canUseTagIndex := len(indexedTags(q.Tags)) != 0 && (q.StartCursor == "" || isTagIndexCursor)
-	if canUseTagIndex {
-		// TODO(crbug/1090540): test switch-case block after tagIndexSearch() is complete.
-		switch res, err := tagIndexSearch(ctx, q); {
-		case model.TagIndexIncomplete.In(err) && q.StartCursor == "":
-			logging.Warningf(ctx, "Falling back to querying search on builds.")
-		case err != nil:
-			return nil, err
-		default:
-			return res, nil
-		}
-	}
-
-	// TODO(crbug/1090540): implement the function querySearch().
-	logging.Debugf(ctx, "Querying search on Build.")
-	return nil, nil
-}
-
-// indexedTags returns the indexed tags.
-func indexedTags(tags strpair.Map) []string {
-	set := make(stringset.Set)
-	for k, vals := range tags {
-		if k != "buildset" && k != "build_address" {
-			continue
-		}
-		for _, val := range vals {
-			set.Add(strpair.Format(k, val))
-		}
-	}
-	return set.ToSortedSlice()
-}
-
-// TODO(crbug/1090540): implement search via tagIndex flow
-func tagIndexSearch(ctx context.Context, q *search.Query) (*pb.SearchBuildsResponse, error) {
-	logging.Debugf(ctx, "Searching builds on TagIndex")
-	return nil, nil
+	// TODO(crbug/1042991): Loading the steps/properties and trimming the builds by mask.
+	return rsp, nil
 }

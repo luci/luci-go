@@ -26,6 +26,12 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+)
+
+const (
+	// BuildKind is a Build entity's kind in the datastore.
+	BuildKind = "Build"
 )
 
 // isHiddenTag returns whether the given tag should be hidden by ToProto.
@@ -175,4 +181,36 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 		return nil, errors.Annotate(err, "error trimming fields for %q", key).Err()
 	}
 	return p, nil
+}
+
+// ToSimpleBuildProto returns the *pb.Build without loading steps, infra, input/output properties.
+func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
+	p := proto.Clone(&b.Proto).(*pb.Build)
+	p.Tags = protoutil.StringPairs(strpair.ParseMap(b.Tags))
+	return p
+}
+
+// GetBuildAndBucket returns the build with the given ID as well as the bucket
+// it belongs to. Returns datastore.ErrNoSuchEntity if either is not found.
+func GetBuildAndBucket(ctx context.Context, id int64) (*Build, *Bucket, error) {
+	bld := &Build{
+		ID: id,
+	}
+	switch err := datastore.Get(ctx, bld); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil, err
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "error fetching build with ID %d", id).Err()
+	}
+	bck := &Bucket{
+		ID:     bld.Proto.Builder.Bucket,
+		Parent: ProjectKey(ctx, bld.Proto.Builder.Project),
+	}
+	switch err := datastore.Get(ctx, bck); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil, err
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "error fetching bucket %q", bld.BucketID).Err()
+	}
+	return bld, bck, nil
 }
