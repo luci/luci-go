@@ -228,7 +228,14 @@
 // "Updating the Build State"). If step S has multiple logs, the
 // "$build.proto" log must be the first one. This is called a "Merge Step", and
 // is a directive for the host to merge the Build message located in the
-// "$build.proto" log here.
+// "$build.proto" log here. Note that the provision that 'Step.Log.Url' fields
+// must be relative still applies here. However, it's the invoker's
+// responsibility to populate $LOGDOG_NAMESPACE with the new, full, namespace.
+// Failure to do this will result in missing logs/step data.
+//
+// (SIDENOTE: There's an internal proposal to improve the Logdog "butler" API so
+// that application code only needs to handle the relative namespaces as well,
+// which would make this much less confusing).
 //
 // The Host Application MUST append all steps from the child build.proto
 // stream to the parent build as substeps of step S and copy the following

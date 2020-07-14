@@ -146,14 +146,17 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 		return nil
 	}
 
-	curLogdogNamespace := lo.env.GetEmpty(luciexe.LogdogNamespaceEnv)
 	var bits []string
-	if curLogdogNamespace != "" {
-		bits = append(bits, strings.Split(curLogdogNamespace, types.StreamNameSepStr)...)
-	}
 	bits = append(bits, strings.Split(o.Namespace, "|")...)
-	ldNS, _ := types.MakeStreamName("s_", bits...)
-	lo.env.Set(luciexe.LogdogNamespaceEnv, string(ldNS))
+	relNS, _ := types.MakeStreamName("s_", bits...)
+
+	// The $LOGDOG_NAMESPACE envvar is currently cumulative, even though the
+	// Log.Url field is relative.
+	fullNS := string(relNS)
+	if curNS := lo.env.GetEmpty(luciexe.LogdogNamespaceEnv); curNS != "" {
+		fullNS = strings.Join([]string{curNS, fullNS}, "/")
+	}
+	lo.env.Set(luciexe.LogdogNamespaceEnv, fullNS)
 
 	startTime, err := ptypes.TimestampProto(clock.Now(ctx))
 	if err != nil {
@@ -166,15 +169,15 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 		Logs: []*bbpb.Log{
 			{
 				Name: luciexe.BuildProtoLogName,
-				Url:  string(ldNS.Concat(luciexe.BuildProtoStreamSuffix)),
+				Url:  string(relNS.Concat(luciexe.BuildProtoStreamSuffix)),
 			},
 			{
 				Name: "stdout",
-				Url:  string(ldNS.Concat("stdout")),
+				Url:  string(relNS.Concat("stdout")),
 			},
 			{
 				Name: "stderr",
-				Url:  string(ldNS.Concat("stderr")),
+				Url:  string(relNS.Concat("stderr")),
 			}},
 	}
 	return nil
