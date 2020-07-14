@@ -75,7 +75,7 @@ def header(input_api):
 
 def source_file_filter(input_api):
   """Returns filter that selects source code files only."""
-  bl = list(input_api.DEFAULT_BLACK_LIST) + [
+  files_to_skip = list(input_api.DEFAULT_FILES_TO_SKIP) + [
     r'.+/bootstrap/.*',  # third party
     r'.+/jquery/.*',  # third party
     r'.+/pb\.discovery\.go$',
@@ -93,10 +93,11 @@ def source_file_filter(input_api):
     r'server/static/bower_components/.*',  # third party
     r'server/static/upload/bower_components/.*',  # third party
   ]
-  wl = list(input_api.DEFAULT_WHITE_LIST) + [
+  files_to_check = list(input_api.DEFAULT_FILES_TO_CHECK) + [
     r'.+\.go$',
   ]
-  return lambda x: input_api.FilterSourceFile(x, white_list=wl, black_list=bl)
+  return lambda x: input_api.FilterSourceFile(
+      x, files_to_check=files_to_check, files_to_skip=files_to_skip)
 
 
 def CommonChecks(input_api, output_api):
