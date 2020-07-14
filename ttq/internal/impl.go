@@ -22,6 +22,7 @@ import (
 	"time"
 
 	gax "github.com/googleapis/gax-go/v2"
+	"golang.org/x/time/rate"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
 )
@@ -223,9 +225,54 @@ func (impl *Impl) Scan(ctx context.Context, w ScanItem) ([]ScanItem, ScanResult,
 	return moreScans, impl.makeScanResult(ctx, w, rs), err
 }
 
-// PostProcessBatch is yet to be implemented.
-func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder) error {
-	return errors.New("not implemented")
+// PostProcessBatch efficiently processes a batch of stale Reminders.
+//
+// Reminders batch will be modified to fetch Reminders' Payload.
+// limiter, if given, limits the rate of individual Reminder PostProcess-ing.
+func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder, limiter *rate.Limiter) error {
+	maxGoroutines := 16
+	switch {
+	case limiter == nil:
+		limiter = rate.NewLimiter(rate.Inf, 0) // Unlimited.
+	case limiter.Limit() != rate.Inf:
+		maxGoroutines = limiter.Burst()
+	}
+	payloaded, err := impl.DB.FetchReminderPayloads(ctx, batch)
+	switch missing := len(batch) - len(payloaded); {
+	case missing < 0:
+		panic(errors.Reason("%s.FetchReminderPayloads returned %d but asked for %d Reminders",
+			impl.DB.Kind(), len(payloaded), len(batch)).Err())
+	case err != nil:
+		logging.Warningf(ctx, "failed to fetch %d/%d Reminders: %s", missing, len(batch), err)
+		// Continue PostProcess-ing whatever was fetched anyway.
+	case missing > 0:
+		logging.Warningf(ctx, "%d stale Reminders were unexpectedly deleted by something else. "+
+			"If this persists, check for a misconfiguration of the sweeping or the happy path timeout",
+			missing)
+	}
+
+	// This can be optimized further by batching deletion of Reminders,
+	// but the current version was good enough in load tests already.
+	merr := parallel.WorkPool(maxGoroutines, func(workChan chan<- func() error) {
+		for _, r := range payloaded {
+			r := r
+			workChan <- func() error {
+				if err := limiter.Wait(ctx); err != nil {
+					return err // canceled/expired context.
+				}
+				return impl.postProcess(ctx, r, nil)
+			}
+		}
+	})
+	switch {
+	case err == nil:
+		return merr
+	case merr == nil:
+		return err
+	default:
+		e := merr.(errors.MultiError)
+		return append(e, err)
+	}
 }
 
 // Helpers.

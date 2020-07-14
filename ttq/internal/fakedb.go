@@ -81,3 +81,39 @@ func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit
 	}
 	return ret, nil
 }
+
+func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*Reminder) (out []*Reminder, err error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	if f.reminders == nil {
+		return
+	}
+	out = make([]*Reminder, 0, len(in))
+	for _, r := range in {
+		if saved, exists := f.reminders[r.Id]; exists {
+			r.Payload = saved.Payload
+			out = append(out, r)
+		}
+	}
+	return
+}
+
+// Not part of Database interface, but useful in tests.
+
+// AllReminders returns all currently saved reminders.
+func (f *FakeDB) AllReminders() []*Reminder {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	if f.reminders == nil {
+		return nil
+	}
+	out := make([]*Reminder, 0, len(f.reminders))
+	for _, r := range f.reminders {
+		out = append(out, &Reminder{
+			Id:         r.Id,
+			FreshUntil: r.FreshUntil,
+			Payload:    r.Payload,
+		})
+	}
+	return out
+}
