@@ -180,9 +180,9 @@ func TestOptionsNamespace(t *testing.T) {
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
 				Logs: []*bbpb.Log{
-					{Name: "$build.proto", Url: "u/bar/sub/build.proto"},
-					{Name: "stdout", Url: "u/bar/sub/stdout"},
-					{Name: "stderr", Url: "u/bar/sub/stderr"},
+					{Name: "$build.proto", Url: "sub/build.proto"},
+					{Name: "stdout", Url: "sub/stdout"},
+					{Name: "stderr", Url: "sub/stderr"},
 				},
 			})
 			So(luciexe.IsMergeStep(lo.step), ShouldBeTrue)
@@ -200,9 +200,9 @@ func TestOptionsNamespace(t *testing.T) {
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
 				Logs: []*bbpb.Log{
-					{Name: "$build.proto", Url: "u/step/s___cool__/sub/build.proto"},
-					{Name: "stdout", Url: "u/step/s___cool__/sub/stdout"},
-					{Name: "stderr", Url: "u/step/s___cool__/sub/stderr"},
+					{Name: "$build.proto", Url: "step/s___cool__/sub/build.proto"},
+					{Name: "stdout", Url: "step/s___cool__/sub/stdout"},
+					{Name: "stderr", Url: "step/s___cool__/sub/stderr"},
 				},
 			})
 			So(luciexe.IsMergeStep(lo.step), ShouldBeTrue)
