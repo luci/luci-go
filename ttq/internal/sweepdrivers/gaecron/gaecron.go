@@ -131,7 +131,7 @@ func (s *Sweeper) handleTask(rctx *router.Context) {
 }
 
 func (s *Sweeper) createTask(ctx context.Context, scan internal.ScanItem) error {
-	body, err := json.MarshalIndent(scan, "", "  ")
+	body, err := json.MarshalIndent(scan, "", 2)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal %v", scan).Err()
 	}
