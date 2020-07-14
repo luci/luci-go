@@ -98,6 +98,136 @@ func (impl *Impl) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (
 	}, nil
 }
 
+// ScanItem defines keyspace to scan for possible work.
+type ScanItem struct {
+	// Shard number in range of [0 .. ttq.Options.Shards).
+	// Although Shard number can be calculated given the Partition and total
+	// number of shards (see ttq.Options.Shards), the latter may change during
+	// asynchroneous scan executions.
+	Shard int
+	// Partition specifies the range of keys to scan.
+	Partition *partition.Partition
+	// Level counts recursion level for monitoring/debugging purposes.
+	// Cron triggers tasks at level=0. If there is a big backlog,
+	// level=0 task will offload some work to level=1 tasks.
+	// level > 1 should not normally happen and indicates either a bug or a very
+	// overloaded system.
+	// level > 2 won't be executed at all.
+	Level int
+}
+
+// ScanResult is the result of a scan.
+type ScanResult struct {
+	// Shard number. See ScanItem.Shard.
+	Shard int
+	// Reminders are sorted by Id stale reminders without Payload.
+	// Reminders belong to the partition assigned to a shard.
+	Reminders []*Reminder
+	// Level is the recursion level. See ScanItem.Level.
+	Level int
+}
+
+// SweepAll intiates the sweeping process across the whole Reminders' keyspace.
+//
+// Caller is expected to call Scan() on each of the returned ScanItems.
+func (impl *Impl) SweepAll() []ScanItem {
+	ret := make([]ScanItem, 0, impl.Options.Shards)
+	u := partition.Universe(keySpaceBytes)
+	for shard, part := range u.Split(int(impl.Options.Shards)) {
+		ret = append(ret, ScanItem{
+			Partition: part,
+			Shard:     shard,
+			Level:     0,
+		})
+	}
+	return ret
+}
+
+// Scan scans the given part of Reminders' keyspace.
+//
+// If Scan is unable to complete the scan of the given part of keyspace,
+// it intelligently partitions the not yet scanned keyspace into several
+// ScanItem for the follow up.
+//
+// For the successfully scanned keyspace, Scan returns a ScanResult.
+// Caller is expected to call PostProcessBatch on the ScanResult.Reminders.
+// NOTE: ScanResult.Reminders may be set even if the function returns an error.
+// This happens if scan fetched stale Reminders before encountering the error.
+func (impl *Impl) Scan(ctx context.Context, w ScanItem) ([]ScanItem, ScanResult, error) {
+	switch {
+	case w.Level > 2:
+		return nil, ScanResult{}, errors.Reason("refusing to do level-%d scan", w.Level).Err()
+	case w.Level == 2:
+		logging.Warningf(ctx, "level-2 scan %s", w)
+	}
+
+	l, h := w.Partition.QueryBounds(keySpaceBytes)
+	startedAt := clock.Now(ctx)
+	rs, err := impl.DB.FetchRemindersMeta(ctx, l, h, int(impl.Options.TasksPerScan))
+	durMS := float64(clock.Now(ctx).Sub(startedAt).Milliseconds())
+
+	status := ""
+	needMoreScans := false
+	switch {
+	case len(rs) > int(impl.Options.TasksPerScan):
+		logging.Errorf(ctx, "bug: %s.FetchRemindersMeta returned %d > limit %d",
+			impl.DB.Kind(), len(rs), impl.Options.TasksPerScan)
+		fallthrough
+	case len(rs) == int(impl.Options.TasksPerScan):
+		status = "limit"
+		// There may be more items in the partition.
+		needMoreScans = true
+	case err == nil:
+		// Scan covered everything.
+		status = "OK"
+	case ctx.Err() == context.DeadlineExceeded && errors.Unwrap(err) == context.DeadlineExceeded:
+		status = "timeout"
+		// Nothing fetched before timeout should not happen frequently.
+		// To avoid waiting until next SweepAll(), follow up with scans on
+		// sub-partitions.
+		needMoreScans = true
+	default:
+		status = "fail"
+	}
+
+	metricSweepFetchMetaDurationsMS.Add(ctx, durMS, status, w.Level, impl.DB.Kind())
+	metricSweepFetchMetaReminders.Add(ctx, int64(len(rs)), status, w.Level, impl.DB.Kind())
+
+	if !needMoreScans {
+		return nil, impl.makeScanResult(ctx, w, rs), err
+	}
+
+	var scanParts partition.SortedPartitions
+	if len(rs) == 0 {
+		// Divide initial range.
+		scanParts = w.Partition.Split(int(impl.Options.SecondaryScanShards))
+	} else {
+		// Divide the range after the last fetched Reminder.
+		scanParts = w.Partition.EducatedSplitAfter(
+			rs[len(rs)-1].Id,
+			len(rs),
+			// Aim to hit these many Reminders per follow up ScanItem,
+			int(impl.Options.TasksPerScan),
+			// but create at most these many ScanItems.
+			int(impl.Options.SecondaryScanShards),
+		)
+	}
+	moreScans := make([]ScanItem, len(scanParts))
+	for i, part := range scanParts {
+		moreScans[i] = ScanItem{
+			Shard:     w.Shard,
+			Level:     w.Level + 1,
+			Partition: part,
+		}
+	}
+	return moreScans, impl.makeScanResult(ctx, w, rs), err
+}
+
+// PostProcessBatch is yet to be implemented.
+func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder) error {
+	return errors.New("not implemented")
+}
+
 // Helpers.
 
 // postProcess enqueues a task and deletes a reminder.
@@ -172,6 +302,28 @@ func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRe
 		metricTasksCreated.Add(ctx, 1, code.String(), when, impl.DB.Kind())
 	}
 	return err
+}
+
+// makeScanResult updates metricReminderAge based on all fetched reminders.
+// Returns ScanResult with just stale Reminders.
+// Mutates & re-uses the given Reminders slice.
+func (impl *Impl) makeScanResult(ctx context.Context, s ScanItem, reminders []*Reminder) ScanResult {
+	dbKind := impl.DB.Kind()
+	now := clock.Now(ctx)
+	i := 0
+	for _, r := range reminders {
+		staleness := now.Sub(r.FreshUntil)
+		metricReminderStalenessMS.Add(ctx, float64(staleness.Milliseconds()), s.Level, dbKind)
+		if staleness >= 0 {
+			reminders[i] = r
+			i++
+		}
+	}
+	return ScanResult{
+		Shard:     s.Shard,
+		Level:     s.Level,
+		Reminders: reminders[:i],
+	}
 }
 
 const (

@@ -52,4 +52,32 @@ var (
 		field.String("when"), // happy | sweep
 		field.String("db"),
 	)
+
+	metricSweepFetchMetaDurationsMS = metric.NewCumulativeDistribution(
+		"ttq/sweep/fetch/meta/durations",
+		"Duration of FetchRemindersMeta operation (ms)",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		bucketer1msTo5min,
+		field.String("status"), // OK | limit | timeout | failures
+		field.Int("level"),     // 0 means the primary shard task, 1+ are its children
+		field.String("db"),
+	)
+	metricSweepFetchMetaReminders = metric.NewCounter(
+		"ttq/sweep/fetch/meta/reminders",
+		"Count of Reminders fetched by FetchRemindersMeta",
+		nil,
+		field.String("status"), // OK | limit | timeout | failures
+		field.Int("level"),     // 0 means the primary shard task, 1+ are its children
+		field.String("db"),
+	)
+
+	metricReminderStalenessMS = metric.NewCumulativeDistribution(
+		"ttq/reminders/staleness",
+		("Distribution of staleness of scanned Reminders during the sweep. " +
+			"May be incomplete if keyspace wasn't scanned completely"),
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		field.Int("level"),
+		field.String("db"),
+	)
 )

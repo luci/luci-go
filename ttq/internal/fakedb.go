@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"sort"
 	"sync"
 )
 
@@ -51,4 +52,32 @@ func (f *FakeDB) DeleteReminder(_ context.Context, r *Reminder) error {
 	}
 	f.mu.Unlock()
 	return nil
+}
+
+func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*Reminder, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	if f.reminders == nil {
+		return nil, nil
+	}
+	var ids []string
+	for id, _ := range f.reminders {
+		if low <= id && id < high {
+			// Optimal algo uses a heap of size exactly limit, but Go makes it very
+			// verbose, so simple stupid sort.
+			ids = append(ids, id)
+		}
+	}
+	sort.Strings(ids)
+	if len(ids) > limit {
+		ids = ids[:limit]
+	}
+	ret := make([]*Reminder, len(ids))
+	for i, id := range ids {
+		ret[i] = &Reminder{
+			Id:         id,
+			FreshUntil: f.reminders[id].FreshUntil,
+		}
+	}
+	return ret, nil
 }

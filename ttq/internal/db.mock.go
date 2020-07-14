@@ -73,3 +73,18 @@ func (mr *MockDatabaseMockRecorder) DeleteReminder(arg0, arg1 interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReminder", reflect.TypeOf((*MockDatabase)(nil).DeleteReminder), arg0, arg1)
 }
+
+// FetchRemindersMeta mocks base method.
+func (m *MockDatabase) FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*Reminder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchRemindersMeta", ctx, low, high, limit)
+	ret0, _ := ret[0].([]*Reminder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchRemindersMeta indicates an expected call of FetchRemindersMeta.
+func (mr *MockDatabaseMockRecorder) FetchRemindersMeta(ctx, low, high, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRemindersMeta", reflect.TypeOf((*MockDatabase)(nil).FetchRemindersMeta), ctx, low, high, limit)
+}
