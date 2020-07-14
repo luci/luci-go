@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f87d3be4_2b4eb857",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "of course! Done.",
+      "parentUuid": "9ab93828_37e94324",
+      "range": {
+        "startLine": 43,
+        "startChar": 13,
+        "endLine": 43,
+        "endChar": 30
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a515030d_153c3d2c",
         "filename": "ttq/internal/impl_test.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aae5ba4f_755ab78c",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "Not required for the test. The reason I\u0027ve added it originally was for realistic SaveReminder call, but admittedly it obscures the test. Removed.\nI\u0027ve left \"genReminder\" since it\u0027s already used in the next CL.",
+      "parentUuid": "a515030d_153c3d2c",
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "41032566_371a0d32",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b99d4752_5bec3557",
+      "range": {
+        "startLine": 272,
+        "startChar": 45,
+        "endLine": 272,
+        "endChar": 47
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ec4f6af_41626c78",
         "filename": "ttq/internal/impl_test.go",
         "patchSetId": 2
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "c2405be9_10a966e2",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ec4f6af_41626c78",
+      "range": {
+        "startLine": 294,
+        "startChar": 23,
+        "endLine": 294,
+        "endChar": 29
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47a7bd99_9d5d9c82",
         "filename": "ttq/internal/impl_test.go",
         "patchSetId": 2
@@ -102,6 +192,24 @@
       "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "513c89b5_18b69caa",
+        "filename": "ttq/internal/impl_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47a7bd99_9d5d9c82",
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "9e96aa95_970197b0",
+        "filename": "ttq/types.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "Yeah, I\u0027m also wondering about that now.\nI intend to revisit Options again once I finish incproc sweeper in https://crrev.com/c/2293247. I think there will no longer be Options.Validate -- it\u0027ll just take Options as a pointer, nil implying defaults and otherwise -- choose at your own risk. \n\nSo, expect a CL coming your way.",
+      "parentUuid": "9bd459e3_a43f04d2",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 25
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9a7dece_d88972e0",
         "filename": "ttq/types.go",
         "patchSetId": 2
@@ -148,6 +280,30 @@
       "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9c9abdb_dc129c7a",
+        "filename": "ttq/types.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:37:07Z",
+      "side": 1,
+      "message": "OOps. Yes!",
+      "parentUuid": "a9a7dece_d88972e0",
+      "range": {
+        "startLine": 198,
+        "startChar": 26,
+        "endLine": 198,
+        "endChar": 30
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
