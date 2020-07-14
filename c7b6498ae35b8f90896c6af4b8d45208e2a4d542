@@ -69,6 +69,24 @@
       "revId": "c7b6498ae35b8f90896c6af4b8d45208e2a4d542",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e374e95d_dafaa660",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-14T05:56:41Z",
+      "side": 1,
+      "message": "I think it is great if we can have go.mod/go.sum in repository and can have CQ for that.\nBut having go.mod in repository was not accepted by vadimsh.\nhttps://crbug.com/1057067",
+      "parentUuid": "926f225c_36890bd0",
+      "revId": "c7b6498ae35b8f90896c6af4b8d45208e2a4d542",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
