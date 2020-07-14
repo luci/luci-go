@@ -73,3 +73,21 @@ func TestValidateBuilderID(t *testing.T) {
 		})
 	})
 }
+
+func TestBuilderConversion(t *testing.T) {
+	t.Parallel()
+
+	Convey("FormatBuilderID", t, func() {
+		So(FormatBuilderID(&pb.BuilderID{
+				Project: "proj",
+				Bucket: "bucket",
+				Builder: "builder",
+			}),
+			ShouldEqual,
+			"proj/bucket/builder")
+	})
+
+	Convey("FormatBucketID", t, func() {
+		So(FormatBucketID("proj", "bucket"), ShouldEqual, "proj/bucket")
+	})
+}

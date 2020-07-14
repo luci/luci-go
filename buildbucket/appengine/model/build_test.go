@@ -219,5 +219,41 @@ func TestBuild(t *testing.T) {
 				So(b.Proto.Steps, ShouldBeEmpty)
 			})
 		})
+
+		Convey("ToSimpleBuildProto", func() {
+			b := &Build{
+				ID: 1,
+				Proto: pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				Project:   "project",
+				BucketID:  "project/bucket",
+				BuilderID: "project/bucket/builder",
+				Tags: []string{
+					"k1:v1",
+				},
+			}
+
+			actual := b.ToSimpleBuildProto(ctx)
+			So(actual, ShouldResembleProto, &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Tags: []*pb.StringPair{
+					{
+						Key:   "k1",
+						Value: "v1",
+					},
+				},
+			})
+		})
 	})
 }
