@@ -260,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "20c5aaa9_3b850dfe",
+        "filename": "ttq/types.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-14T16:55:44Z",
+      "side": 1,
+      "message": "sgtm!",
+      "parentUuid": "9e96aa95_970197b0",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 25
+      },
+      "revId": "362b99736a65d03c8fd854fd8687ecc004023994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9a7dece_d88972e0",
         "filename": "ttq/types.go",
         "patchSetId": 2
