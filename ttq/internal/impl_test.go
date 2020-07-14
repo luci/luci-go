@@ -120,10 +120,7 @@ func TestAddTask(t *testing.T) {
 				ScheduleTime: google.NewTimestamp(clock.Now(ctx).Add(time.Minute)),
 			},
 		}
-		opts := ttq.Options{
-			Queue:   "projects/example-project/locations/us-central1/queues/ttq",
-			BaseURL: "https://example.com/ttq",
-		}
+		opts := ttq.Options{}
 		So(opts.Validate(), ShouldBeNil)
 		db := FakeDB{}
 		fakeCT := fakeCloudTasks{}
