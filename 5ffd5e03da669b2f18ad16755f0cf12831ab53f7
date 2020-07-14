@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ee8f653b_fa57a328",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:43:09Z",
+      "side": 1,
+      "message": "Great question! It was important originally, but as you rightly noticed it is not needed any more.",
+      "parentUuid": "04c0c450_7f3cb7cf",
+      "range": {
+        "startLine": 230,
+        "startChar": 3,
+        "endLine": 230,
+        "endChar": 52
+      },
+      "revId": "5ffd5e03da669b2f18ad16755f0cf12831ab53f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17857997_82345e89",
         "filename": "ttq/internal/impl.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "5ffd5e03da669b2f18ad16755f0cf12831ab53f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a4e9ffd_e6f2aa27",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T05:43:09Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "17857997_82345e89",
+      "range": {
+        "startLine": 238,
+        "startChar": 0,
+        "endLine": 241,
+        "endChar": 33
+      },
+      "revId": "5ffd5e03da669b2f18ad16755f0cf12831ab53f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
