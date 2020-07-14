@@ -117,7 +117,7 @@ func TestAddTask(t *testing.T) {
 			BaseURL: "https://example.com/ttq",
 		}
 		So(opts.Validate(), ShouldBeNil)
-		db := ramDB{}
+		db := FakeDB{}
 		fakeCT := fakeCloudTasks{}
 		impl := Impl{Options: opts, DB: &db, TasksClient: &fakeCT}
 
@@ -134,33 +134,33 @@ func TestAddTask(t *testing.T) {
 				pp(ctx) // noop now
 				So(len(fakeCT.calls), ShouldEqual, 0)
 				So(len(db.reminders), ShouldEqual, 1)
-				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "db"), ShouldBeNil)
+				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldBeNil)
 			})
 
 			Convey("happy path", func() {
 				pp(ctx)
 				So(len(db.reminders), ShouldEqual, 0)
 				So(len(fakeCT.calls), ShouldEqual, 1)
-				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "db"), ShouldEqual, 1)
-				So(latestOf(metricPostProcessedDurationsMS, "OK", "happy", "db").(*distribution.Distribution).Count(), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedDurationsMS, "OK", "happy", "FakeDB").(*distribution.Distribution).Count(), ShouldEqual, 1)
 
 				Convey("calling 2nd time is a noop", func() {
 					pp(ctx)
 					So(len(fakeCT.calls), ShouldEqual, 1)
-					So(latestOf(metricPostProcessedAttempts, "OK", "happy", "db"), ShouldEqual, 1)
+					So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldEqual, 1)
 				})
 			})
 			Convey("happy path transient task creation error", func() {
 				fakeCT.errs = []error{status.Errorf(codes.Unavailable, "please retry")}
 				pp(ctx)
 				So(len(db.reminders), ShouldEqual, 1)
-				So(latestOf(metricPostProcessedAttempts, "fail-task", "happy", "db"), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedAttempts, "fail-task", "happy", "FakeDB"), ShouldEqual, 1)
 			})
 			Convey("happy path permanent task creation error", func() {
 				fakeCT.errs = []error{status.Errorf(codes.InvalidArgument, "forever")}
 				pp(ctx)
-				So(latestOf(metricPostProcessedAttempts, "ignored-bad-task", "happy", "db"), ShouldEqual, 1)
-				So(latestOf(metricTasksCreated, "InvalidArgument", "happy", "db"), ShouldEqual, 1)
+				So(latestOf(metricPostProcessedAttempts, "ignored-bad-task", "happy", "FakeDB"), ShouldEqual, 1)
+				So(latestOf(metricTasksCreated, "InvalidArgument", "happy", "FakeDB"), ShouldEqual, 1)
 				// Must remove reminder despite the error.
 				So(len(db.reminders), ShouldEqual, 0)
 			})
@@ -190,38 +190,6 @@ func TestLeaseHelpers(t *testing.T) {
 }
 
 // helpers
-
-type ramDB struct {
-	mu        sync.RWMutex
-	reminders map[string]*Reminder
-}
-
-func (_ *ramDB) Kind() string { return "db" }
-
-func (db *ramDB) SaveReminder(_ context.Context, r *Reminder) error {
-	db.mu.Lock()
-	if db.reminders == nil {
-		db.reminders = map[string]*Reminder{}
-	}
-	db.reminders[r.Id] = r
-	db.mu.Unlock()
-	return nil
-}
-
-func (db *ramDB) DeleteReminder(_ context.Context, r *Reminder) error {
-	db.mu.Lock()
-	if db.reminders == nil {
-		return nil
-	}
-	for id, _ := range db.reminders {
-		if id == r.Id {
-			delete(db.reminders, id)
-			break
-		}
-	}
-	db.mu.Unlock()
-	return nil
-}
 
 type fakeCloudTasks struct {
 	mu    sync.Mutex
