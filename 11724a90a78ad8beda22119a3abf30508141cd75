@@ -56,6 +56,30 @@
       "revId": "11724a90a78ad8beda22119a3abf30508141cd75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96139059_55975f25",
+        "filename": "ttq/internal/fakedb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-14T00:43:03Z",
+      "side": 1,
+      "message": "Yes, it will, there will FetchRemindersMeta, for example (CL already sent)",
+      "parentUuid": "448db924_c8b1d681",
+      "range": {
+        "startLine": 25,
+        "startChar": 16,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "11724a90a78ad8beda22119a3abf30508141cd75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
