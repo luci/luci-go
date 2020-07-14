@@ -114,6 +114,30 @@
     },
     {
       "key": {
+        "uuid": "3e6b7052_f12003ae",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-14T01:25:54Z",
+      "side": 1,
+      "message": "1. In Python, a module is one file. In Go, a package is one directory. Python modules are semantically equivalent to Go packages. From this perspective, it is much different: in python we have a single module \"api\" with all RPCs. In Go, we have a single \"rpc\" package with all RPCs. So in Go, file names are not as important as directories. \n\nAs you say, search.Query is not a db model object, so I wouldn\u0027t put it into \"model\" package.\n\nI think I am failing to delivery my point across. Imagine, for whatever reason, we need to call search from another piece of code (not SearchBuilds RPC). If that piece of code also wants to take advantage of both search implementations, it would have to duplicate the logic in SearchBuilds RPCs (switching between the two, falling back to query if tag index is incomplete), etc.\n\nAt the same time, I don\u0027t understand what is the problem with having one function\n\n  func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error)\n\nthat internally switches between the two impl. It would be usable from search_builds.go just fine.",
+      "parentUuid": "40c5c3ed_9b7eb556",
+      "range": {
+        "startLine": 110,
+        "startChar": 21,
+        "endLine": 110,
+        "endChar": 29
+      },
+      "revId": "aee1718179d23dfb7c9de108320d6b0a39ee9b05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "57e428d3_3b52ab16",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
