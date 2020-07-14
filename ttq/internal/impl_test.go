@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
 
-	"github.com/googleapis/gax-go"
+	gax "github.com/googleapis/gax-go/v2"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
