@@ -62,17 +62,17 @@ type PostProcess func(context.Context)
 //  (a) each of the `Shards` primary sweeper tasks can process
 //     `TasksPerSweepShare` in << `ScanInterval`;
 //  (b) each primary sweeper task will trigger `S` sub-tasks, each with at most
-//     `TasksPerSweepShard` workload, so (a) applies to sub-tasks, too;
+//     `TasksPerScan` workload, so (a) applies to sub-tasks, too;
 //  (c) `S` sub-tasks of a single shard can acquire/release leases within
 //      `ScanInterval`. For legacy Datastore (not the Firestore-backend one)
 //      there is a hard 0.5 Leases/s limit, thus
 //          ScanInterval  * 0.5 > `S`
 //  (d) finally, throughput must be sufficient to process through backlog in case
 //      of hiccups, thus
-//          Shards * (S+1) * TasksPerSweepShard > 5000 * ScanInterval
+//          Shards * (S+1) * TasksPerScan > 5000 * ScanInterval
 //
 // Experiments show:
-//  (a, b) handling TasksPerSweepShard=2048 takes ~2..6s.
+//  (a, b) handling TasksPerScan=2048 takes ~2..6s.
 //  (c) S = 9 suffices to keep contention on leases low enough to make
 //      progress.
 //  (d) With 16 shards * (9+1) * 2048 tasks/shard = 327K  >  5000*60 = 300K.
@@ -130,12 +130,20 @@ type Options struct {
 	// Shards defines the initial number of shards for sweeping. Defaults to 16.
 	//
 	// If the are many stale tasks to process, each shard may be additionally
-	// partitioned. See TasksPerSweepShard.
+	// partitioned. See TasksPerScan.
 	Shards uint
 
-	// TasksPerSweepShard caps maximum number of tasks that a shard task will
+	// TasksPerScan caps maximum number of tasks that a shard task will
 	// process. Defaults to 2048.
-	TasksPerSweepShard uint
+	TasksPerScan uint
+
+	// Advanced.
+
+	// SecondaryScanShards caps the sharding of additional scans to be performed
+	// if initial scan didn't cover the whole assigned partition. In practice,
+	// this matters only when database is slow or there is a huge backlog.
+	// Defaults to 16.
+	SecondaryScanShards uint
 }
 
 // Validate validates option values and applies defaults in place.
@@ -178,13 +186,16 @@ func (s *Options) Validate() error {
 		// just as well.
 		s.Shards = 16
 	case s.Shards > 100:
-		// >128 is a sign of desperate attempt to process backlog without
+		// >100 is a sign of desperate attempt to process backlog without
 		// understanding. Chances are that the real problem is somewhere else,
 		// say a misconfigured helper Queue.
 		return errors.New("Shards must be in [0..100] range")
 	}
-	if s.TasksPerSweepShard == 0 {
-		s.TasksPerSweepShard = 2048
+	if s.TasksPerScan == 0 {
+		s.TasksPerScan = 2048
+	}
+	if s.SecondaryScanShards == 0 {
+		s.SecondaryScanShards = 16
 	}
 	return nil
 }

@@ -16,10 +16,14 @@ package internal
 
 import (
 	"context"
+	"fmt"
+	"math/big"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	gax "github.com/googleapis/gax-go/v2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,6 +31,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -34,7 +41,8 @@ import (
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
 
-	gax "github.com/googleapis/gax-go/v2"
+	"github.com/golang/mock/gomock"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -168,6 +176,155 @@ func TestAddTask(t *testing.T) {
 	})
 }
 
+func TestSweepAll(t *testing.T) {
+	t.Parallel()
+
+	Convey("SweepAll works", t, func() {
+		impl := Impl{Options: ttq.Options{Shards: 2}}
+		items := impl.SweepAll()
+		So(len(items), ShouldEqual, 2)
+		So(items[0].Partition.High, ShouldResemble, items[1].Partition.Low)
+		items[0].Partition = nil
+		items[1].Partition = nil
+		So(items, ShouldResemble, []ScanItem{
+			{Shard: 0, Level: 0},
+			{Shard: 1, Level: 0},
+		})
+	})
+}
+
+func TestScan(t *testing.T) {
+	t.Parallel()
+
+	Convey("Scan works", t, func() {
+		ctx := cryptorand.MockForTest(context.Background(), 111)
+		epoch := testclock.TestRecentTimeLocal
+		ctx, tclock := testclock.UseTime(ctx, epoch)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		ctx = gologger.StdConfig.Use(ctx)
+		ctx = logging.SetLevel(ctx, logging.Debug)
+
+		// Use first shard spanning 0000000...0 to 1000000...0
+		// such that Reminders in tests can use short IDs "0*".
+		part := partition.Universe(keySpaceBytes).Split(16)[0]
+
+		Convey("Normal operation", func() {
+			db := FakeDB{}
+			impl := Impl{Options: ttq.Options{TasksPerScan: 2048}, DB: &db}
+
+			Convey("Empty", func() {
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				So(len(more), ShouldEqual, 0)
+				So(err, ShouldBeNil)
+				So(len(res.Reminders), ShouldEqual, 0)
+			})
+
+			stale := epoch.Add(30 * time.Second)
+			fresh := epoch.Add(90 * time.Second)
+			savedReminders := []*Reminder{
+				&Reminder{Id: "01", FreshUntil: fresh},
+				&Reminder{Id: "02", FreshUntil: stale},
+				&Reminder{Id: "03", FreshUntil: fresh},
+				&Reminder{Id: "04", FreshUntil: stale},
+			}
+			for _, r := range savedReminders {
+				So(db.SaveReminder(ctx, r), ShouldBeNil)
+			}
+			tclock.Set(epoch.Add(60 * time.Second))
+
+			Convey("Scan complete partition", func() {
+				impl.Options.TasksPerScan = 10
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				So(err, ShouldBeNil)
+				So(len(more), ShouldEqual, 0)
+				So(res.Reminders, ShouldResemble, []*Reminder{
+					&Reminder{Id: "02", FreshUntil: stale},
+					&Reminder{Id: "04", FreshUntil: stale},
+				})
+			})
+
+			Convey("Scan reaches TasksPerScan limit", func() {
+				// Only Reminders 01..03 will be fetched. 02 is stale.
+				// Follow up scans should start from 04.
+				impl.Options.TasksPerScan = 3
+				impl.Options.SecondaryScanShards = 2
+				scanItem := ScanItem{Shard: 1, Level: 1, Partition: part}
+				more, res, err := impl.Scan(ctx, scanItem)
+
+				So(err, ShouldBeNil)
+				So(res.Reminders, ShouldResemble, []*Reminder{
+					&Reminder{Id: "02", FreshUntil: stale},
+				})
+
+				Convey("Scan returns correct follow up ScanItems", func() {
+					So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
+					So(more[0].Partition.Low, ShouldResemble, *big.NewInt(3 + 1))
+					So(more[0].Partition.High, ShouldResemble, more[1].Partition.Low)
+					So(more[1].Partition.High, ShouldResemble, part.High)
+					So(more[0].Shard, ShouldEqual, scanItem.Shard)
+					So(more[1].Shard, ShouldEqual, scanItem.Shard)
+					So(more[0].Level, ShouldEqual, scanItem.Level+1)
+					So(more[1].Level, ShouldEqual, scanItem.Level+1)
+				})
+			})
+		})
+		Convey("Abnormal operation", func() {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			db := NewMockDatabase(ctrl)
+			db.EXPECT().Kind().AnyTimes().Return("mockdb")
+			impl := Impl{Options: ttq.Options{TasksPerScan: 2048, SecondaryScanShards: 2}, DB: db}
+
+			Convey("Level-3 not allowed", func() {
+				_, _, err := impl.Scan(ctx, ScanItem{Level: 3, Partition: part})
+				So(err, ShouldErrLike, "level-3 scan")
+			})
+
+			stale := epoch.Add(30 * time.Second)
+			fresh := epoch.Add(90 * time.Second)
+			someReminders := []*Reminder{
+				&Reminder{Id: "01", FreshUntil: fresh},
+				&Reminder{Id: "02", FreshUntil: stale},
+			}
+			tclock.Set(epoch.Add(60 * time.Second))
+
+			// Simulate context expiry by using deadline in the past.
+			// TODO(tandrii): find a way to expire ctx withing FetchRemindersMeta for a
+			// realistic test.
+			ctx, cancel := clock.WithDeadline(ctx, epoch)
+			defer cancel()
+			So(ctx.Err(), ShouldResemble, context.DeadlineExceeded)
+
+			Convey("Timeout without anything fetched", func() {
+				errExpected := errors.Annotate(ctx.Err(), "failed to fetch all").Err()
+				db.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, errExpected)
+
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				So(err, ShouldResemble, errExpected)
+				So(len(res.Reminders), ShouldEqual, 0)
+				So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
+				So(more[0].Partition.Low, ShouldResemble, part.Low)
+				So(more[1].Partition.High, ShouldResemble, part.High)
+			})
+
+			Convey("Timeout after fetching some", func() {
+				db.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(someReminders, ctx.Err())
+
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				So(err, ShouldResemble, context.DeadlineExceeded)
+				So(res.Reminders, ShouldResemble, []*Reminder{
+					&Reminder{Id: "02", FreshUntil: stale},
+				})
+				So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
+				So(more[0].Partition.Low, ShouldResemble, *big.NewInt(2 + 1))
+				So(more[1].Partition.High, ShouldResemble, part.High)
+			})
+		})
+	})
+}
+
 func TestLeaseHelpers(t *testing.T) {
 	t.Parallel()
 
@@ -190,6 +347,27 @@ func TestLeaseHelpers(t *testing.T) {
 }
 
 // helpers
+
+var genReminderCounter = int32(0)
+
+func genReminder(ctx context.Context) *Reminder {
+	id := atomic.AddInt32(&genReminderCounter, 1)
+	req := taskspb.CreateTaskRequest{
+		Parent: fmt.Sprintf("projects/example-project/locations/us-central1/queues/q-%d", id),
+		Task: &taskspb.Task{
+			MessageType: &taskspb.Task_HttpRequest{HttpRequest: &taskspb.HttpRequest{
+				HttpMethod: taskspb.HttpMethod_GET,
+				Url:        fmt.Sprintf("https://example.com/user/exec/%d", id),
+			}},
+			ScheduleTime: google.NewTimestamp(clock.Now(ctx).Add(time.Minute)),
+		},
+	}
+	r, _, err := makeReminder(ctx, &req)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
 
 type fakeCloudTasks struct {
 	mu    sync.Mutex
