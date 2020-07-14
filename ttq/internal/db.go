@@ -25,4 +25,15 @@ type Database interface {
 	SaveReminder(context.Context, *Reminder) error
 	// DeleteReminder deletes reminder in a non-tranasction context.
 	DeleteReminder(context.Context, *Reminder) error
+
+	// FetchRemindersMeta fetches Reminders with Ids in [low..high) range.
+	//
+	// Payload of Reminders should not be fetched.
+	// Both fresh & stale reminders should be fetched.
+	// The reminders should be returned in order of ascending Id.
+	//
+	// In case of error, partial result of fetched Reminders so far should be
+	// returned alongside the error. The caller will later call this method again
+	// to fetch the remaining of Reminders in range of [<lastReturned.Id+1> .. high).
+	FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*Reminder, error)
 }
