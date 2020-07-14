@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttqspanner
+// Package spanner implements TTQ Database backend on top of Cloud Spanner.
+package spanner
 
 import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/ttq/internal"
 )
 
-type db struct {
-	client *spanner.Client
+type DB struct {
+	Client *spanner.Client
 }
 
-var _ internal.Database = (*db)(nil)
+var _ internal.Database = (*DB)(nil)
 
 // Kind is used only for monitoring/logging purposes.
-func (d *db) Kind() string {
+func (d *DB) Kind() string {
 	return "spanner"
 }
 
-func (d *db) SaveReminder(_ context.Context, _ *internal.Reminder) error {
+func (d *DB) SaveReminder(_ context.Context, _ *internal.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *db) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
+func (d *DB) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }

@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal"
+	dsdb "go.chromium.org/luci/ttq/internal/databases/datastore"
 )
 
 // TTQ implements transaction task enqueueing with Datastore backend.
@@ -57,7 +58,7 @@ func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 	}
 	return &TTQ{impl: internal.Impl{
 		Options:     opts,
-		DB:          &db{},
+		DB:          &dsdb.DB{},
 		TasksClient: c,
 	}}, nil
 }
