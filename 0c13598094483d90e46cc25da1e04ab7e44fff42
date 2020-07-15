@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41b08e6b_e087e13c",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:13:55Z",
+      "side": 1,
+      "message": "pass ctx to function instead of holding here?",
+      "revId": "0c13598094483d90e46cc25da1e04ab7e44fff42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0930c953_3539e308",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:13:55Z",
+      "side": 1,
+      "message": "cas?",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 10
+      },
+      "revId": "0c13598094483d90e46cc25da1e04ab7e44fff42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
