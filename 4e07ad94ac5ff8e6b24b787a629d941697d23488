@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e13c4032_adada193",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-15T01:25:06Z",
+      "side": 1,
+      "message": "Hi Nodir, please review this follow-up CL for your previous comments. Details are added into the description.",
+      "revId": "4e07ad94ac5ff8e6b24b787a629d941697d23488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
