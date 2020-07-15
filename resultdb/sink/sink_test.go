@@ -93,10 +93,13 @@ func TestServer(t *testing.T) {
 			So(srv.Close(), ShouldBeNil)
 
 			_, err := reportTestResults(ctx, addr, "secret", req)
-			// OSes may return different messages for connection errors, but seem to return
-			// with "connection" always.
-			// : e.g., "No connection could be made", "connection refused"
-			So(err, ShouldErrLike, "connection")
+			// The error could be a connection error or write-error.
+			// e.g.,
+			// "No connection could be made", "connection refused", "write: broken pipe"
+			//
+			// The error messages could be different by OS, and this test simply checks
+			// whether err != nil.
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Close fails before Start being called", func() {
