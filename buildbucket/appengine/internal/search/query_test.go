@@ -104,8 +104,8 @@ func TestNewSearchQuery(t *testing.T) {
 				StartTime:           expectedStartTime,
 				EndTime:             expectedEndTime,
 				IncludeExperimental: false,
-				BuildIdHigh:         proto.Int64(201),
-				BuildIdLow:          proto.Int64(99),
+				BuildIdHigh:         201,
+				BuildIdLow:          99,
 				Canary:              proto.Bool(true),
 				PageSize:            100,
 				StartCursor:         "",
@@ -113,7 +113,10 @@ func TestNewSearchQuery(t *testing.T) {
 		})
 
 		Convey("empty req", func() {
-			So(NewQuery(&pb.SearchBuildsRequest{}), ShouldResemble, &Query{})
+			So(NewQuery(&pb.SearchBuildsRequest{}), ShouldResemble, &Query{
+				BuildIdLow:  -1,
+				BuildIdHigh: -1,
+			})
 		})
 
 		Convey("empty predict", func() {
@@ -124,6 +127,8 @@ func TestNewSearchQuery(t *testing.T) {
 			query := NewQuery(req)
 
 			So(query, ShouldResemble, &Query{
+				BuildIdLow:  -1,
+				BuildIdHigh: -1,
 				PageSize:    2,
 				StartCursor: "aa",
 			})

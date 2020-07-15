@@ -53,8 +53,8 @@ func TestIdRange(t *testing.T) {
 			timeLow := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 			timeHigh := timeLow.Add(timeResolution * 10000)
 			idLow, idHigh := IdRange(timeLow, timeHigh)
-			So(idLow, ShouldEqual, 0)
-			So(idHigh, ShouldEqual, 0)
+			So(idLow, ShouldEqual, -1)
+			So(idHigh, ShouldEqual, -1)
 		})
 	})
 }
@@ -62,26 +62,21 @@ func TestIdRange(t *testing.T) {
 func TestIdTimeSegment(t *testing.T) {
 	t.Parallel()
 
-	Convey("beginningOfTheWorld is 2010-01-01", t, func() {
-		t := time.Date(2010, 1, 1, 0, 0, 0, 1000000, time.UTC)
-		So(beginningOfTheWorld, ShouldEqual, t.Unix())
-	})
-
 	Convey("idTimeSegment", t, func() {
 		Convey("after the start of the word time", func() {
-			id := idTimeSegment(time.Unix(beginningOfTheWorld, 0).Add(timeResolution))
+			id := idTimeSegment(beginningOfTheWorld.Add(timeResolution))
 			So(id, ShouldEqual, 0x7FFFFFFFFFE00000)
 		})
 
 		Convey("at the start of the word time", func() {
-			id := idTimeSegment(time.Unix(beginningOfTheWorld, 0))
+			id := idTimeSegment(beginningOfTheWorld)
 			So(id, ShouldEqual, 0x7FFFFFFFFFF00000)
 		})
 
 		Convey("before the start of the word time", func() {
 			t := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 			id := idTimeSegment(t)
-			So(id, ShouldEqual, 0)
+			So(id, ShouldEqual, -1)
 		})
 	})
 }
@@ -109,7 +104,7 @@ func TestMMayContainBuilds(t *testing.T) {
 
 	Convey("high time is less than beginningOfTheWorld", t, func() {
 		low := time.Date(2011, 2, 1, 0, 0, 0, 0, time.UTC)
-		high := time.Unix(beginningOfTheWorld - 1, 0).UTC()
+		high := beginningOfTheWorld.Add(-1)
 		So(MayContainBuilds(low, high), ShouldBeFalse)
 	})
 }
