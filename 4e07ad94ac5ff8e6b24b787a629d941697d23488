@@ -16,6 +16,29 @@
       "revId": "4e07ad94ac5ff8e6b24b787a629d941697d23488",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a46311c3_bae15e5f",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-15T01:48:24Z",
+      "side": 1,
+      "message": "ah, looks like -1 was not such a great choice: before this CL, the default was good (nil means no filtering), but now 0 means filtering is enabled.\n\nactually, should we use 0 instead of -1? 0 is not a valid datastore id anyway.\nThis would be actually consistent with proto: https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/builds_service.proto#431",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 26
+      },
+      "revId": "4e07ad94ac5ff8e6b24b787a629d941697d23488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
