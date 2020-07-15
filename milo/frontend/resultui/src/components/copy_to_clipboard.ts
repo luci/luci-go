@@ -13,19 +13,29 @@
 // limitations under the License.
 
 import copy from 'copy-to-clipboard';
-import { css, customElement, html, LitElement } from 'lit-element';
+import { css, customElement, html} from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { observable } from 'mobx';
 
 
 /**
  * A simple icon that copies textToCopy to clipboard onclick.
  * Size can be configured via --size, defaults to 16px;
+ * Margin can be configured via --margin-left and --margin-right
  */
 @customElement('tr-copy-to-clipboard')
-export class CopyToClipboard extends LitElement {
+export class CopyToClipboard extends MobxLitElement {
+  @observable.ref copied = false;
   textToCopy = '';
 
   onclick = () => {
     copy(this.textToCopy);
+    this.copied = true
+  }
+
+  constructor() {
+    super();
+    this.addEventListener('mouseleave', (_) => {this.copied = false});
   }
 
   protected render() {
@@ -37,16 +47,27 @@ export class CopyToClipboard extends LitElement {
       >
         <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
       </svg>
+      <span ?hidden=${!this.copied}>Test ID was copied to clipboard.</span>
     `;
   }
 
   static styles = css`
     :host {
       cursor: pointer;
+      margin-left: var(--margin-left, 5px);
+      margin-right: var(--margin-right, 5px);
     }
     svg {
       width: var(--size, 16px);
       height: var(--size, 16px);
+    }
+    svg:hover {
+      filter: drop-shadow(3px 3px 4px gray);
+    }
+    span {
+      background-color: black;
+      color: white;
+      padding: 3px;
     }
   `;
 }
