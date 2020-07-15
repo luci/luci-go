@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0426e60e_a6a57f91",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T05:19:24Z",
+      "side": 1,
+      "message": "use errors.Annotate if err is come from outside of luci-go?",
+      "range": {
+        "startLine": 78,
+        "startChar": 15,
+        "endLine": 78,
+        "endChar": 18
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
