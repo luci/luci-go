@@ -44,19 +44,20 @@ import (
 )
 
 const (
-	// beginningOfTheWorld is a unix time for 2010-01-01 00:00:00 +0000 UTC.
-	// It's the earliest valid time encoded by build IDs.
-	beginningOfTheWorld = int64(1262304000)
-
 	timeResolution   = time.Millisecond
 	buildIdSuffixLen = 20
+)
+
+var (
+	// beginningOfTheWorld is the earliest valid time encoded by build IDs.
+	beginningOfTheWorld = time.Date(2010, 01, 01, 0, 0, 0, 0, time.UTC)
 )
 
 // MayContainBuilds returns true if the time range can possibly contain builds.
 // Zero low/high value means no boundary for low/high.
 func MayContainBuilds(low, high time.Time) bool {
 	switch {
-	case !high.IsZero() && high.UTC().Unix() <= beginningOfTheWorld:
+	case !high.IsZero() && (high.Before(beginningOfTheWorld) || high.Equal(beginningOfTheWorld)):
 		return false
 	case !low.IsZero() && !high.IsZero() && high.Before(low):
 		return false
@@ -81,7 +82,7 @@ func IdRange(low, high time.Time) (int64, int64) {
 // If time equals to beginningOfTheWorld, the id is 0x7FFFFFFFFFF00000.
 // If the returned id is 0, it means its time is less than beginningOfTheWorld.
 func idTimeSegment(t time.Time) int64 {
-	delta := t.Sub(time.Unix(beginningOfTheWorld, 0)).Milliseconds()
+	delta := t.Sub(beginningOfTheWorld).Milliseconds()
 	if delta < 0 {
 		return 0
 	}
