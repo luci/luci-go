@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09ccac88_a636e2b7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-15T06:14:21Z",
+      "side": 1,
+      "message": "Demo: https://nqmtuan-dot-luci-milo-dev.appspot.com/inv/build-8874763427370007040/test-results",
+      "revId": "908f66e348993c346b66097a7d01e17127a35288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
