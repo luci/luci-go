@@ -39,6 +39,29 @@
       "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "045f9e97_14eb83e7",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T04:24:01Z",
+      "side": 1,
+      "message": "Maybe I should allow a slice of ArchiveOptions here?",
+      "range": {
+        "startLine": 69,
+        "startChar": 48,
+        "endLine": 69,
+        "endChar": 76
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
