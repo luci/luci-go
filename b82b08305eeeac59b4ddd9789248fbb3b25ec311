@@ -59,6 +59,30 @@
     },
     {
       "key": {
+        "uuid": "f372c815_4526a43f",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T04:39:15Z",
+      "side": 1,
+      "message": "Ack, I\u0027ll just remove this considering both of your suggestions.",
+      "parentUuid": "c37abb88_f2bf541e",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 38
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fe799f1a_c1ca13e7",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
@@ -70,6 +94,30 @@
       "writtenOn": "2020-07-15T04:23:30Z",
       "side": 1,
       "message": "Inject fmCache and deduper like cas client to avoid NewUploader knowing how to create them?",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 0
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "857e236c_8e820534",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T04:39:15Z",
+      "side": 1,
+      "message": "SG for fmCache. For deduper, I feel like it\u0027s a bit of an overkill, because it\u0027s part of the `cas` package, and is just a helper struct.",
+      "parentUuid": "fe799f1a_c1ca13e7",
       "range": {
         "startLine": 42,
         "startChar": 0,
