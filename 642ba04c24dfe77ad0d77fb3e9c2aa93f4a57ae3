@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b7bfc97d_8364b9f3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T05:30:39Z",
+      "side": 1,
+      "message": "I think so.",
+      "parentUuid": "83ba6d14_e303d305",
+      "range": {
+        "startLine": 12,
+        "startChar": 2,
+        "endLine": 12,
+        "endChar": 35
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "900b6fd0_e92994f9",
         "filename": "client/cas/uploader.go",
         "patchSetId": 6
