@@ -34,6 +34,29 @@
       "revId": "768a942d3ae3ed9b4ca02bf493ac161d8a8ebec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "655a9350_886c5ac2",
+        "filename": "client/isolated/scattergather_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-15T03:31:13Z",
+      "side": 1,
+      "message": "Does this cover the root cause of https://crbug.com/1104539? or do we need another test case for a bad case?",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 43
+      },
+      "revId": "768a942d3ae3ed9b4ca02bf493ac161d8a8ebec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
