@@ -55,8 +55,8 @@ type Query struct {
 	StartTime           time.Time
 	EndTime             time.Time
 	IncludeExperimental bool
-	BuildIdHigh         *int64
-	BuildIdLow          *int64
+	BuildIdHigh         int64
+	BuildIdLow          int64
 	Canary              *bool
 	PageSize            int32
 	StartCursor         string
@@ -97,11 +97,11 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	// that build ids are decreasing. So we need to reverse the order.
 	if p.Build.GetStartBuildId() > 0 {
 		// Add 1 because startBuildId is inclusive and buildHigh is exclusive.
-		s.BuildIdHigh = proto.Int64(p.Build.GetStartBuildId() + 1)
+		s.BuildIdHigh = p.Build.GetStartBuildId() + 1
 	}
 	if p.Build.GetEndBuildId() > 0 {
 		// Subtract 1 because endBuildId is exclusive and buildLow is inclusive.
-		s.BuildIdLow = proto.Int64(p.Build.GetEndBuildId() - 1)
+		s.BuildIdLow = p.Build.GetEndBuildId() - 1
 	}
 
 	// Filter by canary.
@@ -183,11 +183,11 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	}
 
 	idLow, idHigh := q.idRange()
-	if idLow != nil {
-		dq = dq.Gte("__key__", datastore.KeyForObj(ctx, &model.Build{ID: *idLow}))
+	if idLow != 0 {
+		dq = dq.Gte("__key__", datastore.KeyForObj(ctx, &model.Build{ID: idLow}))
 	}
-	if idHigh != nil {
-		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: *idHigh}))
+	if idHigh != 0 {
+		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: idHigh}))
 	}
 
 	logging.Debugf(ctx, "datastore query for FetchOnBuild: %s", dq.String())
@@ -210,20 +210,13 @@ func (q *Query) tagIndexSearch(ctx context.Context) (*pb.SearchBuildsResponse, e
 }
 
 // idRange returns the id range from either q.BuildIdLow/q.BuildIdHigh or q.StartTime/q.EndTime.
-func (q *Query) idRange() (*int64, *int64) {
-	if q.BuildIdLow != nil || q.BuildIdHigh != nil {
+// Returning 0 means no boundary.
+func (q *Query) idRange() (int64, int64) {
+	if q.BuildIdLow != 0 || q.BuildIdHigh != 0 {
 		return q.BuildIdLow, q.BuildIdHigh
 	}
 
-	var idLow, idHigh *int64
-	low, high := buildid.IdRange(q.StartTime, q.EndTime)
-	if low != 0 {
-		idLow = &low
-	}
-	if high != 0 {
-		idHigh = &high
-	}
-	return idLow, idHigh
+	return buildid.IdRange(q.StartTime, q.EndTime)
 }
 
 // fixPageSize ensures the size is positive and less than or equal to maxPageSize.
