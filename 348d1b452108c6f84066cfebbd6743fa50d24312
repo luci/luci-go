@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "e3450696_cf8bee08",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T12:49:44Z",
+      "side": 1,
+      "message": "TBH i don\u0027t think so. \n\n1. this kind of marsharlling is used quite widely in their repo to convert a proto to digest, see: https://github.com/bazelbuild/remote-apis-sdks/blob/ef239a11844d72e644e2e62fc3dfc60ec77dbc30/go/pkg/digest/digest.go#L86-L87.\n2. While I think we should contribute code to the SDK to suit our usage, i don\u0027t think code cleanup falls into that category.\n\nWe can file a bug to ask them to do so, but I don\u0027t think it should be a blocker for us. Thoughts?",
+      "parentUuid": "8526eafc_4bb2e55d",
+      "range": {
+        "startLine": 29,
+        "startChar": 2,
+        "endLine": 29,
+        "endChar": 34
+      },
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "681b0c52_3f7c8974",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 14
