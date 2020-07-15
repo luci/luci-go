@@ -16,6 +16,74 @@
       "revId": "908f66e348993c346b66097a7d01e17127a35288",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "231b75f2_91e6575f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-15T22:23:27Z",
+      "side": 1,
+      "message": "Looks good overall.\n",
+      "revId": "908f66e348993c346b66097a7d01e17127a35288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2ead0c62_2a4e26c0",
+        "filename": "milo/frontend/resultui/src/components/copy_to_clipboard.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-15T22:23:27Z",
+      "side": 1,
+      "message": "wouldn\u0027t an onleave method work?\nI think it\u0027s cleaner that way.",
+      "revId": "908f66e348993c346b66097a7d01e17127a35288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f2c7818_24796ce9",
+        "filename": "milo/frontend/resultui/src/components/copy_to_clipboard.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-15T22:23:27Z",
+      "side": 1,
+      "message": "I think we can change to either just \"copied\" or we should pass the tooltip from the parent.\nOtherwise the component is limited to copy test ID only.",
+      "revId": "908f66e348993c346b66097a7d01e17127a35288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e9796d3_227c2e19",
+        "filename": "milo/frontend/resultui/src/components/copy_to_clipboard.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-15T22:23:27Z",
+      "side": 1,
+      "message": "I think we can directly set the margin attributes in the parent element.\nNo need to use css variables.",
+      "revId": "908f66e348993c346b66097a7d01e17127a35288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
