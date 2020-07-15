@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "8395ee44_643250f1",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:13:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bdf4e98e_abf6ebe6",
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c37abb88_f2bf541e",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
@@ -80,6 +98,30 @@
       "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69e4bab6_9bbcd1b0",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:13:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f372c815_4526a43f",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 38
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +268,30 @@
     },
     {
       "key": {
+        "uuid": "1d69adae_12da73ae",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:13:47Z",
+      "side": 1,
+      "message": "Done.\n\n\u003e instantiate where?\n\nJust do fmCache: ...NewSingleFlightCache() as the code is doing now, instead of injecting it.",
+      "parentUuid": "f6c333fe_f1ed191f",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 0
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "045f9e97_14eb83e7",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
@@ -270,6 +336,30 @@
       "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b154dd7b_4ef80951",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:13:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10722566_4c7b7a1a",
+      "range": {
+        "startLine": 69,
+        "startChar": 48,
+        "endLine": 69,
+        "endChar": 76
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
