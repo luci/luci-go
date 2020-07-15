@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36788434_508c0642",
+        "filename": "client/cmd/isolate/lib/casarchive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:18:18Z",
+      "side": 1,
+      "message": "I think we don\u0027t need to use this.",
+      "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6546d69e_53a52307",
+        "filename": "client/cmd/isolate/lib/casarchive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:18:18Z",
+      "side": 1,
+      "message": "could you get instance name from flag like\nhttps://docs.google.com/document/d/12KP-5O4yEmCZaJ5iduv7BJDBEIuraUKW9OXXDnE9g_0/edit#heading\u003dh.5uz3c1qx9dl\n?",
+      "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
