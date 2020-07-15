@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6fa24059_409a42e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-15T01:53:05Z",
+      "side": 1,
+      "message": "DO NOT LAND Until https://chromium-review.googlesource.com/c/infra/luci/luci-py/+/2298664 has been deployed to CrIA production.",
+      "revId": "516d71424d57455d661662c8a069586156a92afc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
