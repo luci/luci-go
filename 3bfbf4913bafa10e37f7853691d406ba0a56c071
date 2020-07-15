@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "969c9ba9_42051a4d",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T10:09:26Z",
+      "side": 1,
+      "message": "Yeah, seems so, see https://github.com/bazelbuild/remote-apis-sdks/blob/ef239a11844d72e644e2e62fc3dfc60ec77dbc30/go/cmd/rexec/main.go#L74-L77",
+      "parentUuid": "f8eb2941_988c74a5",
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b545951a_c7784ccb",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 12
@@ -33,6 +51,24 @@
       "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb88c229_11c92eea",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T10:09:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b545951a_c7784ccb",
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -56,6 +92,30 @@
       "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0a937bb_05a231b1",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T10:09:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49387650_ed6f7e8c",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 62
+      },
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
