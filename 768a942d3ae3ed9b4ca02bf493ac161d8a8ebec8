@@ -81,6 +81,30 @@
       "revId": "768a942d3ae3ed9b4ca02bf493ac161d8a8ebec8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "98339230_7e301fbf",
+        "filename": "client/isolated/scattergather_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-15T04:29:56Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8f334ecb_aac6bd21",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 43
+      },
+      "revId": "768a942d3ae3ed9b4ca02bf493ac161d8a8ebec8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
