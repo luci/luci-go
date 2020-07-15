@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8eb2941_988c74a5",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T08:52:23Z",
+      "side": 1,
+      "message": "So we need to create filemetadata.Cache from caller?",
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b545951a_c7784ccb",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T08:52:23Z",
+      "side": 1,
+      "message": "separate luci-go and third_party import",
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
