@@ -60,7 +60,7 @@ func TestGetInvocation(t *testing.T) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "testproject:testrealm", Permission: permReadInvocation},
+				{Realm: "testproject:testrealm", Permission: permGetInvocation},
 			},
 		})
 		ct := testclock.TestRecentTimeUTC

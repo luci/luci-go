@@ -41,7 +41,7 @@ func validateGetInvocationRequest(req *pb.GetInvocationRequest) error {
 
 // GetInvocation implements pb.ResultDBServer.
 func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
-	if err := verifyPermissionInvNames(ctx, permReadInvocation, in.Name); err != nil {
+	if err := verifyPermissionInvNames(ctx, permGetInvocation, in.Name); err != nil {
 		return nil, err
 	}
 
