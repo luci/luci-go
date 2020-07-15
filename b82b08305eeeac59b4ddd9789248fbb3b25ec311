@@ -202,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "f6c333fe_f1ed191f",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-15T04:56:24Z",
+      "side": 1,
+      "message": "\u003e  I feel like it\u0027s a bit of an overkill, because it\u0027s part of the `cas` package, and is just a helper struct.\n\nAck\n\n\u003e How about we just instantiate it this way, then tweak it if necessary (e.g. if the test needs to customize this)\n\nSG.\nI saw that it\u0027s just given to tree.ComputeMerkleTree() without calling any methods of fmCache.",
+      "parentUuid": "4038fb08_cf210beb",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 0
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "045f9e97_14eb83e7",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
