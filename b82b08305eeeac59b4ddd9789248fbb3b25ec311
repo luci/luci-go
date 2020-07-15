@@ -102,6 +102,30 @@
       "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10722566_4c7b7a1a",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:26:56Z",
+      "side": 1,
+      "message": "yeah, that sounds better",
+      "parentUuid": "045f9e97_14eb83e7",
+      "range": {
+        "startLine": 69,
+        "startChar": 48,
+        "endLine": 69,
+        "endChar": 76
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
