@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "83ba6d14_e303d305",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-15T05:24:34Z",
+      "side": 1,
+      "message": "tikuta, \nI\u0027m not sure if the existing isolated client uploads files in async. But FWIU, the performance of upload isn\u0027t an issue at this moment.\nIs my understanding correct?",
+      "range": {
+        "startLine": 12,
+        "startChar": 2,
+        "endLine": 12,
+        "endChar": 35
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "900b6fd0_e92994f9",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-15T05:24:34Z",
+      "side": 1,
+      "message": "With this code, there is only \u0027excl\u0027, it can be assigned directly without append?",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 62
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0426e60e_a6a57f91",
         "filename": "client/cas/uploader.go",
         "patchSetId": 6
