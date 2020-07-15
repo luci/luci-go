@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "a3ed505e_dc9af5d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:25:02Z",
+      "side": 1,
+      "message": "direction of this CL itself looks good to me",
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bdf4e98e_abf6ebe6",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
