@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "4038fb08_cf210beb",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:50:29Z",
+      "side": 1,
+      "message": "instantiate where?",
+      "parentUuid": "d4a5be87_21060ed9",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 0
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "045f9e97_14eb83e7",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
