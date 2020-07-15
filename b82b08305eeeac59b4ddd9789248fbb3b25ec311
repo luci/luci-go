@@ -130,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "01298899_e4269f48",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-15T04:44:54Z",
+      "side": 1,
+      "message": "I think it is not necessary to pass fmCache from caller now.",
+      "parentUuid": "857e236c_8e820534",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 0
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "045f9e97_14eb83e7",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
