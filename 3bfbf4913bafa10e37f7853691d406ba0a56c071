@@ -33,6 +33,29 @@
       "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49387650_ed6f7e8c",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-15T09:16:50Z",
+      "side": 1,
+      "message": "nit: it might be better to have a private function to write file to make prep steps simpler.\ne.g. writeFile(\"foo\", fooContent)",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 62
+      },
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
