@@ -154,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "d4a5be87_21060ed9",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T04:47:41Z",
+      "side": 1,
+      "message": "FYI, NewSingleFlightCache() is the default one provided in the SDK: https://github.com/bazelbuild/remote-apis-sdks/blob/ef239a11844d72e644e2e62fc3dfc60ec77dbc30/go/pkg/filemetadata/cache.go#L23-L25. How about we just instantiate it this way, then tweak it if necessary (e.g. if the test needs to customize this)",
+      "parentUuid": "01298899_e4269f48",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 0
+      },
+      "revId": "b82b08305eeeac59b4ddd9789248fbb3b25ec311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "045f9e97_14eb83e7",
         "filename": "client/cas/uploader.go",
         "patchSetId": 5
