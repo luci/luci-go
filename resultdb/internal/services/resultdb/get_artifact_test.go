@@ -65,7 +65,7 @@ func TestGetArtifact(t *testing.T) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "testproject:testrealm", Permission: permReadArtifact},
+				{Realm: "testproject:testrealm", Permission: permGetArtifact},
 			},
 		})
 		srv := newTestResultDBService()

@@ -35,7 +35,7 @@ func verifyReadArtifactPermission(ctx context.Context, name string) error {
 		return appstatus.BadRequest(inputErr)
 	}
 
-	return verifyPermission(ctx, permReadArtifact, invocations.ID(invIDStr))
+	return verifyPermission(ctx, permGetArtifact, invocations.ID(invIDStr))
 }
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
