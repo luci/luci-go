@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5c98d886_e2e1abc5",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T11:37:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a6825dc_59edac9a",
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d457fc5e_57c0cee9",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 14
@@ -30,6 +48,24 @@
       "writtenOn": "2020-07-15T11:01:43Z",
       "side": 1,
       "message": "move these lower",
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9af75e95_c9d7fc56",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T11:37:25Z",
+      "side": 1,
+      "message": "hmm, guess i picked a bad example: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/client/isolate/isolate_test.go?g\u003d0 ..",
+      "parentUuid": "d457fc5e_57c0cee9",
       "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "32b37105_25017587",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T11:37:25Z",
+      "side": 1,
+      "message": "Unfortunately no. This is needed to marshal the proto. I tried https://godoc.org/google.golang.org/protobuf/proto but got errors saying the proto message didn\u0027t implement the `protoreflect.ProtoMessage` interface. Maybe the SDK\u0027s generated pb.go is not the most up-to-date?",
+      "parentUuid": "3f409f0b_5628daa7",
+      "range": {
+        "startLine": 29,
+        "startChar": 2,
+        "endLine": 29,
+        "endChar": 34
+      },
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "681b0c52_3f7c8974",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 14
@@ -73,6 +133,24 @@
       "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a4a8126_d56afa0b",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T11:37:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "681b0c52_3f7c8974",
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
