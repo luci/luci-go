@@ -39,6 +39,30 @@
       "revId": "4e07ad94ac5ff8e6b24b787a629d941697d23488",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cda685c7_2e5efc8d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-15T02:09:07Z",
+      "side": 1,
+      "message": "okay, didn\u0027t know 0 is invalid datastore id. \n\nI\u0027ll change to use 0",
+      "parentUuid": "a46311c3_bae15e5f",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 26
+      },
+      "revId": "4e07ad94ac5ff8e6b24b787a629d941697d23488",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
