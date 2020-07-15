@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "68beed0d_ede87aae",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:37:58Z",
+      "side": 1,
+      "message": "Now I don\u0027t think we need to make it async, given that we can pass in a batch of ArchiveOptions.",
+      "parentUuid": "b7bfc97d_8364b9f3",
+      "range": {
+        "startLine": 12,
+        "startChar": 2,
+        "endLine": 12,
+        "endChar": 35
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "900b6fd0_e92994f9",
         "filename": "client/cas/uploader.go",
         "patchSetId": 6
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "13709a71_90d966a7",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:37:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "900b6fd0_e92994f9",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 62
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0426e60e_a6a57f91",
         "filename": "client/cas/uploader.go",
         "patchSetId": 6
@@ -92,6 +140,30 @@
       "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cfb38ba_9d61514c",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-15T05:37:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0426e60e_a6a57f91",
+      "range": {
+        "startLine": 78,
+        "startChar": 15,
+        "endLine": 78,
+        "endChar": 18
+      },
+      "revId": "642ba04c24dfe77ad0d77fb3e9c2aa93f4a57ae3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
