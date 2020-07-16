@@ -86,10 +86,6 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 				return nil
 			}
 		}
-		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
-			// TODO(crbug/1042991): Cancel the Swarming task.
-			return appstatus.Errorf(codes.Unimplemented, "task cancellation not yet supported")
-		}
 
 		bld.Leasee = nil
 		bld.LeaseExpirationDate = time.Time{}
@@ -101,7 +97,30 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		bld.Proto.Status = pb.Status_CANCELED
 		bld.Proto.SummaryMarkdown = req.SummaryMarkdown
 
-		if err := datastore.Put(ctx, bld); err != nil {
+		toPut := []interface{}{bld}
+
+		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
+			stp := &model.BuildSteps{
+				ID:    1,
+				Build: inf.Build,
+			}
+			switch err := datastore.Get(ctx, stp); {
+			case err == datastore.ErrNoSuchEntity:
+			case err != nil:
+				return errors.Annotate(err, "failed to fetch build steps: %d", bld.ID).Err()
+			default:
+				switch changed, err := stp.CancelIncomplete(ctx, bld.Proto.EndTime); {
+				case err != nil:
+					return errors.Annotate(err, "failed to fetch build steps: %d", bld.ID).Err()
+				case changed:
+					toPut = append(toPut, stp)
+				}
+			}
+			// TODO(crbug/1042991): Cancel the Swarming task.
+			return appstatus.Errorf(codes.Unimplemented, "task cancellation not yet supported")
+		}
+
+		if err := datastore.Put(ctx, toPut...); err != nil {
 			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
 		}
 		// TODO(crbug/1042991): Enqueue BigQuery, Pub/Sub, and ResultDB-related tasks.
