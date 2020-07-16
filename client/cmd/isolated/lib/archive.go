@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -58,6 +59,8 @@ working directory, '-files :foo' is sufficient.`,
 				"Write the composite isolated hash to a file")
 			c.Flags.StringVar(&c.isolated, "isolated", "",
 				"Write the composite isolated to a file")
+			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "",
+				"Write the upload stats to this file as JSON")
 			return &c
 		},
 	}
@@ -66,10 +69,11 @@ working directory, '-files :foo' is sufficient.`,
 type archiveRun struct {
 	commonFlags
 	CommandOptions
-	dirs     isolated.ScatterGather
-	files    isolated.ScatterGather
-	dumpHash string
-	isolated string
+	dirs          isolated.ScatterGather
+	files         isolated.ScatterGather
+	dumpHash      string
+	isolated      string
+	dumpStatsJSON string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -130,12 +134,15 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 			return
 		}
 	}
+	stats := arch.Stats()
+	duration := time.Since(start)
 	if !c.defaultFlags.Quiet {
-		duration := time.Since(start)
-		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+	}
+	if c.dumpStatsJSON != "" {
+		dumpStatsJSON(c.dumpStatsJSON, duration, stats)
 	}
 	return
 }
@@ -157,4 +164,19 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		return 1
 	}
 	return 0
+}
+
+func dumpStatsJSON(filename string, duration time.Duration, stats *archiver.Stats) error {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	m := map[string]int{
+		"duration_ms": int(duration / time.Millisecond),
+		"items_hot":   stats.TotalHits(),
+		"items_cold":  stats.TotalMisses(),
+	}
+	return json.NewEncoder(f).Encode(m)
 }
