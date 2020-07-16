@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58227a8f_ec740081",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T10:20:32Z",
+      "side": 1,
+      "message": "This is not number, we use encoded sequence of bytes here.",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 12
+      },
+      "revId": "5fb77beca5aa0bc791f78910fda64f1c4a654af9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
