@@ -118,6 +118,30 @@
       "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f849b17_a7f17123",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-16T05:26:49Z",
+      "side": 1,
+      "message": "I\u0027ve tried `\\foo` and `\\\\foo` (and even `\\\\\\\\foo`), none of which worked..",
+      "parentUuid": "8f5667ac_d6825da9",
+      "range": {
+        "startLine": 169,
+        "startChar": 33,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
