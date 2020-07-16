@@ -46,6 +46,30 @@
       "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dedb29e3_c880f0f1",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-16T04:28:59Z",
+      "side": 1,
+      "message": "Looking at the logs:\n\ninputSpec\u003d\u0026{Inputs:[bar filtered\\foo filtered\\foo2] VirtualInputs:[] InputExclusions:[0xc0005e08e0] EnvironmentVariables:map[]}\ninputExclusions\u003d\u0026{Regex:filtered\\foo Type:UnspecifiedInputType}\n\nI honestly don\u0027t know why this regex didn\u0027t work on Win. I now think it could even be a bug in Win\u0027s regex module. Given that I don\u0027t have a Win env, let\u0027s just use the simpler \"foo\" pattern, wdyt?",
+      "parentUuid": "22093607_bac3298d",
+      "range": {
+        "startLine": 169,
+        "startChar": 33,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
