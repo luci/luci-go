@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57936bdb_a964ae69",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-16T06:02:48Z",
+      "side": 1,
+      "message": "note that when viewing the logs, this line will not be related to the lines below because in L253, we update many hosts concurrently. If your intention is to attach host information to logging below, then https://godoc.org/go.chromium.org/luci/common/logging#SetField would be more appropriate\n\ni\u0027d do it in L253, so that this function does not assume that it is being called in parallel",
+      "revId": "60bae35f0df1cc952fc6c447b410771b2a9ed751",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
