@@ -46,6 +46,30 @@
       "revId": "5fb77beca5aa0bc791f78910fda64f1c4a654af9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3683e85c_ed93ef45",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-16T11:47:06Z",
+      "side": 1,
+      "message": "Ah i see, thanks fixed!",
+      "parentUuid": "e795fcef_4fd2ad84",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 12
+      },
+      "revId": "5fb77beca5aa0bc791f78910fda64f1c4a654af9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
