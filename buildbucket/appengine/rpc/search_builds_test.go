@@ -215,7 +215,7 @@ func TestValidateSearchBuilds(t *testing.T) {
 
 		Convey("TagIndex token with non indexed tags", func() {
 			tags := []*pb.StringPair{
-				&pb.StringPair{Key: "k", Value: "v"},
+				{Key: "k", Value: "v"},
 			}
 			err := validatePageToken("id>123", tags)
 			So(err, ShouldErrLike, "invalid page_token")

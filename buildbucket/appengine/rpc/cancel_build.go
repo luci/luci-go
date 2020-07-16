@@ -72,7 +72,11 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			ID:    1,
 			Build: datastore.KeyForObj(ctx, bld),
 		}
-		if err := datastore.Get(ctx, bld, inf); err != nil {
+		stp := &model.BuildSteps{
+			ID:    1,
+			Build: inf.Build,
+		}
+		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
 				return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
@@ -82,8 +86,12 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 				return errors.Annotate(merr[0], "failed to fetch build: %d", bld.ID).Err()
 			case merr[1] != nil && merr[1] != datastore.ErrNoSuchEntity:
 				return errors.Annotate(merr[1], "failed to fetch build infra: %d", bld.ID).Err()
+			case merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity:
+				return errors.Annotate(merr[2], "failed to fetch build steps: %d", bld.ID).Err()
 			case protoutil.IsEnded(bld.Proto.Status):
 				return nil
+			case merr[2] == datastore.ErrNoSuchEntity:
+				stp = nil
 			}
 		}
 		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
@@ -101,7 +109,18 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		bld.Proto.Status = pb.Status_CANCELED
 		bld.Proto.SummaryMarkdown = req.SummaryMarkdown
 
-		if err := datastore.Put(ctx, bld); err != nil {
+		toPut := []interface{}{bld}
+
+		if stp != nil {
+			switch changed, err := stp.CancelIncomplete(ctx, bld.Proto.EndTime); {
+			case err != nil:
+				return errors.Annotate(err, "failed to fetch build steps: %d", bld.ID).Err()
+			case changed:
+				toPut = append(toPut, stp)
+			}
+		}
+
+		if err := datastore.Put(ctx, toPut...); err != nil {
 			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
 		}
 		// TODO(crbug/1042991): Enqueue BigQuery, Pub/Sub, and ResultDB-related tasks.
