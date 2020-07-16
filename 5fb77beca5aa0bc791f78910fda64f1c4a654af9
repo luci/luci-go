@@ -22,6 +22,30 @@
       "revId": "5fb77beca5aa0bc791f78910fda64f1c4a654af9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e795fcef_4fd2ad84",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T10:30:23Z",
+      "side": 1,
+      "message": "See how we calculate stats in download\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/downloader/downloader.go;l\u003d750;drc\u003dfb1bb1765b68837a22d59726161ce87c8f6e68e4?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n\nBut cache is isolateserver itself in upload.",
+      "parentUuid": "58227a8f_ec740081",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 12
+      },
+      "revId": "5fb77beca5aa0bc791f78910fda64f1c4a654af9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
