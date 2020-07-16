@@ -107,6 +107,8 @@ func TestExportToBigQuery(t *testing.T) {
 			expectedTestIDs := []string{"A", "B", "C", "D"}
 			for _, m := range i.insertedMessages {
 				tr := m.Struct.(*TestResultRow)
+				fmt.Println(tr.TestID)
+				fmt.Println(tr.VariantHash)
 				So(tr.TestID, ShouldBeIn, expectedTestIDs)
 				So(tr.ParentInvocation.ID, ShouldBeIn, []string{"a", "b"})
 				So(tr.ExportedInvocation.ID, ShouldEqual, "a")
