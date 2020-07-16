@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e3a0c480_6b5ddb1c",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-16T05:22:59Z",
+      "side": 1,
+      "message": "I don\u0027t know what the equivalent is of transactional tasklets is, hence the contract of \"we mutate, you write\". This way the caller can decide to write it transactionally with other entities if they want to. Although even if there is some equivalent (spawn goroutine inside RunInTransaction?) it would mean multiple puts are done in parallel instead of all puts done in one batch.",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efbaf620_ada89bd1",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-16T05:22:59Z",
+      "side": 1,
+      "message": "Python attempts to cancel steps regardless. Can there be steps if there is no task?",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
