@@ -94,6 +94,30 @@
       "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f5667ac_d6825da9",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T04:45:16Z",
+      "side": 1,
+      "message": "did you escape \\ appropriately?",
+      "parentUuid": "f7bd38a6_115550a1",
+      "range": {
+        "startLine": 169,
+        "startChar": 33,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
