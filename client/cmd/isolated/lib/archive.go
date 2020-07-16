@@ -16,9 +16,11 @@ package lib
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -27,6 +29,7 @@ import (
 	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
+	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -58,6 +61,8 @@ working directory, '-files :foo' is sufficient.`,
 				"Write the composite isolated hash to a file")
 			c.Flags.StringVar(&c.isolated, "isolated", "",
 				"Write the composite isolated to a file")
+			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "",
+				"Write the upload stats to this file as JSON")
 			return &c
 		},
 	}
@@ -66,10 +71,11 @@ working directory, '-files :foo' is sufficient.`,
 type archiveRun struct {
 	commonFlags
 	CommandOptions
-	dirs     isolated.ScatterGather
-	files    isolated.ScatterGather
-	dumpHash string
-	isolated string
+	dirs          isolated.ScatterGather
+	files         isolated.ScatterGather
+	dumpHash      string
+	isolated      string
+	dumpStatsJSON string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -130,12 +136,17 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 			return
 		}
 	}
+	stats := arch.Stats()
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
-		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+	}
+	if c.dumpStatsJSON != "" {
+		if err = dumpStatsJSON(c.dumpStatsJSON, stats); err != nil {
+			return
+		}
 	}
 	return
 }
@@ -157,4 +168,41 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		return 1
 	}
 	return 0
+}
+
+func dumpStatsJSON(jsonPath string, stats *archiver.Stats) error {
+	hits := make([]int64, len(stats.Hits))
+	for i, h := range stats.Hits {
+		hits[i] = int64(h)
+	}
+	sort.Slice(hits, func(i, j int) bool { return hits[i] < hits[j] })
+	itemsHot, err := isol.Pack(hits)
+	if err != nil {
+		return errors.Annotate(err, "failed to pack itemsHot").Err()
+	}
+
+	pushed := make([]int64, len(stats.Pushed))
+	for i, p := range stats.Pushed {
+		pushed[i] = int64(p.Size)
+	}
+	sort.Slice(pushed, func(i, j int) bool { return pushed[i] < pushed[j] })
+	itemsCold, err := isol.Pack(pushed)
+	if err != nil {
+		return errors.Annotate(err, "failed to pack itemsCold").Err()
+	}
+
+	statsJSON, err := json.Marshal(struct {
+		ItemsCold []byte `json:"items_cold"`
+		ItemsHot  []byte `json:"items_hot"`
+	}{
+		ItemsCold: itemsCold,
+		ItemsHot:  itemsHot,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal result json").Err()
+	}
+	if err := ioutil.WriteFile(jsonPath, statsJSON, 0664); err != nil {
+		return errors.Annotate(err, "failed to write stats json to %s", jsonPath).Err()
+	}
+	return nil
 }
