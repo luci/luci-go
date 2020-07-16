@@ -113,6 +113,10 @@ message TestResult {
 
   // Where the test is defined, e.g. the file name.
   TestLocation test_location = 11;
+
+  // A hex-encoded sha256 of variants.
+  string variant_hash = 12
+      [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Location of the test definition.
