@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import copy from 'copy-to-clipboard';
-import { css, customElement, html, LitElement } from 'lit-element';
+import { css, customElement, html} from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { observable } from 'mobx';
 
 
 /**
@@ -21,11 +23,17 @@ import { css, customElement, html, LitElement } from 'lit-element';
  * Size can be configured via --size, defaults to 16px;
  */
 @customElement('tr-copy-to-clipboard')
-export class CopyToClipboard extends LitElement {
+export class CopyToClipboard extends MobxLitElement {
+  @observable.ref copied = false;
   textToCopy = '';
 
   onclick = () => {
     copy(this.textToCopy);
+    this.copied = true;
+  }
+
+  onmouseleave = () => {
+    this.copied = false;
   }
 
   protected render() {
@@ -37,6 +45,7 @@ export class CopyToClipboard extends LitElement {
       >
         <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
       </svg>
+      <span ?hidden=${!this.copied}>copied</span>
     `;
   }
 
@@ -47,6 +56,14 @@ export class CopyToClipboard extends LitElement {
     svg {
       width: var(--size, 16px);
       height: var(--size, 16px);
+    }
+    svg:hover {
+      filter: drop-shadow(3px 3px 4px gray);
+    }
+    span {
+      background-color: black;
+      color: white;
+      padding: 3px;
     }
   `;
 }
