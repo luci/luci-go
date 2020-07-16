@@ -502,9 +502,15 @@ func TestUpdateTrees(t *testing.T) {
 			So(status.status, ShouldEqual, config.Open)
 			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
 
-			So(log.Messages(), ShouldHaveLength, 1)
-			So(log.Messages()[0].Level, ShouldEqual, logging.Info)
-			So(log.Messages()[0].Msg, ShouldEqual, `Would update status for infra-status.appspot.com to "Tree is closed (Automatic: Close it up!)"`)
+			hasExpectedLog := false
+			for _, log := range log.Messages() {
+				if log.Level == logging.Info {
+					hasExpectedLog = true
+					So(log.Msg, ShouldEqual, `Would update status for infra-status.appspot.com to "Tree is closed (Automatic: Close it up!)"`)
+				}
+			}
+
+			So(hasExpectedLog, ShouldBeTrue)
 		})
 
 		Convey("Multiple projects, overlapping tree status hosts", func() {
