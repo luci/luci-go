@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "be1f198f_fc64aa9e",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T01:49:21Z",
+      "side": 1,
+      "message": "Ah, yeah.\n\nBut I feel goconvey is something special here.",
+      "parentUuid": "9af75e95_c9d7fc56",
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3f409f0b_5628daa7",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 14
@@ -164,6 +182,30 @@
       "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e48507f8_7fa9fc58",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T01:49:21Z",
+      "side": 1,
+      "message": "Sorry, you are right. This is nice to have, but you don\u0027t need to be blocked.",
+      "parentUuid": "e3450696_cf8bee08",
+      "range": {
+        "startLine": 29,
+        "startChar": 2,
+        "endLine": 29,
+        "endChar": 34
+      },
+      "revId": "348d1b452108c6f84066cfebbd6743fa50d24312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

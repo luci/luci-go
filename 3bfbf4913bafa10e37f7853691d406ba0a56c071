@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "d969d48d_0639b9d8",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T01:49:21Z",
+      "side": 1,
+      "message": "I think it is better to use cas client, rexec client is bit too much here? And caller doesn\u0027t need to know about filemetadata in our usage?",
+      "parentUuid": "969c9ba9_42051a4d",
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b545951a_c7784ccb",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 12

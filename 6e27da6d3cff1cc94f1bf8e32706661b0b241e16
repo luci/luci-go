@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97f02271_d2a5126d",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T01:49:21Z",
+      "side": 1,
+      "message": "Hm, I think we need to support windows path separator here.",
+      "range": {
+        "startLine": 169,
+        "startChar": 33,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
