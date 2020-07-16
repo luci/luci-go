@@ -22,6 +22,30 @@
       "revId": "8e4f2bb72d4dfea10c6dcf4743d48069e7acf004",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c571fff_f2523fc1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-16T15:03:36Z",
+      "side": 1,
+      "message": "Hmm, yep i decided to remove it and time this on the python side (which is consistent with map_and_fetch_with_go)",
+      "parentUuid": "bae7cccf_31d70703",
+      "range": {
+        "startLine": 9,
+        "startChar": 33,
+        "endLine": 9,
+        "endChar": 51
+      },
+      "revId": "8e4f2bb72d4dfea10c6dcf4743d48069e7acf004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
