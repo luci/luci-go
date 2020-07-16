@@ -307,5 +307,10 @@ export class VariantEntryElement extends MobxLitElement {
       background-color: rgb(245, 245, 245);
       padding: 5px;
     }
+
+    tr-copy-to-clipboard {
+      margin-left: 5px;
+      margin-right: 5px;
+    }
   `;
 }
