@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17f49c15_29f43292",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-16T22:09:13Z",
+      "side": 1,
+      "message": "PTAL",
+      "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4990c34d_fb06e4e4",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-16T22:09:13Z",
+      "side": 1,
+      "message": "We no longer need this since VariantHash is included in TestResult now. Dropped it in the follow-up change https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2303222",
+      "range": {
+        "startLine": 268,
+        "startChar": 5,
+        "endLine": 268,
+        "endChar": 14
+      },
+      "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
