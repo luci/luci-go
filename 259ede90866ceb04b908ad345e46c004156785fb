@@ -19,6 +19,64 @@
     },
     {
       "key": {
+        "uuid": "9f1cd74d_4260098e",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-16T05:41:42Z",
+      "side": 1,
+      "message": "what you are doing here is exactly what I would recommend.",
+      "parentUuid": "e3a0c480_6b5ddb1c",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0a5c89f2_38f529b9",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-16T05:41:42Z",
+      "side": 1,
+      "message": "nit: consider inverting the condition and exiting early. Then the code below can be unindented",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ecc94c5_0f40f2f0",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-16T05:41:42Z",
+      "side": 1,
+      "message": "nit: consolidate?",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 208,
+        "endChar": 5
+      },
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "efbaf620_ada89bd1",
         "filename": "buildbucket/appengine/rpc/cancel_build.go",
         "patchSetId": 1
@@ -30,6 +88,24 @@
       "writtenOn": "2020-07-16T05:22:59Z",
       "side": 1,
       "message": "Python attempts to cancel steps regardless. Can there be steps if there is no task?",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4241b1e_ecd44085",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-16T05:41:42Z",
+      "side": 1,
+      "message": "with the new backend API, yes. The code under this if-statement does not really care about this condition, so yes, i recommend moving it you of the if-statment.\n\nIn particular, we fetch both build and steps in L75, as opposed to doing *sequential* RPCs",
+      "parentUuid": "efbaf620_ada89bd1",
       "revId": "259ede90866ceb04b908ad345e46c004156785fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
