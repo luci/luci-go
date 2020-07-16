@@ -21,6 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
@@ -81,9 +82,8 @@ type Build struct {
 	// e.g. chromium/try/linux-rel.
 	BuilderID string `gae:"builder_id"`
 
-	Canary bool `gae:"canary"`
-	// TODO(crbug/1042991): Create datastore.PropertyConverter in server/auth.
-	CreatedBy []byte `gae:"created_by,noindex"`
+	Canary    bool              `gae:"canary"`
+	CreatedBy identity.Identity `gae:"created_by"`
 	// TODO(nodir): Replace reliance on create_time indices with id.
 	CreateTime time.Time `gae:"create_time"`
 	// Experimental, if true, means to exclude from monitoring and search results
