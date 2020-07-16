@@ -16,6 +16,24 @@
       "revId": "60bae35f0df1cc952fc6c447b410771b2a9ed751",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a53dce2c_dc952770",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-07-16T06:09:16Z",
+      "side": 1,
+      "message": "Ah, good point, thanks. Am I correct in thinking that these fields are automatically inserted into log messages? Or do I need to get the field and manually put it into the message?",
+      "parentUuid": "57936bdb_a964ae69",
+      "revId": "60bae35f0df1cc952fc6c447b410771b2a9ed751",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
