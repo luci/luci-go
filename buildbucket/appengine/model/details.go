@@ -18,15 +18,18 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // defaultStructValues defaults nil or empty values inside the given
@@ -62,7 +65,7 @@ type DSStruct struct {
 func (s *DSStruct) FromProperty(p datastore.Property) error {
 	err := proto.Unmarshal(p.Value().([]byte), &s.Struct)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "error unmarshalling proto").Err()
 	}
 	defaultStructValues(&s.Struct)
 	return nil
@@ -136,6 +139,13 @@ type BuildOutputProperties struct {
 	Proto DSStruct `gae:"properties,noindex"`
 }
 
+// buildStepsMaxBytes is the maximum length of BuildSteps.Bytes. If Bytes
+// exceeds this maximum, this package will try to compress it, setting IsZipped
+// accordingly, but if this length is still exceeded it's an error to write
+// such entities to the datastore. Use FromProto to ensure this maximum is
+// respected.
+const buildStepsMaxBytes = 1e6
+
 // BuildSteps is a representation of a build proto's steps field
 // in the datastore.
 type BuildSteps struct {
@@ -144,11 +154,69 @@ type BuildSteps struct {
 	ID int `gae:"$id"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
-	// IsZipped indicates whether or not Bytes must be zlib decompressed.
+	// IsZipped indicates whether or not Bytes is zlib compressed.
+	// Use ToProto to ensure this compression is respected.
 	IsZipped bool `gae:"step_container_bytes_zipped,noindex"`
 	// Bytes is the pb.Build proto representation of the build proto where only steps is set.
 	// IsZipped determines whether this value is compressed or not.
 	Bytes []byte `gae:"steps,noindex"`
+}
+
+// CancelIncomplete marks any incomplete steps as cancelled, returning whether
+// at least one step was cancelled. The caller is responsible for writing the
+// entity to the datastore if any steps were cancelled. This entity will not be
+// mutated if an error occurs.
+func (s *BuildSteps) CancelIncomplete(ctx context.Context, now *timestamppb.Timestamp) (bool, error) {
+	stp, err := s.ToProto(ctx)
+	if err != nil {
+		return false, err
+	}
+	changed := false
+	for _, s := range stp {
+		if !protoutil.IsEnded(s.Status) {
+			s.EndTime = now
+			s.Status = pb.Status_CANCELED
+			if s.SummaryMarkdown != "" {
+				s.SummaryMarkdown = fmt.Sprintf("%s\n", s.SummaryMarkdown)
+			}
+			s.SummaryMarkdown = fmt.Sprintf("%sstep was canceled because it did not end before build ended", s.SummaryMarkdown)
+			changed = true
+		}
+	}
+	if changed {
+		if err := s.FromProto(ctx, stp); err != nil {
+			return false, err
+		}
+	}
+	return changed, nil
+}
+
+// FromProto overwrites the current []*pb.Step representation of these steps.
+// The caller is responsible for writing the entity to the datastore. This
+// entity will not be mutated if an error occurs.
+func (s *BuildSteps) FromProto(ctx context.Context, stp []*pb.Step) error {
+	b, err := proto.Marshal(&pb.Build{
+		Steps: stp,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal %q", datastore.KeyForObj(ctx, s)).Err()
+	}
+	if len(b) <= buildStepsMaxBytes {
+		s.Bytes = b
+		s.IsZipped = false
+		return nil
+	}
+	buf := &bytes.Buffer{}
+	w := zlib.NewWriter(buf)
+	if _, err := w.Write(b); err != nil {
+		return errors.Annotate(err, "error zipping %q", datastore.KeyForObj(ctx, s)).Err()
+	}
+	if err := w.Close(); err != nil {
+		return errors.Annotate(err, "error closing writer for %q", datastore.KeyForObj(ctx, s)).Err()
+	}
+	s.Bytes = buf.Bytes()
+	s.IsZipped = true
+	return nil
 }
 
 // ToProto returns the []*pb.Step representation of these steps.
@@ -162,6 +230,9 @@ func (s *BuildSteps) ToProto(ctx context.Context) ([]*pb.Step, error) {
 		b, err = ioutil.ReadAll(r)
 		if err != nil {
 			return nil, errors.Annotate(err, "error reading %q", datastore.KeyForObj(ctx, s)).Err()
+		}
+		if err := r.Close(); err != nil {
+			return nil, errors.Annotate(err, "error closing reader for %q", datastore.KeyForObj(ctx, s)).Err()
 		}
 	}
 	p := &pb.Build{}
