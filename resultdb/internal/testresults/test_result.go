@@ -84,6 +84,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 		"Tags":                 &tr.Tags,
 		"TestLocationFileName": &testLocationFileName,
 		"TestLocationLine":     &testLocationLine,
+		"VariantHash":          &tr.VariantHash,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
