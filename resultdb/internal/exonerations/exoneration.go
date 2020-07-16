@@ -62,6 +62,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestExoneration, 
 	err = span.ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
 		"Variant":         &ret.Variant,
 		"ExplanationHTML": &explanationHTML,
+		"VariantHash":     &ret.VariantHash,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
