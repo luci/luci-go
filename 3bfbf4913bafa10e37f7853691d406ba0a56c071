@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "e1ef4707_9d243b97",
+        "filename": "client/cas/uploader.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-16T02:43:14Z",
+      "side": 1,
+      "message": "\u003e I think it is better to use cas client, rexec client is bit too much here?\n\n+1\n\n\u003e And caller doesn\u0027t need to know about filemetadata in our usage?\n\nThat is true, but note that the SDK\u0027s test env returns a fm cache, so i think we should still be able to inject the cache. Let me add some options to configure this cas.Uploader, then.",
+      "parentUuid": "d969d48d_0639b9d8",
+      "revId": "3bfbf4913bafa10e37f7853691d406ba0a56c071",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b545951a_c7784ccb",
         "filename": "client/cas/uploader_test.go",
         "patchSetId": 12
