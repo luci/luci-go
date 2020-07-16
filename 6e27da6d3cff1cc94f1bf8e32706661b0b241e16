@@ -22,6 +22,30 @@
       "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22093607_bac3298d",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-16T03:10:07Z",
+      "side": 1,
+      "message": "Hmm, that\u0027s actually what i did in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2297002/16/client/cas/uploader_test.go, yet the test still failed.. I believe it\u0027s fine to always use \u0027/\u0027 in isolate file content, but let me double-check.",
+      "parentUuid": "97f02271_d2a5126d",
+      "range": {
+        "startLine": 169,
+        "startChar": 33,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "6e27da6d3cff1cc94f1bf8e32706661b0b241e16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
