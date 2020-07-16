@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "5938dbee_a8a2d979",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-16T17:07:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a5c89f2_38f529b9",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ecc94c5_0f40f2f0",
         "filename": "buildbucket/appengine/model/details.go",
         "patchSetId": 1
@@ -74,6 +92,30 @@
       "revId": "259ede90866ceb04b908ad345e46c004156785fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "286c6431_104f8f79",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-16T17:07:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ecc94c5_0f40f2f0",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 208,
+        "endChar": 5
+      },
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -109,6 +151,24 @@
       "revId": "259ede90866ceb04b908ad345e46c004156785fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01da228e_13acf17f",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-16T17:07:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4241b1e_ecd44085",
+      "revId": "259ede90866ceb04b908ad345e46c004156785fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
