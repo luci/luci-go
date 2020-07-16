@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "35d7faa9_f93194a6",
+        "filename": "client/cas/uploader_test.go",
+        "patchSetId": 29
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-16T06:04:30Z",
+      "side": 1,
+      "message": "why not\n```\nSo(err, ShouldBeNil)\n```\n?",
+      "revId": "8ed6c1bed808d1f4344b09ed8d88ece758bdd691",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
