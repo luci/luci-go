@@ -34,6 +34,24 @@
       "revId": "60bae35f0df1cc952fc6c447b410771b2a9ed751",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "663cefaf_16927d19",
+        "filename": "luci_notify/notify/tree_status.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-16T06:13:15Z",
+      "side": 1,
+      "message": "you are correct. SetField returns context, which is then passed as the first param of Debugf",
+      "parentUuid": "a53dce2c_dc952770",
+      "revId": "60bae35f0df1cc952fc6c447b410771b2a9ed751",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
