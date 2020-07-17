@@ -67,15 +67,17 @@ const (
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
 	// Can be customized with WithScopes() options.
 	//
-	// AsSelf should be used very sparingly, only for "maintenance" RPCs that
-	// happen outside of the context of any LUCI project or any end-user request.
-	// Using AsSelf to authorize RPCs that touch user data leads to "confused
-	// deputy" problems. Strongly prefer to use AsProject or AsUser instead.
+	// In LUCI services AsSelf should be used very sparingly, only for internal
+	// "maintenance" RPCs that happen outside of the context of any LUCI project.
+	// Using AsSelf to authorize RPCs that touch project data leads to "confused
+	// deputy" problems. Prefer to use AsProject when possible.
 	AsSelf
 
 	// AsUser is used for outbound RPCs that inherit the authority of a user
 	// that initiated the request that is currently being handled, regardless of
 	// how exactly the user was authenticated.
+	//
+	// DEPRECATED.
 	//
 	// The implementation is based on LUCI-specific protocol that uses special
 	// delegation tokens. Only LUCI backends can understand them.
@@ -98,7 +100,7 @@ const (
 	// user credentials, exactly as they were received by the service.
 	//
 	// For authenticated calls, works only if the current request was
-	// authenticated via an OAuth access token.
+	// authenticated via a forwardable token, e.g. an OAuth2 access token.
 	//
 	// If the current request was initiated by an anonymous caller, the RPC will
 	// have no auth headers (just like in NoAuth mode).
@@ -108,7 +110,8 @@ const (
 	AsCredentialsForwarder
 
 	// AsActor is used for outbound RPCs sent with the authority of some service
-	// account that the current service has "iam.serviceAccountActor" role in.
+	// account that the current service has "iam.serviceAccountTokenCreator" role
+	// in.
 	//
 	// RPC requests done in this mode will have 'Authorization' header set to
 	// the access token of the service account specified by WithServiceAccount()
@@ -124,7 +127,7 @@ const (
 	// When used to call external services (anything that is not a part of the
 	// current LUCI deployment), uses 'Authorization' header with OAuth2 access
 	// token associated with the project-specific service account (specified with
-	// the LUCI project definition in 'project.cfg' deployment configuration
+	// the LUCI project definition in 'projects.cfg' deployment configuration
 	// file).
 	//
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope
@@ -143,81 +146,60 @@ const (
 // RPCs done via AsProject authority.
 const XLUCIProjectHeader = "X-Luci-Project"
 
-// RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
+// RPCOption is an option for GetRPCTransport, GetPerRPCCredentials and
+// GetTokenSource functions.
 type RPCOption interface {
 	apply(opts *rpcOptions)
 }
 
-// WithProject can be used to generate an OAuth token with an identity bound
-// to that particular LUCI project.
+type rpcOption func(opts *rpcOptions)
+
+func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
+
+// WithProject can be used to generate an OAuth token with an identity of that
+// particular LUCI project.
+//
+// See AsProject for more info.
 func WithProject(project string) RPCOption {
-	return projectOption{name: project}
-}
-
-type projectOption struct {
-	name string
-}
-
-func (o projectOption) apply(opts *rpcOptions) {
-	opts.project = o.name
+	return rpcOption(func(opts *rpcOptions) {
+		opts.project = project
+	})
 }
 
 // WithScopes can be used to customize OAuth scopes for outbound RPC requests.
 //
 // If not used, the requests are made with "userinfo.email" scope.
 func WithScopes(scopes ...string) RPCOption {
-	return oauthScopesOption{scopes: scopes}
-}
-
-type oauthScopesOption struct {
-	scopes []string
-}
-
-func (o oauthScopesOption) apply(opts *rpcOptions) {
-	opts.scopes = append(opts.scopes, o.scopes...)
+	return rpcOption(func(opts *rpcOptions) {
+		opts.scopes = append(opts.scopes, scopes...)
+	})
 }
 
 // WithServiceAccount option must be used with AsActor authority kind to specify
 // what service account to act as.
 func WithServiceAccount(email string) RPCOption {
-	return serviceAccountOption{email: email}
-}
-
-type serviceAccountOption struct {
-	email string
-}
-
-func (o serviceAccountOption) apply(opts *rpcOptions) {
-	opts.serviceAccount = o.email
+	return rpcOption(func(opts *rpcOptions) {
+		opts.serviceAccount = email
+	})
 }
 
 // WithDelegationToken can be used to attach an existing delegation token to
 // requests made in AsUser mode.
 //
+// DEPRECATED.
+//
 // The token can be obtained earlier via MintDelegationToken call. The transport
 // doesn't attempt to validate it and just blindly sends it to the other side.
 func WithDelegationToken(token string) RPCOption {
-	return delegationTokenOption{token: token}
-}
-
-type delegationTokenOption struct {
-	token string
-}
-
-func (o delegationTokenOption) apply(opts *rpcOptions) {
-	opts.delegationToken = o.token
-}
-
-type delegationTagsOption struct {
-	tags []string
-}
-
-func (o delegationTagsOption) apply(opts *rpcOptions) {
-	opts.delegationTags = o.tags
+	return rpcOption(func(opts *rpcOptions) {
+		opts.delegationToken = token
+	})
 }
 
 // WithDelegationTags can be used to attach tags to the delegation token used
 // internally in AsUser mode.
+//
+// DEPRECATED.
 //
 // The recipient of the RPC that uses the delegation will be able to extract
 // them, if necessary. They are also logged in the token server logs.
@@ -228,15 +210,9 @@ func (o delegationTagsOption) apply(opts *rpcOptions) {
 // initiated by an anonymous caller, since delegation protocol is not actually
 // used in this case.
 func WithDelegationTags(tags ...string) RPCOption {
-	return delegationTagsOption{tags: tags}
-}
-
-type monitoringClientOption struct {
-	client string
-}
-
-func (o monitoringClientOption) apply(opts *rpcOptions) {
-	opts.monitoringClient = o.client
+	return rpcOption(func(opts *rpcOptions) {
+		opts.delegationTags = tags
+	})
 }
 
 // WithMonitoringClient allows to override 'client' field that goes into HTTP
@@ -249,10 +225,12 @@ func (o monitoringClientOption) apply(opts *rpcOptions) {
 // Overriding it may be useful if you want to differentiate between requests
 // made to the same host from a bunch of different places in the code.
 //
-// This option has absolutely no effect when passed GetPerRPCCredentials() or
+// This option has absolutely no effect when passed to GetPerRPCCredentials() or
 // GetTokenSource(). It applies only to GetRPCTransport().
 func WithMonitoringClient(client string) RPCOption {
-	return monitoringClientOption{client: client}
+	return rpcOption(func(opts *rpcOptions) {
+		opts.monitoringClient = client
+	})
 }
 
 // GetRPCTransport returns http.RoundTripper to use for outbound HTTP RPC

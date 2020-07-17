@@ -144,6 +144,8 @@ var delegationTokenCache = newTokenCache(tokenCacheConfig{
 // current service to "pretend" to be the current caller (as returned by
 // CurrentIdentity(...)) when sending requests to some other LUCI service.
 //
+// DEPRECATED.
+//
 // The delegation token is essentially a signed assertion that the current
 // service is allowed to access some other service on behalf of the current
 // user.
