@@ -105,6 +105,29 @@ func main() {
 			// callers, etc.
 		})
 
+		// Using ID tokens for authenticating outbound calls. This synthetic example
+		// works on localhost only.
+		srv.Routes.GET("/call", mw, func(c *router.Context) {
+			tr, err := auth.GetRPCTransport(c.Context,
+				auth.AsSelf,
+				auth.WithIDTokenAudience("https://example.com"),
+			)
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+
+			req, _ := http.NewRequest("POST", "http://127.0.0.1:8800/push", nil)
+			req.Host = "example.com"
+
+			resp, err := (&http.Client{Transport: tr}).Do(req)
+			if err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+				return
+			}
+			defer resp.Body.Close()
+		})
+
 		return nil
 	})
 }
