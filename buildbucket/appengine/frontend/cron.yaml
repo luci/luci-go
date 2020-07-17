@@ -1,0 +1,63 @@
+cron:
+
+- description: expire build leases
+  target: backend
+  url: /internal/cron/buildbucket/expire_build_leases
+  schedule: every 1 minutes
+
+- description: expire builds
+  target: backend
+  url: /internal/cron/buildbucket/expire_builds
+  schedule: every 1 minutes
+
+- description: delete builds
+  target: backend
+  url: /internal/cron/buildbucket/delete_builds
+  schedule: every 1 minutes
+
+- description: update buckets
+  target: backend
+  url: /internal/cron/buildbucket/update_buckets
+  schedule: every 1 minutes
+
+### ereporter2
+
+- description: ereporter2 cleanup
+  target: backend
+  url: /internal/cron/ereporter2/cleanup
+  schedule: every 1 hours
+
+- description: ereporter2 mail exception report
+  target: backend
+  url: /internal/cron/ereporter2/mail
+  schedule: every 1 hours synchronized
+
+### luci-config
+
+- description: config update
+  target: backend
+  url: /internal/cron/config/update
+  schedule: every 10 minutes
+
+### bq export
+
+- description: export completed builds to BigQuery
+  target: backend
+  url: /internal/cron/buildbucket/bq-export
+  schedule: every 1 minutes
+  retry_parameters:
+    min_backoff_seconds: 2
+
+## cleanup builders
+
+- description: unregister builders that didn't have builds for a long time.
+  target: backend
+  url: /internal/cron/buildbucket/unregister-builders
+  schedule: every 1 hours
+
+### gae_ts_mon
+
+- description: Send ts_mon metrics
+  target: backend
+  url: /internal/cron/ts_mon/send
+  schedule: every 1 minutes
