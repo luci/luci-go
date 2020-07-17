@@ -53,6 +53,7 @@ def _builder(
         # Tweaks.
         build_numbers = None,
         experimental = None,
+        experiments = None,
         task_template_canary_percentage = None,
         repo = None,
 
@@ -181,6 +182,8 @@ def _builder(
         marked as experimental. This is seen from the executable and it may
         behave differently (e.g. avoiding any side-effects). If None, defer the
         decision to Buildbucket service. Supports the module-scoped default.
+      experiments: a dict with experiments to include or exclude. Keys are
+        strings, and values are a boolean.
       task_template_canary_percentage: int [0-100] or None, indicating
         percentage of builds that should use a canary swarming task template.
         If None, defer the decision to Buildbucket service. Supports the
@@ -230,6 +233,7 @@ def _builder(
         "triggering_policy": schedulerimpl.validate_policy("triggering_policy", triggering_policy, required = False),
         "build_numbers": validate.bool("build_numbers", build_numbers, required = False),
         "experimental": validate.bool("experimental", experimental, required = False),
+        "experiments": validate.str_dict("experiments", experiments),
         "task_template_canary_percentage": validate.int("task_template_canary_percentage", task_template_canary_percentage, min = 0, max = 100, required = False),
         "repo": validate.repo_url("repo", repo, required = False),
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
@@ -333,6 +337,7 @@ builder = lucicfg.rule(
         "triggering_policy": schedulerimpl.validate_policy,
         "build_numbers": validate.bool,
         "experimental": validate.bool,
+        "experiments": validate.str_dict,
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
     }),
