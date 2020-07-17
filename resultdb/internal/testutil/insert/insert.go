@@ -152,6 +152,7 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 			TestId:      testID,
 			ResultId:    resultID,
 			Variant:     v,
+			VariantHash: pbutil.VariantHash(v),
 			Expected:    status == pb.TestStatus_PASS,
 			Status:      status,
 			Duration:    &durpb.Duration{Seconds: int64(i), Nanos: 234567000},

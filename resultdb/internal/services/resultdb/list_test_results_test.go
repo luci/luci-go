@@ -122,13 +122,14 @@ func insertTestResults(ctx context.Context, invID invocations.ID, testName strin
 		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
 
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(string(invID), testID, resultID),
-			TestId:   testID,
-			ResultId: resultID,
-			Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
-			Expected: status == pb.TestStatus_PASS,
-			Status:   status,
-			Duration: &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			Name:        pbutil.TestResultName(string(invID), testID, resultID),
+			TestId:      testID,
+			ResultId:    resultID,
+			Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+			VariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1", "k2", "v2")),
+			Expected:    status == pb.TestStatus_PASS,
+			Status:      status,
+			Duration:    &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
 		}
 
 		mutMap := map[string]interface{}{

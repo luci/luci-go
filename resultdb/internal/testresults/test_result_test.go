@@ -94,6 +94,7 @@ func TestRead(t *testing.T) {
 				FileName: "//a_test.go",
 				Line:     54,
 			},
+			VariantHash: "deadbeef",
 		})
 	})
 }

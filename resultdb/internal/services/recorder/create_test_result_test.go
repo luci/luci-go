@@ -128,17 +128,10 @@ func TestCreateTestResult(t *testing.T) {
 			So(res, ShouldResembleProto, expected)
 
 			// double-check it with the database
+			expected.VariantHash = "c8643f74854d84b4"
 			row, err := testresults.Read(ctx, span.Client(ctx).Single(), res.Name)
 			So(err, ShouldBeNil)
 			So(row, ShouldResembleProto, expected)
-
-			// variant hash
-			key := invocations.ID("u-build-1").Key("test-id", "result-id-0")
-			var variantHash string
-			testutil.MustReadRow(ctx, "TestResults", key, map[string]interface{}{
-				"VariantHash": &variantHash,
-			})
-			So(variantHash, ShouldEqual, "c8643f74854d84b4")
 		}
 
 		// Insert a sample invocation

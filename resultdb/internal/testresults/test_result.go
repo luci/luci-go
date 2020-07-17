@@ -76,6 +76,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestResult, error
 	var testLocationLine spanner.NullInt64
 	err := span.ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":              &tr.Variant,
+		"VariantHash":          &tr.VariantHash,
 		"IsUnexpected":         &maybeUnexpected,
 		"Status":               &tr.Status,
 		"SummaryHTML":          &summaryHTML,

@@ -160,18 +160,11 @@ func TestBatchCreateTestResults(t *testing.T) {
 				So(response.TestResults[i], ShouldResembleProto, expected)
 
 				// double-check it with the database
+				expected.VariantHash = "c8643f74854d84b4"
 				spanClient := span.Client(ctx).Single()
 				row, err := testresults.Read(ctx, spanClient, expected.Name)
 				So(err, ShouldBeNil)
 				So(row, ShouldResembleProto, expected)
-
-				// variant hash
-				key := invocations.ID("u-build-1").Key("test-id", resultID)
-				var variantHash string
-				testutil.MustReadRow(ctx, "TestResults", key, map[string]interface{}{
-					"VariantHash": &variantHash,
-				})
-				So(variantHash, ShouldEqual, "c8643f74854d84b4")
 			}
 		}
 
