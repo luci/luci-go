@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "854a5e51_94166c6d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-17T19:40:00Z",
+      "side": 1,
+      "message": "Note; there\u0027s a version number in lucicfg/version.go; you should bump that up by one patch level.",
+      "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "441c0dd2_9b964f27",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
@@ -16,6 +33,46 @@
       "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d9eb05be_f0cda907",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-17T19:40:00Z",
+      "side": 1,
+      "message": "Looks about right. Once my migrator tool is done we can remove \u0027canary\u0027 and \u0027experimental\u0027 from the output configs, too.",
+      "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5b2cab01_e8c5d7d4",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-17T19:40:00Z",
+      "side": 1,
+      "message": "This is incorrect; values should be integers from 0-100 per https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/project_config.proto#439\n\nedit: looks like it\u0027s just this documentation which is incorrect. This should be the source of truth for the generated README, too, don\u0027t modify the README by hand.",
+      "range": {
+        "startLine": 186,
+        "startChar": 34,
+        "endLine": 186,
+        "endChar": 41
+      },
+      "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
