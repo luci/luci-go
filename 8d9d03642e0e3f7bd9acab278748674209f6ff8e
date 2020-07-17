@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "dc033dd8_4748fc9c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:23:34Z",
+      "side": 1,
+      "message": "did you verify it won\u0027t work in Python? it is possible that Python will just work because it is the same bytes underneath.\n\neven if it does not, i think the fact that the field is Blob was a design mistake in the past and now is an opportunity to fix the past mistake. It can be done in 3 steps:\n1) In Python, start writing two properties: create_by as Identity, and created_by_v2 as string\n2) Run a map-reduce job (fix_builds.py) to copy created_by to created_by_v2 to old builds\n3) Remove create_by (the v1)\n\nThen we don\u0027t have to bring this baggage into the new code base. WDYT?",
+      "parentUuid": "698ac766_33ca35d0",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 67
+      },
+      "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8a01a86d_8d78def9",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 6
