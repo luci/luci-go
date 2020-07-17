@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "58a134cb_300319eb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-07-17T21:34:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e1d5640_26ea8c65",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 26
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f555c3c8_b17b44ff",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
@@ -83,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "e9c60b1e_dd280ec9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-07-17T21:34:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff926796_30b8a631",
+      "range": {
+        "startLine": 185,
+        "startChar": 6,
+        "endLine": 185,
+        "endChar": 17
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d632993_4d956978",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 5
@@ -94,6 +142,30 @@
       "writtenOn": "2020-07-17T21:10:36Z",
       "side": 1,
       "message": "This is not really validated",
+      "range": {
+        "startLine": 187,
+        "startChar": 12,
+        "endLine": 187,
+        "endChar": 45
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c037fdd_54b08f13",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-07-17T21:34:27Z",
+      "side": 1,
+      "message": "should I add a validate_experiments() in builder.star to validate?",
+      "parentUuid": "8d632993_4d956978",
       "range": {
         "startLine": 187,
         "startChar": 12,
