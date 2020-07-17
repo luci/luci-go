@@ -16,6 +16,86 @@
       "revId": "c7f9ebccb49514929486acadec297996dec9bd22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "30ec11cf_0d5a9896",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:30:29Z",
+      "side": 1,
+      "message": "LGTM % comments",
+      "revId": "c7f9ebccb49514929486acadec297996dec9bd22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "721c55d1_2bd5a355",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:30:29Z",
+      "side": 1,
+      "message": "remove\n\nsame below",
+      "revId": "c7f9ebccb49514929486acadec297996dec9bd22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f1a0b26_9c343baa",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:30:29Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 111,
+        "endChar": 31
+      },
+      "revId": "c7f9ebccb49514929486acadec297996dec9bd22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e868b690_5aeed7e3",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:30:29Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 260,
+        "startChar": 0,
+        "endLine": 266,
+        "endChar": 3
+      },
+      "revId": "c7f9ebccb49514929486acadec297996dec9bd22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
