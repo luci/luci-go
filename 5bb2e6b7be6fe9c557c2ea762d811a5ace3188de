@@ -175,6 +175,30 @@
       "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77b11686_eddd9051",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T21:57:44Z",
+      "side": 1,
+      "message": "Yeah, but it doesn\u0027t have to be public, so _validate_experiments.",
+      "parentUuid": "4c037fdd_54b08f13",
+      "range": {
+        "startLine": 187,
+        "startChar": 12,
+        "endLine": 187,
+        "endChar": 45
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
