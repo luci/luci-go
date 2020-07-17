@@ -19,6 +19,57 @@
     },
     {
       "key": {
+        "uuid": "463ff65c_c87b2f31",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:32:59Z",
+      "side": 1,
+      "message": "nits",
+      "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "152f2bee_9ed46d1c",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:32:59Z",
+      "side": 1,
+      "message": "maybe put it after L45?",
+      "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ac7b395_187f47e7",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:32:59Z",
+      "side": 1,
+      "message": "nit: maybe put it after L129?",
+      "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4990c34d_fb06e4e4",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 1
@@ -39,6 +90,23 @@
       "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "49c758cb_0a4a8a54",
+        "filename": "resultdb/internal/testresults/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-17T06:32:59Z",
+      "side": 1,
+      "message": "maybe put it after L78?\n\nsame in other files",
+      "revId": "5f2e6c407d6490edea05057a0520ceee0cf31f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
