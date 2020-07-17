@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3c47454_c5f84035",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-17T01:20:02Z",
+      "side": 1,
+      "message": "Right now when you deploy the go service, because cron.yaml and queues.yaml don\u0027t exist, no changes are made to cron or queue config (i.e. gae retains current configuration, it does not delete the config). I want to move the source of truth of these files from infra/infra to luci-go so that when you deploy the python service, no changes are made to these configs.\n\nThe reason is because as more development is done in go, changes need to be made to these files for reasons only clear from looking at luci-go (in particular I need to configure transactional task queues soon). Since changes in python generally don\u0027t require updating these configs (last updated in 2019), might as well move them.",
+      "revId": "dbfff6881fe6831d31ce2addca89cb0e57174035",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
