@@ -50,7 +50,7 @@ type MintAccessTokenParams struct {
 }
 
 // actorAccessTokenCache is used to store access tokens of service accounts
-// the current service has "iam.serviceAccountActor" role in.
+// the current service has "iam.serviceAccountTokenCreator" role in.
 //
 // The token is stored in OAuth2Token field.
 var actorAccessTokenCache = newTokenCache(tokenCacheConfig{
@@ -61,7 +61,8 @@ var actorAccessTokenCache = newTokenCache(tokenCacheConfig{
 })
 
 // MintAccessTokenForServiceAccount produces an access token for some service
-// account that the current service has "iam.serviceAccountActor" role in.
+// account that the current service has "iam.serviceAccountTokenCreator" role
+// in.
 //
 // Used to implement AsActor authorization kind, but can also be used directly,
 // if needed. The token is cached internally. Same token may be returned by
