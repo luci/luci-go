@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -35,12 +37,17 @@ import (
 func TestGetRPCTransport(t *testing.T) {
 	t.Parallel()
 
+	const ownServiceAccountName = "service-own-sa@example.com"
+
 	Convey("GetRPCTransport works", t, func() {
 		ctx := context.Background()
 		mock := &clientRPCTransportMock{}
 		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.AccessTokenProvider = mock.getAccessToken
 			cfg.AnonymousTransport = mock.getTransport
+			cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
+				ServiceAccountName: ownServiceAccountName,
+			})
 			return cfg
 		})
 
@@ -75,6 +82,31 @@ func TestGetRPCTransport(t *testing.T) {
 			So(mock.calls[0], ShouldResemble, []string{"https://www.googleapis.com/auth/userinfo.email"})
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
 				"Authorization": {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
+			})
+		})
+
+		Convey("in AsSelf mode with ID token", func(c C) {
+			mocks := &rpcMocks{
+				MintIDTokenForServiceAccount: func(ic context.Context, p MintIDTokenParams) (*Token, error) {
+					So(p, ShouldResemble, MintIDTokenParams{
+						ServiceAccount: ownServiceAccountName,
+						Audience:       "https://example.com/aud",
+						MinTTL:         2 * time.Minute,
+					})
+					return &Token{
+						Token:  "id-token",
+						Expiry: clock.Now(ic).Add(time.Hour),
+					}, nil
+				},
+			}
+
+			t, err := GetRPCTransport(ctx, AsSelf, WithIDTokenAudience("https://example.com/aud"), mocks)
+			So(err, ShouldBeNil)
+			_, err = t.RoundTrip(makeReq("https://another.example.com"))
+			So(err, ShouldBeNil)
+
+			So(mock.reqs[0].Header, ShouldResemble, http.Header{
+				"Authorization": {"Bearer id-token"},
 			})
 		})
 
@@ -194,6 +226,16 @@ func TestGetRPCTransport(t *testing.T) {
 
 		Convey("in NoAuth mode with scopes, should error", func(c C) {
 			_, err := GetRPCTransport(ctx, NoAuth, WithScopes("A"))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("in NoAuth mode with ID token, should error", func(c C) {
+			_, err := GetRPCTransport(ctx, NoAuth, WithIDTokenAudience("aud"))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("in AsSelf mode with ID token and scopes, should error", func(c C) {
+			_, err := GetRPCTransport(ctx, AsSelf, WithScopes("A"), WithIDTokenAudience("aud"))
 			So(err, ShouldNotBeNil)
 		})
 

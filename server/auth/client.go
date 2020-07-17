@@ -61,11 +61,18 @@ const (
 	// AsSelf is used for outbound RPCs sent with the authority of the current
 	// service itself.
 	//
-	// RPC requests done in this mode will have 'Authorization' header set to the
-	// OAuth2 access token of the service's own service account.
+	// RPC requests done in this mode will have 'Authorization' header set to
+	// either an OAuth2 access token or an ID token, depending on a presence of
+	// WithIDTokenAudience option.
 	//
-	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
-	// Can be customized with WithScopes() options.
+	// If WithIDTokenAudience is not given, RPCs will be authenticated with
+	// an OAuth2 access token of the service's own service account. The set of
+	// OAuth scopes can be customized via WithScopes option, and by default it
+	// is ["https://www.googleapis.com/auth/userinfo.email"].
+	//
+	// If WithIDTokenAudience is given, RPCs will be authenticated with an ID
+	// token that has `aud` claim set to the supplied value. WithScopes can't be
+	// used in this case, providing it will cause an error.
 	//
 	// In LUCI services AsSelf should be used very sparingly, only for internal
 	// "maintenance" RPCs that happen outside of the context of any LUCI project.
@@ -114,31 +121,36 @@ const (
 	// in.
 	//
 	// RPC requests done in this mode will have 'Authorization' header set to
-	// the access token of the service account specified by WithServiceAccount()
-	// option.
+	// either an OAuth2 access token or an ID token of the service account
+	// specified by WithServiceAccount option.
 	//
-	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
-	// Can be customized with WithScopes() options.
+	// What kind of token is used depends on a presence of WithIDTokenAudience
+	// option and it follows the rules described in AsSelf comment.
+	//
+	// TODO(crbug.com/1081932): Implement WithIDTokenAudience mode.
 	AsActor
 
 	// AsProject is used for outbounds RPCs sent with the authority of some LUCI
 	// project (specified via WithProject option).
 	//
 	// When used to call external services (anything that is not a part of the
-	// current LUCI deployment), uses 'Authorization' header with OAuth2 access
-	// token associated with the project-specific service account (specified with
-	// the LUCI project definition in 'projects.cfg' deployment configuration
-	// file).
+	// current LUCI deployment), uses 'Authorization' header with either an OAuth2
+	// access token or an ID token of the project-specific service account
+	// (specified in the LUCI project definition in 'projects.cfg' deployment
+	// configuration file).
 	//
-	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope
-	// in this case. Can be customized with WithScopes() options.
+	// What kind of token is used in this case depends on a presence of
+	// WithIDTokenAudience option and it follows the rules described in AsSelf
+	// comment.
 	//
 	// When used to call LUCI services belonging the same LUCI deployment (per
 	// 'internal_service_regexp' setting in 'security.cfg' deployment
 	// configuration file) uses the current service's OAuth2 access token plus
 	// 'X-Luci-Project' header with the project name. Such calls are authenticated
-	// by the peer as coming from 'project:<name>' identity. Any custom OAuth
-	// scopes supplied via WithScopes() option are ignored in this case.
+	// by the peer as coming from 'project:<name>' identity. Options WithScopes
+	// and WithIDTokenAudience are ignored in this case.
+	//
+	// TODO(crbug.com/1081932): Implement WithIDTokenAudience mode.
 	AsProject
 )
 
@@ -156,6 +168,42 @@ type rpcOption func(opts *rpcOptions)
 
 func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
 
+// WithIDTokenAudience indicates to use ID tokens instead of OAuth2 tokens.
+//
+// The token's `aud` claim will be set to the given value. It can be customized
+// per-request by using `${host}` which will be substituted with a host name of
+// the request URI.
+//
+// Usage example:
+//
+//    tr, err := auth.GetRPCTransport(ctx,
+//      auth.AsSelf,
+//      auth.WithIDTokenAudience("https://${host}"),
+//    )
+//    if err != nil {
+//      return err
+//    }
+//    client := &http.Client{Transport: tr}
+//    ...
+//
+// Not compatible with WithScopes.
+//
+// TODO(crbug.com/1081932): Implement `${host}` substitution.
+func WithIDTokenAudience(aud string) RPCOption {
+	return rpcOption(func(opts *rpcOptions) {
+		opts.idTokenAud = aud
+	})
+}
+
+// WithScopes can be used to customize OAuth scopes for outbound RPC requests.
+//
+// Not compatible with WithIDTokenAudience.
+func WithScopes(scopes ...string) RPCOption {
+	return rpcOption(func(opts *rpcOptions) {
+		opts.scopes = append(opts.scopes, scopes...)
+	})
+}
+
 // WithProject can be used to generate an OAuth token with an identity of that
 // particular LUCI project.
 //
@@ -163,15 +211,6 @@ func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
 func WithProject(project string) RPCOption {
 	return rpcOption(func(opts *rpcOptions) {
 		opts.project = project
-	})
-}
-
-// WithScopes can be used to customize OAuth scopes for outbound RPC requests.
-//
-// If not used, the requests are made with "userinfo.email" scope.
-func WithScopes(scopes ...string) RPCOption {
-	return rpcOption(func(opts *rpcOptions) {
-		opts.scopes = append(opts.scopes, scopes...)
 	})
 }
 
@@ -353,8 +392,7 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 // GetTokenSource returns an oauth2.TokenSource bound to the supplied Context.
 //
 // Supports only AsSelf, AsCredentialsForwarder and AsActor authority kinds,
-// since they are only ones that exclusively use OAuth2 tokens and no other
-// extra headers.
+// since they are the only ones that exclusively use only Authorization header.
 //
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
@@ -448,6 +486,7 @@ type headersGetter func(ctx context.Context, uri string, opts *rpcOptions) (*oau
 type rpcOptions struct {
 	kind             RPCAuthorityKind
 	project          string   // for AsProject
+	idTokenAud       string   // for AsSelf, AsProject and AsActor
 	scopes           []string // for AsSelf, AsProject and AsActor
 	serviceAccount   string   // for AsActor
 	delegationToken  string   // for AsUser
@@ -465,15 +504,24 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		o.apply(options)
 	}
 
+	asSelfOrActorOrProject := options.kind == AsSelf ||
+		options.kind == AsActor ||
+		options.kind == AsProject
+
 	// Set default scopes.
-	asSelfOrActorOrProject := options.kind == AsSelf || options.kind == AsActor || options.kind == AsProject
-	if asSelfOrActorOrProject && len(options.scopes) == 0 {
+	if asSelfOrActorOrProject && options.idTokenAud == "" && len(options.scopes) == 0 {
 		options.scopes = defaultOAuthScopes
 	}
 
 	// Validate options.
+	if !asSelfOrActorOrProject && options.idTokenAud != "" {
+		return nil, errors.Reason("WithIDTokenAudience can only be used with AsSelf, AsActor or AsProject authority kind").Err()
+	}
 	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
 		return nil, errors.Reason("WithScopes can only be used with AsSelf, AsActor or AsProject authority kind").Err()
+	}
+	if options.idTokenAud != "" && len(options.scopes) != 0 {
+		return nil, errors.Reason("WithIDTokenAudience and WithScopes cannot be used together").Err()
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
 		return nil, errors.Reason("WithServiceAccount can only be used with AsActor authority kind").Err()
@@ -494,12 +542,23 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		return nil, errors.Reason("AsProject authority kind requires WithProject option").Err()
 	}
 
+	// Temporarily not supported combinations of options.
+	//
+	// TODO(crbug.com/1081932): Support.
+	if options.idTokenAud != "" && (options.kind == AsActor || options.kind == AsProject) {
+		return nil, errors.Reason("WithIDTokenAudience is not supported here yet").Err()
+	}
+
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
 	switch options.kind {
 	case NoAuth:
 		options.getRPCHeaders = noAuthHeaders
 	case AsSelf:
-		options.getRPCHeaders = asSelfHeaders
+		if options.idTokenAud != "" {
+			options.getRPCHeaders = asSelfIDTokenHeaders
+		} else {
+			options.getRPCHeaders = asSelfOAuthHeaders
+		}
 	case AsUser:
 		options.getRPCHeaders = asUserHeaders
 	case AsCredentialsForwarder:
@@ -532,11 +591,11 @@ func noAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.T
 	return nil, nil, nil
 }
 
-// asSelfHeaders returns a map of authentication headers to add to outbound
-// RPC requests done in AsSelf mode.
+// asSelfOAuthHeaders returns a map of authentication headers to add to outbound
+// RPC requests done in AsSelf mode when using OAuth2 access tokens.
 //
 // This will be called by the transport layer on each request.
-func asSelfHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func asSelfOAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
 	cfg := getConfig(ctx)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
@@ -546,6 +605,57 @@ func asSelfHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.T
 		return nil, nil, errors.Annotate(err, "failed to get AsSelf access token").Err()
 	}
 	return tok, nil, nil
+}
+
+// asSelfIDTokenHeaders returns a map of authentication headers to add to
+// outbound RPC requests done in AsSelf mode when using ID tokens.
+//
+// This will be called by the transport layer on each request.
+func asSelfIDTokenHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	cfg := getConfig(ctx)
+	if cfg == nil || cfg.Signer == nil {
+		return nil, nil, ErrNotConfigured
+	}
+
+	// TODO(crbug.com/1081932): Extract Host from `uri` for the audience.
+
+	// TODO(crbug.com/1081932): Pick environment-specific methods when available.
+	//
+	// The method below works almost everywhere, but it requires the service
+	// account to have iam.serviceAccountTokenCreator role on itself, which is
+	// a bit weird and not default. On GAE/Flex/Cloud Run/GKE we should use GCE
+	// metadata server instead.
+
+	// Discover our own service account name to use it as a target.
+	info, err := cfg.Signer.ServiceInfo(ctx)
+	switch {
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "failed to get our own service info").Err()
+	case info.ServiceAccountName == "":
+		return nil, nil, errors.Reason("no service account name in our own service info").Err()
+	}
+
+	// Grab ID token for our own account. This uses our own IAM-scoped access
+	// token internally and also implements heavy caching of the result, so its
+	// fine to call it often.
+	mintTokenCall := MintIDTokenForServiceAccount
+	if opts.rpcMocks != nil && opts.rpcMocks.MintIDTokenForServiceAccount != nil {
+		mintTokenCall = opts.rpcMocks.MintIDTokenForServiceAccount
+	}
+	tok, err := mintTokenCall(ctx, MintIDTokenParams{
+		ServiceAccount: info.ServiceAccountName,
+		Audience:       opts.idTokenAud,
+		MinTTL:         2 * time.Minute,
+	})
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to get our own ID token").Err()
+	}
+
+	return &oauth2.Token{
+		AccessToken: tok.Token,
+		TokenType:   "Bearer",
+		Expiry:      tok.Expiry,
+	}, nil, nil
 }
 
 // asUserHeaders returns a map of authentication headers to add to outbound
@@ -666,7 +776,7 @@ func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth
 		// TODO(vadimsh): Always use userinfo.email scope here, not the original
 		// one. The target of the call is a LUCI service, it generally doesn't care
 		// about non-email scopes, but *requires* userinfo.email.
-		tok, _, err := asSelfHeaders(ctx, uri, opts)
+		tok, _, err := asSelfOAuthHeaders(ctx, uri, opts)
 		return tok, map[string]string{XLUCIProjectHeader: opts.project}, err
 	}
 
@@ -691,7 +801,7 @@ func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth
 	// eventually.
 	if tok == nil {
 		logging.Infof(ctx, "Project %s not found, fallback to service identity", opts.project)
-		return asSelfHeaders(ctx, uri, opts)
+		return asSelfOAuthHeaders(ctx, uri, opts)
 	}
 
 	return &oauth2.Token{
