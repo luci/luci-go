@@ -19,7 +19,7 @@
 // That is, when sorted by key, new builds are first.
 // Build has no parent.
 //
-// Build id is a 64 bits integer represented as a string to the user.
+// Build id is a 64 bits integer.
 // - 1 highest order bit is set to 0 to keep value positive.
 // - 43 bits are 43 lower bits of bitwise-inverted time since
 //  beginningOfTheWorld at 1ms resolution.
