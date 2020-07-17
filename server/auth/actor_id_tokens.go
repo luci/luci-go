@@ -51,7 +51,7 @@ type MintIDTokenParams struct {
 }
 
 // actorIDTokenCache is used to store ID tokens of service accounts the current
-// service has "iam.serviceAccountActor" role in.
+// service has "iam.serviceAccountTokenCreator" role in.
 //
 // The underlying token type is IDToken string.
 var actorIDTokenCache = newTokenCache(tokenCacheConfig{
@@ -62,7 +62,7 @@ var actorIDTokenCache = newTokenCache(tokenCacheConfig{
 })
 
 // MintIDTokenForServiceAccount produces an ID token for some service account
-// that the current service has "iam.serviceAccountActor" role in.
+// that the current service has "iam.serviceAccountTokenCreator" role in.
 //
 // Used to implement AsActor authorization kind, but can also be used directly,
 // if needed. The token is cached internally. Same token may be returned by
