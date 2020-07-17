@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e07e975_14fe7a7f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T06:42:36Z",
+      "side": 1,
+      "message": "PTAL, totally untested (will finish it tomorrow).\n\nI plan also to implement \"https://[host]\" support in a follow up CL, and that\u0027s it for now.",
+      "revId": "76eb6bfd6256e044a6658ea7ca4943f98d509ba1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
