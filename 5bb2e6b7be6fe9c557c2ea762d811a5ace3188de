@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "6bc107ae_71d3b27a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-17T21:22:57Z",
+      "side": 1,
+      "message": "I think yes, but maybe when we remove the \u0027canary\u0027 and \u0027experimental\u0027 fields?\n\nI don\u0027t think we\u0027ll be expecting folks to use the new labels yet, right?",
+      "parentUuid": "f555c3c8_b17b44ff",
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff926796_30b8a631",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 5
