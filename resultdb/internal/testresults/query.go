@@ -63,15 +63,14 @@ func ListMask(readMask *field_mask.FieldMask) (mask.Mask, error) {
 
 // Query specifies test results to fetch.
 type Query struct {
-	InvocationIDs     invocations.IDSet
-	Predicate         *pb.TestResultPredicate
-	PageSize          int // must be positive
-	PageToken         string
-	SelectVariantHash bool
-	Mask              mask.Mask
+	InvocationIDs invocations.IDSet
+	Predicate     *pb.TestResultPredicate
+	PageSize      int // must be positive
+	PageToken     string
+	Mask          mask.Mask
 }
 
-func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(QueryItem) error) (err error) {
+func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(*pb.TestResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "QueryTestResults.run")
 	defer func() { ts.End(err) }()
 
@@ -181,7 +180,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		var testLocationFileName spanner.NullString
 		var testLocationLine spanner.NullInt64
 		tr := &pb.TestResult{}
-		item := QueryItem{TestResult: tr}
 
 		ptrs := []interface{}{
 			&invID,
@@ -222,17 +220,13 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := q.Mask.Trim(tr); err != nil {
 			return errors.Annotate(
-				err, "error trimming fields for %s", item.TestResult.Name).Err()
+				err, "error trimming fields for %s", tr.Name).Err()
 		}
 		// Always include name in tr because name is needed to calculate
 		// page token.
 		tr.Name = trName
 
-		if q.SelectVariantHash {
-			item.VariantHash = tr.VariantHash
-		}
-
-		return f(item)
+		return f(tr)
 	})
 }
 
@@ -245,8 +239,8 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tr
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	err = q.run(ctx, txn, func(item QueryItem) error {
-		trs = append(trs, item.TestResult)
+	err = q.run(ctx, txn, func(tr *pb.TestResult) error {
+		trs = append(trs, tr)
 		return nil
 	})
 	if err != nil {
@@ -264,15 +258,9 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tr
 	return
 }
 
-// QueryItem is one element returned by a Query.
-type QueryItem struct {
-	*pb.TestResult
-	VariantHash string
-}
-
 // Run calls f for test results matching the query.
 // The test results are ordered by parent invocation ID, test ID and result ID.
-func (q *Query) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(QueryItem) error) error {
+func (q *Query) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(*pb.TestResult) error) error {
 	if q.PageSize > 0 {
 		panic("PageSize is specified when Query.Run")
 	}

@@ -319,7 +319,6 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 		WHERE InvocationId IN UNNEST(@invIDs)
 	`)
 	st.Params["invIDs"] = invIDs
-
 	tvs := map[testVariantKey]struct{}{}
 	var b span.Buffer
 	err := span.Query(ctx, txn, st, func(row *spanner.Row) error {
@@ -333,7 +332,6 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	if err != nil {
 		return nil, err
 	}
-
 	return tvs, nil
 }
 
@@ -353,15 +351,14 @@ func (b *bqExporter) queryTestResults(
 	rows := make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	rowCount := 0
-	err = q.Run(ctx, txn, func(tr testresults.QueryItem) error {
+	err = q.Run(ctx, txn, func(tr *pb.TestResult) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
 		rows = append(rows, b.generateBQRow(&rowInput{
-			exported:    invs[exportedID],
-			parent:      invs[parentID],
-			tr:          tr.TestResult,
-			exonerated:  exonerated,
-			variantHash: tr.VariantHash,
+			exported:   invs[exportedID],
+			parent:     invs[parentID],
+			tr:         tr,
+			exonerated: exonerated,
 		}))
 		batchSize += proto.Size(tr)
 		rowCount++
@@ -496,10 +493,9 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	})
 
 	q := testresults.Query{
-		Predicate:         bqExport.GetTestResults().GetPredicate(),
-		InvocationIDs:     invIDs,
-		SelectVariantHash: true,
-		Mask:              testresults.AllFields,
+		Predicate:     bqExport.GetTestResults().GetPredicate(),
+		InvocationIDs: invIDs,
+		Mask:          testresults.AllFields,
 	}
 	eg.Go(func() error {
 		defer close(batchC)
