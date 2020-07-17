@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "8bc71367_75001ec8",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T22:03:00Z",
+      "side": 1,
+      "message": "No real reason, changed to ${host}.\n\nI initially wanted to use \":authority\" as in HTTP2 pseudo-headers. But realized \"https://:authority\" looks weird and added [...] around it. Then I realized \":authority\" doesn\u0027t match \"symmetric\" functionality `openid.AudienceMatchesHost` and renamed \u0027:authority\u0027 to \u0027host\u0027, ending up with \u0027[host]\u0027.",
+      "parentUuid": "1a8a8626_f7584eb4",
+      "range": {
+        "startLine": 174,
+        "startChar": 25,
+        "endLine": 174,
+        "endChar": 31
+      },
+      "revId": "76eb6bfd6256e044a6658ea7ca4943f98d509ba1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "047823a5_76a9ff85",
         "filename": "server/auth/client.go",
         "patchSetId": 2
@@ -62,6 +86,30 @@
       "revId": "76eb6bfd6256e044a6658ea7ca4943f98d509ba1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca3e0db6_bd90fe16",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T22:03:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "047823a5_76a9ff85",
+      "range": {
+        "startLine": 395,
+        "startChar": 14,
+        "endLine": 395,
+        "endChar": 22
+      },
+      "revId": "76eb6bfd6256e044a6658ea7ca4943f98d509ba1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
