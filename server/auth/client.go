@@ -67,15 +67,17 @@ const (
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
 	// Can be customized with WithScopes() options.
 	//
-	// AsSelf should be used very sparingly, only for "maintenance" RPCs that
-	// happen outside of the context of any LUCI project or any end-user request.
-	// Using AsSelf to authorize RPCs that touch user data leads to "confused
-	// deputy" problems. Strongly prefer to use AsProject or AsUser instead.
+	// In LUCI services AsSelf should be used very sparingly, only for internal
+	// "maintenance" RPCs that happen outside of the context of any LUCI project.
+	// Using AsSelf to authorize RPCs that touch project data leads to "confused
+	// deputy" problems. Prefer to use AsProject when possible.
 	AsSelf
 
 	// AsUser is used for outbound RPCs that inherit the authority of a user
 	// that initiated the request that is currently being handled, regardless of
 	// how exactly the user was authenticated.
+	//
+	// DEPRECATED.
 	//
 	// The implementation is based on LUCI-specific protocol that uses special
 	// delegation tokens. Only LUCI backends can understand them.
@@ -98,7 +100,7 @@ const (
 	// user credentials, exactly as they were received by the service.
 	//
 	// For authenticated calls, works only if the current request was
-	// authenticated via an OAuth access token.
+	// authenticated via a forwardable token, e.g. an OAuth2 access token.
 	//
 	// If the current request was initiated by an anonymous caller, the RPC will
 	// have no auth headers (just like in NoAuth mode).
@@ -108,7 +110,8 @@ const (
 	AsCredentialsForwarder
 
 	// AsActor is used for outbound RPCs sent with the authority of some service
-	// account that the current service has "iam.serviceAccountActor" role in.
+	// account that the current service has "iam.serviceAccountTokenCreator" role
+	// in.
 	//
 	// RPC requests done in this mode will have 'Authorization' header set to
 	// the access token of the service account specified by WithServiceAccount()
@@ -124,7 +127,7 @@ const (
 	// When used to call external services (anything that is not a part of the
 	// current LUCI deployment), uses 'Authorization' header with OAuth2 access
 	// token associated with the project-specific service account (specified with
-	// the LUCI project definition in 'project.cfg' deployment configuration
+	// the LUCI project definition in 'projects.cfg' deployment configuration
 	// file).
 	//
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope
@@ -143,81 +146,60 @@ const (
 // RPCs done via AsProject authority.
 const XLUCIProjectHeader = "X-Luci-Project"
 
-// RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
+// RPCOption is an option for GetRPCTransport, GetPerRPCCredentials and
+// GetTokenSource functions.
 type RPCOption interface {
 	apply(opts *rpcOptions)
 }
 
-// WithProject can be used to generate an OAuth token with an identity bound
-// to that particular LUCI project.
+type rpcOption func(opts *rpcOptions)
+
+func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
+
+// WithProject can be used to generate an OAuth token with an identity of that
+// particular LUCI project.
+//
+// See AsProject for more info.
 func WithProject(project string) RPCOption {
-	return projectOption{name: project}
-}
-
-type projectOption struct {
-	name string
-}
-
-func (o projectOption) apply(opts *rpcOptions) {
-	opts.project = o.name
+	return rpcOption(func(opts *rpcOptions) {
+		opts.project = project
+	})
 }
 
 // WithScopes can be used to customize OAuth scopes for outbound RPC requests.
 //
 // If not used, the requests are made with "userinfo.email" scope.
 func WithScopes(scopes ...string) RPCOption {
-	return oauthScopesOption{scopes: scopes}
-}
-
-type oauthScopesOption struct {
-	scopes []string
-}
-
-func (o oauthScopesOption) apply(opts *rpcOptions) {
-	opts.scopes = append(opts.scopes, o.scopes...)
+	return rpcOption(func(opts *rpcOptions) {
+		opts.scopes = append(opts.scopes, scopes...)
+	})
 }
 
 // WithServiceAccount option must be used with AsActor authority kind to specify
 // what service account to act as.
 func WithServiceAccount(email string) RPCOption {
-	return serviceAccountOption{email: email}
-}
-
-type serviceAccountOption struct {
-	email string
-}
-
-func (o serviceAccountOption) apply(opts *rpcOptions) {
-	opts.serviceAccount = o.email
+	return rpcOption(func(opts *rpcOptions) {
+		opts.serviceAccount = email
+	})
 }
 
 // WithDelegationToken can be used to attach an existing delegation token to
 // requests made in AsUser mode.
 //
+// DEPRECATED.
+//
 // The token can be obtained earlier via MintDelegationToken call. The transport
 // doesn't attempt to validate it and just blindly sends it to the other side.
 func WithDelegationToken(token string) RPCOption {
-	return delegationTokenOption{token: token}
-}
-
-type delegationTokenOption struct {
-	token string
-}
-
-func (o delegationTokenOption) apply(opts *rpcOptions) {
-	opts.delegationToken = o.token
-}
-
-type delegationTagsOption struct {
-	tags []string
-}
-
-func (o delegationTagsOption) apply(opts *rpcOptions) {
-	opts.delegationTags = o.tags
+	return rpcOption(func(opts *rpcOptions) {
+		opts.delegationToken = token
+	})
 }
 
 // WithDelegationTags can be used to attach tags to the delegation token used
 // internally in AsUser mode.
+//
+// DEPRECATED.
 //
 // The recipient of the RPC that uses the delegation will be able to extract
 // them, if necessary. They are also logged in the token server logs.
@@ -228,15 +210,9 @@ func (o delegationTagsOption) apply(opts *rpcOptions) {
 // initiated by an anonymous caller, since delegation protocol is not actually
 // used in this case.
 func WithDelegationTags(tags ...string) RPCOption {
-	return delegationTagsOption{tags: tags}
-}
-
-type monitoringClientOption struct {
-	client string
-}
-
-func (o monitoringClientOption) apply(opts *rpcOptions) {
-	opts.monitoringClient = o.client
+	return rpcOption(func(opts *rpcOptions) {
+		opts.delegationTags = tags
+	})
 }
 
 // WithMonitoringClient allows to override 'client' field that goes into HTTP
@@ -249,10 +225,12 @@ func (o monitoringClientOption) apply(opts *rpcOptions) {
 // Overriding it may be useful if you want to differentiate between requests
 // made to the same host from a bunch of different places in the code.
 //
-// This option has absolutely no effect when passed GetPerRPCCredentials() or
+// This option has absolutely no effect when passed to GetPerRPCCredentials() or
 // GetTokenSource(). It applies only to GetRPCTransport().
 func WithMonitoringClient(client string) RPCOption {
-	return monitoringClientOption{client: client}
+	return rpcOption(func(opts *rpcOptions) {
+		opts.monitoringClient = client
+	})
 }
 
 // GetRPCTransport returns http.RoundTripper to use for outbound HTTP RPC
@@ -265,33 +243,33 @@ func WithMonitoringClient(client string) RPCOption {
 //    }
 //    client := &http.Client{Transport: tr}
 //    ...
-func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (http.RoundTripper, error) {
+func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOption) (http.RoundTripper, error) {
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	config := getConfig(c)
+	config := getConfig(ctx)
 	if config == nil || config.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
 
 	if options.checkCtx != nil {
-		if err := options.checkCtx(c); err != nil {
+		if err := options.checkCtx(ctx); err != nil {
 			return nil, err
 		}
 	}
 
-	baseTransport := trace.InstrumentTransport(c,
-		metric.InstrumentTransport(c,
-			config.AnonymousTransport(c), options.monitoringClient,
+	baseTransport := trace.InstrumentTransport(ctx,
+		metric.InstrumentTransport(ctx,
+			config.AnonymousTransport(ctx), options.monitoringClient,
 		),
 	)
 	if options.kind == NoAuth {
 		return baseTransport, nil
 	}
 
-	rootState := GetState(c)
+	rootState := GetState(ctx)
 
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
 		// Prefer to use the request context to get authentication headers, if it is
@@ -300,11 +278,11 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 		// context, otherwise there can be very weird side effects. Constructing
 		// the transport with one auth state and then using it with another is not
 		// allowed.
-		ctx := req.Context()
-		if ctx == context.Background() {
-			ctx = c
+		reqCtx := req.Context()
+		if reqCtx == context.Background() {
+			reqCtx = ctx
 		} else {
-			switch reqState := GetState(ctx); {
+			switch reqState := GetState(reqCtx); {
 			case reqState == rootState:
 				// good, exact same state
 			case isBackgroundState(reqState) && isBackgroundState(rootState):
@@ -318,7 +296,7 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 						"an appropriate parent of `ctx`, like the root context associated with the incoming request)")
 			}
 		}
-		tok, extra, err := options.getRPCHeaders(ctx, req.URL.String(), options)
+		tok, extra, err := options.getRPCHeaders(reqCtx, req.URL.String(), options)
 		if err != nil {
 			return err
 		}
@@ -347,11 +325,11 @@ type perRPCCreds struct {
 	options *rpcOptions
 }
 
-func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (map[string]string, error) {
+func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	if len(uri) == 0 {
 		panic("perRPCCreds: no URI given")
 	}
-	tok, extra, err := creds.options.getRPCHeaders(c, uri[0], creds.options)
+	tok, extra, err := creds.options.getRPCHeaders(ctx, uri[0], creds.options)
 	switch {
 	case err != nil:
 		return nil, err
@@ -374,26 +352,26 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 
 // GetTokenSource returns an oauth2.TokenSource bound to the supplied Context.
 //
-// Supports only AsSelf, AsCredentialsForwarder and AsActor authorization kinds,
+// Supports only AsSelf, AsCredentialsForwarder and AsActor authority kinds,
 // since they are only ones that exclusively use OAuth2 tokens and no other
 // extra headers.
 //
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
-func GetTokenSource(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
+func GetTokenSource(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
 	if kind != AsSelf && kind != AsCredentialsForwarder && kind != AsActor {
-		return nil, errors.Reason("GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authorization kind").Err()
+		return nil, errors.Reason("GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authority kind").Err()
 	}
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
 	}
 	if options.checkCtx != nil {
-		if err := options.checkCtx(c); err != nil {
+		if err := options.checkCtx(ctx); err != nil {
 			return nil, err
 		}
 	}
-	return &tokenSource{c, options}, nil
+	return &tokenSource{ctx, options}, nil
 }
 
 type tokenSource struct {
@@ -425,13 +403,13 @@ func init() {
 	// This is needed to allow packages imported by 'server/auth' to make
 	// authenticated calls. They can't use GetRPCTransport directly, since they
 	// can't import 'server/auth' (it creates an import cycle).
-	internal.RegisterClientFactory(func(c context.Context, scopes []string) (*http.Client, error) {
+	internal.RegisterClientFactory(func(ctx context.Context, scopes []string) (*http.Client, error) {
 		var t http.RoundTripper
 		var err error
 		if len(scopes) == 0 {
-			t, err = GetRPCTransport(c, NoAuth)
+			t, err = GetRPCTransport(ctx, NoAuth)
 		} else {
-			t, err = GetRPCTransport(c, AsSelf, WithScopes(scopes...))
+			t, err = GetRPCTransport(ctx, AsSelf, WithScopes(scopes...))
 		}
 		if err != nil {
 			return nil, err
@@ -465,7 +443,7 @@ var defaultOAuthScopes = []string{auth.OAuthScopeEmail}
 
 // headersGetter returns a main Authorization token and optional additional
 // headers.
-type headersGetter func(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error)
+type headersGetter func(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error)
 
 type rpcOptions struct {
 	kind             RPCAuthorityKind
@@ -475,7 +453,7 @@ type rpcOptions struct {
 	delegationToken  string   // for AsUser
 	delegationTags   []string // for AsUser
 	monitoringClient string
-	checkCtx         func(c context.Context) error // optional, may be skipped
+	checkCtx         func(ctx context.Context) error // optional, may be skipped
 	getRPCHeaders    headersGetter
 	rpcMocks         *rpcMocks
 }
@@ -495,25 +473,25 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 
 	// Validate options.
 	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
-		return nil, errors.Reason("WithScopes can only be used with AsSelf or AsActor authorization kind").Err()
+		return nil, errors.Reason("WithScopes can only be used with AsSelf, AsActor or AsProject authority kind").Err()
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
-		return nil, errors.Reason("WithServiceAccount can only be used with AsActor authorization kind").Err()
+		return nil, errors.Reason("WithServiceAccount can only be used with AsActor authority kind").Err()
 	}
 	if options.serviceAccount == "" && options.kind == AsActor {
-		return nil, errors.Reason("AsActor authorization kind requires WithServiceAccount option").Err()
+		return nil, errors.Reason("AsActor authority kind requires WithServiceAccount option").Err()
 	}
 	if options.delegationToken != "" && options.kind != AsUser {
-		return nil, errors.Reason("WithDelegationToken can only be used with AsUser authorization kind").Err()
+		return nil, errors.Reason("WithDelegationToken can only be used with AsUser authority kind").Err()
 	}
 	if len(options.delegationTags) != 0 && options.kind != AsUser {
-		return nil, errors.Reason("WithDelegationTags can only be used with AsUser authorization kind").Err()
+		return nil, errors.Reason("WithDelegationTags can only be used with AsUser authority kind").Err()
 	}
 	if len(options.delegationTags) != 0 && options.delegationToken != "" {
 		return nil, errors.Reason("WithDelegationTags and WithDelegationToken cannot be used together").Err()
 	}
 	if options.project == "" && options.kind == AsProject {
-		return nil, errors.Reason("AsProject authorization kind requires WithProject option").Err()
+		return nil, errors.Reason("AsProject authority kind requires WithProject option").Err()
 	}
 
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
@@ -525,12 +503,12 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	case AsUser:
 		options.getRPCHeaders = asUserHeaders
 	case AsCredentialsForwarder:
-		options.checkCtx = func(c context.Context) error {
-			_, err := forwardedCreds(c)
+		options.checkCtx = func(ctx context.Context) error {
+			_, err := forwardedCreds(ctx)
 			return err
 		}
-		options.getRPCHeaders = func(c context.Context, _ string, _ *rpcOptions) (*oauth2.Token, map[string]string, error) {
-			tok, err := forwardedCreds(c)
+		options.getRPCHeaders = func(ctx context.Context, _ string, _ *rpcOptions) (*oauth2.Token, map[string]string, error) {
+			tok, err := forwardedCreds(ctx)
 			return tok, nil, err
 		}
 	case AsActor:
@@ -550,7 +528,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 }
 
 // noAuthHeaders is getRPCHeaders for NoAuth mode.
-func noAuthHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func noAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
 	return nil, nil, nil
 }
 
@@ -558,12 +536,12 @@ func noAuthHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 // RPC requests done in AsSelf mode.
 //
 // This will be called by the transport layer on each request.
-func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
-	cfg := getConfig(c)
+func asSelfHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	cfg := getConfig(ctx)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
 	}
-	tok, err := cfg.AccessTokenProvider(c, opts.scopes)
+	tok, err := cfg.AccessTokenProvider(ctx, opts.scopes)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to get AsSelf access token").Err()
 	}
@@ -574,8 +552,8 @@ func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 // RPC requests done in AsUser mode.
 //
 // This will be called by the transport layer on each request.
-func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
-	cfg := getConfig(c)
+func asUserHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	cfg := getConfig(ctx)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
 	}
@@ -586,7 +564,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 	} else {
 		// Outbound RPC calls in the context of a request from anonymous caller are
 		// anonymous too. No need to use any authentication headers.
-		userIdent := CurrentIdentity(c)
+		userIdent := CurrentIdentity(ctx)
 		if userIdent == identity.AnonymousIdentity {
 			return nil, nil, nil
 		}
@@ -607,7 +585,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		if opts.rpcMocks != nil && opts.rpcMocks.MintDelegationToken != nil {
 			mintTokenCall = opts.rpcMocks.MintDelegationToken
 		}
-		tok, err := mintTokenCall(c, DelegationTokenParams{
+		tok, err := mintTokenCall(ctx, DelegationTokenParams{
 			TargetHost: host,
 			Tags:       opts.delegationTags,
 			MinTTL:     10 * time.Minute,
@@ -619,14 +597,14 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 	}
 
 	// Use our own OAuth token too, since the delegation token is bound to us.
-	oauthTok, err := cfg.AccessTokenProvider(c, []string{auth.OAuthScopeEmail})
+	oauthTok, err := cfg.AccessTokenProvider(ctx, []string{auth.OAuthScopeEmail})
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to get own access token").Err()
 	}
 
 	logging.Fields{
 		"fingerprint": tokenFingerprint(delegationToken),
-	}.Debugf(c, "auth: Sending delegation token")
+	}.Debugf(ctx, "auth: Sending delegation token")
 	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
 }
 
@@ -634,8 +612,8 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 //
 // Returns (nil, nil) if the incoming call was anonymous. Returns an error if
 // the incoming call was authenticated by non-forwardable credentials.
-func forwardedCreds(c context.Context) (*oauth2.Token, error) {
-	switch s := GetState(c); {
+func forwardedCreds(ctx context.Context) (*oauth2.Token, error) {
+	switch s := GetState(ctx); {
 	case s == nil:
 		return nil, ErrNotConfigured
 	case s.User().Identity == identity.AnonymousIdentity:
@@ -651,12 +629,12 @@ func forwardedCreds(c context.Context) (*oauth2.Token, error) {
 // RPC requests done in AsActor mode.
 //
 // This will be called by the transport layer on each request.
-func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func asActorHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
 	mintTokenCall := MintAccessTokenForServiceAccount
 	if opts.rpcMocks != nil && opts.rpcMocks.MintAccessTokenForServiceAccount != nil {
 		mintTokenCall = opts.rpcMocks.MintAccessTokenForServiceAccount
 	}
-	tok, err := mintTokenCall(c, MintAccessTokenParams{
+	tok, err := mintTokenCall(ctx, MintAccessTokenParams{
 		ServiceAccount: opts.serviceAccount,
 		Scopes:         opts.scopes,
 		MinTTL:         2 * time.Minute,
@@ -675,8 +653,8 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 // RPC requests done in AsProject mode.
 //
 // This will be called by the transport layer on each request.
-func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
-	internal, err := isInternalURI(c, uri)
+func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	internal, err := isInternalURI(ctx, uri)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -685,7 +663,10 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 	// token and 'X-Luci-Project' header to convey the project identity to the
 	// peer.
 	if internal {
-		tok, _, err := asSelfHeaders(c, uri, opts)
+		// TODO(vadimsh): Always use userinfo.email scope here, not the original
+		// one. The target of the call is a LUCI service, it generally doesn't care
+		// about non-email scopes, but *requires* userinfo.email.
+		tok, _, err := asSelfHeaders(ctx, uri, opts)
 		return tok, map[string]string{XLUCIProjectHeader: opts.project}, err
 	}
 
@@ -701,7 +682,7 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 		OAuthScopes: opts.scopes,
 	}
 
-	tok, err := mintTokenCall(c, mintParams)
+	tok, err := mintTokenCall(ctx, mintParams)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "failed to mint AsProject access token").Err()
 	}
@@ -709,8 +690,8 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 	// TODO(fmatenaar): This is only during migration and needs to be removed
 	// eventually.
 	if tok == nil {
-		logging.Infof(c, "Project %s not found, fallback to service identity", opts.project)
-		return asSelfHeaders(c, uri, opts)
+		logging.Infof(ctx, "Project %s not found, fallback to service identity", opts.project)
+		return asSelfHeaders(ctx, uri, opts)
 	}
 
 	return &oauth2.Token{
@@ -725,17 +706,17 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 //
 // Returns an error if the URI can't be parsed, not https:// or there were
 // errors accessing AuthDB to compare the URI against the whitelist.
-func isInternalURI(c context.Context, uri string) (bool, error) {
+func isInternalURI(ctx context.Context, uri string) (bool, error) {
 	switch u, err := url.Parse(uri); {
 	case err != nil:
 		return false, errors.Annotate(err, "could not parse URI %q", uri).Err()
 	case u.Scheme != "https":
 		return false, errors.Reason("AsProject can be used only with https:// targets, got %q", uri).Err()
 	default:
-		state := GetState(c)
+		state := GetState(ctx)
 		if state == nil {
 			return false, ErrNotConfigured
 		}
-		return state.DB().IsInternalService(c, u.Host)
+		return state.DB().IsInternalService(ctx, u.Host)
 	}
 }
