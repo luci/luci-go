@@ -16,6 +16,52 @@
       "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff926796_30b8a631",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T21:10:36Z",
+      "side": 1,
+      "message": "please add a note that this is totally unrelated to https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/doc/README.md#lucicfg.enable_experiment",
+      "range": {
+        "startLine": 185,
+        "startChar": 6,
+        "endLine": 185,
+        "endChar": 17
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d632993_4d956978",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T21:10:36Z",
+      "side": 1,
+      "message": "This is not really validated",
+      "range": {
+        "startLine": 187,
+        "startChar": 12,
+        "endLine": 187,
+        "endChar": 45
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
