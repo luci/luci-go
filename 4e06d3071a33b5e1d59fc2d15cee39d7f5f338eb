@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "68a7ed36_1fd462c0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-07-17T20:37:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "854a5e51_94166c6d",
+      "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "441c0dd2_9b964f27",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
@@ -73,6 +91,30 @@
       "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba134140_3025f1c3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-07-17T20:37:05Z",
+      "side": 1,
+      "message": "Didn\u0027t realize the README was generated - edited the docstring \u0026 regenerated README.",
+      "parentUuid": "5b2cab01_e8c5d7d4",
+      "range": {
+        "startLine": 186,
+        "startChar": 34,
+        "endLine": 186,
+        "endChar": 41
+      },
+      "revId": "4e06d3071a33b5e1d59fc2d15cee39d7f5f338eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
