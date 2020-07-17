@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "07444b5c_4eaba5b7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-17T03:26:32Z",
+      "side": 1,
+      "message": "But if you switch Python to \"string\" then Python can\u0027t load it?",
+      "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d438af75_4f1926c9",
         "filename": "/COMMIT_MSG",
         "patchSetId": 6
@@ -63,6 +80,23 @@
       "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a0dc45fc_40c478c4",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-17T03:26:32Z",
+      "side": 1,
+      "message": "Do you mind adding \"indexing is not respected here, it\u0027s set in Identity.ToProperty\" (see L74)?",
+      "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
