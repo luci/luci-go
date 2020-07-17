@@ -179,11 +179,10 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 
 // rowInput is information required to generate a TestResult BigQuery row.
 type rowInput struct {
-	exported    *pb.Invocation
-	parent      *pb.Invocation
-	tr          *pb.TestResult
-	exonerated  bool
-	variantHash string
+	exported   *pb.Invocation
+	parent     *pb.Invocation
+	tr         *pb.TestResult
+	exonerated bool
 }
 
 func (i *rowInput) row() *TestResultRow {
@@ -195,7 +194,7 @@ func (i *rowInput) row() *TestResultRow {
 		TestID:             tr.TestId,
 		ResultID:           tr.ResultId,
 		Variant:            variantToStringPairs(tr.Variant),
-		VariantHash:        i.variantHash,
+		VariantHash:        tr.VariantHash,
 		Expected:           tr.Expected,
 		Status:             tr.Status.String(),
 		SummaryHTML:        tr.SummaryHtml,
