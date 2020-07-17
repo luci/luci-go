@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "4e1d5640_26ea8c65",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-17T21:11:36Z",
+      "side": 1,
+      "message": "nit: remove \\n, just \u0027[lucicfg] Blah blah blah\u0027. Otherwise commit title in Gitiles will be just \u0027[lucicfg]\u0027.",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 26
+      },
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f555c3c8_b17b44ff",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
