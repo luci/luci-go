@@ -302,6 +302,7 @@ def _buildbucket_builders(bucket):
             wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
             experimental = _buildbucket_toggle(node.props.experimental),
+            experiments = _buildbucket_experiments(node.props.experiments),
             task_template_canary_percentage = optional_UInt32Value(
                 node.props.task_template_canary_percentage,
             ),
@@ -378,6 +379,17 @@ def _buildbucket_dimensions(dims):
                 out.append("%s:%s" % (key, d.value))
             else:
                 out.append("%d:%s:%s" % (d.expiration // time.second, key, d.value))
+    return out
+
+def _buildbucket_experiments(experiments):
+    """{str: bool} => [str] for 'experiments' field."""
+    out = []
+    for exp in sorted(experiments):
+        set = experiments[exp]
+        if set:
+            out.append("+%s", exp)
+        else:
+            out.append("-%s", exp)
     return out
 
 def _buildbucket_trinary(val):
