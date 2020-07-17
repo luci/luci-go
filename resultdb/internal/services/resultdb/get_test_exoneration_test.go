@@ -70,6 +70,7 @@ func TestGetTestExoneration(t *testing.T) {
 			ExonerationId:   "id",
 			TestId:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 			Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
+			VariantHash:     "deadbeef",
 			ExplanationHtml: "broken",
 		})
 	})

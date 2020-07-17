@@ -54,6 +54,7 @@ func TestRead(t *testing.T) {
 			TestId:          "t t",
 			Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
 			ExplanationHtml: "broken",
+			VariantHash:     "deadbeef",
 		})
 	})
 }

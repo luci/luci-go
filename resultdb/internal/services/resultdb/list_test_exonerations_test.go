@@ -96,6 +96,7 @@ func TestListTestExonerations(t *testing.T) {
 				Name:            pbutil.TestExonerationName("inv", testID, "0"),
 				TestId:          testID,
 				Variant:         var0,
+				VariantHash:     "deadbeef",
 				ExonerationId:   "0",
 				ExplanationHtml: "broken",
 			},
@@ -103,11 +104,13 @@ func TestListTestExonerations(t *testing.T) {
 				Name:          pbutil.TestExonerationName("inv", testID, "1"),
 				TestId:        testID,
 				ExonerationId: "1",
+				VariantHash:   "deadbeef",
 			},
 			{
 				Name:          pbutil.TestExonerationName("inv", testID, "2"),
 				TestId:        testID,
 				ExonerationId: "2",
+				VariantHash:   "deadbeef",
 			},
 		}
 		srv := newTestResultDBService()

@@ -43,7 +43,7 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (te
 	}
 
 	st := spanner.NewStatement(`
-		SELECT InvocationId, TestId, ExonerationId, Variant,ExplanationHtml
+		SELECT InvocationId, TestId, ExonerationId, Variant, VariantHash, ExplanationHtml
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
@@ -71,7 +71,7 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (te
 	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		ex := &pb.TestExoneration{}
-		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &explanationHTML)
+		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &ex.VariantHash, &explanationHTML)
 		if err != nil {
 			return err
 		}
