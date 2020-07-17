@@ -113,6 +113,11 @@ message TestResult {
 
   // Where the test is defined, e.g. the file name.
   TestLocation test_location = 11;
+
+  // Hash of the variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+  string variant_hash = 12
+      [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Location of the test definition.
@@ -200,4 +205,8 @@ message TestExoneration {
   // Reasoning behind the exoneration, in HTML.
   // MUST be sanitized before rendering in the browser.
   string explanation_html = 5 [ (google.api.field_behavior) = IMMUTABLE ];
+
+  // Hash of the variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+  string variant_hash = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 }
