@@ -43,6 +43,7 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"test_id",
 	"result_id",
 	"variant",
+	"variant_hash",
 	"expected",
 	"status",
 	"start_time",
@@ -94,10 +95,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	selectIfIncluded("tr.SummaryHtml", "summary_html")
 	selectIfIncluded("tr.Tags", "tags")
 
-	if q.SelectVariantHash {
-		extraSelect = append(extraSelect, "tr.VariantHash")
-	}
-
 	from := "TestResults tr"
 	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
 		// We must return only test results of test variants that have unexpected results.
@@ -130,6 +127,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			tr.TestId,
 			tr.ResultId,
 			tr.Variant,
+			tr.VariantHash,
 			tr.IsUnexpected,
 			tr.Status,
 			tr.StartTime,
@@ -190,6 +188,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 			&tr.TestId,
 			&tr.ResultId,
 			&tr.Variant,
+			&tr.VariantHash,
 			&maybeUnexpected,
 			&tr.Status,
 			&tr.StartTime,
@@ -204,8 +203,6 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 				ptrs = append(ptrs, &summaryHTML)
 			case "tr.Tags":
 				ptrs = append(ptrs, &tr.Tags)
-			case "tr.VariantHash":
-				ptrs = append(ptrs, &item.VariantHash)
 			default:
 				panic("impossible")
 			}
@@ -230,6 +227,10 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 		// Always include name in tr because name is needed to calculate
 		// page token.
 		tr.Name = trName
+
+		if q.SelectVariantHash {
+			item.VariantHash = tr.VariantHash
+		}
 
 		return f(item)
 	})
