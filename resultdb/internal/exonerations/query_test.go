@@ -57,6 +57,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				Variant:         pbutil.Variant("v", "a"),
 				ExonerationId:   "0",
 				ExplanationHtml: "explanation 0",
+				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 			},
 			{
 				Name:            "invocations/a/tests/A/exonerations/1",
@@ -64,6 +65,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				Variant:         pbutil.Variant("v", "a"),
 				ExonerationId:   "1",
 				ExplanationHtml: "explanation 1",
+				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 			},
 			{
 				Name:            "invocations/b/tests/C/exonerations/0",
@@ -71,6 +73,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				Variant:         pbutil.Variant("v", "c"),
 				ExonerationId:   "0",
 				ExplanationHtml: "explanation 0",
+				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 			},
 		})
 	})

@@ -61,6 +61,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestExoneration, 
 	var explanationHTML span.Compressed
 	err = span.ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
 		"Variant":         &ret.Variant,
+		"VariantHash":     &ret.VariantHash,
 		"ExplanationHTML": &explanationHTML,
 	})
 	switch {
