@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "41082b52_b8eb54c4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-18T00:42:54Z",
+      "side": 1,
+      "message": "Yup. SGTM. We can add at the time we migrate them.",
+      "parentUuid": "6bc107ae_71d3b27a",
+      "revId": "5bb2e6b7be6fe9c557c2ea762d811a5ace3188de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff926796_30b8a631",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 5
