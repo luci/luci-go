@@ -33,6 +33,24 @@
       "revId": "1fed5bd8cd064e780b0f4b77e4930234778e3c6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a84ad353_2cf624ad",
+        "filename": "examples/appengine/helloworld_v2/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-18T01:14:57Z",
+      "side": 1,
+      "message": "Dunno, depends on how big they are and how many external dependencies they need.\n\nActually, no, since our long term plan is to use ttq only as internal library to implement server/tq.",
+      "parentUuid": "f3685c95_b56021d7",
+      "revId": "1fed5bd8cd064e780b0f4b77e4930234778e3c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
