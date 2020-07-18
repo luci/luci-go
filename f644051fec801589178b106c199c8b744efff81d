@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0cbd27d9_980f7f0c",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 887,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-18T01:27:35Z",
+      "side": 1,
+      "message": "We used \"Host\" header in pRPC tool for a while when we had no DNS record for results.api.cr.dev.",
+      "parentUuid": "551da4d9_3dabd36a",
+      "range": {
+        "startLine": 884,
+        "startChar": 5,
+        "endLine": 887,
+        "endChar": 6
+      },
+      "revId": "f644051fec801589178b106c199c8b744efff81d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "330b5a45_49d9d2e7",
         "filename": "server/auth/client_test.go",
         "patchSetId": 2
