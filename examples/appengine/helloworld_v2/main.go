@@ -110,7 +110,7 @@ func main() {
 		srv.Routes.GET("/call", mw, func(c *router.Context) {
 			tr, err := auth.GetRPCTransport(c.Context,
 				auth.AsSelf,
-				auth.WithIDTokenAudience("https://example.com"),
+				auth.WithIDTokenAudience("https://${host}"),
 			)
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)
