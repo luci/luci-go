@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab414c59_d55dce93",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-18T01:12:54Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "1fed5bd8cd064e780b0f4b77e4930234778e3c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f3685c95_b56021d7",
+        "filename": "examples/appengine/helloworld_v2/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-18T01:12:54Z",
+      "side": 1,
+      "message": "should I stick TTQ example here, too?",
+      "revId": "1fed5bd8cd064e780b0f4b77e4930234778e3c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
