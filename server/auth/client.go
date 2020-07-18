@@ -364,6 +364,12 @@ type perRPCCreds struct {
 }
 
 func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	// Don't transfer tokens in clear text.
+	if err := credentials.CheckSecurityLevel(ctx, credentials.PrivacyAndIntegrity); err != nil {
+		return nil, errors.Annotate(err, "can't use per RPC credentials").Err()
+	}
+
+	// URI is needed for some auth modes to "lock" tokens to a concrete audience.
 	if len(uri) == 0 {
 		panic("perRPCCreds: no URI given")
 	}
@@ -380,14 +386,15 @@ func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) 
 		return nil, nil
 	}
 
-	headers := make(map[string]string, 1+len(extra))
+	// gRPC metadata uses lower case keys by convention.
+	metadata := make(map[string]string, 1+len(extra))
 	if tok != nil {
-		headers["Authorization"] = tok.TokenType + " " + tok.AccessToken
+		metadata["authorization"] = tok.TokenType + " " + tok.AccessToken
 	}
 	for k, v := range extra {
-		headers[k] = v
+		metadata[strings.ToLower(k)] = v
 	}
-	return headers, nil
+	return metadata, nil
 }
 
 func (creds perRPCCreds) RequireTransportSecurity() bool {
