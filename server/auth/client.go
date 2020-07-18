@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -187,8 +188,6 @@ func (o rpcOption) apply(opts *rpcOptions) { o(opts) }
 //    ...
 //
 // Not compatible with WithScopes.
-//
-// TODO(crbug.com/1081932): Implement `${host}` substitution.
 func WithIDTokenAudience(aud string) RPCOption {
 	return rpcOption(func(opts *rpcOptions) {
 		opts.idTokenAud = aud
@@ -335,7 +334,7 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 						"an appropriate parent of `ctx`, like the root context associated with the incoming request)")
 			}
 		}
-		tok, extra, err := options.getRPCHeaders(reqCtx, req.URL.String(), options)
+		tok, extra, err := options.getRPCHeaders(reqCtx, options, req)
 		if err != nil {
 			return err
 		}
@@ -368,13 +367,19 @@ func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) 
 	if len(uri) == 0 {
 		panic("perRPCCreds: no URI given")
 	}
-	tok, extra, err := creds.options.getRPCHeaders(ctx, uri[0], creds.options)
+	u, err := url.Parse(uri[0])
+	if err != nil {
+		return nil, errors.Annotate(err, "malformed URI %q", uri[0]).Err()
+	}
+
+	tok, extra, err := creds.options.getRPCHeaders(ctx, creds.options, &http.Request{URL: u})
 	switch {
 	case err != nil:
 		return nil, err
 	case tok == nil && len(extra) == 0:
 		return nil, nil
 	}
+
 	headers := make(map[string]string, 1+len(extra))
 	if tok != nil {
 		headers["Authorization"] = tok.TokenType + " " + tok.AccessToken
@@ -409,6 +414,12 @@ func GetTokenSource(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOptio
 			return nil, err
 		}
 	}
+	if options.idTokenAudGen != nil {
+		// There's no access to an URI in oauth2.TokenSource.Token() method, can't
+		// use patterned audiences there.
+		return nil, errors.Reason("WithIDTokenAudience with patterned audience is not supported by GetTokenSource, " +
+			"use GetRPCTransport or GetPerRPCCredentials instead").Err()
+	}
 	return &tokenSource{ctx, options}, nil
 }
 
@@ -418,7 +429,7 @@ type tokenSource struct {
 }
 
 func (ts *tokenSource) Token() (*oauth2.Token, error) {
-	tok, extra, err := ts.options.getRPCHeaders(ts.ctx, "", ts.options)
+	tok, extra, err := ts.options.getRPCHeaders(ts.ctx, ts.options, nil)
 	switch {
 	case err != nil:
 		return nil, err
@@ -481,16 +492,23 @@ var defaultOAuthScopes = []string{auth.OAuthScopeEmail}
 
 // headersGetter returns a main Authorization token and optional additional
 // headers.
-type headersGetter func(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error)
+//
+// `req` is an outbound request if known. May be nil. May not be fully
+// initialized for the gRPC case.
+type headersGetter func(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error)
+
+// audGenerator takes a request and returns an audience string derived from it.
+type audGenerator func(r *http.Request) (string, error)
 
 type rpcOptions struct {
 	kind             RPCAuthorityKind
-	project          string   // for AsProject
-	idTokenAud       string   // for AsSelf, AsProject and AsActor
-	scopes           []string // for AsSelf, AsProject and AsActor
-	serviceAccount   string   // for AsActor
-	delegationToken  string   // for AsUser
-	delegationTags   []string // for AsUser
+	project          string       // for AsProject
+	idTokenAud       string       // for AsSelf, AsProject and AsActor
+	idTokenAudGen    audGenerator // non-nil iff idTokenAud is a pattern
+	scopes           []string     // for AsSelf, AsProject and AsActor
+	serviceAccount   string       // for AsActor
+	delegationToken  string       // for AsUser
+	delegationTags   []string     // for AsUser
 	monitoringClient string
 	checkCtx         func(ctx context.Context) error // optional, may be skipped
 	getRPCHeaders    headersGetter
@@ -549,6 +567,16 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		return nil, errors.Reason("WithIDTokenAudience is not supported here yet").Err()
 	}
 
+	// Convert `idTokenAud` into a callback {http.Request => aud}. This is needed
+	// to support "${host}" substitution.
+	if options.idTokenAud != "" {
+		gen, err := parseAudPattern(options.idTokenAud)
+		if err != nil {
+			return nil, errors.Annotate(err, "bad WithIDTokenAudience value").Err()
+		}
+		options.idTokenAudGen = gen // this is nil if idTokenAud is not a pattern
+	}
+
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
 	switch options.kind {
 	case NoAuth:
@@ -566,7 +594,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 			_, err := forwardedCreds(ctx)
 			return err
 		}
-		options.getRPCHeaders = func(ctx context.Context, _ string, _ *rpcOptions) (*oauth2.Token, map[string]string, error) {
+		options.getRPCHeaders = func(ctx context.Context, _ *rpcOptions, _ *http.Request) (*oauth2.Token, map[string]string, error) {
 			tok, err := forwardedCreds(ctx)
 			return tok, nil, err
 		}
@@ -587,7 +615,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 }
 
 // noAuthHeaders is getRPCHeaders for NoAuth mode.
-func noAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func noAuthHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
 	return nil, nil, nil
 }
 
@@ -595,7 +623,7 @@ func noAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.T
 // RPC requests done in AsSelf mode when using OAuth2 access tokens.
 //
 // This will be called by the transport layer on each request.
-func asSelfOAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func asSelfOAuthHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
 	cfg := getConfig(ctx)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
@@ -611,13 +639,11 @@ func asSelfOAuthHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oau
 // outbound RPC requests done in AsSelf mode when using ID tokens.
 //
 // This will be called by the transport layer on each request.
-func asSelfIDTokenHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func asSelfIDTokenHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
 	cfg := getConfig(ctx)
 	if cfg == nil || cfg.Signer == nil {
 		return nil, nil, ErrNotConfigured
 	}
-
-	// TODO(crbug.com/1081932): Extract Host from `uri` for the audience.
 
 	// TODO(crbug.com/1081932): Pick environment-specific methods when available.
 	//
@@ -635,6 +661,18 @@ func asSelfIDTokenHeaders(ctx context.Context, uri string, opts *rpcOptions) (*o
 		return nil, nil, errors.Reason("no service account name in our own service info").Err()
 	}
 
+	// Derive the audience string. It may have "${host}" var that is replaced
+	// based on the hostname in the `req`.
+	var aud string
+	if opts.idTokenAudGen != nil {
+		if aud, err = opts.idTokenAudGen(req); err != nil {
+			return nil, nil, errors.Annotate(err, "can't derive audience for ID token").Err()
+		}
+	} else {
+		// Using a static audience, not a pattern.
+		aud = opts.idTokenAud
+	}
+
 	// Grab ID token for our own account. This uses our own IAM-scoped access
 	// token internally and also implements heavy caching of the result, so its
 	// fine to call it often.
@@ -644,11 +682,11 @@ func asSelfIDTokenHeaders(ctx context.Context, uri string, opts *rpcOptions) (*o
 	}
 	tok, err := mintTokenCall(ctx, MintIDTokenParams{
 		ServiceAccount: info.ServiceAccountName,
-		Audience:       opts.idTokenAud,
+		Audience:       aud,
 		MinTTL:         2 * time.Minute,
 	})
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get our own ID token").Err()
+		return nil, nil, errors.Annotate(err, "failed to get our own ID token for %q with aud %q", info.ServiceAccountName, aud).Err()
 	}
 
 	return &oauth2.Token{
@@ -662,7 +700,7 @@ func asSelfIDTokenHeaders(ctx context.Context, uri string, opts *rpcOptions) (*o
 // RPC requests done in AsUser mode.
 //
 // This will be called by the transport layer on each request.
-func asUserHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
 	cfg := getConfig(ctx)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
@@ -679,14 +717,9 @@ func asUserHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.T
 			return nil, nil, nil
 		}
 
-		// Grab root URL of the destination service. Only https:// are allowed.
-		uri = strings.ToLower(uri)
-		if !strings.HasPrefix(uri, "https://") {
+		// Only https:// are allowed, can't send bearer tokens in clear text.
+		if req.URL.Scheme != "https" {
 			return nil, nil, errors.Reason("refusing to use delegation tokens with non-https URL").Err()
-		}
-		host := uri[len("https://"):]
-		if idx := strings.IndexRune(host, '/'); idx != -1 {
-			host = host[:idx]
 		}
 
 		// Grab a token that's good enough for at least 10 min. Outbound RPCs
@@ -696,7 +729,7 @@ func asUserHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.T
 			mintTokenCall = opts.rpcMocks.MintDelegationToken
 		}
 		tok, err := mintTokenCall(ctx, DelegationTokenParams{
-			TargetHost: host,
+			TargetHost: req.URL.Hostname(),
 			Tags:       opts.delegationTags,
 			MinTTL:     10 * time.Minute,
 		})
@@ -739,7 +772,7 @@ func forwardedCreds(ctx context.Context) (*oauth2.Token, error) {
 // RPC requests done in AsActor mode.
 //
 // This will be called by the transport layer on each request.
-func asActorHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+func asActorHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
 	mintTokenCall := MintAccessTokenForServiceAccount
 	if opts.rpcMocks != nil && opts.rpcMocks.MintAccessTokenForServiceAccount != nil {
 		mintTokenCall = opts.rpcMocks.MintAccessTokenForServiceAccount
@@ -763,8 +796,8 @@ func asActorHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.
 // RPC requests done in AsProject mode.
 //
 // This will be called by the transport layer on each request.
-func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
-	internal, err := isInternalURI(ctx, uri)
+func asProjectHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
+	internal, err := isInternalURL(ctx, req.URL)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -776,7 +809,7 @@ func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth
 		// TODO(vadimsh): Always use userinfo.email scope here, not the original
 		// one. The target of the call is a LUCI service, it generally doesn't care
 		// about non-email scopes, but *requires* userinfo.email.
-		tok, _, err := asSelfOAuthHeaders(ctx, uri, opts)
+		tok, _, err := asSelfOAuthHeaders(ctx, opts, req)
 		return tok, map[string]string{XLUCIProjectHeader: opts.project}, err
 	}
 
@@ -801,7 +834,7 @@ func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth
 	// eventually.
 	if tok == nil {
 		logging.Infof(ctx, "Project %s not found, fallback to service identity", opts.project)
-		return asSelfOAuthHeaders(ctx, uri, opts)
+		return asSelfOAuthHeaders(ctx, opts, req)
 	}
 
 	return &oauth2.Token{
@@ -811,22 +844,69 @@ func asProjectHeaders(ctx context.Context, uri string, opts *rpcOptions) (*oauth
 	}, nil, nil
 }
 
-// isInternalURI returns true if the URI points to a LUCI microservice belonging
+// isInternalURL returns true if the URL points to a LUCI microservice belonging
 // to the same LUCI deployment as us.
 //
-// Returns an error if the URI can't be parsed, not https:// or there were
-// errors accessing AuthDB to compare the URI against the whitelist.
-func isInternalURI(ctx context.Context, uri string) (bool, error) {
-	switch u, err := url.Parse(uri); {
-	case err != nil:
-		return false, errors.Annotate(err, "could not parse URI %q", uri).Err()
-	case u.Scheme != "https":
-		return false, errors.Reason("AsProject can be used only with https:// targets, got %q", uri).Err()
-	default:
-		state := GetState(ctx)
-		if state == nil {
-			return false, ErrNotConfigured
-		}
-		return state.DB().IsInternalService(ctx, u.Host)
+// Returns an error if the URL is not https:// or there were errors accessing
+// the AuthDB to compare the URL against the list of LUCI services.
+func isInternalURL(ctx context.Context, u *url.URL) (bool, error) {
+	if u.Scheme != "https" {
+		return false, errors.Reason("AsProject can be used only with https:// targets, got %s", u).Err()
 	}
+	state := GetState(ctx)
+	if state == nil {
+		return false, ErrNotConfigured
+	}
+	return state.DB().IsInternalService(ctx, u.Hostname())
+}
+
+var placeholderRe = regexp.MustCompile(`\${[^}]*}`)
+
+// parseAudPattern takes a pattern like "https://${host}" and produces
+// a callback that knows how to fill it in given a *http.Request.
+//
+// Returns (nil, nil) if `pat` is not really a pattern but just a static string.
+// Returns an error if `pat` looks like a malformed or unsupported pattern.
+func parseAudPattern(pat string) (audGenerator, error) {
+	// Recognized static string, use a cheesy check for mismatched curly braces.
+	if !placeholderRe.MatchString(pat) {
+		if strings.Contains(pat, "${") {
+			return nil, errors.Reason("%q looks like a malformed pattern", pat).Err()
+		}
+		return nil, nil
+	}
+
+	renderPat := func(req *http.Request) (out string, err error) {
+		out = placeholderRe.ReplaceAllStringFunc(pat, func(match string) string {
+			if err == nil {
+				switch match {
+				case "${host}":
+					// Prefer a value of `Host` header when given.
+					if req.Host != "" {
+						return req.Host
+					}
+					return req.URL.Host
+				default:
+					err = errors.Reason("unknown var %s", match).Err()
+				}
+			}
+			return ""
+		})
+		return
+	}
+
+	// Verify all referenced vars are known by interpreting a phony request. That
+	// way a set of supported vars is neatly referenced only in `renderPat`.
+	_, err := renderPat(&http.Request{
+		URL: &url.URL{
+			Scheme: "https",
+			Host:   "example.com",
+			Path:   "/example",
+		},
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "bad pattern %q", pat).Err()
+	}
+
+	return renderPat, nil
 }

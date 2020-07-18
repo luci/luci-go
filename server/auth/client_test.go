@@ -85,7 +85,7 @@ func TestGetRPCTransport(t *testing.T) {
 			})
 		})
 
-		Convey("in AsSelf mode with ID token", func(c C) {
+		Convey("in AsSelf mode with ID token, static aud", func(c C) {
 			mocks := &rpcMocks{
 				MintIDTokenForServiceAccount: func(ic context.Context, p MintIDTokenParams) (*Token, error) {
 					So(p, ShouldResemble, MintIDTokenParams{
@@ -103,6 +103,31 @@ func TestGetRPCTransport(t *testing.T) {
 			t, err := GetRPCTransport(ctx, AsSelf, WithIDTokenAudience("https://example.com/aud"), mocks)
 			So(err, ShouldBeNil)
 			_, err = t.RoundTrip(makeReq("https://another.example.com"))
+			So(err, ShouldBeNil)
+
+			So(mock.reqs[0].Header, ShouldResemble, http.Header{
+				"Authorization": {"Bearer id-token"},
+			})
+		})
+
+		Convey("in AsSelf mode with ID token, pattern aud", func(c C) {
+			mocks := &rpcMocks{
+				MintIDTokenForServiceAccount: func(ic context.Context, p MintIDTokenParams) (*Token, error) {
+					So(p, ShouldResemble, MintIDTokenParams{
+						ServiceAccount: ownServiceAccountName,
+						Audience:       "https://another.example.com:443/aud",
+						MinTTL:         2 * time.Minute,
+					})
+					return &Token{
+						Token:  "id-token",
+						Expiry: clock.Now(ic).Add(time.Hour),
+					}, nil
+				},
+			}
+
+			t, err := GetRPCTransport(ctx, AsSelf, WithIDTokenAudience("https://${host}/aud"), mocks)
+			So(err, ShouldBeNil)
+			_, err = t.RoundTrip(makeReq("https://another.example.com:443"))
 			So(err, ShouldBeNil)
 
 			So(mock.reqs[0].Header, ShouldResemble, http.Header{
@@ -236,6 +261,11 @@ func TestGetRPCTransport(t *testing.T) {
 
 		Convey("in AsSelf mode with ID token and scopes, should error", func(c C) {
 			_, err := GetRPCTransport(ctx, AsSelf, WithScopes("A"), WithIDTokenAudience("aud"))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("in AsSelf mode with bad aud pattern, should error", func(c C) {
+			_, err := GetRPCTransport(ctx, AsSelf, WithIDTokenAudience("${huh}"))
 			So(err, ShouldNotBeNil)
 		})
 
@@ -429,6 +459,16 @@ func TestTokenSource(t *testing.T) {
 			})
 		})
 
+		Convey("With ID token, static aud", func() {
+			_, err := GetTokenSource(ctx, AsSelf, WithIDTokenAudience("https://host.example.com"))
+			So(err, ShouldBeNil)
+		})
+
+		Convey("With ID token, pattern aud", func() {
+			_, err := GetTokenSource(ctx, AsSelf, WithIDTokenAudience("https://${host}"))
+			So(err, ShouldNotBeNil)
+		})
+
 		Convey("NoAuth is not allowed", func() {
 			ts, err := GetTokenSource(ctx, NoAuth)
 			So(ts, ShouldBeNil)
@@ -440,6 +480,39 @@ func TestTokenSource(t *testing.T) {
 			So(ts, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
+	})
+}
+
+func TestParseAudPattern(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		cb, err := parseAudPattern("https://${host}/zzz")
+		So(err, ShouldBeNil)
+
+		s, err := cb(&http.Request{
+			Host: "something.example.com:443",
+		})
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, "https://something.example.com:443/zzz")
+	})
+
+	Convey("Static", t, func() {
+		cb, err := parseAudPattern("no-vars-here")
+		So(cb, ShouldBeNil)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Malformed", t, func() {
+		cb, err := parseAudPattern("aaa-${host)-bbb")
+		So(cb, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Unknown var", t, func() {
+		cb, err := parseAudPattern("aaa-${unknown}-bbb")
+		So(cb, ShouldBeNil)
+		So(err, ShouldNotBeNil)
 	})
 }
 
