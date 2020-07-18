@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "551da4d9_3dabd36a",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 887,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-18T01:24:10Z",
+      "side": 1,
+      "message": "curious cat: any specific scenario in ChOps services mind where it matters?",
+      "range": {
+        "startLine": 884,
+        "startChar": 5,
+        "endLine": 887,
+        "endChar": 6
+      },
+      "revId": "f644051fec801589178b106c199c8b744efff81d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "330b5a45_49d9d2e7",
+        "filename": "server/auth/client_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-18T01:24:10Z",
+      "side": 1,
+      "message": "👍\n\nI keep forgetting that :443 is part of host in parsed URL.",
+      "range": {
+        "startLine": 118,
+        "startChar": 47,
+        "endLine": 118,
+        "endChar": 55
+      },
+      "revId": "f644051fec801589178b106c199c8b744efff81d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
