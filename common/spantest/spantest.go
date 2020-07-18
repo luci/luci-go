@@ -28,9 +28,10 @@ import (
 
 	"cloud.google.com/go/spanner"
 	spandb "cloud.google.com/go/spanner/admin/database/apiv1"
-	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
@@ -45,11 +46,11 @@ type TempDBConfig struct {
 	// Defaults to chromeinfra.TestSpannerInstance.
 	InstanceName string
 
-	// TokenSource will be used to authenticate to Spanner.
+	// Credentials will be used to authenticate to Spanner.
 	// If nil, auth.Authenticator with SilentLogin and chrome-infra auth options
 	// will be used.
 	// This means that that the user may have to login with luci-auth tool.
-	TokenSource oauth2.TokenSource
+	Credentials credentials.PerRPCCredentials
 
 	// InitScriptPath is a path to a DDL script to initialize the database.
 	//
@@ -62,9 +63,9 @@ type TempDBConfig struct {
 	InitScriptPath string
 }
 
-func (cfg *TempDBConfig) tokenSource(ctx context.Context) (oauth2.TokenSource, error) {
-	if cfg.TokenSource != nil {
-		return cfg.TokenSource, nil
+func (cfg *TempDBConfig) credentials(ctx context.Context) (credentials.PerRPCCredentials, error) {
+	if cfg.Credentials != nil {
+		return cfg.Credentials, nil
 	}
 
 	opts := chromeinfra.DefaultAuthOptions()
@@ -73,7 +74,7 @@ func (cfg *TempDBConfig) tokenSource(ctx context.Context) (oauth2.TokenSource, e
 	if err := a.CheckLoginRequired(); err != nil {
 		return nil, errors.Annotate(err, "please login with `luci-auth login -scopes %q`", strings.Join(opts.Scopes, " ")).Err()
 	}
-	return a.TokenSource()
+	return a.PerRPCCredentials()
 }
 
 var ddlStatementSepRe = regexp.MustCompile(`;\s*\n`)
@@ -103,20 +104,28 @@ func (cfg *TempDBConfig) readDDLStatements() ([]string, error) {
 	return ret, nil
 }
 
+// adminClient returns a Spanner admin client, it must be closed when done.
+func adminClient(ctx context.Context, creds credentials.PerRPCCredentials) (*spandb.DatabaseAdminClient, error) {
+	return spandb.NewDatabaseAdminClient(ctx,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+}
+
 // TempDB is a temporary Spanner database.
 type TempDB struct {
-	Name string
-	ts   oauth2.TokenSource
+	Name  string
+	creds credentials.PerRPCCredentials
 }
 
 // Client returns a spanner client connected to the database.
 func (db *TempDB) Client(ctx context.Context) (*spanner.Client, error) {
-	return spanner.NewClient(ctx, db.Name, option.WithTokenSource(db.ts))
+	return spanner.NewClient(ctx, db.Name,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(db.creds)),
+	)
 }
 
 // Drop deletes the database.
 func (db *TempDB) Drop(ctx context.Context) error {
-	client, err := spandb.NewDatabaseAdminClient(ctx, option.WithTokenSource(db.ts))
+	client, err := adminClient(ctx, db.creds)
 	if err != nil {
 		return err
 	}
@@ -138,7 +147,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		instanceName = chromeinfra.TestSpannerInstance
 	}
 
-	ts, err := cfg.tokenSource(ctx)
+	creds, err := cfg.credentials(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +157,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
 	}
 
-	client, err := spandb.NewDatabaseAdminClient(ctx, option.WithTokenSource(ts))
+	client, err := adminClient(ctx, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -176,8 +185,8 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 	}
 
 	return &TempDB{
-		Name: db.Name,
-		ts:   ts,
+		Name:  db.Name,
+		creds: creds,
 	}, nil
 }
 

@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
@@ -70,10 +71,10 @@ func withProdSpannerClient(ctx context.Context, dbFlag string, trackSessionHandl
 		return ctx, errors.Reason("-spanner-database flag is required").Err()
 	}
 
-	// A token source with Cloud scope.
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	// Credentials with Cloud scope.
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return ctx, errors.Annotate(err, "failed to get the token source").Err()
+		return ctx, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}
 
 	// Init a Spanner client.
@@ -82,7 +83,8 @@ func withProdSpannerClient(ctx context.Context, dbFlag string, trackSessionHandl
 			TrackSessionHandles: trackSessionHandles,
 		},
 	}
-	spannerClient, err := spanner.NewClientWithConfig(ctx, dbFlag, cfg, option.WithTokenSource(ts))
+	spannerClient, err := spanner.NewClientWithConfig(ctx, dbFlag, cfg,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 	if err != nil {
 		return ctx, err
 	}
