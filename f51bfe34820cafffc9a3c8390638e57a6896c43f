@@ -16,6 +16,29 @@
       "revId": "f51bfe34820cafffc9a3c8390638e57a6896c43f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "092466b0_d7a261ff",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-18T01:32:22Z",
+      "side": 1,
+      "message": "\u003e This API is experimental.\nhttps://godoc.org/google.golang.org/grpc/credentials#CheckSecurityLevel\n\nbut I guess it\u0027s fine. Easy to remove.",
+      "range": {
+        "startLine": 368,
+        "startChar": 23,
+        "endLine": 368,
+        "endChar": 41
+      },
+      "revId": "f51bfe34820cafffc9a3c8390638e57a6896c43f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
