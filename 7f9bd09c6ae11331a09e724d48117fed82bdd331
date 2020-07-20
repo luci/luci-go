@@ -22,6 +22,30 @@
       "revId": "7f9bd09c6ae11331a09e724d48117fed82bdd331",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f4290ed_f7bb4456",
+        "filename": "buildbucket/appengine/model/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:03:18Z",
+      "side": 1,
+      "message": "\u003e Why keep GetIgnoreMissing?\n\nLess things to type?\n\n\u003e why not in gae/ as sugar inside service/datastore\n\nNot a fan of adding one-line utility methods into widely used low-level libraries. It increases their API surface for no good reason.",
+      "parentUuid": "a766c512_79dab149",
+      "range": {
+        "startLine": 28,
+        "startChar": 1,
+        "endLine": 28,
+        "endChar": 76
+      },
+      "revId": "7f9bd09c6ae11331a09e724d48117fed82bdd331",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
