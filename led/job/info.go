@@ -75,6 +75,9 @@ type HighLevelInfo interface {
 	// Returns true iff the job is marked as 'experimental'.
 	Experimental() bool
 
+	// Returns a sorted list of enabled experiments.
+	Experiments() []string
+
 	// Returns the input properties of this build as a map of top-level key to
 	// its JSON-encoded value.
 	Properties() (map[string]string, error)

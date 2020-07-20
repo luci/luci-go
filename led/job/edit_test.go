@@ -336,6 +336,36 @@ func TestExperimental(t *testing.T) {
 	})
 }
 
+func TestExperiments(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `Experiments`, []testCase{
+		{
+			name:   "full",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				So(jd.HighLevelInfo().Experiments(), ShouldHaveLength, 0)
+
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Experiments(map[string]bool{
+						"exp1":         true,
+						"exp2":         true,
+						"delMissingOK": false,
+					})
+				})
+				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{"exp1", "exp2"})
+
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Experiments(map[string]bool{
+						"exp1": false,
+					})
+				})
+				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{"exp2"})
+			},
+		},
+	})
+}
+
 func TestProperties(t *testing.T) {
 	t.Parallel()
 

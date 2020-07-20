@@ -83,6 +83,15 @@ type HighLevelEditor interface {
 	// Experimental sets the task to either be marked 'experimental' or not.
 	Experimental(isExperimental bool)
 
+	// Experiments enables or disables experiments.
+	//
+	// If `exps[<name>]` is true, the corresponding experiment will be enabled.
+	// If it is false, the experiment will be disabled (if it was enabled).
+	//
+	// Experiments enabled in the build, but not mentioned in `exps` map are left
+	// enabled.
+	Experiments(exps map[string]bool)
+
 	// Properties edits the recipe properties.
 	//
 	// `props` should be a mapping of the top-level property to JSON-encoded data

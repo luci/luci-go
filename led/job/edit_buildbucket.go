@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
@@ -265,6 +266,21 @@ func (bbe *buildbucketEditor) TaskName(name string) {
 func (bbe *buildbucketEditor) Experimental(isExperimental bool) {
 	bbe.tweak(func() error {
 		bbe.bb.BbagentArgs.Build.Input.Experimental = isExperimental
+		return nil
+	})
+}
+
+func (bbe *buildbucketEditor) Experiments(exps map[string]bool) {
+	bbe.tweak(func() error {
+		enabled := stringset.NewFromSlice(bbe.bb.BbagentArgs.Build.Input.Experiments...)
+		for k, v := range exps {
+			if v {
+				enabled.Add(k)
+			} else {
+				enabled.Del(k)
+			}
+		}
+		bbe.bb.BbagentArgs.Build.Input.Experiments = enabled.ToSortedSlice()
 		return nil
 	})
 }
