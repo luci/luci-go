@@ -98,6 +98,10 @@ func (b bbInfo) Experimental() bool {
 	return b.GetBbagentArgs().GetBuild().GetInput().GetExperimental()
 }
 
+func (b bbInfo) Experiments() []string {
+	return b.GetBbagentArgs().GetBuild().GetInput().GetExperiments()
+}
+
 func (b bbInfo) Properties() (ret map[string]string, err error) {
 	if p := b.GetBbagentArgs().GetBuild().GetInput().GetProperties(); p != nil {
 		m := (&jsonpb.Marshaler{})
