@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "1a3cd7d2_f1604fd1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-20T16:21:27Z",
+      "side": 1,
+      "message": "lgtm w/ vadim\u0027s comments",
+      "revId": "13a14007523298823c863fce6ded0769f695087e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f61ad0d5_99e6e69c",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/builder.star",
         "patchSetId": 8
@@ -81,6 +98,29 @@
         "startChar": 23,
         "endLine": 367,
         "endChar": 40
+      },
+      "revId": "13a14007523298823c863fce6ded0769f695087e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc005e42_2649e141",
+        "filename": "lucicfg/testdata/errors/invalid_experiments_int.star",
+        "patchSetId": 8
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-20T16:21:27Z",
+      "side": 1,
+      "message": "This is not a good experiment name. Maybe something like \"luci.enable_next_gen_feature\" or something like that? I find that users tend to take inspiration from the most unlikely places...",
+      "range": {
+        "startLine": 17,
+        "startChar": 9,
+        "endLine": 17,
+        "endChar": 17
       },
       "revId": "13a14007523298823c863fce6ded0769f695087e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
