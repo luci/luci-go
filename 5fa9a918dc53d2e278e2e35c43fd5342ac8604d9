@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6cdf2150_67825ea9",
+        "filename": "ttq/internal/partition/partition.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T21:56:30Z",
+      "side": 0,
+      "message": "bug #2: this was actually NotInKeySpace, but it self-canceled with bug #1 😊",
+      "range": {
+        "startLine": 333,
+        "startChar": 5,
+        "endLine": 333,
+        "endChar": 15
+      },
+      "revId": "5fa9a918dc53d2e278e2e35c43fd5342ac8604d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
