@@ -1,0 +1,251 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46f04136_46fa9373",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "mostly nits",
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d3796690_69258a85",
+        "filename": "ttq/internal/lessor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "nit: document it may be empty",
+      "range": {
+        "startLine": 24,
+        "startChar": 60,
+        "endLine": 24,
+        "endChar": 76
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09e16242_cd3b8b9c",
+        "filename": "ttq/internal/lessor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "it is really OK not to return any errors? Is it \"best effort\" kind of stuff?",
+      "range": {
+        "startLine": 28,
+        "startChar": 5,
+        "endLine": 28,
+        "endChar": 18
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7df4f6cb_0773b475",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "it captures the \"original\" context, right? Not the one with shorter deadline?",
+      "range": {
+        "startLine": 53,
+        "startChar": 20,
+        "endLine": 53,
+        "endChar": 23
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea062cd6_7c549600",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "reset this to 0 at the start of the transaction, since it may be retried and exit before reaching this line",
+      "range": {
+        "startLine": 80,
+        "startChar": 3,
+        "endLine": 80,
+        "endChar": 17
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe10f5f8_8130c187",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "If you don\u0027t actually need leasesRoot entity, try:\n\n  func leasesRootKey(...) ... {\n    return ds.NewKey(ctx, \"ttq.leasesRoot\", \"\", shard+1, nil)\n  }\n\nOr if you really prefer string ID, then strconv.Atoi(shard) instead of \"\".",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 111,
+        "endChar": 1
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cf00dc6_d33e6044",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "Consider using datastore auto-generated IDs. Not sure how they would be better, but they do exist :)",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 27
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8320ffa6_39259a76",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "Is this actually ever queried for?",
+      "range": {
+        "startLine": 147,
+        "startChar": 23,
+        "endLine": 147,
+        "endChar": 46
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41cc6b73_06b95c9d",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "I think this should work:\n\n  all[i], all[j] \u003d all[j], all[i]",
+      "range": {
+        "startLine": 179,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 14
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2711d582_62602cbf",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "is this expensive? Should it be moved outside the transaction?",
+      "range": {
+        "startLine": 187,
+        "startChar": 1,
+        "endLine": 187,
+        "endChar": 57
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72e722d4_a418ece9",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:00:36Z",
+      "side": 1,
+      "message": "FYI: I have no idea what this means, I hope you have a test.",
+      "range": {
+        "startLine": 188,
+        "startChar": 0,
+        "endLine": 200,
+        "endChar": 29
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
