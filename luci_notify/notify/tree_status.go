@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-const botUsername = "luci-notify@chromium.org"
+const botUsername = "luci-notify@appspot.gserviceaccount.com"
 const legacyBotUsername = "buildbot@chromium.org"
 
 type treeStatus struct {
