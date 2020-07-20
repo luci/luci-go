@@ -16,6 +16,29 @@
       "revId": "1ae1ffe10dd8b13349e7da2a500683d0706fd865",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a761a606_20c9533b",
+        "filename": "ttq/internal/sweepdrivers/incproc/incproc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T22:09:05Z",
+      "side": 1,
+      "message": "why inCproc? What does C stand for?\n\nI suggested \"inproc\" because it is a (relatively) stable abbreviation for \"things hosted in the same process\". In particular I was having COM In-Proc stuff in mind (https://docs.microsoft.com/en-us/windows/win32/com/in-process-servers, yes I\u0027m that old).",
+      "range": {
+        "startLine": 19,
+        "startChar": 8,
+        "endLine": 19,
+        "endChar": 15
+      },
+      "revId": "1ae1ffe10dd8b13349e7da2a500683d0706fd865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
