@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59d5a139_8ef1f7b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T22:05:36Z",
+      "side": 1,
+      "message": "PTAL\nVadim for TTQ perspective\nRobbie for dispatcher.Channel-related question (but also TTQ)",
+      "revId": "1ae1ffe10dd8b13349e7da2a500683d0706fd865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

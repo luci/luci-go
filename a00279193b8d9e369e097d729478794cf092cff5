@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1a26ee1_457f050f",
+        "filename": "ttq/internal/sweepdrivers/incproc/incproc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T22:05:36Z",
+      "side": 1,
+      "message": "Robbie, I thoroughly enjoyed writing this. dispatcher.Channel\u0027s and buffer.Options were not only well documented, but more importantly required me to think about failure scenarios for my code.",
+      "revId": "a00279193b8d9e369e097d729478794cf092cff5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b4fd3f39_3707bf26",
+        "filename": "ttq/internal/sweepdrivers/incproc/incproc_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T22:05:36Z",
+      "side": 1,
+      "message": "Robbie, do you remember facing this during testing dispatcher.Channel? I looked in your tests but I didn\u0027t notice a workaround.",
+      "revId": "a00279193b8d9e369e097d729478794cf092cff5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "213b83df_a05a5550",
+        "filename": "ttq/internal/sweepdrivers/incproc/incproc_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T22:05:36Z",
+      "side": 1,
+      "message": "Robbie: this is the only hidden implementation detail of the channel.\nShall I expose it as public const with an example of SetTimerCallback?",
+      "range": {
+        "startLine": 68,
+        "startChar": 30,
+        "endLine": 68,
+        "endChar": 41
+      },
+      "revId": "a00279193b8d9e369e097d729478794cf092cff5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
