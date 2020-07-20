@@ -373,6 +373,30 @@
     },
     {
       "key": {
+        "uuid": "2ccf4e7e_e0842e63",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T23:28:35Z",
+      "side": 1,
+      "message": "well, but code here is simpler and performance for individual key isn\u0027t critical. I\u0027ll assemble all my CLs again and re-test. Worst case, I\u0027ll bring random back.",
+      "parentUuid": "a0c2f7f4_11a6ff1e",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 27
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8320ffa6_39259a76",
         "filename": "ttq/internal/lessors/datastore/ds.go",
         "patchSetId": 1
