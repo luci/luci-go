@@ -120,7 +120,7 @@ func (p Partition) Copy() *Partition {
 
 func (p Partition) QueryBounds(keySpaceBytes int) (low, high string) {
 	low = paddedHex(&p.Low, keySpaceBytes)
-	if inKeySpace(&p.High, keySpaceBytes) {
+	if !inKeySpace(&p.High, keySpaceBytes) {
 		// In practice, this should mean p.high == 2^(keySpaceBytes*8).
 		high = "g" // all hex strings are smaller than "g".
 	} else {
@@ -331,5 +331,5 @@ func paddedHex(b *big.Int, keySpaceBytes int) string {
 
 // inKeySpace returns whether v does not exceed keyspace upper boundary.
 func inKeySpace(v *big.Int, keySpaceBytes int) bool {
-	return v.BitLen() >= keySpaceBytes*8
+	return v.BitLen() <= keySpaceBytes*8
 }
