@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "25d21502_d52d67e3",
+        "filename": "ttq/internal/lessor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:24:56Z",
+      "side": 1,
+      "message": "No, my fault, it\u0027s fine.",
+      "parentUuid": "7787a84e_9622d0ee",
+      "range": {
+        "startLine": 24,
+        "startChar": 60,
+        "endLine": 24,
+        "endChar": 76
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09e16242_cd3b8b9c",
         "filename": "ttq/internal/lessor.go",
         "patchSetId": 1
@@ -110,6 +134,30 @@
       "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46c02c75_3c259f46",
+        "filename": "ttq/internal/lessor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:24:56Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d17f7a12_e10c6751",
+      "range": {
+        "startLine": 28,
+        "startChar": 5,
+        "endLine": 28,
+        "endChar": 18
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -289,6 +337,30 @@
       "side": 1,
       "message": "Done.",
       "parentUuid": "6cf00dc6_d33e6044",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 27
+      },
+      "revId": "2f1cf5e52e48a5dcc463bf9366c7d55e843ff2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a0c2f7f4_11a6ff1e",
+        "filename": "ttq/internal/lessors/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:24:56Z",
+      "side": 1,
+      "message": "I didn\u0027t say it was necessarily a good idea :) (I can imagine auto-generating IDs is slightly more expensive than using random ones). OTOH int64 keys are better than big string ones. So dunno.",
+      "parentUuid": "3653ce04_a88fd0e0",
       "range": {
         "startLine": 133,
         "startChar": 1,
