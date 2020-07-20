@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ec1feb0_5bd7b1cf",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T23:24:02Z",
+      "side": 1,
+      "message": "these should become Options, similar to inproc implementation, and some should be moved into top level ttq.Options (batchSize, batchworkers, ppLimiter).\nIf SGTU, I\u0027ll have a follow up after inproc CL (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2293247)",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 20
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
