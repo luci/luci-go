@@ -22,6 +22,30 @@
       "revId": "838f943a38377f88571b91f030d94deafe0d05ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d680f349_7cfb1e50",
+        "filename": "ttq/internal/testing/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T23:34:58Z",
+      "side": 1,
+      "message": "Oh, i accidentally did this only in follow up CL. Done here!",
+      "parentUuid": "f2be3273_3d6d91c9",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 15
+      },
+      "revId": "838f943a38377f88571b91f030d94deafe0d05ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
