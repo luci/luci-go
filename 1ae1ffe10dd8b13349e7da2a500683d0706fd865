@@ -39,6 +39,30 @@
       "revId": "1ae1ffe10dd8b13349e7da2a500683d0706fd865",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58e03971_27b04a16",
+        "filename": "ttq/internal/sweepdrivers/incproc/incproc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-20T23:14:25Z",
+      "side": 1,
+      "message": "originally a typo, and then mindlessly copy-pasted. I\u0027m really bad at naming.\nMind if I rename after first round of review (s.t. my inline questions stay)?",
+      "parentUuid": "a761a606_20c9533b",
+      "range": {
+        "startLine": 19,
+        "startChar": 8,
+        "endLine": 19,
+        "endChar": 15
+      },
+      "revId": "1ae1ffe10dd8b13349e7da2a500683d0706fd865",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
