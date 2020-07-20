@@ -25,16 +25,5 @@ import (
 // ignoring datastore.ErrNoSuchEntity errors. All other errors are returned.
 // For valid values of dst, see datastore.Get.
 func GetIgnoreMissing(ctx context.Context, dst ...interface{}) error {
-	if err := datastore.Get(ctx, dst...); err != nil {
-		merr, ok := err.(errors.MultiError)
-		if !ok {
-			return err
-		}
-		for _, e := range merr {
-			if e != nil && e != datastore.ErrNoSuchEntity {
-				return err
-			}
-		}
-	}
-	return nil
+	return errors.Filter(datastore.Get(ctx, dst...), datastore.ErrNoSuchEntity)
 }
