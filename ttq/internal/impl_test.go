@@ -18,12 +18,10 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	gax "github.com/googleapis/gax-go/v2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,8 +36,10 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/types"
+
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
+	ttqtesting "go.chromium.org/luci/ttq/internal/testing"
 
 	"github.com/golang/mock/gomock"
 
@@ -123,7 +123,7 @@ func TestAddTask(t *testing.T) {
 		opts := ttq.Options{}
 		So(opts.Validate(), ShouldBeNil)
 		db := FakeDB{}
-		fakeCT := fakeCloudTasks{}
+		fakeCT := ttqtesting.FakeCloudTasks{}
 		impl := Impl{Options: opts, DB: &db, TasksClient: &fakeCT}
 
 		Convey("with deadline", func() {
@@ -137,7 +137,7 @@ func TestAddTask(t *testing.T) {
 					tclock.Set(r.FreshUntil.Add(time.Second))
 				}
 				pp(ctx) // noop now
-				So(len(fakeCT.calls), ShouldEqual, 0)
+				So(len(fakeCT.PopCreateTaskReqs()), ShouldEqual, 0)
 				So(len(db.reminders), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldBeNil)
 			})
@@ -145,24 +145,24 @@ func TestAddTask(t *testing.T) {
 			Convey("happy path", func() {
 				pp(ctx)
 				So(len(db.reminders), ShouldEqual, 0)
-				So(len(fakeCT.calls), ShouldEqual, 1)
+				So(len(fakeCT.PopCreateTaskReqs()), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedDurationsMS, "OK", "happy", "FakeDB").(*distribution.Distribution).Count(), ShouldEqual, 1)
 
 				Convey("calling 2nd time is a noop", func() {
 					pp(ctx)
-					So(len(fakeCT.calls), ShouldEqual, 1)
+					So(len(fakeCT.PopCreateTaskReqs()), ShouldEqual, 0)
 					So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldEqual, 1)
 				})
 			})
 			Convey("happy path transient task creation error", func() {
-				fakeCT.errs = []error{status.Errorf(codes.Unavailable, "please retry")}
+				fakeCT.FakeCreateTaskErrors(status.Errorf(codes.Unavailable, "please retry"))
 				pp(ctx)
 				So(len(db.reminders), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedAttempts, "fail-task", "happy", "FakeDB"), ShouldEqual, 1)
 			})
 			Convey("happy path permanent task creation error", func() {
-				fakeCT.errs = []error{status.Errorf(codes.InvalidArgument, "forever")}
+				fakeCT.FakeCreateTaskErrors(status.Errorf(codes.InvalidArgument, "forever"))
 				pp(ctx)
 				So(latestOf(metricPostProcessedAttempts, "ignored-bad-task", "happy", "FakeDB"), ShouldEqual, 1)
 				So(latestOf(metricTasksCreated, "InvalidArgument", "happy", "FakeDB"), ShouldEqual, 1)
@@ -331,7 +331,7 @@ func TestPostProcessBatch(t *testing.T) {
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		db := FakeDB{}
-		fakeCT := fakeCloudTasks{}
+		fakeCT := ttqtesting.FakeCloudTasks{}
 		impl := Impl{Options: ttq.Options{}, DB: &db, TasksClient: &fakeCT}
 
 		batch := make([]*Reminder, 10)
@@ -355,10 +355,10 @@ func TestPostProcessBatch(t *testing.T) {
 			So(len(db.AllReminders()), ShouldEqual, 0)
 		})
 		Convey("Task Creation failures", func() {
-			fakeCT.errs = []error{
+			fakeCT.FakeCreateTaskErrors(
 				status.Errorf(codes.Unavailable, "please retry"),
 				status.Errorf(codes.InvalidArgument, "user error"),
-			}
+			)
 			err := impl.PostProcessBatch(ctx, batch, nil)
 			So(err, ShouldNotBeNil)
 			merr := err.(errors.MultiError)
@@ -411,24 +411,4 @@ func genReminder(ctx context.Context) *Reminder {
 		panic(err)
 	}
 	return r
-}
-
-type fakeCloudTasks struct {
-	mu    sync.Mutex
-	errs  []error
-	calls []*taskspb.CreateTaskRequest
-}
-
-func (f *fakeCloudTasks) CreateTask(_ context.Context, req *taskspb.CreateTaskRequest, _ ...gax.CallOption) (*taskspb.Task, error) {
-	// NOTE: actual implementation returns the created Task, but the TTQ library
-	// doesn't care.
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.calls = append(f.calls, req)
-	if len(f.errs) > 0 {
-		var err error
-		f.errs, err = f.errs[1:], f.errs[0]
-		return nil, err
-	}
-	return nil, nil
 }
