@@ -22,6 +22,8 @@ import (
 
 // FakeDB implements Database in RAM.
 // Used for testing of ttq guts.
+// TODO(tandrii): move into testing/ package after
+// moving Reminder to a new package to avoid circular dependency.
 type FakeDB struct {
 	mu        sync.RWMutex
 	reminders map[string]*Reminder
