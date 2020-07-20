@@ -217,6 +217,15 @@ luci.builder(
     executable = "main/executable",
 )
 
+luci.builder(
+    name = "builder with experiment map",
+    bucket = "try",
+    executable = "main/executable",
+    experiments = {
+        "luci.enable_new_beta_feature": 32,
+    },
+)
+
 # Inline definitions.
 
 def inline_poller():
@@ -720,6 +729,19 @@ lucicfg.emit(
 #         cipd_version: "refs/heads/master"
 #       }
 #       properties: "{}"
+#     }
+#     builders {
+#       name: "builder with experiment map"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       exe {
+#         cipd_package: "executable/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       }
+#       properties: "{}"
+#       experiments {
+#         key: "luci.enable_new_beta_feature"
+#         value: 32
+#       }
 #     }
 #     builders {
 #       name: "equivalent cq builder"
