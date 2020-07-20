@@ -22,6 +22,99 @@
       "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23a4b96b_00cd230b",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:41:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8ec1feb0_5bd7b1cf",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 20
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8bc97f55_4313fabd",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:41:30Z",
+      "side": 1,
+      "message": "Sweeper",
+      "range": {
+        "startLine": 113,
+        "startChar": 22,
+        "endLine": 113,
+        "endChar": 27
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "566dd531_ce0e05d3",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:41:30Z",
+      "side": 1,
+      "message": "do we need to optimize the case when `len(leased) \u003d 0` or it never really happens?",
+      "range": {
+        "startLine": 231,
+        "startChar": 58,
+        "endLine": 231,
+        "endChar": 64
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f32dd13f_5b792e4c",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-20T23:41:30Z",
+      "side": 1,
+      "message": "why does it have to be rate limiting exactly (vs a semaphore for concurrency limiting to avoid OOMs)?",
+      "range": {
+        "startLine": 256,
+        "startChar": 75,
+        "endLine": 256,
+        "endChar": 84
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
