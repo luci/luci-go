@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/oauth"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
@@ -36,7 +37,7 @@ import (
 
 // RBEConn creates a gRPC connection to RBE authenticated as self.
 func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
-	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 	return grpc.Dial(
 		"remotebuildexecution.googleapis.com:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(creds),
+		grpc.WithPerRPCCredentials(oauth.TokenSource{TokenSource: ts}),
 	)
 }
 
