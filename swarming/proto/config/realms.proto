@@ -1,0 +1,76 @@
+// Copyright 2020 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.config;
+
+option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
+
+// Realm permissions used in Swarming.
+// The enums are converted to string names using get_permission_name
+// in server/realms.py
+// NEXT_ID: 12
+enum RealmPermission {
+  REALM_PERMISSION_UNSPECIFIED = 0;
+
+  // Pools permissions
+
+  // Permission 'swarming.pools.createTask'
+  // This is required to create a task in the pool.
+  // It will be checked at the new task API.
+  REALM_PERMISSION_POOLS_CREATE_TASK = 1;
+
+  // Permission 'swarming.pools.listTasks'
+  // This is required to list/count tasks in the pool.
+  // It will be checked at tasks list/count APIs.
+  REALM_PERMISSION_POOLS_LIST_TASKS = 4;
+
+  // Permission 'swarming.pools.cancelTask'
+  // This is required to cancel a task in the pool.
+  // It will be checked at task cancel APIs.
+  REALM_PERMISSION_POOLS_CANCEL_TASK = 5;
+
+  // Permission 'swarming.pools.createBot'
+  // This is required to create a bot in the pool.
+  // It will be checked at bot bootstrap, bot code APIs.
+  REALM_PERMISSION_POOLS_CREATE_BOT = 6;
+
+  // Permission 'swarming.pools.listBots'
+  // This is required to list/count bots in the pool.
+  // It will be checked at bots list/count APIs.
+  REALM_PERMISSION_POOLS_LIST_BOTS = 7;
+
+  // Permission 'swarming.pools.terminateBot'
+  // This is required to terminate a bot in the pool.
+  // It will be checked at bot terminate API.
+  REALM_PERMISSION_POOLS_TERMINATE_BOT = 8;
+
+  // Permission 'swarming.pools.deleteBot'
+  // This is required to delete a bot in the pool.
+  // It will be checked at bot delete API.
+  REALM_PERMISSION_POOLS_DELETE_BOT = 9;
+
+  // Tasks permissions
+
+  // Permission 'swarming.tasks.createInRealm'
+  // This is required to create a task in the realm.
+  // It will be checked at the new task API.
+  REALM_PERMISSION_TASKS_CREATE_IN_REALM = 2;
+
+  // Permission 'swarming.tasks.actAs'
+  // This is required to use a task service account in the realm.
+  // It will be checked at the new task API.
+  REALM_PERMISSION_TASKS_ACT_AS = 3;
+
+  // Permission 'swarming.tasks.get'
+  // This is required to get task request, result, outputs.
+  // It will be checked at task request, result, stdout GET APIs.
+  REALM_PERMISSION_TASKS_GET = 10;
+
+  // Permission 'swarming.tasks.cancel'
+  // This is required to cancel a task.
+  // It will be checked at task cancel API.
+  REALM_PERMISSION_TASKS_CANCEL = 11;
+}

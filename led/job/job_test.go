@@ -95,7 +95,9 @@ func TestFlattenToSwarming(t *testing.T) {
 			}
 			So(props, ShouldResemble, expectedProps)
 
-			So(slice0.Properties.CipdInputs, ShouldContain, &swarmingpb.CIPDPackage{
+			// Added `kitchen-checkout` as the last CipdInputs entry.
+			So(slice0.Properties.CipdInputs, ShouldHaveLength, 17) // see bbagent.job.json
+			So(slice0.Properties.CipdInputs[16], ShouldResembleProto, &swarmingpb.CIPDPackage{
 				DestPath:    "kitchen-checkout",
 				PackageName: expectedProps.CIPDInput.Package,
 				Version:     expectedProps.CIPDInput.Version,
