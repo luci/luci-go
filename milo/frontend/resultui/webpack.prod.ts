@@ -20,6 +20,11 @@ import common from './webpack.common';
 const config: webpack.Configuration = merge(common, {
   devtool: 'source-map',
   mode: 'production',
+  plugins: [
+    new webpack.DefinePlugin({
+      'MILO_HOST': JSON.stringify(''),
+    }),
+  ],
 });
 
 // Default export is required by webpack.
