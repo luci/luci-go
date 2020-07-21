@@ -1308,6 +1308,18 @@
         "get_configs": {
           "type": "boolean"
         },
+        "list_bots": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "list_tasks": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "put_configs": {
           "type": "boolean"
         },
@@ -1847,6 +1859,9 @@
           "type": "string"
         },
         "pubsub_userdata": {
+          "type": "string"
+        },
+        "realm": {
           "type": "string"
         },
         "service_account": {
