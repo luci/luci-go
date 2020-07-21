@@ -152,6 +152,30 @@
       "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a567c581_11b69f52",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-21T21:28:54Z",
+      "side": 1,
+      "message": "ah, okay. I misunderstood. I thought you meant it included a space between the double quotation marks. \n\nMade a CL to solve this nit - http://crrev.com/c/2310815",
+      "parentUuid": "d804f7cf_b8240ab6",
+      "range": {
+        "startLine": 174,
+        "startChar": 19,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
