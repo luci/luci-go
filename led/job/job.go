@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/led/job/experiments"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -380,6 +381,11 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		}
 	}
 
+	if err := experiments.Apply(ctx, bb.BbagentArgs.Build, sw.Task); err != nil {
+		return errors.Annotate(err, "applying experiments").Err()
+	}
+
 	jd.JobType = &Definition_Swarming{Swarming: sw}
+
 	return nil
 }
