@@ -93,6 +93,30 @@
       "revId": "d2fff26a395c6aef10184dcd7d2ddef890371578",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02023a41_c64e8913",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-21T08:54:37Z",
+      "side": 1,
+      "message": "Done (I initially didn\u0027t do this because i feel like erroring on stats failure doesn\u0027t have to prevent the entire process from suceeding, but whatever....)",
+      "parentUuid": "7a271552_6334ff1c",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 15
+      },
+      "revId": "d2fff26a395c6aef10184dcd7d2ddef890371578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
