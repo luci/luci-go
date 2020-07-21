@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa38d728_4d7aaa8a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T21:25:50Z",
+      "side": 1,
+      "message": "PTAL, forgot about them.\n\nI also once again rediscovered that Scheduler still uses Buildbucket v1 APIs including glorious \"luci.\u003cproject\u003e.\u003cbucket\u003e\" names.",
+      "revId": "5d25ea04e8d01cfd312cd774701ab4305322b512",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
