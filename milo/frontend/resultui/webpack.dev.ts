@@ -17,9 +17,16 @@ import merge from 'webpack-merge';
 
 import common from './webpack.common';
 
+const devConfig = require('./local-dev-config.json');
+
 const config: webpack.Configuration = merge(common, {
   mode: 'development',
   devtool: 'eval-source-map',
+  plugins: [
+    new webpack.DefinePlugin({
+      'MILO_HOST': JSON.stringify(devConfig.milo.host),
+    }),
+  ],
 });
 
 // Default export is required by webpack.
