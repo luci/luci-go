@@ -128,6 +128,30 @@
       "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d804f7cf_b8240ab6",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-21T20:07:33Z",
+      "side": 1,
+      "message": "sorry, what do you mean?\n\nI meant that this code could be simpler:\n\n  if q.CreatedBy !\u003d \"\"\n\ndo you mean that this code is less readable than\n\n  if q.CreatedBy !\u003d identity.Identity(\"\") {\n\n?",
+      "parentUuid": "3ad285a2_82c4e2ea",
+      "range": {
+        "startLine": 174,
+        "startChar": 19,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
