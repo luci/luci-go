@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "11e03993_1f4beead",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-21T08:52:13Z",
+      "side": 1,
+      "message": "I re-read the other comment. And now I understand the intent of this CL.\nI think either is fine. Sorry for the noise.",
+      "parentUuid": "cae89a54_7c58a68f",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 110,
+        "endChar": 22
+      },
+      "revId": "d2fff26a395c6aef10184dcd7d2ddef890371578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a271552_6334ff1c",
         "filename": "client/cmd/isolated/lib/archive.go",
         "patchSetId": 3
