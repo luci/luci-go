@@ -489,6 +489,21 @@
           "description": "Returns the caller's permissions.",
           "httpMethod": "GET",
           "id": "swarming.server.permissions",
+          "parameters": {
+            "bot_id": {
+              "location": "query",
+              "type": "string"
+            },
+            "tags": {
+              "location": "query",
+              "repeated": true,
+              "type": "string"
+            },
+            "task_id": {
+              "location": "query",
+              "type": "string"
+            }
+          },
           "path": "server/permissions",
           "response": {
             "$ref": "SwarmingRpcsClientPermissions"
@@ -1433,6 +1448,9 @@
           "type": "string"
         },
         "pubsub_userdata": {
+          "type": "string"
+        },
+        "realm": {
           "type": "string"
         },
         "request_uuid": {
