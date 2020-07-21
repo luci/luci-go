@@ -69,6 +69,26 @@ luci.builder(
     service_account = "builder@example.com",
 )
 
+luci.builder(
+    name = "cron",
+    bucket = "bucket",
+    executable = luci.recipe(
+        name = "recipe",
+        cipd_package = "recipe/bundles/main",
+    ),
+    service_account = "builder@example.com",
+    schedule = "with 10s interval",
+)
+
+luci.gitiles_poller(
+    name = "poller",
+    bucket = "bucket",
+    repo = "https://noop.com",
+    refs = ["refs/heads/zzz"],
+    schedule = "with 10s interval",
+    triggers = ["builder"],
+)
+
 # Expect configs:
 #
 # === cr-buildbucket-dev.cfg
@@ -115,6 +135,80 @@ luci.builder(
 #       }
 #       service_account: "builder@example.com"
 #     }
+#     builders {
+#       name: "cron"
+#       swarming_host: "chromium-swarm-dev.appspot.com"
+#       recipe {
+#         name: "recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       }
+#       service_account: "builder@example.com"
+#     }
+#   }
+# }
+# ===
+#
+# === luci-scheduler-dev.cfg
+# job {
+#   id: "builder"
+#   realm: "bucket"
+#   acl_sets: "bucket"
+#   buildbucket {
+#     server: "cr-buildbucket-dev.appspot.com"
+#     bucket: "luci.proj.bucket"
+#     builder: "builder"
+#   }
+# }
+# job {
+#   id: "cron"
+#   realm: "bucket"
+#   schedule: "with 10s interval"
+#   acl_sets: "bucket"
+#   buildbucket {
+#     server: "cr-buildbucket-dev.appspot.com"
+#     bucket: "luci.proj.bucket"
+#     builder: "cron"
+#   }
+# }
+# trigger {
+#   id: "poller"
+#   realm: "bucket"
+#   schedule: "with 10s interval"
+#   acl_sets: "bucket"
+#   triggers: "builder"
+#   gitiles {
+#     repo: "https://noop.com"
+#     refs: "regexp:refs/heads/zzz"
+#   }
+# }
+# acl_sets {
+#   name: "bucket"
+#   acls {
+#     role: OWNER
+#     granted_to: "group:owners"
+#   }
+#   acls {
+#     granted_to: "r1@example.com"
+#   }
+#   acls {
+#     granted_to: "r2@example.com"
+#   }
+#   acls {
+#     granted_to: "group:readers1"
+#   }
+#   acls {
+#     granted_to: "group:readers2"
+#   }
+#   acls {
+#     granted_to: "project:pr1"
+#   }
+#   acls {
+#     granted_to: "project:pr2"
+#   }
+#   acls {
+#     role: TRIGGERER
+#     granted_to: "group:triggerers"
 #   }
 # }
 # ===
