@@ -499,6 +499,34 @@ func TestFetchOnBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(actualRsp, ShouldResembleProto, expectedRsp)
 		})
+		Convey("found by created_by", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID: 1111,
+				Proto: pb.Build{
+					Id:        1111,
+					CreatedBy: "project:infra",
+				},
+				CreatedBy: "project:infra",
+			}), ShouldBeNil)
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					CreatedBy: "project:infra",
+				},
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id:        1111,
+						CreatedBy: "project:infra",
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
 		Convey("pagination", func() {
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
