@@ -80,7 +80,7 @@ func getBuildsSubMask(fields *field_mask.FieldMask) (mask.Mask, error) {
 // TODO(crbug/1042991): Remove once methods are implemented.
 func buildsServicePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	err = commonPostlude(ctx, methodName, rsp, err)
-	if methodName == "GetBuild" {
+	if methodName == "GetBuild" || methodName == "SearchBuilds" {
 		logging.Debugf(ctx, "%q is returning %q with response %s", methodName, err, proto.MarshalTextString(rsp))
 		return err
 	}

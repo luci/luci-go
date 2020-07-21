@@ -19,8 +19,10 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
@@ -82,8 +84,8 @@ type Build struct {
 	BuilderID string `gae:"builder_id"`
 
 	Canary bool `gae:"canary"`
-	// TODO(crbug/1042991): Create datastore.PropertyConverter in server/auth.
-	CreatedBy []byte `gae:"created_by,noindex"`
+
+	CreatedBy identity.Identity `gae:"created_by"`
 	// TODO(nodir): Replace reliance on create_time indices with id.
 	CreateTime time.Time `gae:"create_time"`
 	// Experimental, if true, means to exclude from monitoring and search results
@@ -185,6 +187,7 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 
 // ToSimpleBuildProto returns the *pb.Build without loading steps, infra, input/output properties.
 func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
+	logging.Debugf(ctx, "ToSimpleBuildProto: %+v", b)
 	p := proto.Clone(&b.Proto).(*pb.Build)
 	p.Tags = protoutil.StringPairs(strpair.ParseMap(b.Tags))
 	return p
@@ -213,4 +216,26 @@ func GetBuildAndBucket(ctx context.Context, id int64) (*Build, *Bucket, error) {
 		return nil, nil, errors.Annotate(err, "error fetching bucket %q", bld.BucketID).Err()
 	}
 	return bld, bck, nil
+}
+
+// Identity is a wrapper around the identity.Identity.
+type Identity struct {
+	identity.Identity
+}
+
+// Ensure Identity implements datastore.PropertyConverter.
+var _ datastore.PropertyConverter = &Identity{}
+
+// FromProperty implements datastore.PropertyConverter.
+func (i *Identity) FromProperty(p datastore.Property) error {
+	*i = Identity{
+		identity.Identity(string(p.Value().([]byte))),
+	}
+	return nil
+}
+
+// ToProperty implements datastore.PropertyConverter.
+func (i *Identity) ToProperty() (datastore.Property, error) {
+	p := datastore.Property{}
+	return p, p.SetValue([]byte(i.Identity), datastore.ShouldIndex)
 }
