@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1193de67_85c156cf",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-21T08:14:19Z",
+      "side": 1,
+      "message": "Is the stats necessary when it got an error?",
+      "range": {
+        "startLine": 109,
+        "startChar": 0,
+        "endLine": 110,
+        "endChar": 22
+      },
+      "revId": "d2fff26a395c6aef10184dcd7d2ddef890371578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
