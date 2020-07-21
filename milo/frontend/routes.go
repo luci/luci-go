@@ -78,6 +78,8 @@ func Run(templatePath string) {
 	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId/data", optionalProjectMW, handleError(handleLUCIBuildData))
+	r.OPTIONS("/p/:project/builders/:bucket/:builder/:numberOrId/data", baseMW, handleOptions)
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
@@ -219,4 +221,37 @@ func configsJSHandler(c *router.Context) {
 		logging.Errorf(c.Context, "Failed to execute configs.template.js: %s", err)
 		http.Error(c.Writer, "Internal server error", 500)
 	}
+}
+
+var (
+	// Describe the permitted Access Control requests.
+	allowHeaders = strings.Join([]string{"Origin", "Content-Type", "Accept", "Authorization"}, ", ")
+	allowMethods = strings.Join([]string{"OPTIONS", "GET", "POST"}, ", ")
+
+	// allowPreflightCacheAgeSecs is the amount of time to enable the browser to
+	// cache the preflight access control response, in seconds.
+	//
+	// 600 seconds is 10 minutes.
+	allowPreflightCacheAgeSecs = "600"
+)
+
+func setAccessControlHeaders(c *router.Context) {
+	// Don't write out access control headers if the origin is unspecified.
+	origin := c.Request.Header.Get("origin")
+	if origin == "" {
+		logging.Warningf(c.Context, "no origin specified")
+		return
+	}
+
+	h := c.Writer.Header()
+	h.Add("Access-Control-Allow-Origin", origin)
+	h.Add("Access-Control-Allow-Credentials", "true")
+
+	h.Add("Access-Control-Allow-Headers", allowHeaders)
+	h.Add("Access-Control-Allow-Methods", allowMethods)
+}
+
+func handleOptions(c *router.Context) {
+	setAccessControlHeaders(c)
+	c.Writer.WriteHeader(http.StatusOK)
 }

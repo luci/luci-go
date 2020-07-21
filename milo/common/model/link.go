@@ -17,8 +17,8 @@ package model
 // Link denotes a single labeled link.
 type Link struct {
 	// Title (text) of the link.
-	Label string
+	Label string `json:"label,omitempty"`
 
 	// The destination for the link.
-	URL string
+	URL string `json:"url,omitempty"`
 }
