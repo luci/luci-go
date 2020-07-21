@@ -39,6 +39,30 @@
       "revId": "b2376abc79839c9df3e330272e3979d6372b7735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74277380_57bf865e",
+        "filename": "mmutex/lib/lock_file_helpers.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-07-21T03:39:18Z",
+      "side": 1,
+      "message": "The timeout will be decided only by the timeout, which is 2 hours. The acquisition limit is for the calculation of the interval. As mentioned in the comment, it is only an estimation, based on the default interval which is only one millisecond.\n\n// lockAcquisitionAttempts is the number of times that the blocker should attempt to\n// acquire the lock. This is approximate, especially when making a high number of\n// attempts over a short period of time.",
+      "parentUuid": "b44a2af2_438c2c38",
+      "range": {
+        "startLine": 81,
+        "startChar": 48,
+        "endLine": 81,
+        "endChar": 80
+      },
+      "revId": "b2376abc79839c9df3e330272e3979d6372b7735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
