@@ -32,17 +32,35 @@ export class InvocationState {
   constructor(private appState: AppState) {}
 
   @computed
-  get invocationName(): string {
+  get invocationName(): string | null {
+    if (!this.invocationId) {
+      return null;
+    }
     return 'invocations/' + this.invocationId;
   }
 
   @computed
   get invocationReq(): IPromiseBasedObservable<Invocation> {
-    if (!this.appState.resultDb) {
+    if (!this.appState.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(new Promise(() => {}));
     }
     return fromPromise(this.appState.resultDb.getInvocation({name: this.invocationName}));
+  }
+
+  @computed
+  get buildPageReq(): IPromiseBasedObservable<{}> {
+    if (!this.appState.accessToken) {
+      return fromPromise(Promise.race([]));
+    }
+    return fromPromise(fetch(
+      'https://weiweilin-dot-luci-milo-dev.appspot.com/p/chromium/builders/ci/mac-rel-swarming/3775/data',
+      {
+        headers: {
+          'authorization': `Bearer ${this.appState.accessToken}`,
+        },
+      },
+    ).then((res) => res.json()));
   }
 
   @computed
@@ -59,7 +77,7 @@ export class InvocationState {
   @observable.ref showFlaky = true;
 
   @computed private get testResultBatchIterFn() {
-    if (!this.appState?.resultDb) {
+    if (!this.appState?.resultDb || !this.invocationName) {
       return async function*() {};
     }
     return iter.teeAsync(streamTestResultBatches(
@@ -75,7 +93,7 @@ export class InvocationState {
   }
 
   @computed private get testExonerationBatchIterFn() {
-    if (!this.appState?.resultDb) {
+    if (!this.appState?.resultDb || !this.invocationName) {
       return async function*() {};
     }
     return iter.teeAsync(streamTestExonerationBatches(
