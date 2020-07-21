@@ -56,6 +56,30 @@
       "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca7422f5_fd5bdb92",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-21T18:26:18Z",
+      "side": 1,
+      "message": "It is the empty string. The displaying of the UI is misleading.",
+      "parentUuid": "91c2ebcb_2888af2e",
+      "range": {
+        "startLine": 174,
+        "startChar": 19,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
