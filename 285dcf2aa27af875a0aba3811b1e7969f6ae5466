@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "632f1515_050089a9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-21T01:13:17Z",
+      "side": 1,
+      "message": "nah. FWIW: I was staring at this code for like 1 hour: noticing bug #1, I then dismissing it thinking \"nah, no way tests would pass if it was wrong\". I then had dinner, came back and in disbelief \u0026 desperation added test with 254 as the boundary, which broke and with WTF?! I finally had unblocked my brain to look for actual bugs.",
+      "parentUuid": "241106b0_c6bf29f4",
+      "revId": "285dcf2aa27af875a0aba3811b1e7969f6ae5466",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f0d3059_ae57be52",
         "filename": "ttq/internal/partition/partition.go",
         "patchSetId": 1
