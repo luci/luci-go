@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "1b0ebcd7_21cc475b",
+        "filename": "led/job/experiments/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-21T06:03:05Z",
+      "side": 1,
+      "message": "warning?",
+      "range": {
+        "startLine": 45,
+        "startChar": 11,
+        "endLine": 45,
+        "endChar": 16
+      },
+      "revId": "84bcaeedd092d9749bd97dd4970ed9f6585cb549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "733f2849_fd2d8884",
         "filename": "led/job/experiments/use_realms.go",
         "patchSetId": 1
@@ -25,6 +48,29 @@
     },
     {
       "key": {
+        "uuid": "d9902546_515cd2cb",
+        "filename": "led/job/experiments/use_realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-21T06:03:05Z",
+      "side": 1,
+      "message": "Have you decided that realm name \u003d\u003d bucket name?\nI thought it can be independent.",
+      "range": {
+        "startLine": 36,
+        "startChar": 45,
+        "endLine": 36,
+        "endChar": 51
+      },
+      "revId": "84bcaeedd092d9749bd97dd4970ed9f6585cb549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6d965602_970b95ca",
         "filename": "led/ledcmd/get_swarm.go",
         "patchSetId": 1
@@ -36,6 +82,30 @@
       "writtenOn": "2020-07-21T05:51:32Z",
       "side": 1,
       "message": "this is blocked on https://chromium.googlesource.com/infra/luci/luci-py/+/349706e9bfc6571eefc05c83faac07945872eeb4 being deployed and common/api/swarming regenerated.",
+      "range": {
+        "startLine": 173,
+        "startChar": 2,
+        "endLine": 173,
+        "endChar": 75
+      },
+      "revId": "84bcaeedd092d9749bd97dd4970ed9f6585cb549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae561657_35ddb734",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-21T06:03:05Z",
+      "side": 1,
+      "message": "\u003e https://chromium.googlesource.com/infra/luci/luci-py/+/349706e9bfc6571eefc05c83faac07945872eeb4 being deployed \nwill deploy it.",
+      "parentUuid": "6d965602_970b95ca",
       "range": {
         "startLine": 173,
         "startChar": 2,
