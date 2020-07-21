@@ -23,9 +23,9 @@ import (
 )
 
 type Interval struct {
-	Start time.Time
-	End   time.Time
-	Now   time.Time
+	Start time.Time `json:"start,omitempty"`
+	End   time.Time `json:"end,omitempty"`
+	Now   time.Time `json:"now,omitempty"`
 }
 
 func (in Interval) Started() bool {
