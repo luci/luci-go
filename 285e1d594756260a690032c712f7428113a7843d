@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3919802_15bb5f51",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T04:18:27Z",
+      "side": 1,
+      "message": "Fixed the test. It failed because Swarming protos use new protobuf lib now.",
+      "revId": "285e1d594756260a690032c712f7428113a7843d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
