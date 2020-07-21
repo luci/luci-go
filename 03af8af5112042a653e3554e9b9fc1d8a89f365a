@@ -22,6 +22,30 @@
       "revId": "03af8af5112042a653e3554e9b9fc1d8a89f365a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51664dc3_55292c6a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-21T06:59:01Z",
+      "side": 1,
+      "message": "That\u0027s only true if the config is newly created. No other queue will have anything to process besides expand config. But if config import writes an update to an existing config, then there will already be queues handling the VMs for that config. If they run before expand runs then they will see the default amount.",
+      "parentUuid": "c58c6911_97ac0693",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 14
+      },
+      "revId": "03af8af5112042a653e3554e9b9fc1d8a89f365a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
