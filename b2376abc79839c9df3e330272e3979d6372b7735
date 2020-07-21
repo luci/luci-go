@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7cde4b3c_0cb86865",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1373330
+      },
+      "writtenOn": "2020-07-21T00:02:28Z",
+      "side": 1,
+      "message": "This CL update the interval to make mmutex check file lock more frequent. PTAL.",
+      "revId": "b2376abc79839c9df3e330272e3979d6372b7735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
