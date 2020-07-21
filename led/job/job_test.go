@@ -21,14 +21,26 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	durpb "github.com/golang/protobuf/ptypes/duration"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/led/job/experiments"
 	"go.chromium.org/luci/luciexe/exe"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+const phonyTagExperiment = "luci.test.add_phony_tag_experiment"
+
+func init() {
+	experiments.Register(phonyTagExperiment, func(ctx context.Context, b *bbpb.Build, task *swarmingpb.TaskRequest) error {
+		task.Tags = append(task.Tags, "phony_tag:experiment")
+		return nil
+	})
+}
 
 func TestFlattenToSwarming(t *testing.T) {
 	t.Parallel()
@@ -182,6 +194,20 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
 		})
 
+		Convey(`With experiments`, func() {
+			SoHLEdit(bbJob, func(je HighLevelEditor) {
+				je.Experiments(map[string]bool{
+					phonyTagExperiment:             true, // see init() above
+					"should_be_skipped_as_unknown": true,
+				})
+			})
+
+			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport()), ShouldBeNil)
+
+			sw := bbJob.GetSwarming()
+			So(sw, ShouldNotBeNil)
+			So(sw.Task.Tags[len(sw.Task.Tags)-1], ShouldEqual, "phony_tag:experiment")
+		})
 	})
 
 }
