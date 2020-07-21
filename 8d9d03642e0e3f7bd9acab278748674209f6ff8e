@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "92dfe6d1_be339b1b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-21T01:50:42Z",
+      "side": 1,
+      "message": "verified in Python which works.",
+      "parentUuid": "07444b5c_4eaba5b7",
+      "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d438af75_4f1926c9",
         "filename": "/COMMIT_MSG",
         "patchSetId": 6
@@ -90,6 +108,30 @@
     },
     {
       "key": {
+        "uuid": "a42ef7ce_81506880",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-21T01:50:42Z",
+      "side": 1,
+      "message": "Verified in Python. It\u0027s able to read the CreatedBy correctly in Py, if the type in Go is changed to\nstring or identity.Identity. We don\u0027t need to add a wrapper.\nI\u0027ve removed it in the new patchset and updated the CL description.",
+      "parentUuid": "dc033dd8_4748fc9c",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 67
+      },
+      "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a01a86d_8d78def9",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 6
@@ -121,6 +163,24 @@
       "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cc68de8_ac9b87b3",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-21T01:50:42Z",
+      "side": 1,
+      "message": "Done. No longer needed.",
+      "parentUuid": "a0dc45fc_40c478c4",
+      "revId": "8d9d03642e0e3f7bd9acab278748674209f6ff8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

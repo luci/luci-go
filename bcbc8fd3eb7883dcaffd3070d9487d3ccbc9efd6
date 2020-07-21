@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b1d9b0c_ae6cde64",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-21T01:50:42Z",
+      "side": 1,
+      "message": "Hi, I\u0027ve verified that directly use identity.Identity works. No need an extra wrapper. Updated the code and PTAL. Thanks.",
+      "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
