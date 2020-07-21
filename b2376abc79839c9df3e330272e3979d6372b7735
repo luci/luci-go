@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "6e4ea800_4a9b3184",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-21T19:59:58Z",
+      "side": 1,
+      "message": "oops, meant to stamp this; sorry about that",
+      "revId": "b2376abc79839c9df3e330272e3979d6372b7735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b44a2af2_438c2c38",
         "filename": "mmutex/lib/lock_file_helpers.go",
         "patchSetId": 1
