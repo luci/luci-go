@@ -20,9 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 )
@@ -44,21 +42,18 @@ func HTTPClient(ctx context.Context) *http.Client {
 }
 
 // CommonPrelude must be used as a prelude in all ResultDB services.
-// Verifies access.
+// It does not verify access, as individual RPCs check permissions via realms,
+// or via update token.
 func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
 	// Do not GRPCify the returned error, because CommonPostlude does it
 	// and it treats generic GRPC errors as internal.
 
-	// TODO(crbug.com/1013316): replace this with project-identified transport.
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	tr, err := auth.GetRPCTransport(ctx, auth.AsProject)
 	if err != nil {
 		return ctx, err
 	}
 	ctx = WithHTTPClient(ctx, &http.Client{Transport: tr})
 
-	if err := verifyAccess(ctx); err != nil {
-		return nil, err
-	}
 	return ctx, nil
 }
 
@@ -68,30 +63,6 @@ func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (c
 // If the error is internal or unknown, logs the stack trace.
 func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	return appstatus.GRPCifyAndLog(ctx, err)
-}
-
-func verifyAccess(ctx context.Context) error {
-	if curID := auth.CurrentIdentity(ctx); curID.Kind() == identity.Project {
-		// Only trusted LUCI systems can act on behalf of a project.
-		// Trust ourselves.
-		return nil
-	}
-
-	// TODO(crbug.com/1013316): use realms.
-
-	// WARNING: removing this restriction requires removing AsSelf HTTP client
-	// that is setup in CommonPrelude()
-	// DO NOT REMOVE this until that's done.
-	switch allowed, err := auth.IsMember(ctx, accessGroup); {
-	case err != nil:
-		return err
-
-	case !allowed:
-		return appstatus.Errorf(codes.PermissionDenied, "%s is not in %s CIA group", auth.CurrentIdentity(ctx), accessGroup)
-
-	default:
-		return nil
-	}
 }
 
 // AssertUTC panics if t is not UTC.
