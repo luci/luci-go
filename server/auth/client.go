@@ -351,15 +351,21 @@ func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOpti
 // GetPerRPCCredentials returns gRPC's PerRPCCredentials implementation.
 //
 // It can be used to authenticate outbound gPRC RPC's.
-func GetPerRPCCredentials(kind RPCAuthorityKind, opts ...RPCOption) (credentials.PerRPCCredentials, error) {
+func GetPerRPCCredentials(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOption) (credentials.PerRPCCredentials, error) {
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
 	}
-	return perRPCCreds{options}, nil
+	if options.checkCtx != nil {
+		if err := options.checkCtx(ctx); err != nil {
+			return nil, err
+		}
+	}
+	return perRPCCreds{ctx, options}, nil
 }
 
 type perRPCCreds struct {
+	ctx     context.Context
 	options *rpcOptions
 }
 
@@ -376,6 +382,16 @@ func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) 
 	u, err := url.Parse(uri[0])
 	if err != nil {
 		return nil, errors.Annotate(err, "malformed URI %q", uri[0]).Err()
+	}
+
+	// Some libraries (in particular Spanner), pass very bare bones `ctx` here
+	// (essentially context.Background() with gRPC metadata on top). Such contexts
+	// are not sufficient to call getRPCHeaders, so we merge it with creds.ctx
+	// to get a full-featured LUCI context that at the same time has the same
+	// deadline and cancellation as `ctx`.
+	ctx = &internal.MergedContext{
+		Root:     ctx,
+		Fallback: creds.ctx,
 	}
 
 	tok, extra, err := creds.options.getRPCHeaders(ctx, creds.options, &http.Request{URL: u})

@@ -145,7 +145,7 @@ func (gsvc *GlobalServices) connectBigTableClient(c context.Context, cfg *svccon
 	}
 
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
+	creds, err := auth.GetPerRPCCredentials(c, auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
 	if err != nil {
 		return errors.Annotate(err, "failed to create BigTable credentials").Err()
 	}
