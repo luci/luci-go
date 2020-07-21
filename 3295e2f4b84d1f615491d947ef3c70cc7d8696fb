@@ -33,6 +33,29 @@
       "revId": "3295e2f4b84d1f615491d947ef3c70cc7d8696fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6725006c_1a390548",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-21T01:43:23Z",
+      "side": 1,
+      "message": "I tried to trace what context Spanner ends up using for its own RPCs starting from\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/main.go;l\u003d85?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\nto\nhttps://github.com/googleapis/google-cloud-go/blob/25a5f07e5bab2a2fbaa1e9cef1f01429f2d01b46/spanner/client.go#L172\nto \nhttps://github.com/googleapis/google-api-go-client/blob/master/transport/grpc/dial.go#L108\nbut I gave here. Did you do this by any chance?",
+      "range": {
+        "startLine": 387,
+        "startChar": 1,
+        "endLine": 391,
+        "endChar": 39
+      },
+      "revId": "3295e2f4b84d1f615491d947ef3c70cc7d8696fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
