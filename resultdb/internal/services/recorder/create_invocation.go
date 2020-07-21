@@ -83,11 +83,12 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		return errors.Annotate(err, "invocation.tags").Err()
 	}
 
-	// TODO(crbug.com/1013316): Do not allow empty realm.
-	if inv.GetRealm() != "" {
-		if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
-			return errors.Annotate(err, "invocation.realm").Err()
-		}
+	if inv.Realm == "" {
+		return errors.Annotate(errors.Reason("realm is required").Err(), "invocation.realm").Err()
+	}
+
+	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
+		return errors.Annotate(err, "invocation.realm").Err()
 	}
 
 	if inv.GetDeadline() != nil {
@@ -108,21 +109,6 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocationRequest) error {
 	inv := in.GetInvocation()
 	realm := inv.GetRealm()
-
-	// TODO(crbug.com/1013316): Remove this fallback when realm is required in
-	// all invocation creations.
-	if realm == "" || realm == "chromium:public" {
-		// legacyTrustedCreator indicates the caller is allowed certain things on realm-less invocations
-		// without being explicitly granted these permissions, by virtue of belonging to a trusted group.
-		switch legacyTrustedCreator, err := auth.IsMember(ctx, "luci-resultdb-trusted-invocation-creators"); {
-		case err != nil:
-			return err
-		case legacyTrustedCreator:
-			return nil
-		}
-		// Set the default realm to avoid checking permissions against the empty realm.
-		realm = "chromium:public"
-	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm); {
 	case err != nil:
