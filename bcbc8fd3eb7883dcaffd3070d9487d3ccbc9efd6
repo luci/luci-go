@@ -80,6 +80,30 @@
       "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38e558b0_f3a7a17d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-21T19:00:08Z",
+      "side": 1,
+      "message": "what UI are you referring to?",
+      "parentUuid": "ca7422f5_fd5bdb92",
+      "range": {
+        "startLine": 174,
+        "startChar": 19,
+        "endLine": 174,
+        "endChar": 40
+      },
+      "revId": "bcbc8fd3eb7883dcaffd3070d9487d3ccbc9efd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
