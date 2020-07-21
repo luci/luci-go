@@ -728,6 +728,10 @@ type SwarmingRpcsClientPermissions struct {
 
 	GetConfigs bool `json:"get_configs,omitempty"`
 
+	ListBots []string `json:"list_bots,omitempty"`
+
+	ListTasks []string `json:"list_tasks,omitempty"`
+
 	PutConfigs bool `json:"put_configs,omitempty"`
 
 	TerminateBot bool `json:"terminate_bot,omitempty"`
@@ -1508,6 +1512,8 @@ type SwarmingRpcsTaskRequest struct {
 	PubsubTopic string `json:"pubsub_topic,omitempty"`
 
 	PubsubUserdata string `json:"pubsub_userdata,omitempty"`
+
+	Realm string `json:"realm,omitempty"`
 
 	ServiceAccount string `json:"service_account,omitempty"`
 
