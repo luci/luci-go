@@ -117,6 +117,30 @@
       "revId": "d2fff26a395c6aef10184dcd7d2ddef890371578",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "947353da_cd12e0a7",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-21T09:02:10Z",
+      "side": 1,
+      "message": "You can leave only logs without making the process fail. \nIt depends on what the goal of this command is.\nWe can revisit if it makes an issue, anyway.",
+      "parentUuid": "02023a41_c64e8913",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 15
+      },
+      "revId": "d2fff26a395c6aef10184dcd7d2ddef890371578",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
