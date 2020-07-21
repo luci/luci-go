@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "4ecc4253_6eef9033",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-21T00:41:20Z",
+      "side": 1,
+      "message": "nit: Make it uppercase as well?",
+      "range": {
+        "startLine": 437,
+        "startChar": 3,
+        "endLine": 437,
+        "endChar": 4
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8ec1feb0_5bd7b1cf",
         "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
         "patchSetId": 1
