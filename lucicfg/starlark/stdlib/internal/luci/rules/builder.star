@@ -219,6 +219,7 @@ def _builder(
     props = {
         "name": name,
         "bucket": bucket_key.id,
+        "realm": bucket_key.id if realms.experiment.is_enabled() else None,
         "description_html": validate.string("description_html", description_html, required = False),
         "project": "",  # means "whatever is being defined right now"
         "properties": validate.str_dict("properties", properties),

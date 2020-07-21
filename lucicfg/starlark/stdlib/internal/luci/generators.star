@@ -495,6 +495,7 @@ def gen_scheduler_cfg(ctx):
     for poller, targets in pollers.items():
         cfg.trigger.append(scheduler_pb.Trigger(
             id = node_to_id[poller],
+            realm = poller.props.realm,
             acl_sets = [poller.props.bucket],
             triggers = [node_to_id[b] for b in targets],
             schedule = poller.props.schedule,
@@ -512,6 +513,7 @@ def gen_scheduler_cfg(ctx):
     for builder, triggered_by in builders.items():
         cfg.job.append(scheduler_pb.Job(
             id = node_to_id[builder],
+            realm = builder.props.realm,
             acl_sets = [builder.props.bucket],
             acls = _scheduler_acls(aclimpl.normalize_acls([
                 acl.entry(acl.SCHEDULER_TRIGGERER, users = t.props.service_account)
