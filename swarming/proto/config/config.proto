@@ -6,9 +6,10 @@ syntax = "proto3";
 
 package swarming.config;
 
-option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
-
 import "go.chromium.org/luci/common/proto/options.proto";
+import "go.chromium.org/luci/swarming/proto/config/realms.proto";
+
+option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/services/swarming:settings.cfg";
@@ -76,6 +77,9 @@ message SettingsCfg {
 
   // Whether swarming should batch notifications to the external scheduler.
   bool enable_batch_es_notifications = 18;
+
+  // Configuration for Swarming-ResultDB integration.
+  ResultDBSettings resultdb = 19;
 }
 
 
@@ -170,4 +174,16 @@ message AuthSettings {
   // Grants:
   // - view all tasks
   string view_all_tasks_group = 6;
+
+  // List of Realm permissions enforced by default.
+  // This field will be deprecated after migration.
+  repeated RealmPermission enforced_realm_permissions = 7;
+}
+
+// Settings for Swarming-ResultDB integration.
+message ResultDBSettings {
+  // URL of the ResultDB server to use.
+  // Must start with "https://" or "http://",
+  // e.g. "https://results.api.cr.dev".
+  string server = 1;
 }

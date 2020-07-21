@@ -6,9 +6,11 @@ syntax = "proto3";
 
 package swarming.config;
 
-option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
-
 import "go.chromium.org/luci/common/proto/options.proto";
+import "go.chromium.org/luci/swarming/proto/config/config.proto";
+import "go.chromium.org/luci/swarming/proto/config/realms.proto";
+
+option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/services/swarming:pools.cfg";
@@ -113,6 +115,27 @@ message Pool {
   // For a given task or bot, the first entry in this list that matches based on
   // dimension eligibility will be used.
   repeated ExternalSchedulerConfig external_schedulers = 9;
+
+  // Realm name that the pool is associated with.
+  //
+  // e.g.
+  // 'infra:pool/flex/try' for 'luci.flex.try' pool
+  //
+  // See also
+  // https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/server/auth/service/protocol/components/auth/proto/realms.proto
+  string realm = 10;
+
+  // Enforcements of permissions can be controlled by pool during migration
+  // from legacy ACLs configs to Realms configs.
+  // Listed permissions will be enforced to the specific pool.
+  // This field will be deprecated after migration.
+  repeated RealmPermission enforced_realm_permissions = 11;
+
+  // Realm name that will be used to call
+  // auth.has_permission_dryrun('swarming.tasks.actAs') and
+  // auth.has_permission_dryrun('swarming.tasks.createInRealm')
+  // for task requests without realm field.
+  string dry_run_task_realm = 12;
 }
 
 
@@ -429,6 +452,9 @@ message ExternalServices {
   Isolate isolate = 1;
 
   message CIPD {
+    reserved 2; // Used to be "client_version", no longer used.
+    reserved "client_version";
+
     // (required) URL of the default CIPD server to use, if it is not specified
     // in the task.
     //
@@ -437,10 +463,10 @@ message ExternalServices {
     // e.g. "https://chrome-infra-packages.appspot.com"
     string server = 1;
 
-    // (required) The version of the cipd client to use. This is the
+    // (required) The version of the cipd client to use. This is likely the
     // 'infra/tools/cipd/${platform}' package, but because it's part of the
     // bootstrap needs special logic to handle its installation.
-    string client_version = 2;
+    CipdPackage client_package = 3;
   }
   CIPD cipd = 2;
 }
