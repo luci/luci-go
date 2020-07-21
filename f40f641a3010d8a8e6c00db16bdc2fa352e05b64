@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "690e2fb8_e0f4b240",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-21T22:57:43Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "f40f641a3010d8a8e6c00db16bdc2fa352e05b64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f382c99e_36f39f0d",
+        "filename": "led/job/experiments/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-21T22:57:43Z",
+      "side": 1,
+      "message": "not sure this should be a separate package from job?",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 19
+      },
+      "revId": "f40f641a3010d8a8e6c00db16bdc2fa352e05b64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ddae8f0_a580af04",
+        "filename": "led/job/experiments/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-21T22:57:43Z",
+      "side": 1,
+      "message": "imo just drop this",
+      "range": {
+        "startLine": 45,
+        "startChar": 3,
+        "endLine": 45,
+        "endChar": 10
+      },
+      "revId": "f40f641a3010d8a8e6c00db16bdc2fa352e05b64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
