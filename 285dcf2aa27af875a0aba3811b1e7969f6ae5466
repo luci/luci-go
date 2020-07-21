@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "241106b0_c6bf29f4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-21T00:50:09Z",
+      "side": 1,
+      "message": "👍 \n(shame on me that didn\u0027t catch it at the first place 😞)",
+      "revId": "285dcf2aa27af875a0aba3811b1e7969f6ae5466",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f0d3059_ae57be52",
         "filename": "ttq/internal/partition/partition.go",
         "patchSetId": 1
