@@ -15,6 +15,7 @@
 import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../../libs/context';
+import { Milo } from '../../services/milo';
 import { ResultDb } from '../../services/resultdb';
 
 /**
@@ -31,6 +32,14 @@ export class AppState {
       return null;
     }
     return new ResultDb(this.resultDbHost, this.accessToken);
+  }
+
+  @computed
+  get milo(): Milo | null {
+    if (!this.accessToken) {
+      return null;
+    }
+    return new Milo(this.accessToken);
   }
 }
 
