@@ -88,8 +88,8 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-func (c *archiveRun) main(a subcommands.Application, args []string) (err error) {
-	start := time.Now()
+// Does the archive by uploading to isolate-server, then return the archive stats and error.
+func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *archiver.Stats, err error) {
 	out := os.Stdout
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
@@ -105,8 +105,9 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 		// This waits for all uploads.
 		if cerr := arch.Close(); err == nil {
 			err = cerr
-			return
 		}
+		// We must take the stats until after all the uploads have finished
+		stats = arch.Stats()
 	}()
 
 	opts := isolated.ArchiveOptions{
@@ -136,7 +137,10 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 			return
 		}
 	}
-	stats := arch.Stats()
+	return
+}
+
+func (c *archiveRun) postprocessStats(stats *archiver.Stats, start time.Time) {
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
@@ -144,11 +148,8 @@ func (c *archiveRun) main(a subcommands.Application, args []string) (err error) 
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
 	if c.dumpStatsJSON != "" {
-		if err = dumpStatsJSON(c.dumpStatsJSON, stats); err != nil {
-			return
-		}
+		dumpStatsJSON(c.dumpStatsJSON, stats)
 	}
-	return
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
@@ -163,10 +164,13 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 	}
 	defer cl.Close()
 	defer c.profilerFlags.Stop()
-	if err := c.main(a, args); err != nil {
+	start := time.Now()
+	stats, err := c.doArchive(a, args)
+	if err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	c.postprocessStats(stats, start)
 	return 0
 }
 
