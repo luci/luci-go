@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e44c6962_9ce542ef",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T05:51:32Z",
+      "side": 1,
+      "message": "PTAL.\n\nI could not resist and added a tiny amount of abstraction...",
+      "revId": "11288dc0f5bd3a82b55a1e02c509f5f77e0a99eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "733f2849_fd2d8884",
+        "filename": "led/job/experiments/use_realms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T05:51:32Z",
+      "side": 1,
+      "message": "it will be referenced in KitchenSupport in infra.git to \"sniff\" realms experiment from a kitchen Swarming task definition (once \"/request\" API endpoint is updated to return the realm). Unless kitchenSupport.FromSwarming already obtains full Build proto somehow (but doesn\u0027t look like it).",
+      "range": {
+        "startLine": 27,
+        "startChar": 6,
+        "endLine": 27,
+        "endChar": 15
+      },
+      "revId": "84bcaeedd092d9749bd97dd4970ed9f6585cb549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d965602_970b95ca",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T05:51:32Z",
+      "side": 1,
+      "message": "this is blocked on https://chromium.googlesource.com/infra/luci/luci-py/+/349706e9bfc6571eefc05c83faac07945872eeb4 being deployed and common/api/swarming regenerated.",
+      "range": {
+        "startLine": 173,
+        "startChar": 2,
+        "endLine": 173,
+        "endChar": 75
+      },
+      "revId": "84bcaeedd092d9749bd97dd4970ed9f6585cb549",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
