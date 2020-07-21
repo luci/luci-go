@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "9a8a6595_a5a95ca6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T02:22:05Z",
+      "side": 1,
+      "message": "I filed https://github.com/googleapis/google-cloud-go/issues/1691 some time ago that has the similar root cause. They didn\u0027t fix the root cause, so I think it\u0027s a waste of time.",
+      "parentUuid": "99badde9_8d70f70d",
+      "revId": "3295e2f4b84d1f615491d947ef3c70cc7d8696fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6725006c_1a390548",
         "filename": "server/auth/client.go",
         "patchSetId": 1
@@ -56,6 +74,30 @@
       "revId": "3295e2f4b84d1f615491d947ef3c70cc7d8696fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73dc3417_ae6317e6",
+        "filename": "server/auth/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-21T02:22:05Z",
+      "side": 1,
+      "message": "I put a panic into GetRequestMetadata and looked at its stack trace.\n\nThe first call with context.Background() happens here: https://github.com/googleapis/google-cloud-go/blob/master/spanner/sessionclient.go#L209\n\nThere are likely more calls like that, there are 16 instances of context.Background() in cloud.google.com/go/spanner outside of tests.\n\nNote that we used PerRPCCredentials with BigTable client for years and it was fine. I think the issue is in Spanner lib specifically, not in gRPC lib.",
+      "parentUuid": "6725006c_1a390548",
+      "range": {
+        "startLine": 387,
+        "startChar": 1,
+        "endLine": 391,
+        "endChar": 39
+      },
+      "revId": "3295e2f4b84d1f615491d947ef3c70cc7d8696fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
