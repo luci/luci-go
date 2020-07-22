@@ -26,23 +26,21 @@
       <table class="table" id="jobs-table">
         <thead>
           <tr>
-            <th style="width: 180px;">Project</th>
-            <th style="width: 340px;">Job</th>
-            <th style="width: 180px;">Schedule</th>
-            <th style="width: 120px;">State</th>
-            <th>Next run</th>
-            <th>Actions</th>
+            <th>Project</th>
+            <th style="width: 160px;">Running</th>
+            <th style="width: 160px;">Scheduled</th>
+            <th style="width: 160px;">Waiting</th>
+            <th style="width: 160px;">Paused</th>
           </tr>
         </thead>
         <tbody>
-        {{range .Jobs }}
+        {{range .Projects }}
           <tr>
             <td><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></td>
-            <td class="long">{{template "job-id-ref" .}}</td>
-            <td>{{.Schedule}}</td>
-            <td><span class="label {{.LabelClass}}">{{.State}}</span></td>
-            <td class="long">{{.NextRun}}</td>
-            <td>{{template "job-action-buttons" .}}</td>
+            <td><a href="/jobs/{{.ProjectID}}?filter=running" class="underline label label-info">{{JobCount .Running}}</a></td>
+            <td><a href="/jobs/{{.ProjectID}}?filter=scheduled" class="underline label label-primary">{{JobCount .Scheduled}}</a></td>
+            <td><a href="/jobs/{{.ProjectID}}?filter=waiting" class="underline label label-warning">{{JobCount .Waiting}}</a></td>
+            <td><a href="/jobs/{{.ProjectID}}?filter=paused" class="underline label label-default">{{JobCount .Paused}}</a></td>
           </tr>
         {{end}}
         </tbody>

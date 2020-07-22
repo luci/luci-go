@@ -15,8 +15,12 @@
 package ui
 
 import (
+	"strings"
+
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/scheduler/appengine/presentation"
 )
 
 func projectPage(c *router.Context) {
@@ -25,8 +29,40 @@ func projectPage(c *router.Context) {
 	if err != nil {
 		panic(err)
 	}
+
+	check := func(j *schedulerJob) bool { return true }
+
+	// See index.html and index.go for these values.
+	filter := strings.ToLower(c.Request.URL.Query().Get("filter"))
+	switch filter {
+	case "running":
+		check = func(j *schedulerJob) bool { return j.State == presentation.PublicStateRunning }
+	case "scheduled":
+		check = func(j *schedulerJob) bool { return j.State == presentation.PublicStateScheduled }
+	case "waiting":
+		check = func(j *schedulerJob) bool {
+			return j.State == presentation.PublicStateWaiting ||
+				j.State == presentation.PublicStateDisabled
+		}
+	case "paused":
+		check = func(j *schedulerJob) bool { return j.State == presentation.PublicStatePaused }
+	default:
+		filter = "" // unknown filter, ignore it in UI
+	}
+
+	// Filter jobs used `check`.
+	sorted := sortJobs(c.Context, jobs)
+	filtered := sorted[:0]
+	for _, job := range sorted {
+		if check(job) {
+			filtered = append(filtered, job)
+		}
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/project.html", map[string]interface{}{
-		"ProjectID": projectID,
-		"Jobs":      sortJobs(c.Context, jobs),
+		"ProjectID":    projectID,
+		"ProjectEmpty": len(sorted) == 0,
+		"Filter":       filter,
+		"Jobs":         filtered,
 	})
 }
