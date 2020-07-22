@@ -1,0 +1,191 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f17cbe5b_cc72266d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "I think we should create a bug to track this",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37fd563b_40e92db1",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Do we really need OPTIONS method? How do you foresee it will be used?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "991e22e5_63b43b56",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Nit: allowHeaders describes the permitted Access Control requests.",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fa888e8_b0ef81ee",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Maybe we can change this to allowedHeaders / allowedMethods",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2694bae9_aeba2d30",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Is this not used?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "116f5dac_ede41783",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Nit: if c.Request.Header.Get(\"origin\") \u003d\u003d \"\" {..}\n\nNot sure, but does \"origin\" always present in c.Request.Header?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2747c2ec_5cdb8bad",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Should we return error here?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90e84bc5_87946c17",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Do you mean http.StatusOK?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55d93352_840b2de6",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "If this is an error, then it should not be a 200?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e198b34_fb018485",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "Does this need to return something?",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a32b3438_777f9646",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T00:51:50Z",
+      "side": 1,
+      "message": "This is a simple and nice function. It would be nice to have unittest for this.",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
