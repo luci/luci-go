@@ -16,6 +16,24 @@
       "revId": "1312f205ee3fd51531c0dd216cf8862b1a49f5fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "639c4a25_46e0cff4",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:42:37Z",
+      "side": 1,
+      "message": "Opened a separate bug for it since it\u0027s different and probably won\u0027t happen this quarter.",
+      "parentUuid": "11f6dad1_17743a9b",
+      "revId": "1312f205ee3fd51531c0dd216cf8862b1a49f5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
