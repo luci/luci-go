@@ -22,6 +22,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -31,6 +32,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
@@ -106,17 +108,17 @@ func (cfg *TempDBConfig) readDDLStatements() ([]string, error) {
 // TempDB is a temporary Spanner database.
 type TempDB struct {
 	Name string
-	ts   oauth2.TokenSource
+	opts []option.ClientOption
 }
 
 // Client returns a spanner client connected to the database.
 func (db *TempDB) Client(ctx context.Context) (*spanner.Client, error) {
-	return spanner.NewClient(ctx, db.Name, option.WithTokenSource(db.ts))
+	return spanner.NewClient(ctx, db.Name, db.opts...)
 }
 
 // Drop deletes the database.
 func (db *TempDB) Drop(ctx context.Context) error {
-	client, err := spandb.NewDatabaseAdminClient(ctx, option.WithTokenSource(db.ts))
+	client, err := spandb.NewDatabaseAdminClient(ctx, db.opts...)
 	if err != nil {
 		return err
 	}
@@ -148,7 +150,21 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
 	}
 
-	client, err := spandb.NewDatabaseAdminClient(ctx, option.WithTokenSource(ts))
+	// Use Spanner emulator if available.
+	// TODO(crbug.com/1066993): require Spanner emulator.
+	var opts []option.ClientOption
+	if emulatorAddr := os.Getenv("SPANNER_EMULATOR_HOST"); emulatorAddr != "" {
+		opts = append(
+			opts,
+			option.WithEndpoint(emulatorAddr),
+			option.WithGRPCDialOption(grpc.WithInsecure()),
+			option.WithoutAuthentication(),
+		)
+	} else {
+		opts = []option.ClientOption{option.WithTokenSource(ts)}
+	}
+
+	client, err := spandb.NewDatabaseAdminClient(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +193,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 
 	return &TempDB{
 		Name: db.Name,
-		ts:   ts,
+		opts: opts,
 	}, nil
 }
 
