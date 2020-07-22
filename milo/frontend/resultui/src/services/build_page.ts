@@ -19,12 +19,12 @@ import { Build, BuilderID, Step } from './buildbucket';
 
 export interface GetBuildPageDataRequest {
   builder: BuilderID;
-  buildNumber: number;
+  buildNumOrId: string;
 }
 
 /**
  * BuildPageData is the type definition of the JSON returned from
- * /p/${project}/builders/${bucket}/${builder}/${build_number}/data
+ * /p/${project}/builders/${bucket}/${builder}/${build_id_or_number}/data
  *
  * Fields that are not intended to be used in the frontend are excluded.
  */
@@ -111,7 +111,7 @@ export class BuildPageService {
 
   async getBuildPageData(req: GetBuildPageDataRequest): Promise<BuildPageData> {
     const res = await fetch(
-      `/p/${req.builder.project}/builders/${req.builder.bucket}/${req.builder.builder}/${req.buildNumber}/data`,
+      `/p/${req.builder.project}/builders/${req.builder.bucket}/${req.builder.builder}/${req.buildNumOrId}/data`,
       {headers: {'Authorization': `Bearer ${this.accessToken}`}},
     );
     const buildPageData = await res.json();
