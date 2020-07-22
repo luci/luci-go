@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "343fc07d_c6aadb57",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Created a main (master) bug for setting up build page \"foundation code\".\nI think it\u0027s fine to have a main bug when we just started. We can  replace it with more detailed feature bugs later.\nLet me know if you want it to be more granular.",
+      "parentUuid": "f17cbe5b_cc72266d",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37fd563b_40e92db1",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5111d0ac_2beca62e",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Forgot that we are serving result UI and Milo under the same domain now.\nI added this so it\u0027s easier to make a request from localhost during development.\nBut I think it can be replaced with a local proxy server.",
+      "parentUuid": "37fd563b_40e92db1",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "f4d9f39e_b8c6fe20",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "991e22e5_63b43b56",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3fa888e8_b0ef81ee",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 4
@@ -67,6 +121,24 @@
       "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6455c08_1f0f8ac6",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3fa888e8_b0ef81ee",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "8234e440_b8236a68",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2694bae9_aeba2d30",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "116f5dac_ede41783",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 4
@@ -101,6 +191,24 @@
       "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09f85cef_a2c14c7b",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "116f5dac_ede41783",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "3d9027ea_f2fe3fc2",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2747c2ec_5cdb8bad",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90e84bc5_87946c17",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -135,6 +261,24 @@
       "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c62fdb_803cd877",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90e84bc5_87946c17",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -155,6 +299,24 @@
     },
     {
       "key": {
+        "uuid": "15160876_5f9de3a4",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55d93352_840b2de6",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e198b34_fb018485",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -172,6 +334,24 @@
     },
     {
       "key": {
+        "uuid": "0574c3aa_3748061e",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "this function uses a different convention for returning variables.\nthe return variables are named therefore we don\u0027t need to specify them in the return statement.\nThis is quite common in the infra codebase.",
+      "parentUuid": "3e198b34_fb018485",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a32b3438_777f9646",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -186,6 +366,24 @@
       "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8d3861c_7053b116",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T06:04:34Z",
+      "side": 1,
+      "message": "added",
+      "parentUuid": "a32b3438_777f9646",
+      "revId": "31ab36450c5fc74f18df08b35accc0974e3f5867",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
