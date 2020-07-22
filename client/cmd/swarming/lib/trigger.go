@@ -157,6 +157,7 @@ type triggerRun struct {
 	user           string
 	expiration     int64
 	enableResultDB bool
+	realm          string
 
 	// Other.
 	rawCmd   bool
@@ -200,6 +201,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
 	c.Flags.Int64Var(&c.expiration, "expiration", 6*60*60, "Seconds to allow the task to be pending for a bot to run before this task request expires.")
 	c.Flags.BoolVar(&c.enableResultDB, "enable-resultdb", false, "Enable ResultDB for this task.")
+	c.Flags.StringVar(&c.realm, "realm", "", "Realm name for this task.")
 
 	// Other.
 	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
@@ -397,5 +399,6 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Resultdb: &swarming.SwarmingRpcsResultDBCfg{
 			Enable: c.enableResultDB,
 		},
+		Realm: c.realm,
 	}, nil
 }
