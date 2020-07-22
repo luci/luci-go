@@ -89,7 +89,7 @@ const config: webpack.Configuration = {
         const configsTemplate = readFileSync('./configs.template.js', 'utf8');
         res.send(configsTemplate.replace('{{.ResultDB.Host}}', config.result_db.host));
       });
-      app.use('/p', createProxyMiddleware({target: config.milo.host, changeOrigin: true}));
+      app.use(/^(?!\/rui\/).*/, createProxyMiddleware({target: config.milo.host, changeOrigin: true}));
     },
   },
 };

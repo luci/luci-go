@@ -27,10 +27,12 @@ const notFoundRoute: Route = {
   },
 };
 
+export const NOT_FOUND_URL = '/rui/not-found';
+
 const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot);
 router.setRoutes({
-  path: '/',
+  path: '/rui',
   component: 'tr-app-config-provider',
   children: [
     {
@@ -91,6 +93,14 @@ router.setRoutes({
                     },
                     notFoundRoute,
                   ],
+                },
+                {
+                  path: '/p/:project/:bucket/:builder/:build',
+                  name: 'build',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "build_page" */ './pages/build_page');
+                    return cmd.component('tr-build-page');
+                  },
                 },
                 {
                   path: '/artifact',
