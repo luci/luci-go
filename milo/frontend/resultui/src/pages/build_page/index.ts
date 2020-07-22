@@ -22,17 +22,7 @@ import '../../components/status_bar';
 import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { NOT_FOUND_URL, router } from '../../routes';
-import { InvocationState as InvState } from '../../services/resultdb';
-import './invocation_details_tab';
-
-const INVOCATION_STATE_DISPLAY_MAP = {
-  [InvState.Unspecified]: 'unspecified',
-  [InvState.Active]: 'active',
-  [InvState.Finalizing]: 'finalizing',
-  [InvState.Finalized]: 'finalized',
-};
 
 /**
  * Main test results page.
@@ -41,83 +31,73 @@ const INVOCATION_STATE_DISPLAY_MAP = {
  * If invocation_id not provided, redirects to '/not-found'.
  * Otherwise, shows results for the invocation.
  */
-export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
+export class BuildPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
-  @observable.ref invocationState!: InvocationState;
 
-  private invocationId = '';
+  private project = '';
+  private bucket = '';
+  private builder = '';
+  private build = 0;
+
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const invocationId = location.params['invocation_id'];
-    if (typeof invocationId !== 'string') {
+    const project = location.params['project'];
+    const bucket = location.params['bucket'];
+    const builder = location.params['builder'];
+    const buildStr = location.params['build'];
+    if ([project, bucket, builder, buildStr].some((param) => typeof param !== 'string')) {
       return cmd.redirect(NOT_FOUND_URL);
     }
-    this.invocationId = invocationId;
+
+    this.project = project as string;
+    this.bucket = bucket as string;
+    this.builder = builder as string;
+    this.build = Number(buildStr);
     return;
   }
+
   connectedCallback() {
     super.connectedCallback();
-    this.invocationState.invocationId = this.invocationId;
-  }
-
-  private renderInvocationState() {
-    const invocation = this.invocationState.invocation;
-    if (!invocation) {
-      return null;
+    if (isNaN((this.build))) {
+      this.dispatchEvent(new ErrorEvent('error', {
+        message: 'build ID is not a number',
+        composed: true,
+        bubbles: true,
+      }));
     }
-    if (invocation.finalizeTime) {
-        return html`
-          <i>${INVOCATION_STATE_DISPLAY_MAP[invocation.state]}</i>
-          at ${new Date(invocation.finalizeTime).toLocaleString()}
-        `;
-    }
-
-    return html`
-      <i>${INVOCATION_STATE_DISPLAY_MAP[invocation.state]}</i>
-      since ${new Date(invocation.createTime).toLocaleString()}
-    `;
   }
 
   @computed get tabDefs(): TabDef[] {
     return [
       {
-        id: 'test-results',
-        label: 'Test Results',
+        id: 'overview',
+        label: 'Overview',
         href: router.urlForName(
-          'test-results',
-          {'invocation_id': this.invocationState.invocationId},
-        ),
-      },
-      {
-        id: 'invocation-details',
-        label: 'Invocation Details',
-        href: router.urlForName(
-          'invocation-details',
-          {'invocation_id': this.invocationState.invocationId},
+          'build',
+          {
+            'project': this.project,
+            'bucket': this.bucket,
+            'builder': this.builder,
+            'build': this.build.toString(),
+          },
         ),
       },
     ];
   }
 
   protected render() {
-    if (this.invocationState.invocationId === '') {
-      return html``;
-    }
-
     return html`
-      <div id="test-invocation-summary">
-        <div id="test-invocation-id">
-          <span id="test-invocation-id-label">Invocation ID </span>
-          <span>${this.invocationState.invocationId}</span>
+      <div id="build-summary">
+        <div id="build-id">
+          <span id="build-id-label">Build</span>
+          <span>${this.builder} / ${this.build}</span>
         </div>
-        <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
       <tr-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
-        .loading=${this.invocationState.invocationReq.state === 'pending'}
       ></tr-status-bar>
       <tr-tab-bar
         .tabs=${this.tabDefs}
-        .selectedTabId=${this.appState.selectedTabId}
+        .selectedTabId=${'overview'}
       ></tr-tab-bar>
       <slot></slot>
     `;
@@ -130,7 +110,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       grid-template-rows: repeat(3, auto) 1fr;
     }
 
-    #test-invocation-summary {
+    #build-summary {
       background-color: rgb(248, 249, 250);
       padding: 6px 16px;
       font-family: "Google Sans", "Helvetica Neue", sans-serif;
@@ -138,25 +118,23 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       display: flex;
     }
 
-    #test-invocation-id {
+    #build-id {
       flex: 0 auto;
     }
 
-    #test-invocation-id-label {
+    #build-id-label {
       color: rgb(95, 99, 104);
     }
 
-    #test-invocation-state {
+    #build-state {
       margin-left: auto;
       flex: 0 auto;
     }
   `;
 }
 
-customElement('tr-invocation-page')(
-  consumeInvocationState(
-    consumeAppState(
-      InvocationPageElement,
-    ),
+customElement('tr-build-page')(
+  consumeAppState(
+    BuildPageElement,
   ),
 );
