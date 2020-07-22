@@ -15,6 +15,7 @@
 package frontend
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"math/rand"
@@ -53,24 +54,60 @@ func handleLUCIBuild(c *router.Context) error {
 		http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
 	}
 
-	br := buildbucketpb.GetBuildRequest{}
-	if strings.HasPrefix(numberOrID, "b") {
-		id, err := strconv.ParseInt(numberOrID[1:], 10, 64)
-		if err != nil {
-			return errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
-		}
-		br.Id = int64(id)
-	} else {
-		number, err := strconv.Atoi(numberOrID)
-		if err != nil {
-			return errors.Annotate(err, "bad build number").Tag(grpcutil.InvalidArgumentTag).Err()
-		}
-		br.Builder = bid
-		br.BuildNumber = int32(number)
+	br, err := prepareGetBuildRequest(bid, numberOrID)
+	if err != nil {
+		return err
 	}
 
-	bp, err := buildbucket.GetBuildPage(c, &br, forceBlamelist)
+	bp, err := buildbucket.GetBuildPage(c, br, forceBlamelist)
 	return renderBuild(c, bp, err)
+}
+
+// handleLUCIBuildData renders the data of the build needed to render a build
+// page.
+// TODO(crbug.com/1108200): once all the build page data fetching code are moved
+// to ResultUI, delete this.
+func handleLUCIBuildData(c *router.Context) error {
+	bid := &buildbucketpb.BuilderID{
+		Project: c.Params.ByName("project"),
+		Bucket:  c.Params.ByName("bucket"),
+		Builder: c.Params.ByName("builder"),
+	}
+	numberOrID := c.Params.ByName("numberOrId")
+	br, err := prepareGetBuildRequest(bid, numberOrID)
+	if err != nil {
+		return err
+	}
+	bp, err := buildbucket.GetBuildPage(c, br, false)
+	if err != nil {
+		return err
+	}
+	bpd := ui.BuildPageData{
+		BuildPage:               bp,
+		CommitLinkHTML:          bp.CommitLinkHTML(),
+		Summary:                 bp.Summary(),
+		RecipeLink:              bp.RecipeLink(),
+		BuildbucketLink:         bp.BuildbucketLink(),
+		BuildSets:               bp.BuildSets(),
+		BuildSetLinks:           bp.BuildSetLinks(),
+		Steps:                   bp.Steps(),
+		HumanStatus:             bp.HumanStatus(),
+		ShouldShowCanaryWarning: bp.ShouldShowCanaryWarning(),
+		InputProperties:         bp.InputProperties(),
+		OutputProperties:        bp.OutputProperties(),
+		BuilderLink:             bp.BuilderLink(),
+		Link:                    bp.Link(),
+		Banners:                 bp.Banners(),
+		Timeline:                bp.Timeline(),
+	}
+
+	if err := json.NewEncoder(c.Writer).Encode(bpd); err != nil {
+		logging.Errorf(c.Context, "Failed to JSON encode output - %s", err)
+		return err
+	}
+	c.Writer.Header().Add("Content-Type", "application/json")
+	c.Writer.WriteHeader(http.StatusOK)
+	return nil
 }
 
 // renderBuild is a shortcut for rendering build or returning err if it is not nil.
@@ -103,11 +140,9 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 // redirectLUCIBuild redirects to a canonical build URL
 // e.g. to /p/{project}/builders/{bucket}/{builder}/{number or id}.
 func redirectLUCIBuild(c *router.Context) error {
-	idStr := c.Params.ByName("id")
-	// Verify it is an int64.
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := parseBuildID(c.Params.ByName("id"))
 	if err != nil {
-		return errors.Annotate(err, "invalid id").Tag(grpcutil.InvalidArgumentTag).Err()
+		return err
 	}
 	builder, number, err := buildbucket.GetBuilderID(c.Context, id)
 	if err != nil {
@@ -163,4 +198,33 @@ func getShowDebugLogsPrefCookie(c *router.Context) bool {
 		logging.WithError(err).Errorf(c.Context, "failed to read showDebugLogsPref cookie")
 		return false
 	}
+}
+
+// parseBuildID parses build ID from string.
+func parseBuildID(idStr string) (id int64, err error) {
+	// Verify it is an int64.
+	id, err = strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		err = errors.Annotate(err, "invalid id").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+	return
+}
+
+func prepareGetBuildRequest(builderID *buildbucketpb.BuilderID, numberOrID string) (*buildbucketpb.GetBuildRequest, error) {
+	br := &buildbucketpb.GetBuildRequest{}
+	if strings.HasPrefix(numberOrID, "b") {
+		id, err := parseBuildID(numberOrID[1:])
+		if err != nil {
+			return nil, err
+		}
+		br.Id = id
+	} else {
+		number, err := strconv.ParseInt(numberOrID, 10, 32)
+		if err != nil {
+			return nil, errors.Annotate(err, "bad build number").Tag(grpcutil.InvalidArgumentTag).Err()
+		}
+		br.Builder = builderID
+		br.BuildNumber = int32(number)
+	}
+	return br, nil
 }
