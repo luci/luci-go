@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e55cf402_0c09aefe",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-22T20:54:27Z",
+      "side": 1,
+      "message": "PTAL\n\nDemo is here https://6717-5889ce3-vadimsh-show-projs-only-dot-luci-scheduler-dev.appspot.com/\n\nQuick and dirty, and keeping the signature \"Christmas Lights\" color scheme 👍",
+      "revId": "85669adc152c9fb6ff53f3db6fbb05fe4c91035c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
