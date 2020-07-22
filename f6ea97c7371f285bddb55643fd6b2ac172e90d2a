@@ -1,0 +1,191 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40673376_e0471d5f",
+        "filename": "milo/frontend/resultui/package-lock.json",
+        "patchSetId": 6
+      },
+      "lineNbr": 6247,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "It looks like there is another http-proxy-middleware package at line 12096. Will they get conflicted?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a965318_9e5cf361",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "Is this your testing?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b631cfd5_b97e87d5",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "This class doesn\u0027t seem to be used in this CL. Are you planning to use it in the next CL?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fa1bbf8_7a4b744f",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "Can we name this file differently? I think \"milo\" is not descriptive (it\u0027s not telling me the purpose of this service",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be86e61b_07201248",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "Perhaps build_number?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0025d98_dde6c12f",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "Actually what is the meaning of this field? Is it a timestamp?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad5068df_1c3e7b6b",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "Are those comments intentional?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4adc1fd9_0bbed37c",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "nit: extra space",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3578018a_66c2ef0f",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "What should be the format of this? Do we have a timestamp field or something like this?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6495e23f_e525515d",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "Maybe similar question, but what is \"now\" here?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e5b1e4b_b1ab1894",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-22T07:27:58Z",
+      "side": 1,
+      "message": "What is \"count\"?",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
