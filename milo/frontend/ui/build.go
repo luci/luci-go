@@ -636,7 +636,7 @@ var (
 					`{{ end }}`))
 	optInTemplate = template.Must(
 		template.New("optIn").
-			Parse(`<div id="opt-in-banner">Try the new test results page <a href="/inv/{{ . }}">here</a>!</div>`))
+			Parse(`<div id="opt-in-banner">Try the new test results page <a href="/ui/inv/{{ . }}">here</a>!</div>`))
 )
 
 // HTML renders this Link as HTML.
