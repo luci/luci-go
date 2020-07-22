@@ -16,6 +16,24 @@
       "revId": "a8afbabc968658f6afd5a6b24f2e413cfa19dfc0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d28b934_7f58319b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "Oops. Sorry.\nThe new patch is just to add some instructions on how to setup the local development environment.\nAll your comments still make sense \u0026 I\u0027ve addressed most of them.\nThanks.",
+      "parentUuid": "fda38fe7_e7ef6b12",
+      "revId": "a8afbabc968658f6afd5a6b24f2e413cfa19dfc0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

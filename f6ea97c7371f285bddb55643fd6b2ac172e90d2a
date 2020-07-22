@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "44bceba5_4899d6d5",
+        "filename": "milo/frontend/resultui/package-lock.json",
+        "patchSetId": 6
+      },
+      "lineNbr": 6247,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "it will not. npm resolves this automatically.",
+      "parentUuid": "40673376_e0471d5f",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a965318_9e5cf361",
         "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92694f57_47dae12b",
+        "filename": "milo/frontend/resultui/src/context/invocation_state/invocation_state.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "oops. removed",
+      "parentUuid": "0a965318_9e5cf361",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "cc885489_c8bbb16e",
+        "filename": "milo/frontend/resultui/src/services/buildbucket.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "It will be used in the future but not in the next patch. Removed for now.",
+      "parentUuid": "b631cfd5_b97e87d5",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fa1bbf8_7a4b744f",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -67,6 +121,24 @@
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17b809db_3e24edee",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "Hmm. It\u0027s for communicating with Milo backend though.\nI can change it to milo_backend or milo_service.\nBut considering that it\u0027s already in the services folder, I\u0027m not sure if adding _backend or _service suffix will add much value.",
+      "parentUuid": "1fa1bbf8_7a4b744f",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "fe00ca2a_20c718bf",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be86e61b_07201248",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0025d98_dde6c12f",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -101,6 +191,24 @@
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de093b3a_475e4c94",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "It\u0027s a timestamp from the milo BuildPage struct.\nAll the fields are from that struct directly.\nWe can copy the comments over as well.\nBut I\u0027m not sure how useful that would be. Also, we will need to sync the changes when we modify the comments on the go side.\nI think it\u0027s fine to not copy the comments over. Since we will eventually remove this file and hopefully replace other files in the services folder with auto-generated code.\nWDYT?",
+      "parentUuid": "f0025d98_dde6c12f",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "e2d1d631_5ea59552",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "There were intend to communicate that although these fields are returned from the endpoint, they are not intended to be used.\nRemoved them and added a comment to the interface instead.",
+      "parentUuid": "ad5068df_1c3e7b6b",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4adc1fd9_0bbed37c",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -135,6 +261,24 @@
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849c2626_7c92567c",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "hmm. that\u0027s a tab instead of two spaces.\nWonder why tslint didn\u0027t catch that.\nFixed.",
+      "parentUuid": "4adc1fd9_0bbed37c",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -155,6 +299,24 @@
     },
     {
       "key": {
+        "uuid": "25d97e75_6ad1933c",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "it\u0027s the default format used by the go serializer.",
+      "parentUuid": "3578018a_66c2ef0f",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6495e23f_e525515d",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -172,6 +334,24 @@
     },
     {
       "key": {
+        "uuid": "2d4635bc_97cbb743",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "It\u0027s from here.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/common/time.go;l\u003d28",
+      "parentUuid": "6495e23f_e525515d",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e5b1e4b_b1ab1894",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -186,6 +366,24 @@
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c763bbcb_76cb0a64",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-22T20:43:47Z",
+      "side": 1,
+      "message": "It\u0027s from here\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/ui/logo.go;l\u003d31",
+      "parentUuid": "9e5b1e4b_b1ab1894",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
