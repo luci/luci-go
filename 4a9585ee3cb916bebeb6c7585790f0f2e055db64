@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0d1d1854_7febb48c",
+        "filename": "milo/frontend/appengine/app.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T01:54:29Z",
+      "side": 1,
+      "message": "Follow the discussion with Nodir, I think maybe we can just name it \"ui\".\n\nI don\u0027t have a preference on this, because this should go away, so it\u0027s up to you.",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd945032_3b7179d9",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T01:54:29Z",
+      "side": 1,
+      "message": "Can this be a non-number? e.g. https://ci.chromium.org/p/chromium/builders/ci/ToTAndroid/b8874120165784843184",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e33af8d0_b7ef5ecc",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T01:54:29Z",
+      "side": 1,
+      "message": "Not sure about this, but do you want to move it to the css section below?",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ef7bf16_f5a84e35",
+        "filename": "milo/frontend/resultui/webpack.common.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T01:54:29Z",
+      "side": 1,
+      "message": "Just for my own information, what is the static dist/style?",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
