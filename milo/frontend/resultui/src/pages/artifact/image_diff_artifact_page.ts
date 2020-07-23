@@ -21,7 +21,7 @@ import { fromPromise } from 'mobx-utils';
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { router } from '../../routes';
+import { NOT_FOUND_URL, router } from '../../routes';
 import { constructArtifactName, parseArtifactName } from '../../services/resultdb';
 
 /**
@@ -85,7 +85,7 @@ export class ImageDiffArtifactPage extends MobxLitElement {
     const expectedArtifactId = search.get('expected_artifact_id');
     const actualArtifactId = search.get('actual_artifact_id');
     if (typeof diffArtifactName !== 'string' || !expectedArtifactId || !actualArtifactId) {
-      return cmd.redirect('/not-found');
+      return cmd.redirect(NOT_FOUND_URL);
     }
 
     this.expectedArtifactId = expectedArtifactId;

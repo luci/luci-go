@@ -27,10 +27,12 @@ const notFoundRoute: Route = {
   },
 };
 
+export const NOT_FOUND_URL = '/ui/not-found';
+
 const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot);
 router.setRoutes({
-  path: '/',
+  path: '/ui',
   component: 'tr-app-config-provider',
   children: [
     {
@@ -71,7 +73,7 @@ router.setRoutes({
                   children: [
                     {
                       path: '/',
-                      redirect: '/inv/:invocation_id/test-results',
+                      redirect: '/ui/inv/:invocation_id/test-results',
                     },
                     {
                       path: 'test-results',
@@ -91,6 +93,14 @@ router.setRoutes({
                     },
                     notFoundRoute,
                   ],
+                },
+                {
+                  path: '/p/:project/:bucket/:builder/:build_num_or_id',
+                  name: 'build',
+                  action: async (_ctx, cmd) => {
+                    await import(/* webpackChunkName: "build_page" */ './pages/build_page');
+                    return cmd.component('tr-build-page');
+                  },
                 },
                 {
                   path: '/artifact',

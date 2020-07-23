@@ -23,7 +23,7 @@ import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
-import { router } from '../../routes';
+import { NOT_FOUND_URL, router } from '../../routes';
 import { InvocationState as InvState } from '../../services/resultdb';
 import './invocation_details_tab';
 
@@ -49,7 +49,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const invocationId = location.params['invocation_id'];
     if (typeof invocationId !== 'string') {
-      return cmd.redirect('/not-found');
+      return cmd.redirect(NOT_FOUND_URL);
     }
     this.invocationId = invocationId;
     return;

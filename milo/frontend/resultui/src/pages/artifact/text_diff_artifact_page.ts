@@ -22,7 +22,7 @@ import { fromPromise } from 'mobx-utils';
 import '../../components/status_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { router } from '../../routes';
+import { NOT_FOUND_URL, router } from '../../routes';
 import { parseArtifactName } from '../../services/resultdb';
 
 /**
@@ -61,7 +61,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const artifactName = location.params['artifact_name'];
     if (typeof artifactName !== 'string') {
-      return cmd.redirect('/not-found');
+      return cmd.redirect(NOT_FOUND_URL);
     }
     this.artifactName = artifactName;
     return;

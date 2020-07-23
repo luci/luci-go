@@ -42,7 +42,7 @@ handlers:
   login: admin
 
 # ResultUI frontend routes.
-- url: /(inv/.*|error|login|artifact/.*)
+- url: /ui/.*
   secure: always
   static_files: index.html
   upload: index.html
