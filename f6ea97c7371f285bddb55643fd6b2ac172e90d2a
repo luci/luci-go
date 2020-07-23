@@ -160,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "e374a316_f35fb9f1",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-23T01:05:46Z",
+      "side": 1,
+      "message": "Renamed to build_page.ts",
+      "parentUuid": "64b2fa56_ec54d063",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be86e61b_07201248",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -242,6 +260,24 @@
       "side": 1,
       "message": "I think that\u0027s fine. But I think we should make a comment that the fields are copied directly from the struct, and maybe to add a TODO..",
       "parentUuid": "de093b3a_475e4c94",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a4182bd4_93ae0558",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-23T01:05:46Z",
+      "side": 1,
+      "message": "Added comments and TODO.",
+      "parentUuid": "8bc1fa3d_406e4c63",
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
