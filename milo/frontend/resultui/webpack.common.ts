@@ -17,6 +17,7 @@ import path from 'path';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import webpack from 'webpack';
 
 import { readFileSync } from 'fs';
@@ -88,6 +89,7 @@ const config: webpack.Configuration = {
         const configsTemplate = readFileSync('./configs.template.js', 'utf8');
         res.send(configsTemplate.replace('{{.ResultDB.Host}}', config.result_db.host));
       });
+      app.use('/p', createProxyMiddleware({target: config.milo.url, changeOrigin: true}));
     },
   },
 };
