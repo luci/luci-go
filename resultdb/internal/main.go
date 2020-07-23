@@ -33,12 +33,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 )
 
-const (
-	// accessGroup is a CIA group that can access ResultDB.
-	// TODO(crbug.com/1013316): remove in favor of realms.
-	accessGroup = "luci-resultdb-access"
-)
-
 // Main runs a service.
 //
 // Registers -spanner-database flag and initializes a Spanner client.
