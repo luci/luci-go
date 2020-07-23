@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4dc8609f_5e7b6880",
+        "filename": "milo/frontend/appengine/app.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-23T02:54:47Z",
+      "side": 1,
+      "message": "sure, changed to ui.",
+      "parentUuid": "0d1d1854_7febb48c",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd945032_3b7179d9",
         "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
         "patchSetId": 7
@@ -30,6 +48,24 @@
       "writtenOn": "2020-07-23T01:54:29Z",
       "side": 1,
       "message": "Can this be a non-number? e.g. https://ci.chromium.org/p/chromium/builders/ci/ToTAndroid/b8874120165784843184",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0c46e40_0500ffdd",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-23T02:54:47Z",
+      "side": 1,
+      "message": "b signals a build ID instead of a build number.\nAFAIK all builds have build numbers. So it\u0027s not a necessary feature to support.\nThe handling of build number is quite messy on Milo side so I don\u0027t want to add it in yet.\nWe can support build ID in the future if there\u0027s a need for that.\nWDYT?",
+      "parentUuid": "dd945032_3b7179d9",
       "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "96fb58e5_3fe2d3d7",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-23T02:54:47Z",
+      "side": 1,
+      "message": "It\u0027s not CSS but params passed to the status bar component.\nThe status bar component can render multiple sections. I planed to use it for display the number of expected/unexpected/exonerated tests, like how github displays the language composition in a repo. Although this feature is not used now. But I think it\u0027s fine to keep it as is.",
+      "parentUuid": "e33af8d0_b7ef5ecc",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ef7bf16_f5a84e35",
         "filename": "milo/frontend/resultui/webpack.common.ts",
         "patchSetId": 7
@@ -67,6 +121,24 @@
       "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6acf52d0_45ffb7ed",
+        "filename": "milo/frontend/resultui/webpack.common.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-23T02:54:47Z",
+      "side": 1,
+      "message": "dist contains compiled JS.\nstyle contains static stylesheet.\nOther static files are served on Milo.\nTherefore we need to handle them separately.",
+      "parentUuid": "3ef7bf16_f5a84e35",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
