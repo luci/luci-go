@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "05503a74_0080301b",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T04:39:42Z",
+      "side": 1,
+      "message": "Maybe I\u0027m wrong, but I remember @nodir mentioned that not all projects use build number, only buildID is available for them. And I think between the two, buildID is more universal.\n\nWe can land this as-is, but I think it is necessary to support buildID.\n\nAdding Nodir for clarification on this.",
+      "parentUuid": "f0c46e40_0500ffdd",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e33af8d0_b7ef5ecc",
         "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
         "patchSetId": 7
