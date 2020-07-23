@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c295d247_da3d9208",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-23T09:16:03Z",
+      "side": 1,
+      "message": "we cannot land this yet, because rdb tool never specifies realm when creating an invocation. perhaps we need -realm flag?\n\nstepping back, when making a breaking change, we should verify that it would not break anyone (e.g. everyone is prepared) by analyzing prod artifacts (logs, bq, storage). Sometimes it requires adding logging.",
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ecbbfaff_ad297276",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-23T09:16:03Z",
+      "side": 1,
+      "message": "ok",
+      "range": {
+        "startLine": 48,
+        "startChar": 58,
+        "endLine": 48,
+        "endChar": 68
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2f477d0_9c2c0edf",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-23T09:16:03Z",
+      "side": 1,
+      "message": "this is an empty function. do we still need it? we can always restore it\n\nhttp://go/how-to-write-software: \"The system should always look like it was designed to do exactly what it does now. Refactor it continuously so that it always looks like this, either before a change or immediately after it.\n\"",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 0
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48ba7777_119031c5",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-23T09:16:03Z",
+      "side": 1,
+      "message": "this is the only usage of this func. is there a reason why the func is not in this package?\n\nalso now that this is the only usage, do we still need httpClientCtxKey and the code around it, or can we simply create the http client here and use it in L90?",
+      "range": {
+        "startLine": 79,
+        "startChar": 22,
+        "endLine": 79,
+        "endChar": 42
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd79eca8_57192e3d",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-23T09:16:03Z",
+      "side": 1,
+      "message": "unspecified()\n\nsee usage of this func in this package\n\nsame below",
+      "range": {
+        "startLine": 79,
+        "startChar": 25,
+        "endLine": 79,
+        "endChar": 70
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
