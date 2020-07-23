@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "744a2f9a_e3970db6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T00:33:53Z",
+      "side": 1,
+      "message": "I am not sure if we are going to use all the data, but I think I am fine with it.",
+      "revId": "214eeb663a119ddaf868a2ae748dc796ae2fe6bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "995f3647_0cc1c946",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T00:33:53Z",
+      "side": 1,
+      "message": "Can we specify the return type (i.e. BuildPageData) here?",
+      "revId": "214eeb663a119ddaf868a2ae748dc796ae2fe6bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

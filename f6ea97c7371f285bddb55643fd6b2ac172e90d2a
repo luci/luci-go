@@ -142,6 +142,24 @@
     },
     {
       "key": {
+        "uuid": "64b2fa56_ec54d063",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T00:33:53Z",
+      "side": 1,
+      "message": "I think what I meant is looking at the name \"milo\", I cannot expect what this service will do. Maybe something like \"services/build_page.ts\" is more descriptive (Looking at the name, I can see that it is service for build page.",
+      "parentUuid": "17b809db_3e24edee",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be86e61b_07201248",
         "filename": "milo/frontend/resultui/src/services/milo.ts",
         "patchSetId": 6
@@ -206,6 +224,24 @@
       "side": 1,
       "message": "It\u0027s a timestamp from the milo BuildPage struct.\nAll the fields are from that struct directly.\nWe can copy the comments over as well.\nBut I\u0027m not sure how useful that would be. Also, we will need to sync the changes when we modify the comments on the go side.\nI think it\u0027s fine to not copy the comments over. Since we will eventually remove this file and hopefully replace other files in the services folder with auto-generated code.\nWDYT?",
       "parentUuid": "f0025d98_dde6c12f",
+      "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8bc1fa3d_406e4c63",
+        "filename": "milo/frontend/resultui/src/services/milo.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-23T00:33:53Z",
+      "side": 1,
+      "message": "I think that\u0027s fine. But I think we should make a comment that the fields are copied directly from the struct, and maybe to add a TODO..",
+      "parentUuid": "de093b3a_475e4c94",
       "revId": "f6ea97c7371f285bddb55643fd6b2ac172e90d2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
