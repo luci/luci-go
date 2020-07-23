@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "5cead0b8_a58064e0",
+        "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-23T05:35:36Z",
+      "side": 1,
+      "message": "i think its fine to have this CL support only builds with build numbers (to keep it focused and make incremental progress faster), but we certainly need to support builds without build numbers, and we can\u0027t turn down the legacy page without this support. Some projects indeed won\u0027t be able to use the new page without this support. Actually, the tryjobs for this CL don\u0027t use build numbers: https://ci.chromium.org/p/infra/builders/try/luci-go-try-trusty-64/b8874025634610595728?\n\nthere is an alternative to start a discussion on luci-eng to try to convince everyone to always use build numbers, but my sense is that it will take more time than implementing this feature :)",
+      "parentUuid": "05503a74_0080301b",
+      "revId": "4a9585ee3cb916bebeb6c7585790f0f2e055db64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e33af8d0_b7ef5ecc",
         "filename": "milo/frontend/resultui/src/pages/build_page/index.ts",
         "patchSetId": 7
