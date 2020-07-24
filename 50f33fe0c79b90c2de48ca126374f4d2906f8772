@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "417d8262_0a8bc46b",
+        "filename": "common/errors/multierror.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:07:53Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 19
+      },
+      "revId": "50f33fe0c79b90c2de48ca126374f4d2906f8772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
