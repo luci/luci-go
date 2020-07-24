@@ -2,6 +2,190 @@
   "comments": [
     {
       "key": {
+        "uuid": "4f64d90c_1eb95e3f",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "I haven\u0027t looked at the implementation yet, but a single pod can be VERY beefy and the sweeper (in theory) doesn\u0027t do much computations or need a lot of RAM. So with a correct (multi-threaded) implementation one pod can handle a ton of operations. Primary concerns are reliability (if the pod goes kaput the backlog processing will stall) and babysitting pod size/parameters to avoid wasting resources/getting OOMs.\n\nEdit: maybe I was wrong about RAM, I see it loads payloads...",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 18,
+        "endChar": 40
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0705a1c8_2332ed74",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "This has surprising handling of defaults. If I call \n\n  NewSweeper(impl, \u0026Options{ScanInterval: 2 * time.Minute})\n\nI\u0027d expect all other parameters stay at their defaults. \n\nIf NewSweeper is part of public API, better to implement per-field default. If its not a public API, consider removing defaults and require callers to populate everything explicitly.",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 1
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f991daef_70d25986",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "oh, so it is single threaded... fine for now I guess...",
+      "range": {
+        "startLine": 76,
+        "startChar": 18,
+        "endLine": 76,
+        "endChar": 35
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "229abf2d_13fafe18",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "nit:\n\n  switch errOriginal :\u003d errors.Unwrap(err); {\n    ...\n  }",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 10
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d73b3ce3_5c7a31eb",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "arguments do not match\nalso the error is logged below anyhow",
+      "range": {
+        "startLine": 88,
+        "startChar": 24,
+        "endLine": 88,
+        "endChar": 66
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "172ceae1_ab866a98",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "Why did you choose to use it instead of plain old worker pool? TBH I\u0027m afraid of dispatcher.Channel, it look like a ton of complexity and makes code hard to understand unless you know dispatcher.Channel API by heart. It\u0027s fine to use it if it really solves some problem. I just hope it\u0027s not used for the sake of being used (like we had Tumble in Logdog...).",
+      "range": {
+        "startLine": 132,
+        "startChar": 28,
+        "endLine": 132,
+        "endChar": 49
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df21b307_4d7c51dc",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "huh?",
+      "range": {
+        "startLine": 139,
+        "startChar": 4,
+        "endLine": 139,
+        "endChar": 40
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a41551f_fbe8c0fe",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "do we need to start and stop this machinery each sweep? Can we keep it running and just continuously feed it new items?",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 35
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c7de761c_a08a2903",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc_test.go",
         "patchSetId": 10
@@ -13,6 +197,30 @@
       "writtenOn": "2020-07-24T15:42:53Z",
       "side": 1,
       "message": "Am I hitting KI with bug in testclock library or am I holding it wrong?\n\n$ go test -race -v -timeout 2s -failfast -count 1000 \n\nreproduces pretty quickly an apparent deadlock.\n\n\nAlthough the highlighted code gets called, and I see dispathcer.Channel\u0027s unblocking itself,\nbut it gets stuck at \n  defer timer.Stop\nwhich itself is get stuck at \n  stopped \u003d \u003c-t.monitorFinishedC\n\n\n\n  (goroutine 162 [chan receive]:\ngo.chromium.org/luci/common/clock/testclock.(*timer).Stop(0xc000659dc0, 0x0)\n        .../go/src/go.chromium.org/luci/common/clock/testclock/testtimer.go:87 +0xab\ngo.chromium.org/luci/common/sync/dispatcher.(*coordinatorState).run(0xc0002623c0, 0x12867a0, 0xc0007dedb0, 0xc0006e6ea0)\n        .../go/src/go.chromium.org/luci/common/sync/dispatcher/coordinator.go:253 +0xf2b\ncreated by go.chromium.org/luci/common/sync/dispatcher.NewChannel\n        .../go/src/go.chromium.org/luci/common/sync/dispatcher/channel.go:140 +0x2f1\nexit status 2",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 17
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "050cefb9_ac7b6958",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T21:31:35Z",
+      "side": 1,
+      "message": "I can imagine dispatcher channel may use other (non-tagged) timers that are totally ignored here. I can imagine some of them need to advance time for the test to proceed correctly.",
+      "parentUuid": "c7de761c_a08a2903",
       "range": {
         "startLine": 65,
         "startChar": 3,
