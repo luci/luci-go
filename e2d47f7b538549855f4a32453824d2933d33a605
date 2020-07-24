@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "c9241018_ea355f8d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T14:14:23Z",
+      "side": 1,
+      "message": "sorry for delay",
+      "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "441b5161_f46458c0",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T14:14:23Z",
+      "side": 1,
+      "message": "yeah, I was thinking this should be passed via vars, but vadimsh@ is thinking that it ought to be possible to hide ttq library itself behind appengine/tq replacement. So, I agree it\u0027s fine to hardcode for now.",
+      "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "27267fb8_f3822d63",
         "filename": "buildbucket/appengine/frontend/main.go",
         "patchSetId": 1
@@ -13,6 +47,24 @@
       "writtenOn": "2020-07-23T03:14:21Z",
       "side": 1,
       "message": "Is this incorrect? cron.yaml is configured to execute /internal/cron/ttq, but the handler just serves 404s...",
+      "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24e2d761_56a953cd",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T14:14:23Z",
+      "side": 1,
+      "message": "for this pathPrefix, the cron.yaml should be hitting \"internal/cron/ttq/cron\"",
+      "parentUuid": "27267fb8_f3822d63",
       "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
