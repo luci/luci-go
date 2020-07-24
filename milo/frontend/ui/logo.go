@@ -19,17 +19,17 @@ package ui
 // application's static/logo/ folder.
 
 type LogoBase struct {
-	Img string `json:"img,omitempty"`
-	Alt string `json:"alt,omitempty"`
+	Img string
+	Alt string
 }
 
 type Logo struct {
 	LogoBase
 	// Subtitle is text that goes under the logo.  This is most commonly used
 	// to specify the version of the OS or type of device.
-	Subtitle string `json:"subtitle,omitempty"`
+	Subtitle string
 	// Count specifies how many of the OS or device there are.
-	Count int `json:"count,omitempty"`
+	Count int
 }
 
 // Define our known base logos

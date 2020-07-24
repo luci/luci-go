@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
-
 cd $(dirname $0)
 rm -f internal/gensupport/*.go
 cp ../../../../../.vendor/src/google.golang.org/api/internal/gensupport/* internal/gensupport
-chmod -R u+w internal/gensupport

@@ -72,7 +72,7 @@ func withProdSpannerClient(ctx context.Context, dbFlag string, trackSessionHandl
 	}
 
 	// Credentials with Cloud scope.
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return ctx, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}

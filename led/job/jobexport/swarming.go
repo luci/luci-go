@@ -18,7 +18,7 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/led/job"
-	apipb "go.chromium.org/luci/swarming/proto/api"
+	"go.chromium.org/luci/swarming/proto/api"
 )
 
 // ToSwarmingNewTask renders a swarming proto task to a
@@ -32,7 +32,6 @@ func ToSwarmingNewTask(sw *job.Swarming, userPayload *apipb.CASTree) (*swarming.
 		ParentTaskId:         task.ParentTaskId,
 		Priority:             int64(task.Priority),
 		ServiceAccount:       task.ServiceAccount,
-		Realm:                task.Realm,
 		Tags:                 task.Tags,
 		TaskSlices:           make([]*swarming.SwarmingRpcsTaskSlice, 0, len(task.TaskSlices)),
 	}

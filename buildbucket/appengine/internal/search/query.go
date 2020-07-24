@@ -171,9 +171,7 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		dq = dq.Eq("status_v2", q.Status)
 	}
 
-	if q.CreatedBy != "" {
-		dq = dq.Eq("created_by", q.CreatedBy)
-	}
+	// TODO(crbug/1090540): filtering by created_by after it's been migrated to string.
 
 	switch {
 	case q.Builder.GetBuilder() != "":

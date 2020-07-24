@@ -152,7 +152,6 @@ func jobDefinitionFromSwarming(sw *job.Swarming, r *swarming.SwarmingRpcsNewTask
 
 	t.Priority = int32(r.Priority) + 10
 	t.ServiceAccount = r.ServiceAccount
-	t.Realm = r.Realm
 	// CreateTime is unused for new task requests
 	// Name is overwritten
 	// Tags should not be explicitly provided by the user for the new task

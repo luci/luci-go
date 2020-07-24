@@ -170,6 +170,5 @@ func taskRequestToNewTaskRequest(req *swarming.SwarmingRpcsTaskRequest) *swarmin
 		Tags:           req.Tags,
 		User:           req.User,
 		ServiceAccount: req.ServiceAccount,
-		Realm:          req.Realm,
 	}
 }

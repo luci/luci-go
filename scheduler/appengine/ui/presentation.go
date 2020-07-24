@@ -52,7 +52,7 @@ type schedulerJob struct {
 	Policy         string
 	Revision       string
 	RevisionURL    string
-	State          presentation.PublicStateKind
+	State          string
 	NextRun        string
 	Paused         bool
 	LabelClass     string
@@ -127,7 +127,7 @@ func makeJob(c context.Context, j *engine.Job, log *engine.JobTriageLog) *schedu
 		Policy:         policyToText(j.TriggeringPolicyRaw),
 		Revision:       j.Revision,
 		RevisionURL:    j.RevisionURL,
-		State:          state,
+		State:          string(state),
 		NextRun:        nextRun,
 		Paused:         j.Paused,
 		LabelClass:     labelClass,

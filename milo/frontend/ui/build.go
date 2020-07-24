@@ -47,9 +47,9 @@ var crosMasterRE = regexp.MustCompile(`^cros/master_buildbucket_id/(\d+)$`)
 // nesting information.
 type Step struct {
 	*buildbucketpb.Step
-	Children  []*Step         `json:"children,omitempty"`
-	Collapsed bool            `json:"collapsed,omitempty"`
-	Interval  common.Interval `json:"interval,omitempty"`
+	Children  []*Step
+	Collapsed bool
+	Interval  common.Interval
 }
 
 // ShortName returns the leaf name of a potentially nested step.
@@ -69,7 +69,7 @@ type Build struct {
 
 	// Now is the current time, used to generate durations that may depend
 	// on the current time.
-	Now *timestamp.Timestamp `json:"now,omitempty"`
+	Now *timestamp.Timestamp
 }
 
 // CommitLinkHTML returns an HTML link pointing to the output commit, or input commit
@@ -110,24 +110,24 @@ type BuildPage struct {
 	// Blame is a list of people and commits that likely caused the build result.
 	// It is usually used as the list of commits between the previous run of the
 	// build on the same builder, and this run.
-	Blame []*Commit `json:"blame,omitempty"`
+	Blame []*Commit
 
 	// BuildBugLink is a URL to be used a feedback link for the build. If the
 	// link could not be generated an empty string will be returned. There will be
 	// no link, for example, if the project has not set up their build bug template.
-	BuildBugLink string `json:"build_bug_link,omitempty"`
+	BuildBugLink string
 
 	// BuildbucketHost is the hostname for the buildbucket instance this build came from.
-	BuildbucketHost string `json:"buildbucket_host,omitempty"`
+	BuildbucketHost string
 
 	// Errors contains any non-critical errors encountered while rendering the page.
-	Errors []error `json:"errors,omitempty"`
+	Errors []error
 
 	// Mode to render the steps.
-	StepDisplayPref StepDisplayPref `json:"step_display_pref,omitempty"`
+	StepDisplayPref StepDisplayPref
 
 	// Iff true, show all log links whose name starts with '$'.
-	ShowDebugLogsPref bool `json:"show_debug_logs_pref,omitempty"`
+	ShowDebugLogsPref bool
 
 	// timelineData caches the results from Timeline().
 	timelineData string
@@ -137,14 +137,14 @@ type BuildPage struct {
 
 	// BlamelistError holds errors related to the blamelist.
 	// This determines the behavior of clicking the "blamelist" tab.
-	BlamelistError error `json:"blamelist_error,omitempty"`
+	BlamelistError error
 
 	// ForcedBlamelist indicates that the user forced a blamelist load.
-	ForcedBlamelist bool `json:"forced_blamelist,omitempty"`
+	ForcedBlamelist bool
 
 	// Whether the user is able to perform certain actions on this build
-	CanCancel bool `json:"can_cancel,omitempty"`
-	CanRetry  bool `json:"can_retry,omitempty"`
+	CanCancel bool
+	CanRetry  bool
 }
 
 // RelatedBuildsTable represents a related builds table on Milo.
@@ -322,9 +322,9 @@ func (b *Build) ShouldShowCanaryWarning() bool {
 type property struct {
 	// Name is the name of the property relative to a build.
 	// Note: We call this a "Name" not a "Key", since this was the term used in BuildBot.
-	Name string `json:"name,omitempty"`
+	Name string
 	// Value is a JSON string of the value.
-	Value string `json:"value,omitempty"`
+	Value string
 }
 
 // properties returns the values in the proto struct fields as
@@ -463,27 +463,27 @@ const (
 // Commit represents a single commit to a repository, rendered as part of a blamelist.
 type Commit struct {
 	// Who made the commit?
-	AuthorName string `json:"author_name,omitempty"`
+	AuthorName string
 	// Email of the committer.
-	AuthorEmail string `json:"author_email,omitempty"`
+	AuthorEmail string
 	// Time of the commit.
-	CommitTime time.Time `json:"commit_time,omitempty"`
+	CommitTime time.Time
 	// Full URL of the main source repository.
-	Repo string `json:"repo,omitempty"`
+	Repo string
 	// Branch of the repo.
-	Branch string `json:"branch,omitempty"`
+	Branch string
 	// Requested revision of the commit or base commit.
-	RequestRevision *Link `json:"request_revision,omitempty"`
+	RequestRevision *Link
 	// Revision of the commit or base commit.
-	Revision *Link `json:"revision,omitempty"`
+	Revision *Link
 	// The commit message.
-	Description string `json:"description,omitempty"`
+	Description string
 	// Rietveld or Gerrit URL if the commit is a patch.
-	Changelist *Link `json:"changelist,omitempty"`
+	Changelist *Link
 	// Browsable URL of the commit.
-	CommitURL string `json:"commit_url,omitempty"`
+	CommitURL string
 	// List of changed filenames.
-	File []string `json:"file,omitempty"`
+	File []string
 }
 
 // RevisionHTML returns a single rendered link for the revision, prioritizing
@@ -636,7 +636,7 @@ var (
 					`{{ end }}`))
 	optInTemplate = template.Must(
 		template.New("optIn").
-			Parse(`<div id="opt-in-banner">Try the new test results page <a href="/ui/inv/{{ . }}">here</a>!</div>`))
+			Parse(`<div id="opt-in-banner">Try the new test results page <a href="/inv/{{ . }}">here</a>!</div>`))
 )
 
 // HTML renders this Link as HTML.
@@ -691,16 +691,16 @@ type Link struct {
 	model.Link
 
 	// AriaLabel is a spoken label for the link.  Used as aria-label under the anchor tag.
-	AriaLabel string `json:"aria_label,omitempty"`
+	AriaLabel string `json:",omitempty"`
 
 	// Img is an icon for the link.  Not compatible with label.  Rendered as <img>
-	Img string `json:"img,omitempty"`
+	Img string `json:",omitempty"`
 
 	// Alt text for the image, or title text with text link.
-	Alt string `json:"alt,omitempty"`
+	Alt string `json:",omitempty"`
 
 	// Alias, if true, means that this link is an [alias link].
-	Alias bool `json:"alias,omitempty"`
+	Alias bool `json:",omitempty"`
 }
 
 // NewLink does just about what you'd expect.
@@ -719,26 +719,4 @@ func NewPatchLink(cl *buildbucketpb.GerritChange) *Link {
 // NewEmptyLink creates a Link struct acting as a pure text label.
 func NewEmptyLink(label string) *Link {
 	return &Link{Link: model.Link{Label: label}}
-}
-
-// BuildPageData represents a build page on Milo.
-// Comparing to BuildPage, it caches a lot of the computed properties so they
-// be serialised to JSON.
-type BuildPageData struct {
-	*BuildPage
-	CommitLinkHTML          template.HTML   `json:"commit_link_html,omitempty"`
-	Summary                 []string        `json:"summary,omitempty"`
-	RecipeLink              *Link           `json:"recipe_link,omitempty"`
-	BuildbucketLink         *Link           `json:"buildbucket_link,omitempty"`
-	BuildSets               []string        `json:"build_sets,omitempty"`
-	BuildSetLinks           []template.HTML `json:"build_set_links,omitempty"`
-	Steps                   []*Step         `json:"steps,omitempty"`
-	HumanStatus             string          `json:"human_status,omitempty"`
-	ShouldShowCanaryWarning bool            `json:"should_show_canary_warning,omitempty"`
-	InputProperties         []property      `json:"input_properties,omitempty"`
-	OutputProperties        []property      `json:"output_properties,omitempty"`
-	BuilderLink             *Link           `json:"builder_link,omitempty"`
-	Link                    *Link           `json:"link,omitempty"`
-	Banners                 []Logo          `json:"banners,omitempty"`
-	Timeline                string          `json:"timeline,omitempty"`
 }

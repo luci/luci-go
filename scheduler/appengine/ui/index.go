@@ -15,12 +15,8 @@
 package ui
 
 import (
-	"fmt"
-
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-
-	"go.chromium.org/luci/scheduler/appengine/presentation"
 )
 
 func indexPage(c *router.Context) {
@@ -28,36 +24,7 @@ func indexPage(c *router.Context) {
 	if err != nil {
 		panic(err)
 	}
-
-	// Group jobs by project they belong to and their state.
-	type projectAndJobs struct {
-		ProjectID string
-		Paused    sortedJobs
-		Running   sortedJobs
-		Scheduled sortedJobs
-		Waiting   sortedJobs
-	}
-	var byProj []*projectAndJobs
-	for _, job := range sortJobs(c.Context, jobs) {
-		if len(byProj) == 0 || byProj[len(byProj)-1].ProjectID != job.ProjectID {
-			byProj = append(byProj, &projectAndJobs{ProjectID: job.ProjectID})
-		}
-		group := byProj[len(byProj)-1]
-		switch job.State {
-		case presentation.PublicStatePaused:
-			group.Paused = append(group.Paused, job)
-		case presentation.PublicStateRunning:
-			group.Running = append(group.Running, job)
-		case presentation.PublicStateScheduled:
-			group.Scheduled = append(group.Scheduled, job)
-		case presentation.PublicStateWaiting, presentation.PublicStateDisabled:
-			group.Waiting = append(group.Waiting, job)
-		default:
-			panic(fmt.Sprintf("unexpected job state %q in %v", job.State, job))
-		}
-	}
-
 	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
-		"Projects": byProj,
+		"Jobs": sortJobs(c.Context, jobs),
 	})
 }

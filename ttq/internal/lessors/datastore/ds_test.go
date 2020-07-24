@@ -46,7 +46,7 @@ func TestLeasing(t *testing.T) {
 		Convey("noop for save and load", func() {
 			l, err := save(ctx, shard13, epoch.Add(time.Minute), nil)
 			So(err, ShouldBeNil)
-			So(l.Id, ShouldEqual, 0)
+			So(l.Id, ShouldEqual, "")
 
 			active, expired, err := loadAll(ctx, shard13)
 			So(err, ShouldBeNil)

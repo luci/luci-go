@@ -32,16 +32,13 @@ export class InvocationState {
   constructor(private appState: AppState) {}
 
   @computed
-  get invocationName(): string | null {
-    if (!this.invocationId) {
-      return null;
-    }
+  get invocationName(): string {
     return 'invocations/' + this.invocationId;
   }
 
   @computed
   get invocationReq(): IPromiseBasedObservable<Invocation> {
-    if (!this.appState.resultDb || !this.invocationName) {
+    if (!this.appState.resultDb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(new Promise(() => {}));
     }
@@ -62,7 +59,7 @@ export class InvocationState {
   @observable.ref showFlaky = true;
 
   @computed private get testResultBatchIterFn() {
-    if (!this.appState?.resultDb || !this.invocationName) {
+    if (!this.appState?.resultDb) {
       return async function*() {};
     }
     return iter.teeAsync(streamTestResultBatches(
@@ -78,7 +75,7 @@ export class InvocationState {
   }
 
   @computed private get testExonerationBatchIterFn() {
-    if (!this.appState?.resultDb || !this.invocationName) {
+    if (!this.appState?.resultDb) {
       return async function*() {};
     }
     return iter.teeAsync(streamTestExonerationBatches(

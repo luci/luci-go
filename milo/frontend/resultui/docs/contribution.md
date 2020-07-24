@@ -7,9 +7,6 @@ It should have the following content.
     "client_id": "<OAuth2 Client ID>",
     "result_db": {
         "host": "<ResultDB Host Name>"  // e.g. "staging.results.api.cr.dev"
-    },
-    "milo": {
-        "url": "<Milo URL>"  // e.g. "https://luci-milo-dev.appspot.com"
     }
 }
 ```

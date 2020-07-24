@@ -36,7 +36,7 @@ import (
 
 // RBEConn creates a gRPC connection to RBE authenticated as self.
 func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, err
 	}

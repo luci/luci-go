@@ -17,7 +17,6 @@ package ui
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 	"strings"
 	"time"
@@ -115,17 +114,6 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 				return map[string]interface{}{
 					"First":  a1,
 					"Second": a2,
-				}
-			},
-			// JobCount returns "<n> job(s)".
-			"JobCount": func(jobs sortedJobs) string {
-				switch len(jobs) {
-				case 0:
-					return "NONE"
-				case 1:
-					return "1 JOB"
-				default:
-					return fmt.Sprintf("%d JOBS", len(jobs))
 				}
 			},
 		},

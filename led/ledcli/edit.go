@@ -21,7 +21,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/led/job"
@@ -56,14 +55,12 @@ type cmdEdit struct {
 	propertiesAuto stringmapflag.Value
 	recipeName     string
 	experimental   string
-	experiments    stringmapflag.Value
 
 	recipeIsolate string
 	recipeCIPDPkg string
 	recipeCIPDVer string
 
-	processedDimensions  job.DimensionEditCommands
-	processedExperiments map[string]bool
+	processedDimensions job.DimensionEditCommands
 
 	swarmingHost string
 	taskName     string
@@ -115,10 +112,6 @@ func (c *cmdEdit) initFlags(opts cmdBaseOptions) {
 	c.Flags.StringVar(&c.experimental, "exp", "",
 		"set to `true` or `false` to change the Build.Input.Experimental value. `led` jobs, "+
 			"by default, always start as experimental.")
-	c.Flags.Var(&c.experiments, "experiment",
-		"(repeatable) enable or disable an experiment. This takes a parameter of `experiment_name=true|false` and "+
-			"adds/removes the corresponding experiment. Already enabled experiments are left as is unless they "+
-			"are explicitly disabled.")
 
 	c.cmdBase.initFlags(opts)
 }
@@ -130,14 +123,6 @@ func (c *cmdEdit) validateFlags(ctx context.Context, _ []string, _ subcommands.E
 	c.processedDimensions, err = job.MakeDimensionEditCommands(c.dimensions)
 	if err != nil {
 		return err
-	}
-
-	c.processedExperiments = make(map[string]bool, len(c.experiments))
-	for k, v := range c.experiments {
-		if v != "true" && v != "false" {
-			return errors.Reason("bad -experiment %s=...: the value should be `true` or `false`, got %q", k, v).Err()
-		}
-		c.processedExperiments[k] = v == "true"
 	}
 
 	return
@@ -179,7 +164,6 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, inJob *job.Defini
 			if c.experimental != "" {
 				je.Experimental(c.experimental == "true")
 			}
-			je.Experiments(c.processedExperiments)
 		})
 	}
 	return inJob, err

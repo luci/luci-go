@@ -18,8 +18,10 @@ package datastore
 
 import (
 	"context"
+	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
@@ -50,9 +52,9 @@ func (l *Lessor) WithLease(ctx context.Context, shard int, part *partition.Parti
 	}
 	defer lease.delete(ctx) // failure to delete is logged & ignored.
 
-	lctx, cancel := clock.WithDeadline(ctx, lease.ExpiresAt)
+	ctx, cancel := clock.WithDeadline(ctx, lease.ExpiresAt)
 	defer cancel()
-	clbk(lctx, lease.parts)
+	clbk(ctx, lease.parts)
 	return nil
 }
 
@@ -62,7 +64,6 @@ func (*Lessor) acquire(ctx context.Context, shard int, desired *partition.Partit
 	var acquired *lease
 	deletedExpired := 0
 	err := ds.RunInTransaction(ctx, func(ctx context.Context) error {
-		deletedExpired = 0 // reset in case of retries.
 		active, expired, err := loadAll(ctx, shard)
 		if err != nil {
 			return err
@@ -96,17 +97,24 @@ func (*Lessor) acquire(ctx context.Context, shard int, desired *partition.Partit
 	return acquired, nil
 }
 
+type leasesRoot struct {
+	_kind string `gae:"$kind,ttq.leasesRoot"`
+	Shard string `gae:"$id"` // string to avoid having 0 integer keys.
+}
+
+func leasesRootEntity(shard int) *leasesRoot {
+	return &leasesRoot{Shard: strconv.Itoa(shard)}
+}
+
 func leasesRootKey(ctx context.Context, shard int) *ds.Key {
-	// Integer ID of 0 are not allowed, so add 1000000 s.t. it's clear which shard
-	// an entity belongs to visually.
-	return ds.NewKey(ctx, "ttq.leasesRoot", "", 1000000+int64(shard), nil)
+	return ds.KeyForObj(ctx, leasesRootEntity(shard))
 }
 
 type lease struct {
 	_kind string `gae:"$kind,ttq.lease"`
 
-	Id              int64     `gae:"$id"`     // autoassigned. If not set, implies a noop lease.
-	Parent          *ds.Key   `gae:"$parent"` // ttq.leasesRoot entity.
+	Id              string    `gae:"$id"`     // if not set, implies noop lease.
+	Parent          *ds.Key   `gae:"$parent"` // leasesRoot entity.
 	SerializedParts []string  `gae:",noindex"`
 	ExpiresAt       time.Time `gae:",noindex"` // precision up to microseconds.
 
@@ -122,8 +130,12 @@ func save(ctx context.Context, shard int, expiresAt time.Time, parts partition.S
 		}, nil // no need to save noop lease.
 	}
 
+	u, err := uuid.NewRandom()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to generate lease ID").Tag(transient.Tag).Err()
+	}
 	l := &lease{
-		// ID will be autoassgined.
+		Id:              u.String(),
 		Parent:          leasesRootKey(ctx, shard),
 		SerializedParts: make([]string, len(parts)),
 		ExpiresAt:       expiresAt.UTC(),
@@ -132,14 +144,14 @@ func save(ctx context.Context, shard int, expiresAt time.Time, parts partition.S
 	for i, p := range parts {
 		l.SerializedParts[i] = p.String()
 	}
-	if err := ds.Put(ctx, l); err != nil {
+	if err := ds.Put(ctx, leasesRootEntity(shard), l); err != nil {
 		return nil, errors.Annotate(err, "failed to save a new lease").Tag(transient.Tag).Err()
 	}
 	return l, nil
 }
 
 func (l *lease) delete(ctx context.Context) {
-	if l.Id == 0 {
+	if l.Id == "" {
 		return // noop leases are not saved.
 	}
 	if err := ds.Delete(ctx, l); err != nil {
@@ -164,16 +176,15 @@ func loadAll(ctx context.Context, shard int) (active, expired []*lease, err erro
 			continue
 		}
 		j--
-		all[i], all[j] = all[j], all[i]
+		tmp := all[i]
+		all[i] = all[j]
+		all[j] = tmp
 	}
 	return all[:i], all[i:], nil
 }
 
 func availableForLease(desired *partition.Partition, active []*lease) (partition.SortedPartitions, error) {
 	builder := partition.NewSortedPartitionsBuilder(desired)
-	// Exclude from desired all partitions under currently active leases.
-	// TODO(tandrii): constrain number of partitions per lease to avoid excessive
-	// runtime here.
 	for _, l := range active {
 		for _, s := range l.SerializedParts {
 			p, err := partition.FromString(s)

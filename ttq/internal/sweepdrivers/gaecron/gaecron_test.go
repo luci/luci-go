@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
+	"golang.org/x/time/rate"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
 	"go.chromium.org/luci/ttq/internal"
@@ -61,6 +62,10 @@ func TestSweeper(t *testing.T) {
 		}}
 		ttqCT := ttqtesting.FakeCloudTasks{}
 		sw := NewSweeper(&impl, "/internal/ttq", "projects/example-project/locations/us-central1/queues/ttq", &ttqCT)
+		// Although it'd be nice to test with real limiter, limiter uses time.Now()
+		// while the rest of TTQ library uses the clock from context.
+		// So, effectively disable limiter by allowing all events.
+		sw.ppLimiter = rate.NewLimiter(rate.Inf, 0)
 
 		r := router.NewWithRootContext(ctx)
 		sw.InstallRoutes(r, router.MiddlewareChain{})

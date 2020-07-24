@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -92,6 +93,7 @@ func NewSweeper(impl *internal.Impl, pathPrefix, queue string, tasksClient inter
 		queue:          queue,
 		tasksClient:    internal.UnborkTasksClient(tasksClient),
 		impl:           impl,
+		ppLimiter:      rate.NewLimiter(200, 50), // 200 QPS.
 		ppBatchSize:    50,
 		ppBatchWorkers: 8,
 	}
@@ -106,6 +108,10 @@ type Sweeper struct {
 	impl        *internal.Impl
 	lessor      dslessor.Lessor
 
+	// ppLimiter limits the rate of individual PostProcessing of Reminders, which
+	// encompasses 1 RPC to create a task and 1 RPC to delete Reminder.
+	// This limit is per-Sweep instance overall.
+	ppLimiter      *rate.Limiter
 	ppBatchSize    int // max reminders to PostProcess in a batch.
 	ppBatchWorkers int // max workers to PostProcess batches per task.
 }
@@ -247,7 +253,7 @@ func (s *Sweeper) postProcessWithLease(ctx context.Context, reminders []*interna
 			default:
 				batch, reminders = reminders[:s.ppBatchSize], reminders[s.ppBatchSize:]
 			}
-			workChan <- func() error { return s.impl.PostProcessBatch(ctx, batch, nil) }
+			workChan <- func() error { return s.impl.PostProcessBatch(ctx, batch, s.ppLimiter) }
 		}
 	})
 }
