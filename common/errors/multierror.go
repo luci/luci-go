@@ -88,3 +88,30 @@ func SingleError(err error) error {
 	}
 	return err
 }
+
+// Flatten collapses a multi-dimensional MultiError space into a flat
+// MultiError, removing "nil" errors.
+//
+// If err is not an errors.MultiError, will return err directly.
+//
+// As a special case, if merr contains no non-nil errors, nil will be returned.
+func Flatten(err error) error {
+	var ret MultiError
+	flattenRec(&ret, err)
+	if len(ret) == 0 {
+		return nil
+	}
+	return ret
+}
+
+func flattenRec(ret *MultiError, err error) {
+	switch et := err.(type) {
+	case nil:
+	case MultiError:
+		for _, e := range et {
+			flattenRec(ret, e)
+		}
+	default:
+		*ret = append(*ret, et)
+	}
+}
