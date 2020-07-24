@@ -66,3 +66,26 @@ func TestUpstreamErrors(t *testing.T) {
 		So(SingleError(e), ShouldEqual, e)
 	})
 }
+
+func TestFlatten(t *testing.T) {
+	t.Parallel()
+
+	Convey("Flatten works", t, func() {
+		Convey("Nil", func() {
+			So(Flatten(MultiError{nil, nil, MultiError{nil, nil, nil}}), ShouldBeNil)
+		})
+
+		Convey("2-dim", func() {
+			So(Flatten(MultiError{nil, errors.New("1"), nil, MultiError{nil, errors.New("2"), nil}}),
+				ShouldResemble, MultiError{errors.New("1"), errors.New("2")})
+		})
+
+		Convey("Doesn't unwrap", func() {
+			ann := Annotate(MultiError{nil, nil, nil}, "don't do this").Err()
+			merr, yup := Flatten(MultiError{nil, ann, nil, MultiError{nil, errors.New("2"), nil}}).(MultiError)
+			So(yup, ShouldBeTrue)
+			So(len(merr), ShouldEqual, 2)
+			So(merr, ShouldResemble, MultiError{ann, errors.New("2")})
+		})
+	})
+}
