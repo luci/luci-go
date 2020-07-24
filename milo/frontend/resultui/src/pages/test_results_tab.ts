@@ -20,15 +20,15 @@ import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
 
-import '../../components/left_panel';
-import '../../components/test_filter';
-import { TestFilter } from '../../components/test_filter';
-import '../../components/test_nav_tree';
-import '../../components/variant_entry';
-import { VariantEntryElement } from '../../components/variant_entry';
-import { AppState, consumeAppState } from '../../context/app_state/app_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
-import { ReadonlyVariant, TestNode, VariantStatus } from '../../models/test_node';
+import '../components/left_panel';
+import '../components/test_filter';
+import { TestFilter } from '../components/test_filter';
+import '../components/test_nav_tree';
+import '../components/variant_entry';
+import { VariantEntryElement } from '../components/variant_entry';
+import { AppState, consumeAppState } from '../context/app_state/app_state';
+import { consumeInvocationState, InvocationState } from '../context/invocation_state/invocation_state';
+import { ReadonlyVariant, TestNode, VariantStatus } from '../models/test_node';
 
 /**
  * Display a list of test results.

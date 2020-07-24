@@ -16,6 +16,7 @@ import { Route, Router } from '@vaadin/router';
 
 import './components/page_layout';
 import './context/app_state/app_state_provider';
+import './context/build_state/build_state_provider';
 import './context/config_provider';
 import './context/invocation_state/invocation_state_provider';
 
@@ -77,9 +78,9 @@ router.setRoutes({
                     },
                     {
                       path: 'test-results',
-                      name: 'test-results',
+                      name: 'invocation-test-results',
                       action: async (_ctx, cmd) => {
-                        await import(/* webpackChunkName: "test_results_tab" */ './pages/invocation_page/test_results_tab');
+                        await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
                         return cmd.component('tr-test-results-tab');
                       },
                     },
@@ -96,11 +97,31 @@ router.setRoutes({
                 },
                 {
                   path: '/p/:project/:bucket/:builder/:build_num_or_id',
-                  name: 'build',
-                  action: async (_ctx, cmd) => {
-                    await import(/* webpackChunkName: "build_page" */ './pages/build_page');
-                    return cmd.component('tr-build-page');
-                  },
+                  component: 'tr-build-state-provider',
+                  children: [
+                    {
+                      path: '/',
+                      name: 'build',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "build_page" */ './pages/build_page');
+                        return cmd.component('tr-build-page');
+                      },
+                      children: [
+                        {
+                          path: '/',
+                          redirect: '/ui/p/:project/:bucket/:builder/:build_num_or_id/test-results',
+                        },
+                        {
+                          path: '/test-results',
+                          name: 'build-test-results',
+                          action: async (_ctx, cmd) => {
+                            await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
+                            return cmd.component('tr-test-results-tab');
+                          },
+                        },
+                      ],
+                    },
+                  ],
                 },
                 {
                   path: '/artifact',

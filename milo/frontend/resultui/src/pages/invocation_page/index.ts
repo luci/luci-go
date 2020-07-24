@@ -83,7 +83,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
         id: 'test-results',
         label: 'Test Results',
         href: router.urlForName(
-          'test-results',
+          'invocation-test-results',
           {'invocation_id': this.invocationState.invocationId},
         ),
       },

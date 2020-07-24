@@ -16,13 +16,16 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { autorun, computed, observable } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import { TabDef } from '../../components/tab_bar';
 import { AppState, consumeAppState } from '../../context/app_state/app_state';
+import { BuildState, consumeBuildState } from '../../context/build_state/build_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state/invocation_state';
 import { NOT_FOUND_URL, router } from '../../routes';
+import { BuilderID } from '../../services/buildbucket';
 
 /**
  * Main build page.
@@ -32,10 +35,10 @@ import { NOT_FOUND_URL, router } from '../../routes';
  */
 export class BuildPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref appState!: AppState;
+  @observable.ref buildState!: BuildState;
+  @observable.ref invocationState!: InvocationState;
 
-  private project = '';
-  private bucket = '';
-  private builder = '';
+  private builder!: BuilderID;
   private buildNumOrId = '';
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -47,24 +50,46 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       return cmd.redirect(NOT_FOUND_URL);
     }
 
-    this.project = project as string;
-    this.bucket = bucket as string;
-    this.builder = builder as string;
+    this.builder = {
+      project: project as string,
+      bucket: bucket as string,
+      builder: builder as string,
+    };
     this.buildNumOrId = buildNumOrId as string;
     return;
+  }
+
+  private disposers: Array<() => void> = [];
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.buildState.builder = this.builder;
+    this.buildState.buildNumOrId = this.buildNumOrId;
+
+    this.disposers.push(autorun(
+      () => this.invocationState.invocationId = this.buildState.buildPageData
+        ?.infra.resultdb.invocation.slice('invocations/'.length) || '',
+    ));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    for (const disposer of this.disposers) {
+      disposer();
+    }
   }
 
   @computed get tabDefs(): TabDef[] {
     return [
       {
-        id: 'overview',
-        label: 'Overview',
+        id: 'test-results',
+        label: 'Test Results',
         href: router.urlForName(
-          'build',
+          'build-test-results',
           {
-            'project': this.project,
-            'bucket': this.bucket,
-            'builder': this.builder,
+            'project': this.builder.project,
+            'bucket': this.builder.bucket,
+            'builder': this.builder.builder,
             'build_num_or_id': this.buildNumOrId,
           },
         ),
@@ -77,15 +102,16 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build</span>
-          <span>${this.builder} / ${this.buildNumOrId}</span>
+          <span>${this.builder.builder} / ${this.buildNumOrId}</span>
         </div>
       </div>
       <tr-status-bar
         .components=${[{color: '#007bff', weight: 1}]}
+        .loading=${this.buildState.buildPageDataReq.state === 'pending'}
       ></tr-status-bar>
       <tr-tab-bar
         .tabs=${this.tabDefs}
-        .selectedTabId=${'overview'}
+        .selectedTabId=${'test-results'}
       ></tr-tab-bar>
       <slot></slot>
     `;
@@ -122,7 +148,11 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
 }
 
 customElement('tr-build-page')(
-  consumeAppState(
-    BuildPageElement,
+  consumeInvocationState(
+    consumeBuildState(
+      consumeAppState(
+        BuildPageElement,
+      ),
+    ),
   ),
 );
