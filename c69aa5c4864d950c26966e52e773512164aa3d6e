@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0eb4fca7_bd353fa1",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-24T04:42:32Z",
+      "side": 1,
+      "message": "It\u0027s optional because we won\u0027t be able to set it when we initialise the state.\nThat\u0027s not ideal but typescript is able to statically tell if a property/variant is set or not and warns us if we are accessing a variable that could be undefined.",
+      "parentUuid": "d714279a_6df8cf77",
+      "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "096a4403_0f2fcd25",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
         "patchSetId": 7
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "9c8bd702_4d88056c",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-24T04:42:32Z",
+      "side": 1,
+      "message": "replaced with the constant from the lib.",
+      "parentUuid": "096a4403_0f2fcd25",
+      "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b81be5c_96de6c11",
         "filename": "milo/frontend/resultui/src/context/build_state/build_state_provider.ts",
         "patchSetId": 7
@@ -50,6 +86,24 @@
       "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0666c03f_2bcfe89c",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state_provider.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-24T04:42:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b81be5c_96de6c11",
+      "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
