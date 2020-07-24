@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "d6322de7_fcd3065e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-24T21:53:46Z",
+      "side": 1,
+      "message": "yeah, we just need to notify a couple users that we have today. Please let them now: estaab@, saagarsanghavi@, yuanzhi@.",
+      "parentUuid": "e26a118e_737f2c0b",
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ecbbfaff_ad297276",
         "filename": "resultdb/internal/common.go",
         "patchSetId": 3
