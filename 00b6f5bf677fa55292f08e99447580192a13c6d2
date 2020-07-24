@@ -16,6 +16,24 @@
       "revId": "00b6f5bf677fa55292f08e99447580192a13c6d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e34cab80_c277b222",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-24T03:56:37Z",
+      "side": 1,
+      "message": "I don\u0027t remember; Really we should make a real API call of some sort if we want to validate at this level.",
+      "parentUuid": "9b0d4748_502d22f7",
+      "revId": "00b6f5bf677fa55292f08e99447580192a13c6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
