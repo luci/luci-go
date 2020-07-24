@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c7de761c_a08a2903",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T15:42:53Z",
+      "side": 1,
+      "message": "Am I hitting KI with bug in testclock library or am I holding it wrong?\n\n$ go test -race -v -timeout 2s -failfast -count 1000 \n\nreproduces pretty quickly an apparent deadlock.\n\n\nAlthough the highlighted code gets called, and I see dispathcer.Channel\u0027s unblocking itself,\nbut it gets stuck at \n  defer timer.Stop\nwhich itself is get stuck at \n  stopped \u003d \u003c-t.monitorFinishedC\n\n\n\n  (goroutine 162 [chan receive]:\ngo.chromium.org/luci/common/clock/testclock.(*timer).Stop(0xc000659dc0, 0x0)\n        .../go/src/go.chromium.org/luci/common/clock/testclock/testtimer.go:87 +0xab\ngo.chromium.org/luci/common/sync/dispatcher.(*coordinatorState).run(0xc0002623c0, 0x12867a0, 0xc0007dedb0, 0xc0006e6ea0)\n        .../go/src/go.chromium.org/luci/common/sync/dispatcher/coordinator.go:253 +0xf2b\ncreated by go.chromium.org/luci/common/sync/dispatcher.NewChannel\n        .../go/src/go.chromium.org/luci/common/sync/dispatcher/channel.go:140 +0x2f1\nexit status 2",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 17
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
