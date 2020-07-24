@@ -201,16 +201,18 @@ func TestScan(t *testing.T) {
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = logging.SetLevel(ctx, logging.Debug)
 
-		// Use first shard spanning 0000000...0 to 1000000...0
-		// such that Reminders in tests can use short IDs "0*".
-		part := partition.Universe(keySpaceBytes).Split(16)[0]
+		mkReminder := func(id int64, freshUntil time.Time) *Reminder {
+			low, _ := partition.FromInts(id, id+1).QueryBounds(keySpaceBytes)
+			return &Reminder{Id: low, FreshUntil: freshUntil}
+		}
+		part0to10 := partition.FromInts(0, 10)
 
 		Convey("Normal operation", func() {
 			db := FakeDB{}
 			impl := Impl{Options: ttq.Options{TasksPerScan: 2048}, DB: &db}
 
 			Convey("Empty", func() {
-				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part0to10})
 				So(len(more), ShouldEqual, 0)
 				So(err, ShouldBeNil)
 				So(len(res.Reminders), ShouldEqual, 0)
@@ -219,10 +221,10 @@ func TestScan(t *testing.T) {
 			stale := epoch.Add(30 * time.Second)
 			fresh := epoch.Add(90 * time.Second)
 			savedReminders := []*Reminder{
-				&Reminder{Id: "01", FreshUntil: fresh},
-				&Reminder{Id: "02", FreshUntil: stale},
-				&Reminder{Id: "03", FreshUntil: fresh},
-				&Reminder{Id: "04", FreshUntil: stale},
+				mkReminder(1, fresh),
+				mkReminder(2, stale),
+				mkReminder(3, fresh),
+				mkReminder(4, stale),
 			}
 			for _, r := range savedReminders {
 				So(db.SaveReminder(ctx, r), ShouldBeNil)
@@ -231,12 +233,19 @@ func TestScan(t *testing.T) {
 
 			Convey("Scan complete partition", func() {
 				impl.Options.TasksPerScan = 10
-				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part0to10})
 				So(err, ShouldBeNil)
 				So(len(more), ShouldEqual, 0)
 				So(res.Reminders, ShouldResemble, []*Reminder{
-					&Reminder{Id: "02", FreshUntil: stale},
-					&Reminder{Id: "04", FreshUntil: stale},
+					mkReminder(2, stale),
+					mkReminder(4, stale),
+				})
+
+				Convey("but only within given partition", func() {
+					more, res, err = impl.Scan(ctx, ScanItem{Partition: partition.FromInts(0, 4)})
+					So(err, ShouldBeNil)
+					So(len(more), ShouldEqual, 0)
+					So(res.Reminders, ShouldResemble, []*Reminder{mkReminder(2, stale)})
 				})
 			})
 
@@ -245,19 +254,17 @@ func TestScan(t *testing.T) {
 				// Follow up scans should start from 04.
 				impl.Options.TasksPerScan = 3
 				impl.Options.SecondaryScanShards = 2
-				scanItem := ScanItem{Shard: 1, Level: 1, Partition: part}
+				scanItem := ScanItem{Shard: 1, Level: 1, Partition: part0to10}
 				more, res, err := impl.Scan(ctx, scanItem)
 
 				So(err, ShouldBeNil)
-				So(res.Reminders, ShouldResemble, []*Reminder{
-					&Reminder{Id: "02", FreshUntil: stale},
-				})
+				So(res.Reminders, ShouldResemble, []*Reminder{mkReminder(2, stale)})
 
 				Convey("Scan returns correct follow up ScanItems", func() {
 					So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
 					So(more[0].Partition.Low, ShouldResemble, *big.NewInt(3 + 1))
 					So(more[0].Partition.High, ShouldResemble, more[1].Partition.Low)
-					So(more[1].Partition.High, ShouldResemble, part.High)
+					So(more[1].Partition.High, ShouldResemble, *big.NewInt(10))
 					So(more[0].Shard, ShouldEqual, scanItem.Shard)
 					So(more[1].Shard, ShouldEqual, scanItem.Shard)
 					So(more[0].Level, ShouldEqual, scanItem.Level+1)
@@ -265,6 +272,7 @@ func TestScan(t *testing.T) {
 				})
 			})
 		})
+
 		Convey("Abnormal operation", func() {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -273,20 +281,20 @@ func TestScan(t *testing.T) {
 			impl := Impl{Options: ttq.Options{TasksPerScan: 2048, SecondaryScanShards: 2}, DB: db}
 
 			Convey("Level-3 not allowed", func() {
-				_, _, err := impl.Scan(ctx, ScanItem{Level: 3, Partition: part})
+				_, _, err := impl.Scan(ctx, ScanItem{Level: 3, Partition: part0to10})
 				So(err, ShouldErrLike, "level-3 scan")
 			})
 
 			stale := epoch.Add(30 * time.Second)
 			fresh := epoch.Add(90 * time.Second)
 			someReminders := []*Reminder{
-				&Reminder{Id: "01", FreshUntil: fresh},
-				&Reminder{Id: "02", FreshUntil: stale},
+				mkReminder(1, fresh),
+				mkReminder(2, stale),
 			}
 			tclock.Set(epoch.Add(60 * time.Second))
 
 			// Simulate context expiry by using deadline in the past.
-			// TODO(tandrii): find a way to expire ctx withing FetchRemindersMeta for a
+			// TODO(tandrii): find a way to expire ctx within FetchRemindersMeta for a
 			// realistic test.
 			ctx, cancel := clock.WithDeadline(ctx, epoch)
 			defer cancel()
@@ -297,26 +305,24 @@ func TestScan(t *testing.T) {
 				db.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errExpected)
 
-				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part0to10})
 				So(err, ShouldResemble, errExpected)
 				So(len(res.Reminders), ShouldEqual, 0)
 				So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
-				So(more[0].Partition.Low, ShouldResemble, part.Low)
-				So(more[1].Partition.High, ShouldResemble, part.High)
+				So(more[0].Partition.Low, ShouldResemble, *big.NewInt(0))
+				So(more[1].Partition.High, ShouldResemble, *big.NewInt(10))
 			})
 
 			Convey("Timeout after fetching some", func() {
 				db.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(someReminders, ctx.Err())
 
-				more, res, err := impl.Scan(ctx, ScanItem{Partition: part})
+				more, res, err := impl.Scan(ctx, ScanItem{Partition: part0to10})
 				So(err, ShouldResemble, context.DeadlineExceeded)
-				So(res.Reminders, ShouldResemble, []*Reminder{
-					&Reminder{Id: "02", FreshUntil: stale},
-				})
-				So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
+				So(res.Reminders, ShouldResemble, []*Reminder{mkReminder(2, stale)})
+				So(len(more), ShouldEqual, 1) // partition is so small, only 1 follow up scan suffices.
 				So(more[0].Partition.Low, ShouldResemble, *big.NewInt(2 + 1))
-				So(more[1].Partition.High, ShouldResemble, part.High)
+				So(more[0].Partition.High, ShouldResemble, *big.NewInt(10))
 			})
 		})
 	})

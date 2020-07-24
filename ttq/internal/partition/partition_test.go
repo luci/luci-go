@@ -16,6 +16,7 @@ package partition
 
 import (
 	"encoding/json"
+	"math/big"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -95,6 +96,14 @@ func TestPartition(t *testing.T) {
 		})
 
 		Convey("ApplyToQuery", func() {
+			Convey("inKeySpace", func() {
+				So(inKeySpace(big.NewInt(1), 1), ShouldBeTrue)
+				So(inKeySpace(big.NewInt(254), 1), ShouldBeTrue)
+				So(inKeySpace(big.NewInt(255), 1), ShouldBeTrue)
+				So(inKeySpace(big.NewInt(256), 1), ShouldBeFalse)
+				So(inKeySpace(big.NewInt(256), 2), ShouldBeTrue)
+			})
+
 			u := Universe(1)
 			l, h := u.QueryBounds(1)
 			So(l, ShouldEqual, "00")
@@ -102,6 +111,14 @@ func TestPartition(t *testing.T) {
 			l, h = u.QueryBounds(2)
 			So(l, ShouldEqual, "0000")
 			So(h, ShouldEqual, "0100")
+
+			p := FromInts(10, 255)
+			l, h = p.QueryBounds(1)
+			So(l, ShouldEqual, "0a")
+			So(h, ShouldEqual, "ff")
+			l, h = p.QueryBounds(2)
+			So(l, ShouldEqual, "000a")
+			So(h, ShouldEqual, "00ff")
 		})
 
 		Convey("Split", func() {
