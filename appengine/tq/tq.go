@@ -301,7 +301,7 @@ func (d *Dispatcher) runBatchesPerQueue(ctx context.Context, tasks []*Task,
 		}
 	}
 
-	if err := flattenErrors(all.Get()); err != nil {
+	if err := errors.Flatten(all.Get()); err != nil {
 		return transient.Tag.Apply(err)
 	}
 	return nil
@@ -553,33 +553,4 @@ func deserializePayload(blob []byte) (proto.Message, error) {
 	}
 
 	return task, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// flattenErrors collapses a multi-dimensional MultiError space into a flat
-// MultiError, removing "nil" errors.
-//
-// If err is not an errors.MultiError, will return err directly.
-//
-// As a special case, if merr contains no non-nil errors, nil will be returned.
-func flattenErrors(err error) error {
-	var ret errors.MultiError
-	flattenErrorsRec(&ret, err)
-	if len(ret) == 0 {
-		return nil
-	}
-	return ret
-}
-
-func flattenErrorsRec(ret *errors.MultiError, err error) {
-	switch et := err.(type) {
-	case nil:
-	case errors.MultiError:
-		for _, e := range et {
-			flattenErrorsRec(ret, e)
-		}
-	default:
-		*ret = append(*ret, et)
-	}
 }
