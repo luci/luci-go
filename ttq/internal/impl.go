@@ -229,6 +229,7 @@ func (impl *Impl) Scan(ctx context.Context, w ScanItem) ([]ScanItem, ScanResult,
 //
 // Reminders batch will be modified to fetch Reminders' Payload.
 // limiter, if given, limits the rate of individual Reminder PostProcess-ing.
+// TODO(tandrii): get rid of limiter.
 func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder, limiter *rate.Limiter) error {
 	maxGoroutines := 16
 	switch {
@@ -258,7 +259,8 @@ func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder, limit
 			r := r
 			workChan <- func() error {
 				if err := limiter.Wait(ctx); err != nil {
-					return err // canceled/expired context.
+					// Either canceled context or waiting would exceed context deadline.
+					return errors.Annotate(err, "failed to wait on limiter").Err()
 				}
 				return impl.postProcess(ctx, r, nil)
 			}
@@ -433,9 +435,9 @@ func (r *Reminder) createTaskRequest() (*taskspb.CreateTaskRequest, error) {
 	return req, nil
 }
 
-// onlyLeased shrinks the given slice of Reminders sorted by their ID to contain
+// OnlyLeased shrinks the given slice of Reminders sorted by their ID to contain
 // only those inside the leased partitions.
-func onlyLeased(sorted []*Reminder, leased partition.SortedPartitions) []*Reminder {
+func OnlyLeased(sorted []*Reminder, leased partition.SortedPartitions) []*Reminder {
 	reuse := sorted[:]
 	l := 0
 	keyOf := func(i int) string {

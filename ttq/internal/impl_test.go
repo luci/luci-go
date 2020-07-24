@@ -380,7 +380,7 @@ func TestLeaseHelpers(t *testing.T) {
 
 	Convey("Lease Helpers", t, func() {
 
-		Convey("onlyLeased", func() {
+		Convey("OnlyLeased", func() {
 			reminders := []*Reminder{
 				// Each key be exactly 2*keySpaceBytes chars long.
 				&Reminder{Id: "00000000000000000000000000000001"},
@@ -389,7 +389,7 @@ func TestLeaseHelpers(t *testing.T) {
 				&Reminder{Id: "0000000000000000000000000000000f"}, // ie 15
 			}
 			leased := partition.SortedPartitions{partition.FromInts(5, 9)}
-			So(onlyLeased(reminders, leased), ShouldResemble, []*Reminder{
+			So(OnlyLeased(reminders, leased), ShouldResemble, []*Reminder{
 				&Reminder{Id: "00000000000000000000000000000005"},
 			})
 		})

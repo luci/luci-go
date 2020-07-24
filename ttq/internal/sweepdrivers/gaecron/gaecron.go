@@ -23,17 +23,22 @@ import (
 	"io/ioutil"
 	"strings"
 	"sync"
+	"time"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/ttq/internal"
+	dslessor "go.chromium.org/luci/ttq/internal/lessors/datastore"
+	"go.chromium.org/luci/ttq/internal/partition"
 )
 
 // NewSweeper creates a new Sweeper.
@@ -83,10 +88,12 @@ func NewSweeper(impl *internal.Impl, pathPrefix, queue string, tasksClient inter
 		pathPrefix += "/"
 	}
 	return &Sweeper{
-		pathPrefix:  pathPrefix,
-		queue:       queue,
-		tasksClient: internal.UnborkTasksClient(tasksClient),
-		impl:        impl,
+		pathPrefix:     pathPrefix,
+		queue:          queue,
+		tasksClient:    internal.UnborkTasksClient(tasksClient),
+		impl:           impl,
+		ppBatchSize:    50,
+		ppBatchWorkers: 8,
 	}
 }
 
@@ -97,6 +104,10 @@ type Sweeper struct {
 	queue       string
 	tasksClient internal.TasksClient
 	impl        *internal.Impl
+	lessor      dslessor.Lessor
+
+	ppBatchSize    int // max reminders to PostProcess in a batch.
+	ppBatchWorkers int // max workers to PostProcess batches per task.
 }
 
 func (s *Sweeper) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
@@ -162,10 +173,18 @@ func (s *Sweeper) createTask(ctx context.Context, scan internal.ScanItem) error 
 // execTask executes one scan task and any follow postProcessing as a result.
 // If more scans required as a followup, schedules them via push tasks.
 func (s *Sweeper) execTask(ctx context.Context, scan internal.ScanItem) error {
-	moreScans, scanResult, err := s.impl.Scan(ctx, scan)
+	// Ensure there is time to postProcess Reminders produced by scan.
+	scanTimeout := time.Minute
+	if d, ok := ctx.Deadline(); ok {
+		scanTimeout = clock.Now(ctx).Sub(d) / 5
+	}
+	scanCtx, cancel := clock.WithTimeout(ctx, scanTimeout)
+	defer cancel()
+	moreScans, scanResult, err := s.impl.Scan(scanCtx, scan)
 	if err != nil {
 		return err
 	}
+
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	lerr := errors.NewLazyMultiError(2)
@@ -192,7 +211,43 @@ func (s *Sweeper) createTasks(ctx context.Context, scans []internal.ScanItem) er
 }
 
 func (s *Sweeper) postProcessAll(ctx context.Context, scanResult internal.ScanResult) error {
-	// TODO(tandrii): implement by acquiring a lease first, then splitting into
-	// batches for s.Impl.PostProcessBatch.
-	return errors.New("not implemented")
+	l := len(scanResult.Reminders)
+	if l == 0 {
+		return nil
+	}
+	desired, err := partition.SpanInclusive(scanResult.Reminders[0].Id, scanResult.Reminders[l-1].Id)
+	if err != nil {
+		return errors.Annotate(err, "invalid Reminder Id(s)").Err()
+	}
+	var errProcess error
+	leaseErr := s.lessor.WithLease(ctx, scanResult.Shard, desired, time.Minute,
+		func(leaseCtx context.Context, leased partition.SortedPartitions) {
+			reminders := internal.OnlyLeased(scanResult.Reminders, leased)
+			errProcess = s.postProcessWithLease(leaseCtx, reminders)
+		})
+	switch {
+	case leaseErr != nil:
+		return errors.Annotate(leaseErr, "failed to acquire lease").Err()
+	case errProcess != nil:
+		return errors.Annotate(errProcess, "failed to postProcess all reminders").Err()
+	default:
+		return nil
+	}
+}
+
+func (s *Sweeper) postProcessWithLease(ctx context.Context, reminders []*internal.Reminder) error {
+	return parallel.WorkPool(s.ppBatchWorkers, func(workChan chan<- func() error) {
+		for {
+			var batch []*internal.Reminder
+			switch l := len(reminders); {
+			case l == 0:
+				return
+			case l < s.ppBatchSize:
+				batch, reminders = reminders, nil
+			default:
+				batch, reminders = reminders[:s.ppBatchSize], reminders[s.ppBatchSize:]
+			}
+			workChan <- func() error { return s.impl.PostProcessBatch(ctx, batch, nil) }
+		}
+	})
 }
