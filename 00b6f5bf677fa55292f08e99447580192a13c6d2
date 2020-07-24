@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b0d4748_502d22f7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T01:08:38Z",
+      "side": 1,
+      "message": "lgtm, but just validating the string looks like a host wasn\u0027t enough?",
+      "revId": "00b6f5bf677fa55292f08e99447580192a13c6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
