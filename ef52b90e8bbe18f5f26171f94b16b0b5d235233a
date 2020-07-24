@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "71479a8b_ac30fecc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-24T19:47:51Z",
+      "side": 1,
+      "message": "Apologies for not thinking this all the way through.\n\nI am for allowing a -realm flag, but not requiring it. Should we have a default realm? As you can see I am trying to remove \u0027chromium:public\u0027 throughout.\n\nI am concerned of making results uploaded with rdb cli public by default.\n\nHow about this: if -realm is not specified and no realm is set in some env var, then show a prompt saying that the invocation will be created in the default public realm, and if the user does not want this that they should specify the flag or set an env var.",
+      "parentUuid": "c295d247_da3d9208",
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ecbbfaff_ad297276",
         "filename": "resultdb/internal/common.go",
         "patchSetId": 3
