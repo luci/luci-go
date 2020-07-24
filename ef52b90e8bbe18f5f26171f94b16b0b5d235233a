@@ -55,6 +55,23 @@
     },
     {
       "key": {
+        "uuid": "c287f7ce_5d26331f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-24T20:18:02Z",
+      "side": 1,
+      "message": "Re default realm: there\u0027s one in LUCI_CONTEXT https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/client/LUCI_CONTEXT.md \n\nIt will (eventually) be set in all Swarming tasks. Currently it is not yet populated though.",
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecbbfaff_ad297276",
         "filename": "resultdb/internal/common.go",
         "patchSetId": 3
