@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/luciexe"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // Subprocess represents a running luciexe.
@@ -114,7 +115,11 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 // Wait waits for the subprocess to terminate.
 //
 // If Options.CollectOutput (default: false) was specified, this will return the
-// final Build message, as reported by the luciexe.
+// final Build message, as reported by the luciexe. In addition, the status of
+// SubProcess.Step will be set to INFRA_FAILURE if any of the following
+// conditions are met:
+//  * Fail to read the final Build message reported by the luciexe
+//  * The status of final Build message is non-terminal
 //
 // If you wish to cancel the subprocess (e.g. due to a timeout or deadline),
 // make sure to pass a cancelable/deadline context to Start().
@@ -136,7 +141,27 @@ func (s *Subprocess) Wait() (*bbpb.Build, error) {
 			s.err = errors.Annotate(s.err, "waiting for luciexe").Err()
 			return
 		}
-		s.build, s.err = luciexe.ReadBuildFile(s.collectPath)
+
+		if s.collectPath != "" {
+			if s.build, s.err = luciexe.ReadBuildFile(s.collectPath); s.err != nil {
+				s.err = errors.Annotate(s.err, "reading luciexe output").Err()
+				failStep(s.Step, s.err)
+			} else if !protoutil.IsEnded(s.build.GetStatus()) {
+				s.err = errors.Reason("expected terminal status in final Build of luciexe; got %s", s.build.GetStatus()).Err()
+				failStep(s.Step, s.err)
+			}
+		}
 	})
 	return s.build, s.err
+}
+
+func failStep(step *bbpb.Step, err error) {
+	if step == nil {
+		return
+	}
+	step.Status = bbpb.Status_INFRA_FAILURE
+	if step.SummaryMarkdown != "" {
+		step.SummaryMarkdown += "\n\n"
+	}
+	step.SummaryMarkdown += err.Error()
 }

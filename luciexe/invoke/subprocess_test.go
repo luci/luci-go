@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -54,9 +55,13 @@ func init() {
 		if err := proto.Unmarshal(data, in); err != nil {
 			panic(err)
 		}
-		in.SummaryMarkdown = "hi"
 
-		if *out != "" {
+		if *out != "" && varVal != "missing-output" {
+			in.Status = bbpb.Status_SUCCESS
+			if varVal == "non-terminal-status" {
+				in.Status = bbpb.Status_SCHEDULED
+			}
+			in.SummaryMarkdown = "hi"
 			outData, err := proto.Marshal(in)
 			if err != nil {
 				panic(err)
@@ -97,6 +102,33 @@ func TestSubprocess(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(build, ShouldNotBeNil)
 			So(build.SummaryMarkdown, ShouldEqual, "hi")
+		})
+
+		Convey(`collect output missing`, func() {
+			o.Namespace = "Foo"
+			o.CollectOutput = true
+			o.Env.Set(selfTestEnvvar, "missing-output")
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			So(err, ShouldBeNil)
+			So(protoutil.IsEnded(sp.Step.Status), ShouldBeFalse)
+			_, err = sp.Wait()
+			So(err, ShouldErrLike, "reading luciexe output")
+			So(sp.Step.Status, ShouldResemble, bbpb.Status_INFRA_FAILURE)
+			So(sp.Step.SummaryMarkdown, ShouldContainSubstring, "reading luciexe output")
+		})
+
+		Convey(`collect non-terminal build status`, func() {
+			o.Namespace = "Foo"
+			o.CollectOutput = true
+			o.Env.Set(selfTestEnvvar, "non-terminal-status")
+			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
+			So(err, ShouldBeNil)
+			So(protoutil.IsEnded(sp.Step.Status), ShouldBeFalse)
+			_, err = sp.Wait()
+			expectedErr := fmt.Sprintf("expected terminal status in final Build of luciexe; got %s", bbpb.Status_SCHEDULED)
+			So(err, ShouldErrLike, expectedErr)
+			So(sp.Step.Status, ShouldResemble, bbpb.Status_INFRA_FAILURE)
+			So(sp.Step.SummaryMarkdown, ShouldEqual, expectedErr)
 		})
 
 		Convey(`cancel context`, func() {
