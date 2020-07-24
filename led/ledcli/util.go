@@ -163,10 +163,13 @@ func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args 
 	return 0
 }
 
-func validateHost(host string) error {
-	if rsp, err := http.Get("https://" + host); err != nil {
+func pingHost(host string) error {
+	rsp, err := http.Get("https://" + host)
+	if err != nil {
 		return errors.Annotate(err, "%q", host).Err()
-	} else if rsp.StatusCode != 200 {
+	}
+	defer rsp.Body.Close()
+	if rsp.StatusCode != 200 {
 		return errors.Reason("%q: bad status %d", host, rsp.StatusCode).Err()
 	}
 	return nil

@@ -68,7 +68,7 @@ func (c *cmdGetBuild) jobInput() bool                  { return false }
 func (c *cmdGetBuild) positionalRange() (min, max int) { return 1, 1 }
 
 func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, env subcommands.Env) (err error) {
-	if err := validateHost(c.bbHost); err != nil {
+	if err := pingHost(c.bbHost); err != nil {
 		return errors.Annotate(err, "buildbucket host").Err()
 	}
 
