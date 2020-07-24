@@ -156,7 +156,7 @@ func (s *Sweeper) oneShard(ctx context.Context, firstScan internal.ScanItem) err
 			for i, d := range data.Data {
 				batch[i] = d.(*internal.Reminder)
 			}
-			return s.impl.PostProcessBatch(ctx, batch, nil)
+			return s.impl.PostProcessBatch(ctx, batch)
 		},
 	)
 	if err != nil {

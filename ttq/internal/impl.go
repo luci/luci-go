@@ -22,7 +22,6 @@ import (
 	"time"
 
 	gax "github.com/googleapis/gax-go/v2"
-	"golang.org/x/time/rate"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -228,16 +227,9 @@ func (impl *Impl) Scan(ctx context.Context, w ScanItem) ([]ScanItem, ScanResult,
 // PostProcessBatch efficiently processes a batch of stale Reminders.
 //
 // Reminders batch will be modified to fetch Reminders' Payload.
-// limiter, if given, limits the rate of individual Reminder PostProcess-ing.
-// TODO(tandrii): get rid of limiter.
-func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder, limiter *rate.Limiter) error {
-	maxGoroutines := 16
-	switch {
-	case limiter == nil:
-		limiter = rate.NewLimiter(rate.Inf, 0) // Unlimited.
-	case limiter.Limit() != rate.Inf:
-		maxGoroutines = limiter.Burst()
-	}
+//
+// RAM usage is equivalent to O(total Payload size of each Reminder in batch).
+func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder) error {
 	payloaded, err := impl.DB.FetchReminderPayloads(ctx, batch)
 	switch missing := len(batch) - len(payloaded); {
 	case missing < 0:
@@ -254,16 +246,10 @@ func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder, limit
 
 	// This can be optimized further by batching deletion of Reminders,
 	// but the current version was good enough in load tests already.
-	merr := parallel.WorkPool(maxGoroutines, func(workChan chan<- func() error) {
+	merr := parallel.WorkPool(16, func(workChan chan<- func() error) {
 		for _, r := range payloaded {
 			r := r
-			workChan <- func() error {
-				if err := limiter.Wait(ctx); err != nil {
-					// Either canceled context or waiting would exceed context deadline.
-					return errors.Annotate(err, "failed to wait on limiter").Err()
-				}
-				return impl.postProcess(ctx, r, nil)
-			}
+			workChan <- func() error { return impl.postProcess(ctx, r, nil) }
 		}
 	})
 	switch {
