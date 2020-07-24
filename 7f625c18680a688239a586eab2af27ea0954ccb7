@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4d670b95_1f4a4bf0",
+        "filename": "ttq/internal/impl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T06:24:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ecc4253_6eef9033",
+      "range": {
+        "startLine": 437,
+        "startChar": 3,
+        "endLine": 437,
+        "endChar": 4
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ec1feb0_5bd7b1cf",
         "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
         "patchSetId": 1
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c28d3fa3_4b883ff9",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T06:24:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8bc97f55_4313fabd",
+      "range": {
+        "startLine": 113,
+        "startChar": 22,
+        "endLine": 113,
+        "endChar": 27
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "566dd531_ce0e05d3",
         "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
         "patchSetId": 1
@@ -118,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "06c93d3b_578f0132",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T06:24:33Z",
+      "side": 1,
+      "message": "possible if two level-0 TQ tasks originating from the different crons run at the same time for some reason,\nbut I don\u0027t see a reason to care about not creating workpool.",
+      "parentUuid": "566dd531_ce0e05d3",
+      "range": {
+        "startLine": 231,
+        "startChar": 58,
+        "endLine": 231,
+        "endChar": 64
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f32dd13f_5b792e4c",
         "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
         "patchSetId": 1
@@ -138,6 +210,30 @@
       "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4075cbbf_6c8197b3",
+        "filename": "ttq/internal/sweepdrivers/gaecron/gaecron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-24T06:24:33Z",
+      "side": 1,
+      "message": "Good question. The answer is that it doesn\u0027t.\n\nRAM usage SUM(len(r.payload) for r in batch) because they are loaded at once from database.\nThus batchsize * concurrent batches suffices to limit RAM.\n\nAnd CloudTasks is able to take more QPS than this library ever intends to handle.\n\nSo, removed it entirely.",
+      "parentUuid": "f32dd13f_5b792e4c",
+      "range": {
+        "startLine": 256,
+        "startChar": 75,
+        "endLine": 256,
+        "endChar": 84
+      },
+      "revId": "7f625c18680a688239a586eab2af27ea0954ccb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
