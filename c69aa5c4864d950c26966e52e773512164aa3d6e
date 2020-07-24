@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d714279a_6df8cf77",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-24T01:40:47Z",
+      "side": 1,
+      "message": "Does it have to be optional? I see in index.ts it the fields was set in \"connectedCallback\", does it mean during the lifecycle of the BuildState object, the \"builder\" and \"buildNumOrId\" may not be set?\n\nThe reason I asked is if we make a field optional, we effectively create more logical path that we need to care about.",
+      "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "096a4403_0f2fcd25",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-24T01:40:47Z",
+      "side": 1,
+      "message": "Do we have an enum for \"fulfilled\"?",
+      "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b81be5c_96de6c11",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state_provider.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-07-24T01:40:47Z",
+      "side": 1,
+      "message": "enum here?",
+      "revId": "c69aa5c4864d950c26966e52e773512164aa3d6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
