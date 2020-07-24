@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "793258b7_07fe5f6c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-24T19:53:07Z",
+      "side": 1,
+      "message": "I am not sure about prompt - it might be annoying for those who need it to be public.\n\ncould you elaborate on the hesitation of making -realm required?\n\nDevelopers will not use `rdb stream` directly. This tool is too low-level. For example in case of Chromium, `rdb stream` will be invoked by Dirks\u0027 test wrappers. For them, passing -realm chromium/public would be trivial.",
+      "parentUuid": "71479a8b_ac30fecc",
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ecbbfaff_ad297276",
         "filename": "resultdb/internal/common.go",
         "patchSetId": 3
