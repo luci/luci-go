@@ -12,36 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package testing
 
 import (
 	"context"
 	"sort"
 	"sync"
+
+	"go.chromium.org/luci/ttq/internal/reminder"
 )
 
 // FakeDB implements Database in RAM.
-// Used for testing of ttq guts.
-// TODO(tandrii): move into testing/ package after
-// moving Reminder to a new package to avoid circular dependency.
 type FakeDB struct {
 	mu        sync.RWMutex
-	reminders map[string]*Reminder
+	reminders map[string]*reminder.Reminder
 }
 
 func (_ *FakeDB) Kind() string { return "FakeDB" }
 
-func (f *FakeDB) SaveReminder(_ context.Context, r *Reminder) error {
+func (f *FakeDB) SaveReminder(_ context.Context, r *reminder.Reminder) error {
 	f.mu.Lock()
 	if f.reminders == nil {
-		f.reminders = map[string]*Reminder{}
+		f.reminders = map[string]*reminder.Reminder{}
 	}
 	f.reminders[r.Id] = r
 	f.mu.Unlock()
 	return nil
 }
 
-func (f *FakeDB) DeleteReminder(_ context.Context, r *Reminder) error {
+func (f *FakeDB) DeleteReminder(_ context.Context, r *reminder.Reminder) error {
 	f.mu.Lock()
 	if f.reminders == nil {
 		return nil
@@ -56,7 +55,7 @@ func (f *FakeDB) DeleteReminder(_ context.Context, r *Reminder) error {
 	return nil
 }
 
-func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*Reminder, error) {
+func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*reminder.Reminder, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	if f.reminders == nil {
@@ -74,9 +73,9 @@ func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit
 	if len(ids) > limit {
 		ids = ids[:limit]
 	}
-	ret := make([]*Reminder, len(ids))
+	ret := make([]*reminder.Reminder, len(ids))
 	for i, id := range ids {
-		ret[i] = &Reminder{
+		ret[i] = &reminder.Reminder{
 			Id:         id,
 			FreshUntil: f.reminders[id].FreshUntil,
 		}
@@ -84,13 +83,13 @@ func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit
 	return ret, nil
 }
 
-func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*Reminder) (out []*Reminder, err error) {
+func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*reminder.Reminder) (out []*reminder.Reminder, err error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	if f.reminders == nil {
 		return
 	}
-	out = make([]*Reminder, 0, len(in))
+	out = make([]*reminder.Reminder, 0, len(in))
 	for _, r := range in {
 		if saved, exists := f.reminders[r.Id]; exists {
 			r.Payload = saved.Payload
@@ -103,15 +102,15 @@ func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*Reminder) (out [
 // Not part of Database interface, but useful in tests.
 
 // AllReminders returns all currently saved reminders.
-func (f *FakeDB) AllReminders() []*Reminder {
+func (f *FakeDB) AllReminders() []*reminder.Reminder {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	if f.reminders == nil {
 		return nil
 	}
-	out := make([]*Reminder, 0, len(f.reminders))
+	out := make([]*reminder.Reminder, 0, len(f.reminders))
 	for _, r := range f.reminders {
-		out = append(out, &Reminder{
+		out = append(out, &reminder.Reminder{
 			Id:         r.Id,
 			FreshUntil: r.FreshUntil,
 			Payload:    r.Payload,

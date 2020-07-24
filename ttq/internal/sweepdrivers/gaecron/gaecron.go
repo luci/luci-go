@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/ttq/internal"
 	dslessor "go.chromium.org/luci/ttq/internal/lessors/datastore"
 	"go.chromium.org/luci/ttq/internal/partition"
+	"go.chromium.org/luci/ttq/internal/reminder"
 )
 
 // NewSweeper creates a new Sweeper.
@@ -235,10 +236,10 @@ func (s *Sweeper) postProcessAll(ctx context.Context, scanResult internal.ScanRe
 	}
 }
 
-func (s *Sweeper) postProcessWithLease(ctx context.Context, reminders []*internal.Reminder) error {
+func (s *Sweeper) postProcessWithLease(ctx context.Context, reminders []*reminder.Reminder) error {
 	return parallel.WorkPool(s.ppBatchWorkers, func(workChan chan<- func() error) {
 		for {
-			var batch []*internal.Reminder
+			var batch []*reminder.Reminder
 			switch l := len(reminders); {
 			case l == 0:
 				return

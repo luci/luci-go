@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+// package databases defines common database interface.
+package databases
 
-import "context"
+import (
+	"context"
+
+	"go.chromium.org/luci/ttq/internal/reminder"
+)
 
 // Database abstracts out specific storage implementation.
 type Database interface {
@@ -22,9 +27,9 @@ type Database interface {
 	Kind() string
 
 	// SaveReminder persists reminder in a transaction context.
-	SaveReminder(context.Context, *Reminder) error
+	SaveReminder(context.Context, *reminder.Reminder) error
 	// DeleteReminder deletes reminder in a non-tranasction context.
-	DeleteReminder(context.Context, *Reminder) error
+	DeleteReminder(context.Context, *reminder.Reminder) error
 
 	// FetchRemindersMeta fetches Reminders with Ids in [low..high) range.
 	//
@@ -35,7 +40,7 @@ type Database interface {
 	// In case of error, partial result of fetched Reminders so far should be
 	// returned alongside the error. The caller will later call this method again
 	// to fetch the remaining of Reminders in range of [<lastReturned.Id+1> .. high).
-	FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*Reminder, error)
+	FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*reminder.Reminder, error)
 
 	// FetchReminderPayloads fetches payloads of a batch of Reminders.
 	//
@@ -44,5 +49,5 @@ type Database interface {
 	// batch.
 	// In case of any other error, partial result of fetched Reminders so far
 	// should be returned alongside the error.
-	FetchReminderPayloads(context.Context, []*Reminder) ([]*Reminder, error)
+	FetchReminderPayloads(context.Context, []*reminder.Reminder) ([]*reminder.Reminder, error)
 }

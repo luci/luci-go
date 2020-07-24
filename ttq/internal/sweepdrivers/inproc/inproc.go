@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/ttq/internal"
+	"go.chromium.org/luci/ttq/internal/reminder"
 )
 
 type Options struct {
@@ -152,9 +153,9 @@ func (s *Sweeper) oneShard(ctx context.Context, firstScan internal.ScanItem) err
 		},
 		// SendFn
 		func(data *buffer.Batch) error {
-			batch := make([]*internal.Reminder, len(data.Data))
+			batch := make([]*reminder.Reminder, len(data.Data))
 			for i, d := range data.Data {
-				batch[i] = d.(*internal.Reminder)
+				batch[i] = d.(*reminder.Reminder)
 			}
 			return s.impl.PostProcessBatch(ctx, batch)
 		},
