@@ -127,8 +127,7 @@ func (s *Subprocess) Wait() (*bbpb.Build, error) {
 		// stdout/stderr.
 		defer func() {
 			close(s.closeChannels)
-			closeErr := <-s.allClosed
-			if s.err != nil {
+			if closeErr := <-s.allClosed; s.err == nil {
 				s.err = closeErr
 			}
 		}()
