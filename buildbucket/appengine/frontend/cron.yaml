@@ -1,5 +1,11 @@
 cron:
 
+- description: ttq sweeper
+  # TODO(crbug/1042991): Target backend-go once it exists.
+  target: default-go
+  url: /internal/ttq/cron
+  schedule: every 1 minutes
+
 - description: expire build leases
   target: backend
   url: /internal/cron/buildbucket/expire_build_leases
