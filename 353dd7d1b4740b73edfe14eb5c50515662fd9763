@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "511c4a0c_6735e5c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-25T23:36:40Z",
+      "side": 1,
+      "message": "PTAL. I\u0027m not insisting on this change, just experimenting with a nicer API (in expense of more magic).",
+      "revId": "353dd7d1b4740b73edfe14eb5c50515662fd9763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
