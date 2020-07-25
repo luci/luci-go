@@ -134,7 +134,8 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 
 		resultCh: make(chan workerResult),
 
-		timer: clock.NewTimer(clock.Tag(ctx, "coordinator")),
+		timer:           clock.NewTimer(clock.Tag(ctx, "coordinator")),
+		timerWasDrained: true,
 	}
 
 	go cstate.run(ctx, send)

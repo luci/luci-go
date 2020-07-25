@@ -35,6 +35,8 @@ type coordinatorState struct {
 	// Used as a wake-up timer for the coordinator to wake itself up when the
 	// buffer will have a batch available due to buffer timeout and/or qps limiter.
 	timer clock.Timer
+	// true if timer.GetC() was drained after last the timer.Reset() call.
+	timerWasDrained bool
 
 	// true if itemCh is closed
 	closed bool
@@ -119,6 +121,12 @@ func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken ti
 	}
 
 	if resetDuration > 0 {
+		if !state.timerWasDrained {
+			if !state.timer.Stop() {
+				<-state.timer.GetC()
+			}
+		}
+		state.timerWasDrained = false
 		state.timer.Reset(resetDuration)
 		state.dbg("  |%s (%s)", msg, resetDuration)
 		return state.timer.GetC()
@@ -235,6 +243,7 @@ loop:
 			}
 
 		case result := <-state.getNextTimingEvent(now, resDelay):
+			state.timerWasDrained = true
 			if result.Incomplete() {
 				state.dbg("  GOT CANCEL (via timer)")
 				state.canceled = true

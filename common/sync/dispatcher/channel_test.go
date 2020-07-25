@@ -17,10 +17,12 @@ package dispatcher
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -508,4 +510,65 @@ func TestCloseDeadlockRegression(t *testing.T) {
 			<-ch.DrainC
 		})
 	}
+}
+
+func TestCorrectTimerUsage(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Correct use of Timer.Reset`, t, func(cvctx C) {
+		ctx, tclock := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, dbg := dbgIfVerbose(ctx)
+		tclock.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			switch {
+			case testclock.HasTags(t, "coordinator") || testclock.HasTags(t, "test-itself"):
+				logging.Debugf(ctx, "unblocking %s", testclock.GetTags(t))
+				tclock.Add(d)
+			}
+		})
+
+		mu := sync.Mutex{}
+		sent := []int{}
+
+		ch, err := NewChannel(ctx, &Options{
+			DropFn: noDrop,
+			Buffer: buffer.Options{
+				MaxLeases:     10,
+				BatchSize:     3,
+				BatchDuration: time.Second,
+				FullBehavior:  &buffer.BlockNewItems{MaxItems: 15},
+			},
+			testingDbg: dbg,
+		}, func(batch *buffer.Batch) (err error) {
+			// Add randomish delays.
+			timer := clock.NewTimer(clock.Tag(ctx, "test-itself"))
+			timer.Reset(time.Millisecond)
+			<-timer.GetC()
+
+			mu.Lock()
+			for i, _ := range batch.Data {
+				sent = append(sent, batch.Data[i].(int))
+			}
+			mu.Unlock()
+			return nil
+		})
+		So(err, ShouldBeNil)
+
+		const N = 100
+		for i := 1; i <= N; i++ {
+			ch.C <- i
+		}
+		// Must not hang when tried with
+		//     go test -race -run TestCorrectTimerUsage -failfast -count 1000 -timeout 20s
+		//
+		// NOTE: there may be failure not due to a deadlock, but due to garbage
+		// collection taking too long, after lots of iterations. You can either
+		// examine the stack traces or bump the timeout and observe if it increases
+		// the number of iterations before failure.
+		ch.CloseAndDrain(ctx)
+		So(sent, ShouldHaveLength, N)
+		sort.Ints(sent)
+		for i := 1; i <= N; i++ {
+			So(sent[i-1], ShouldEqual, i)
+		}
+	})
 }
