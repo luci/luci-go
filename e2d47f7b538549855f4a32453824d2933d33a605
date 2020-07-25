@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "bc52bc00_7a3f1bb2",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-25T02:49:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "441b5161_f46458c0",
+      "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27267fb8_f3822d63",
         "filename": "buildbucket/appengine/frontend/main.go",
         "patchSetId": 1
@@ -82,6 +100,24 @@
       "side": 1,
       "message": "for this pathPrefix, the cron.yaml should be hitting \"internal/cron/ttq/cron\"",
       "parentUuid": "27267fb8_f3822d63",
+      "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7b1f95c_18b8e45f",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-25T02:49:13Z",
+      "side": 1,
+      "message": "ad;kfjasd ok I fixed it, the cron works but sweeping is hitting /internal/ttq//work/\u003cwhatever\u003e (with double slash, I think this is harmless but still looks funny) and they all serve HTTP 308.",
+      "parentUuid": "24e2d761_56a953cd",
       "revId": "e2d47f7b538549855f4a32453824d2933d33a605",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
