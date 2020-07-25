@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "686f4251_6b402a91",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "looks pretty good!",
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71ff637d_aa108a4a",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "nit: this allocates this slice in each iteration of the L230 loop.\nlet\u0027s declare the var before the L230 loop and here do\n\n  entiresToFetch \u003d entiresToFetch[:0]\n\nsame applies to L249",
+      "range": {
+        "startLine": 232,
+        "startChar": 2,
+        "endLine": 232,
+        "endChar": 43
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "467b4473_5907ddad",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "i have noticed that we are copying TagIndexEntry all of the place, here in filterEntires, in L241.\nis this intentional? the alternative is to copy only pointers by using *TagIndexEntry everywhere",
+      "range": {
+        "startLine": 234,
+        "startChar": 12,
+        "endLine": 234,
+        "endChar": 50
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10e69ca3_0a95a1f6",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "this part is not implemented: https://screenshot.googleplex.com/U2ChRFBnEW1\nthat code tolerates non-existent builds.\nthis code would return an error\n\nit is important to tolerate non-existent builds because during build creation, we first put TagIndex entity, and THEN Build entity. This means we don\u0027t have a guarantee that a build exists",
+      "range": {
+        "startLine": 253,
+        "startChar": 11,
+        "endLine": 253,
+        "endChar": 38
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd92c898_eb8d93a8",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "let\u0027s do it before the loops",
+      "range": {
+        "startLine": 268,
+        "startChar": 24,
+        "endLine": 268,
+        "endChar": 42
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef12bbd2_a3200bd4",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "nit: could just return nil here.\ni.e. we have allocated `processed` for nothing.\n\nconsider moving L292 to L307",
+      "range": {
+        "startLine": 304,
+        "startChar": 9,
+        "endLine": 304,
+        "endChar": 21
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd78553c_04bfba93",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "this code assumes that any non-nil error means no access, but this might be a problem in the datastore. \nwe should check the rpc code using appstatus package",
+      "range": {
+        "startLine": 319,
+        "startChar": 4,
+        "endLine": 322,
+        "endChar": 36
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73cdd7eb_aaada05e",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "let\u0027s compute this before the loop",
+      "range": {
+        "startLine": 327,
+        "startChar": 12,
+        "endLine": 327,
+        "endChar": 73
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae18cb3b_6835ab79",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-25T05:57:30Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 78,
+        "startChar": 60,
+        "endLine": 78,
+        "endChar": 66
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
