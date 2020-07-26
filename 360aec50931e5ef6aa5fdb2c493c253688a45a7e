@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "170cd022_9e340b0e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-26T02:25:19Z",
+      "side": 1,
+      "message": "PTAL, I\u0027m not super happy about it, but I think it will be less evil than a clanky Task Queue API that requires to pass ReadWriteTransaction context explicitly and then not forget to call PostProcess callbacks when the transaction ends (which may be far-far away from AddTask call). \n\nThere\u0027s just no way to have a simple `AddTask(ctx, ...)` API without some kind of a context magic 😞\n\nAs written, there\u0027s no way to misuse the API (since *spanner.Client is hidden), but it means we may have hard time calling third party libraries that want *spanner.Client. But I\u0027m not aware of any, so *shrug*.\n\nIf you approve this CL, I\u0027ll migrate ResultDB to use this new module.\n\nI also contemplate moving ResultDB\u0027s row serialization stuff here too, but it can be done later if necessary (requires some work).",
+      "revId": "360aec50931e5ef6aa5fdb2c493c253688a45a7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
