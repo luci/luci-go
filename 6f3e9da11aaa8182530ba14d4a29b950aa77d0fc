@@ -69,6 +69,24 @@
       "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a151c71_5d350b0a",
+        "filename": "client/cmd/isolate/lib/casarchive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-27T08:34:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "11c3dc18_ac23d79e",
+      "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
