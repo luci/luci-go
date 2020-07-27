@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a06451b_0351c779",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-27T22:54:46Z",
+      "side": 1,
+      "message": "I now prefer verbose metricLeaseTask for readability. Also, no createTask metric? 😞",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 10
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
