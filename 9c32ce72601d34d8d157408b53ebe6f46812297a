@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "355b7458_60861e65",
+        "filename": "logdog/appengine/coordinator/endpoints/services/service.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 38,
+        "startChar": 49,
+        "endLine": 38,
+        "endChar": 56
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "635a447a_2fb5677e",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "let\u0027s make it *server? `server` sounds like something beefy, it is odd to pass it by value.",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 14
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27e49046_36f947db",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "I believe this may produce non-uniform distribution: https://stackoverflow.com/questions/10984974/why-do-people-say-there-is-modulo-bias-when-using-a-random-number-generator\n\nBetter to use mathrand.Intn instead. Will be shorter too.",
+      "range": {
+        "startLine": 65,
+        "startChar": 16,
+        "endLine": 65,
+        "endChar": 58
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9a06451b_0351c779",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 2
@@ -22,6 +91,98 @@
       "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c0d7534_fd8a31e2",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "wat?",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 2
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eaef9f6_e4a586c2",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "I believe Cloud Tasks docs advice against having a shared prefix for task names. Can we make it a suffix? Or it is not a Cloud Task name at all?",
+      "range": {
+        "startLine": 180,
+        "startChar": 19,
+        "endLine": 180,
+        "endChar": 63
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecd41280_2b117a04",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "see, and here it is `*server` already",
+      "range": {
+        "startLine": 204,
+        "startChar": 8,
+        "endLine": 204,
+        "endChar": 15
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4fec4853_456d12b9",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T22:56:42Z",
+      "side": 1,
+      "message": "I feel bad about this, but it\u0027s the simplest we can do now, so whatever...",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 47
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
