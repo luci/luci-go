@@ -33,6 +33,24 @@
       "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02519169_41b3840b",
+        "filename": "client/cmd/isolate/lib/casarchive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-27T06:38:34Z",
+      "side": 1,
+      "message": "Ah i just saw your comment. Sorry I was using this to do some tests, without intending to submit it. But sure I\u0027ll do `-cas-instance`. BTW, WDYT of having this separate `casarchive` command first? I feel it will be confusing to just mix CAS with `archive` at this point.",
+      "parentUuid": "6546d69e_53a52307",
+      "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
