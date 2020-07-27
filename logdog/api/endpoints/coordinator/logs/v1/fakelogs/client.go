@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	reg_impl "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	services_impl "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	logs_impl "go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -86,23 +85,23 @@ type Client struct {
 
 // Get implements logs.Get.
 func (c *Client) Get(_ context.Context, in *logs_api.GetRequest, _ ...grpc.CallOption) (*logs_api.GetResponse, error) {
-	realIn := *in
+	realIn := proto.Clone(in).(*logs_api.GetRequest)
 	realIn.Project = coordinatorTest.AllAccessProject
-	return c.logsServ.Get(c.ctx, &realIn)
+	return c.logsServ.Get(c.ctx, realIn)
 }
 
 // Tail implements logs.Tail.
 func (c *Client) Tail(_ context.Context, in *logs_api.TailRequest, _ ...grpc.CallOption) (*logs_api.GetResponse, error) {
-	realIn := *in
+	realIn := proto.Clone(in).(*logs_api.TailRequest)
 	realIn.Project = coordinatorTest.AllAccessProject
-	return c.logsServ.Tail(c.ctx, &realIn)
+	return c.logsServ.Tail(c.ctx, realIn)
 }
 
 // Query implements logs.Query.
 func (c *Client) Query(_ context.Context, in *logs_api.QueryRequest, _ ...grpc.CallOption) (*logs_api.QueryResponse, error) {
-	realIn := *in
+	realIn := proto.Clone(in).(*logs_api.QueryRequest)
 	realIn.Project = coordinatorTest.AllAccessProject
-	return c.logsServ.Query(c.ctx, &realIn)
+	return c.logsServ.Query(c.ctx, realIn)
 }
 
 // OpenTextStream returns a stream for text (line delimited) data.
@@ -256,7 +255,7 @@ func NewClient() *Client {
 		pcfg.MaxStreamAge = google.NewDuration(time.Hour)
 	})
 	ts := taskqueue.GetTestable(ctx)
-	ts.CreatePullQueue(services.ArchiveQueueName)
+	ts.CreatePullQueue(services_impl.RawArchiveQueueName(0))
 
 	storage := &mem_storage.Storage{}
 	env.Services.ST = func(*coordinator.LogStreamState) (coordinator.SigningStorage, error) {
@@ -267,7 +266,9 @@ func NewClient() *Client {
 
 		logsServ: logs_impl.New(),
 		regServ:  reg_impl.New(),
-		srvServ:  services_impl.New(),
+		srvServ: services_impl.New(services_impl.ServerSettings{
+			NumQueues: 1,
+		}),
 
 		storage: storage,
 

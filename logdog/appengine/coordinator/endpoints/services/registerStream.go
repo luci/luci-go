@@ -228,7 +228,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			if preTerminated {
 				delay = set.OptimisticArchivalDelay
 			}
-			return TaskArchival(c, lst, delay)
+			return s.taskArchival(c, lst, delay)
 		}, nil)
 		if err != nil {
 			log.Fields{

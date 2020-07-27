@@ -106,7 +106,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			}
 		}
 
-		return TaskArchival(c, lst, coordinator.GetSettings(c).OptimisticArchivalDelay)
+		return s.taskArchival(c, lst, coordinator.GetSettings(c).OptimisticArchivalDelay)
 	}, nil)
 	if err != nil {
 		log.Fields{

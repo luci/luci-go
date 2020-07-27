@@ -16,6 +16,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +30,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/taskqueue"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
@@ -41,19 +44,40 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
-// ArchiveQueueName is the taskqueue queue name which contains Archive tasks.
-const ArchiveQueueName = "archiveTasks"
+// baseArchiveQueueName is the taskqueue queue name which contains Archive tasks.
+const baseArchiveQueueName = "archiveTasks"
+
+// RawArchiveQueueName returns the raw name for the queueNumber'th queue used
+// for ArchiveTasks.
+func RawArchiveQueueName(queueNumber int32) string {
+	if queueNumber == 0 {
+		// logdog queues didn't used to be sharded, so keep baseArchiveQueueName for
+		// queue 0.
+		return baseArchiveQueueName
+	}
+	return fmt.Sprintf("%s-%d", baseArchiveQueueName, queueNumber)
+}
+
+// randomQueueName returns a randomized queue name.
+//
+// Relies on mathrand library for randomness.
+func (s server) randomQueueName(ctx context.Context) (string, int32) {
+	queueNumber := mathrand.Int31(ctx) % s.settings.NumQueues
+	return RawArchiveQueueName(queueNumber), queueNumber
+}
 
 var (
 	leaseTask = metric.NewCounter(
 		"logdog/archival/lease_task",
 		"Number of leased tasks from the archive queue, as seen by the coordinator",
 		nil,
-		field.Int("numRetries"))
+		field.Int("numRetries"),
+		field.Int("queueNumber"))
 	deleteTask = metric.NewCounter(
 		"logdog/archival/delete_task",
 		"Number of delete task request for the archive queue, as seen by the coordinator",
-		nil)
+		nil,
+		field.Int("queueNumber"))
 )
 
 var (
@@ -67,8 +91,8 @@ var (
 	}
 )
 
-// TaskArchival tasks an archival of a stream with the given delay.
-func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration) error {
+// taskArchival tasks an archival of a stream with the given delay.
+func (s server) taskArchival(c context.Context, state *coordinator.LogStreamState, delay time.Duration) error {
 	// Now task the archival.
 	state.Updated = clock.Now(c).UTC()
 	state.ArchivalKey = []byte{'1'} // Use a fake key just to signal that we've tasked the archival.
@@ -87,37 +111,73 @@ func TaskArchival(c context.Context, state *coordinator.LogStreamState, delay ti
 		return grpcutil.Internal
 	}
 	t.Delay = delay
-	if err := taskqueue.Add(c, ArchiveQueueName, t); err != nil {
+	queueName, _ := s.randomQueueName(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "failed to generate queue name")
+		return grpcutil.Internal
+	}
+
+	if err := taskqueue.Add(c, queueName, t); err != nil {
 		log.WithError(err).Errorf(c, "could not task archival")
 		return grpcutil.Internal
 	}
 	return nil
-
 }
 
 // tqTask returns a taskqueue task for an archive task.
 func tqTask(task *logdog.ArchiveTask) (*taskqueue.Task, error) {
+	if task.TaskName != "" {
+		panic("task.TaskName is set while generating task")
+	}
+
 	payload, err := proto.Marshal(task)
 	return &taskqueue.Task{
-		Name:    task.TaskName,
 		Payload: payload,
 		Method:  "PULL",
 	}, err
 }
 
-// tqTaskLite returns a taskqueue task for an archive task without the payload.
-func tqTaskLite(task *logdog.ArchiveTask) *taskqueue.Task {
-	return &taskqueue.Task{
-		Name:   task.TaskName,
+// tqTaskLeased returns a taskqueue queue name and task from a previously-leased
+// archive task.
+func tqTaskLeased(task *logdog.ArchiveTask) (queueNumber int32, t *taskqueue.Task, err error) {
+	if task.TaskName == "" {
+		panic("task.TaskName is unset while deleting task")
+	}
+
+	t = &taskqueue.Task{
 		Method: "PULL",
 	}
+
+	toks := strings.Split(task.TaskName, ":")
+	switch len(toks) {
+	case 1:
+		// legacy task: pre-sharding
+		queueNumber = 0
+		t.Name = task.TaskName
+
+	case 2:
+		var queueNumberInt int
+
+		if queueNumberInt, err = strconv.Atoi(toks[0]); err != nil {
+			err = errors.Annotate(err, "parsing TaskName %q", task.TaskName).Err()
+			return
+		}
+
+		queueNumber = int32(queueNumberInt)
+		t.Name = toks[1]
+
+	default:
+		err = errors.Reason("unknown TaskName format %q", task.TaskName).Err()
+	}
+
+	return
 }
 
 // archiveTask creates a archiveTask proto from a taskqueue task.
-func archiveTask(task *taskqueue.Task) (*logdog.ArchiveTask, error) {
+func archiveTask(task *taskqueue.Task, queueNumber int32) (*logdog.ArchiveTask, error) {
 	result := logdog.ArchiveTask{}
 	err := proto.Unmarshal(task.Payload, &result)
-	result.TaskName = task.Name
+	result.TaskName = fmt.Sprintf("%d:%s", queueNumber, task.Name)
 	return &result, err
 }
 
@@ -141,7 +201,7 @@ func isArchived(c context.Context, task *logdog.ArchiveTask) bool {
 }
 
 // LeaseArchiveTasks leases archive tasks to the requestor from a pull queue.
-func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) (*logdog.LeaseResponse, error) {
+func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) (*logdog.LeaseResponse, error) {
 	duration, err := ptypes.Duration(req.LeaseTime)
 	if err != nil {
 		return nil, err
@@ -150,10 +210,14 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 	var tasks []*taskqueue.Task
 	logging.Infof(c, "got request to lease %d tasks for %s", req.MaxTasks, req.GetLeaseTime())
 
+	queueName, queueNumber := s.randomQueueName(c)
+	logging.Infof(c, "picked queue %q", queueName)
+
 	err = retry.Retry(c, taskqueueLeaseRetry,
 		func() error {
 			var err error
-			tasks, err = taskqueue.Lease(c, int(req.MaxTasks), ArchiveQueueName, duration)
+
+			tasks, err = taskqueue.Lease(c, int(req.MaxTasks), queueName, duration)
 			// TODO(iannucci): There probably should be a better API for this error
 			// detection stuff, but since taskqueue is deprecated, I don't think it's
 			// worth the effort.
@@ -179,7 +243,7 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 	parallel.WorkPool(8, func(ch chan<- func() error) {
 		for _, task := range tasks {
 			task := task
-			at, err := archiveTask(task)
+			at, err := archiveTask(task, queueNumber)
 			if err != nil {
 				// Ignore malformed name errors, just log them.
 				logging.WithError(err).Errorf(c, "while leasing task")
@@ -189,14 +253,15 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 			ch <- func() error {
 				// Optimization: Delete the task if it's already archived.
 				if isArchived(c, at) {
-					if err := taskqueue.Delete(c, ArchiveQueueName, task); err != nil {
+					if err := taskqueue.Delete(c, queueName, task); err != nil {
 						logging.WithError(err).Errorf(c, "failed to delete %s/%s (%s)", at.Project, at.Id, task.Name)
 					}
+					deleteTask.Add(c, 1, queueNumber)
 				} else {
 					archiveTasksL.Lock()
 					defer archiveTasksL.Unlock()
 					archiveTasks = append(archiveTasks, at)
-					leaseTask.Add(c, 1, task.RetryCount)
+					leaseTask.Add(c, 1, task.RetryCount, queueNumber)
 				}
 				return nil
 			}
@@ -209,16 +274,33 @@ func (b *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 
 // DeleteArchiveTasks deletes archive tasks from the task queue.
 // Errors are logged but ignored.
-func (b *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest) (*empty.Empty, error) {
-	deleteTask.Add(c, int64(len(req.Tasks)))
-	tasks := make([]*taskqueue.Task, 0, len(req.Tasks))
+func (s *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest) (*empty.Empty, error) {
+	// Although we only ever issue archival tasks from a single queue, this RPC
+	// doesn't stipulate that all tasks must belong to the same queue.
+	tasksPerQueue := map[int32][]*taskqueue.Task{}
 	for _, at := range req.Tasks {
-		tasks = append(tasks, tqTaskLite(at))
+		queueNumber, tqTask, err := tqTaskLeased(at)
+		if err != nil {
+			return nil, err
+		}
+
+		tasksPerQueue[queueNumber] = append(tasksPerQueue[queueNumber], tqTask)
 	}
-	logging.Infof(c, "Deleting %d tasks", len(req.Tasks))
-	err := taskqueue.Delete(c, ArchiveQueueName, tasks...)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "while deleting tasks\n%#v", tasks)
-	}
-	return &empty.Empty{}, nil
+
+	return &empty.Empty{}, parallel.WorkPool(8, func(ch chan<- func() error) {
+		for queueNumber, tasks := range tasksPerQueue {
+			queueNumber, tasks := queueNumber, tasks
+			queueName := RawArchiveQueueName(queueNumber)
+
+			deleteTask.Add(c, int64(len(req.Tasks)), queueNumber)
+
+			ch <- func() error {
+				logging.Infof(c, "Deleting %d tasks from %q", len(tasks), queueName)
+				if err := taskqueue.Delete(c, queueName, tasks...); err != nil {
+					logging.WithError(err).Errorf(c, "while deleting tasks\n%#v", tasks)
+				}
+				return nil
+			}
+		}
+	})
 }
