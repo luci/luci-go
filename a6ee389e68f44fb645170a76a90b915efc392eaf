@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5e2c81d_690543d4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-27T09:33:40Z",
+      "side": 1,
+      "message": "add design doc? (IIRC, there is a doc)",
+      "revId": "a6ee389e68f44fb645170a76a90b915efc392eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b4ef73a_0a48dfce",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-27T09:33:40Z",
+      "side": 1,
+      "message": "FYI: I\u0027ve seen a similar patter in python. Do we want to support a project starts with \u0027google.com\u0027?\nhttps://source.chromium.org/chromium/infra/infra/+/master:luci/appengine/components/components/gce.py;l\u003d661?q\u003df:components%2Fgce.py\u0026ss\u003dchromium\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F",
+      "revId": "a6ee389e68f44fb645170a76a90b915efc392eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
