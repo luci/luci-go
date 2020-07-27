@@ -119,6 +119,13 @@ func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken ti
 	}
 
 	if resetDuration > 0 {
+		if !state.timer.Stop() {
+			select {
+			case <-state.timer.GetC():
+			default:
+				// The timer was already drained in the main loop.
+			}
+		}
 		state.timer.Reset(resetDuration)
 		state.dbg("  |%s (%s)", msg, resetDuration)
 		return state.timer.GetC()
