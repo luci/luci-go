@@ -16,6 +16,52 @@
       "revId": "67dc1757743562ce05acee660a4b185ffc955109",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ade17e82_9749612d",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T23:55:02Z",
+      "side": 1,
+      "message": "not very good example because -realm without -new is a noop",
+      "range": {
+        "startLine": 60,
+        "startChar": 15,
+        "endLine": 60,
+        "endChar": 38
+      },
+      "revId": "67dc1757743562ce05acee660a4b185ffc955109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb13f44b_9a902b68",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T23:55:02Z",
+      "side": 1,
+      "message": "-realm",
+      "range": {
+        "startLine": 125,
+        "startChar": 32,
+        "endLine": 125,
+        "endChar": 37
+      },
+      "revId": "67dc1757743562ce05acee660a4b185ffc955109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
