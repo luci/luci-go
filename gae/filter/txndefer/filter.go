@@ -74,8 +74,12 @@ func (s *txnState) deferCB(cb func(context.Context)) {
 }
 
 func (s *txnState) execCBs() {
-	s.m.Lock()
-	defer s.m.Unlock()
+	// Note: execCBs happens after RunInTransaction has finished. If it spawned
+	// any goroutines, they must have been finished already too (calling Defer
+	// from a goroutine that outlives a transaction is rightfully a race). Thus
+	// all writes to `s.cbs` are finished already and we also passed some
+	// synchronization barrier that waited for the goroutines to join. It's fine
+	// to avoid locking s.m in this case saving 200ns on hot code path.
 	if len(s.cbs) != 0 {
 		ctx := ds.WithoutTransaction(s.ctx)
 		for i := len(s.cbs) - 1; i >= 0; i-- {
