@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -28,12 +29,46 @@ import (
 // server is a service supporting privileged support services.
 //
 // This endpoint is restricted to LogDog support service accounts.
-type server struct{}
+type server struct {
+	settings ServerSettings
+}
+
+// ServerSettings are settings for the LogDog RPC service.
+type ServerSettings struct {
+	// NumQueues is the number of queues to use for Arcival tasks.
+	//
+	// Note that cloud task queues have a maximum throughput of 1000 qps on
+	// average. Each log STREAM in LogDog will require processing AT LEAST two
+	// tasks. It is recommended that you monitor the queue throughput of the
+	// logdog deployment and increase this value when getting close to the qps
+	// limit.
+	//
+	// NOTE:
+	//   * Decreasing this value will cause some tasks to be un-issued.
+	//     DO NOT DO THIS without coding some other workaround (for example, in
+	//     LeaseArchiveTasks, inspect ALL available queues and issue randomly from
+	//     all of them; Could be done by maintaining a `maxNumQueues` alongside
+	//     `numQueues` where `maxNumQueues` is kept high while draining the higher
+	//     queues).
+	//   * Increasing this value is OK. Leased tasks embed their queue number into
+	//     their TaskName field, which is round-tripped through the Archivist.
+	//     When the DeleteArchiveTasks RPC is invoked, each task will be removed
+	//     from the queue number embedded in TaskName.
+	//
+	// Reqired. Must be >0.
+	NumQueues int32
+}
 
 // New creates a new authenticating ServicesServer instance.
-func New() logdog.ServicesServer {
+//
+// Panics if `settings` is invalid.
+func New(settings ServerSettings) logdog.ServicesServer {
+	if settings.NumQueues <= 0 {
+		panic(errors.Reason("settings.NumQueues <= 0: %d", settings.NumQueues))
+	}
+
 	return &logdog.DecoratedServices{
-		Service: &server{},
+		Service: &server{settings},
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 			// Only service users may access this endpoint.
 			if err := coordinator.IsServiceUser(c); err != nil {
