@@ -69,6 +69,24 @@
       "revId": "a6ee389e68f44fb645170a76a90b915efc392eaf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a22d759c_bf63c88e",
+        "filename": "client/cmd/isolate/lib/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-27T09:47:52Z",
+      "side": 1,
+      "message": "I think it is fine to ignore google.com prefix now.",
+      "parentUuid": "a870be3b_370f35e6",
+      "revId": "a6ee389e68f44fb645170a76a90b915efc392eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
