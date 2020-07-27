@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7365c7b_bbf9bc7c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-27T04:00:44Z",
+      "side": 1,
+      "message": "good catch, lgtm w/ question",
+      "revId": "4c1f8ae6cd9443aeaf3705ae9808931681464dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b4822d1b_1017be32",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-27T04:00:44Z",
+      "side": 1,
+      "message": "why is this boolean necessary? Why isn\u0027t `if !Stop() { \u003c- GetC() }` enough?",
+      "range": {
+        "startLine": 124,
+        "startChar": 12,
+        "endLine": 124,
+        "endChar": 27
+      },
+      "revId": "4c1f8ae6cd9443aeaf3705ae9808931681464dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
