@@ -207,6 +207,30 @@
       "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd2b8b07_90cb845f",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-27T23:05:08Z",
+      "side": 1,
+      "message": "If we have mostly empty queues, tail latency of a task processing will be high, since the task will need to win a lottery first to be picked up. Ideally each worker is assigned a subset of queues it *always* polls, in coordinated fashion so all queues are polled at all times.\n\nIn our situation its probably fine...",
+      "parentUuid": "68abdb4c_de3a2eb9",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 47
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
