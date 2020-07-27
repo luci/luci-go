@@ -91,7 +91,11 @@ func TestParseCASInstance(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Basic`, t, func() {
-		ins, err := parseCASInstance("abc-123")
+		ins, err := parseCASInstance("")
+		So(err, ShouldBeNil)
+		So(ins, ShouldResemble, "")
+
+		ins, err = parseCASInstance("abc-123")
 		So(err, ShouldBeNil)
 		So(ins, ShouldResemble, "projects/abc-123/instances/default_instance")
 

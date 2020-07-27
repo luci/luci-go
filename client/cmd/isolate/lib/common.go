@@ -238,6 +238,10 @@ func (c *casFlags) Parse() error {
 }
 
 func parseCASInstance(ins string) (string, error) {
+	if ins == "" {
+		// -cas-instance is optional
+		return "", nil
+	}
 	// GCP project ID format: https://cloud.google.com/resource-manager/docs/creating-managing-projects
 	// Not the most accurate regexp, but let's just assume most people know what they are doing...
 	projectRe := regexp.MustCompile(`^[a-z0-9\-]+$`)
