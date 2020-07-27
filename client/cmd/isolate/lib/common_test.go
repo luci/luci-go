@@ -86,3 +86,28 @@ func TestElideNestedPaths(t *testing.T) {
 		So(doElision(deps), ShouldResemble, []string{"a/b", "a/bc", "a/bcd", "a/c"})
 	})
 }
+
+func TestParseCASInstance(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Basic`, t, func() {
+		ins, err := parseCASInstance("abc-123")
+		So(err, ShouldBeNil)
+		So(ins, ShouldResemble, "projects/abc-123/instances/default_instance")
+
+		ins, err = parseCASInstance("projects/foo/instances/bar")
+		So(err, ShouldBeNil)
+		So(ins, ShouldResemble, "projects/foo/instances/bar")
+	})
+
+	Convey(`Invalid`, t, func() {
+		_, err := parseCASInstance("ABC")
+		So(err, ShouldNotBeNil)
+
+		_, err = parseCASInstance("projects/foo")
+		So(err, ShouldNotBeNil)
+
+		_, err = parseCASInstance("projects/foo/instances/bar/42")
+		So(err, ShouldNotBeNil)
+	})
+}
