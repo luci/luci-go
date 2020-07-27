@@ -39,6 +39,30 @@
       "revId": "4c1f8ae6cd9443aeaf3705ae9808931681464dc9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5ee1c06_76326816",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-27T04:25:58Z",
+      "side": 1,
+      "message": "!Stop() means timer was not running \u003d\u003e1 item was sent into its channel since last Reset, but it is not known if channel was drained in the main loop.\n\nHowever, I don\u0027t actually need this flag, I can do the same with select \u0026 default clause. Simplified!",
+      "parentUuid": "b4822d1b_1017be32",
+      "range": {
+        "startLine": 124,
+        "startChar": 12,
+        "endLine": 124,
+        "endChar": 27
+      },
+      "revId": "4c1f8ae6cd9443aeaf3705ae9808931681464dc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
