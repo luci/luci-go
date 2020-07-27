@@ -97,7 +97,7 @@ func TestKeyEncode(t *testing.T) {
 		Convey("extra junk after", func() {
 			enc := keys[2].Encode()
 			_, err := NewKeyEncoded(enc[:len(enc)-1])
-			So(err, ShouldErrLike, "EOF")
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("json encoding includes quotes", func() {
