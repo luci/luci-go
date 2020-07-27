@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "1ded91cb_075ac071",
+        "filename": "server/span/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T19:58:37Z",
+      "side": 1,
+      "message": "thanks for consolidating",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 3
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "70942804_556050fc",
+        "filename": "server/span/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T19:58:37Z",
+      "side": 1,
+      "message": "this is nice. I think there are a couple of places in rdb where this could be useful, like logging after txn",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 20
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a864c725_64471bda",
+        "filename": "server/span/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T19:58:37Z",
+      "side": 1,
+      "message": "per chat: please rename to RW or something like that because there are multiple types of transactions",
+      "range": {
+        "startLine": 88,
+        "startChar": 5,
+        "endLine": 88,
+        "endChar": 8
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "32869678_e697725f",
         "filename": "server/span/client.go",
         "patchSetId": 2
@@ -41,6 +110,53 @@
         "startChar": 21,
         "endLine": 122,
         "endChar": 60
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96ad5c54_5d24d39b",
+        "filename": "server/span/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T19:58:37Z",
+      "side": 1,
+      "message": "this is documentation for this code, I think",
+      "parentUuid": "54063744_eda44c5e",
+      "range": {
+        "startLine": 122,
+        "startChar": 21,
+        "endLine": 122,
+        "endChar": 60
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86aa9df6_a7df145a",
+        "filename": "server/span/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-27T19:58:37Z",
+      "side": 1,
+      "message": "nit: maybe include example or format\nhttps://godoc.org/cloud.google.com/go/spanner#NewClientWithConfig does it",
+      "range": {
+        "startLine": 44,
+        "startChar": 3,
+        "endLine": 44,
+        "endChar": 13
       },
       "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
