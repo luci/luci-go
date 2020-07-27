@@ -17,7 +17,6 @@ package frontend
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/frontend/ui"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -119,20 +117,11 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 	bp.StepDisplayPref = getStepDisplayPrefCookie(c)
 	bp.ShowDebugLogsPref = getShowDebugLogsPrefCookie(c)
 
-	bannerHTML := template.HTML("")
-	resultUIFishfood, err := auth.IsMember(c.Context, "milo-resultui-fishfood")
-	if err != nil {
-		return err
-	}
-	if resultUIFishfood {
-		bannerHTML = bp.TestResultsOptInHTML()
-	}
-
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"BuildPage":      bp,
 		"RetryRequestID": rand.Int31(),
 		"XsrfTokenField": xsrf.TokenField(c.Context),
-		"BannerHTML":     bannerHTML,
+		"BannerHTML":     bp.TestResultsOptInHTML(),
 	})
 	return nil
 }
