@@ -16,6 +16,24 @@
       "revId": "360aec50931e5ef6aa5fdb2c493c253688a45a7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33f6e2d1_a780f67d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-27T05:05:11Z",
+      "side": 1,
+      "message": "On context magic: Nodir suggested using it to me a few months ago.\n\nOn misuse of API: *shrug* indeed, though I failed to imagine how one can misuse things.",
+      "parentUuid": "170cd022_9e340b0e",
+      "revId": "360aec50931e5ef6aa5fdb2c493c253688a45a7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

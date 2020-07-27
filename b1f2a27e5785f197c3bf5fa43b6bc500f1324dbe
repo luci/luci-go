@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "32869678_e697725f",
+        "filename": "server/span/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-27T05:05:11Z",
+      "side": 1,
+      "message": "Yeah, I like this for my own use.\nHowever, I fear it\u0027ll be abused to incorrectly perform things meant for transactional semantics, like task enqueueing, LOL.\n\nSince paternalistic thinking is annoying, let\u0027s do this, but I think you should yell at potential abuses in the documentation, smth like:\n   THE CALLBACKS MAY BE NEVER EXECUTED EVEN AFTER TRANSACTION SUCCEEDS.\n   ENSURE *YOUR* LOGIC IS OK WITH THIS. IF NOT SURE, DO NOT USE THIS.",
+      "range": {
+        "startLine": 111,
+        "startChar": 5,
+        "endLine": 111,
+        "endChar": 10
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54063744_eda44c5e",
+        "filename": "server/span/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-27T05:05:11Z",
+      "side": 1,
+      "message": "is this s.t. recursively printed context.Context looks better?",
+      "range": {
+        "startLine": 122,
+        "startChar": 21,
+        "endLine": 122,
+        "endChar": 60
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78dd6774_6484ce60",
+        "filename": "server/span/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-27T05:05:11Z",
+      "side": 1,
+      "message": "I wish we had a library to validate cloud resource names, since I wrote the same thing for queue name in ttq/",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 141,
+        "endChar": 1
+      },
+      "revId": "b1f2a27e5785f197c3bf5fa43b6bc500f1324dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
