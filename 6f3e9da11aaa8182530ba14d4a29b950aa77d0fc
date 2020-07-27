@@ -51,6 +51,24 @@
       "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11c3dc18_ac23d79e",
+        "filename": "client/cmd/isolate/lib/casarchive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-27T07:36:40Z",
+      "side": 1,
+      "message": "\u003e BTW, WDYT of having this separate `casarchive` command first? I feel it will be confusing to just mix CAS with `archive` at this point.\n\nI prefer to keep using `archive` because I feel having `cas` prefix is bit long for subcommand after we remove `archive`. Also I think we can reduce confusion by appropriate explanation/migration doc.",
+      "parentUuid": "02519169_41b3840b",
+      "revId": "6f3e9da11aaa8182530ba14d4a29b950aa77d0fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
