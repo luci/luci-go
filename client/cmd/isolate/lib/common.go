@@ -229,6 +229,10 @@ func (c *casFlags) Init(f *flag.FlagSet) {
 }
 
 func (c *casFlags) Parse() error {
+	if c.instance == "" {
+		// -cas-instance is optional for now
+		return nil
+	}
 	ins, err := parseCASInstance(c.instance)
 	if err != nil {
 		return err
