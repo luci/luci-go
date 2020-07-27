@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -215,4 +216,38 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 		}
 	}
 	return nil
+}
+
+type casFlags struct {
+	instance   string
+	digestJSON string
+}
+
+func (c *casFlags) Init(f *flag.FlagSet) {
+	f.StringVar(&c.instance, "cas-instance", "", "CAS instance (GCP). Format is either a project ID, or \"projects/<project_id>/instances/<instance_id>\"")
+	f.StringVar(&c.digestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
+}
+
+func (c *casFlags) Parse() error {
+	ins, err := parseCASInstance(c.instance)
+	if err != nil {
+		return err
+	}
+	c.instance = ins
+	return nil
+}
+
+func parseCASInstance(ins string) (string, error) {
+	// GCP project ID format: https://cloud.google.com/resource-manager/docs/creating-managing-projects
+	// Not the most accurate regexp, but let's just assume most people know what they are doing...
+	projectRe := regexp.MustCompile(`^[a-z0-9\-]+$`)
+	instanceRe := regexp.MustCompile(`^projects/[a-z0-9\-]+/instances/[^/]+$`)
+
+	if projectRe.MatchString(ins) {
+		return "projects/" + ins + "/instances/default_instance", nil
+	}
+	if instanceRe.MatchString(ins) {
+		return ins, nil
+	}
+	return "", errors.Reason("invalid CAS instance: %s", ins).Err()
 }
