@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -171,9 +171,9 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	}
 
 	// Read the results.
-	var summaryHTML span.Compressed
-	var b span.Buffer
-	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	var summaryHTML spanutil.Compressed
+	var b spanutil.Buffer
+	return spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64

@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 // Shards is the sharding level for the Invocations table.
@@ -33,7 +33,7 @@ const Shards = 100
 // This may differ from the constant above when it has changed recently.
 func CurrentMaxShard(ctx context.Context) (int, error) {
 	var ret int64
-	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), spanner.NewStatement(`
+	err := spanutil.QueryFirstRow(ctx, spanutil.Client(ctx).Single(), spanner.NewStatement(`
 		SELECT ShardId
 		FROM Invocations@{FORCE_INDEX=InvocationsByInvocationExpiration}
 		ORDER BY ShardID DESC
@@ -44,7 +44,7 @@ func CurrentMaxShard(ctx context.Context) (int, error) {
 
 // ReadTestResultCount returns the total number of test results of requested
 // invocations.
-func ReadTestResultCount(ctx context.Context, txn span.Txn, ids IDSet) (int64, error) {
+func ReadTestResultCount(ctx context.Context, txn spanutil.Txn, ids IDSet) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
@@ -54,11 +54,11 @@ func ReadTestResultCount(ctx context.Context, txn span.Txn, ids IDSet) (int64, e
 		FROM Invocations
 		WHERE InvocationId IN UNNEST(@invIDs)
 	`)
-	st.Params = span.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 		"invIDs": ids,
 	})
 	var count spanner.NullInt64
-	err := span.QueryFirstRow(ctx, txn, st, &count)
+	err := spanutil.QueryFirstRow(ctx, txn, st, &count)
 	return count.Int64, err
 }
 
@@ -73,7 +73,7 @@ func IncrementTestResultCount(ctx context.Context, txn *spanner.ReadWriteTransac
 		SET TestResultCount = TestResultCount + @delta
 		WHERE InvocationId = @invID
 	`)
-	st.Params = span.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 		"invID": id,
 		"delta": delta,
 	})

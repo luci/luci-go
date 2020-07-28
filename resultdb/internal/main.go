@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 const (
@@ -59,7 +59,7 @@ func Main(init func(srv *server.Server) error) {
 		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB, !*prodMode); err != nil {
 			return err
 		}
-		srv.RegisterCleanup(func(ctx context.Context) { span.Client(ctx).Close() })
+		srv.RegisterCleanup(func(ctx context.Context) { spanutil.Client(ctx).Close() })
 
 		return init(srv)
 	})
@@ -97,5 +97,5 @@ func withProdSpannerClient(ctx context.Context, dbFlag string, trackSessionHandl
 		return ctx, errors.Annotate(err, "failed to ping Spanner").Err()
 	}
 
-	return span.WithClient(ctx, spannerClient), nil
+	return spanutil.WithClient(ctx, spannerClient), nil
 }

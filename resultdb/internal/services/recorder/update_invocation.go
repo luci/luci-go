@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -91,7 +91,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			}
 		}
 
-		return txn.BufferWrite([]*spanner.Mutation{span.UpdateMap("Invocations", values)})
+		return txn.BufferWrite([]*spanner.Mutation{spanutil.UpdateMap("Invocations", values)})
 	})
 	if err != nil {
 		return nil, err

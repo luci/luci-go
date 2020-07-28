@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -42,11 +42,11 @@ func insertInvocation(id ID, extraValues map[string]interface{}) *spanner.Mutati
 		values["FinalizeTime"] = spanner.CommitTimestamp
 	}
 
-	return span.InsertMap("Invocations", values)
+	return spanutil.InsertMap("Invocations", values)
 }
 
 func insertInclusion(including, included ID) *spanner.Mutation {
-	return span.InsertMap("IncludedInvocations", map[string]interface{}{
+	return spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
 	})

@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -85,7 +85,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 			return appstatus.Errorf(codes.NotFound, "at least one of the included invocations does not exist")
 		}
 		for aInv := range add {
-			ms = append(ms, span.InsertOrUpdateMap("IncludedInvocations", map[string]interface{}{
+			ms = append(ms, spanutil.InsertOrUpdateMap("IncludedInvocations", map[string]interface{}{
 				"InvocationId":         including,
 				"IncludedInvocationId": aInv,
 			}))

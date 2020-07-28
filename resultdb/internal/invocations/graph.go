@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/redisconn"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 // MaxNodes is the maximum number of invocation nodes that ResultDB
@@ -50,9 +50,9 @@ func InclusionKey(including, included ID) spanner.Key {
 }
 
 // ReadIncluded reads ids of included invocations.
-func ReadIncluded(ctx context.Context, txn span.Txn, id ID) (IDSet, error) {
+func ReadIncluded(ctx context.Context, txn spanutil.Txn, id ID) (IDSet, error) {
 	var ret IDSet
-	var b span.Buffer
+	var b spanutil.Buffer
 	err := txn.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
 		var included ID
 		if err := b.FromSpanner(row, &included); err != nil {
@@ -79,7 +79,7 @@ var TooManyTag = errors.BoolTag{
 // Reachable returns all invocations reachable from roots along the inclusion
 // edges.
 // May return an appstatus-annotated error.
-func Reachable(ctx context.Context, txn span.Txn, roots IDSet) (reachable IDSet, err error) {
+func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable IDSet, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readReachableInvocations")
 	defer func() { ts.End(err) }()
 

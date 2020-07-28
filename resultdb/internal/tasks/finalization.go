@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -36,7 +36,7 @@ import (
 // new package as the code base grows.
 func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id invocations.ID) error {
 	return txn.BufferWrite([]*spanner.Mutation{
-		span.UpdateMap("Invocations", map[string]interface{}{
+		spanutil.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
 			"State":        pb.Invocation_FINALIZING,
 		}),

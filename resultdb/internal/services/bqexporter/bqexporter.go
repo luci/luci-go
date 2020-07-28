@@ -39,7 +39,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -170,7 +170,7 @@ func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
 }
 
 func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
-	realm, err := invocations.ReadRealm(ctx, span.Client(ctx).Single(), invID)
+	realm, err := invocations.ReadRealm(ctx, spanutil.Client(ctx).Single(), invID)
 	if err != nil {
 		return "", err
 	}
@@ -320,8 +320,8 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	`)
 	st.Params["invIDs"] = invIDs
 	tvs := map[testVariantKey]struct{}{}
-	var b span.Buffer
-	err := span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	var b spanutil.Buffer
+	err := spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var key testVariantKey
 		if err := b.FromSpanner(row, &key.testID, &key.variantHash); err != nil {
 			return err
@@ -457,7 +457,7 @@ func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*b
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
 func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	inv, err := invocations.Read(ctx, txn, invID)

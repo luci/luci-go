@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -148,7 +148,7 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readyToFinalize")
 	defer func() { ts.End(err) }()
 
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -195,11 +195,11 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 				JOIN Invocations included on incl.IncludedInvocationId = included.InvocationId
 				WHERE incl.InvocationId = @invID AND included.State != @finalized
 			`)
-			st.Params = span.ToSpannerMap(map[string]interface{}{
+			st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 				"finalized": pb.Invocation_FINALIZED,
 				"invID":     id,
 			})
-			var b span.Buffer
+			var b spanutil.Buffer
 			return txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 				var includedID invocations.ID
 				var includedState pb.Invocation_State
@@ -239,7 +239,7 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 	}
 }
 
-func ensureFinalizing(ctx context.Context, txn span.Txn, invID invocations.ID) error {
+func ensureFinalizing(ctx context.Context, txn spanutil.Txn, invID invocations.ID) error {
 	switch state, err := invocations.ReadState(ctx, txn, invID); {
 	case err != nil:
 		return err
@@ -258,7 +258,7 @@ func ensureFinalizing(ctx context.Context, txn span.Txn, invID invocations.ID) e
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 	var reach invocations.IDSet
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
 		if err := ensureFinalizing(ctx, txn, invID); err != nil {
@@ -286,7 +286,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			// Update the invocation state.
 			work <- func() error {
 				return txn.BufferWrite([]*spanner.Mutation{
-					span.UpdateMap("Invocations", map[string]interface{}{
+					spanutil.UpdateMap("Invocations", map[string]interface{}{
 						"InvocationId": invID,
 						"State":        pb.Invocation_FINALIZED,
 						"FinalizeTime": spanner.CommitTimestamp,
@@ -322,7 +322,7 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 		JOIN Invocations including ON incl.InvocationId = including.InvocationId
 		WHERE IncludedInvocationId = @invID AND including.State = @finalizing
 	`)
-	st.Params = span.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 		"taskType":   string(tasks.TryFinalizeInvocation),
 		"invID":      invID.RowID(),
 		"finalizing": pb.Invocation_FINALIZING,
@@ -346,7 +346,7 @@ func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction,
 		FROM Invocations inv, UNNEST(inv.BigQueryExports) payload WITH OFFSET AS i
 		WHERE inv.InvocationId = @invID
 	`)
-	st.Params = span.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 		"taskType": string(tasks.BQExport),
 		"invID":    invID.RowID(),
 	})

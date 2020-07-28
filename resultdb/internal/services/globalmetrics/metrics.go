@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 var (
@@ -96,8 +96,8 @@ func updateTaskStats(ctx context.Context) error {
 		GROUP BY TaskType
 	`)
 
-	var b span.Buffer
-	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	var b spanutil.Buffer
+	err := spanutil.Query(ctx, spanutil.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var taskType string
 		var minCreateTime time.Time
 		var count int64
@@ -129,7 +129,7 @@ func updateTaskStats(ctx context.Context) error {
 
 func updateExpiredResultsMetrics(ctx context.Context) error {
 	switch oldest, count, err := expiredResultStats(ctx); {
-	case err == span.ErrNoResults:
+	case err == spanutil.ErrNoResults:
 		return nil
 	case err != nil:
 		return err
@@ -158,7 +158,7 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 		WHERE ExpectedTestResultsExpirationTime IS NOT NULL
 			AND ExpectedTestResultsExpirationTime < CURRENT_TIMESTAMP()
 	`)
-	err = span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &earliest, &pendingInvocationsCount)
+	err = spanutil.QueryFirstRow(ctx, spanutil.Client(ctx).Single(), st, &earliest, &pendingInvocationsCount)
 	oldestResult = earliest.Time
 	return
 }

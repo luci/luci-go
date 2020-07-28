@@ -19,7 +19,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -71,7 +71,7 @@ func TestParentID(t *testing.T) {
 func TestRead(t *testing.T) {
 	Convey(`TestRead`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		txn := span.Client(ctx).ReadOnlyTransaction()
+		txn := spanutil.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
 
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))

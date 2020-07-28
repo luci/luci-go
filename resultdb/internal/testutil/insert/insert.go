@@ -23,7 +23,7 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -55,7 +55,7 @@ func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[st
 		values["FinalizeTime"] = spanner.CommitTimestamp
 	}
 	updateDict(values, extraValues)
-	return span.InsertMap("Invocations", values)
+	return spanutil.InsertMap("Invocations", values)
 }
 
 // FinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
@@ -74,7 +74,7 @@ func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, extr
 
 // Inclusion returns a spanner mutation that inserts an inclusion.
 func Inclusion(including, included invocations.ID) *spanner.Mutation {
-	return span.InsertMap("IncludedInvocations", map[string]interface{}{
+	return spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
 	})
@@ -100,7 +100,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          tr.Status,
 			"RunDurationUsec": 1e6*i + 234567,
-			"SummaryHtml":     span.Compressed("SummaryHtml"),
+			"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
 		}
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
@@ -110,7 +110,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 			mutMap["TestLocationLine"] = int(tr.TestLocation.Line)
 		}
 
-		ms[i] = span.InsertMap("TestResults", mutMap)
+		ms[i] = spanutil.InsertMap("TestResults", mutMap)
 	}
 	return ms
 }
@@ -119,13 +119,13 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
-		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
+		ms[i] = spanutil.InsertMap("TestExonerations", map[string]interface{}{
 			"InvocationId":    invID,
 			"TestId":          testID,
 			"ExonerationId":   strconv.Itoa(i),
 			"Variant":         variant,
 			"VariantHash":     pbutil.VariantHash(variant),
-			"ExplanationHTML": span.Compressed(fmt.Sprintf("explanation %d", i)),
+			"ExplanationHTML": spanutil.Compressed(fmt.Sprintf("explanation %d", i)),
 		})
 	}
 	return ms
@@ -139,7 +139,7 @@ func Artifact(invID invocations.ID, parentID, artID string, extraValues map[stri
 		"ArtifactId":   artID,
 	}
 	updateDict(values, extraValues)
-	return span.InsertMap("Artifacts", values)
+	return spanutil.InsertMap("Artifacts", values)
 }
 
 // MakeTestResults creates test results.

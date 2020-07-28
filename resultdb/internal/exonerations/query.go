@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -66,9 +66,9 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (te
 	// TODO(nodir): add support for q.Predicate.Variant.
 
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
-	var b span.Buffer
-	var explanationHTML span.Compressed
-	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	var b spanutil.Buffer
+	var explanationHTML spanutil.Compressed
+	err = spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		ex := &pb.TestExoneration{}
 		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &ex.VariantHash, &explanationHTML)

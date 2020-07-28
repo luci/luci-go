@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -88,7 +88,7 @@ func TestReadInvocation(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 
 		readInv := func() *pb.Invocation {
-			txn := span.Client(ctx).ReadOnlyTransaction()
+			txn := spanutil.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
 			inv, err := invocations.Read(ctx, txn, "inv")

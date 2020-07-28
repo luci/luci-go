@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -44,7 +44,7 @@ func MustParseName(name string) (invID invocations.ID, testID, exonerationID str
 // Read reads a test exoneration from Spanner.
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
-func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestExoneration, error) {
+func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.TestExoneration, error) {
 	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
 	if err != nil {
 		return nil, err
@@ -58,8 +58,8 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.TestExoneration, 
 	}
 
 	// Populate fields from TestExonerations table.
-	var explanationHTML span.Compressed
-	err = span.ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
+	var explanationHTML spanutil.Compressed
+	err = spanutil.ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
 		"Variant":         &ret.Variant,
 		"VariantHash":     &ret.VariantHash,
 		"ExplanationHTML": &explanationHTML,

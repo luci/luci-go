@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -75,7 +75,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
 // Does not return artifact content or its location.
-func Read(ctx context.Context, txn span.Txn, name string) (*pb.Artifact, error) {
+func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.Artifact, error) {
 	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func Read(ctx context.Context, txn span.Txn, name string) (*pb.Artifact, error) 
 	// Populate fields from Artifacts table.
 	var contentType spanner.NullString
 	var size spanner.NullInt64
-	err = span.ReadRow(ctx, txn, "Artifacts", invID.Key(parentID, artifactID), map[string]interface{}{
+	err = spanutil.ReadRow(ctx, txn, "Artifacts", invID.Key(parentID, artifactID), map[string]interface{}{
 		"ContentType": &contentType,
 		"Size":        &size,
 	})

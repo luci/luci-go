@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -95,7 +95,7 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 
 	var err error
 	deduped := false
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		deduped, err = deduplicateCreateInvocations(ctx, txn, idSet, requestID, createdBy)
 		if err != nil {
 			return err
@@ -109,7 +109,7 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 		return nil, nil, err
 	}
 	if !deduped {
-		span.IncRowCount(ctx, len(reqs), span.Invocations, span.Inserted)
+		spanutil.IncRowCount(ctx, len(reqs), spanutil.Invocations, spanutil.Inserted)
 	}
 
 	return getCreatedInvocationsAndUpdateTokens(ctx, idSet, reqs)
@@ -142,7 +142,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		pbutil.NormalizeInvocation(inv)
 		// Create a mutation to create the invocation.
-		ms[i] = span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
+		ms[i] = spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, requestID))
 	}
 	return ms
 }
@@ -151,7 +151,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 // invocations just created in a separate read-only transaction, and
 // generates an update token for each.
 func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations.IDSet, reqs []*pb.CreateInvocationRequest) ([]*pb.Invocation, []string, error) {
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 	invMap, err := invocations.ReadBatch(ctx, txn, idSet)
 	if err != nil {
@@ -175,14 +175,14 @@ func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations
 // deduplicateCreateInvocations checks if the invocations have already been
 // created with the given requestID and current requester.
 // Returns a true if they have.
-func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet invocations.IDSet, requestID, createdBy string) (bool, error) {
+func deduplicateCreateInvocations(ctx context.Context, txn spanutil.Txn, idSet invocations.IDSet, requestID, createdBy string) (bool, error) {
 	invCount := 0
 	columns := []string{"InvocationId", "CreateRequestId", "CreatedBy"}
 	err := txn.Read(ctx, "Invocations", idSet.Keys(), columns).Do(func(r *spanner.Row) error {
 		var invID invocations.ID
 		var rowRequestID spanner.NullString
 		var rowCreatedBy spanner.NullString
-		switch err := span.FromSpanner(r, &invID, &rowRequestID, &rowCreatedBy); {
+		switch err := spanutil.FromSpanner(r, &invID, &rowRequestID, &rowCreatedBy); {
 		case err != nil:
 			return err
 		case !rowRequestID.Valid || rowRequestID.StringVal != requestID:

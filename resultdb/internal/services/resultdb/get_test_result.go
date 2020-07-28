@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -39,7 +39,7 @@ func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResult
 		return nil, appstatus.BadRequest(err)
 	}
 
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 	tr, err := testresults.Read(ctx, txn, in.Name)
 	if err != nil {

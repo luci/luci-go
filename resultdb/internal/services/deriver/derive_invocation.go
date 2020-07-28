@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -95,7 +95,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	}
 	invID := chromium.GetInvocationID(task, in)
 
-	client := span.Client(ctx)
+	client := spanutil.Client(ctx)
 
 	// Check if we need to write this invocation.
 	switch err := shouldWriteInvocation(ctx, client.Single(), invID); {
@@ -125,13 +125,13 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	originInvID := invocations.MustParseName(originInv.Name)
 	inv.IncludedInvocations = []string{originInv.Name}
 	invMs := []*spanner.Mutation{
-		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", 0)),
-		span.InsertMap("IncludedInvocations", map[string]interface{}{
+		spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", 0)),
+		spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
 			"IncludedInvocationId": originInvID,
 		}),
 	}
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		if err := shouldWriteInvocation(ctx, txn, invID); err != nil {
 			return err
 		}
@@ -143,7 +143,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	case err != nil:
 		return nil, err
 	default:
-		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
 
 		// Cache the set of all invocations reachable from invID.
 		reach.Add(originInvID)
@@ -158,7 +158,7 @@ var errAlreadyExists = fmt.Errorf("already exists")
 
 // shouldWriteInvocation returns errAlreadyExists if the invocation already
 // exists and should not be re-written.
-func shouldWriteInvocation(ctx context.Context, txn span.Txn, id invocations.ID) error {
+func shouldWriteInvocation(ctx context.Context, txn spanutil.Txn, id invocations.ID) error {
 	state, err := invocations.ReadState(ctx, txn, id)
 	s, _ := appstatus.Get(err)
 	switch {
@@ -230,16 +230,16 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(batchInvs)+4)
-	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "", 0)))
+	ms = append(ms, spanutil.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "", 0)))
 	for includedID := range batchInvs {
-		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
+		ms = append(ms, spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         originInvID,
 			"IncludedInvocationId": includedID,
 		}))
 	}
 	ms = append(ms, tasks.EnqueueBQExport(originInvID, s.InvBQTable, clock.Now(ctx).UTC()))
 
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check origin invocation state again.
 		if err := shouldWriteInvocation(ctx, txn, originInvID); err != nil {
 			return err
@@ -253,7 +253,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	case err != nil:
 		return nil, nil, err
 	default:
-		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
 		// Cache the included invocations.
 		invocations.ReachCache(originInvID).TryWrite(ctx, batchInvs)
 		return originInv, batchInvs, nil
@@ -261,7 +261,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 }
 
 // readExistingInv reads an invocation and IDs of all invocations it can reach.
-func readExistingInv(ctx context.Context, txn span.Txn, id invocations.ID) (inv *pb.Invocation, reach invocations.IDSet, err error) {
+func readExistingInv(ctx context.Context, txn spanutil.Txn, id invocations.ID) (inv *pb.Invocation, reach invocations.IDSet, err error) {
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
 			inv, err = invocations.Read(ctx, txn, id)
@@ -284,7 +284,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 
 	invID := invocations.MustParseName(inv.Name)
 	eg, ctx := errgroup.WithContext(ctx)
-	client := span.Client(ctx)
+	client := spanutil.Client(ctx)
 	for i, batch := range batches {
 		i := i
 		batch := batch
@@ -304,7 +304,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				Deadline:     inv.Deadline,
 				Tags:         inv.Tags,
 			}
-			ms = append(ms, span.InsertOrUpdateMap(
+			ms = append(ms, spanutil.InsertOrUpdateMap(
 				"Invocations", s.rowOfInvocation(ctx, batchInv, "", int64(len(batch)))),
 			)
 
@@ -324,8 +324,8 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 			// Memorize that this invocation does not include anything.
 			invocations.ReachCache(batchID).TryWrite(ctx, nil)
 
-			span.IncRowCount(ctx, len(batch), span.TestResults, span.Inserted)
-			span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+			spanutil.IncRowCount(ctx, len(batch), spanutil.TestResults, spanutil.Inserted)
+			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
 			return nil
 		})
 	}
@@ -370,7 +370,7 @@ func insertOrUpdateTestResult(invID invocations.ID, tr *pb.TestResult) *spanner.
 		"CommitTimestamp": spanner.CommitTimestamp,
 
 		"Status":          tr.Status,
-		"SummaryHTML":     span.Compressed([]byte(tr.SummaryHtml)),
+		"SummaryHTML":     spanutil.Compressed([]byte(tr.SummaryHtml)),
 		"StartTime":       tr.StartTime,
 		"RunDurationUsec": toMicros(tr.Duration),
 		"Tags":            tr.Tags,
@@ -387,11 +387,11 @@ func insertOrUpdateTestResult(invID invocations.ID, tr *pb.TestResult) *spanner.
 		trMap["TestLocationLine"] = int(tr.TestLocation.Line)
 	}
 
-	return span.InsertOrUpdateMap("TestResults", trMap)
+	return spanutil.InsertOrUpdateMap("TestResults", trMap)
 }
 
 func insertOrUpdateArtifact(invID invocations.ID, tr *pb.TestResult, a *pb.Artifact) *spanner.Mutation {
-	return span.InsertOrUpdateMap("Artifacts", map[string]interface{}{
+	return spanutil.InsertOrUpdateMap("Artifacts", map[string]interface{}{
 		"InvocationId": invID,
 		"ParentId":     artifacts.ParentID(tr.TestId, tr.ResultId),
 		"ArtifactId":   a.ArtifactId,

@@ -21,7 +21,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -64,7 +64,7 @@ func TestRead(t *testing.T) {
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-			span.InsertMap("TestResults", map[string]interface{}{
+			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":         invID,
 				"TestId":               "t t",
 				"ResultId":             "r",
@@ -80,7 +80,7 @@ func TestRead(t *testing.T) {
 		)
 
 		const name = "invocations/inv/tests/t%20t/results/r"
-		tr, err := Read(ctx, span.Client(ctx).Single(), name)
+		tr, err := Read(ctx, spanutil.Client(ctx).Single(), name)
 		So(err, ShouldBeNil)
 		So(tr, ShouldResembleProto, &pb.TestResult{
 			Name:     name,

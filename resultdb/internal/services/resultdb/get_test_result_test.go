@@ -22,7 +22,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -70,7 +70,7 @@ func TestGetTestResult(t *testing.T) {
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
-			span.InsertMap("TestResults", map[string]interface{}{
+			spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_0",
@@ -97,7 +97,7 @@ func TestGetTestResult(t *testing.T) {
 		)
 
 		Convey(`works with expected result`, func() {
-			testutil.MustApply(ctx, span.InsertMap("TestResults", map[string]interface{}{
+			testutil.MustApply(ctx, spanutil.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_1",

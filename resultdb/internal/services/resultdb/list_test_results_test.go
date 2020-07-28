@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -146,7 +146,7 @@ func insertTestResults(ctx context.Context, invID invocations.ID, testName strin
 			mutMap["IsUnexpected"] = true
 		}
 
-		ms[i] = span.InsertMap("TestResults", mutMap)
+		ms[i] = spanutil.InsertMap("TestResults", mutMap)
 	}
 
 	testutil.MustApply(ctx, ms...)

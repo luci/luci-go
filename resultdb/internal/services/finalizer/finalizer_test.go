@@ -21,7 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -138,9 +138,9 @@ func TestFinalizeInvocation(t *testing.T) {
 				WHERE TaskType = @taskType
 			`)
 			st.Params["taskType"] = string(tasks.TryFinalizeInvocation)
-			var b span.Buffer
+			var b spanutil.Buffer
 			nextInvs := invocations.IDSet{}
-			err = span.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
+			err = spanutil.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
 				var nextInv invocations.ID
 				err := b.FromSpanner(r, &nextInv)
 				So(err, ShouldBeNil)
@@ -171,8 +171,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			`)
 			st.Params["taskType"] = string(tasks.BQExport)
 			var payloads []string
-			var b span.Buffer
-			err = span.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
+			var b spanutil.Buffer
+			err = spanutil.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
 				var taskID string
 				var invID invocations.ID
 				var payload []byte
