@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "e494170e_b229e3fc",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-28T21:37:04Z",
+      "side": 1,
+      "message": "Yes, sorry. I meant null which will be correctly interpreted by Python as {} as opposed to \"\" which will throw.",
+      "parentUuid": "d8b4791b_8f97031b",
+      "range": {
+        "startLine": 127,
+        "startChar": 64,
+        "endLine": 127,
+        "endChar": 66
+      },
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "663c9931_5de8812e",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -77,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "8a5e9f79_f7618224",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-28T21:37:04Z",
+      "side": 1,
+      "message": "Since Python will interpret it as an empty dict anyway, I originally tried\nb.LegacyProperties.ResultDetails \u003d []byte(\"{}\")\nBut this doesn\u0027t work. I mean b.\u003canything\u003e \u003d \u003canything\u003e doesn\u0027t work.",
+      "parentUuid": "8c2e1a11_e4d50c3f",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a33e292_a4fa8bb4",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -88,6 +130,30 @@
       "writtenOn": "2020-07-28T18:47:35Z",
       "side": 1,
       "message": "why not\n\np, err :\u003d datastore.GetPLS(b).Save(withMeta)\nif len(b.LegacyProperties.ResultDetails) \u003d\u003d 0 {\n  p[\"result_details\"] \u003d datastore.MkProperty(nil)\n}\n\n?",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 137,
+        "endChar": 24
+      },
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23fa4d4d_1e10b61a",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-28T21:37:04Z",
+      "side": 1,
+      "message": "It won\u0027t have len 0 though will it? It will have one element which is []byte(\"\"). Unless it hasn\u0027t been defaulted yet? These are the things I didn\u0027t bother to check, honestly.",
+      "parentUuid": "5a33e292_a4fa8bb4",
       "range": {
         "startLine": 137,
         "startChar": 4,
