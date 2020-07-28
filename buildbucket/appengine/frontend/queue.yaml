@@ -1,5 +1,9 @@
 queue:
 
+- name: ttq-sweeper
+  # TODO(crbug/1042991): Target backend-go once it exists.
+  target: default-go
+  rate: 500/s
 - name: swarming-build-sync
   target: backend
   rate: 500/s

@@ -22,6 +22,8 @@ import (
 	"net/url"
 	"strings"
 
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
+
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/access"
@@ -30,6 +32,8 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/ttq"
+	"go.chromium.org/luci/ttq/ttqgaeds"
 
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -51,6 +55,18 @@ func main() {
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
+		ctc, err := cloudtasks.NewClient(srv.Context)
+		if err != nil {
+			panic(err)
+		}
+		tq, err := ttqgaeds.New(ctc, ttq.Options{})
+		if err != nil {
+			panic(err)
+		}
+		// TODO(crbug/1042991): Support app locations besides us-central1.
+		queue := fmt.Sprintf("projects/%s/locations/us-central1/queues/ttq-sweeper", srv.Options.CloudProject)
+		tq.SetupSweeping(srv.Routes, router.MiddlewareChain{}, "/internal/ttq", queue)
+
 		// Proxy buildbucket.v2.Builds pRPC requests back to the Python
 		// service in order to achieve a programmatic traffic split.
 		// Because of the way dispatch routes work, requests are proxied
