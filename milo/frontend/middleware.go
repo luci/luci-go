@@ -29,6 +29,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	bluemonday "github.com/microcosm-cc/bluemonday"
 	blackfriday "gopkg.in/russross/blackfriday.v2"
 
 	"go.chromium.org/gae/service/info"
@@ -74,6 +75,7 @@ var funcMap = template.FuncMap{
 	"percent":          percent,
 	"prefix":           prefix,
 	"renderMarkdown":   renderMarkdown,
+	"renderHTML":       renderHTML,
 	"shortenEmail":     common.ShortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
@@ -401,6 +403,14 @@ func renderMarkdown(t string) (results template.HTML) {
 		return template.HTML(fmt.Sprintf("Failed to render markdown: %s", template.HTMLEscapeString(err.Error())))
 	}
 	return template.HTML(out.String())
+}
+
+// renderHTML renders the given text as sannitized HTML.
+// This uses bluemonday.UGCPolicy to sanitize HTML.
+func renderHTML(t string) (results template.HTML) {
+	p := bluemonday.UGCPolicy()
+	html := p.Sanitize(t)
+	return template.HTML(html)
 }
 
 // pagedURL returns a self URL with the given cursor and limit paging options.
