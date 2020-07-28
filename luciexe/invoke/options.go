@@ -78,6 +78,12 @@ type Options struct {
 	// `nil`.
 	Namespace string
 
+	// BaseDir is the root dir where all sub-directories (i.e. workdirs,
+	// tempdirs, etc.) will be created under.
+	//
+	// If empty, a random directory under os.TempDir will be used.
+	BaseDir string
+
 	// Absolute path to the cache base directory. This must exist and be
 	// a directory.
 	//
@@ -258,10 +264,13 @@ type dirs struct {
 }
 
 func (o *Options) mkdirs() (ret dirs, err error) {
-	var base string
-	if base, err = ioutil.TempDir("", ""); err != nil {
-		return
+	base := o.BaseDir
+	if base == "" {
+		if base, err = ioutil.TempDir("", ""); err != nil {
+			return
+		}
 	}
+
 	// maybeMkdir attempts to make the dir named `dirname` under `base`,
 	// annotating the error with `friendlyName` as long as `err` is nil.
 	//

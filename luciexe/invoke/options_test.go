@@ -427,7 +427,16 @@ func TestOptionsExtraDirs(t *testing.T) {
 		ctx, o, tdir, closer := commonOptions()
 		defer closer()
 
-		Convey(`default`, func() {
+		Convey(`provided BaseDir`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			So(os.Mkdir(o.BaseDir, 0777), ShouldBeNil)
+			lo, _, err := o.rationalize(ctx)
+			So(err, ShouldBeNil)
+			So(lo.env.GetEmpty("TMP"), ShouldStartWith, o.BaseDir)
+			So(lo.workDir, ShouldStartWith, o.BaseDir)
+		})
+
+		Convey(`fallback to temp`, func() {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
 			So(lo.env.GetEmpty("TMP"), ShouldStartWith, tdir)

@@ -161,6 +161,11 @@ func mainImpl() int {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
 		subp, err := invoke.Start(ctx, exeArgs, input.Build, &invoke.Options{
+			// TODO(yiwzhang): Figure out a better way to pass opts.BaseDir.
+			//  If opts.BaseDir is empty, it will be assigned with a tempDir
+			//  value inside host.Run(). Currently, there's no way to pass that
+			//  tempDir to invoke. It's fine for now as we always set opts.BaseDir.
+			BaseDir:  opts.BaseDir,
 			CacheDir: input.CacheDir,
 		})
 		if err != nil {
