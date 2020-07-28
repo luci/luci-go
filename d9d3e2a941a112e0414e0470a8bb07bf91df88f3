@@ -354,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "68dc8233_8c2e6bdb",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T14:04:17Z",
+      "side": 1,
+      "message": "I couldn\u0027t sleep well today, so I hacked a re-usable solution. Also, simplified to not use dispatcher.Channel for the scan channel since I don\u0027t need batching there.\nI hope you like it since you now have to review this from ~scratch, though tests are had to change only slightly.",
+      "parentUuid": "1f0eb372_0a6be1e2",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 35
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c7de761c_a08a2903",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc_test.go",
         "patchSetId": 10
