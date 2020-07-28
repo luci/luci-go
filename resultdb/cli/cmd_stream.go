@@ -57,7 +57,7 @@ func cmdStream(p Params) *subcommands.Command {
 			Run a given test command, continuously collect the results over IPC, and
 			upload them to ResultDB. Either use the current invocation from
 			LUCI_CONTEXT or create/finalize a new one. Example:
-				rdb stream ./out/chrome/test/browser_tests
+				rdb stream -new -realm chromium:public ./out/chrome/test/browser_tests
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &streamRun{vars: make(stringmapflag.Value)}
@@ -65,6 +65,11 @@ func cmdStream(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.isNew, "new", false, text.Doc(`
 				If true, create and use a new invocation for the test command.
 				If false, use the current invocation, set in LUCI_CONTEXT.
+			`))
+			r.Flags.StringVar(&r.realm, "realm", "", text.Doc(`
+				Realm to create the new invocation in. Required if -new is set,
+				ignored otherwise.
+				e.g. "chromium:public"
 			`))
 			r.Flags.StringVar(&r.testIDPrefix, "test-id-prefix", "", text.Doc(`
 				Prefix to prepend to the test ID of every test result.
@@ -85,6 +90,7 @@ type streamRun struct {
 
 	// flags
 	isNew        bool
+	realm        string
 	testIDPrefix string
 	vars         stringmapflag.Value
 
@@ -115,6 +121,9 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	loginMode := auth.OptionalLogin
 	// login is required only if it creates a new invocation.
 	if r.isNew {
+		if r.realm == "" {
+			return r.done(errors.Reason("-realm is required for new invocations").Err())
+		}
 		loginMode = auth.SilentLogin
 	}
 	if err := r.initClients(ctx, loginMode); err != nil {
@@ -124,7 +133,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// if -new is passed, create a new invocation. If not, use the existing one set in
 	// lucictx.
 	if r.isNew {
-		ninv, err := r.createInvocation(ctx)
+		ninv, err := r.createInvocation(ctx, r.realm)
 		if err != nil {
 			return r.done(err)
 		}
@@ -205,7 +214,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	})
 }
 
-func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.ResultDBInvocation, err error) {
+func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
 	invID, err := genInvID(ctx)
 	if err != nil {
 		return
@@ -214,6 +223,9 @@ func (r *streamRun) createInvocation(ctx context.Context) (ret lucictx.ResultDBI
 	md := metadata.MD{}
 	resp, err := r.recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
 		InvocationId: invID,
+		Invocation: &pb.Invocation{
+			Realm: realm,
+		},
 	}, prpc.Header(&md))
 	if err != nil {
 		err = errors.Annotate(err, "failed to create an invocation").Err()
