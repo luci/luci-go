@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91fb1348_4e629234",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T05:03:31Z",
+      "side": 1,
+      "message": "lgtm (though I\u0027ll defer to chan for final review)",
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "950581a4_aeefd3a0",
+        "filename": "resultdb/internal/tasks/tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T05:03:31Z",
+      "side": 1,
+      "message": "should a big chunk of \u0027spanutil\u0027 go away now?",
+      "range": {
+        "startLine": 26,
+        "startChar": 41,
+        "endLine": 26,
+        "endChar": 49
+      },
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
