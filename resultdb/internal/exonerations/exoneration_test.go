@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -46,7 +47,7 @@ func TestRead(t *testing.T) {
 			}))
 
 		const name = "invocations/inv/tests/t%20t/exonerations/id"
-		ex, err := Read(ctx, spanutil.Client(ctx).Single(), name)
+		ex, err := Read(ctx, span.Single(ctx), name)
 		So(err, ShouldBeNil)
 		So(ex, ShouldResembleProto, &pb.TestExoneration{
 			Name:            name,

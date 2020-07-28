@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -140,7 +141,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			st.Params["taskType"] = string(tasks.TryFinalizeInvocation)
 			var b spanutil.Buffer
 			nextInvs := invocations.IDSet{}
-			err = spanutil.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
+			err = span.Single(ctx).Query(ctx, st).Do(func(r *spanner.Row) error {
 				var nextInv invocations.ID
 				err := b.FromSpanner(r, &nextInv)
 				So(err, ShouldBeNil)
@@ -172,7 +173,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			st.Params["taskType"] = string(tasks.BQExport)
 			var payloads []string
 			var b spanutil.Buffer
-			err = spanutil.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
+			err = span.Single(ctx).Query(ctx, st).Do(func(r *spanner.Row) error {
 				var taskID string
 				var invID invocations.ID
 				var payload []byte

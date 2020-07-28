@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -70,7 +71,7 @@ func TestTasks(t *testing.T) {
 
 				// Check the task's ProcessAfter is updated.
 				var newProcessAfter time.Time
-				txn := spanutil.Client(ctx).Single()
+				txn := span.Single(ctx)
 				err = spanutil.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
 					"ProcessAfter": &newProcessAfter,
 				})
@@ -100,7 +101,7 @@ func TestTasks(t *testing.T) {
 			err := Delete(ctx, BQExport, "task")
 			So(err, ShouldBeNil)
 
-			txn := spanutil.Client(ctx).Single()
+			txn := span.Single(ctx)
 			var taskID string
 			err = spanutil.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
 				"TaskId": &taskID,

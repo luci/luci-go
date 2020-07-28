@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -148,7 +149,7 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readyToFinalize")
 	defer func() { ts.End(err) }()
 
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
+	txn := span.ReadOnlyTransaction(ctx)
 	defer txn.Close()
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -258,7 +259,9 @@ func ensureFinalizing(ctx context.Context, txn spanutil.Txn, invID invocations.I
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 	var reach invocations.IDSet
-	_, err := spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		txn := span.RW(ctx)
+
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
 		if err := ensureFinalizing(ctx, txn, invID); err != nil {

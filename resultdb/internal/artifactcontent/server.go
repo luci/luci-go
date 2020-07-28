@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -174,7 +175,7 @@ func (r *contentRequest) handle(c *router.Context) {
 	// Read the state from database.
 	var isolateURL spanner.NullString
 	var rbeCASHash spanner.NullString
-	txn := spanutil.Client(c.Context).Single()
+	txn := span.Single(c.Context)
 	key := r.invID.Key(r.parentID, r.artifactID)
 	err := spanutil.ReadRow(c.Context, txn, "Artifacts", key, map[string]interface{}{
 		"ContentType": &r.contentType,

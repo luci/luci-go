@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -170,7 +171,7 @@ func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
 }
 
 func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
-	realm, err := invocations.ReadRealm(ctx, spanutil.Client(ctx).Single(), invID)
+	realm, err := invocations.ReadRealm(ctx, span.Single(ctx), invID)
 	if err != nil {
 		return "", err
 	}
@@ -457,7 +458,7 @@ func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*b
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
 func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
+	txn := span.ReadOnlyTransaction(ctx)
 	defer txn.Close()
 
 	inv, err := invocations.Read(ctx, txn, invID)

@@ -31,12 +31,12 @@ import (
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -107,17 +107,17 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {
-				err := shouldWriteInvocation(ctx, spanutil.Client(ctx).Single(), "inserted")
+				err := shouldWriteInvocation(ctx, span.Single(ctx), "inserted")
 				So(err, ShouldEqual, errAlreadyExists)
 			})
 
 			Convey(`if we already have a non-finalized invocation`, func() {
-				err := shouldWriteInvocation(ctx, spanutil.Client(ctx).Single(), "active")
+				err := shouldWriteInvocation(ctx, span.Single(ctx), "active")
 				So(err, ShouldEqual, errAlreadyExists)
 			})
 
 			Convey(`if we don't yet have the invocation written`, func() {
-				err := shouldWriteInvocation(ctx, spanutil.Client(ctx).Single(), "another")
+				err := shouldWriteInvocation(ctx, span.Single(ctx), "another")
 				So(err, ShouldBeNil)
 			})
 		})
@@ -240,7 +240,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			})
 
 			// Assert we wrote correct test results.
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 
 			invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
@@ -291,7 +291,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(inv.IncludedInvocations[0], ShouldContainSubstring, "origin1")
 
 			// Assert we wrote correct test results.
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 
 			invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
@@ -368,7 +368,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 			}
 			So(actualInclusions, ShouldResemble, expectedInclusions)
 
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 
 			// Check that the TestResults are batched as expected.

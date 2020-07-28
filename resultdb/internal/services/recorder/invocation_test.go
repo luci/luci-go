@@ -24,9 +24,9 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -88,7 +88,7 @@ func TestReadInvocation(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 
 		readInv := func() *pb.Invocation {
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 
 			inv, err := invocations.Read(ctx, txn, "inv")
