@@ -107,8 +107,12 @@ func (r *runRun) main(a subcommands.Application, args []string) error {
 		if len(cmdAndArgs) == 0 {
 			return errors.Reason("command cannot be empty").Err()
 		}
-		cwd := filepath.Join(outDir, isol.RelativeCwd)
-		// TODO: Ensure cwd exists + normalize cwd
+		cwd := filepath.Clean(filepath.Join(outDir, isol.RelativeCwd))
+		// |cwd| should never exist because it is under the temporary directory |outDir|.
+		err = filesystem.MakeDirs(cwd)
+		if err != nil {
+			return errors.Annotate(err, "failed to create cwd=%s", cwd).Err()
+		}
 		log.Printf("Running %v, cwd=%s\n", cmdAndArgs, cwd)
 		cmd := exec.Command(cmdAndArgs[0], cmdAndArgs[1:]...)
 		cmd.Dir = cwd
