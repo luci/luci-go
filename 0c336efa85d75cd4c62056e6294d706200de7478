@@ -119,6 +119,24 @@
     },
     {
       "key": {
+        "uuid": "bdac0469_aca4eed6",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T21:41:22Z",
+      "side": 1,
+      "message": "Hm... is it that LegacyProperties is being saved as a different property? like `LegacyProperties.ResultDetails` or something like that?",
+      "parentUuid": "8a5e9f79_f7618224",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a33e292_a4fa8bb4",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -154,6 +172,30 @@
       "side": 1,
       "message": "It won\u0027t have len 0 though will it? It will have one element which is []byte(\"\"). Unless it hasn\u0027t been defaulted yet? These are the things I didn\u0027t bother to check, honestly.",
       "parentUuid": "5a33e292_a4fa8bb4",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 137,
+        "endChar": 24
+      },
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a69ec436_eb22ddc2",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T21:41:22Z",
+      "side": 1,
+      "message": "b.LegacyProperties.ResultDetails looks like it has type `[]byte`; an empty (nil, or allocated with no data) []byte has length 0. If you cast this to a string, it will be \"\".",
+      "parentUuid": "23fa4d4d_1e10b61a",
       "range": {
         "startLine": 137,
         "startChar": 4,
