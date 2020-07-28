@@ -69,3 +69,13 @@ func ParseBuilderID(s string) (*pb.BuilderID, error) {
 func FormatBucketID(project, bucket string) string {
 	return fmt.Sprintf("%s/%s", project, bucket)
 }
+
+// ParseBucketID parses a "{project}/{bucket}" string.
+// Opposite of FormatBucketID.
+func ParseBucketID(s string) (string, string, error) {
+	parts := strings.Split(s, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid bucket id; must have 1 slash")
+	}
+	return parts[0], parts[1], nil
+}
