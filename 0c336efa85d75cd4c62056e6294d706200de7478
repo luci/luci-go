@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "e83653a0_e3200bf2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T18:47:35Z",
+      "side": 1,
+      "message": "lgtm, but I don\u0027t think I understand your comment",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d8b4791b_8f97031b",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T18:47:35Z",
+      "side": 1,
+      "message": "do you mean Null?",
+      "range": {
+        "startLine": 127,
+        "startChar": 64,
+        "endLine": 127,
+        "endChar": 66
+      },
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "663c9931_5de8812e",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -13,6 +53,47 @@
       "writtenOn": "2020-07-28T10:06:46Z",
       "side": 1,
       "message": "Setting the value here causes the tests to hang but I didn\u0027t bother to investigate.",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c2e1a11_e4d50c3f",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T18:47:35Z",
+      "side": 1,
+      "message": "I\u0027m not sure what you mean?",
+      "parentUuid": "663c9931_5de8812e",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a33e292_a4fa8bb4",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T18:47:35Z",
+      "side": 1,
+      "message": "why not\n\np, err :\u003d datastore.GetPLS(b).Save(withMeta)\nif len(b.LegacyProperties.ResultDetails) \u003d\u003d 0 {\n  p[\"result_details\"] \u003d datastore.MkProperty(nil)\n}\n\n?",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 137,
+        "endChar": 24
+      },
       "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
