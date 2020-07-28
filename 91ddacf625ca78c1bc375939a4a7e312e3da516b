@@ -16,6 +16,29 @@
       "revId": "91ddacf625ca78c1bc375939a4a7e312e3da516b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ece2ced_62894c57",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T18:25:07Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand this comment; I think opts.BaseDir is always populated further up?\n\nAlso, I think the luciexe doc needs to be updated as well; I think right now it mandates that it starts in a random empty directory.",
+      "range": {
+        "startLine": 164,
+        "startChar": 7,
+        "endLine": 167,
+        "endChar": 74
+      },
+      "revId": "91ddacf625ca78c1bc375939a4a7e312e3da516b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
