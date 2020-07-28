@@ -34,6 +34,24 @@
       "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d85c1674_79f7d8ba",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T05:40:17Z",
+      "side": 1,
+      "message": "Ah I see. Then can you align key with existing implementation?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/archiver/upload_tracker.go;l\u003d322;drc\u003d31f89039d027a1ae464e28dacdfd4bf43b852295?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F",
+      "parentUuid": "df3d0b84_67d444f4",
+      "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
