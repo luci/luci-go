@@ -20,11 +20,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -42,7 +42,7 @@ func TestQuery(t *testing.T) {
 		}
 
 		mustFetch := func(q *Query) (arts []*pb.Artifact, token string) {
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 			arts, tok, err := q.Fetch(ctx, txn)
 			So(err, ShouldBeNil)
@@ -336,7 +336,7 @@ func TestQuery(t *testing.T) {
 
 			Convey(`Bad token`, func() {
 				q.PageToken = "CgVoZWxsbw=="
-				_, _, err := q.Fetch(ctx, spanutil.Client(ctx).Single())
+				_, _, err := q.Fetch(ctx, span.Single(ctx))
 				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 			})
 		})

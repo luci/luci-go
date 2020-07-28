@@ -30,9 +30,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -212,7 +212,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			So(resp.Invocations[1], ShouldResembleProto, expected2)
 			So(resp.UpdateTokens, ShouldHaveLength, 2)
 
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 
 			inv, err := invocations.Read(ctx, txn, "u-batch-inv")

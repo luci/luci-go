@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/cron"
@@ -80,7 +81,7 @@ func purgeOneShard(ctx context.Context, shard int) error {
 		AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP()
 	`)
 	st.Params["shardId"] = shard
-	return spanutil.Query(ctx, spanutil.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	return spanutil.Query(ctx, span.Single(ctx), st, func(row *spanner.Row) error {
 		var id invocations.ID
 		if err := spanutil.FromSpanner(row, &id); err != nil {
 			return err
@@ -94,7 +95,7 @@ func purgeOneShard(ctx context.Context, shard int) error {
 }
 
 func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
+	txn := span.ReadOnlyTransaction(ctx)
 	defer txn.Close()
 
 	// Check that invocation hasn't been purged already.
@@ -123,7 +124,7 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 		// One deletion is one mutation.
 		// Flush at 19k boundary.
 		if len(ms) > 19000 {
-			if _, err := spanutil.Client(ctx).Apply(ctx, ms); err != nil {
+			if _, err := span.Apply(ctx, ms); err != nil {
 				return err
 			}
 			spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted)
@@ -137,7 +138,7 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 
 	// Flush the last batch.
 	if len(ms) > 0 {
-		if _, err := spanutil.Client(ctx).Apply(ctx, ms); err != nil {
+		if _, err := span.Apply(ctx, ms); err != nil {
 			return err
 		}
 		spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted)
@@ -207,7 +208,7 @@ func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv invo
 }
 
 func unsetInvocationResultsExpiration(ctx context.Context, id invocations.ID) error {
-	_, err := spanutil.Client(ctx).Apply(ctx, []*spanner.Mutation{
+	_, err := span.Apply(ctx, []*spanner.Mutation{
 		spanutil.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationID":                      id,
 			"ExpectedTestResultsExpirationTime": nil,

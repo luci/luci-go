@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 // Type is a value for InvocationTasks.TaskType column.
@@ -81,7 +82,7 @@ func Peek(ctx context.Context, typ Type, f func(id string) error) error {
 	st.Params["taskType"] = string(typ)
 
 	var b spanutil.Buffer
-	return spanutil.Query(ctx, spanutil.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	return spanutil.Query(ctx, span.Single(ctx), st, func(row *spanner.Row) error {
 		var id string
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err
@@ -98,7 +99,7 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID invocations.ID, payload []byte, err error) {
 	tried := false
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		if tried {
 			// This is the second time this function is called.
 			// It is very likely that the prev attempt collided with another
@@ -107,6 +108,8 @@ func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (in
 			return ErrConflict
 		}
 		tried = true
+
+		txn := span.RW(ctx)
 
 		st := spanner.NewStatement(`
 			SELECT InvocationId, Payload
@@ -138,7 +141,7 @@ func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (in
 
 // Delete deletes a task.
 func Delete(ctx context.Context, typ Type, id string) error {
-	_, err := spanutil.Client(ctx).Apply(ctx, []*spanner.Mutation{
+	_, err := span.Apply(ctx, []*spanner.Mutation{
 		spanner.Delete("InvocationTasks", typ.Key(id)),
 	})
 	return err

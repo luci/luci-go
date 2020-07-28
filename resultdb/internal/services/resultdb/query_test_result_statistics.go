@@ -21,9 +21,9 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -38,7 +38,7 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 	}
 
 	// Open a transaction.
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
+	txn := span.ReadOnlyTransaction(ctx)
 	defer txn.Close()
 	if in.MaxStaleness != nil {
 		st, _ := ptypes.Duration(in.MaxStaleness)
