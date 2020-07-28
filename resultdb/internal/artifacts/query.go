@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -95,7 +95,7 @@ LIMIT @limit
 // Returned artifacts are ordered by level (invocation or test result).
 // Test result artifacts are sorted by parent invocation ID, test ID and
 // artifact ID.
-func (q *Query) Fetch(ctx context.Context, txn span.Txn) (arts []*pb.Artifact, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context, txn spanutil.Txn) (arts []*pb.Artifact, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
@@ -130,8 +130,8 @@ func (q *Query) Fetch(ctx context.Context, txn span.Txn) (arts []*pb.Artifact, n
 	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
 	testresults.PopulateVariantParams(&st, q.TestResultPredicate.GetVariant())
 
-	var b span.Buffer
-	err = span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	var b spanutil.Buffer
+	err = spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		var parentID string
 		var contentType spanner.NullString

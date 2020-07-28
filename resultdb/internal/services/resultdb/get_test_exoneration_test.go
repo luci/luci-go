@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -53,13 +53,13 @@ func TestGetTestExoneration(t *testing.T) {
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
-			span.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ExonerationId":   "id",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
-				"ExplanationHTML": span.Compressed("broken"),
+				"ExplanationHTML": spanutil.Compressed("broken"),
 			}))
 
 		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}

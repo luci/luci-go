@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -93,13 +93,13 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		ExonerationId:   exonerationID,
 		ExplanationHtml: body.ExplanationHtml,
 	}
-	mutation = mutFn("TestExonerations", span.ToSpannerMap(map[string]interface{}{
+	mutation = mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]interface{}{
 		"InvocationId":    invID,
 		"TestId":          ret.TestId,
 		"ExonerationId":   exonerationID,
 		"Variant":         ret.Variant,
 		"VariantHash":     pbutil.VariantHash(ret.Variant),
-		"ExplanationHTML": span.Compressed(ret.ExplanationHtml),
+		"ExplanationHTML": spanutil.Compressed(ret.ExplanationHtml),
 	}))
 	return
 }

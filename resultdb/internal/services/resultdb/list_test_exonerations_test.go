@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -67,22 +67,22 @@ func TestListTestExonerations(t *testing.T) {
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
 			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
-			span.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          testID,
 				"ExonerationId":   "0",
 				"Variant":         var0,
 				"VariantHash":     "deadbeef",
-				"ExplanationHTML": span.Compressed("broken"),
+				"ExplanationHTML": spanutil.Compressed("broken"),
 			}),
-			span.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
 				"TestId":        testID,
 				"ExonerationId": "1",
 				"Variant":       pbutil.Variant(),
 				"VariantHash":   "deadbeef",
 			}),
-			span.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
 				"TestId":        testID,
 				"ExonerationId": "2",

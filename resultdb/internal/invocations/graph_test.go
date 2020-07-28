@@ -21,7 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/server/redisconn"
 
@@ -35,7 +35,7 @@ func TestReachable(t *testing.T) {
 		node := insertInvocationIncluding
 
 		read := func(roots ...ID) (IDSet, error) {
-			txn := span.Client(ctx).ReadOnlyTransaction()
+			txn := spanutil.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 			return Reachable(ctx, txn, NewIDSet(roots...))
 		}
@@ -75,7 +75,7 @@ func TestReachable(t *testing.T) {
 // with a 10 linear inclusions.
 func BenchmarkChainFetch(b *testing.B) {
 	ctx := testutil.SpannerTestContext(b)
-	client := span.Client(ctx)
+	client := spanutil.Client(ctx)
 
 	var ms []*spanner.Mutation
 	var prev ID
@@ -94,7 +94,7 @@ func BenchmarkChainFetch(b *testing.B) {
 	}
 
 	read := func() {
-		txn := span.Client(ctx).ReadOnlyTransaction()
+		txn := spanutil.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
 
 		if _, err := Reachable(ctx, txn, NewIDSet(prev)); err != nil {

@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -45,7 +45,7 @@ func TestQueryTestResults(t *testing.T) {
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
-			txn := span.Client(ctx).ReadOnlyTransaction()
+			txn := spanutil.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 			return q.Fetch(ctx, txn)
 		}
@@ -252,7 +252,7 @@ func TestQueryTestResults(t *testing.T) {
 			})
 
 			Convey(`Bad token`, func() {
-				txn := span.Client(ctx).ReadOnlyTransaction()
+				txn := spanutil.Client(ctx).ReadOnlyTransaction()
 				defer txn.Close()
 
 				Convey(`From bad position`, func() {

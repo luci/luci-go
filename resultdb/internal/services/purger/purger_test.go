@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -86,7 +86,7 @@ func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassin
 		inserts = append(inserts, insert.TestResultMessages(results)...)
 		for _, res := range results {
 			for j := 0; j < nArtifactsPerResult; j++ {
-				inserts = append(inserts, span.InsertMap("Artifacts", map[string]interface{}{
+				inserts = append(inserts, spanutil.InsertMap("Artifacts", map[string]interface{}{
 					"InvocationId": invID,
 					"ParentId":     artifacts.ParentID(res.TestId, res.ResultId),
 					"ArtifactId":   strconv.Itoa(j),
@@ -104,8 +104,8 @@ func countRows(ctx context.Context, invID invocations.ID) (testResults, artifact
 			(SELECT COUNT(*) FROM TestResults WHERE InvocationId = @invocationId),
 			(SELECT COUNT(*) FROM Artifacts WHERE InvocationId = @invocationId),
 		`)
-	st.Params["invocationId"] = span.ToSpanner(invID)
-	So(span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &testResults, &artifacts), ShouldBeNil)
+	st.Params["invocationId"] = spanutil.ToSpanner(invID)
+	So(spanutil.QueryFirstRow(ctx, spanutil.Client(ctx).Single(), st, &testResults, &artifacts), ShouldBeNil)
 	return
 }
 
