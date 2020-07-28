@@ -17,7 +17,6 @@ package lib
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -32,6 +31,7 @@ import (
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/signals"
@@ -81,7 +81,7 @@ func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error 
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("at least one isolate file required")
+		return errors.Reason("at least one isolate file required").Err()
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 		return nil, err
 	}
 	if base.GetFlags().NArg() > 0 {
-		return nil, fmt.Errorf("no positional arguments expected")
+		return nil, errors.Reason("no positional arguments expected").Err()
 	}
 	i.PostProcess(cwd)
 	return &i.ArchiveOptions, nil
@@ -179,7 +179,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		// Parse the incoming isolate file.
 		deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
 		if err != nil {
-			return fmt.Errorf("isolate %s: failed to process: %v", opts.Isolate, err)
+			return errors.Annotate(err, "isolate %s: failed to process", opts.Isolate).Err()
 		}
 		log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
@@ -190,7 +190,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 			Isolated:      opts.Isolated,
 			Isol:          isol})
 		if err != nil && errArchive == nil {
-			errArchive = fmt.Errorf("isolate %s: %v", opts.Isolate, err)
+			errArchive = errors.Annotate(err, "isolate %s: failed to archive", opts.Isolate).Err()
 		} else {
 			printSummary(al, isolSummary)
 			isolSummaries = append(isolSummaries, isolSummary)
@@ -230,13 +230,13 @@ func digests(summaries []archiver.IsolatedSummary) []string {
 func processGenJSON(genJSONPath string) (*isolate.ArchiveOptions, error) {
 	f, err := os.Open(genJSONPath)
 	if err != nil {
-		return nil, fmt.Errorf("opening %s: %s", genJSONPath, err)
+		return nil, errors.Annotate(err, "opening %s", genJSONPath).Err()
 	}
 	defer f.Close()
 
 	opts, err := processGenJSONData(f)
 	if err != nil {
-		return nil, fmt.Errorf("processing %s: %s", genJSONPath, err)
+		return nil, errors.Annotate(err, "processing %s", genJSONPath).Err()
 	}
 	return opts, nil
 }
@@ -249,20 +249,20 @@ func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 		Version int
 	}{}
 	if err := json.NewDecoder(r).Decode(data); err != nil {
-		return nil, fmt.Errorf("failed to decode: %s", err)
+		return nil, errors.Annotate(err, "failed to decode").Err()
 	}
 
 	if data.Version != isolate.IsolatedGenJSONVersion {
-		return nil, fmt.Errorf("invalid version %d", data.Version)
+		return nil, errors.Reason("invalid version %d", data.Version).Err()
 	}
 
 	if fileInfo, err := os.Stat(data.Dir); err != nil || !fileInfo.IsDir() {
-		return nil, fmt.Errorf("invalid dir %s", data.Dir)
+		return nil, errors.Reason("invalid dir %s", data.Dir).Err()
 	}
 
 	opts, err := parseArchiveCMD(data.Args, data.Dir)
 	if err != nil {
-		return nil, fmt.Errorf("invalid archive command: %s", err)
+		return nil, errors.Annotate(err, "invalid archive command").Err()
 	}
 	return opts, nil
 }
@@ -280,7 +280,7 @@ func strippedIsolatedName(isolated string) string {
 func writeJSONDigestFile(filePath string, data map[string]isolated.HexDigest) error {
 	digestBytes, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		return fmt.Errorf("encoding digest JSON: %s", err)
+		return errors.Annotate(err, "encoding digest JSON").Err()
 	}
 	return writeFile(filePath, digestBytes)
 }
@@ -289,16 +289,16 @@ func writeJSONDigestFile(filePath string, data map[string]isolated.HexDigest) er
 func writeFile(filePath string, data []byte) error {
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("opening %s: %s", filePath, err)
+		return errors.Annotate(err, "opening %s", filePath).Err()
 	}
 	// NOTE: We don't defer f.Close here, because it may return an error.
 
 	_, writeErr := f.Write(data)
 	closeErr := f.Close()
 	if writeErr != nil {
-		return fmt.Errorf("writing %s: %s", filePath, writeErr)
+		return errors.Annotate(writeErr, "writing %s", filePath).Err()
 	} else if closeErr != nil {
-		return fmt.Errorf("closing %s: %s", filePath, closeErr)
+		return errors.Annotate(closeErr, "closing %s", filePath).Err()
 	}
 	return nil
 }

@@ -17,7 +17,6 @@ package lib
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -32,6 +31,7 @@ import (
 	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -92,7 +92,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.New("position arguments not expected")
+		return errors.Reason("position arguments not expected").Err()
 	}
 	return nil
 }
@@ -156,12 +156,15 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 	// Parse the incoming isolate file.
 	deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
 	if err != nil {
-		return fmt.Errorf("isolate %s: failed to process: %v", opts.Isolate, err)
+		return errors.Annotate(err, "isolate %s: failed to process", opts.Isolate).Err()
 	}
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 	if c.casFlags.instance != "" {
-		return c.uploadToCAS(ctx)
+		if err := c.uploadToCAS(ctx); err != nil {
+			return errors.Annotate(err, "failed to upload to CAS").Err()
+		}
+		return nil
 	}
 
 	// Set up a checker and uploader.
@@ -175,7 +178,7 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 		Isolated:      opts.Isolated,
 		Isol:          isol})
 	if err != nil {
-		return fmt.Errorf("isolate %s: %v", opts.Isolate, err)
+		return errors.Annotate(err, "isolate %s", opts.Isolate).Err()
 	}
 
 	// Make sure that all pending items have been checked.
