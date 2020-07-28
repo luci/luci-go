@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/server/redisconn"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -83,7 +83,7 @@ func SpannerTestContext(tb testing.TB) context.Context {
 		tb.Fatal(err)
 	}
 
-	ctx = span.WithClient(ctx, spannerClient)
+	ctx = spanutil.WithClient(ctx, spannerClient)
 
 	if connectToRedis() {
 		ctx = redisconn.UsePool(ctx, redisconn.NewPool("localhost:6379", 0))
@@ -95,7 +95,7 @@ func SpannerTestContext(tb testing.TB) context.Context {
 	return ctx
 }
 
-// findInitScript returns path //resultdb/internal/span/init_db.sql.
+// findInitScript returns path //resultdb/internal/spanutil/init_db.sql.
 func findInitScript() (string, error) {
 	ancestor, err := filepath.Abs(".")
 	if err != nil {
@@ -103,7 +103,7 @@ func findInitScript() (string, error) {
 	}
 
 	for {
-		scriptPath := filepath.Join(ancestor, "internal", "span", "init_db.sql")
+		scriptPath := filepath.Join(ancestor, "internal", "spanutil", "init_db.sql")
 		_, err := os.Stat(scriptPath)
 		if os.IsNotExist(err) {
 			parent := filepath.Dir(ancestor)
@@ -200,7 +200,7 @@ func cleanupRedis(ctx context.Context) error {
 // Asserts that application succeeds.
 // Returns the commit timestamp.
 func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
-	ct, err := span.Client(ctx).Apply(ctx, ms)
+	ct, err := spanutil.Client(ctx).Apply(ctx, ms)
 	So(err, ShouldBeNil)
 	return ct
 }
@@ -221,13 +221,13 @@ func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 // MustReadRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert success.
 func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
-	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
+	err := spanutil.ReadRow(ctx, spanutil.Client(ctx).Single(), table, key, ptrMap)
 	So(err, ShouldBeNil)
 }
 
 // MustNotFindRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert the row was not found.
 func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
-	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
+	err := spanutil.ReadRow(ctx, spanutil.Client(ctx).Single(), table, key, ptrMap)
 	So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)
 }

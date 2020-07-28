@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -105,6 +105,6 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	if err != nil {
 		return nil, err
 	}
-	span.IncRowCount(ctx, len(in.Requests), span.TestResults, span.Inserted)
+	spanutil.IncRowCount(ctx, len(in.Requests), spanutil.TestResults, spanutil.Inserted)
 	return ret, nil
 }

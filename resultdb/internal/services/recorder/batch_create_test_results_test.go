@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -161,7 +161,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 				// double-check it with the database
 				expected.VariantHash = "c8643f74854d84b4"
-				spanClient := span.Client(ctx).Single()
+				spanClient := spanutil.Client(ctx).Single()
 				row, err := testresults.Read(ctx, spanClient, expected.Name)
 				So(err, ShouldBeNil)
 				So(row, ShouldResembleProto, expected)
@@ -180,7 +180,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 			Convey("with a request ID", func() {
 				createTestResults(req)
 
-				txn := span.Client(ctx).ReadOnlyTransaction()
+				txn := spanutil.Client(ctx).ReadOnlyTransaction()
 				defer txn.Close()
 				trNum, err := invocations.ReadTestResultCount(ctx, txn, invocations.NewIDSet(invID))
 				So(err, ShouldBeNil)

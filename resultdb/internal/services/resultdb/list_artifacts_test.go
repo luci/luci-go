@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -112,7 +112,7 @@ func TestListArtifacts(t *testing.T) {
 		Convey(`With both invocation and test result artifacts`, func() {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", nil),
-				span.InsertMap("Artifacts", map[string]interface{}{
+				spanutil.InsertMap("Artifacts", map[string]interface{}{
 					"InvocationId": invocations.ID("inv1"),
 					"ParentID":     "tr/t t/r",
 					"ArtifactId":   "a",

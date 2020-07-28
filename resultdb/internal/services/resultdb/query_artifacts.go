@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -51,7 +51,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	}
 
 	// Open a transaction.
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 	if in.MaxStaleness != nil {
 		st, _ := ptypes.Duration(in.MaxStaleness)

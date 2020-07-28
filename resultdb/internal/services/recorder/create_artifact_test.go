@@ -34,7 +34,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -196,7 +196,7 @@ func TestCreateArtifact(t *testing.T) {
 			Convey(`Same artifact exists`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					span.InsertMap("Artifacts", map[string]interface{}{
+					spanutil.InsertMap("Artifacts", map[string]interface{}{
 						"InvocationId": invocations.ID("inv"),
 						"ParentId":     "",
 						"ArtifactId":   "a",
@@ -211,7 +211,7 @@ func TestCreateArtifact(t *testing.T) {
 			Convey(`Different artifact exists`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					span.InsertMap("Artifacts", map[string]interface{}{
+					spanutil.InsertMap("Artifacts", map[string]interface{}{
 						"InvocationId": invocations.ID("inv"),
 						"ParentId":     "",
 						"ArtifactId":   "a",

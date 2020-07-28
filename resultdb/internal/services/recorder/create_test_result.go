@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -64,7 +64,7 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	if err != nil {
 		return nil, err
 	}
-	span.IncRowCount(ctx, 1, span.TestResults, span.Inserted)
+	spanutil.IncRowCount(ctx, 1, spanutil.TestResults, spanutil.Inserted)
 	return ret, nil
 }
 
@@ -90,7 +90,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		"CommitTimestamp": spanner.CommitTimestamp,
 		"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !body.Expected},
 		"Status":          ret.Status,
-		"SummaryHTML":     span.Compressed(ret.SummaryHtml),
+		"SummaryHTML":     spanutil.Compressed(ret.SummaryHtml),
 		"StartTime":       ret.StartTime,
 		"RunDurationUsec": runDuration,
 		"Tags":            ret.Tags,
@@ -100,6 +100,6 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		// Spanner client does not support int32
 		row["TestLocationLine"] = int(ret.TestLocation.Line)
 	}
-	mutation := spanner.InsertOrUpdateMap("TestResults", span.ToSpannerMap(row))
+	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation
 }

@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -70,8 +70,8 @@ func TestTasks(t *testing.T) {
 
 				// Check the task's ProcessAfter is updated.
 				var newProcessAfter time.Time
-				txn := span.Client(ctx).Single()
-				err = span.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
+				txn := spanutil.Client(ctx).Single()
+				err = spanutil.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
 					"ProcessAfter": &newProcessAfter,
 				})
 				So(err, ShouldBeNil)
@@ -100,9 +100,9 @@ func TestTasks(t *testing.T) {
 			err := Delete(ctx, BQExport, "task")
 			So(err, ShouldBeNil)
 
-			txn := span.Client(ctx).Single()
+			txn := spanutil.Client(ctx).Single()
 			var taskID string
-			err = span.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
+			err = spanutil.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
 				"TaskId": &taskID,
 			})
 			So(err, ShouldErrLike, "row not found")

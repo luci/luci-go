@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -56,7 +56,7 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 		return nil, appstatus.BadRequest(err)
 	}
 
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	art, err := artifacts.Read(ctx, txn, in.Name)

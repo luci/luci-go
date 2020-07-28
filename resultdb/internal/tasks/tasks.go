@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -55,7 +55,7 @@ var AllTypes = []Type{BQExport, TryFinalizeInvocation}
 // Enqueue inserts one row to InvocationTasks.
 func Enqueue(typ Type, taskID string, invID invocations.ID, payload interface{}, processAfter time.Time) *spanner.Mutation {
 	internal.AssertUTC(processAfter)
-	return span.InsertMap("InvocationTasks", map[string]interface{}{
+	return spanutil.InsertMap("InvocationTasks", map[string]interface{}{
 		"TaskType":     string(typ),
 		"TaskId":       taskID,
 		"InvocationId": invID,
@@ -80,8 +80,8 @@ func Peek(ctx context.Context, typ Type, f func(id string) error) error {
 
 	st.Params["taskType"] = string(typ)
 
-	var b span.Buffer
-	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	var b spanutil.Buffer
+	return spanutil.Query(ctx, spanutil.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id string
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err
@@ -98,7 +98,7 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID invocations.ID, payload []byte, err error) {
 	tried := false
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		if tried {
 			// This is the second time this function is called.
 			// It is very likely that the prev attempt collided with another
@@ -116,8 +116,8 @@ func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (in
 		`)
 		st.Params["taskType"] = string(typ)
 		st.Params["taskId"] = id
-		switch err := span.QueryFirstRow(ctx, txn, st, &invID, &payload); {
-		case err == span.ErrNoResults:
+		switch err := spanutil.QueryFirstRow(ctx, txn, st, &invID, &payload); {
+		case err == spanutil.ErrNoResults:
 			return ErrConflict
 
 		case err != nil:
@@ -125,7 +125,7 @@ func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (in
 
 		default:
 			return txn.BufferWrite([]*spanner.Mutation{
-				span.UpdateMap("InvocationTasks", map[string]interface{}{
+				spanutil.UpdateMap("InvocationTasks", map[string]interface{}{
 					"TaskType":     string(typ),
 					"TaskId":       id,
 					"ProcessAfter": clock.Now(ctx).UTC().Add(duration),
@@ -138,7 +138,7 @@ func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (in
 
 // Delete deletes a task.
 func Delete(ctx context.Context, typ Type, id string) error {
-	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
+	_, err := spanutil.Client(ctx).Apply(ctx, []*spanner.Mutation{
 		spanner.Delete("InvocationTasks", typ.Key(id)),
 	})
 	return err

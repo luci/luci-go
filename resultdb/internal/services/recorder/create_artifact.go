@@ -44,7 +44,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -152,7 +152,7 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 	}
 
 	// Record the artifact in Spanner.
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Verify the state again.
 		switch sameExists, err := ac.verifyState(ctx, txn); {
 		case err != nil:
@@ -162,7 +162,7 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			span.InsertMap("Artifacts", map[string]interface{}{
+			spanutil.InsertMap("Artifacts", map[string]interface{}{
 				"InvocationId": ac.invID,
 				"ParentId":     ac.localParentID,
 				"ArtifactId":   ac.artifactID,
@@ -326,14 +326,14 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 // verifyStateBeforeWriting checks Spanner state in a read-only transaction,
 // see verifyState comment.
 func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAlreadyExists bool, err error) {
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 	return ac.verifyState(ctx, txn)
 }
 
 // verifyState checks if the Spanner state is compatible with creation of the
 // artifact. If an identical artifact already exists, sameAlreadyExists is true.
-func (ac *artifactCreator) verifyState(ctx context.Context, txn span.Txn) (sameAlreadyExists bool, err error) {
+func (ac *artifactCreator) verifyState(ctx context.Context, txn spanutil.Txn) (sameAlreadyExists bool, err error) {
 	var (
 		invState       pb.Invocation_State
 		hash           spanner.NullString
@@ -350,7 +350,7 @@ func (ac *artifactCreator) verifyState(ctx context.Context, txn span.Txn) (sameA
 
 		work <- func() error {
 			key := ac.invID.Key(ac.localParentID, ac.artifactID)
-			err := span.ReadRow(ctx, txn, "Artifacts", key, map[string]interface{}{
+			err := spanutil.ReadRow(ctx, txn, "Artifacts", key, map[string]interface{}{
 				"RBECASHash": &hash,
 				"Size":       &size,
 			})
