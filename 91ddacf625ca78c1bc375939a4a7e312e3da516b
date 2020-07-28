@@ -39,6 +39,30 @@
       "revId": "91ddacf625ca78c1bc375939a4a7e312e3da516b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcc62038_3268e699",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-28T19:38:44Z",
+      "side": 1,
+      "message": "This is a bit confusing. I will try my best to explain here. There\u0027s two types of options: hostOptions and invokeOptions. With Patchset #1, both of them will have a `BaseDir` attribute. IMO, invokeOptions.BaseDir should be the same as hostOptions.BaseDir because the Host Application will guarantee to clean up its BaseDir before it finishes the run to prevent leakage. The hostOptions.BaseDir is currently populated before the host.Run()[1] so that that invoke callback function can access that value and use that as the value of invokeOptions.BaseDir. However, for some reason in the future, if we decide to leave hostOptions.BaseDir empty in the main function, the invokeOptions.BaseDir will also become empty with the Change in PS #1. Once the Host Application starts running, it will create a temp dir[2] and use that as the hostOptions.BaseDir and when it comes to invoke, it will create another temp dir [3] and then create workdir under that. However, I think `invoke` should just use the temp dir created by Host Application as its BaseDir to achieve guaranteed clean up. That really what this TODO means. This is really annoying me so I upload a new patchset to achieve that. PTAL. \n\nI will also work on updating the protocol doc.\n\n[1]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/cmd/bbagent/main.go;l\u003d121;drc\u003d5e745f762d465d24305f6ae74977941de24326e3?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n[2]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/luciexe/host/options.go;l\u003d137-144;drc\u003d92b2fb28399fe49f15c3a6eb07beaef96afbf70e?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n[3]: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/luciexe/invoke/options.go;l\u003d262-264;drc\u003d1392f6f70b6d27da541d4557abf7dc6c3faca1d1?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F",
+      "parentUuid": "7ece2ced_62894c57",
+      "range": {
+        "startLine": 164,
+        "startChar": 7,
+        "endLine": 167,
+        "endChar": 74
+      },
+      "revId": "91ddacf625ca78c1bc375939a4a7e312e3da516b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
