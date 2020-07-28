@@ -39,6 +39,30 @@
       "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bed95f4_114a18b8",
+        "filename": "resultdb/internal/tasks/tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T05:14:38Z",
+      "side": 1,
+      "message": "The largest chunk of spanutil is serialization of rows and it has direct references to ResultDB types and proto messages, so generalizing it will require more work.\n\nReadRow/QueryFirstRow/Query handlers depend in this serialization and can\u0027t be moved either.\n\nAnother change I\u0027m considering is to shove read-only transactions into the context as well. Then\n\n  ReadRow(ctx, span.Single(ctx), ...)\n\nwould become\n\n  ReadRow(span.Single(ctx), ...)\n\nBut what\u0027s more important it would allow to stop explicitly propagating `txt` object through everything (which ResultDB currently does). I think it is good, but maybe I\u0027m already brainwashed by excessive use of contexts everywhere.\n\nThe context API would then be:\n  span.Txn(ctx) - returns current read or write transaction as interface (same one as spanutil.Txn) or nil if not in a spanner transaction.\n  span.RO(ctx) - returns *spanner.ReadOnlyTransaction or nil\n  span.RW(ctx) - returns *spanner.ReadWriteTransaction or nil.\n\nWdyt?",
+      "parentUuid": "950581a4_aeefd3a0",
+      "range": {
+        "startLine": 26,
+        "startChar": 41,
+        "endLine": 26,
+        "endChar": 49
+      },
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
