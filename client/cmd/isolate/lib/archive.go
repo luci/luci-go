@@ -104,7 +104,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		quiet: c.defaultFlags.Quiet,
 	}
 
-	return archive(ctx, client, &c.ArchiveOptions, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, al)
+	return c.archive(ctx, client, al)
 }
 
 // archiveLogger reports stats to stderr.
@@ -143,7 +143,8 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 
 // archive performs the archive operation for an isolate specified by opts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger) error {
+func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client, al archiveLogger) error {
+	opts := &c.ArchiveOptions
 	// Parse the incoming isolate file.
 	deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
 	if err != nil {
@@ -152,8 +153,8 @@ func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.A
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 	// Set up a checker and uploader.
-	checker := archiver.NewChecker(ctx, client, concurrentChecks)
-	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
+	checker := archiver.NewChecker(ctx, client, c.maxConcurrentChecks)
+	uploader := archiver.NewUploader(ctx, client, c.maxConcurrentUploads)
 	arc := archiver.NewTarringArchiver(checker, uploader)
 	isolSummary, err := arc.Archive(&archiver.TarringArgs{
 		Deps:          deps,
@@ -176,7 +177,7 @@ func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.A
 	}
 
 	printSummary(al, isolSummary)
-	if err := dumpSummaryJSON(dumpJSON, isolSummary); err != nil {
+	if err := dumpSummaryJSON(c.dumpJSON, isolSummary); err != nil {
 		return err
 	}
 
