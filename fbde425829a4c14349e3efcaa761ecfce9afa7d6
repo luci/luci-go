@@ -51,6 +51,24 @@
       "revId": "fbde425829a4c14349e3efcaa761ecfce9afa7d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd226431_bff0b397",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-28T01:27:20Z",
+      "side": 1,
+      "message": "I\u0027d find it odd if passing -realm created a new invocation.\nOne way we could remove the superfluous flag would be to make \u003crealm\u003e an argument to -new\ne.g. `rdb stream -new chromium:public ./out/test_executable`",
+      "parentUuid": "bc1c2b9f_1e9c31aa",
+      "revId": "fbde425829a4c14349e3efcaa761ecfce9afa7d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
