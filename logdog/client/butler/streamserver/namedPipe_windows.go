@@ -25,7 +25,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
-	"github.com/microsoft/go-winio"
+	"github.com/Microsoft/go-winio"
 )
 
 // maxWindowsNamedPipeLength is the maximum length of a Windows named pipe.
