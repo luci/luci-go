@@ -25,11 +25,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Use installs a Spanner client into the context.
+// UseClient installs a Spanner client into the context.
 //
 // Primarily used by the module initialization code. May be useful in tests as
 // well.
-func Use(ctx context.Context, client *spanner.Client) context.Context {
+func UseClient(ctx context.Context, client *spanner.Client) context.Context {
 	return context.WithValue(ctx, &clientContextKey, client)
 }
 
@@ -63,7 +63,7 @@ func ReadOnlyTransaction(ctx context.Context) *spanner.ReadOnlyTransaction {
 // See https://godoc.org/cloud.google.com/go/spanner#ReadWriteTransaction for
 // more details.
 //
-// The callback can access the transaction object via Txn(ctx).
+// The callback can access the transaction object via RW(ctx).
 func ReadWriteTransaction(ctx context.Context, f func(ctx context.Context) error) (commitTimestamp time.Time, err error) {
 	var state *txnState
 
@@ -118,7 +118,7 @@ func WithoutTxn(ctx context.Context) context.Context {
 func Defer(ctx context.Context, cb func(context.Context)) {
 	state := getTxnState(ctx)
 	if state == nil {
-		panic("not a transactional context")
+		panic("not a Spanner transactional context")
 	}
 	state.deferCB(cb)
 }
@@ -143,7 +143,7 @@ var (
 func client(ctx context.Context) *spanner.Client {
 	cl, _ := ctx.Value(&clientContextKey).(*spanner.Client)
 	if cl == nil {
-		panic("no spanner Client in the context")
+		panic("no Spanner client in the context")
 	}
 	return cl
 }
