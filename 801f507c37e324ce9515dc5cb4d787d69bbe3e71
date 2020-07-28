@@ -16,6 +16,24 @@
       "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df3d0b84_67d444f4",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-28T05:21:43Z",
+      "side": 1,
+      "message": "Then i wonder what do we dump for batch_archive? (If we dump this map, then it will be consistent between archive and batcharchive?)",
+      "parentUuid": "5a0821ef_6b2f3e03",
+      "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
