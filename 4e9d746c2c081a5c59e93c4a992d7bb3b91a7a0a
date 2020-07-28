@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "337c1088_876e0f13",
+        "filename": "common/system/filesystem/filepath.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T06:09:58Z",
+      "side": 1,
+      "message": "Could you use\nhttps://golang.org/pkg/strings/#LastIndexByte\ninstead?",
+      "range": {
+        "startLine": 142,
+        "startChar": 17,
+        "endLine": 142,
+        "endChar": 26
+      },
+      "revId": "4e9d746c2c081a5c59e93c4a992d7bb3b91a7a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
