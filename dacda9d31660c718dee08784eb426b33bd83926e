@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6c9859fb_f0c9b255",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T23:23:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f311394_ea508e4c",
+      "range": {
+        "startLine": 56,
+        "startChar": 3,
+        "endLine": 56,
+        "endChar": 35
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "99ad1db2_188aa418",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 13
@@ -45,6 +69,30 @@
       "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47eb04c4_7b306711",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T23:23:08Z",
+      "side": 1,
+      "message": "Ah, I meant to, but forgot to make fields public. DOne!",
+      "parentUuid": "99ad1db2_188aa418",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 14
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "81942185_c70ce488",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T23:23:08Z",
+      "side": 1,
+      "message": "rephrased.",
+      "parentUuid": "1cb21409_06164ba9",
+      "range": {
+        "startLine": 91,
+        "startChar": 25,
+        "endLine": 91,
+        "endChar": 44
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "904b11d6_6c1d5c87",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 13
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "20ad17b8_a1e0423b",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T23:23:08Z",
+      "side": 1,
+      "message": "each sweep ensures pipeline is empty before exiting, so yes, this is fine.",
+      "parentUuid": "904b11d6_6c1d5c87",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 159,
+        "endChar": 28
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1375e2e_1a24357f",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 13
@@ -114,6 +210,30 @@
       "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb5037e2_be9692ef",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T23:23:08Z",
+      "side": 1,
+      "message": "the error is from the doScan whose completion is trackked by L224 `defer s.scanItemsWG.Done()`.\nppItemsWG is for tracking individual Reminders for postProcess.\n\nSo, no, not necessary to swap.",
+      "parentUuid": "e1375e2e_1a24357f",
+      "range": {
+        "startLine": 235,
+        "startChar": 0,
+        "endLine": 236,
+        "endChar": 83
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
