@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "663c9931_5de8812e",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-28T10:06:46Z",
+      "side": 1,
+      "message": "Setting the value here causes the tests to hang but I didn\u0027t bother to investigate.",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
