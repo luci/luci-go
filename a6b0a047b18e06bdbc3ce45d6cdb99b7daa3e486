@@ -113,6 +113,30 @@
     },
     {
       "key": {
+        "uuid": "87d14eb8_7e6cadbc",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T22:49:41Z",
+      "side": 1,
+      "message": "I just remember there was surprising edge case related to len(1) slices when I was writing https://chromium.googlesource.com/infra/luci/luci-go/+/769a370cd8b6ecc72fa023173a57719dda087da1 but I forgot what it was exactly :(",
+      "parentUuid": "41a3d450_31258c15",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 36
+      },
+      "revId": "a6b0a047b18e06bdbc3ce45d6cdb99b7daa3e486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa2b5f9b_500cfe46",
         "filename": "ttq/internal/databases/datastore/ds.go",
         "patchSetId": 1
