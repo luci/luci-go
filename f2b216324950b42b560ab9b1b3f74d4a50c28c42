@@ -22,6 +22,30 @@
       "revId": "f2b216324950b42b560ab9b1b3f74d4a50c28c42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72b8e242_2833acf6",
+        "filename": "client/cmd/isolate/lib/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-28T06:05:15Z",
+      "side": 1,
+      "message": "I guess it\u0027s because |outDir| is always a temporary dir, so |cwd| should never exist?\n\nI\u0027m curious why this actually worked on swarming, though...",
+      "parentUuid": "fe94db35_1dc9f7d7",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 4
+      },
+      "revId": "f2b216324950b42b560ab9b1b3f74d4a50c28c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
