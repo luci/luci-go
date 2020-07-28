@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/gae/filter/dscache"
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/filter/readonly"
+	"go.chromium.org/gae/filter/txndefer"
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
@@ -195,6 +196,7 @@ func (e *Environment) With(ctx context.Context, req *http.Request) context.Conte
 	if e.DSReadOnly {
 		ctx = readonly.FilterRDS(ctx, e.DSReadOnlyPredicate)
 	}
+	ctx = txndefer.FilterRDS(ctx)
 
 	// The rest of the service may use applied configuration.
 	if e.WithConfig != nil {

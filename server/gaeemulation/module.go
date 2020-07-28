@@ -45,6 +45,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/gae/filter/txndefer"
 	"go.chromium.org/gae/impl/cloud"
 
 	"go.chromium.org/luci/common/errors"
@@ -104,7 +105,7 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 		ProjectID: opts.CloudProject,
 		DS:        client, // if nil, datastore calls will fail gracefully(-ish)
 	}
-	return cfg.Use(ctx), nil
+	return txndefer.FilterRDS(cfg.Use(ctx)), nil
 }
 
 // initDSClient sets up Cloud Datastore client that uses AsSelf server token
