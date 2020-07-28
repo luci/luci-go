@@ -70,6 +70,24 @@
       "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5061c65a_ae5a197b",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-28T07:02:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "25347512_3b0bd3df",
+      "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
