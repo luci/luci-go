@@ -114,7 +114,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to instantiate Cloud Spanner client").Err()
 	}
-	ctx = Use(ctx, client)
+	ctx = UseClient(ctx, client)
 
 	// Close the client when exiting gracefully.
 	host.RegisterCleanup(func(ctx context.Context) { client.Close() })
