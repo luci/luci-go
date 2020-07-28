@@ -62,20 +62,20 @@ var (
 		"logdog/archival/create_task",
 		"Number of created tasks from the archive queue, as seen by the coordinator",
 		nil,
-		field.Int("project"),
+		field.String("project"),
 		field.Int("queueNumber"))
 	metricLeaseTask = metric.NewCounter(
 		"logdog/archival/lease_task",
 		"Number of leased tasks from the archive queue, as seen by the coordinator",
 		nil,
 		field.Int("numRetries"),
-		field.Int("project"),
+		field.String("project"),
 		field.Int("queueNumber"))
 	metricDeleteTask = metric.NewCounter(
 		"logdog/archival/delete_task",
 		"Number of delete task request for the archive queue, as seen by the coordinator",
 		nil,
-		field.Int("project"),
+		field.String("project"),
 		field.Int("queueNumber"))
 )
 
