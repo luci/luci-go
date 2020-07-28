@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f311394_ea508e4c",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T22:29:53Z",
+      "side": 1,
+      "message": "What does this mean?",
+      "range": {
+        "startLine": 56,
+        "startChar": 3,
+        "endLine": 56,
+        "endChar": 35
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99ad1db2_188aa418",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T22:29:53Z",
+      "side": 1,
+      "message": "there\u0027s no public constructor to set these.. is that OK?",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 14
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cb21409_06164ba9",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T22:29:53Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 91,
+        "startChar": 25,
+        "endLine": 91,
+        "endChar": 44
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "904b11d6_6c1d5c87",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T22:29:53Z",
+      "side": 1,
+      "message": "Writing to a closed channel is a panic. Are you sure the rest of the pipeline is stopped before this close(s.scanChan) call?",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 159,
+        "endChar": 28
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1375e2e_1a24357f",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T22:29:53Z",
+      "side": 1,
+      "message": "swap these otherwise there may potentially be a race reading the error (if someone waits on ppItemsWG)",
+      "range": {
+        "startLine": 235,
+        "startChar": 0,
+        "endLine": 236,
+        "endChar": 83
+      },
+      "revId": "dacda9d31660c718dee08784eb426b33bd83926e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
