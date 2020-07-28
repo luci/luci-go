@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -360,7 +360,7 @@ func TestCreateInvocation(t *testing.T) {
 		}
 
 		Convey(`already exists`, func() {
-			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
+			_, err := spanutil.Client(ctx).Apply(ctx, []*spanner.Mutation{
 				insert.Invocation("u-inv", 1, nil),
 			})
 			So(err, ShouldBeNil)
@@ -433,7 +433,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			So(headers.Get(UpdateTokenMetadataKey), ShouldHaveLength, 1)
 
-			txn := span.Client(ctx).ReadOnlyTransaction()
+			txn := spanutil.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
 			inv, err = invocations.Read(ctx, txn, "u-inv")

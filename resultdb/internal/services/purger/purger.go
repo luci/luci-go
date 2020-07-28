@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/cron"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 // maxTestVariantsToFilter is the maximum number of test variants to include
@@ -61,7 +61,7 @@ func InitServer(srv *server.Server, opts Options) {
 func run(ctx context.Context, minInterval time.Duration) {
 	maxShard, err := invocations.CurrentMaxShard(ctx)
 	switch {
-	case err == span.ErrNoResults:
+	case err == spanutil.ErrNoResults:
 		maxShard = invocations.Shards - 1
 	case err != nil:
 		panic(errors.Annotate(err, "failed to determine number of shards").Err())
@@ -80,9 +80,9 @@ func purgeOneShard(ctx context.Context, shard int) error {
 		AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP()
 	`)
 	st.Params["shardId"] = shard
-	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	return spanutil.Query(ctx, spanutil.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id invocations.ID
-		if err := span.FromSpanner(row, &id); err != nil {
+		if err := spanutil.FromSpanner(row, &id); err != nil {
 			return err
 		}
 
@@ -94,7 +94,7 @@ func purgeOneShard(ctx context.Context, shard int) error {
 }
 
 func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
-	txn := span.Client(ctx).ReadOnlyTransaction()
+	txn := spanutil.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	// Check that invocation hasn't been purged already.
@@ -123,10 +123,10 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 		// One deletion is one mutation.
 		// Flush at 19k boundary.
 		if len(ms) > 19000 {
-			if _, err := span.Client(ctx).Apply(ctx, ms); err != nil {
+			if _, err := spanutil.Client(ctx).Apply(ctx, ms); err != nil {
 				return err
 			}
-			span.IncRowCount(ctx, len(ms), span.TestResults, span.Deleted)
+			spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted)
 			ms = ms[:0]
 		}
 		return nil
@@ -137,10 +137,10 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 
 	// Flush the last batch.
 	if len(ms) > 0 {
-		if _, err := span.Client(ctx).Apply(ctx, ms); err != nil {
+		if _, err := spanutil.Client(ctx).Apply(ctx, ms); err != nil {
 			return err
 		}
-		span.IncRowCount(ctx, len(ms), span.TestResults, span.Deleted)
+		spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted)
 	}
 
 	// Set the invocation's result expiration to null.
@@ -173,7 +173,7 @@ func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv invo
 	st.Params["invocationId"] = inv
 
 	var lastTestID, lastResultID string
-	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	return spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var testID, resultID string
 		var artifactID spanner.NullString
 		if err := row.Columns(&testID, &resultID, &artifactID); err != nil {
@@ -207,8 +207,8 @@ func rowsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv invo
 }
 
 func unsetInvocationResultsExpiration(ctx context.Context, id invocations.ID) error {
-	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-		span.UpdateMap("Invocations", map[string]interface{}{
+	_, err := spanutil.Client(ctx).Apply(ctx, []*spanner.Mutation{
+		spanutil.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationID":                      id,
 			"ExpectedTestResultsExpirationTime": nil,
 		}),

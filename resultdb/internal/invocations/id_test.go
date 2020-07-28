@@ -19,7 +19,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,7 +27,7 @@ import (
 func TestSpannerConversion(t *testing.T) {
 	t.Parallel()
 	Convey(`InvocationID`, t, func() {
-		var b span.Buffer
+		var b spanutil.Buffer
 
 		Convey(`ID`, func() {
 			id := ID("a")

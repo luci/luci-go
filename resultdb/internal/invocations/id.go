@@ -22,7 +22,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 )
 
@@ -35,12 +35,12 @@ func (id ID) ToSpanner() interface{} {
 }
 
 // SpannerPtr implements span.Ptr.
-func (id *ID) SpannerPtr(b *span.Buffer) interface{} {
+func (id *ID) SpannerPtr(b *spanutil.Buffer) interface{} {
 	return &b.NullString
 }
 
 // FromSpanner implements span.Ptr.
-func (id *ID) FromSpanner(b *span.Buffer) error {
+func (id *ID) FromSpanner(b *spanutil.Buffer) error {
 	*id = ""
 	if b.NullString.Valid {
 		*id = IDFromRowID(b.NullString.StringVal)
@@ -151,12 +151,12 @@ func (s IDSet) ToSpanner() interface{} {
 }
 
 // SpannerPtr implements span.Ptr.
-func (s *IDSet) SpannerPtr(b *span.Buffer) interface{} {
+func (s *IDSet) SpannerPtr(b *spanutil.Buffer) interface{} {
 	return &b.StringSlice
 }
 
 // FromSpanner implements span.Ptr.
-func (s *IDSet) FromSpanner(b *span.Buffer) error {
+func (s *IDSet) FromSpanner(b *spanutil.Buffer) error {
 	*s = make(IDSet, len(b.StringSlice))
 	for _, rowID := range b.StringSlice {
 		s.Add(IDFromRowID(rowID))

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -33,11 +33,11 @@ import (
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in span/util.go.
-func ReadColumns(ctx context.Context, txn span.Txn, id ID, ptrMap map[string]interface{}) error {
+func ReadColumns(ctx context.Context, txn spanutil.Txn, id ID, ptrMap map[string]interface{}) error {
 	if id == "" {
 		return errors.Reason("id is unspecified").Err()
 	}
-	err := span.ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
+	err := spanutil.ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.Name())
@@ -50,7 +50,7 @@ func ReadColumns(ctx context.Context, txn span.Txn, id ID, ptrMap map[string]int
 	}
 }
 
-func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *pb.Invocation) error) error {
+func readMulti(ctx context.Context, txn spanutil.Txn, ids IDSet, f func(id ID, inv *pb.Invocation) error) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -71,11 +71,11 @@ func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
-	st.Params = span.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
 		"invIDs": ids,
 	})
-	var b span.Buffer
-	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	var b spanutil.Buffer
+	return spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var id ID
 		included := IDSet{}
 		var bqExports [][]byte
@@ -122,7 +122,7 @@ func readMulti(ctx context.Context, txn span.Txn, ids IDSet, f func(id ID, inv *
 // Read reads one invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func Read(ctx context.Context, txn span.Txn, id ID) (*pb.Invocation, error) {
+func Read(ctx context.Context, txn spanutil.Txn, id ID) (*pb.Invocation, error) {
 	var ret *pb.Invocation
 	err := readMulti(ctx, txn, NewIDSet(id), func(id ID, inv *pb.Invocation) error {
 		ret = inv
@@ -141,7 +141,7 @@ func Read(ctx context.Context, txn span.Txn, id ID) (*pb.Invocation, error) {
 
 // ReadBatch reads multiple invocations from Spanner.
 // If any of them are not found, returns an error.
-func ReadBatch(ctx context.Context, txn span.Txn, ids IDSet) (map[ID]*pb.Invocation, error) {
+func ReadBatch(ctx context.Context, txn spanutil.Txn, ids IDSet) (map[ID]*pb.Invocation, error) {
 	ret := make(map[ID]*pb.Invocation, len(ids))
 	err := readMulti(ctx, txn, ids, func(id ID, inv *pb.Invocation) error {
 		if _, ok := ret[id]; ok {
@@ -162,19 +162,19 @@ func ReadBatch(ctx context.Context, txn span.Txn, ids IDSet) (map[ID]*pb.Invocat
 }
 
 // ReadState returns the invocation's state.
-func ReadState(ctx context.Context, txn span.Txn, id ID) (pb.Invocation_State, error) {
+func ReadState(ctx context.Context, txn spanutil.Txn, id ID) (pb.Invocation_State, error) {
 	var state pb.Invocation_State
 	err := ReadColumns(ctx, txn, id, map[string]interface{}{"State": &state})
 	return state, err
 }
 
 // ReadStateBatch reads the states of multiple invocations.
-func ReadStateBatch(ctx context.Context, txn span.Txn, ids IDSet) (map[ID]pb.Invocation_State, error) {
+func ReadStateBatch(ctx context.Context, txn spanutil.Txn, ids IDSet) (map[ID]pb.Invocation_State, error) {
 	ret := make(map[ID]pb.Invocation_State)
 	err := txn.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationID", "State"}).Do(func(r *spanner.Row) error {
 		var id ID
 		var s pb.Invocation_State
-		if err := span.FromSpanner(r, &id, &s); err != nil {
+		if err := spanutil.FromSpanner(r, &id, &s); err != nil {
 			return errors.Annotate(err, "failed to fetch %s", ids).Err()
 		}
 		ret[id] = s
@@ -187,7 +187,7 @@ func ReadStateBatch(ctx context.Context, txn span.Txn, ids IDSet) (map[ID]pb.Inv
 }
 
 // ReadRealm returns the invocation's realm.
-func ReadRealm(ctx context.Context, txn span.Txn, id ID) (string, error) {
+func ReadRealm(ctx context.Context, txn spanutil.Txn, id ID) (string, error) {
 	var realm string
 	err := ReadColumns(ctx, txn, id, map[string]interface{}{"Realm": &realm})
 	return realm, err

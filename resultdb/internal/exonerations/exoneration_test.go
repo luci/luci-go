@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -36,17 +36,17 @@ func TestRead(t *testing.T) {
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-			span.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "t t",
 				"ExonerationId":   "id",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
-				"ExplanationHTML": span.Compressed("broken"),
+				"ExplanationHTML": spanutil.Compressed("broken"),
 			}))
 
 		const name = "invocations/inv/tests/t%20t/exonerations/id"
-		ex, err := Read(ctx, span.Client(ctx).Single(), name)
+		ex, err := Read(ctx, spanutil.Client(ctx).Single(), name)
 		So(err, ShouldBeNil)
 		So(ex, ShouldResembleProto, &pb.TestExoneration{
 			Name:            name,
