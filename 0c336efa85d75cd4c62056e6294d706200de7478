@@ -137,6 +137,24 @@
     },
     {
       "key": {
+        "uuid": "84e2ff9e_f644dd0a",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-28T21:51:58Z",
+      "side": 1,
+      "message": "It\u0027s embedded (for organization),\nstruct Build {\n  LegacyProperties\n  Foo Int\n}\n\nBut regardless, I mean you can\u0027t set anything. Setting b.Foo \u003d 1 hangs as well.",
+      "parentUuid": "bdac0469_aca4eed6",
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a33e292_a4fa8bb4",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -205,6 +223,30 @@
       "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66f3e28a_7d0a3616",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-28T21:51:58Z",
+      "side": 1,
+      "message": "Oh I misread. I thought you were saying to inspect the PropertyData referred to by p[\"result_details\"]. Done.",
+      "parentUuid": "a69ec436_eb22ddc2",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 137,
+        "endChar": 24
+      },
+      "revId": "0c336efa85d75cd4c62056e6294d706200de7478",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
