@@ -276,7 +276,7 @@ func (s *shard) sendPostProcessBatch(data *buffer.Batch) error {
 	for i, d := range data.Data {
 		batch[i] = d.(*internal.Reminder)
 	}
-	if err := s.impl.PostProcessBatch(s.iterCtx, batch, nil); err != nil {
+	if err := s.impl.PostProcessBatch(s.iterCtx, batch); err != nil {
 		s.addError(err)
 	}
 	return nil
