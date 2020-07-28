@@ -15,3 +15,9 @@
 queue:
 - name: "archiveTasks"
   mode: pull
+- name: "archiveTasks-1"
+  mode: pull
+- name: "archiveTasks-2"
+  mode: pull
+- name: "archiveTasks-3"
+  mode: pull
