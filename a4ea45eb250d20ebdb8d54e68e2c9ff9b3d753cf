@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "08fb7ed2_b0e4ab60",
+        "filename": "server/span/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-28T04:08:26Z",
+      "side": 1,
+      "message": "RW",
+      "range": {
+        "startLine": 66,
+        "startChar": 54,
+        "endLine": 66,
+        "endChar": 57
+      },
+      "revId": "a4ea45eb250d20ebdb8d54e68e2c9ff9b3d753cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
