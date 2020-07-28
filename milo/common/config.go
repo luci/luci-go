@@ -39,6 +39,8 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
@@ -47,6 +49,19 @@ import (
 	// Register "${appid}" placeholder for config validation rules.
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
+
+var (
+	permGetConsoles = realms.RegisterPermission("milo.consoles.get")
+)
+
+// hasPermission is a wrapper around auth.HasPermission.
+// Always allow access when realm == "".
+func hasPermission(ctx context.Context, permission realms.Permission, realm string) (bool, error) {
+	if realm == "" {
+		return true, nil
+	}
+	return auth.HasPermission(ctx, permission, realm)
+}
 
 // Project is a datastore entity representing a single project.
 //
@@ -115,6 +130,9 @@ type Console struct {
 	// another project), this will contain the resolved Console definition,
 	// but with ExternalId and ExternalProject also set.
 	Def config.Console `gae:",noindex"`
+
+	// Realm that the console exists under.
+	Realm string
 
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
@@ -527,6 +545,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			ConfigRevision: meta.Revision,
 			Builders:       pc.AllBuilderIDs(),
 			Def:            *pc,
+			Realm:          pc.Realm,
 		})
 	}
 	return toPut, nil
@@ -813,18 +832,24 @@ func getVisibleProjectIDs(c context.Context) (stringset.Set, error) {
 	return projectIDs, nil
 }
 
-// filterExternalConsoles takes a slice of Consoles and filters out any external
-// consoles that the user does not have access to. (It is assumed that the user
-// can see all non-external consoles by virtue of having access to the Project.)
-func filterExternalConsoles(c context.Context, consoles []*Console, visibleProjects stringset.Set) []*Console {
+// filterConsoles takes a slice of Consoles and filters out any consoles that
+// the user does not have access to.
+func filterConsoles(c context.Context, consoles []*Console, visibleProjects stringset.Set) ([]*Console, error) {
 	res := make([]*Console, 0, len(consoles))
-	for _, c := range consoles {
-		if c.IsExternal() && !visibleProjects.Has(c.Def.ExternalProject) {
+	for _, con := range consoles {
+		if con.IsExternal() && !visibleProjects.Has(con.Def.ExternalProject) {
 			continue
 		}
-		res = append(res, c)
+		allowed, err := hasPermission(c, permGetConsoles, con.Realm)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			continue
+		}
+		res = append(res, con)
 	}
-	return res
+	return res, nil
 }
 
 // GetProjectConsoles returns all consoles for the given project ordered as in config.
@@ -843,7 +868,7 @@ func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting visible projects").Err()
 	}
-	return filterExternalConsoles(c, con, visibleProjects), nil
+	return filterConsoles(c, con, visibleProjects)
 }
 
 // GetConsole returns the requested console.
@@ -858,7 +883,14 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 	case datastore.ErrNoSuchEntity:
 		return nil, ErrConsoleNotFound
 	case nil:
-		return &con, nil
+		switch allowed, err := hasPermission(c, permGetConsoles, con.Realm); {
+		case err != nil:
+			return nil, err
+		case !allowed:
+			return nil, errors.Reason("caller does not have permission %s in realm of console %s", permGetConsoles, con.Realm).Tag(grpcutil.PermissionDeniedTag).Err()
+		default:
+			return &con, nil
+		}
 	default:
 		return nil, errors.Annotate(err, "getting project %q console %q", proj, id).Err()
 	}
@@ -881,7 +913,7 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "getting visible projects").Err()
 	}
-	return filterExternalConsoles(c, result, visibleProjects), nil
+	return filterConsoles(c, result, visibleProjects)
 }
 
 // Config validation rules go here.
