@@ -92,6 +92,10 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	if err := validateQueryTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
+	readMask, err := testresults.ListMask(in.GetReadMask())
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
 
 	// Open a transaction.
 	txn := spanutil.Client(ctx).ReadOnlyTransaction()
@@ -103,11 +107,6 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 
 	// Get the transitive closure.
 	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
-	if err != nil {
-		return nil, appstatus.BadRequest(err)
-	}
-
-	readMask, err := testresults.ListMask(in.GetReadMask())
 	if err != nil {
 		return nil, err
 	}
