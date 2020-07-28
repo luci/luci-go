@@ -120,6 +120,30 @@
       "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "455c2089_6132024a",
+        "filename": "resultdb/internal/tasks/tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-28T05:17:22Z",
+      "side": 1,
+      "message": "RO/RW/Txn is what I expected as well.\n\nI think not passing txn param might be fine. I don\u0027t think we would start breeding bugs by not being explicit about the kind of txn we pass (RO vs RW)",
+      "parentUuid": "5bed95f4_114a18b8",
+      "range": {
+        "startLine": 26,
+        "startChar": 41,
+        "endLine": 26,
+        "endChar": 49
+      },
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
