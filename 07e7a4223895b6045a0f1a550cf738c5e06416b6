@@ -16,6 +16,24 @@
       "revId": "07e7a4223895b6045a0f1a550cf738c5e06416b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb786446_9cc26526",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-28T01:26:41Z",
+      "side": 1,
+      "message": "I\u0027m about to support c.casFlags, and feel like it will be a bit cleaner to do it this way, in order to prevent archive() from having more and more args.",
+      "parentUuid": "00a5f36d_a0541e87",
+      "revId": "07e7a4223895b6045a0f1a550cf738c5e06416b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
