@@ -21,11 +21,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -45,7 +45,7 @@ func TestQueryTestResults(t *testing.T) {
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
+			txn := span.ReadOnlyTransaction(ctx)
 			defer txn.Close()
 			return q.Fetch(ctx, txn)
 		}
@@ -252,7 +252,7 @@ func TestQueryTestResults(t *testing.T) {
 			})
 
 			Convey(`Bad token`, func() {
-				txn := spanutil.Client(ctx).ReadOnlyTransaction()
+				txn := span.ReadOnlyTransaction(ctx)
 				defer txn.Close()
 
 				Convey(`From bad position`, func() {

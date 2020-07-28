@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -95,7 +96,8 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 
 	var err error
 	deduped := false
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		txn := span.RW(ctx)
 		deduped, err = deduplicateCreateInvocations(ctx, txn, idSet, requestID, createdBy)
 		if err != nil {
 			return err
@@ -151,7 +153,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 // invocations just created in a separate read-only transaction, and
 // generates an update token for each.
 func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations.IDSet, reqs []*pb.CreateInvocationRequest) ([]*pb.Invocation, []string, error) {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
+	txn := span.ReadOnlyTransaction(ctx)
 	defer txn.Close()
 	invMap, err := invocations.ReadBatch(ctx, txn, idSet)
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/server/span"
 )
 
 // Shards is the sharding level for the Invocations table.
@@ -33,7 +34,7 @@ const Shards = 100
 // This may differ from the constant above when it has changed recently.
 func CurrentMaxShard(ctx context.Context) (int, error) {
 	var ret int64
-	err := spanutil.QueryFirstRow(ctx, spanutil.Client(ctx).Single(), spanner.NewStatement(`
+	err := spanutil.QueryFirstRow(ctx, span.Single(ctx), spanner.NewStatement(`
 		SELECT ShardId
 		FROM Invocations@{FORCE_INDEX=InvocationsByInvocationExpiration}
 		ORDER BY ShardID DESC

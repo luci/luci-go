@@ -28,10 +28,10 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -91,7 +91,8 @@ func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Con
 	if err := validateInvocationToken(ctx, token, id); err != nil {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		txn := span.RW(ctx)
 
 		state, err := invocations.ReadState(ctx, txn, id)
 		switch {

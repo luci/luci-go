@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -47,7 +47,7 @@ func TestRead(t *testing.T) {
 			insertInclusion("including", "included1"),
 		)
 
-		txn := spanutil.Client(ctx).ReadOnlyTransaction()
+		txn := span.ReadOnlyTransaction(ctx)
 		defer txn.Close()
 
 		// Fetch back the top-level Invocation.
@@ -73,7 +73,7 @@ func TestReadBatch(t *testing.T) {
 			insertInvocation("inv2", nil),
 		)
 
-		txn := spanutil.Client(ctx).ReadOnlyTransaction()
+		txn := span.ReadOnlyTransaction(ctx)
 		defer txn.Close()
 
 		Convey(`One name`, func() {

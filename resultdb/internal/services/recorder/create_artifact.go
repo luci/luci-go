@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -152,7 +153,9 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 	}
 
 	// Record the artifact in Spanner.
-	_, err := spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		txn := span.RW(ctx)
+
 		// Verify the state again.
 		switch sameExists, err := ac.verifyState(ctx, txn); {
 		case err != nil:
@@ -326,7 +329,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 // verifyStateBeforeWriting checks Spanner state in a read-only transaction,
 // see verifyState comment.
 func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAlreadyExists bool, err error) {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
+	txn := span.ReadOnlyTransaction(ctx)
 	defer txn.Close()
 	return ac.verifyState(ctx, txn)
 }

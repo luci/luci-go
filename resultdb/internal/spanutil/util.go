@@ -17,14 +17,10 @@ package spanutil
 import (
 	"context"
 	"reflect"
-	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/api/iterator"
-	"google.golang.org/grpc/codes"
-
-	"go.chromium.org/luci/common/errors"
 )
 
 // ErrNoResults is an error returned when a query unexpectedly has no results.
@@ -70,19 +66,6 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 	}
 
 	return FromSpanner(row, ptrs...)
-}
-
-// ReadWriteTransaction calls Client(ctx).ReadWriteTransaction and unwraps
-// a "transaction is aborted" errors such that the spanner client properly
-// retries the function.
-func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (commitTimestamp time.Time, err error) {
-	return Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		err := f(ctx, txn)
-		if unwrapped := errors.Unwrap(err); spanner.ErrCode(unwrapped) == codes.Aborted {
-			err = unwrapped
-		}
-		return err
-	})
 }
 
 // QueryFirstRow executes a query, reads the first row into ptrs and stops the
