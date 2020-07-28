@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "67ff947b_c07b0e85",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "71ff637d_aa108a4a",
+      "range": {
+        "startLine": 232,
+        "startChar": 2,
+        "endLine": 232,
+        "endChar": 43
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "467b4473_5907ddad",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -62,6 +86,30 @@
       "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97541791_56f199b3",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "I used a slice of TagIndexEntry as the returned values of existing `model.SearchTagIndex()`  are this type of structure.\n\nBut yes, we should use pointers. I\u0027m changing that function to return []*TagIndexEntry.",
+      "parentUuid": "467b4473_5907ddad",
+      "range": {
+        "startLine": 234,
+        "startChar": 12,
+        "endLine": 234,
+        "endChar": 50
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,54 @@
     },
     {
       "key": {
+        "uuid": "f5e6e872_73534561",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10e69ca3_0a95a1f6",
+      "range": {
+        "startLine": 253,
+        "startChar": 11,
+        "endLine": 253,
+        "endChar": 38
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "955ebead_51912cf1",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "thx for catching it. \n\nI change to use `GetIgnoreMissing`, which can ignore the NoSuchEntity error and continue. So that later, the filter builds loop is able to catch this build into the inconsistentEntries.",
+      "parentUuid": "10e69ca3_0a95a1f6",
+      "range": {
+        "startLine": 253,
+        "startChar": 11,
+        "endLine": 253,
+        "endChar": 38
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd92c898_eb8d93a8",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -108,6 +204,30 @@
       "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce0b4fe6_8bcad902",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd92c898_eb8d93a8",
+      "range": {
+        "startLine": 268,
+        "startChar": 24,
+        "endLine": 268,
+        "endChar": 42
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +254,54 @@
     },
     {
       "key": {
+        "uuid": "2b1fffb9_1b6e2af5",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef12bbd2_a3200bd4",
+      "range": {
+        "startLine": 304,
+        "startChar": 9,
+        "endLine": 304,
+        "endChar": 21
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "29bcc129_5ec9bc4d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef12bbd2_a3200bd4",
+      "range": {
+        "startLine": 304,
+        "startChar": 9,
+        "endLine": 304,
+        "endChar": 21
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd78553c_04bfba93",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 5
@@ -154,6 +322,30 @@
       "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e8ca73c_58224b29",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Checked specific errors.\n\nPermissonDenied and NotFound codes means no access according to https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/internal/perm/perm.go;l\u003d64-70",
+      "parentUuid": "fd78553c_04bfba93",
+      "range": {
+        "startLine": 319,
+        "startChar": 4,
+        "endLine": 322,
+        "endChar": 36
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +372,30 @@
     },
     {
       "key": {
+        "uuid": "97eb864c_65050443",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73cdd7eb_aaada05e",
+      "range": {
+        "startLine": 327,
+        "startChar": 12,
+        "endLine": 327,
+        "endChar": 73
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae18cb3b_6835ab79",
         "filename": "buildbucket/protoutil/builder.go",
         "patchSetId": 5
@@ -200,6 +416,30 @@
       "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c89a601e_bbb6867a",
+        "filename": "buildbucket/protoutil/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-28T23:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae18cb3b_6835ab79",
+      "range": {
+        "startLine": 78,
+        "startChar": 60,
+        "endLine": 78,
+        "endChar": 66
+      },
+      "revId": "1f8f0c56e0481ede7ae10a2d43df9de511b913d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
