@@ -177,11 +177,17 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("Check Console config updated with realm", func() {
-				cs, err := GetConsole(c, "foo", "realm_test_console")
+				cUser := auth.WithState(c, &authtest.FakeState{
+					Identity: "user:e@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "foo:fake_realm", Permission: permGetConsoles},
+					},
+				})
+				cs, err := GetConsole(cUser, "foo", "realm_test_console")
 				So(err, ShouldBeNil)
 				So(cs.ID, ShouldEqual, "realm_test_console")
 				So(cs.Ordinal, ShouldEqual, 2)
-				So(cs.Realm, ShouldEqual, "foo:fake_realm")
+				So(cs.Def.Realm, ShouldEqual, "foo:fake_realm")
 			})
 
 			Convey("Check external Console is resolved", func() {
@@ -218,6 +224,42 @@ func TestConfig(t *testing.T) {
 					ids = append(ids, c.ID)
 				}
 				So(ids, ShouldHaveLength, 0)
+			})
+
+			Convey("Check user can't get consoles in realms they don't have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:e@example.com"})
+				_, err := GetConsole(cUser, "foo", "realm_test_console")
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("Check user can get consoles in realms they have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{
+					Identity: "user:e@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "foo:fake_realm", Permission: permGetConsoles},
+					},
+				})
+				con, err := GetConsole(cUser, "foo", "realm_test_console")
+				So(err, ShouldBeNil)
+				So(con.ID, ShouldEqual, "realm_test_console")
+			})
+
+			Convey("Check user can only list consoles in realms they have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{
+					Identity: "user:e@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "foo:fake_realm2", Permission: permGetConsoles},
+					},
+				})
+				cons, err := GetConsoles(cUser, []ConsoleID{
+					{Project: "foo", ID: "default"},
+					{Project: "foo", ID: "realm_test_console"},
+					{Project: "foo", ID: "realm_test_console2"},
+				})
+				So(err, ShouldBeNil)
+				So(cons, ShouldHaveLength, 2)
+				So(cons[0].ID, ShouldEqual, "default")
+				So(cons[1].ID, ShouldEqual, "realm_test_console2")
 			})
 
 			Convey("Check second update reorders", func() {
@@ -327,6 +369,14 @@ consoles: {
 	repo_url: "https://chromium.googlesource.com/foo/bar"
 	refs: "refs/heads/master"
 	realm: "foo:fake_realm"
+	manifest_name: "REVISION"
+}
+consoles: {
+	id: "realm_test_console2"
+	name: "realm_test2"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "refs/heads/master"
+	realm: "foo:fake_realm2"
 	manifest_name: "REVISION"
 }
 `
