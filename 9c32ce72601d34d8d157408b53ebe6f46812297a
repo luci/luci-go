@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "59926f49_b16ec1c8",
+        "filename": "logdog/appengine/coordinator/endpoints/services/service.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T01:59:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "355b7458_60861e65",
+      "range": {
+        "startLine": 38,
+        "startChar": 49,
+        "endLine": 38,
+        "endChar": 56
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "635a447a_2fb5677e",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "633cd9d8_6b1a793f",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T01:59:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "635a447a_2fb5677e",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 14
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ac4867ba_f5056566",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T01:59:22Z",
+      "side": 1,
+      "message": "Done. I had vaguely recalled this but forgot to double check :(",
+      "parentUuid": "27e49046_36f947db",
+      "range": {
+        "startLine": 65,
+        "startChar": 16,
+        "endLine": 65,
+        "endChar": 58
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a06451b_0351c779",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b548e8b_671495c9",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T01:59:22Z",
+      "side": 1,
+      "message": "I thought adding createTask metric (with project) would be hard, but fortunately all the data is there!",
+      "parentUuid": "9a06451b_0351c779",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 70,
+        "endChar": 10
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "b5e3baee_8b00ee99",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T01:59:22Z",
+      "side": 1,
+      "message": "er... oops. leftovers from when queue name was determined by logstream id.",
+      "parentUuid": "9c0d7534_fd8a31e2",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 2
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8eaef9f6_e4a586c2",
         "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
         "patchSetId": 2
@@ -137,6 +257,30 @@
       "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "629075b7_ab955127",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T01:59:22Z",
+      "side": 1,
+      "message": "It\u0027s actually not a cloud task name at all; It\u0027s the queue number we pulled from plus the auto-generated task ID that cloud tasks assigned it. Added comment.",
+      "parentUuid": "8eaef9f6_e4a586c2",
+      "range": {
+        "startLine": 180,
+        "startChar": 19,
+        "endLine": 180,
+        "endChar": 63
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
