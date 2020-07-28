@@ -47,7 +47,7 @@ import (
 // running. Be careful when using Run concurrently with other code. You MUST
 // completely drain the returned channel in order to be guaranteed that all
 // side-effects of Run have been unwound.
-func Run(ctx context.Context, options *Options, cb func(context.Context) error) (<-chan *bbpb.Build, error) {
+func Run(ctx context.Context, options *Options, cb func(context.Context, Options) error) (<-chan *bbpb.Build, error) {
 	var opts Options
 	if options != nil {
 		opts = *options
@@ -134,7 +134,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 		defer userCleanup.run(ctx)
 		logging.Infof(ctx, "invoking host environment callback")
 
-		if err := cb(ctx); err != nil {
+		if err := cb(ctx, opts); err != nil {
 			logging.Errorf(ctx, "host environment callback failed:")
 			errors.Log(ctx, err)
 		}
