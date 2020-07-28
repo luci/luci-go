@@ -212,6 +212,24 @@ func TestConfig(t *testing.T) {
 				So(ids, ShouldHaveLength, 0)
 			})
 
+			Convey("Check user can't see consoles in realms they don't have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:e@example.com"})
+				_, err := GetConsole(cUser, "foo", "realm_test_console")
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("Check user can see consoles in realms they have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{
+					Identity: "user:e@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "foo:fake_realm", Permission: permGetConsoles},
+					},
+				})
+				con, err := GetConsole(cUser, "foo", "realm_test_console")
+				So(err, ShouldBeNil)
+				So(con.ID, ShouldEqual, "realm_test_console")
+			})
+
 			Convey("Check second update reorders", func() {
 				c := cfgclient.Use(c, memcfg.New(mockedConfigsUpdate))
 				So(UpdateProjects(c), ShouldBeNil)
@@ -312,6 +330,14 @@ consoles: {
 		short_name: "o"
 	}
 	header_id: "main_header"
+}
+consoles: {
+	id: "realm_test_console"
+	name: "realm_test"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "refs/heads/master"
+	realm: "foo:fake_realm"
+	manifest_name: "REVISION"
 }
 `
 
