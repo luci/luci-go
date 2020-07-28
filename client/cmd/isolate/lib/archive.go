@@ -24,14 +24,17 @@ import (
 	"os"
 	"time"
 
+	casclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -52,6 +55,7 @@ func CmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.isolateFlags.Init(&c.Flags)
 			c.loggingFlags.Init(&c.Flags)
+			c.casFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate")
 			c.Flags.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
@@ -67,6 +71,7 @@ type archiveRun struct {
 	commonServerFlags
 	isolateFlags
 	loggingFlags         loggingFlags
+	casFlags             casFlags
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
 	dumpJSON             string
@@ -81,6 +86,9 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if err := c.isolateFlags.Parse(cwd, RequireIsolateFile); err != nil {
+		return err
+	}
+	if err := c.casFlags.Parse(); err != nil {
 		return err
 	}
 	if len(args) != 0 {
@@ -152,6 +160,10 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 	}
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
+	if c.casFlags.instance != "" {
+		return c.uploadToCAS(ctx)
+	}
+
 	// Set up a checker and uploader.
 	checker := archiver.NewChecker(ctx, client, c.maxConcurrentChecks)
 	uploader := archiver.NewUploader(ctx, client, c.maxConcurrentUploads)
@@ -183,6 +195,40 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 
 	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), []string{string(isolSummary.Digest)})
 	return nil
+}
+
+func (c *archiveRun) uploadToCAS(ctx context.Context) error {
+	fl := c.casFlags
+	cl, err := casclient.NewClient(ctx, fl.instance,
+		casclient.DialParams{
+			Service: "remotebuildexecution.googleapis.com:443",
+			// TODO(1066839): Integrate with LUCI Realm
+			UseApplicationDefault: true,
+		})
+	if err != nil {
+		return err
+	}
+	defer cl.Close()
+
+	uploader := cas.NewUploader(cl)
+	digests, err := uploader.Upload(ctx, &c.ArchiveOptions)
+	if err != nil {
+		return err
+	}
+
+	if fl.digestJSON == "" {
+		return nil
+	}
+
+	f, err := os.Create(fl.digestJSON)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	m := make(map[string]string)
+	m[filesystem.GetFilenameNoExt(c.ArchiveOptions.Isolate)] = digests[0].String()
+	return json.NewEncoder(f).Encode(m)
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
