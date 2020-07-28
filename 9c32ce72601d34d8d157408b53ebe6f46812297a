@@ -375,6 +375,30 @@
       "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "faf9fce4_1d27dd13",
+        "filename": "logdog/appengine/coordinator/endpoints/services/taskQueue.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-28T02:01:26Z",
+      "side": 1,
+      "message": "Our qps for this endpoint is ~3-4. I changed this to randomly pick a starting queue on instance start, and then round-robin between queues after that. I think this should have the effect of ensuring that no queue ever starves.",
+      "parentUuid": "bd2b8b07_90cb845f",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 214,
+        "endChar": 47
+      },
+      "revId": "9c32ce72601d34d8d157408b53ebe6f46812297a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
