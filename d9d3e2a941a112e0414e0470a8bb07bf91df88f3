@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "dab90b2b_c94097b5",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0705a1c8_2332ed74",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 1
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f991daef_70d25986",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 10
@@ -59,6 +83,30 @@
       "writtenOn": "2020-07-24T21:31:35Z",
       "side": 1,
       "message": "oh, so it is single threaded... fine for now I guess...",
+      "range": {
+        "startLine": 76,
+        "startChar": 18,
+        "endLine": 76,
+        "endChar": 35
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "86df4eaf_8a2db4a8",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "well, it\u0027s not extremely single-threaded, but I get what you mean. So, updated.",
+      "parentUuid": "f991daef_70d25986",
       "range": {
         "startLine": 76,
         "startChar": 18,
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "376c4825_a809bc43",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "229abf2d_13fafe18",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 10
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d73b3ce3_5c7a31eb",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 10
@@ -114,6 +186,30 @@
       "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bd4ae37_45ccd9c1",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "d73b3ce3_5c7a31eb",
+      "range": {
+        "startLine": 88,
+        "startChar": 24,
+        "endLine": 88,
+        "endChar": 66
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "405a28ab_e95bf500",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "I\u0027m proud to report that I started w/o it, but hit obstacles described in the comment in latest patchset. LMK if it\u0027s not convincing enough, ie you have better alternatives.",
+      "parentUuid": "172ceae1_ab866a98",
+      "range": {
+        "startLine": 132,
+        "startChar": 28,
+        "endLine": 132,
+        "endChar": 49
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df21b307_4d7c51dc",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 10
@@ -163,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "1b631f2d_43916e7c",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "sorry, dispatcher.Channel debugging craft I forgot to remove.",
+      "parentUuid": "df21b307_4d7c51dc",
+      "range": {
+        "startLine": 139,
+        "startChar": 4,
+        "endLine": 139,
+        "endChar": 40
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a41551f_fbe8c0fe",
         "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
         "patchSetId": 10
@@ -174,6 +318,30 @@
       "writtenOn": "2020-07-24T21:31:35Z",
       "side": 1,
       "message": "do we need to start and stop this machinery each sweep? Can we keep it running and just continuously feed it new items?",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 35
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f0eb372_0a6be1e2",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "TBH, I didn\u0027t consider it heavy: 3 channels + Timer (which has a channel, too). The parallel.WorkPool is 2 channels.\n\nI could re-use it, but I\u0027ll need one more work group. I don\u0027t mind doing it as a follow up, but I\u0027d prefer not to land this CL w/o major refactoring \u0026\u0026 land outstanding datastore stuff.\n\nWDYT?",
+      "parentUuid": "2a41551f_fbe8c0fe",
       "range": {
         "startLine": 166,
         "startChar": 5,
@@ -230,6 +398,30 @@
       "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abff6995_e349d488",
+        "filename": "ttq/internal/sweepdrivers/inproc/inproc_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T11:29:04Z",
+      "side": 1,
+      "message": "Figured it out: https://crrev.com/c/2318448",
+      "parentUuid": "050cefb9_ac7b6958",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 17
+      },
+      "revId": "d9d3e2a941a112e0414e0470a8bb07bf91df88f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
