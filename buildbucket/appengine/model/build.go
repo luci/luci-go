@@ -54,6 +54,7 @@ type PubSubCallback struct {
 }
 
 // Build is a representation of a build in the datastore.
+// Implements datastore.PropertyLoadSaver.
 type Build struct {
 	_     datastore.PropertyMap `gae:"-,extra"`
 	_kind string                `gae:"$kind,Build"`
@@ -106,8 +107,37 @@ type Build struct {
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
 }
 
+// Load overwrites this representation of a build by reading the given
+// datastore.PropertyMap. Mutates this entity.
+func (b *Build) Load(p datastore.PropertyMap) error {
+	return datastore.GetPLS(b).Load(p)
+}
+
+// Save returns the datastore.PropertyMap representation of this build. Does not
+// mutate this entity (i.e. the returned PropertyMap contains changes not
+// reflected in this entity).
+func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
+	p, err := datastore.GetPLS(b).Save(withMeta)
+	if err != nil {
+		return nil, err
+	}
+	// ResultDetails is only set via v1 API. For builds only manipulated with the
+	// v2 API, this column will be missing in the datastore in Python. Python
+	// interprets this field as JSON, and a missing value is loaded as None which
+	// Python loads as the empty JSON dict. However in Go, in order to preserve
+	// the value of this field without having to interpret it, the type is set
+	// to []byte. But if the build has no result details, Go will store the empty
+	// value for this type (i.e. an empty string), which is not a valid JSON dict.
+	// For the benefit of the Python service, default the value to null in the
+	// datastore which Python will handle correctly.
+	// TODO(crbug/1042991): Remove ResultDetails default once v1 API is removed
+	if len(b.LegacyProperties.ResultDetails) == 0 {
+		p["result_details"] = datastore.MkProperty(nil)
+	}
+	return p, nil
+}
+
 // ToProto returns the *pb.Build representation of this build.
-// TODO(crbug/1042991): Support field masks.
 func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	p := proto.Clone(&b.Proto).(*pb.Build)
 	switch inc, err := m.Includes("tags"); {
