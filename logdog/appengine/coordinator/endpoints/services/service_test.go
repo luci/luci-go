@@ -31,7 +31,7 @@ func TestServiceAuth(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
 
-		svr := New().(*logdog.DecoratedServices)
+		svr := New(ServerSettings{NumQueues: 2}).(*logdog.DecoratedServices)
 
 		Convey(`With an application config installed`, func() {
 			Convey(`Will reject users if there is an authentication error (no state).`, func() {

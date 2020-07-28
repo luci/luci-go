@@ -20,6 +20,7 @@ import (
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
 
@@ -33,13 +34,20 @@ import (
 
 // Run installs and executes this site.
 func main() {
+	// needed for LeaseArchiveTasks to pick random queues.
+	mathrand.SeedRandomly()
+
 	r := router.New()
 
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{
 		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
-	servicesPb.RegisterServicesServer(&svr, services.New())
+	servicesPb.RegisterServicesServer(&svr, services.New(services.ServerSettings{
+		// 4 is very likely overkill. Until 2020Q3, Logdog was essentially fine
+		// running on a single queue.
+		NumQueues: 4,
+	}))
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.

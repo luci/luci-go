@@ -35,7 +35,7 @@ func TestArchiveStream(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
 
-		svr := New()
+		svr := New(ServerSettings{NumQueues: 2})
 
 		// Register a testing log stream with an archive tasked.
 		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo")

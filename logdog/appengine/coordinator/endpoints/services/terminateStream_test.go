@@ -53,7 +53,7 @@ func TestTerminateStream(t *testing.T) {
 			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
 		})
 
-		svr := New()
+		svr := New(ServerSettings{NumQueues: 2})
 
 		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
 
@@ -66,7 +66,8 @@ func TestTerminateStream(t *testing.T) {
 
 		// The testable TQ object.
 		ts := taskqueue.GetTestable(c)
-		ts.CreatePullQueue(ArchiveQueueName)
+		ts.CreatePullQueue(RawArchiveQueueName(0))
+		ts.CreatePullQueue(RawArchiveQueueName(1))
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
 			_, err := svr.TerminateStream(c, &req)

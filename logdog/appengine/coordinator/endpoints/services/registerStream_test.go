@@ -58,11 +58,12 @@ func TestRegisterStream(t *testing.T) {
 		// By default, the testing user is a service.
 		env.JoinGroup("services")
 
+		svr := New(ServerSettings{NumQueues: 2})
+
 		// The testable TQ object.
 		ts := taskqueue.GetTestable(c)
-		ts.CreatePullQueue(ArchiveQueueName)
-
-		svr := New()
+		ts.CreatePullQueue(RawArchiveQueueName(0))
+		ts.CreatePullQueue(RawArchiveQueueName(1))
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
 			env.LeaveAllGroups()
@@ -321,7 +322,7 @@ func BenchmarkRegisterStream(b *testing.B) {
 		}
 	})
 
-	svr := New()
+	svr := New(ServerSettings{NumQueues: 2})
 
 	b.ResetTimer()
 

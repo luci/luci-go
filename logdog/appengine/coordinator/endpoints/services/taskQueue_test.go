@@ -15,11 +15,13 @@
 package services
 
 import (
+	"math/rand"
 	"sort"
 	"testing"
 	"time"
 
 	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
@@ -30,14 +32,25 @@ import (
 func TestTaskQueue(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
+		c = mathrand.Set(c, rand.New(rand.NewSource(1234)))
 
 		// By default, the testing user is a service.
 		env.JoinGroup("services")
-		svr := New()
+		svr := New(ServerSettings{NumQueues: 2})
 
 		// The testable TQ object.
 		ts := taskqueue.GetTestable(c)
-		ts.CreatePullQueue(ArchiveQueueName)
+		ts.CreatePullQueue(RawArchiveQueueName(0))
+		ts.CreatePullQueue(RawArchiveQueueName(1))
+
+		mustAddTask := func(t *logdog.ArchiveTask) {
+			task, err := tqTask(t)
+			So(err, ShouldBeNil)
+
+			queueName, _ := svr.(*logdog.DecoratedServices).Service.(*server).getNextArchiveQueueName(c)
+
+			So(taskqueue.Add(c, queueName, task), ShouldBeNil)
+		}
 
 		Convey(`Lease a task with empty taskqueue`, func() {
 			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
@@ -47,42 +60,71 @@ func TestTaskQueue(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(tasks.Tasks), ShouldEqual, 0)
 		})
-		task1, _ := tqTask(&logdog.ArchiveTask{Project: "foo", Id: "deadbeef1"})
-		task2, _ := tqTask(&logdog.ArchiveTask{Project: "foo", Id: "deadbeef2"})
-		task3, _ := tqTask(&logdog.ArchiveTask{Project: "foo", Id: "deadbeef3"})
-		task4, _ := tqTask(&logdog.ArchiveTask{Project: "foo", Id: "deadbeef4"})
+		task1 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef1"}
+		task2 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef2"}
+		task3 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef3"}
+		task4 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef4"}
 
 		Convey(`Two tasks`, func() {
-			So(taskqueue.Add(c, ArchiveQueueName, []*taskqueue.Task{task1, task2}...), ShouldBeNil)
-			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
-				MaxTasks:  10,
-				LeaseTime: ptypes.DurationProto(10 * time.Minute),
-			})
-			So(err, ShouldBeNil)
-			So(len(tasks.Tasks), ShouldEqual, 2)
-			// No order is guaranteed in the returned slice
-			sort.Slice(tasks.Tasks, func(i, j int) bool {
-				return tasks.Tasks[i].Id < tasks.Tasks[j].Id
-			})
-			So(tasks.Tasks[0].Project, ShouldEqual, "foo")
-			So(tasks.Tasks[0].Id, ShouldEqual, "deadbeef1")
-			Convey(`And delete one of the tasks`, func() {
-				_, err := svr.DeleteArchiveTasks(c, &logdog.DeleteRequest{
-					Tasks: []*logdog.ArchiveTask{tasks.Tasks[0]},
+			mustAddTask(task1)
+			mustAddTask(task2)
+
+			var leasedTasks []*logdog.ArchiveTask
+			// We have to retry a couple times to collect all the tasks b/c
+			// randomness. This is sensitive to the math.NewSource() value above.
+			for i := 0; i < 3; i++ {
+				tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
+					MaxTasks:  10,
+					LeaseTime: ptypes.DurationProto(10 * time.Minute),
 				})
 				So(err, ShouldBeNil)
-				So(len(ts.GetScheduledTasks()[ArchiveQueueName]), ShouldEqual, 1)
+				leasedTasks = append(leasedTasks, tasks.Tasks...)
+			}
+
+			So(len(leasedTasks), ShouldEqual, 2)
+			// No order is guaranteed in the returned slice
+			sort.Slice(leasedTasks, func(i, j int) bool {
+				return leasedTasks[i].Id < leasedTasks[j].Id
+			})
+			So(leasedTasks[0].Project, ShouldEqual, "foo")
+			So(leasedTasks[0].Id, ShouldEqual, task1.Id)
+			So(leasedTasks[1].Id, ShouldEqual, task2.Id)
+			Convey(`And delete one of the tasks`, func() {
+				_, err := svr.DeleteArchiveTasks(c, &logdog.DeleteRequest{
+					// leasedTasks[0] has TaskName filled, but task1 does not.
+					Tasks: []*logdog.ArchiveTask{leasedTasks[0]},
+				})
+				So(err, ShouldBeNil)
+
+				// there should only be one scheduled task remaining.
+				numScheduled := 0
+				for _, tasks := range ts.GetScheduledTasks() {
+					numScheduled += len(tasks)
+				}
+
+				So(numScheduled, ShouldEqual, 1)
 			})
 		})
 
 		Convey(`Many tasks`, func() {
-			taskqueue.Add(c, ArchiveQueueName, []*taskqueue.Task{task1, task2, task3, task4}...)
-			tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
-				MaxTasks:  3,
-				LeaseTime: ptypes.DurationProto(10 * time.Minute),
-			})
-			So(err, ShouldBeNil)
-			So(len(tasks.Tasks), ShouldEqual, 3)
+			mustAddTask(task1)
+			mustAddTask(task2)
+			mustAddTask(task3)
+			mustAddTask(task4)
+
+			var leasedTasks []*logdog.ArchiveTask
+			// We have to retry a couple times to collect all the tasks b/c
+			// randomness. This is sensitive to the math.NewSource() value above.
+			for i := 0; i < 3; i++ {
+				tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
+					MaxTasks:  1,
+					LeaseTime: ptypes.DurationProto(10 * time.Minute),
+				})
+				So(err, ShouldBeNil)
+				leasedTasks = append(leasedTasks, tasks.Tasks...)
+			}
+
+			So(len(leasedTasks), ShouldEqual, 3)
 		})
 
 	})

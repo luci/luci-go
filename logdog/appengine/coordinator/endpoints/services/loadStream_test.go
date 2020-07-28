@@ -36,7 +36,7 @@ func TestLoadStream(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
 
-		svr := New()
+		svr := New(ServerSettings{NumQueues: 2})
 
 		// Register a test stream.
 		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
