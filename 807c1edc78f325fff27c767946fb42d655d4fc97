@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2de8475_c6c5db98",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T02:39:58Z",
+      "side": 1,
+      "message": "no need to upload to isolate server if this is given.",
+      "revId": "807c1edc78f325fff27c767946fb42d655d4fc97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b48977f_d0fd4947",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T02:39:58Z",
+      "side": 1,
+      "message": "could you leave TODO to use realm here?",
+      "revId": "807c1edc78f325fff27c767946fb42d655d4fc97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb353954_362fec5f",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T02:39:58Z",
+      "side": 1,
+      "message": "digests?",
+      "range": {
+        "startLine": 214,
+        "startChar": 1,
+        "endLine": 214,
+        "endChar": 7
+      },
+      "revId": "807c1edc78f325fff27c767946fb42d655d4fc97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3060650_57199a93",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T02:39:58Z",
+      "side": 1,
+      "message": "os.Create?",
+      "range": {
+        "startLine": 223,
+        "startChar": 11,
+        "endLine": 223,
+        "endChar": 22
+      },
+      "revId": "807c1edc78f325fff27c767946fb42d655d4fc97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
