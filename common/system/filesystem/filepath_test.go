@@ -162,3 +162,20 @@ func TestResolveSymlink(t *testing.T) {
 		})
 	})
 }
+
+func TestGetFilenameNoExt(t *testing.T) {
+	t.Parallel()
+	Convey("Basic", t, func() {
+		p := filepath.Join("foo", "bar.txt")
+		name := GetFilenameNoExt(p)
+		So(name, ShouldResemble, "bar")
+
+		p = filepath.Join("foo", "bar", "baz")
+		name = GetFilenameNoExt(p)
+		So(name, ShouldResemble, "baz")
+
+		p = filepath.Join("foo.bar.baz")
+		name = GetFilenameNoExt(p)
+		So(name, ShouldResemble, "foo.bar")
+	})
+}

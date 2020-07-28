@@ -23,12 +23,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 const (
@@ -320,9 +320,5 @@ func (ij *isolatedFile) writeJSONFile(opener openFiler) error {
 
 // name returns the base name of the isolated file, extension stripped.
 func (ij *isolatedFile) name() string {
-	name := filepath.Base(ij.path)
-	if i := strings.LastIndex(name, "."); i != -1 {
-		name = name[:i]
-	}
-	return name
+	return filesystem.GetFilenameNoExt(ij.path)
 }
