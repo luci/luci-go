@@ -272,6 +272,10 @@ message Console {
   // If this is set, ExternalProject must also be set, and no other fields must
   // be set except for Id and Name.
   string external_id = 18;
+
+  // Realm that the console exists under.
+  // See https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/proto/realms_config.proto
+  string realm = 19;
 }
 
 // Builder is a reference to a Milo builder.
