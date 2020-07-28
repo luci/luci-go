@@ -23,7 +23,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/microsoft/go-winio"
+	"github.com/Microsoft/go-winio"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
