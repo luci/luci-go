@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0b470115_c47e9343",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T07:53:18Z",
+      "side": 1,
+      "message": "This sounds like you are going to resolve this in this CL, but not?",
+      "revId": "117542df87695b05ce34c27feb9b47257aec4755",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
