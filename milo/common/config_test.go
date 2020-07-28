@@ -212,6 +212,42 @@ func TestConfig(t *testing.T) {
 				So(ids, ShouldHaveLength, 0)
 			})
 
+			Convey("Check user can't get consoles in realms they don't have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:e@example.com"})
+				_, err := GetConsole(cUser, "foo", "realm_test_console1")
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("Check user can get consoles in realms they have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{
+					Identity: "user:e@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "foo:fake_realm1", Permission: permGetConsoles},
+					},
+				})
+				con, err := GetConsole(cUser, "foo", "realm_test_console1")
+				So(err, ShouldBeNil)
+				So(con.ID, ShouldEqual, "realm_test_console1")
+			})
+
+			Convey("Check user can only list consoles in realms they have access to", func() {
+				cUser := auth.WithState(c, &authtest.FakeState{
+					Identity: "user:e@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "foo:fake_realm2", Permission: permGetConsoles},
+					},
+				})
+				cons, err := GetConsoles(cUser, []ConsoleID{
+					{Project: "foo", ID: "default"},
+					{Project: "foo", ID: "realm_test_console1"},
+					{Project: "foo", ID: "realm_test_console2"},
+				})
+				So(err, ShouldBeNil)
+				So(cons, ShouldHaveLength, 2)
+				So(cons[0].ID, ShouldEqual, "default")
+				So(cons[1].ID, ShouldEqual, "realm_test_console2")
+			})
+
 			Convey("Check second update reorders", func() {
 				c := cfgclient.Use(c, memcfg.New(mockedConfigsUpdate))
 				So(UpdateProjects(c), ShouldBeNil)
@@ -312,6 +348,22 @@ consoles: {
 		short_name: "o"
 	}
 	header_id: "main_header"
+}
+consoles: {
+	id: "realm_test_console1"
+	name: "realm_test1"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "refs/heads/master"
+	realm: "foo:fake_realm1"
+	manifest_name: "REVISION"
+}
+consoles: {
+	id: "realm_test_console2"
+	name: "realm_test2"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "refs/heads/master"
+	realm: "foo:fake_realm2"
+	manifest_name: "REVISION"
 }
 `
 
