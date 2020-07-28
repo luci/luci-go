@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4677943b_0329aea1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-28T08:16:01Z",
+      "side": 1,
+      "message": "PTAL\n\nworking Led Job: https://chromium-swarm-dev.appspot.com/task?id\u003d4dad1c3937bab410",
+      "revId": "91ddacf625ca78c1bc375939a4a7e312e3da516b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
