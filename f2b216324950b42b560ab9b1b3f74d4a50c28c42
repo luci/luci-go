@@ -94,6 +94,30 @@
       "revId": "f2b216324950b42b560ab9b1b3f74d4a50c28c42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9fd204e7_b67e3cb8",
+        "filename": "client/cmd/isolate/lib/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-28T06:28:10Z",
+      "side": 1,
+      "message": "\u003e Done\n\u003e \n\u003e \u003e What do you mean?\n\u003e \n\u003e You suggested that \"we don\u0027t need to test for IsNotExist()\", is it because |cwd| will never exist because it\u0027s under a temporary directory?\n\u003e \n\nI commented that because just calling MakeDirs is simpler than this. And that doesn\u0027t take whether directory exists or not.",
+      "parentUuid": "80190b20_bec60404",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 4
+      },
+      "revId": "f2b216324950b42b560ab9b1b3f74d4a50c28c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
