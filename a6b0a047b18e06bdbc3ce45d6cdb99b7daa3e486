@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "936e228d_eb4070cb",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T14:30:17Z",
+      "side": 1,
+      "message": "Yes. It is a hex-encoded number.",
+      "parentUuid": "059f529d_fcaf3bae",
+      "range": {
+        "startLine": 49,
+        "startChar": 31,
+        "endLine": 49,
+        "endChar": 33
+      },
+      "revId": "a6b0a047b18e06bdbc3ce45d6cdb99b7daa3e486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "584711b3_5c67c07e",
         "filename": "ttq/internal/databases/datastore/ds.go",
         "patchSetId": 1
@@ -53,6 +77,30 @@
       "writtenOn": "2020-07-28T03:55:30Z",
       "side": 1,
       "message": "please check this works correctly when len(vs) \u003d\u003d 1 and vs[0] is not found. I believe ds can have an edge case/bug there.",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 36
+      },
+      "revId": "a6b0a047b18e06bdbc3ce45d6cdb99b7daa3e486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41a3d450_31258c15",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T14:30:17Z",
+      "side": 1,
+      "message": "I\u0027ve added a test, but it passes (see latest patchset). Is my test wrong or did you mean a bug against prod datastore?",
+      "parentUuid": "584711b3_5c67c07e",
       "range": {
         "startLine": 125,
         "startChar": 0,
@@ -85,6 +133,30 @@
       "revId": "a6b0a047b18e06bdbc3ce45d6cdb99b7daa3e486",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "876f2183_10c304f5",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-28T14:30:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa2b5f9b_500cfe46",
+      "range": {
+        "startLine": 139,
+        "startChar": 7,
+        "endLine": 139,
+        "endChar": 37
+      },
+      "revId": "a6b0a047b18e06bdbc3ce45d6cdb99b7daa3e486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
