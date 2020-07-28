@@ -31,6 +31,9 @@
 // https://godoc.org/go.chromium.org/luci/server/gaeemulation
 // and
 // https://godoc.org/go.chromium.org/gae/impl/cloud.
+//
+// Depends on "go.chromium.org/gae/filter/txndefer" filter installed. It is
+// installed by default in LUCI server contexts.
 package ttqgaeds
 
 import (
@@ -39,6 +42,7 @@ import (
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
+	"go.chromium.org/gae/filter/txndefer"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal"
@@ -82,12 +86,11 @@ func (t *TTQ) SetupSweeping(r *router.Router, mw router.MiddlewareChain,
 // AddTask guarantees eventual creation of a task in Cloud Tasks if the current
 // transaction completes successfully.
 //
-// The returned ttq.PostProcess should be called after the successful
-// transaction. See ttq.PostProcess
-//     https://godoc.org/go.chromium.org/luci/ttq#PostProcess
-// documentation for more info.
-//
 // Panics if not called with a transaction context.
-func (t *TTQ) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) (ttq.PostProcess, error) {
-	return t.impl.AddTask(ctx, req)
+func (t *TTQ) AddTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+	postProc, err := t.impl.AddTask(ctx, req)
+	if err == nil {
+		txndefer.Defer(ctx, postProc)
+	}
+	return err
 }
