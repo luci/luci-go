@@ -76,6 +76,24 @@
     },
     {
       "key": {
+        "uuid": "e30da203_3574ac11",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T05:24:17Z",
+      "side": 1,
+      "message": "It\u0027s because I didn\u0027t want to touch a lot of ResultDB code at once. I may do it in a separate CL.",
+      "parentUuid": "823d34e9_ca2fb91c",
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "950581a4_aeefd3a0",
         "filename": "resultdb/internal/tasks/tasks_test.go",
         "patchSetId": 3
@@ -135,6 +153,30 @@
       "side": 1,
       "message": "RO/RW/Txn is what I expected as well.\n\nI think not passing txn param might be fine. I don\u0027t think we would start breeding bugs by not being explicit about the kind of txn we pass (RO vs RW)",
       "parentUuid": "5bed95f4_114a18b8",
+      "range": {
+        "startLine": 26,
+        "startChar": 41,
+        "endLine": 26,
+        "endChar": 49
+      },
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09d26f7f_aeb96371",
+        "filename": "resultdb/internal/tasks/tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T05:24:17Z",
+      "side": 1,
+      "message": "Ok, I\u0027ll try to add it.\n\nOne issue I forgot about is closing the read transaction. I think it\u0027s going to be:\n\n  ctx, close :\u003d span.ReadOnlyTransaction(ctx)\n  defer close()\n\nWhich looks very much like regular context cancelation which some people tend to ignore :( Asking to do \n\n  ctx :\u003d span.ReadOnlyTransaction(ctx)\n  defer span.RO(ctx).Close()\n\nIs also kind of weird, but maybe better than `defer close()`?",
+      "parentUuid": "455c2089_6132024a",
       "range": {
         "startLine": 26,
         "startChar": 41,
