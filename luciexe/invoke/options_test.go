@@ -427,7 +427,29 @@ func TestOptionsExtraDirs(t *testing.T) {
 		ctx, o, tdir, closer := commonOptions()
 		defer closer()
 
-		Convey(`default`, func() {
+		Convey(`provided BaseDir`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			So(os.Mkdir(o.BaseDir, 0777), ShouldBeNil)
+			lo, _, err := o.rationalize(ctx)
+			So(err, ShouldBeNil)
+			So(lo.env.GetEmpty("TMP"), ShouldStartWith, o.BaseDir)
+			So(lo.workDir, ShouldStartWith, o.BaseDir)
+		})
+
+		Convey(`provided BaseDir does not exist`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			_, _, err := o.rationalize(ctx)
+			So(err, ShouldErrLike, "statting base dir")
+		})
+
+		Convey(`provided BaseDir is not a directory`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			So(ioutil.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
+			_, _, err := o.rationalize(ctx)
+			So(err, ShouldErrLike, "base dir is not a directory:")
+		})
+
+		Convey(`fallback to temp`, func() {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
 			So(lo.env.GetEmpty("TMP"), ShouldStartWith, tdir)

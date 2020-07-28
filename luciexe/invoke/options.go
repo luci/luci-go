@@ -78,6 +78,13 @@ type Options struct {
 	// `nil`.
 	Namespace string
 
+	// The base dir where all sub-directories (i.e. workdir, tempdir, etc.)
+	// will be created under (i.e. the `cwd` for invoked luciexe will be
+	// `$BaseDir/w`). This must exist and be a directory.
+	//
+	// If empty, a random directory under os.TempDir will be used.
+	BaseDir string
+
 	// Absolute path to the cache base directory. This must exist and be
 	// a directory.
 	//
@@ -258,10 +265,21 @@ type dirs struct {
 }
 
 func (o *Options) mkdirs() (ret dirs, err error) {
-	var base string
-	if base, err = ioutil.TempDir("", ""); err != nil {
-		return
+	base := o.BaseDir
+	if base == "" {
+		if base, err = ioutil.TempDir("", ""); err != nil {
+			return
+		}
+	} else {
+		finfo, err := os.Stat(base)
+		if err != nil {
+			return ret, errors.Annotate(err, "statting base dir").Err()
+		}
+		if !finfo.IsDir() {
+			return ret, errors.Reason("base dir is not a directory: %q", base).Err()
+		}
 	}
+
 	// maybeMkdir attempts to make the dir named `dirname` under `base`,
 	// annotating the error with `friendlyName` as long as `err` is nil.
 	//

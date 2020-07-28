@@ -62,11 +62,11 @@
 //     build.proto (zlib-compressed) stream.
 //   * Set up a local LUCI ambient authentication service which luciexe's can
 //     use to mint auth tokens.
-//   * Prepare an empty temporary directory which will house tempdirs and
-//     workdirs for all luciexe invocations. The Host Application MAY clean
-//     this directory up, but it may be useful to leak it for debugging.
-//     It's permissible for the Host Application to defer this cleanup to an
-//     external process (e.g. buildbucket's agent may defer this to swarming).
+//   * Prepare an empty directory which will house tempdirs and workdirs for
+//     all luciexe invocations. The Host Application MAY clean this directory
+//     up, but it may be useful to leak it for debugging. It's permissible for
+//     the Host Application to defer this cleanup to an external process (e.g.
+//     buildbucket's agent may defer this to swarming).
 //
 // The Host Application MAY hook additional streams for debugging/logging; it is
 // frequently convenient to hook the stderr/stdout streams from the top level
