@@ -186,6 +186,30 @@
       "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad6bd26a_38922f29",
+        "filename": "resultdb/internal/tasks/tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-28T05:27:47Z",
+      "side": 1,
+      "message": "\u003e I think not passing txn param might be fine. I don\u0027t think we would start breeding bugs by not being explicit about the kind of txn we pass (RO vs RW)\n\nWe might start breeding inefficiencies: \n\n  func doStuff(ctx context.Context) {\n     // Am I inside a read transaction? Who knows. \n     // Better to start a new one just to be sure.\n     doOtherStuff(span.Single(ctx), ...)\n  }\n\nThough we can teach span.Single(...) etc to panic if they already got a transactional context... Dunno.",
+      "parentUuid": "09d26f7f_aeb96371",
+      "range": {
+        "startLine": 26,
+        "startChar": 41,
+        "endLine": 26,
+        "endChar": 49
+      },
+      "revId": "7e83fd948162e3e47d997bf44a1217142ff5e312",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
