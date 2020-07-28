@@ -52,6 +52,24 @@
       "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25347512_3b0bd3df",
+        "filename": "client/cmd/isolate/lib/archive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-28T06:02:10Z",
+      "side": 1,
+      "message": "Ack, i created https://crrev.com/c/2321825",
+      "parentUuid": "d85c1674_79f7d8ba",
+      "revId": "801f507c37e324ce9515dc5cb4d787d69bbe3e71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
