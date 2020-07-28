@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "19152d44_d65971c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-28T00:49:34Z",
+      "side": 1,
+      "message": "i think so, at least to avoid confusion.\notherwise it would work despite the realm doesn\u0027t exist",
+      "parentUuid": "588afa74_3998c2d7",
+      "revId": "67dc1757743562ce05acee660a4b185ffc955109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ade17e82_9749612d",
         "filename": "resultdb/cli/cmd_stream.go",
         "patchSetId": 1

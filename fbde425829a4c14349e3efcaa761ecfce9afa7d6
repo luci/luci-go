@@ -16,6 +16,41 @@
       "revId": "fbde425829a4c14349e3efcaa761ecfce9afa7d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8407ae28_503ba210",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-28T00:49:34Z",
+      "side": 1,
+      "message": "on bots it picks up the invocation created by buildbucket or swarming",
+      "parentUuid": "22a7a37c_07f56fb9",
+      "revId": "fbde425829a4c14349e3efcaa761ecfce9afa7d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc1c2b9f_1e9c31aa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-28T00:49:34Z",
+      "side": 1,
+      "message": "now that -realm is passed iff -new is passed, do we need -new?",
+      "revId": "fbde425829a4c14349e3efcaa761ecfce9afa7d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
