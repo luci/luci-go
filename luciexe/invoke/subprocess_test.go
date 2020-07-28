@@ -28,7 +28,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
-	//. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const selfTestEnvvar = "LUCIEXE_INVOKE_TEST"
@@ -110,7 +110,7 @@ func TestSubprocess(t *testing.T) {
 			So(err, ShouldBeNil)
 			cancel()
 			_, err = sp.Wait()
-			So(err, ShouldBeNil)
+			So(err, ShouldErrLike, "waiting for luciexe")
 
 			So(time.Now(), ShouldHappenWithin, time.Second, start)
 		})
