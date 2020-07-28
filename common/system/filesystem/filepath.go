@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 
 	"go.chromium.org/luci/common/errors"
@@ -133,4 +134,13 @@ func ResolveSymlink(path string) (string, os.FileInfo, error) {
 	}
 
 	return path, stat, nil
+}
+
+// GetFilenameNoExt returns the base file name without the extension.
+func GetFilenameNoExt(path string) string {
+	name := filepath.Base(path)
+	if i := strings.LastIndexByte(name, '.'); i != -1 {
+		name = name[:i]
+	}
+	return name
 }
