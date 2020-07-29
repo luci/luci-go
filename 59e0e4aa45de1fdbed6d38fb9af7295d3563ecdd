@@ -22,6 +22,30 @@
       "revId": "59e0e4aa45de1fdbed6d38fb9af7295d3563ecdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "315f13cf_2b4502d6",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:22:44Z",
+      "side": 1,
+      "message": "if was the case, then I think we would need to stop using errgroup\nbut it is not the case: https://github.com/golang/sync/blob/master/errgroup/errgroup.go#L58\n\nbtw 199 of \"context cancleled\" is spammy\n\n\nalso, i don\u0027t think this condition happened in the today\u0027s outage. In that step, we deal with task-level invocations. they include up to 10 other invocations",
+      "parentUuid": "729d4860_8fbe6e05",
+      "range": {
+        "startLine": 147,
+        "startChar": 4,
+        "endLine": 147,
+        "endChar": 83
+      },
+      "revId": "59e0e4aa45de1fdbed6d38fb9af7295d3563ecdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

@@ -90,6 +90,30 @@
     },
     {
       "key": {
+        "uuid": "655f8748_48afddf7",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:22:44Z",
+      "side": 1,
+      "message": "i prefer the tag",
+      "parentUuid": "6bf973eb_58fbde83",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "808af1ca369223f43f3c7151fd50ca4e38311d46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ded4abf2_3aee13cb",
         "filename": "resultdb/internal/invocations/graph.go",
         "patchSetId": 1
