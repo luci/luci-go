@@ -16,6 +16,24 @@
       "revId": "e3d4a49fc764c5b00c30455848ede1ca6bff0463",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5d6d697a_b35401f4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T08:20:32Z",
+      "side": 1,
+      "message": "I get that you are ironic, but I think this actually as future friendly as we can get 😊",
+      "parentUuid": "ebbd2662_7ea67f9f",
+      "revId": "e3d4a49fc764c5b00c30455848ede1ca6bff0463",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
