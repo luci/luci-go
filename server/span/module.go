@@ -142,9 +142,7 @@ func isValidDB(name string) bool {
 }
 
 func pingDB(ctx context.Context) error {
-	ctx, done := context.WithTimeout(ctx, 30*time.Second)
+	ctx, done := context.WithTimeout(Single(ctx), 30*time.Second)
 	defer done()
-	return Single(ctx).
-		Query(ctx, spanner.NewStatement("SELECT 1;")).
-		Do(func(*spanner.Row) error { return nil })
+	return Query(ctx, spanner.NewStatement("SELECT 1;")).Do(func(*spanner.Row) error { return nil })
 }
