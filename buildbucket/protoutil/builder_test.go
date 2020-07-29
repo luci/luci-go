@@ -79,15 +79,22 @@ func TestBuilderConversion(t *testing.T) {
 
 	Convey("FormatBuilderID", t, func() {
 		So(FormatBuilderID(&pb.BuilderID{
-				Project: "proj",
-				Bucket: "bucket",
-				Builder: "builder",
-			}),
+			Project: "proj",
+			Bucket:  "bucket",
+			Builder: "builder",
+		}),
 			ShouldEqual,
 			"proj/bucket/builder")
 	})
 
 	Convey("FormatBucketID", t, func() {
 		So(FormatBucketID("proj", "bucket"), ShouldEqual, "proj/bucket")
+	})
+
+	Convey("ParseBucketID", t, func() {
+		p, b, err := ParseBucketID("proj/bucket")
+		So(err, ShouldBeNil)
+		So(p, ShouldEqual, "proj")
+		So(b, ShouldEqual, "bucket")
 	})
 }
