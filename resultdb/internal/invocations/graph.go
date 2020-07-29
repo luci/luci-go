@@ -86,10 +86,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	tooMany := func() error {
-		cancel()
 		return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
 	}
 
