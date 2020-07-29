@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 
@@ -83,7 +84,7 @@ func SpannerTestContext(tb testing.TB) context.Context {
 		tb.Fatal(err)
 	}
 
-	ctx = spanutil.WithClient(ctx, spannerClient)
+	ctx = span.UseClient(ctx, spannerClient)
 
 	if connectToRedis() {
 		ctx = redisconn.UsePool(ctx, redisconn.NewPool("localhost:6379", 0))
@@ -200,7 +201,7 @@ func cleanupRedis(ctx context.Context) error {
 // Asserts that application succeeds.
 // Returns the commit timestamp.
 func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
-	ct, err := spanutil.Client(ctx).Apply(ctx, ms)
+	ct, err := span.Apply(ctx, ms)
 	So(err, ShouldBeNil)
 	return ct
 }
@@ -221,13 +222,13 @@ func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 // MustReadRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert success.
 func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
-	err := spanutil.ReadRow(ctx, spanutil.Client(ctx).Single(), table, key, ptrMap)
+	err := spanutil.ReadRow(span.Single(span.WithoutTxn(ctx)), table, key, ptrMap)
 	So(err, ShouldBeNil)
 }
 
 // MustNotFindRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert the row was not found.
 func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
-	err := spanutil.ReadRow(ctx, spanutil.Client(ctx).Single(), table, key, ptrMap)
+	err := spanutil.ReadRow(span.Single(span.WithoutTxn(ctx)), table, key, ptrMap)
 	So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)
 }

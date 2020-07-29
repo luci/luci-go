@@ -95,7 +95,7 @@ LIMIT @limit
 // Returned artifacts are ordered by level (invocation or test result).
 // Test result artifacts are sorted by parent invocation ID, test ID and
 // artifact ID.
-func (q *Query) Fetch(ctx context.Context, txn spanutil.Txn) (arts []*pb.Artifact, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
@@ -131,7 +131,7 @@ func (q *Query) Fetch(ctx context.Context, txn spanutil.Txn) (arts []*pb.Artifac
 	testresults.PopulateVariantParams(&st, q.TestResultPredicate.GetVariant())
 
 	var b spanutil.Buffer
-	err = spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
+	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		var parentID string
 		var contentType spanner.NullString

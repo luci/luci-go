@@ -25,6 +25,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -105,7 +106,7 @@ func countRows(ctx context.Context, invID invocations.ID) (testResults, artifact
 			(SELECT COUNT(*) FROM Artifacts WHERE InvocationId = @invocationId),
 		`)
 	st.Params["invocationId"] = spanutil.ToSpanner(invID)
-	So(spanutil.QueryFirstRow(ctx, spanutil.Client(ctx).Single(), st, &testResults, &artifacts), ShouldBeNil)
+	So(spanutil.QueryFirstRow(span.Single(ctx), st, &testResults, &artifacts), ShouldBeNil)
 	return
 }
 

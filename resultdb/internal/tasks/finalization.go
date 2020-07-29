@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -34,8 +35,8 @@ import (
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
 // new package as the code base grows.
-func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id invocations.ID) error {
-	return txn.BufferWrite([]*spanner.Mutation{
+func StartInvocationFinalization(ctx context.Context, id invocations.ID) {
+	span.BufferWrite(ctx, []*spanner.Mutation{
 		spanutil.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
 			"State":        pb.Invocation_FINALIZING,

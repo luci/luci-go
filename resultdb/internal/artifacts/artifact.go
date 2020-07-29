@@ -75,7 +75,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
 // Does not return artifact content or its location.
-func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.Artifact, error) {
+func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.Artifact, err
 	// Populate fields from Artifacts table.
 	var contentType spanner.NullString
 	var size spanner.NullInt64
-	err = spanutil.ReadRow(ctx, txn, "Artifacts", invID.Key(parentID, artifactID), map[string]interface{}{
+	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]interface{}{
 		"ContentType": &contentType,
 		"Size":        &size,
 	})

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -97,7 +98,7 @@ func updateTaskStats(ctx context.Context) error {
 	`)
 
 	var b spanutil.Buffer
-	err := spanutil.Query(ctx, spanutil.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err := spanutil.Query(span.Single(ctx), st, func(row *spanner.Row) error {
 		var taskType string
 		var minCreateTime time.Time
 		var count int64
@@ -158,7 +159,7 @@ func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInv
 		WHERE ExpectedTestResultsExpirationTime IS NOT NULL
 			AND ExpectedTestResultsExpirationTime < CURRENT_TIMESTAMP()
 	`)
-	err = spanutil.QueryFirstRow(ctx, spanutil.Client(ctx).Single(), st, &earliest, &pendingInvocationsCount)
+	err = spanutil.QueryFirstRow(span.Single(ctx), st, &earliest, &pendingInvocationsCount)
 	oldestResult = earliest.Time
 	return
 }
