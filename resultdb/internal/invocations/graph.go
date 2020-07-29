@@ -144,6 +144,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 			included, err := ReadIncluded(ctx, txn, id)
 			spanSem.Release(1)
 			if err != nil {
+				logging.Debugf(ctx, "ReadIncluded errored: %s", err)
 				return errors.Annotate(err, "failed to read inclusions of %s", id.Name()).Err()
 			}
 
