@@ -81,6 +81,30 @@
       "revId": "08aecc2b676008b7beff911672badbfae8837c6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eee9c30e_56c0b495",
+        "filename": "client/cmd/isolated/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-29T05:50:10Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d8da4e8c_e592b02e",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 0
+      },
+      "revId": "08aecc2b676008b7beff911672badbfae8837c6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
