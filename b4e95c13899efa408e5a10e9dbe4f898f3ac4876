@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a28b141_f82cee7c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-29T11:01:25Z",
+      "side": 1,
+      "message": "I guess the cas.Uploader\u0027s usage is kind of limited if we are directly using cas Client. Also, maybe it\u0027s better to upstream this stats feature to UploadIfMissing?",
+      "revId": "b4e95c13899efa408e5a10e9dbe4f898f3ac4876",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "742e96bc_f97ded03",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-29T11:01:25Z",
+      "side": 1,
+      "message": "doCASArchive?",
+      "range": {
+        "startLine": 133,
+        "startChar": 21,
+        "endLine": 133,
+        "endChar": 34
+      },
+      "revId": "b4e95c13899efa408e5a10e9dbe4f898f3ac4876",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
