@@ -81,6 +81,7 @@ message Builder {
   reserved 11; // build_numbers of the old format.
   reserved 13; // auto_builder_dimension of the old format.
   reserved 15; // experimental of the old format.
+  reserved 19; // luci_migration_host
   reserved 27; // description of the old format.
 
   // Describes a cache directory persisted on a bot.
@@ -419,12 +420,6 @@ message Builder {
   // See the documentation on `experiments` for more details about the
   // "luci.non_production" experiment.
   Toggle experimental = 18;
-
-  // DEPRECATED
-  //
-  // Using this field will result in buildbucket rejecting your config. Just
-  // remove it from your config and you should be good to go :).
-  string luci_migration_host = 19;
 
   // DEPRECATED
   //
