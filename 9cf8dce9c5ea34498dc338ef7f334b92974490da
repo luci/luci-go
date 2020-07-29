@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "293463ce_115aee30",
+        "filename": "resultdb/internal/artifacts/artifact_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T05:14:10Z",
+      "side": 1,
+      "message": "It is in fact canceling the context (and closing the transaction): https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2324874\n\nIt is doing so because using closed transaction is a bad thing.",
+      "parentUuid": "9086db8c_624ef469",
+      "range": {
+        "startLine": 75,
+        "startChar": 7,
+        "endLine": 75,
+        "endChar": 13
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5136c2f6_97dcfa57",
         "filename": "resultdb/internal/services/finalizer/finalizer.go",
         "patchSetId": 5
