@@ -15,8 +15,11 @@
 package cas
 
 import (
+	"context"
 	"flag"
 	"regexp"
+
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -57,4 +60,13 @@ func parseCASInstance(ins string) (string, error) {
 		return ins, nil
 	}
 	return "", errors.Reason("invalid CAS instance: %s", ins).Err()
+}
+
+func (c *Flags) NewClient(ctx context.Context) (*client.Client, error) {
+	return client.NewClient(ctx, c.Instance,
+		client.DialParams{
+			Service: "remotebuildexecution.googleapis.com:443",
+			// TODO(crbug.com/1066839): Integrate with LUCI Realm
+			UseApplicationDefault: true,
+		})
 }
