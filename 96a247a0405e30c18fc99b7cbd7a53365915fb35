@@ -34,6 +34,24 @@
       "revId": "96a247a0405e30c18fc99b7cbd7a53365915fb35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c426bab9_94323f4f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-29T07:23:24Z",
+      "side": 1,
+      "message": "The source URL in the error page is read from the query string, which can be manipulated.\nFor other URLs, I sanitised them all because I think it\u0027s easier to sanitise everything than trying to tell which input (from other services) are safe.\nI\u0027ll change the implementation to use Dom purifier in another CL.",
+      "parentUuid": "2d35ebae_a73f7e4e",
+      "revId": "96a247a0405e30c18fc99b7cbd7a53365915fb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
