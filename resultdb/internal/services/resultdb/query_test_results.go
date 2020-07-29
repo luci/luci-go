@@ -108,7 +108,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	// Get the transitive closure.
 	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
 
 	// Query test results.
@@ -121,7 +121,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}
 	trs, token, err := q.Fetch(ctx, txn)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to read test results").Err()
 	}
 
 	return &pb.QueryTestResultsResponse{
