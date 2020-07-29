@@ -71,7 +71,7 @@ type archiveRun struct {
 	commonServerFlags
 	isolateFlags
 	loggingFlags         loggingFlags
-	casFlags             casFlags
+	casFlags             cas.Flags
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
 	dumpJSON             string
@@ -160,7 +160,7 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 	}
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
-	if c.casFlags.instance != "" {
+	if c.casFlags.Instance != "" {
 		if err := c.uploadToCAS(ctx); err != nil {
 			return errors.Annotate(err, "failed to upload to CAS").Err()
 		}
@@ -202,7 +202,7 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 
 func (c *archiveRun) uploadToCAS(ctx context.Context) error {
 	fl := c.casFlags
-	cl, err := casclient.NewClient(ctx, fl.instance,
+	cl, err := casclient.NewClient(ctx, fl.Instance,
 		casclient.DialParams{
 			Service: "remotebuildexecution.googleapis.com:443",
 			// TODO(1066839): Integrate with LUCI Realm
@@ -219,11 +219,11 @@ func (c *archiveRun) uploadToCAS(ctx context.Context) error {
 		return err
 	}
 
-	if fl.digestJSON == "" {
+	if fl.DigestJSON == "" {
 		return nil
 	}
 
-	f, err := os.Create(fl.digestJSON)
+	f, err := os.Create(fl.DigestJSON)
 	if err != nil {
 		return err
 	}
