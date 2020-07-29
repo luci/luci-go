@@ -39,6 +39,30 @@
       "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c480f3f_5bd4a376",
+        "filename": "server/span/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T03:07:48Z",
+      "side": 1,
+      "message": "Consider a helper function:\n\n  func checkCanDoStuff(ctx context.Context) {\n     ...\n  }\n\nIt can be called in 3 scenarios:\n1. As a standalone check outside of any larger transactions: `checkCanDoStuff(span.Single(ctx))`.\n2. As a part of larger read-only transaction:\n   \n  ctx, cancel :\u003d span.ReadOnlyTransaction(ctx)\n  defer cancel()\n  ...\n  checkCanDoStuff(ctx)\n\n3. As a part of a read-write transaction:\n\n  span.ReadWriteTransaction(ctx, func(ctx context.Context) error {\n    checkCanDoStuff(ctx)\n    ...\n  })\n\nThe only way to support this is to consistently shove everything into context.Context. ResultDB has many instances of this pattern. It currently explicitly passes Txn object to such functions.",
+      "parentUuid": "bed1ad7a_8adb0c88",
+      "range": {
+        "startLine": 219,
+        "startChar": 5,
+        "endLine": 219,
+        "endChar": 12
+      },
+      "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
