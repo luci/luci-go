@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa25d504_e21087a3",
+        "filename": "resultdb/internal/services/bqexporter/bqexporter_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-07-29T23:38:53Z",
+      "side": 1,
+      "message": "Nit: also check parent\u0027s realm?",
+      "revId": "37e67e6c6262e58004259008c959ebedb72a3016",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
