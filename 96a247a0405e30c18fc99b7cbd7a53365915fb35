@@ -52,6 +52,24 @@
       "revId": "96a247a0405e30c18fc99b7cbd7a53365915fb35",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "788e9052_0aa3513a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T07:24:50Z",
+      "side": 1,
+      "message": "fwiw that error page has another problem: if there is an internal error, then refreshing the page does not help. You have to click on the link back. This is not how most pages work. Normally the error is displayed at the same URL.\n\nso the alternative is to not to change the URL, and remove sanitization where it is not needed (for simplicity).",
+      "parentUuid": "07a21012_8b80ddd7",
+      "revId": "96a247a0405e30c18fc99b7cbd7a53365915fb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
