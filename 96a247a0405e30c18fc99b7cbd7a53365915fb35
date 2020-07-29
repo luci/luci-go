@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d35ebae_a73f7e4e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T07:16:27Z",
+      "side": 1,
+      "message": "not sure this CL is really needed. All URLs sanitized in this CL are trusted:\n- fetchURL always point back to resultdb and never to anything else\n- other URLs are Milo\u0027s own URLs.\n\nalso braintree isn\u0027t a security-approved sanitizer: go/sanitizers-html#secure-sanitizers-for-html-markup at the moment",
+      "revId": "96a247a0405e30c18fc99b7cbd7a53365915fb35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
