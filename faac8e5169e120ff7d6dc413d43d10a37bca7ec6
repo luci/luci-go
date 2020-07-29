@@ -134,6 +134,30 @@
       "revId": "faac8e5169e120ff7d6dc413d43d10a37bca7ec6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "feb2f7a7_0a005469",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-29T22:26:49Z",
+      "side": 1,
+      "message": "Yep, here we just need to make sure dir exists and we can create sub-directory afterwards. But a helper function for \u0027is this path an existing directory\u0027 is also a good refactoring though.",
+      "parentUuid": "9c4a8a1d_97582fcd",
+      "range": {
+        "startLine": 278,
+        "startChar": 6,
+        "endLine": 278,
+        "endChar": 11
+      },
+      "revId": "faac8e5169e120ff7d6dc413d43d10a37bca7ec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
