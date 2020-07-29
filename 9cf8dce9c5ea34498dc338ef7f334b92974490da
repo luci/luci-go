@@ -16,6 +16,93 @@
       "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5997dda8_667f1989",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:07:48Z",
+      "side": 1,
+      "message": "I think I\u0027d be OK with this change. Yes, the func might panic, but I doubt it will cause actual problems in production - it would mean the developer did not write tests whosoever, in which case the code is more likely to fail in different ways.\n\nmarking unresolved since the discussion is ongoing.",
+      "parentUuid": "6a6702b6_8603efb3",
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9086db8c_624ef469",
+        "filename": "resultdb/internal/artifacts/artifact_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:07:48Z",
+      "side": 1,
+      "message": "nit: I think it is better called \"close\", otherwise a reader might thing that we are canceling a transaction, or canceling the context, none of which is true",
+      "range": {
+        "startLine": 75,
+        "startChar": 7,
+        "endLine": 75,
+        "endChar": 13
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5136c2f6_97dcfa57",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:07:48Z",
+      "side": 1,
+      "message": "if adding your own BufferWrite, please use the opportunity to fix Spanner client\u0027s mistake of not making this func variadic",
+      "range": {
+        "startLine": 289,
+        "startChar": 26,
+        "endLine": 289,
+        "endChar": 46
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2969ed76_dd9a9bea",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:07:48Z",
+      "side": 1,
+      "message": "span.Update(...)?",
+      "range": {
+        "startLine": 355,
+        "startChar": 15,
+        "endLine": 355,
+        "endChar": 34
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
