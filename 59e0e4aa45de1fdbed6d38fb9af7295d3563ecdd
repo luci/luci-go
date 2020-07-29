@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "729d4860_8fbe6e05",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T05:12:13Z",
+      "side": 1,
+      "message": "logging would have been more helpful...\n\nWhat I\u0027m after is seeing e.g. 200 lines with errors, where one is \"\u003csome weird shit happened\u003e\" and 199 are \"context canceled\". I suspect \"context canceled\" errors somehow override \"\u003cweird shit\u003e\" errors (by being returned to errgroup earlier). Annotating errors will not change this.",
+      "range": {
+        "startLine": 147,
+        "startChar": 4,
+        "endLine": 147,
+        "endChar": 83
+      },
+      "revId": "59e0e4aa45de1fdbed6d38fb9af7295d3563ecdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
