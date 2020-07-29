@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ecadd81_68f6f7bd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T02:34:07Z",
+      "side": 1,
+      "message": "PTAL. I\u0027m not sure about this. Will change resultdb to use it and see how it looks/feelds.",
+      "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
