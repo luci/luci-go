@@ -39,6 +39,7 @@ import (
 
 	"go.chromium.org/luci/ttq"
 	"go.chromium.org/luci/ttq/internal/partition"
+	"go.chromium.org/luci/ttq/internal/reminder"
 	ttqtesting "go.chromium.org/luci/ttq/internal/testing"
 
 	"github.com/golang/mock/gomock"
@@ -75,10 +76,6 @@ func TestMakeReminder(t *testing.T) {
 			So(r.FreshUntil, ShouldEqual, deadline.UTC())
 			So(clonedReq.Task.Name, ShouldResemble,
 				"projects/example-project/locations/us-central1/queues/q/tasks/1408d4aaccbdf3f4b03972992f179ce4")
-
-			deserialized, err := r.createTaskRequest()
-			So(err, ShouldBeNil)
-			So(clonedReq, ShouldResembleProto, deserialized)
 
 			clonedReq.Task.Name = ""
 			So(clonedReq, ShouldResembleProto, &req)
@@ -122,7 +119,7 @@ func TestAddTask(t *testing.T) {
 		}
 		opts := ttq.Options{}
 		So(opts.Validate(), ShouldBeNil)
-		db := FakeDB{}
+		db := ttqtesting.FakeDB{}
 		fakeCT := ttqtesting.FakeCloudTasks{}
 		impl := Impl{Options: opts, DB: &db, TasksClient: &fakeCT}
 
@@ -130,21 +127,21 @@ func TestAddTask(t *testing.T) {
 			pp, err := impl.AddTask(ctx, &req)
 			So(err, ShouldBeNil)
 			So(pp, ShouldNotBeNil)
-			So(len(db.reminders), ShouldEqual, 1)
+			So(len(db.AllReminders()), ShouldEqual, 1)
 
 			Convey("no time to complete happy path", func() {
-				for _, r := range db.reminders {
+				for _, r := range db.AllReminders() {
 					tclock.Set(r.FreshUntil.Add(time.Second))
 				}
 				pp(ctx) // noop now
 				So(len(fakeCT.PopCreateTaskReqs()), ShouldEqual, 0)
-				So(len(db.reminders), ShouldEqual, 1)
+				So(len(db.AllReminders()), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldBeNil)
 			})
 
 			Convey("happy path", func() {
 				pp(ctx)
-				So(len(db.reminders), ShouldEqual, 0)
+				So(len(db.AllReminders()), ShouldEqual, 0)
 				So(len(fakeCT.PopCreateTaskReqs()), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedAttempts, "OK", "happy", "FakeDB"), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedDurationsMS, "OK", "happy", "FakeDB").(*distribution.Distribution).Count(), ShouldEqual, 1)
@@ -158,7 +155,7 @@ func TestAddTask(t *testing.T) {
 			Convey("happy path transient task creation error", func() {
 				fakeCT.FakeCreateTaskErrors(status.Errorf(codes.Unavailable, "please retry"))
 				pp(ctx)
-				So(len(db.reminders), ShouldEqual, 1)
+				So(len(db.AllReminders()), ShouldEqual, 1)
 				So(latestOf(metricPostProcessedAttempts, "fail-task", "happy", "FakeDB"), ShouldEqual, 1)
 			})
 			Convey("happy path permanent task creation error", func() {
@@ -167,7 +164,7 @@ func TestAddTask(t *testing.T) {
 				So(latestOf(metricPostProcessedAttempts, "ignored-bad-task", "happy", "FakeDB"), ShouldEqual, 1)
 				So(latestOf(metricTasksCreated, "InvalidArgument", "happy", "FakeDB"), ShouldEqual, 1)
 				// Must remove reminder despite the error.
-				So(len(db.reminders), ShouldEqual, 0)
+				So(len(db.AllReminders()), ShouldEqual, 0)
 			})
 		})
 	})
@@ -201,14 +198,14 @@ func TestScan(t *testing.T) {
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = logging.SetLevel(ctx, logging.Debug)
 
-		mkReminder := func(id int64, freshUntil time.Time) *Reminder {
+		mkReminder := func(id int64, freshUntil time.Time) *reminder.Reminder {
 			low, _ := partition.FromInts(id, id+1).QueryBounds(keySpaceBytes)
-			return &Reminder{Id: low, FreshUntil: freshUntil}
+			return &reminder.Reminder{Id: low, FreshUntil: freshUntil}
 		}
 		part0to10 := partition.FromInts(0, 10)
 
 		Convey("Normal operation", func() {
-			db := FakeDB{}
+			db := ttqtesting.FakeDB{}
 			impl := Impl{Options: ttq.Options{TasksPerScan: 2048}, DB: &db}
 
 			Convey("Empty", func() {
@@ -220,7 +217,7 @@ func TestScan(t *testing.T) {
 
 			stale := epoch.Add(30 * time.Second)
 			fresh := epoch.Add(90 * time.Second)
-			savedReminders := []*Reminder{
+			savedReminders := []*reminder.Reminder{
 				mkReminder(1, fresh),
 				mkReminder(2, stale),
 				mkReminder(3, fresh),
@@ -236,7 +233,7 @@ func TestScan(t *testing.T) {
 				more, res, err := impl.Scan(ctx, ScanItem{Partition: part0to10})
 				So(err, ShouldBeNil)
 				So(len(more), ShouldEqual, 0)
-				So(res.Reminders, ShouldResemble, []*Reminder{
+				So(res.Reminders, ShouldResemble, []*reminder.Reminder{
 					mkReminder(2, stale),
 					mkReminder(4, stale),
 				})
@@ -245,7 +242,7 @@ func TestScan(t *testing.T) {
 					more, res, err = impl.Scan(ctx, ScanItem{Partition: partition.FromInts(0, 4)})
 					So(err, ShouldBeNil)
 					So(len(more), ShouldEqual, 0)
-					So(res.Reminders, ShouldResemble, []*Reminder{mkReminder(2, stale)})
+					So(res.Reminders, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
 				})
 			})
 
@@ -258,7 +255,7 @@ func TestScan(t *testing.T) {
 				more, res, err := impl.Scan(ctx, scanItem)
 
 				So(err, ShouldBeNil)
-				So(res.Reminders, ShouldResemble, []*Reminder{mkReminder(2, stale)})
+				So(res.Reminders, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
 
 				Convey("Scan returns correct follow up ScanItems", func() {
 					So(len(more), ShouldEqual, impl.Options.SecondaryScanShards)
@@ -276,7 +273,7 @@ func TestScan(t *testing.T) {
 		Convey("Abnormal operation", func() {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			db := NewMockDatabase(ctrl)
+			db := ttqtesting.NewMockDatabase(ctrl)
 			db.EXPECT().Kind().AnyTimes().Return("mockdb")
 			impl := Impl{Options: ttq.Options{TasksPerScan: 2048, SecondaryScanShards: 2}, DB: db}
 
@@ -287,7 +284,7 @@ func TestScan(t *testing.T) {
 
 			stale := epoch.Add(30 * time.Second)
 			fresh := epoch.Add(90 * time.Second)
-			someReminders := []*Reminder{
+			someReminders := []*reminder.Reminder{
 				mkReminder(1, fresh),
 				mkReminder(2, stale),
 			}
@@ -319,7 +316,7 @@ func TestScan(t *testing.T) {
 
 				more, res, err := impl.Scan(ctx, ScanItem{Partition: part0to10})
 				So(err, ShouldResemble, context.DeadlineExceeded)
-				So(res.Reminders, ShouldResemble, []*Reminder{mkReminder(2, stale)})
+				So(res.Reminders, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
 				So(len(more), ShouldEqual, 1) // partition is so small, only 1 follow up scan suffices.
 				So(more[0].Partition.Low, ShouldResemble, *big.NewInt(2 + 1))
 				So(more[0].Partition.High, ShouldResemble, *big.NewInt(10))
@@ -336,15 +333,15 @@ func TestPostProcessBatch(t *testing.T) {
 		ctx, tclock := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		db := FakeDB{}
+		db := ttqtesting.FakeDB{}
 		fakeCT := ttqtesting.FakeCloudTasks{}
 		impl := Impl{Options: ttq.Options{}, DB: &db, TasksClient: &fakeCT}
 
-		batch := make([]*Reminder, 10)
+		batch := make([]*reminder.Reminder, 10)
 		for i, _ := range batch {
 			r := genReminder(ctx)
 			So(db.SaveReminder(ctx, r), ShouldBeNil)
-			batch[i] = &Reminder{Id: r.Id, FreshUntil: r.FreshUntil}
+			batch[i] = &reminder.Reminder{Id: r.Id, FreshUntil: r.FreshUntil}
 		}
 		tclock.Add(time.Hour)
 
@@ -381,16 +378,16 @@ func TestLeaseHelpers(t *testing.T) {
 	Convey("Lease Helpers", t, func() {
 
 		Convey("OnlyLeased", func() {
-			reminders := []*Reminder{
+			reminders := []*reminder.Reminder{
 				// Each key be exactly 2*keySpaceBytes chars long.
-				&Reminder{Id: "00000000000000000000000000000001"},
-				&Reminder{Id: "00000000000000000000000000000005"},
-				&Reminder{Id: "00000000000000000000000000000009"},
-				&Reminder{Id: "0000000000000000000000000000000f"}, // ie 15
+				&reminder.Reminder{Id: "00000000000000000000000000000001"},
+				&reminder.Reminder{Id: "00000000000000000000000000000005"},
+				&reminder.Reminder{Id: "00000000000000000000000000000009"},
+				&reminder.Reminder{Id: "0000000000000000000000000000000f"}, // ie 15
 			}
 			leased := partition.SortedPartitions{partition.FromInts(5, 9)}
-			So(OnlyLeased(reminders, leased), ShouldResemble, []*Reminder{
-				&Reminder{Id: "00000000000000000000000000000005"},
+			So(OnlyLeased(reminders, leased), ShouldResemble, []*reminder.Reminder{
+				&reminder.Reminder{Id: "00000000000000000000000000000005"},
 			})
 		})
 	})
@@ -400,7 +397,7 @@ func TestLeaseHelpers(t *testing.T) {
 
 var genReminderCounter = int32(0)
 
-func genReminder(ctx context.Context) *Reminder {
+func genReminder(ctx context.Context) *reminder.Reminder {
 	id := atomic.AddInt32(&genReminderCounter, 1)
 	req := taskspb.CreateTaskRequest{
 		Parent: fmt.Sprintf("projects/example-project/locations/us-central1/queues/q-%d", id),

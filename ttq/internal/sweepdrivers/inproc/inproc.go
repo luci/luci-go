@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/ttq/internal"
+	"go.chromium.org/luci/ttq/internal/reminder"
 )
 
 type Options struct {
@@ -272,9 +273,9 @@ func (s *shard) doScan(w internal.ScanItem) {
 func (s *shard) sendPostProcessBatch(data *buffer.Batch) error {
 	defer s.ppItemsWG.Add(-len(data.Data))
 
-	batch := make([]*internal.Reminder, len(data.Data))
+	batch := make([]*reminder.Reminder, len(data.Data))
 	for i, d := range data.Data {
-		batch[i] = d.(*internal.Reminder)
+		batch[i] = d.(*reminder.Reminder)
 	}
 	if err := s.impl.PostProcessBatch(s.iterCtx, batch); err != nil {
 		s.addError(err)

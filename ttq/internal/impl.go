@@ -34,33 +34,16 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/ttq"
+	"go.chromium.org/luci/ttq/internal/databases"
 	"go.chromium.org/luci/ttq/internal/partition"
+	"go.chromium.org/luci/ttq/internal/reminder"
 )
-
-// Reminder reminds to enqueue a task.
-//
-// It is persisted transactionally with some other user logic to the database.
-// Later, a task is actually scheduled and a reminder can be deleted
-// non-transactionally.
-type Reminder struct {
-	// Id identifies a reminder.
-	//
-	// Id values are always in hex-encoded and are well distributed in keyspace.
-	Id string
-	// FreshUntil is the expected time by which the happy path should complete.
-	//
-	// If the sweeper encounters a Reminder before this time, the sweeper ignores
-	// it to allow the happy path to complete.
-	FreshUntil time.Time
-	// Payload is a proto-serialized taskspb.Task.
-	Payload []byte
-}
 
 // Impl implements abstract transaction enqueue semantics on top of Database
 // interface.
 type Impl struct {
 	Options     ttq.Options
-	DB          Database
+	DB          databases.Database
 	TasksClient TasksClient
 }
 
@@ -123,7 +106,7 @@ type ScanResult struct {
 	Shard int
 	// Reminders are sorted by Id stale reminders without Payload.
 	// Reminders belong to the partition assigned to a shard.
-	Reminders []*Reminder
+	Reminders []*reminder.Reminder
 	// Level is the recursion level. See ScanItem.Level.
 	Level int
 }
@@ -229,7 +212,7 @@ func (impl *Impl) Scan(ctx context.Context, w ScanItem) ([]ScanItem, ScanResult,
 // Reminders batch will be modified to fetch Reminders' Payload.
 //
 // RAM usage is equivalent to O(total Payload size of each Reminder in batch).
-func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder) error {
+func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*reminder.Reminder) error {
 	payloaded, err := impl.DB.FetchReminderPayloads(ctx, batch)
 	switch missing := len(batch) - len(payloaded); {
 	case missing < 0:
@@ -267,7 +250,7 @@ func (impl *Impl) PostProcessBatch(ctx context.Context, batch []*Reminder) error
 
 // postProcess enqueues a task and deletes a reminder.
 // During happy path, the req is not nil.
-func (impl *Impl) postProcess(ctx context.Context, r *Reminder, req *taskspb.CreateTaskRequest) (err error) {
+func (impl *Impl) postProcess(ctx context.Context, r *reminder.Reminder, req *taskspb.CreateTaskRequest) (err error) {
 	startedAt := clock.Now(ctx)
 	when := "happy"
 	status := "OK"
@@ -279,9 +262,11 @@ func (impl *Impl) postProcess(ctx context.Context, r *Reminder, req *taskspb.Cre
 
 	if req == nil {
 		when = "sweep"
-		if req, err = r.createTaskRequest(); err != nil {
+		req = &taskspb.CreateTaskRequest{}
+		if err = proto.Unmarshal(r.Payload, req); err != nil {
 			status = "fail-deserialize"
-			return err
+			err = errors.Annotate(err, "failed to unmarshal the task").Err()
+			return
 		}
 	}
 
@@ -342,7 +327,7 @@ func (impl *Impl) createCloudTask(ctx context.Context, req *taskspb.CreateTaskRe
 // makeScanResult updates metricReminderAge based on all fetched reminders.
 // Returns ScanResult with just stale Reminders.
 // Mutates & re-uses the given Reminders slice.
-func (impl *Impl) makeScanResult(ctx context.Context, s ScanItem, reminders []*Reminder) ScanResult {
+func (impl *Impl) makeScanResult(ctx context.Context, s ScanItem, reminders []*reminder.Reminder) ScanResult {
 	dbKind := impl.DB.Kind()
 	now := clock.Now(ctx)
 	i := 0
@@ -382,7 +367,7 @@ const (
 // creation later on.
 // The resulting cloned request is returned to avoid needlessly deserializing it
 // from the Reminder.Payload in the PostProcess callback.
-func makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*Reminder, *taskspb.CreateTaskRequest, error) {
+func makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*reminder.Reminder, *taskspb.CreateTaskRequest, error) {
 	if req.Task == nil {
 		return nil, nil, errors.New("CreateTaskRequest.Task must be set")
 	}
@@ -394,7 +379,7 @@ func makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*Reminde
 		return nil, nil, errors.Annotate(err, "failed to get random bytes").Tag(transient.Tag).Err()
 	}
 
-	r := &Reminder{Id: hex.EncodeToString(buf)}
+	r := &reminder.Reminder{Id: hex.EncodeToString(buf)}
 	// Bound FreshUntil to at most current context deadline.
 	r.FreshUntil = clock.Now(ctx).Add(happyPathMaxDuration)
 	if deadline, ok := ctx.Deadline(); ok && r.FreshUntil.After(deadline) {
@@ -413,17 +398,8 @@ func makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*Reminde
 	return r, clone, nil
 }
 
-func (r *Reminder) createTaskRequest() (*taskspb.CreateTaskRequest, error) {
-	req := &taskspb.CreateTaskRequest{}
-	if err := proto.Unmarshal(r.Payload, req); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal the task").Err()
-	}
-	return req, nil
-}
-
 // OnlyLeased shrinks the given slice of Reminders sorted by their ID to contain
-// only those inside the leased partitions.
-func OnlyLeased(sorted []*Reminder, leased partition.SortedPartitions) []*Reminder {
+func OnlyLeased(sorted []*reminder.Reminder, leased partition.SortedPartitions) []*reminder.Reminder {
 	reuse := sorted[:]
 	l := 0
 	keyOf := func(i int) string {

@@ -49,7 +49,7 @@ func TestSweeper(t *testing.T) {
 			ctx = logging.SetLevel(ctx, logging.Debug)
 		}
 
-		db := internal.FakeDB{}
+		db := ttqtesting.FakeDB{}
 		userCT := ttqtesting.FakeCloudTasks{}
 		impl := internal.Impl{DB: &db, TasksClient: &userCT, Options: ttq.Options{
 			Shards:              2,
