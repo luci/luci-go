@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "b4f804e0_603c0833",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-29T19:35:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "651cda9d_ca65c321",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 23
+      },
+      "revId": "faac8e5169e120ff7d6dc413d43d10a37bca7ec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ca71e7d_b6afb01e",
         "filename": "luciexe/invoke/options.go",
         "patchSetId": 3
@@ -62,6 +86,30 @@
       "revId": "faac8e5169e120ff7d6dc413d43d10a37bca7ec6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2978eeec_204c9f15",
+        "filename": "luciexe/invoke/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-29T19:35:54Z",
+      "side": 1,
+      "message": "I assume you mean \"is this path an **existing** directory?\". Added a new helper function in options.go as it is the only place where this function is required.",
+      "parentUuid": "8ca71e7d_b6afb01e",
+      "range": {
+        "startLine": 278,
+        "startChar": 6,
+        "endLine": 278,
+        "endChar": 11
+      },
+      "revId": "faac8e5169e120ff7d6dc413d43d10a37bca7ec6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
