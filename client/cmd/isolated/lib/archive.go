@@ -26,6 +26,7 @@ import (
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
@@ -130,10 +131,10 @@ func getRoot(dirs, files isolated.ScatterGather) (string, error) {
 	return wd0, nil
 }
 
-func (c *archiveRun) doCASArchive(ctx context.Context) error {
+func (c *archiveRun) doCASArchive(ctx context.Context) (*archiver.Stats, error) {
 	root, err := getRoot(c.dirs, c.files)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	is := command.InputSpec{}
@@ -146,26 +147,55 @@ func (c *archiveRun) doCASArchive(ctx context.Context) error {
 
 	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
 	if err != nil {
-		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
 	client, err := c.casFlags.NewClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to create cas client").Err()
+		return nil, errors.Annotate(err, "failed to create cas client").Err()
 	}
 	defer client.Close()
 
+	var ds []digest.Digest
+	for _, chunker := range chunkers {
+		ds = append(ds, chunker.Digest())
+	}
+	missings, err := client.MissingBlobs(ctx, ds)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to call MissingBlobs").Err()
+	}
+
+	missingSet := make(map[digest.Digest]struct{}, len(missings))
+	for _, missing := range missings {
+		missingSet[missing] = struct{}{}
+	}
+
+	// TODO(tikuta): do not call MissingBlobs twice if possible.
 	if err := client.UploadIfMissing(ctx, chunkers...); err != nil {
-		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
+		return nil, errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 
 	if c.dumpHash != "" {
 		if err := ioutil.WriteFile(c.dumpHash, []byte(rootDg.String()), 0644); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	var stats archiver.Stats
+
+	for _, chunker := range chunkers {
+		dg := chunker.Digest()
+		if _, ok := missingSet[dg]; ok {
+			stats.Pushed = append(stats.Pushed, &archiver.UploadStat{
+				Size: units.Size(dg.Size),
+			})
+		} else {
+			stats.Hits = append(stats.Hits, units.Size(dg.Size))
+
+		}
+	}
+
+	return &stats, nil
 }
 
 func (c *archiveRun) doIsolatedArchive(ctx context.Context) (stats *archiver.Stats, err error) {
@@ -226,8 +256,7 @@ func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats 
 	signals.HandleInterrupt(cancel)
 
 	if c.casFlags.Instance != "" {
-		// TODO(crbug.com/1110569): get stats
-		return &archiver.Stats{}, c.doCASArchive(ctx)
+		return c.doCASArchive(ctx)
 	}
 
 	return c.doIsolatedArchive(ctx)
