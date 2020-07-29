@@ -23,7 +23,6 @@ import (
 	"os"
 	"time"
 
-	casclient "github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -202,12 +201,7 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 
 func (c *archiveRun) uploadToCAS(ctx context.Context) error {
 	fl := c.casFlags
-	cl, err := casclient.NewClient(ctx, fl.Instance,
-		casclient.DialParams{
-			Service: "remotebuildexecution.googleapis.com:443",
-			// TODO(1066839): Integrate with LUCI Realm
-			UseApplicationDefault: true,
-		})
+	cl, err := c.casFlags.NewClient(ctx)
 	if err != nil {
 		return err
 	}
