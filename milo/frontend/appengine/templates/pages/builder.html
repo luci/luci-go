@@ -13,7 +13,7 @@
 
 <h1>Builder <a href="{{ pagedURL $request -1 "EMPTY" }}">{{.Builder.Id.Builder}}</a></h1>
 {{ if .Builder.Config.DescriptionHtml }}
-  <p id="builder-description">{{ .Builder.Config.DescriptionHtml }}</p>
+  <p id="builder-description">{{ .Builder.Config.DescriptionHtml | renderHTML }}</p>
 {{ end }}
 
 <div class="prelude">
