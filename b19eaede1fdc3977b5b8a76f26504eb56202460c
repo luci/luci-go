@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61fa9605_efede9a2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-29T06:09:40Z",
+      "side": 1,
+      "message": "Do I need to include the bugnizer link in the CL description?\n\nBugnizer: https://b.corp.google.com/issues/161159813\nDemo: https://weiweilin-2-dot-luci-milo-dev.appspot.com/ui/error?reason\u003dwarawrawrw\u0026sourceUrl\u003djavascript:alert(document.domain)",
+      "revId": "b19eaede1fdc3977b5b8a76f26504eb56202460c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
