@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
@@ -108,9 +109,9 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	mu                   sync.RWMutex
-	services             map[string]*service
-	overrides            map[string]map[string]Override
+	mu        sync.RWMutex
+	services  map[string]*service
+	overrides map[string]map[string]Override
 }
 
 type service struct {
@@ -255,6 +256,9 @@ func (s *Server) handlePOST(c *router.Context) {
 	}
 
 	if res.err != nil {
+		if c.Context.Err() != nil {
+			logging.Debugf(c.Context, "prpc: the context is done: %s", c.Context.Err())
+		}
 		writeError(c.Context, c.Writer, res.err, res.fmt)
 		return
 	}

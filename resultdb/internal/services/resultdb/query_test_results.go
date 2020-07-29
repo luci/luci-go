@@ -22,6 +22,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -108,6 +109,9 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	// Get the transitive closure.
 	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
 	if err != nil {
+		if ctx.Err() != nil {
+			logging.Debugf(ctx, "QueryTestResults: ctx is done: %s", ctx.Err())
+		}
 		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
 
