@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package testing
 
-//go:generate mockgen -source db.go -destination db.mock.go -package internal -write_package_comment=false
+//go:generate mockgen -source ../databases/db.go -destination db.mock.go -package testing -write_package_comment=false

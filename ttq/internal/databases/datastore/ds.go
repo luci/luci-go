@@ -18,32 +18,33 @@ package datastore
 import (
 	"context"
 
-	"go.chromium.org/luci/ttq/internal"
+	"go.chromium.org/luci/ttq/internal/databases"
+	"go.chromium.org/luci/ttq/internal/reminder"
 )
 
 type DB struct {
 }
 
-var _ internal.Database = (*DB)(nil)
+var _ databases.Database = (*DB)(nil)
 
 // Kind is used only for monitoring/logging purposes.
 func (d *DB) Kind() string {
 	return "datastore"
 }
 
-func (d *DB) SaveReminder(_ context.Context, _ *internal.Reminder) error {
+func (d *DB) SaveReminder(_ context.Context, _ *reminder.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *DB) DeleteReminder(_ context.Context, _ *internal.Reminder) error {
+func (d *DB) DeleteReminder(_ context.Context, _ *reminder.Reminder) error {
 	panic("not implemented") // TODO: Implement
 
 }
 
-func (d *DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) ([]*internal.Reminder, error) {
+func (d *DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) ([]*reminder.Reminder, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *DB) FetchReminderPayloads(_ context.Context, _ []*internal.Reminder) ([]*internal.Reminder, error) {
+func (d *DB) FetchReminderPayloads(_ context.Context, _ []*reminder.Reminder) ([]*reminder.Reminder, error) {
 	panic("not implemented") // TODO: Implement
 }
