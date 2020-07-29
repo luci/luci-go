@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "c38621db_a54381e2",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T04:49:45Z",
+      "side": 1,
+      "message": "wouldn\u0027t it be fragile? it would break if someone Annotates the error, e.g. in L163",
+      "parentUuid": "1df7d2d7_6acdb5d7",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "808af1ca369223f43f3c7151fd50ca4e38311d46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ded4abf2_3aee13cb",
         "filename": "resultdb/internal/invocations/graph.go",
         "patchSetId": 1
