@@ -16,6 +16,46 @@
       "revId": "07318e20e7a98abc60bf9f6009fe07055a933819",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a8ae9f8c_58fdff05",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T06:18:20Z",
+      "side": 1,
+      "message": "this line assumes that non-existent builds get filtered out by the code below. maybe add a comment to make it obvious to a future reader. Specifically, this happens in L281 because non-existent builds wouldn\u0027t have the tags",
+      "revId": "07318e20e7a98abc60bf9f6009fe07055a933819",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e343b39a_cfeb6145",
+        "filename": "buildbucket/appengine/model/tagindex.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T06:18:20Z",
+      "side": 1,
+      "message": "this loop copies all elements of the slice, unnecessarily.\nto take pointers to the elements, it would need to be something like \n\n  for i :\u003d range s.Entries {\n    ents \u003d append(ents, \u0026s.Entries[i])\n  }",
+      "range": {
+        "startLine": 111,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 31
+      },
+      "revId": "07318e20e7a98abc60bf9f6009fe07055a933819",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
