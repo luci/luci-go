@@ -65,6 +65,7 @@ type Module interface {
 type HostOptions struct {
 	Prod         bool   // set when running in production (not on a dev workstation)
 	CloudProject string // name of hosting Google Cloud Project if running in GCP
+	CloudRegion  string // name of a hosting region (e.g. 'us-central1') if known
 }
 
 // Host is part of server.Server API that modules are allowed to use during

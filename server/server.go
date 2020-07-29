@@ -135,6 +135,23 @@ var (
 		nil)
 )
 
+// cloudRegionFromGAERegion maps GAE region codes (e.g. `s`) to corresponding
+// cloud regions (e.g. `us-central1`), which may be defined as regions where GAE
+// creates resources associated with the app, such as Task Queues or Flex VMs.
+//
+// Sadly this mapping is not documented, thus the below map is incomplete. Feel
+// free to modify it if you deployed to some new GAE region.
+//
+// This mapping is unused if `-cloud-region` flag is passed explicitly.
+var cloudRegionFromGAERegion = map[string]string{
+	"e": "europe-west1",
+	"g": "europe-west2",
+	"h": "europe-west3",
+	"m": "us-west2",
+	"p": "us-east1",
+	"s": "us-central1",
+}
+
 // Main initializes the server and runs its serving loop until SIGTERM.
 //
 // Registers all options in the default flag set and uses `flag.Parse` to parse
@@ -193,7 +210,9 @@ type Options struct {
 	AuthDBDump      string             // Google Storage path to fetch AuthDB dumps from
 	AuthDBSigner    string             // service account that signs AuthDB dumps
 
-	CloudProject  string // name of the hosting Google Cloud Project
+	CloudProject string // name of the hosting Google Cloud Project
+	CloudRegion  string // name of the hosting Google Cloud region
+
 	TraceSampling string // what portion of traces to upload to Stackdriver (ignored on GAE)
 
 	TsMonAccount     string // service account to flush metrics as
@@ -277,6 +296,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"Name of hosting Google Cloud Project (optional)",
 	)
 	f.StringVar(
+		&o.CloudRegion,
+		"cloud-region",
+		o.CloudRegion,
+		"Name of hosting Google Cloud region, e.g. 'us-central1' (optional)",
+	)
+	f.StringVar(
 		&o.TraceSampling,
 		"trace-sampling",
 		o.TraceSampling,
@@ -331,6 +356,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 //   -admin-addr -
 //   -shutdown-delay 0s
 //   -cloud-project ${GOOGLE_CLOUD_PROJECT}
+//   -cloud-region <derived from the region code in GAE_APPLICATION>
 //   -service-account-json :gce
 //   -ts-mon-service-name ${GOOGLE_CLOUD_PROJECT}
 //   -ts-mon-job-name ${GAE_SERVICE}
@@ -339,9 +365,15 @@ func (o *Options) Register(f *flag.FlagSet) {
 // fields) are derived from available GAE_* env vars to be semantically similar
 // to what they represent in the GKE environment.
 //
+// Note that a mapping between a region code in GAE_APPLICATION and
+// the corresponding cloud region is not documented anywhere, so if you see
+// warnings when your app starts up either update the code to recognize your
+// region code or pass '-cloud-region' argument explicitly in app.yaml.
+//
 // See https://cloud.google.com/appengine/docs/standard/go/runtime.
 func (o *Options) FromGAEEnv() {
-	if os.Getenv("GAE_APPLICATION") == "" {
+	appID := os.Getenv("GAE_APPLICATION") // e.g. "s~something"
+	if appID == "" {
 		return
 	}
 	o.GAE = true
@@ -351,6 +383,9 @@ func (o *Options) FromGAEEnv() {
 	o.AdminAddr = "-"
 	o.ShutdownDelay = 0
 	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if o.CloudRegion == "" {
+		o.CloudRegion = cloudRegionFromGAERegion[strings.Split(appID, "~")[0]]
+	}
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
 	o.TsMonServiceName = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	o.TsMonJobName = os.Getenv("GAE_SERVICE")
@@ -412,6 +447,7 @@ func (o *Options) hostOptions() module.HostOptions {
 	return module.HostOptions{
 		Prod:         o.Prod,
 		CloudProject: o.CloudProject,
+		CloudRegion:  o.CloudRegion,
 	}
 }
 
@@ -595,6 +631,13 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
 	} else {
 		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
+		if srv.Options.CloudRegion == "" {
+			logging.Warningf(srv.Context, "Could not figure out the primary Cloud region based "+
+				"on the region code in GAE_APPLICATION %q, consider passing the region name "+
+				"via -cloud-region flag explicitly", os.Getenv("GAE_APPLICATION"))
+		} else {
+			logging.Infof(srv.Context, "Cloud region is %s", srv.Options.CloudRegion)
+		}
 	}
 
 	// Configure base server subsystems by injecting them into the root context
