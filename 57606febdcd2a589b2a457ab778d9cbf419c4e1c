@@ -63,6 +63,30 @@
       "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4593d0b8_b4d06d34",
+        "filename": "server/span/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-29T03:13:00Z",
+      "side": 1,
+      "message": "\u003e The only way to support this is to consistently shove everything into context.Context\n\nGo in a nutshell 😞",
+      "parentUuid": "3c480f3f_5bd4a376",
+      "range": {
+        "startLine": 219,
+        "startChar": 5,
+        "endLine": 219,
+        "endChar": 12
+      },
+      "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
