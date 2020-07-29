@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -173,7 +174,10 @@ func (c *archiveRun) doIsolatedArchive(ctx context.Context) (stats *archiver.Sta
 		err = errors.Annotate(isolErr, "failed to create isolated client").Err()
 		return
 	}
-	out := os.Stdout
+	var out io.Writer = os.Stdout
+	if c.defaultFlags.Quiet {
+		out = ioutil.Discard
+	}
 	arch := archiver.New(ctx, isolatedClient, out)
 	defer func() {
 		// This waits for all uploads.
