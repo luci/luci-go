@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a027819_89809bc4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-29T08:57:13Z",
+      "side": 1,
+      "message": "lgtm\n\nspecifically \"check_deps\" in infra (https://source.chromium.org/chromium/infra/infra/+/master:go/check_deps.allowlist?q\u003dcheck_deps.allowlist\u0026ss\u003dchromium\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2Fcheck_deps.allowlist) determines what dependencies are allowed from luci code.",
+      "revId": "143bba5723d5bbcaa538bbda4de18fcc5d154475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
