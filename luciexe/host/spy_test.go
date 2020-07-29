@@ -50,7 +50,7 @@ func TestSpy(t *testing.T) {
 		}()
 
 		Convey(`butler active within Run`, func(c C) {
-			ch, err := Run(ctx, nil, func(ctx context.Context) error {
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) error {
 				bs, err := bootstrap.Get()
 
 				stream, err := bs.Client.NewDatagramStream(

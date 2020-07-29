@@ -78,6 +78,13 @@ type Options struct {
 	// `nil`.
 	Namespace string
 
+	// The base dir where all sub-directories (i.e. workdir, tempdir, etc.)
+	// will be created under (i.e. the `cwd` for invoked luciexe will be
+	// `$BaseDir/w`). If specified, this must exist and be a directory.
+	//
+	// If empty, a random directory under os.TempDir will be used.
+	BaseDir string
+
 	// Absolute path to the cache base directory. This must exist and be
 	// a directory.
 	//
@@ -198,12 +205,8 @@ func (o *Options) prepCacheDir(ctx context.Context, cdir string, lo *launchOptio
 		if newDir, err = filepath.Abs(newDir); err != nil {
 			return nil, errors.Annotate(err, "resolving CacheDir").Err()
 		}
-		finfo, err := os.Stat(newDir)
-		if err != nil {
-			return nil, errors.Annotate(err, "statting CacheDir").Err()
-		}
-		if !finfo.IsDir() {
-			return nil, errors.Reason("CacheDir is not a directory: %q", newDir).Err()
+		if err = checkDirExists(newDir); err != nil {
+			return nil, errors.Annotate(err, "checking CacheDir").Err()
 		}
 	}
 
@@ -222,13 +225,8 @@ func (o *Options) prepCollection(outDir string, lo *launchOptions) error {
 	if collect == "" {
 		collect = filepath.Join(outDir, "out"+luciexe.BuildFileCodecBinary.FileExtension())
 	} else {
-		parDir := filepath.Dir(collect)
-		finfo, err := os.Stat(parDir)
-		if err != nil {
-			return errors.Annotate(err, "CollectOutputPath's parent is un-statable").Err()
-		}
-		if !finfo.IsDir() {
-			return errors.Reason("CollectOutputPath's parent is not a directory: %q", parDir).Err()
+		if err := checkDirExists(filepath.Dir(collect)); err != nil {
+			return errors.Annotate(err, "checking CollectOutputPath's parent").Err()
 		}
 
 		if _, err := os.Stat(collect); !os.IsNotExist(err) {
@@ -258,10 +256,16 @@ type dirs struct {
 }
 
 func (o *Options) mkdirs() (ret dirs, err error) {
-	var base string
-	if base, err = ioutil.TempDir("", ""); err != nil {
-		return
+	base := o.BaseDir
+	if base == "" {
+		if base, err = ioutil.TempDir("", ""); err != nil {
+			return
+		}
 	}
+	if err = checkDirExists(base); err != nil {
+		return ret, errors.Annotate(err, "checking BaseDir").Err()
+	}
+
 	// maybeMkdir attempts to make the dir named `dirname` under `base`,
 	// annotating the error with `friendlyName` as long as `err` is nil.
 	//
@@ -353,4 +357,20 @@ func (o *Options) rationalize(ctx context.Context) (ret launchOptions, newCtx co
 	}
 
 	return
+}
+
+// checkDirExists returns error if the given path is not an
+// existing directory.
+func checkDirExists(path string) error {
+	fInfo, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.Reason("dir does not exist: %q", path).Err()
+		}
+		return errors.Annotate(err, "statting path: %q", path).Err()
+	}
+	if !fInfo.IsDir() {
+		return errors.Reason("path is not a directory: %q", path).Err()
+	}
+	return nil
 }
