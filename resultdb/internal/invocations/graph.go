@@ -87,6 +87,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 	defer eg.Wait()
 
 	tooMany := func() error {
+		logging.Debugf(ctx, "tooMany() actually happened")
 		return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
 	}
 
@@ -116,6 +117,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
 			if err := ctx.Err(); err != nil {
+				logging.Debugf(ctx, "invocations.Reach: the context is done in the beginning of the visitor goroutine: %s", err)
 				return err
 			}
 
@@ -139,6 +141,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 
 			// Cache miss. => Read from Spanner.
 			if err := spanSem.Acquire(ctx, 1); err != nil {
+				logging.Debugf(ctx, "invocations.Reach: could not acquire semaphore: %s", err)
 				return err
 			}
 			included, err := ReadIncluded(ctx, txn, id)
@@ -150,6 +153,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 
 			for id := range included {
 				if err := visit(id); err != nil {
+					logging.Debugf(ctx, "invocations.Reach: inner visit(%s) failed: %s", id, err)
 					return err
 				}
 			}
