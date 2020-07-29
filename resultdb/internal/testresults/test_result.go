@@ -60,7 +60,7 @@ func MustParseName(name string) (invID invocations.ID, testID, resultID string) 
 // Read reads specified TestResult within the transaction.
 // If the TestResult does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.TestResult, error) {
+func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	invID, testID, resultID := MustParseName(name)
 	tr := &pb.TestResult{
 		Name:     name,
@@ -74,7 +74,7 @@ func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.TestResult, e
 	var summaryHTML spanutil.Compressed
 	var testLocationFileName spanner.NullString
 	var testLocationLine spanner.NullInt64
-	err := spanutil.ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
+	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":              &tr.Variant,
 		"VariantHash":          &tr.VariantHash,
 		"IsUnexpected":         &maybeUnexpected,

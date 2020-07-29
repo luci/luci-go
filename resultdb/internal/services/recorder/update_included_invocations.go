@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -68,7 +69,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	add := invocations.MustParseNames(in.AddInvocations)
 	remove := invocations.MustParseNames(in.RemoveInvocations)
 
-	err := mutateInvocation(ctx, including, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	err := mutateInvocation(ctx, including, func(ctx context.Context) error {
 		// Accumulate keys to remove in a single KeySet.
 		ks := spanner.KeySets()
 		for rInv := range remove {
@@ -77,7 +78,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 		ms := make([]*spanner.Mutation, 1, 1+len(add))
 		ms[0] = spanner.Delete("IncludedInvocations", ks)
 
-		switch states, err := invocations.ReadStateBatch(ctx, txn, add); {
+		switch states, err := invocations.ReadStateBatch(ctx, add); {
 		case err != nil:
 			return err
 		// Ensure every included invocation exists.
@@ -90,7 +91,8 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 				"IncludedInvocationId": aInv,
 			}))
 		}
-		return txn.BufferWrite(ms)
+		span.BufferWrite(ctx, ms...)
+		return nil
 	})
 
 	return &empty.Empty{}, err

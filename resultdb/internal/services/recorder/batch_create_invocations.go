@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -95,13 +96,13 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 
 	var err error
 	deduped := false
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		deduped, err = deduplicateCreateInvocations(ctx, txn, idSet, requestID, createdBy)
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		deduped, err = deduplicateCreateInvocations(ctx, idSet, requestID, createdBy)
 		if err != nil {
 			return err
 		}
 		if !deduped {
-			return txn.BufferWrite(ms)
+			span.BufferWrite(ctx, ms...)
 		}
 		return nil
 	})
@@ -151,9 +152,10 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 // invocations just created in a separate read-only transaction, and
 // generates an update token for each.
 func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations.IDSet, reqs []*pb.CreateInvocationRequest) ([]*pb.Invocation, []string, error) {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
-	invMap, err := invocations.ReadBatch(ctx, txn, idSet)
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	invMap, err := invocations.ReadBatch(ctx, idSet)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -175,10 +177,10 @@ func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations
 // deduplicateCreateInvocations checks if the invocations have already been
 // created with the given requestID and current requester.
 // Returns a true if they have.
-func deduplicateCreateInvocations(ctx context.Context, txn spanutil.Txn, idSet invocations.IDSet, requestID, createdBy string) (bool, error) {
+func deduplicateCreateInvocations(ctx context.Context, idSet invocations.IDSet, requestID, createdBy string) (bool, error) {
 	invCount := 0
 	columns := []string{"InvocationId", "CreateRequestId", "CreatedBy"}
-	err := txn.Read(ctx, "Invocations", idSet.Keys(), columns).Do(func(r *spanner.Row) error {
+	err := span.Read(ctx, "Invocations", idSet.Keys(), columns).Do(func(r *spanner.Row) error {
 		var invID invocations.ID
 		var rowRequestID spanner.NullString
 		var rowCreatedBy spanner.NullString

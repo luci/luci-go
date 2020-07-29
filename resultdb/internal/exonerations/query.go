@@ -37,7 +37,7 @@ type Query struct {
 // Fetch returns a page test of exonerations matching the query.
 // Returned test exonerations are ordered by invocation ID, test ID and
 // exoneration ID.
-func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tes []*pb.TestExoneration, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
@@ -68,7 +68,7 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (te
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b spanutil.Buffer
 	var explanationHTML spanutil.Compressed
-	err = spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
+	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		ex := &pb.TestExoneration{}
 		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &ex.VariantHash, &explanationHTML)

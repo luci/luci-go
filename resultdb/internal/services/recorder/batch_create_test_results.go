@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -96,11 +97,9 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 	}
-	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		if err := txn.BufferWrite(ms); err != nil {
-			return err
-		}
-		return invocations.IncrementTestResultCount(ctx, txn, invID, int64(len(in.Requests)))
+	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+		span.BufferWrite(ctx, ms...)
+		return invocations.IncrementTestResultCount(ctx, invID, int64(len(in.Requests)))
 	})
 	if err != nil {
 		return nil, err

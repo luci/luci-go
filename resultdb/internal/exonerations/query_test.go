@@ -18,10 +18,11 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/server/span"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -45,7 +46,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			InvocationIDs: invocations.NewIDSet("a", "b"),
 			PageSize:      100,
 		}
-		actual, _, err := q.Fetch(ctx, spanutil.Client(ctx).Single())
+		actual, _, err := q.Fetch(span.Single(ctx))
 		So(err, ShouldBeNil)
 		sort.Slice(actual, func(i, j int) bool {
 			return actual[i].Name < actual[j].Name

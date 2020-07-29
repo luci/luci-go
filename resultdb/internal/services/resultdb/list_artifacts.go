@@ -20,11 +20,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -82,7 +82,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	}
 
 	// Read artifacts.
-	arts, token, err := q.Fetch(ctx, spanutil.Client(ctx).Single())
+	arts, token, err := q.Fetch(span.Single(ctx))
 	if err != nil {
 		return nil, err
 	}

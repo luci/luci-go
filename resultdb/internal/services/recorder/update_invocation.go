@@ -18,11 +18,10 @@ import (
 	"context"
 	"time"
 
-	"cloud.google.com/go/spanner"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -67,9 +66,9 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 	invID := invocations.MustParseName(in.Invocation.Name)
 
 	var ret *pb.Invocation
-	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		var err error
-		if ret, err = invocations.Read(ctx, txn, invID); err != nil {
+		if ret, err = invocations.Read(ctx, invID); err != nil {
 			return err
 		}
 
@@ -91,7 +90,8 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			}
 		}
 
-		return txn.BufferWrite([]*spanner.Mutation{spanutil.UpdateMap("Invocations", values)})
+		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", values))
+		return nil
 	})
 	if err != nil {
 		return nil, err

@@ -22,9 +22,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 )
 
@@ -42,7 +42,7 @@ var (
 // verifyPermission checks if the caller has the specified permission on the
 // realm that the invocation with the specified id belongs to.
 func verifyPermission(ctx context.Context, permission realms.Permission, id invocations.ID) error {
-	realm, err := invocations.ReadRealm(ctx, spanutil.Client(ctx).Single(), id)
+	realm, err := invocations.ReadRealm(span.Single(ctx), id)
 	if err != nil {
 		return err
 	}

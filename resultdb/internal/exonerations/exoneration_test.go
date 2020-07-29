@@ -17,6 +17,8 @@ package exonerations
 import (
 	"testing"
 
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -46,7 +48,7 @@ func TestRead(t *testing.T) {
 			}))
 
 		const name = "invocations/inv/tests/t%20t/exonerations/id"
-		ex, err := Read(ctx, spanutil.Client(ctx).Single(), name)
+		ex, err := Read(span.Single(ctx), name)
 		So(err, ShouldBeNil)
 		So(ex, ShouldResembleProto, &pb.TestExoneration{
 			Name:            name,

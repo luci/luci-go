@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -148,15 +149,15 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readyToFinalize")
 	defer func() { ts.End(err) }()
 
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
 	// Ensure the root invocation is in FINALIZING state.
 	eg.Go(func() error {
-		return ensureFinalizing(ctx, txn, invID)
+		return ensureFinalizing(ctx, invID)
 	})
 
 	// Walk the graph of invocations, starting from the root, along the inclusion
@@ -200,7 +201,7 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 				"invID":     id,
 			})
 			var b spanutil.Buffer
-			return txn.Query(ctx, st).Do(func(row *spanner.Row) error {
+			return span.Query(ctx, st).Do(func(row *spanner.Row) error {
 				var includedID invocations.ID
 				var includedState pb.Invocation_State
 				switch err := b.FromSpanner(row, &includedID, &includedState); {
@@ -239,8 +240,8 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 	}
 }
 
-func ensureFinalizing(ctx context.Context, txn spanutil.Txn, invID invocations.ID) error {
-	switch state, err := invocations.ReadState(ctx, txn, invID); {
+func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
+	switch state, err := invocations.ReadState(ctx, invID); {
 	case err != nil:
 		return err
 	case state == pb.Invocation_FINALIZED:
@@ -258,40 +259,39 @@ func ensureFinalizing(ctx context.Context, txn spanutil.Txn, invID invocations.I
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 	var reach invocations.IDSet
-	_, err := spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
-		if err := ensureFinalizing(ctx, txn, invID); err != nil {
+		if err := ensureFinalizing(ctx, invID); err != nil {
 			return err
 		}
 
 		return parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
 			work <- func() (err error) {
-				reach, err = invocations.Reachable(ctx, txn, invocations.NewIDSet(invID))
+				reach, err = invocations.Reachable(ctx, invocations.NewIDSet(invID))
 				return
 			}
 
 			// Enqueue tasks to try to finalize invocations that include ours.
 			work <- func() error {
-				if err := insertNextFinalizationTasks(ctx, txn, invID); err != nil {
+				if err := insertNextFinalizationTasks(ctx, invID); err != nil {
 					return err
 				}
 				// Enqueue tasks to export the invocation to BigQuery.
 				// Note: this cannot be done in parallel with insertNextFinalizationTasks
 				// because a Spanner session can process only one DML query at a time.
-				return insertBigQueryTasks(ctx, txn, invID)
+				return insertBigQueryTasks(ctx, invID)
 			}
 
 			// Update the invocation state.
 			work <- func() error {
-				return txn.BufferWrite([]*spanner.Mutation{
-					spanutil.UpdateMap("Invocations", map[string]interface{}{
-						"InvocationId": invID,
-						"State":        pb.Invocation_FINALIZED,
-						"FinalizeTime": spanner.CommitTimestamp,
-					}),
-				})
+				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+					"InvocationId": invID,
+					"State":        pb.Invocation_FINALIZED,
+					"FinalizeTime": spanner.CommitTimestamp,
+				}))
+				return nil
 			}
 		})
 	})
@@ -309,7 +309,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly
 // includes ours, schedules a task to try to finalize it.
-func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, invID invocations.ID) error {
+func insertNextFinalizationTasks(ctx context.Context, invID invocations.ID) error {
 	// Note: its OK not to schedule a task for active invocations because
 	// state transition ACTIVE->FINALIZING includes creating a finalization
 	// task.
@@ -327,7 +327,7 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 		"invID":      invID.RowID(),
 		"finalizing": pb.Invocation_FINALIZING,
 	})
-	count, err := txn.Update(ctx, st)
+	count, err := span.Update(ctx, st)
 	if err != nil {
 		return errors.Annotate(err, "failed to insert further finalizing tasks").Err()
 	}
@@ -337,7 +337,7 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 
 // insertBigQueryTasks inserts a bq_export invocation task for each element
 // of Invocations.BigQueryExports array in the specified invocation.
-func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, invID invocations.ID) error {
+func insertBigQueryTasks(ctx context.Context, invID invocations.ID) error {
 	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()
 	// in "INSERT INTO ... SELECT" queries.
 	st := spanner.NewStatement(`
@@ -350,7 +350,7 @@ func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction,
 		"taskType": string(tasks.BQExport),
 		"invID":    invID.RowID(),
 	})
-	count, err := txn.Update(ctx, st)
+	count, err := span.Update(ctx, st)
 	if err != nil {
 		return errors.Annotate(err, "failed to insert bq_export tasks").Err()
 	}

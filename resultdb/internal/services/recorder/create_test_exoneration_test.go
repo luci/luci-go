@@ -21,9 +21,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -142,7 +143,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(res, ShouldResembleProto, expected)
 
 			// Now check the database.
-			row, err := exonerations.Read(ctx, spanutil.Client(ctx).Single(), res.Name)
+			row, err := exonerations.Read(span.Single(ctx), res.Name)
 			So(err, ShouldBeNil)
 			So(row.Variant, ShouldResembleProto, expected.Variant)
 			So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
