@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { sanitizeUrl } from '@braintree/sanitize-url';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
@@ -35,7 +36,7 @@ export class ErrorPageElement extends MobxLitElement implements BeforeEnterObser
     return html`
       <div>
         ${this.sourceUrl ?
-          html`An error occurred when visiting the following URL:<br><a href=${this.sourceUrl}>${this.sourceUrl}</a>` :
+          html`An error occurred when visiting the following URL:<br><a href=${sanitizeUrl(this.sourceUrl)}>${this.sourceUrl}</a>` :
           'An error occurred:'}
       </div>
       <div id="reason">

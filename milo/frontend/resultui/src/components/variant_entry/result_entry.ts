@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { sanitizeUrl } from '@braintree/sanitize-url';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
@@ -144,7 +145,7 @@ export class ResultEntryElement extends MobxLitElement {
       <ul id="artifact-list" style=${styleMap({display: this.artifactsExpanded ? '' : 'none'})}>
         ${this.artifacts.map((artifact) => html`
         <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-        <li><a href=${artifact.fetchUrl}>${artifact.artifactId}</a></li>
+        <li><a href=${artifact.fetchUrl && sanitizeUrl(artifact.fetchUrl)}>${artifact.artifactId}</a></li>
         `)}
       </ul>
     `;
