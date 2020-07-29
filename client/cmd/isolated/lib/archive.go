@@ -130,7 +130,7 @@ func getRoot(dirs, files isolated.ScatterGather) (string, error) {
 	return wd0, nil
 }
 
-func (c *archiveRun) doCASAarchive(ctx context.Context) error {
+func (c *archiveRun) doCASArchive(ctx context.Context) error {
 	root, err := getRoot(c.dirs, c.files)
 	if err != nil {
 		return err
@@ -227,7 +227,7 @@ func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats 
 
 	if c.casFlags.Instance != "" {
 		// TODO(crbug.com/1110569): get stats
-		return &archiver.Stats{}, c.doCASAarchive(ctx)
+		return &archiver.Stats{}, c.doCASArchive(ctx)
 	}
 
 	return c.doIsolatedArchive(ctx)
