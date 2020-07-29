@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "f6c0ac39_cf217477",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "logdog apparently uses it, but not via TQ. So, fine.",
+      "range": {
+        "startLine": 14,
+        "startChar": 5,
+        "endLine": 14,
+        "endChar": 22
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "98812314_bae5d3bb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "ever evolving Vadim 👍",
+      "range": {
+        "startLine": 16,
+        "startChar": 5,
+        "endLine": 20,
+        "endChar": 0
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d49bb71_ddfeb160",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -16,6 +62,156 @@
       "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb350e88_4eb67d12",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "SGTM.",
+      "parentUuid": "7d49bb71_ddfeb160",
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c2290f9c_12698fe2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "cc:Yiwei because this is very relevant to my TTQ work you\u0027ve helped review.",
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "87464d77_e22ea46b",
+        "filename": "server/tq/default.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 30,
+        "startChar": 25,
+        "endLine": 30,
+        "endChar": 26
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16b1a09c_61f54073",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "permanently fail OR fail + whatever queue retry policy applies?\nEither way, worth documenting. I can\u0027t decide which one is my preferred choice.",
+      "range": {
+        "startLine": 45,
+        "startChar": 39,
+        "endLine": 45,
+        "endChar": 43
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d2619c9_5d2d5e04",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 49,
+        "startChar": 23,
+        "endLine": 49,
+        "endChar": 24
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f4182ca_4368db42",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "del\n\nSemantics is the same as unrecognized IDs, right?",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 9
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21d2ef3e_3e7d99d4",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T09:10:22Z",
+      "side": 1,
+      "message": "added",
+      "range": {
+        "startLine": 182,
+        "startChar": 3,
+        "endLine": 182,
+        "endChar": 6
+      },
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
