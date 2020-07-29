@@ -198,13 +198,16 @@ func writeError(c context.Context, w http.ResponseWriter, err error, format Form
 	}
 
 	body := st.Message()
-	level := logging.Warning
-	if httpStatus >= 500 {
-		level = logging.Error
+	if httpStatus < 500 {
+		logging.Warningf(c, "prpc: responding with %s error: %s", st.Code(), st.Message())
+	} else {
 		// Hide potential implementation details from the user.
 		body = http.StatusText(httpStatus)
+
+		// Log everything about the error.
+		logging.Errorf(c, "prpc: responding with %s error: %s", st.Code(), st.Message())
+		errors.Log(c, err)
 	}
-	logging.Logf(c, level, "prpc: responding with %s error: %s", st.Code(), st.Message())
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(st.Code())))
 	w.Header().Set(headerContentType, "text/plain")
