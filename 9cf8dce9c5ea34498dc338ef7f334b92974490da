@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a6702b6_8603efb3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T03:47:58Z",
+      "side": 1,
+      "message": "PTAL. I put ReadOnlyTransaction into the context too and removed all `txn` arguments everywhere.\n\nI\u0027m on the fence about this... On one hand it is (arguably) easier to read and write, no need to pass `txn` everywhere explicitly. On another: it is now not clear if a function needs a transaction, and of what kind. It is revealed only at runtime (it would panic if the context is not transactional).",
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
