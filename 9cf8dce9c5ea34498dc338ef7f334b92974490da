@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "f996d6e8_25cd31b1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-29T15:31:33Z",
+      "side": 1,
+      "message": "This is true, but it starts poking into dynamic type land. For context, I think we all agree that putting giant \u0027service\u0027 objects into the context is fine; these are 1/instance. For datastore transactions, it was kind-of fine, because \"in a transaction\" wasn\u0027t required, and there was only one type. However lack of tests could definitely end you up in hot water. In this case there are now multiple types of transactions, and a transaction of SOME sort is always required (iiuc).\n\nThis definitely makes the compiler less helpful as a tradeoff for more concise code and introduction of potential runtime errors. However, ultimately, I haven\u0027t worked with spanner to tell if this tradeoff is the right one, so I\u0027ll defer to you and vadim.\n\nIdeally Go would have some sort of compiler-checked context thing, but, well... we can\u0027t have that.",
+      "parentUuid": "5997dda8_667f1989",
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9086db8c_624ef469",
         "filename": "resultdb/internal/artifacts/artifact_test.go",
         "patchSetId": 5
