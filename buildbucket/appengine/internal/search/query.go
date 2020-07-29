@@ -15,20 +15,26 @@
 package search
 
 import (
+	"container/heap"
 	"context"
+	"fmt"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/paged"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -142,8 +148,8 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	isTagIndexCursor := TagIndexCursorRegex.MatchString(q.StartCursor)
 	canUseTagIndex := len(IndexedTags(q.Tags)) != 0 && (q.StartCursor == "" || isTagIndexCursor)
 	if canUseTagIndex {
-		// TODO(crbug/1090540): test switch-case block after tagIndexSearch() is complete.
-		switch res, err := q.tagIndexSearch(ctx); {
+		// TODO(crbug/1090540): test switch-case block after fetchOnTagIndex() is complete.
+		switch res, err := q.fetchOnTagIndex(ctx); {
 		case model.TagIndexIncomplete.In(err) && q.StartCursor == "":
 			logging.Warningf(ctx, "Falling back to querying search on builds.")
 		case err != nil:
@@ -205,10 +211,144 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	return rsp, nil
 }
 
-// TODO(crbug/1090540): implement search via tagIndex flow
-func (q *Query) tagIndexSearch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
-	logging.Debugf(ctx, "Searching builds on TagIndex")
-	return nil, nil
+func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, error) {
+	// Have checked earlier that len(IndexedTags) > 0.
+	// Choose the most selective tag to search by.
+	indexedTag := IndexedTags(q.Tags)[0]
+	k, v := strpair.Parse(indexedTag)
+
+	// Load tag index entries and put them to a min-heap, sorted by build_id.
+	entries, err := model.SearchTagIndex(ctx, k, v)
+	if err != nil {
+		return nil, err
+	}
+
+	var eHeap minHeap
+	switch filteredEntries, err := q.filterEntries(ctx, entries); {
+	case err != nil:
+		return nil, err
+	case len(filteredEntries) == 0:
+		return &pb.SearchBuildsResponse{}, nil
+	default:
+		eHeap = filteredEntries
+	}
+	heap.Init(&eHeap)
+
+	// Find the builds.
+	results := make([]*pb.Build, 0, q.PageSize) // Ordered by build id by ascending.
+	var lastConsideredEntry *model.TagIndexEntry
+	inconsistentEntries := 0
+	var entriesToFetch []*model.TagIndexEntry
+	tags := q.Tags.Format()
+	for len(results) < int(q.PageSize) {
+		toFetchCount := int(q.PageSize) - len(results)
+		entriesToFetch = entriesToFetch[:0]
+		for eHeap.Len() > 0 && len(entriesToFetch) < toFetchCount {
+			entry := heap.Pop(&eHeap).(*model.TagIndexEntry)
+			prev := lastConsideredEntry
+			lastConsideredEntry = entry
+			// Tolerate duplicates.
+			if prev != nil && prev.BuildID == entry.BuildID {
+				continue
+			}
+			entriesToFetch = append(entriesToFetch, entry)
+		}
+
+		if len(entriesToFetch) == 0 {
+			break
+		}
+
+		// Fetch builds
+		builds := make([]*model.Build, len(entriesToFetch))
+		for i, e := range entriesToFetch {
+			builds[i] = &model.Build{ID: e.BuildID}
+		}
+		// The non-existent builds will be filtered out in the filtering builds for-loop as they have no tags.
+		if err := model.GetIgnoreMissing(ctx, builds); err != nil {
+			logging.Errorf(ctx, "error fetching builds on fetchOnTagIndex code path : %s", err)
+			return nil, errors.Annotate(err, "error fetching builds").Err()
+		}
+
+		// Filter builds
+		for i, b := range builds {
+			buildTags := stringset.NewFromSlice(b.Tags...)
+			// Check for inconsistent entries.
+			if b.BucketID != entriesToFetch[i].BucketID || !buildTags.Has(indexedTag) {
+				logging.Warningf(ctx, "entry with build_id %d is inconsistent", b.ID)
+				inconsistentEntries += 1
+				continue
+			}
+			// Check user-supplied filters.
+			if !buildTags.HasAll(tags...) ||
+				(q.Status != pb.Status_STATUS_UNSPECIFIED && q.Status != b.Status) ||
+				(q.CreatedBy != "" && q.CreatedBy != b.CreatedBy) ||
+				(q.Builder.GetBuilder() != "" && b.Proto.Builder.Builder != q.Builder.Builder) ||
+				(q.Builder.GetProject() != "" && b.Proto.Builder.Project != q.Builder.Project) ||
+				(b.Experimental && !q.IncludeExperimental) ||
+				(q.Canary != nil && *q.Canary != b.Canary) {
+				continue
+			}
+			results = append(results, b.ToSimpleBuildProto(ctx))
+		}
+	}
+	// TODO(crbug/1090540): add metrics for inconsistentEntries.
+	rsp := &pb.SearchBuildsResponse{
+		Builds: results,
+	}
+	if len(results) == int(q.PageSize) && lastConsideredEntry != nil {
+		rsp.NextPageToken = fmt.Sprintf("id>%d", lastConsideredEntry.BuildID)
+	}
+	return rsp, nil
+}
+
+// filterEntries filters tag index entries by the build id ranges and buckets conditions in the Query.
+func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntry) ([]*model.TagIndexEntry, error) {
+	idLow, idHigh := q.idRange()
+	if TagIndexCursorRegex.MatchString(q.StartCursor) {
+		if minExclusiveId, _ := strconv.ParseInt(q.StartCursor[len("id>"):], 10, 64); minExclusiveId+1 > idLow {
+			idLow = minExclusiveId + 1
+		}
+	}
+	if idHigh == 0 {
+		idHigh = int64(uint64(1)<<63 - 1)
+	}
+	if idLow >= idHigh {
+		return nil, nil
+	}
+
+	bucketId := protoutil.FormatBucketID(q.Builder.GetProject(), q.Builder.GetBucket())
+	preprocessed := make([]*model.TagIndexEntry, 0, len(entries))
+	// A cache whether the user has the access permission to buckets.
+	hasAccessCache := map[string]bool{}
+	for _, e := range entries {
+		if e.BuildID < idLow || e.BuildID >= idHigh {
+			continue
+		}
+		// If the bucket in query is not specified, the permission was not checked earlier.
+		// In this case, check the permission.
+		if q.Builder.GetBucket() == "" {
+			has, ok := hasAccessCache[e.BucketID]
+			if !ok {
+				proj, bkt, _ := protoutil.ParseBucketID(e.BucketID)
+				if err := perm.HasInBucket(ctx, perm.BuildsList, proj, bkt); err == nil {
+					has = true
+				} else {
+					status, ok := appstatus.Get(err)
+					if !ok || (status.Code() != codes.PermissionDenied && status.Code() != codes.NotFound) {
+						return nil, err
+					}
+				}
+				hasAccessCache[e.BucketID] = has
+			}
+			if !has {
+				continue
+			}
+		} else if bucketId != e.BucketID {
+			continue
+		}
+		preprocessed = append(preprocessed, e)
+	}
+	return preprocessed, nil
 }
 
 // idRange returns the id range from either q.BuildIdLow/q.BuildIdHigh or q.StartTime/q.EndTime.
@@ -245,4 +385,27 @@ func mustTimestamp(ts *timestamp.Timestamp) time.Time {
 		panic(err)
 	}
 	return t
+}
+
+// minHeap holds a slice of TagIndexEntry and implements heap.Interface.
+type minHeap []*model.TagIndexEntry
+
+var _ heap.Interface = &minHeap{}
+
+func (m minHeap) Len() int { return len(m) }
+
+func (m minHeap) Less(i, j int) bool { return m[i].BuildID < m[j].BuildID }
+
+func (m minHeap) Swap(i, j int) { m[i], m[j] = m[j], m[i] }
+
+func (m *minHeap) Push(x interface{}) {
+	*m = append(*m, x.(*model.TagIndexEntry))
+}
+
+func (m *minHeap) Pop() interface{} {
+	old := *m
+	n := len(old)
+	item := old[n-1]
+	*m = old[0 : n-1]
+	return item
 }

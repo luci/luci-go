@@ -15,6 +15,7 @@
 package search
 
 import (
+	"container/heap"
 	"context"
 	"testing"
 	"time"
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -191,7 +191,6 @@ func TestMainFetchFlow(t *testing.T) {
 	Convey("Fetch", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
-		log := logging.Get(ctx).(*memlogger.MemLogger)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -252,9 +251,9 @@ func TestMainFetchFlow(t *testing.T) {
 			), ShouldBeNil)
 
 			query.Tags = strpair.ParseMap([]string{"buildset:1"})
-			_, err := query.Fetch(ctx)
-			So(log, memlogger.ShouldHaveLog, logging.Debug, "Searching builds on TagIndex")
+			actualRsp, err := query.Fetch(ctx)
 			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
 		})
 		Convey("Fetch via Build flow", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -587,4 +586,284 @@ func TestIndexedTags(t *testing.T) {
 		result := IndexedTags(tags)
 		So(result, ShouldResemble, []string{})
 	})
+}
+
+func TestFetchOnTagIndex(t *testing.T) {
+	t.Parallel()
+
+	Convey("FetchOnTagIndex", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:user",
+		})
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket",
+			Parent: model.ProjectKey(ctx, "project"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:user",
+						Role:     pb.Acl_READER,
+					},
+				},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			ID: 100,
+			Proto: pb.Build{
+				Id: 100,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder1",
+				},
+				Status: pb.Status_SUCCESS,
+			},
+			Status:    pb.Status_SUCCESS,
+			Project:   "project",
+			BucketID:  "project/bucket",
+			BuilderID: "project/bucket/builder1",
+			Tags:      []string{"buildset:commit/git/abcd"},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			ID: 200,
+			Proto: pb.Build{
+				Id: 200,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder2",
+				},
+				Status: pb.Status_CANCELED,
+			},
+			Status:    pb.Status_CANCELED,
+			Project:   "project",
+			BucketID:  "project/bucket",
+			BuilderID: "project/bucket/builder2",
+			Tags:      []string{"buildset:commit/git/abcd"},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.TagIndex{
+			ID: ":2:buildset:commit/git/abcd",
+			Entries: []model.TagIndexEntry{
+				{
+					BuildID:  100,
+					BucketID: "project/bucket",
+				},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.TagIndex{
+			ID: ":3:buildset:commit/git/abcd",
+			Entries: []model.TagIndexEntry{
+				{
+					BuildID:  200,
+					BucketID: "project/bucket",
+				},
+			},
+		}), ShouldBeNil)
+		req := &pb.SearchBuildsRequest{
+			Predicate: &pb.BuildPredicate{
+				Tags: []*pb.StringPair{
+					{Key: "buildset", Value: "commit/git/abcd"},
+				},
+			},
+		}
+		Convey("filter only by an indexed tag", func() {
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_CANCELED,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+
+		Convey("filter by status", func() {
+			req.Predicate.Status = pb.Status_CANCELED
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_CANCELED,
+					},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("filter by an indexed tag and a normal tag", func() {
+			req.Predicate.Tags = append(req.Predicate.Tags, &pb.StringPair{Key: "k1", Value: "v1"})
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+		})
+		Convey("filter by build range", func() {
+			req.Predicate.Build = &pb.BuildRange{
+				StartBuildId: 199,
+				EndBuildId:   99,
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("filter by created_by", func() {
+			req.Predicate.CreatedBy = "project:infra"
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+		})
+		Convey("filter by canary", func() {
+			req.Predicate.Canary = pb.Trinary_YES
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+		})
+		Convey("filter by IncludeExperimental", func() {
+			req.Predicate.IncludeExperimental = true
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+					{
+						Id: 200,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder2",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_CANCELED,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("pagination", func() {
+			req.PageSize = 1
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 100,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "buildset", Value: "commit/git/abcd"},
+						},
+						Status: pb.Status_SUCCESS,
+					},
+				},
+				NextPageToken: "id>100",
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("No permission on requested buckets", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:none",
+			})
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnTagIndex(ctx)
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+		})
+	})
+}
+
+func TestMinHeap(t *testing.T) {
+	t.Parallel()
+
+	Convey("minHeap", t, func() {
+		h := &minHeap{{BuildID: 2}, {BuildID: 1}, {BuildID: 5}}
+
+		heap.Init(h)
+		heap.Push(h, &model.TagIndexEntry{BuildID: 3})
+		var res []int64
+		for h.Len() > 0 {
+			res = append(res, heap.Pop(h).(*model.TagIndexEntry).BuildID)
+		}
+		So(res, ShouldResemble, []int64{1, 2, 3, 5})
+	})
+
 }

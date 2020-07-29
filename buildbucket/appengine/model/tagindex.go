@@ -91,7 +91,7 @@ var TagIndexIncomplete = errors.BoolTag{Key: errors.NewTagKey("tag index incompl
 // SearchTagIndex searches the tag index for the given tag.
 // Returns an error tagged with TagIndexIncomplete if the tag index is
 // incomplete and thus cannot be searched.
-func SearchTagIndex(ctx context.Context, key, val string) ([]TagIndexEntry, error) {
+func SearchTagIndex(ctx context.Context, key, val string) ([]*TagIndexEntry, error) {
 	shds := make([]TagIndex, TagIndexShardCount)
 	for i := range shds {
 		if i == 0 {
@@ -103,12 +103,14 @@ func SearchTagIndex(ctx context.Context, key, val string) ([]TagIndexEntry, erro
 	if err := GetIgnoreMissing(ctx, shds); err != nil {
 		return nil, errors.Annotate(err, "error fetching tag index for %q", fmt.Sprintf("%s:%s", key, val)).Err()
 	}
-	var ents []TagIndexEntry
+	var ents []*TagIndexEntry
 	for _, s := range shds {
 		if s.Incomplete {
 			return nil, errors.Reason("tag index incomplete for %q", fmt.Sprintf("%s:%s", key, val)).Tag(TagIndexIncomplete).Err()
 		}
-		ents = append(ents, s.Entries...)
+		for i := range s.Entries {
+			ents = append(ents, &s.Entries[i])
+		}
 	}
 	return ents, nil
 }
