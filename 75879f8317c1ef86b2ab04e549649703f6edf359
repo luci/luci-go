@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb493d3b_c96e372b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T00:46:15Z",
+      "side": 1,
+      "message": "lgtm, but don\u0027t rush, there\u0027s no actual realms to use yet.",
+      "revId": "75879f8317c1ef86b2ab04e549649703f6edf359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
