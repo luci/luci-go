@@ -6,6 +6,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@adobe/lit-mobx": "0.0.4",
+    "@braintree/sanitize-url": "^4.1.1",
     "@chopsui/chops-signin": "^0.3.1",
     "@chopsui/prpc-client": "^1.1.0",
     "@material/mwc-button": "^0.17.2",
