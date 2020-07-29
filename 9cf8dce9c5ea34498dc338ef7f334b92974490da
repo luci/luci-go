@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "cddec62d_da93ecb0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T22:31:03Z",
+      "side": 1,
+      "message": "\u003e However, ultimately, I haven\u0027t worked with spanner to tell if this tradeoff is the right one, so I\u0027ll defer to you and vadim.\n\nI also have no first-hand experience writing code for Spanner, so I defer this to Nodir :)\n\nNote that I still need at least RW(...) transaction in the context (with Defer), or server/tq API will be very ugly (we\u0027ll need to expose an API specifically for Spanner). So far I was hoping to make server/tq to be oblivious of what transactional engine is used, and this requires all relevant guts to be in context.Context, so they can round-tripped through server/tq API to the transaction engine API.\n\nSo our options:\n1. Land this CL and risk writing panic-happy code.\n2. Land a previous variant of this CL that used ctx.RW(...) but otherwise passed `txn` explicitly everywhere.\n3. Don\u0027t land this at all and make spanner-specific variant of server/tq.\n\nWhat do you prefer?",
+      "parentUuid": "f996d6e8_25cd31b1",
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9086db8c_624ef469",
         "filename": "resultdb/internal/artifacts/artifact_test.go",
         "patchSetId": 5
@@ -126,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "b4878a36_105db061",
+        "filename": "resultdb/internal/artifacts/artifact_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T22:31:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "293463ce_115aee30",
+      "range": {
+        "startLine": 75,
+        "startChar": 7,
+        "endLine": 75,
+        "endChar": 13
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5136c2f6_97dcfa57",
         "filename": "resultdb/internal/services/finalizer/finalizer.go",
         "patchSetId": 5
@@ -149,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "f6895279_9d26168e",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T22:31:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5136c2f6_97dcfa57",
+      "range": {
+        "startLine": 289,
+        "startChar": 26,
+        "endLine": 289,
+        "endChar": 46
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2969ed76_dd9a9bea",
         "filename": "resultdb/internal/services/finalizer/finalizer.go",
         "patchSetId": 5
@@ -169,6 +235,30 @@
       "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a81e6a0a_603b9f02",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T22:31:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2969ed76_dd9a9bea",
+      "range": {
+        "startLine": 355,
+        "startChar": 15,
+        "endLine": 355,
+        "endChar": 34
+      },
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
