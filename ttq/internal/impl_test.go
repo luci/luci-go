@@ -73,7 +73,7 @@ func TestMakeReminder(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(r.Id, ShouldResemble, "1408d4aaccbdf3f4b03972992f179ce4")
 			So(len(r.Id), ShouldEqual, 2*keySpaceBytes)
-			So(r.FreshUntil, ShouldEqual, deadline.UTC())
+			So(r.FreshUntil, ShouldEqual, deadline.UTC().Truncate(reminder.FreshUntilPrecision))
 			So(clonedReq.Task.Name, ShouldResemble,
 				"projects/example-project/locations/us-central1/queues/q/tasks/1408d4aaccbdf3f4b03972992f179ce4")
 
@@ -84,7 +84,7 @@ func TestMakeReminder(t *testing.T) {
 		Convey("reasonable FreshUntil without deadline", func() {
 			r, _, err := makeReminder(ctx, &req)
 			So(err, ShouldBeNil)
-			So(r.FreshUntil, ShouldEqual, testclock.TestRecentTimeLocal.Add(happyPathMaxDuration).UTC())
+			So(r.FreshUntil, ShouldEqual, testclock.TestRecentTimeLocal.Add(happyPathMaxDuration).UTC().Truncate(reminder.FreshUntilPrecision))
 		})
 
 		Convey("named tasks not supported", func() {

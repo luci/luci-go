@@ -387,7 +387,7 @@ func makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*reminde
 		// path which won't bind the context's deadline.
 		r.FreshUntil = deadline
 	}
-	r.FreshUntil = r.FreshUntil.UTC()
+	r.FreshUntil = r.FreshUntil.UTC().Truncate(reminder.FreshUntilPrecision)
 
 	clone := proto.Clone(req).(*taskspb.CreateTaskRequest)
 	clone.Task.Name = clone.Parent + "/tasks/" + r.Id

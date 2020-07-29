@@ -32,7 +32,13 @@ type Reminder struct {
 	//
 	// If the sweeper encounters a Reminder before this time, the sweeper ignores
 	// it to allow the happy path to complete.
+	//
+	// Truncated to FreshUntilPrecision.
 	FreshUntil time.Time
 	// Payload is a proto-serialized taskspb.Task.
 	Payload []byte
 }
+
+// FreshUntilPrecision is precision of Reminder.FreshUntil, to which it is
+// always truncated.
+const FreshUntilPrecision = time.Millisecond
