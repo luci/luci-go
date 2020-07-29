@@ -243,14 +243,14 @@ func TestOptionsCacheDir(t *testing.T) {
 			Convey(`bad override (doesn't exist)`, func() {
 				o.CacheDir = filepath.Join(tdir, "cache")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "statting CacheDir")
+				So(err, ShouldErrLike, "checking CacheDir: dir does not exist")
 			})
 
 			Convey(`bad override (not a dir)`, func() {
 				o.CacheDir = filepath.Join(tdir, "cache")
 				So(ioutil.WriteFile(o.CacheDir, []byte("not a dir"), 0666), ShouldBeNil)
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "not a directory")
+				So(err, ShouldErrLike, "checking CacheDir: path is not a directory")
 			})
 		})
 	})
@@ -291,13 +291,13 @@ func TestOptionsCollectOutput(t *testing.T) {
 				o.CollectOutputPath = filepath.Join(parDir, "out.pb")
 
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "CollectOutputPath's parent is not a directory")
+				So(err, ShouldErrLike, "checking CollectOutputPath's parent: path is not a directory")
 			})
 
 			Convey(`no parent folder`, func() {
 				o.CollectOutputPath = filepath.Join(tdir, "extra", "output.fleem")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "CollectOutputPath's parent is un-statable")
+				So(err, ShouldErrLike, "checking CollectOutputPath's parent: dir does not exist")
 			})
 		})
 
@@ -427,7 +427,29 @@ func TestOptionsExtraDirs(t *testing.T) {
 		ctx, o, tdir, closer := commonOptions()
 		defer closer()
 
-		Convey(`default`, func() {
+		Convey(`provided BaseDir`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			So(os.Mkdir(o.BaseDir, 0777), ShouldBeNil)
+			lo, _, err := o.rationalize(ctx)
+			So(err, ShouldBeNil)
+			So(lo.env.GetEmpty("TMP"), ShouldStartWith, o.BaseDir)
+			So(lo.workDir, ShouldStartWith, o.BaseDir)
+		})
+
+		Convey(`provided BaseDir does not exist`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			_, _, err := o.rationalize(ctx)
+			So(err, ShouldErrLike, "checking BaseDir: dir does not exist")
+		})
+
+		Convey(`provided BaseDir is not a directory`, func() {
+			o.BaseDir = filepath.Join(tdir, "base")
+			So(ioutil.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
+			_, _, err := o.rationalize(ctx)
+			So(err, ShouldErrLike, "checking BaseDir: path is not a directory")
+		})
+
+		Convey(`fallback to temp`, func() {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
 			So(lo.env.GetEmpty("TMP"), ShouldStartWith, tdir)

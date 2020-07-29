@@ -157,10 +157,11 @@ func mainImpl() int {
 	check(errors.Annotate(err, "marshalling input args").Err())
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
-	builds, err := host.Run(cctx, opts, func(ctx context.Context) error {
+	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
 		subp, err := invoke.Start(ctx, exeArgs, input.Build, &invoke.Options{
+			BaseDir:  hostOpts.BaseDir,
 			CacheDir: input.CacheDir,
 		})
 		if err != nil {
