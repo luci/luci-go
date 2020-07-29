@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8006c1e4_3557ceee",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-07-29T06:47:29Z",
+      "side": 1,
+      "message": "Landing this first to fix the XSS vulnerability.\nIf there are more comments we can fix later in another CL or revert the deployment.\n \n\n",
+      "revId": "f3fa1d7d46baf150ee6b78d830dec18034ca289f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
