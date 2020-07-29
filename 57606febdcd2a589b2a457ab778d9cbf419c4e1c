@@ -36,6 +36,29 @@
     },
     {
       "key": {
+        "uuid": "6e05d15f_0f82f818",
+        "filename": "server/span/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:19:53Z",
+      "side": 1,
+      "message": "copied 3 times. dedupe?",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 0
+      },
+      "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bed1ad7a_8adb0c88",
         "filename": "server/span/client.go",
         "patchSetId": 1
@@ -104,6 +127,52 @@
       "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c25f47b_ea8587f8",
+        "filename": "server/span/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:19:53Z",
+      "side": 1,
+      "message": "...",
+      "range": {
+        "startLine": 258,
+        "startChar": 41,
+        "endLine": 258,
+        "endChar": 43
+      },
+      "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a1c0f18_9ef41ddc",
+        "filename": "server/span/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-29T05:19:53Z",
+      "side": 1,
+      "message": "my guess is that you will end up adding MustRW if you add Update()",
+      "range": {
+        "startLine": 259,
+        "startChar": 1,
+        "endLine": 259,
+        "endChar": 32
+      },
+      "revId": "57606febdcd2a589b2a457ab778d9cbf419c4e1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
