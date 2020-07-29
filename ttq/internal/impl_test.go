@@ -349,14 +349,14 @@ func TestPostProcessBatch(t *testing.T) {
 		tclock.Add(time.Hour)
 
 		Convey("Normal operation", func() {
-			err := impl.PostProcessBatch(ctx, batch, nil)
+			err := impl.PostProcessBatch(ctx, batch)
 			So(err, ShouldBeNil)
 			So(len(db.AllReminders()), ShouldEqual, 0)
 		})
 		Convey("Concurrent deletion", func() {
 			So(db.DeleteReminder(ctx, batch[0]), ShouldBeNil)
 			So(db.DeleteReminder(ctx, batch[9]), ShouldBeNil)
-			err := impl.PostProcessBatch(ctx, batch, nil)
+			err := impl.PostProcessBatch(ctx, batch)
 			So(err, ShouldBeNil)
 			So(len(db.AllReminders()), ShouldEqual, 0)
 		})
@@ -365,7 +365,7 @@ func TestPostProcessBatch(t *testing.T) {
 				status.Errorf(codes.Unavailable, "please retry"),
 				status.Errorf(codes.InvalidArgument, "user error"),
 			)
-			err := impl.PostProcessBatch(ctx, batch, nil)
+			err := impl.PostProcessBatch(ctx, batch)
 			So(err, ShouldNotBeNil)
 			merr := err.(errors.MultiError)
 			So(len(merr), ShouldEqual, 1)

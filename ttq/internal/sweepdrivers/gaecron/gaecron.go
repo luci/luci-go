@@ -247,7 +247,7 @@ func (s *Sweeper) postProcessWithLease(ctx context.Context, reminders []*interna
 			default:
 				batch, reminders = reminders[:s.ppBatchSize], reminders[s.ppBatchSize:]
 			}
-			workChan <- func() error { return s.impl.PostProcessBatch(ctx, batch, nil) }
+			workChan <- func() error { return s.impl.PostProcessBatch(ctx, batch) }
 		}
 	})
 }
