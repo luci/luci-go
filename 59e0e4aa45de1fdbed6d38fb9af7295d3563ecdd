@@ -46,6 +46,30 @@
       "revId": "59e0e4aa45de1fdbed6d38fb9af7295d3563ecdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd7dc5f2_76aa3ce1",
+        "filename": "resultdb/internal/invocations/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T05:34:27Z",
+      "side": 1,
+      "message": "\u003e btw 199 of \"context cancleled\" is spammy\n\nIt is just temporary to debug the issue... It is very silent. Handlers just log the useless top-level error after running for 30ms. Looking at the Cloud Trace I see they actually do a lot of stuff, silently.\n\n\u003e also, i don\u0027t think this condition happened in the today\u0027s outage\n\nI agree unless there\u0027s a horrible bug somewhere.",
+      "parentUuid": "315f13cf_2b4502d6",
+      "range": {
+        "startLine": 147,
+        "startChar": 4,
+        "endLine": 147,
+        "endChar": 83
+      },
+      "revId": "59e0e4aa45de1fdbed6d38fb9af7295d3563ecdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
