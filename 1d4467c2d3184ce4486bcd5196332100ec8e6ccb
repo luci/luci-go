@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d49bb71_ddfeb160",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-29T06:29:04Z",
+      "side": 1,
+      "message": "PTAL\n\nI want to add non-transactional tasks support first and integrate with ttq later.",
+      "revId": "1d4467c2d3184ce4486bcd5196332100ec8e6ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
