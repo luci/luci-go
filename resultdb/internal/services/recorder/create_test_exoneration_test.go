@@ -23,11 +23,11 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -142,7 +142,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(res, ShouldResembleProto, expected)
 
 			// Now check the database.
-			row, err := exonerations.Read(ctx, spanutil.Client(ctx).Single(), res.Name)
+			row, err := exonerations.Read(span.Single(ctx), res.Name)
 			So(err, ShouldBeNil)
 			So(row.Variant, ShouldResembleProto, expected.Variant)
 			So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)

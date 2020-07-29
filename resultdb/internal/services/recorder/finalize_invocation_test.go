@@ -20,11 +20,11 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -76,7 +76,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
 			// Read the invocation from Spanner to confirm it's really FINALIZING.
-			inv, err = invocations.Read(ctx, spanutil.Client(ctx).Single(), "inv")
+			inv, err = invocations.Read(span.Single(ctx), "inv")
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 

@@ -19,14 +19,13 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -41,7 +40,7 @@ func TestMutateInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		mayMutate := func(id invocations.ID) error {
-			return mutateInvocation(ctx, id, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+			return mutateInvocation(ctx, id, func(ctx context.Context) error {
 				return nil
 			})
 		}
@@ -88,10 +87,10 @@ func TestReadInvocation(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 
 		readInv := func() *pb.Invocation {
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
 
-			inv, err := invocations.Read(ctx, txn, "inv")
+			inv, err := invocations.Read(ctx, "inv")
 			So(err, ShouldBeNil)
 			return inv
 		}

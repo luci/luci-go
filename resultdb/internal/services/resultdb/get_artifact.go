@@ -21,10 +21,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -56,10 +56,10 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 		return nil, appstatus.BadRequest(err)
 	}
 
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
 
-	art, err := artifacts.Read(ctx, txn, in.Name)
+	art, err := artifacts.Read(ctx, in.Name)
 	if err != nil {
 		return nil, err
 	}
