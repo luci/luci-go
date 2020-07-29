@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d6fdbec6_82a46b25",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-29T05:45:35Z",
+      "side": 1,
+      "message": "I couldn\u0027t come up the way to simplify this more.",
+      "parentUuid": "0c123c4a_a7416c68",
+      "range": {
+        "startLine": 96,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 12
+      },
+      "revId": "d572e985308e3db174f696be3fd828ec7ba575be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "144cd6e1_6e3b9224",
         "filename": "client/cmd/isolated/lib/archive.go",
         "patchSetId": 5

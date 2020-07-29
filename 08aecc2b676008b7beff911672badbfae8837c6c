@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4ad039bb_736e538d",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-29T05:45:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d1477bf_3169f5e4",
+      "revId": "08aecc2b676008b7beff911672badbfae8837c6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a41417f0_d2e58db8",
         "filename": "client/cmd/isolated/lib/common.go",
         "patchSetId": 4
@@ -30,6 +48,30 @@
       "writtenOn": "2020-07-29T05:19:10Z",
       "side": 1,
       "message": "Parse isolatedFlags outside of the if statement and check if both flags are set?",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 0
+      },
+      "revId": "08aecc2b676008b7beff911672badbfae8837c6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8da4e8c_e592b02e",
+        "filename": "client/cmd/isolated/lib/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-07-29T05:45:35Z",
+      "side": 1,
+      "message": "This requires to set isolate server URL, but that is not necessary in cas.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/isolatedclient/flags.go;l\u003d44-46;drc\u003d7c59a9fe22b7be33a4837a84c7c8444656cee752?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F",
+      "parentUuid": "a41417f0_d2e58db8",
       "range": {
         "startLine": 62,
         "startChar": 0,
