@@ -137,6 +137,30 @@
     },
     {
       "key": {
+        "uuid": "394982b0_08f08a45",
+        "filename": "ttq/internal/databases/datastore/ds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-29T01:19:46Z",
+      "side": 1,
+      "message": ":( I think i\u0027ll remove this unittest then.",
+      "parentUuid": "87d14eb8_7e6cadbc",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 36
+      },
+      "revId": "a6b0a047b18e06bdbc3ce45d6cdb99b7daa3e486",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa2b5f9b_500cfe46",
         "filename": "ttq/internal/databases/datastore/ds.go",
         "patchSetId": 1
