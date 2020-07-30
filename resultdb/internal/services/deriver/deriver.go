@@ -45,7 +45,6 @@ type Options struct {
 func InitServer(srv *server.Server, opt Options) {
 	pb.RegisterDeriverServer(srv.PRPC, &pb.DecoratedDeriver{
 		Service:  &deriverServer{Options: &opt},
-		Prelude:  internal.CommonPrelude,
 		Postlude: internal.CommonPostlude,
 	})
 }

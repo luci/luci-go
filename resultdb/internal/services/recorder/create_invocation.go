@@ -76,18 +76,19 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 
 	inv := req.Invocation
 	if inv == nil {
-		return nil
+		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation").Err()
 	}
 
 	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
 		return errors.Annotate(err, "invocation.tags").Err()
 	}
 
-	// TODO(crbug.com/1013316): Do not allow empty realm.
-	if inv.GetRealm() != "" {
-		if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
-			return errors.Annotate(err, "invocation.realm").Err()
-		}
+	if inv.Realm == "" {
+		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err()
+	}
+
+	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
+		return errors.Annotate(err, "invocation.realm").Err()
 	}
 
 	if inv.GetDeadline() != nil {
@@ -106,28 +107,20 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 }
 
 func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocationRequest) error {
-	inv := in.GetInvocation()
-	realm := inv.GetRealm()
+	inv := in.Invocation
+	if inv == nil {
+		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation").Err())
+	}
 
-	// TODO(crbug.com/1013316): Remove this fallback when realm is required in
-	// all invocation creations.
-	if realm == "" || realm == "chromium:public" {
-		// legacyTrustedCreator indicates the caller is allowed certain things on realm-less invocations
-		// without being explicitly granted these permissions, by virtue of belonging to a trusted group.
-		switch legacyTrustedCreator, err := auth.IsMember(ctx, "luci-resultdb-trusted-invocation-creators"); {
-		case err != nil:
-			return err
-		case legacyTrustedCreator:
-			return nil
-		}
-		// Set the default realm to avoid checking permissions against the empty realm.
-		realm = "chromium:public"
+	realm := inv.Realm
+	if realm == "" {
+		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err())
 	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm); {
 	case err != nil:
 		return err
-	case !allowed && realm != "chromium:public":
+	case !allowed:
 		return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to create invocations in realm %q`, realm)
 	}
 

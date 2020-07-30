@@ -122,7 +122,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			})
 		})
 
-		ctx = internal.WithHTTPClient(ctx, &http.Client{
+		ctx = internal.WithTestHTTPClient(ctx, &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
