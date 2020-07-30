@@ -16,6 +16,23 @@
       "revId": "72771a812c40fe63c58f83d0f70de0ff03760c78",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6dd2ebe5_d3515cf4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-07-30T00:03:32Z",
+      "side": 1,
+      "message": "FWIW I\u0027m very much on board with your reasoning from the other CL about just sanitising everything even if it seems like you don\u0027t need to.",
+      "revId": "72771a812c40fe63c58f83d0f70de0ff03760c78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
