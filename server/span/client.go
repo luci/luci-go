@@ -25,6 +25,27 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// Transaction is a common interface of spanner.ReadOnlyTransaction and
+// spanner.ReadWriteTransaction.
+type Transaction interface {
+	// ReadRow reads a single row from the database.
+	ReadRow(ctx context.Context, table string, key spanner.Key, columns []string) (*spanner.Row, error)
+
+	// Read reads multiple rows from the database.
+	Read(ctx context.Context, table string, keys spanner.KeySet, columns []string) *spanner.RowIterator
+
+	// ReadWithOptions reads multiple rows from the database, and allows
+	// customizing options.
+	ReadWithOptions(ctx context.Context, table string, keys spanner.KeySet, columns []string, opts *spanner.ReadOptions) *spanner.RowIterator
+
+	// Query reads multiple rows returned by SQL statement.
+	Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator
+
+	// QueryWithOptions reads multiple rows returned by SQL statement, and allows
+	// customizing options.
+	QueryWithOptions(ctx context.Context, statement spanner.Statement, opts spanner.QueryOptions) *spanner.RowIterator
+}
+
 // UseClient installs a Spanner client into the context.
 //
 // Primarily used by the module initialization code. May be useful in tests as
@@ -34,22 +55,44 @@ func UseClient(ctx context.Context, client *spanner.Client) context.Context {
 }
 
 // Apply applies a list of mutations atomically to the database.
+//
+// Panics if called from inside a read-write transaction. Use BufferWrite to
+// apply mutations there.
 func Apply(ctx context.Context, ms []*spanner.Mutation, opts ...spanner.ApplyOption) (commitTimestamp time.Time, err error) {
+	panicOnNestedRW(ctx)
 	return client(ctx).Apply(ctx, ms, opts...)
 }
 
-// Single provides a read-only snapshot transaction optimized for the case where
+// Single returns a derived context with a single-use read-only transaction.
+//
+// It provides a read-only snapshot transaction optimized for the case where
 // only a single read or query is needed. This is more efficient than using
 // ReadOnlyTransaction() for a single read or query.
-func Single(ctx context.Context) *spanner.ReadOnlyTransaction {
-	return client(ctx).Single()
+//
+// The transaction object can be obtained through RO(ctx) or Txn(ctx). It is
+// also transparently used by ReadRow, Read, Query, etc. wrappers.
+//
+// Panics if `ctx` already holds a transaction (either read-write or read-only).
+func Single(ctx context.Context) context.Context {
+	panicOnNestedRO(ctx)
+	return setTxnState(ctx, &txnState{ro: client(ctx).Single()})
 }
 
-// ReadOnlyTransaction returns a ReadOnlyTransaction that can be used for
-// multiple reads from the database. You must call Close() when the
-// ReadOnlyTransaction is no longer needed to release resources on the server.
-func ReadOnlyTransaction(ctx context.Context) *spanner.ReadOnlyTransaction {
-	return client(ctx).ReadOnlyTransaction()
+// ReadOnlyTransaction returns a derived context with a read-only transaction.
+//
+// It can be used for multiple reads from the database. To avoid leaking
+// resources on the server this context *must* be canceled as soon as all reads
+// are done.
+//
+// The transaction object can be obtained through RO(ctx) or Txn(ctx). It is
+// also transparently used by ReadRow, Read, Query, etc. wrappers.
+//
+// Panics if `ctx` already holds a transaction (either read-write or read-only).
+func ReadOnlyTransaction(ctx context.Context) (context.Context, context.CancelFunc) {
+	panicOnNestedRO(ctx)
+	txn := client(ctx).ReadOnlyTransaction()
+	ctx, cancel := context.WithCancel(setTxnState(ctx, &txnState{ro: txn}))
+	return ctx, func() { cancel(); txn.Close() }
 }
 
 // ReadWriteTransaction executes a read-write transaction, with retries as
@@ -63,8 +106,15 @@ func ReadOnlyTransaction(ctx context.Context) *spanner.ReadOnlyTransaction {
 // See https://godoc.org/cloud.google.com/go/spanner#ReadWriteTransaction for
 // more details.
 //
-// The callback can access the transaction object via RW(ctx).
+// The callback can access the transaction object via RW(ctx) or Txn(ctx). It is
+// also transparently used by ReadRow, Read, Query, BufferWrite, etc. wrappers.
+//
+// Panics if `ctx` already holds a read-write transaction. Starting a read-write
+// transaction from a read-only transaction is OK though, but beware that they
+// are completely separate unrelated transactions.
 func ReadWriteTransaction(ctx context.Context, f func(ctx context.Context) error) (commitTimestamp time.Time, err error) {
+	panicOnNestedRW(ctx)
+
 	var state *txnState
 
 	cts, err := client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, rw *spanner.ReadWriteTransaction) error {
@@ -83,6 +133,23 @@ func ReadWriteTransaction(ctx context.Context, f func(ctx context.Context) error
 	return cts, err
 }
 
+// RO returns the current read-only transaction in the context of nil if it's
+// not a read-only transactional context.
+func RO(ctx context.Context) *spanner.ReadOnlyTransaction {
+	if s := getTxnState(ctx); s != nil {
+		return s.ro
+	}
+	return nil
+}
+
+// MustRO is like RO except it panics if `ctx` is not read-only transactional.
+func MustRO(ctx context.Context) *spanner.ReadOnlyTransaction {
+	if ro := RO(ctx); ro != nil {
+		return ro
+	}
+	panic("not a read-only Spanner transactional context")
+}
+
 // RW returns the current read-write transaction in the context or nil if it's
 // not a read-write transactional context.
 func RW(ctx context.Context) *spanner.ReadWriteTransaction {
@@ -92,7 +159,41 @@ func RW(ctx context.Context) *spanner.ReadWriteTransaction {
 	return nil
 }
 
+// MustRW is like RW except it panics if `ctx` is not read-write transactional.
+func MustRW(ctx context.Context) *spanner.ReadWriteTransaction {
+	if rw := RW(ctx); rw != nil {
+		return rw
+	}
+	panic("not a read-write Spanner transactional context")
+}
+
+// Txn returns an interface that can be used to read data in the current
+// read-only or read-write transaction.
+//
+// Returns nil if `ctx` is not a transactional context.
+func Txn(ctx context.Context) Transaction {
+	switch s := getTxnState(ctx); {
+	case s == nil:
+		return nil
+	case s.ro != nil:
+		return s.ro
+	default:
+		return s.rw
+	}
+}
+
+// MustTxn is like Txn except it panics if `ctx` is not transactional.
+func MustTxn(ctx context.Context) Transaction {
+	if txn := Txn(ctx); txn != nil {
+		return txn
+	}
+	panic("not a transactional Spanner context")
+}
+
 // WithoutTxn returns a copy of the context without the transaction in it.
+//
+// This can be used to spawn separate independent transactions from within
+// a transaction.
 func WithoutTxn(ctx context.Context) context.Context {
 	if getTxnState(ctx) == nil {
 		return ctx
@@ -100,8 +201,8 @@ func WithoutTxn(ctx context.Context) context.Context {
 	return setTxnState(ctx, nil)
 }
 
-// Defer schedules `cb` for execution when the current transaction successfully
-// lands.
+// Defer schedules `cb` for execution when the current read-write transaction
+// successfully lands.
 //
 // Intended for a best-effort non-transactional follow up to a successful
 // transaction. Note that in presence of failures there's no guarantee the
@@ -117,10 +218,83 @@ func WithoutTxn(ctx context.Context) context.Context {
 // Panics if the given context is not transactional.
 func Defer(ctx context.Context, cb func(context.Context)) {
 	state := getTxnState(ctx)
-	if state == nil {
-		panic("not a Spanner transactional context")
+	if state == nil || state.rw == nil {
+		panic("not a read-write Spanner transactional context")
 	}
 	state.deferCB(cb)
+}
+
+// ReadRow reads a single row from the database.
+//
+// It is a shortcut for MustTxn(ctx).ReadRow(ctx, ...). Panics if the context
+// is not transactional.
+func ReadRow(ctx context.Context, table string, key spanner.Key, columns []string) (*spanner.Row, error) {
+	return MustTxn(ctx).ReadRow(ctx, table, key, columns)
+}
+
+// Read reads multiple rows from the database.
+//
+// It is a shortcut for MustTxn(ctx).Read(ctx, ...). Panics if the context
+// is not transactional.
+func Read(ctx context.Context, table string, keys spanner.KeySet, columns []string) *spanner.RowIterator {
+	return MustTxn(ctx).Read(ctx, table, keys, columns)
+}
+
+// ReadWithOptions reads multiple rows from the database, and allows customizing
+// options.
+//
+// It is a shortcut for MustTxn(ctx).ReadWithOptions(ctx, ...). Panics if the
+// context is not transactional.
+func ReadWithOptions(ctx context.Context, table string, keys spanner.KeySet, columns []string, opts *spanner.ReadOptions) *spanner.RowIterator {
+	return MustTxn(ctx).ReadWithOptions(ctx, table, keys, columns, opts)
+}
+
+// Query reads multiple rows returned by SQL statement.
+//
+// It is a shortcut for MustTxn(ctx).Query(ctx, ...). Panics if the context is
+// not transactional.
+func Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator {
+	return MustTxn(ctx).Query(ctx, statement)
+}
+
+// BufferWrite adds a list of mutations to the set of updates that will be
+// applied when the transaction is committed.
+//
+// It does not actually apply the write until the transaction is committed, so
+// the operation does not block. The effects of the write won't be visible to
+// any reads (including reads done in the same transaction) until the
+// transaction commits.
+//
+// It is a wrapper over MustRW(ctx).BufferWrite(...). Panics if the context is
+// not read-write transactional.
+func BufferWrite(ctx context.Context, ms ...*spanner.Mutation) {
+	// BufferWrite just appends mutation to an internal buffer. It fails only if
+	// the transaction has already landed. We are OK to panic in this case:
+	// calling BufferWrite outside of a transaction is a programming error.
+	if err := MustRW(ctx).BufferWrite(ms); err != nil {
+		panic(err)
+	}
+}
+
+// Update executes a DML statement against the database. It returns the number
+// of affected rows. Update returns an error if the statement is a query.
+// However, the query is executed, and any data read will be validated upon
+// commit.
+//
+// It is a shortcut for MustRW(ctx).Update(...). Panics if the context is not
+// read-write transactional.
+func Update(ctx context.Context, stmt spanner.Statement) (rowCount int64, err error) {
+	return MustRW(ctx).Update(ctx, stmt)
+}
+
+// UpdateWithOptions executes a DML statement against the database. It returns
+// the number of affected rows. The sql query execution will be optimized based
+// on the given query options.
+//
+// It is a shortcut for MustRW(ctx).Update(...). Panics if the context is not
+// read-write transactional.
+func UpdateWithOptions(ctx context.Context, stmt spanner.Statement, opts spanner.QueryOptions) (rowCount int64, err error) {
+	return MustRW(ctx).UpdateWithOptions(ctx, stmt, opts)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,6 +323,7 @@ func client(ctx context.Context) *spanner.Client {
 }
 
 type txnState struct {
+	ro *spanner.ReadOnlyTransaction
 	rw *spanner.ReadWriteTransaction
 
 	m   sync.Mutex
@@ -180,4 +355,16 @@ func setTxnState(ctx context.Context, s *txnState) context.Context {
 func getTxnState(ctx context.Context) *txnState {
 	s, _ := ctx.Value(&txnContextKey).(*txnState)
 	return s
+}
+
+func panicOnNestedRW(ctx context.Context) {
+	if RW(ctx) != nil {
+		panic("nested Spanner write transactions are not allowed")
+	}
+}
+
+func panicOnNestedRO(ctx context.Context) {
+	if getTxnState(ctx) != nil {
+		panic("nested Spanner read transactions are not allowed")
+	}
 }
