@@ -16,6 +16,29 @@
       "revId": "aa736703ed3f6b4402d8209e4bdaa353ce65647f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b55e8023_d2ee7c82",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 707,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T10:05:06Z",
+      "side": 1,
+      "message": "nit: is",
+      "range": {
+        "startLine": 707,
+        "startChar": 48,
+        "endLine": 707,
+        "endChar": 49
+      },
+      "revId": "aa736703ed3f6b4402d8209e4bdaa353ce65647f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
