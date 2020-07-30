@@ -46,6 +46,30 @@
       "revId": "bb9747d4738317b30ad5d7a8099364b7b4a74796",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7d01d45_644a0e40",
+        "filename": "client/cmd/isolate/lib/batch_archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-30T07:56:10Z",
+      "side": 1,
+      "message": "Sorry, I reviewed the CL.\nMaybe, code search wasn\u0027t synced yet.",
+      "parentUuid": "65374dff_47bca07a",
+      "range": {
+        "startLine": 160,
+        "startChar": 9,
+        "endLine": 160,
+        "endChar": 20
+      },
+      "revId": "bb9747d4738317b30ad5d7a8099364b7b4a74796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
