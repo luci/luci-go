@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/redisconn"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
@@ -50,10 +51,10 @@ func InclusionKey(including, included ID) spanner.Key {
 }
 
 // ReadIncluded reads ids of included invocations.
-func ReadIncluded(ctx context.Context, txn spanutil.Txn, id ID) (IDSet, error) {
+func ReadIncluded(ctx context.Context, id ID) (IDSet, error) {
 	var ret IDSet
 	var b spanutil.Buffer
-	err := txn.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
+	err := span.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
 		var included ID
 		if err := b.FromSpanner(row, &included); err != nil {
 			return err
@@ -79,7 +80,7 @@ var TooManyTag = errors.BoolTag{
 // Reachable returns all invocations reachable from roots along the inclusion
 // edges.
 // May return an appstatus-annotated error.
-func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable IDSet, err error) {
+func Reachable(ctx context.Context, roots IDSet) (reachable IDSet, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readReachableInvocations")
 	defer func() { ts.End(err) }()
 
@@ -141,7 +142,7 @@ func Reachable(ctx context.Context, txn spanutil.Txn, roots IDSet) (reachable ID
 			if err := spanSem.Acquire(ctx, 1); err != nil {
 				return err
 			}
-			included, err := ReadIncluded(ctx, txn, id)
+			included, err := ReadIncluded(ctx, id)
 			spanSem.Release(1)
 			if err != nil {
 				return errors.Annotate(err, "failed to read inclusions of %s", id.Name()).Err()

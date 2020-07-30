@@ -19,11 +19,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -56,9 +56,9 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 		PageToken:     in.GetPageToken(),
 	}
 
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
-	tes, tok, err := q.Fetch(ctx, txn)
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	tes, tok, err := q.Fetch(ctx)
 	if err != nil {
 		return nil, err
 	}

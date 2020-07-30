@@ -44,7 +44,7 @@ func MustParseName(name string) (invID invocations.ID, testID, exonerationID str
 // Read reads a test exoneration from Spanner.
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
-func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.TestExoneration, error) {
+func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func Read(ctx context.Context, txn spanutil.Txn, name string) (*pb.TestExonerati
 
 	// Populate fields from TestExonerations table.
 	var explanationHTML spanutil.Compressed
-	err = spanutil.ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
+	err = spanutil.ReadRow(ctx, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
 		"Variant":         &ret.Variant,
 		"VariantHash":     &ret.VariantHash,
 		"ExplanationHTML": &explanationHTML,

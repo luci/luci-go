@@ -19,7 +19,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -71,13 +72,13 @@ func TestParentID(t *testing.T) {
 func TestRead(t *testing.T) {
 	Convey(`TestRead`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		txn := spanutil.Client(ctx).ReadOnlyTransaction()
-		defer txn.Close()
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
 
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
 		Convey(`Does not exist`, func() {
-			_, err := Read(ctx, txn, "invocations/i/artifacts/a")
+			_, err := Read(ctx, "invocations/i/artifacts/a")
 			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/i/artifacts/a not found")
 		})
 
@@ -87,7 +88,7 @@ func TestRead(t *testing.T) {
 				"Size":        "54",
 			}))
 			const name = "invocations/inv/tests/t/results/r/artifacts/a"
-			a, err := Read(ctx, txn, name)
+			a, err := Read(ctx, name)
 			So(err, ShouldBeNil)
 			So(a, ShouldResembleProto, &pb.Artifact{
 				Name:        name,

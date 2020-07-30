@@ -21,9 +21,9 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -38,20 +38,20 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 	}
 
 	// Open a transaction.
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
 	if in.MaxStaleness != nil {
 		st, _ := ptypes.Duration(in.MaxStaleness)
-		txn.WithTimestampBound(spanner.MaxStaleness(st))
+		span.RO(ctx).WithTimestampBound(spanner.MaxStaleness(st))
 	}
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
+	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
 
-	totalNum, err := invocations.ReadTestResultCount(ctx, txn, invs)
+	totalNum, err := invocations.ReadTestResultCount(ctx, invs)
 	if err != nil {
 		return nil, err
 	}

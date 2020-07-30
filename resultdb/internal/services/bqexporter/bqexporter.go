@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -170,7 +171,7 @@ func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
 }
 
 func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
-	realm, err := invocations.ReadRealm(ctx, spanutil.Client(ctx).Single(), invID)
+	realm, err := invocations.ReadRealm(span.Single(ctx), invID)
 	if err != nil {
 		return "", err
 	}
@@ -312,7 +313,7 @@ type testVariantKey struct {
 }
 
 // queryExoneratedTestVariants reads exonerated test variants matching the predicate.
-func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTransaction, invIDs invocations.IDSet) (map[testVariantKey]struct{}, error) {
+func queryExoneratedTestVariants(ctx context.Context, invIDs invocations.IDSet) (map[testVariantKey]struct{}, error) {
 	st := spanner.NewStatement(`
 		SELECT DISTINCT TestId, VariantHash,
 		FROM TestExonerations
@@ -321,7 +322,7 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	st.Params["invIDs"] = invIDs
 	tvs := map[testVariantKey]struct{}{}
 	var b spanutil.Buffer
-	err := spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
+	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var key testVariantKey
 		if err := b.FromSpanner(row, &key.testID, &key.variantHash); err != nil {
 			return err
@@ -337,13 +338,12 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 
 func (b *bqExporter) queryTestResults(
 	ctx context.Context,
-	txn *spanner.ReadOnlyTransaction,
 	exportedID invocations.ID,
 	q testresults.Query,
 	exoneratedTestVariants map[testVariantKey]struct{},
 	batchC chan []*bigquery.StructSaver) error {
 
-	invs, err := invocations.ReadBatch(ctx, txn, q.InvocationIDs)
+	invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
 	if err != nil {
 		return err
 	}
@@ -351,7 +351,7 @@ func (b *bqExporter) queryTestResults(
 	rows := make([]*bigquery.StructSaver, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	rowCount := 0
-	err = q.Run(ctx, txn, func(tr *pb.TestResult) error {
+	err = q.Run(ctx, func(tr *pb.TestResult) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
 		rows = append(rows, b.generateBQRow(&rowInput{
@@ -457,10 +457,10 @@ func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*b
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
 func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
 
-	inv, err := invocations.Read(ctx, txn, invID)
+	inv, err := invocations.Read(ctx, invID)
 	if err != nil {
 		return err
 	}
@@ -469,7 +469,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 
 	// Get the invocation set.
-	invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invID))
+	invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
 	if err != nil {
 		if invocations.TooManyTag.In(err) {
 			err = tasks.PermanentFailure.Apply(err)
@@ -477,7 +477,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		return err
 	}
 
-	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, txn, invIDs)
+	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invIDs)
 	if err != nil {
 		return err
 	}
@@ -499,7 +499,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 	eg.Go(func() error {
 		defer close(batchC)
-		return b.queryTestResults(ctx, txn, invID, q, exoneratedTestVariants, batchC)
+		return b.queryTestResults(ctx, invID, q, exoneratedTestVariants, batchC)
 	})
 
 	return eg.Wait()

@@ -20,8 +20,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -45,9 +46,9 @@ func TestQueryTestResults(t *testing.T) {
 		}
 
 		fetch := func(q *Query) (trs []*pb.TestResult, token string, err error) {
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
-			return q.Fetch(ctx, txn)
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			return q.Fetch(ctx)
 		}
 
 		mustFetch := func(q *Query) (trs []*pb.TestResult, token string) {
@@ -252,18 +253,18 @@ func TestQueryTestResults(t *testing.T) {
 			})
 
 			Convey(`Bad token`, func() {
-				txn := spanutil.Client(ctx).ReadOnlyTransaction()
-				defer txn.Close()
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
 
 				Convey(`From bad position`, func() {
 					q.PageToken = "CgVoZWxsbw=="
-					_, _, err := q.Fetch(ctx, txn)
+					_, _, err := q.Fetch(ctx)
 					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 				})
 
 				Convey(`From decoding`, func() {
 					q.PageToken = "%%%"
-					_, _, err := q.Fetch(ctx, txn)
+					_, _, err := q.Fetch(ctx)
 					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 				})
 			})

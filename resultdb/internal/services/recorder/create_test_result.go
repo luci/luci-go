@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -53,13 +54,9 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 
 	invID := invocations.MustParseName(in.Invocation)
 	ret, mutation := insertTestResult(ctx, invID, in.RequestId, in.TestResult)
-	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		err := txn.BufferWrite([]*spanner.Mutation{mutation})
-		if err != nil {
-			return err
-		}
-
-		return invocations.IncrementTestResultCount(ctx, txn, invID, 1)
+	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+		span.BufferWrite(ctx, mutation)
+		return invocations.IncrementTestResultCount(ctx, invID, 1)
 	})
 	if err != nil {
 		return nil, err

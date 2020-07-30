@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -69,8 +70,9 @@ func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 	for i, sub := range in.Requests {
 		ret.TestExonerations[i], ms[i] = insertTestExoneration(ctx, invID, in.RequestId, i, sub.TestExoneration)
 	}
-	err = mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		return txn.BufferWrite(ms)
+	err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
+		span.BufferWrite(ctx, ms...)
+		return nil
 	})
 	if err != nil {
 		return nil, err

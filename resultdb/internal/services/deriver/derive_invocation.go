@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -95,14 +96,12 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	}
 	invID := chromium.GetInvocationID(task, in)
 
-	client := spanutil.Client(ctx)
-
 	// Check if we need to write this invocation.
-	switch err := shouldWriteInvocation(ctx, client.Single(), invID); {
+	switch err := shouldWriteInvocation(span.Single(ctx), invID); {
 	case err == errAlreadyExists:
-		readTxn := client.ReadOnlyTransaction()
-		defer readTxn.Close()
-		return invocations.Read(ctx, readTxn, invID)
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+		return invocations.Read(ctx, invID)
 	case err != nil:
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	}
 
 	// Derive the origin invocation and results.
-	originInv, reach, err := s.deriveInvocationForOriginTask(ctx, in, task, swarmSvc, client)
+	originInv, reach, err := s.deriveInvocationForOriginTask(ctx, in, task, swarmSvc)
 	switch {
 	case err != nil:
 		return nil, err
@@ -131,11 +130,12 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 			"IncludedInvocationId": originInvID,
 		}),
 	}
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		if err := shouldWriteInvocation(ctx, txn, invID); err != nil {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		if err := shouldWriteInvocation(ctx, invID); err != nil {
 			return err
 		}
-		return txn.BufferWrite(invMs)
+		span.BufferWrite(ctx, invMs...)
+		return nil
 	})
 	switch {
 	case err == errAlreadyExists:
@@ -158,8 +158,8 @@ var errAlreadyExists = fmt.Errorf("already exists")
 
 // shouldWriteInvocation returns errAlreadyExists if the invocation already
 // exists and should not be re-written.
-func shouldWriteInvocation(ctx context.Context, txn spanutil.Txn, id invocations.ID) error {
-	state, err := invocations.ReadState(ctx, txn, id)
+func shouldWriteInvocation(ctx context.Context, id invocations.ID) error {
+	state, err := invocations.ReadState(ctx, id)
 	s, _ := appstatus.Get(err)
 	switch {
 	case s.Code() == codes.NotFound:
@@ -185,7 +185,7 @@ func shouldWriteInvocation(ctx context.Context, txn spanutil.Txn, id invocations
 // reach is all invocations reachable from originInv.
 func (s *deriverServer) deriveInvocationForOriginTask(
 	ctx context.Context, in *pb.DeriveChromiumInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult,
-	swarmSvc *swarmingAPI.Service, client *spanner.Client) (
+	swarmSvc *swarmingAPI.Service) (
 	originInv *pb.Invocation, reach invocations.IDSet, err error) {
 
 	// Get the origin task that the task is deduped against. Or the task
@@ -198,11 +198,11 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	originInvID := chromium.GetInvocationID(originTask, in)
 
 	// Check if we need to write origin invocation.
-	switch err := shouldWriteInvocation(ctx, client.Single(), originInvID); {
+	switch err := shouldWriteInvocation(span.Single(ctx), originInvID); {
 	case err == errAlreadyExists:
-		txn := client.ReadOnlyTransaction()
-		defer txn.Close()
-		return readExistingInv(ctx, txn, originInvID)
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+		return readExistingInv(ctx, originInvID)
 	case err != nil:
 		return nil, nil, err
 	}
@@ -239,12 +239,13 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	}
 	ms = append(ms, tasks.EnqueueBQExport(originInvID, s.InvBQTable, clock.Now(ctx).UTC()))
 
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check origin invocation state again.
-		if err := shouldWriteInvocation(ctx, txn, originInvID); err != nil {
+		if err := shouldWriteInvocation(ctx, originInvID); err != nil {
 			return err
 		}
-		return txn.BufferWrite(ms)
+		span.BufferWrite(ctx, ms...)
+		return nil
 	})
 
 	switch {
@@ -261,14 +262,14 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 }
 
 // readExistingInv reads an invocation and IDs of all invocations it can reach.
-func readExistingInv(ctx context.Context, txn spanutil.Txn, id invocations.ID) (inv *pb.Invocation, reach invocations.IDSet, err error) {
+func readExistingInv(ctx context.Context, id invocations.ID) (inv *pb.Invocation, reach invocations.IDSet, err error) {
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
-			inv, err = invocations.Read(ctx, txn, id)
+			inv, err = invocations.Read(ctx, id)
 			return
 		}
 		work <- func() (err error) {
-			reach, err = invocations.Reachable(ctx, txn, invocations.NewIDSet(id))
+			reach, err = invocations.Reachable(ctx, invocations.NewIDSet(id))
 			return
 		}
 	})
@@ -284,7 +285,6 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 
 	invID := invocations.MustParseName(inv.Name)
 	eg, ctx := errgroup.WithContext(ctx)
-	client := spanutil.Client(ctx)
 	for i, batch := range batches {
 		i := i
 		batch := batch
@@ -317,7 +317,7 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 				}
 			}
 
-			if _, err := client.Apply(ctx, ms); err != nil {
+			if _, err := span.Apply(ctx, ms); err != nil {
 				return err
 			}
 

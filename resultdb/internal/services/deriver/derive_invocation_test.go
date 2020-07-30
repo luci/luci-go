@@ -31,12 +31,12 @@ import (
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -107,17 +107,17 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {
-				err := shouldWriteInvocation(ctx, spanutil.Client(ctx).Single(), "inserted")
+				err := shouldWriteInvocation(span.Single(ctx), "inserted")
 				So(err, ShouldEqual, errAlreadyExists)
 			})
 
 			Convey(`if we already have a non-finalized invocation`, func() {
-				err := shouldWriteInvocation(ctx, spanutil.Client(ctx).Single(), "active")
+				err := shouldWriteInvocation(span.Single(ctx), "active")
 				So(err, ShouldEqual, errAlreadyExists)
 			})
 
 			Convey(`if we don't yet have the invocation written`, func() {
-				err := shouldWriteInvocation(ctx, spanutil.Client(ctx).Single(), "another")
+				err := shouldWriteInvocation(span.Single(ctx), "another")
 				So(err, ShouldBeNil)
 			})
 		})
@@ -240,13 +240,13 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			})
 
 			// Assert we wrote correct test results.
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
 
-			invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
 			So(err, ShouldBeNil)
 
-			trNum, err := invocations.ReadTestResultCount(ctx, txn, invIDs)
+			trNum, err := invocations.ReadTestResultCount(ctx, invIDs)
 			So(err, ShouldBeNil)
 			So(trNum, ShouldEqual, 3)
 
@@ -255,7 +255,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				PageSize:      100,
 				Mask:          testresults.AllFields,
 			}
-			trs, _, err := q.Fetch(ctx, txn)
+			trs, _, err := q.Fetch(ctx)
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
 			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
@@ -291,10 +291,10 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			So(inv.IncludedInvocations[0], ShouldContainSubstring, "origin1")
 
 			// Assert we wrote correct test results.
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
 
-			invIDs, err := invocations.Reachable(ctx, txn, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
 			So(err, ShouldBeNil)
 			So(len(invIDs), ShouldEqual, 3)
 
@@ -303,7 +303,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 				PageSize:      100,
 				Mask:          testresults.AllFields,
 			}
-			trs, _, err := q.Fetch(ctx, txn)
+			trs, _, err := q.Fetch(ctx)
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
 			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/c1/t1.html")
@@ -368,8 +368,8 @@ func TestBatchInsertTestResults(t *testing.T) {
 			}
 			So(actualInclusions, ShouldResemble, expectedInclusions)
 
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
 
 			// Check that the TestResults are batched as expected.
 			for i, expectedBatch := range expectedBatches {
@@ -378,7 +378,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 					PageSize:      100,
 					Mask:          testresults.AllFields,
 				}
-				actualResults, _, err := q.Fetch(ctx, txn)
+				actualResults, _, err := q.Fetch(ctx)
 				So(err, ShouldBeNil)
 				So(actualResults, ShouldHaveLength, len(expectedBatch))
 

@@ -28,10 +28,10 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -81,7 +81,7 @@ func validateInvocationToken(ctx context.Context, token string, invID invocation
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
-func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
+func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Context) error) error {
 	var retErr error
 
 	token, err := extractUpdateToken(ctx)
@@ -91,9 +91,8 @@ func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Con
 	if err := validateInvocationToken(ctx, token, id); err != nil {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
-	_, err = spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-
-		state, err := invocations.ReadState(ctx, txn, id)
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		state, err := invocations.ReadState(ctx, id)
 		switch {
 		case err != nil:
 			return err
@@ -102,7 +101,7 @@ func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Con
 			return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 		}
 
-		return f(ctx, txn)
+		return f(ctx)
 	})
 
 	if err != nil {

@@ -20,6 +20,8 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -80,7 +82,7 @@ func TestRead(t *testing.T) {
 		)
 
 		const name = "invocations/inv/tests/t%20t/results/r"
-		tr, err := Read(ctx, spanutil.Client(ctx).Single(), name)
+		tr, err := Read(span.Single(ctx), name)
 		So(err, ShouldBeNil)
 		So(tr, ShouldResembleProto, &pb.TestResult{
 			Name:     name,

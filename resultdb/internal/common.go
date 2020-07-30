@@ -27,6 +27,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+const (
+	// accessGroup is a CIA group that can access ResultDB.
+	// TODO(crbug.com/1013316): remove in favor of realms.
+	accessGroup = "luci-resultdb-access"
+)
+
 var httpClientCtxKey = "context key for a *http.Client"
 
 // WithHTTPClient returns a context with the client embedded.

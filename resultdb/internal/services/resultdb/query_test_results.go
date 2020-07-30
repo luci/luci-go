@@ -23,10 +23,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -98,15 +98,15 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}
 
 	// Open a transaction.
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
 	if in.MaxStaleness != nil {
 		st, _ := ptypes.Duration(in.MaxStaleness)
-		txn.WithTimestampBound(spanner.MaxStaleness(st))
+		span.RO(ctx).WithTimestampBound(spanner.MaxStaleness(st))
 	}
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, txn, invocations.MustParseNames(in.Invocations))
+	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
@@ -119,7 +119,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		InvocationIDs: invs,
 		Mask:          readMask,
 	}
-	trs, token, err := q.Fetch(ctx, txn)
+	trs, token, err := q.Fetch(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read test results").Err()
 	}

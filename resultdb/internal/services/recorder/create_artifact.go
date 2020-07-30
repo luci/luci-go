@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -152,25 +153,24 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 	}
 
 	// Record the artifact in Spanner.
-	_, err := spanutil.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Verify the state again.
-		switch sameExists, err := ac.verifyState(ctx, txn); {
+		switch sameExists, err := ac.verifyState(ctx); {
 		case err != nil:
 			return err
 		case sameExists:
 			return nil
 		}
 
-		return txn.BufferWrite([]*spanner.Mutation{
-			spanutil.InsertMap("Artifacts", map[string]interface{}{
-				"InvocationId": ac.invID,
-				"ParentId":     ac.localParentID,
-				"ArtifactId":   ac.artifactID,
-				"ContentType":  ac.contentType,
-				"Size":         ac.size,
-				"RBECASHash":   ac.hash,
-			}),
-		})
+		span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]interface{}{
+			"InvocationId": ac.invID,
+			"ParentId":     ac.localParentID,
+			"ArtifactId":   ac.artifactID,
+			"ContentType":  ac.contentType,
+			"Size":         ac.size,
+			"RBECASHash":   ac.hash,
+		}))
+		return nil
 	})
 	return err
 }
@@ -326,14 +326,14 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 // verifyStateBeforeWriting checks Spanner state in a read-only transaction,
 // see verifyState comment.
 func (ac *artifactCreator) verifyStateBeforeWriting(ctx context.Context) (sameAlreadyExists bool, err error) {
-	txn := spanutil.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
-	return ac.verifyState(ctx, txn)
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	return ac.verifyState(ctx)
 }
 
 // verifyState checks if the Spanner state is compatible with creation of the
 // artifact. If an identical artifact already exists, sameAlreadyExists is true.
-func (ac *artifactCreator) verifyState(ctx context.Context, txn spanutil.Txn) (sameAlreadyExists bool, err error) {
+func (ac *artifactCreator) verifyState(ctx context.Context) (sameAlreadyExists bool, err error) {
 	var (
 		invState       pb.Invocation_State
 		hash           spanner.NullString
@@ -344,13 +344,13 @@ func (ac *artifactCreator) verifyState(ctx context.Context, txn spanutil.Txn) (s
 	// Read the state concurrently.
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
-			invState, err = invocations.ReadState(ctx, txn, ac.invID)
+			invState, err = invocations.ReadState(ctx, ac.invID)
 			return
 		}
 
 		work <- func() error {
 			key := ac.invID.Key(ac.localParentID, ac.artifactID)
-			err := spanutil.ReadRow(ctx, txn, "Artifacts", key, map[string]interface{}{
+			err := spanutil.ReadRow(ctx, "Artifacts", key, map[string]interface{}{
 				"RBECASHash": &hash,
 				"Size":       &size,
 			})

@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -47,11 +47,11 @@ func TestRead(t *testing.T) {
 			insertInclusion("including", "included1"),
 		)
 
-		txn := spanutil.Client(ctx).ReadOnlyTransaction()
-		defer txn.Close()
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
 
 		// Fetch back the top-level Invocation.
-		inv, err := Read(ctx, txn, "including")
+		inv, err := Read(ctx, "including")
 		So(err, ShouldBeNil)
 		So(inv, ShouldResembleProto, &pb.Invocation{
 			Name:                "invocations/including",
@@ -73,11 +73,11 @@ func TestReadBatch(t *testing.T) {
 			insertInvocation("inv2", nil),
 		)
 
-		txn := spanutil.Client(ctx).ReadOnlyTransaction()
-		defer txn.Close()
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
 
 		Convey(`One name`, func() {
-			invs, err := ReadBatch(ctx, txn, NewIDSet("inv1"))
+			invs, err := ReadBatch(ctx, NewIDSet("inv1"))
 			So(err, ShouldBeNil)
 			So(invs, ShouldHaveLength, 1)
 			So(invs, ShouldContainKey, ID("inv1"))
@@ -86,7 +86,7 @@ func TestReadBatch(t *testing.T) {
 		})
 
 		Convey(`Two names`, func() {
-			invs, err := ReadBatch(ctx, txn, NewIDSet("inv0", "inv1"))
+			invs, err := ReadBatch(ctx, NewIDSet("inv0", "inv1"))
 			So(err, ShouldBeNil)
 			So(invs, ShouldHaveLength, 2)
 			So(invs, ShouldContainKey, ID("inv0"))
@@ -96,7 +96,7 @@ func TestReadBatch(t *testing.T) {
 		})
 
 		Convey(`Not found`, func() {
-			_, err := ReadBatch(ctx, txn, NewIDSet("inv0", "x"))
+			_, err := ReadBatch(ctx, NewIDSet("inv0", "x"))
 			So(err, ShouldErrLike, `invocations/x not found`)
 		})
 	})

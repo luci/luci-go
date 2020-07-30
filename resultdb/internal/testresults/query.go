@@ -70,7 +70,7 @@ type Query struct {
 	Mask          mask.Mask
 }
 
-func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(*pb.TestResult) error) (err error) {
+func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "QueryTestResults.run")
 	defer func() { ts.End(err) }()
 
@@ -173,7 +173,7 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 	// Read the results.
 	var summaryHTML spanutil.Compressed
 	var b spanutil.Buffer
-	return spanutil.Query(ctx, txn, st, func(row *spanner.Row) error {
+	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
@@ -233,13 +233,13 @@ func (q *Query) run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f fun
 // Fetch returns a page of test results matching q.
 // Returned test results are ordered by parent invocation ID, test ID and result
 // ID.
-func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (trs []*pb.TestResult, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context) (trs []*pb.TestResult, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	err = q.run(ctx, txn, func(tr *pb.TestResult) error {
+	err = q.run(ctx, func(tr *pb.TestResult) error {
 		trs = append(trs, tr)
 		return nil
 	})
@@ -260,11 +260,11 @@ func (q *Query) Fetch(ctx context.Context, txn *spanner.ReadOnlyTransaction) (tr
 
 // Run calls f for test results matching the query.
 // The test results are ordered by parent invocation ID, test ID and result ID.
-func (q *Query) Run(ctx context.Context, txn *spanner.ReadOnlyTransaction, f func(*pb.TestResult) error) error {
+func (q *Query) Run(ctx context.Context, f func(*pb.TestResult) error) error {
 	if q.PageSize > 0 {
 		panic("PageSize is specified when Query.Run")
 	}
-	return q.run(ctx, txn, f)
+	return q.run(ctx, f)
 }
 
 // PopulateVariantParams populates variantHashEquals and variantContains

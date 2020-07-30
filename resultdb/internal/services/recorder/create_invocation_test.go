@@ -32,9 +32,9 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -360,7 +360,7 @@ func TestCreateInvocation(t *testing.T) {
 		}
 
 		Convey(`already exists`, func() {
-			_, err := spanutil.Client(ctx).Apply(ctx, []*spanner.Mutation{
+			_, err := span.Apply(ctx, []*spanner.Mutation{
 				insert.Invocation("u-inv", 1, nil),
 			})
 			So(err, ShouldBeNil)
@@ -433,16 +433,16 @@ func TestCreateInvocation(t *testing.T) {
 
 			So(headers.Get(UpdateTokenMetadataKey), ShouldHaveLength, 1)
 
-			txn := spanutil.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
 
-			inv, err = invocations.Read(ctx, txn, "u-inv")
+			inv, err = invocations.Read(ctx, "u-inv")
 			So(err, ShouldBeNil)
 			So(inv, ShouldResembleProto, expected)
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
-			err = invocations.ReadColumns(ctx, txn, "u-inv", map[string]interface{}{
+			err = invocations.ReadColumns(ctx, "u-inv", map[string]interface{}{
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})
