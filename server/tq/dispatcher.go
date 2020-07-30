@@ -24,7 +24,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"reflect"
+	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -34,10 +35,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -45,6 +49,8 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -61,6 +67,11 @@ type Dispatcher struct {
 	// It alters how tasks are submitted and how incoming HTTP requests are
 	// authenticated.
 	GAE bool
+
+	// NoAuth can be used to disable authentication on HTTP endpoints.
+	//
+	// This is useful when running in development mode on localhost or in tests.
+	NoAuth bool
 
 	// CloudProject is ID of a Google Cloud project that hosts all queues.
 	//
@@ -96,14 +107,23 @@ type Dispatcher struct {
 	// PushAs is a service account email to be used for generating OIDC tokens.
 	//
 	// The service account must be within the same project. The server account
-	// must have "iam.serviceAccounts.actAs" permission for `PushAs` account.
+	// must have "iam.serviceAccounts.actAs" permission for PushAs account.
 	//
 	// Ignored on GAE. Required on non-GAE.
 	PushAs string
 
+	// AuthorizedPushers is a list of service account emails to accept pushes from
+	// in addition to PushAs.
+	//
+	// This is handy when migrating from one PushAs account to another, or when
+	// submitting tasks from one service, but handing them in another.
+	//
+	// Ignored on GAE. Optional on non-GAE.
+	AuthorizedPushers []string
+
 	mu       sync.RWMutex
 	clsByID  map[string]*taskClassImpl
-	clsByTyp map[reflect.Type]*taskClassImpl
+	clsByTyp map[protoreflect.MessageType]*taskClassImpl
 }
 
 // Submitter is used by Dispatcher to submit Cloud Tasks.
@@ -251,7 +271,7 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
 		panic("TaskClass Queue must be set")
 	}
 
-	typ := reflect.TypeOf(cls.Prototype)
+	typ := cls.Prototype.ProtoReflect().Type()
 
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -260,7 +280,7 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
 		d.clsByID = make(map[string]*taskClassImpl, 1)
 	}
 	if d.clsByTyp == nil {
-		d.clsByTyp = make(map[reflect.Type]*taskClassImpl, 1)
+		d.clsByTyp = make(map[protoreflect.MessageType]*taskClassImpl, 1)
 	}
 
 	if _, ok := d.clsByID[cls.ID]; ok {
@@ -270,7 +290,7 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
 		panic(fmt.Sprintf("TaskClass with Prototype %T is already registered", cls.Prototype))
 	}
 
-	impl := &taskClassImpl{TaskClass: cls}
+	impl := &taskClassImpl{TaskClass: cls, protoType: typ}
 	d.clsByID[cls.ID] = impl
 	d.clsByTyp[typ] = impl
 }
@@ -282,10 +302,21 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
 // The exposed HTTP endpoints are called by Cloud Tasks service when it is time
 // to execute a task.
 func (d *Dispatcher) InstallRoutes(r *router.Router) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// TODO(vadimsh): Actually install routes.
+	// We don't really care about the exact format of URLs. At the same time
+	// accepting all requests under InternalRoutingPrefix is necessary for
+	// compatibility with "appengine/tq" which used totally different URL format.
+	r.POST(d.internalURL("*path"), d.authorize(), func(c *router.Context) {
+		switch err := d.handlePush(c.Context, c.Request); {
+		case err == nil:
+			httpReply(c, 200, "OK", nil)
+		case Retry.In(err):
+			httpReply(c, 409, "The handler asked for retry", err)
+		case transient.Tag.In(err):
+			httpReply(c, 500, "Transient error", err)
+		default:
+			httpReply(c, 202, "Fatal error", err)
+		}
+	})
 }
 
 // AddTask submits one or more tasks for later execution.
@@ -441,6 +472,9 @@ func (d *Dispatcher) checkConfigIsSane() error {
 
 // internalURL joins d.InternalRoutingPrefix with `u`.
 func (d *Dispatcher) internalURL(u string) string {
+	if d.InternalRoutingPrefix == "" {
+		panic("InternalRoutingPrefix must be set")
+	}
 	out := d.InternalRoutingPrefix
 	if !strings.HasSuffix(out, "/") {
 		out += "/"
@@ -477,7 +511,7 @@ func (d *Dispatcher) prepTasks(ctx context.Context, tasks []*Task) ([]*prepedTas
 
 // prepTaskLocked converts a single task into Cloud Tasks request.
 func (d *Dispatcher) prepTaskLocked(ctx context.Context, t *Task) (*prepedTask, error) {
-	cls, ok := d.clsByTyp[reflect.TypeOf(t.Payload)]
+	cls, ok := d.clsByTyp[t.Payload.ProtoReflect().Type()]
 	if !ok {
 		return nil, errors.Reason("no TaskClass registered for type %T", t.Payload).Err()
 	}
@@ -557,11 +591,145 @@ func (d *Dispatcher) prepTaskLocked(ctx context.Context, t *Task) (*prepedTask, 
 	return preped, nil
 }
 
+// authorize returns a middleware chain that authorizes requests to handlers.
+func (d *Dispatcher) authorize() router.MiddlewareChain {
+	if d.NoAuth {
+		return router.MiddlewareChain{}
+	}
+
+	if d.GAE {
+		return router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
+			// On GAE X-AppEngine-* headers can be trusted. Check we are being called
+			// by Cloud Tasks. We don't care by which queue exactly though. It is
+			// easier to move tasks between queues that way.
+			if c.Request.Header.Get("X-AppEngine-QueueName") != "" {
+				next(c)
+			} else {
+				httpReply(c, 403,
+					"This endpoint can only be called by Cloud Tasks",
+					errors.Reason("no X-AppEngine-QueueName header").Err(),
+				)
+			}
+		})
+	}
+
+	// On non-GAE we first want to validate the OpenID Connect token in the
+	// request and then check that thus authenticated caller is authorized to push
+	// tasks to us.
+	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+		AudienceCheck: openid.AudienceMatchesHost,
+	})
+	return router.NewMiddlewareChain(oidc, func(c *router.Context, next router.Handler) {
+		ident := auth.CurrentIdentity(c.Context)
+		if d.isAuthorizedPusher(ident) {
+			next(c)
+		} else {
+			httpReply(c, 403,
+				fmt.Sprintf("Caller %q is not authorized", ident),
+				errors.Reason("expecting %q or any of %q", d.PushAs, d.AuthorizedPushers).Err(),
+			)
+		}
+	})
+}
+
+// isAuthorizedPusher is true if `ident` is allowed to push tasks to us.
+func (d *Dispatcher) isAuthorizedPusher(ident identity.Identity) bool {
+	if ident.Kind() != identity.User {
+		return false // e.g. anonymous caller, this is bad
+	}
+	email := ident.Email()
+	if email == d.PushAs {
+		return true
+	}
+	for _, extra := range d.AuthorizedPushers {
+		if email == extra {
+			return true
+		}
+	}
+	return false
+}
+
+// handlePush handles one incoming task.
+//
+// Returns errors annotated in the same style as errors from Handler, see its
+// doc.
+func (d *Dispatcher) handlePush(ctx context.Context, r *http.Request) error {
+	// TODO(vadimsh): Parse magic headers to get the attempt count.
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return errors.Annotate(err, "failed to read the request").Tag(transient.Tag).Err()
+	}
+
+	// See taskClassImpl.serialize().
+	env := envelope{}
+	if err := json.Unmarshal(body, &env); err != nil {
+		return errors.Annotate(err, "not a valid JSON body").Err()
+	}
+
+	// Find the matching registered task class. Newer tasks always have `class`
+	// set. Older ones have `type` instead.
+	var cls *taskClassImpl
+	if env.Class != "" {
+		cls, err = d.classByID(env.Class)
+	} else if env.Type != "" {
+		cls, err = d.classByTyp(env.Type)
+	} else {
+		err = errors.Reason("malformed task body, no class").Err()
+	}
+	if err != nil {
+		return err
+	}
+
+	msg, err := cls.deserialize(&env)
+	if err != nil {
+		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
+	}
+
+	return cls.Handler(ctx, msg)
+}
+
+// classByID returns a task class given its ID or an error if no such class.
+func (d *Dispatcher) classByID(id string) (*taskClassImpl, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	if cls := d.clsByID[id]; cls != nil {
+		return cls, nil
+	}
+	return nil, errors.Reason("no task class with ID %q is registered", id).Err()
+}
+
+// classByTyp returns a task class given proto message name or an error if no
+// such class.
+func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, error) {
+	msgTyp, _ := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typ))
+	if msgTyp == nil {
+		return nil, errors.Reason("no proto message %q registered", typ).Err()
+	}
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	if cls := d.clsByTyp[msgTyp]; cls != nil {
+		return cls, nil
+	}
+	return nil, errors.Reason("no task class matching type %q is registered", typ).Err()
+}
+
+// httpReply writes and logs HTTP response.
+//
+// `msg` is sent to the caller as is. `err` is logged, but not sent.
+func httpReply(c *router.Context, code int, msg string, err error) {
+	if err != nil {
+		logging.Errorf(c.Context, "%s: %s", msg, err)
+	}
+	http.Error(c.Writer, msg, code)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // taskClassImpl knows how to prepare and handle tasks of a particular class.
 type taskClassImpl struct {
 	TaskClass
+	protoType protoreflect.MessageType
 }
 
 // envelope is what we put into all Cloud Tasks.
@@ -602,4 +770,19 @@ func (cls *taskClassImpl) serialize(t *Task) ([]byte, error) {
 		Type:  string(proto.MessageName(t.Payload)),
 		Body:  &raw,
 	}, "", "\t")
+}
+
+// deserialize instantiates a proto message based on its serialized body.
+func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
+	if env.Body == nil {
+		return nil, errors.Reason("no body").Err()
+	}
+	opts := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	msg := cls.protoType.New().Interface()
+	if err := opts.Unmarshal(*env.Body, msg); err != nil {
+		return nil, err
+	}
+	return msg, nil
 }

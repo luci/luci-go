@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
@@ -53,6 +54,14 @@ type ModuleOptions struct {
 	//
 	// By default set to the server's own account. Ignored on GAE.
 	PushAs string
+
+	// AuthorizedPushers is a list of service account emails to accept pushes from
+	// in addition to PushAs.
+	//
+	// See Dispatcher for more info.
+	//
+	// Ignored on GAE. Optional on non-GAE.
+	AuthorizedPushers []string
 }
 
 // Register registers the command line flags.
@@ -68,6 +77,9 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.StringVar(&o.PushAs, "tq-push-as", "",
 		`Service account email to be used for generating OIDC tokens. `+
 			`Default is server's own account.`)
+
+	f.Var(luciflag.StringSlice(&o.AuthorizedPushers), "tq-authorized-pusher",
+		`Service account email to accept pushes from (in addition to -tq-push-as). May be repeated.`)
 }
 
 // NewModule returns a server module that sets up a TQ dispatcher.
@@ -109,6 +121,7 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 	}
 
 	Default.GAE = opts.GAE
+	Default.NoAuth = !opts.Prod
 	Default.CloudProject = opts.CloudProject
 	Default.CloudRegion = opts.CloudRegion
 
@@ -127,6 +140,7 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 			}
 			Default.PushAs = info.ServiceAccountName
 		}
+		Default.AuthorizedPushers = m.opts.AuthorizedPushers
 
 		if m.opts.ExternalRoutingPrefix == "" {
 			return nil, errors.Reason("-tq-external-routing-prefix is required, it should " +
