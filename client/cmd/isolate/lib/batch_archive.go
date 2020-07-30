@@ -146,6 +146,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
 
+	opts, err := toArchiveOptions(args)
+	if err != nil {
+		return errors.Annotate(err, "failed to process input JSONs").Err()
+	}
+
 	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
@@ -156,11 +161,23 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		start: start,
 		quiet: c.defaultFlags.Quiet,
 	}
-	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args)
+	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, opts)
 }
 
-// batchArchive archives a series of isolates specified by genJSONPaths.
-func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, genJSONPaths []string) error {
+func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) {
+	opts := make([]*isolate.ArchiveOptions, 0, len(genJSONPaths))
+	for _, genJSONPath := range genJSONPaths {
+		o, err := processGenJSON(genJSONPath)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, o)
+	}
+	return opts, nil
+}
+
+// batchArchive archives a series of isolate files to isolate server.
+func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, opts []*isolate.ArchiveOptions) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
@@ -171,26 +188,22 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 
 	var errArchive error
 	var isolSummaries []archiver.IsolatedSummary
-	for _, genJSONPath := range genJSONPaths {
-		opts, err := processGenJSON(genJSONPath)
-		if err != nil {
-			return err
-		}
+	for _, opt := range opts {
 		// Parse the incoming isolate file.
-		deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
+		deps, rootDir, isol, err := isolate.ProcessIsolate(opt)
 		if err != nil {
-			return errors.Annotate(err, "isolate %s: failed to process", opts.Isolate).Err()
+			return errors.Annotate(err, "isolate %s: failed to process", opt.Isolate).Err()
 		}
-		log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
+		log.Printf("Isolate %s referenced %d deps", opt.Isolate, len(deps))
 
 		isolSummary, err := a.Archive(&archiver.TarringArgs{
 			Deps:          deps,
 			RootDir:       rootDir,
-			IgnoredPathRe: opts.IgnoredPathFilterRe,
-			Isolated:      opts.Isolated,
+			IgnoredPathRe: opt.IgnoredPathFilterRe,
+			Isolated:      opt.Isolated,
 			Isol:          isol})
 		if err != nil && errArchive == nil {
-			errArchive = errors.Annotate(err, "isolate %s: failed to archive", opts.Isolate).Err()
+			errArchive = errors.Annotate(err, "isolate %s: failed to archive", opt.Isolate).Err()
 		} else {
 			printSummary(al, isolSummary)
 			isolSummaries = append(isolSummaries, isolSummary)
