@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { sanitizeUrl } from '@braintree/sanitize-url';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
@@ -101,7 +100,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement implements Befor
         .loading=${this.artifactRes.state === 'pending'}
       ></tr-status-bar>
       <div id="details">
-        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl && sanitizeUrl(this.artifact?.fetchUrl)}>View Raw Content</a>` : ''}
+        ${this.artifact?.fetchUrl ? html`<a href=${this.artifact?.fetchUrl}>View Raw Content</a>` : ''}
       </div>
       <div id="content">
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />

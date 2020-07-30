@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { sanitizeUrl } from '@braintree/sanitize-url';
 import '@material/mwc-icon';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html, property } from 'lit-element';
@@ -56,7 +55,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
         <span class="one-line-content">
           Unexpected text output from
           <a href=${router.urlForName('text-diff-artifact', {'artifact_name': this.artifact.name})} target="_blank">${this.artifact.artifactId}</a>
-          (<a href=${this.artifact.fetchUrl && sanitizeUrl(this.artifact.fetchUrl)} target="_blank">view raw</a>)
+          (<a href=${this.artifact.fetchUrl} target="_blank">view raw</a>)
         </span>
       </div>
       <div id="container" style=${styleMap({display: this.expanded ? '' : 'none'})}>
