@@ -59,7 +59,8 @@ type Invocation struct {
 	// A key can be repeated.
 	Tags []StringPair `bigquery:"tags"`
 
-	// TODO(crbug.com/1090503): Add Realm field.
+	// The LUCI Realm the invocation exists under.
+	Realm string `bigquery:"realm"`
 }
 
 // TestResultRow represents a row in a BigQuery table for result of a functional
@@ -173,7 +174,7 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 	return Invocation{
 		ID:   string(invocations.MustParseName(inv.Name)),
 		Tags: stringPairProtosToStringPairs(inv.Tags),
-		// TODO(crbug.com/1090503): Add Realm field.
+		Realm: inv.Realm,
 	}
 }
 
