@@ -22,6 +22,30 @@
       "revId": "bb9747d4738317b30ad5d7a8099364b7b4a74796",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65374dff_47bca07a",
+        "filename": "client/cmd/isolate/lib/batch_archive.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-30T07:45:06Z",
+      "side": 1,
+      "message": "I think it\u0027s already in common.go..? (https://crrev.com/c/2328243)",
+      "parentUuid": "ac03fcb2_095e9c67",
+      "range": {
+        "startLine": 160,
+        "startChar": 9,
+        "endLine": 160,
+        "endChar": 20
+      },
+      "revId": "bb9747d4738317b30ad5d7a8099364b7b4a74796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
