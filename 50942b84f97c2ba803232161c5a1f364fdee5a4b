@@ -129,6 +129,30 @@
       "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "050928d9_5dd74230",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T21:06:46Z",
+      "side": 1,
+      "message": "Tagging multi-error works in a surprising way.\n\nWhat I want:\n- If a batch has at least one fatal error, consider the batch bad, do not retry.\n- If all errors in the batch are transient, consider batch retriable.\n\nWhat one would expect reading \"multierror is marked with transient tag if all errors are transient\":\n- transient.Tag.In(merr) \u003d\u003d true: all errors are transient\n- transient.Tag.In(merr) \u003d\u003d false: at least one error is fatal\n\nWhen one really gets:\n- transient.Tag.In(merr) \u003d\u003d true: if at least one error is transient\n- transient.Tag.In(merr) \u003d\u003d false: if all errors are fatal.\n\nThis is because transient.Tag.In actually recurses into multi error.\n\nThis is a surprising behavior to me. Thus I consider \"annotating the multierror\" the worst approach.\n\n\n---\n\n\nHow about I make AddTask(*Task) (always returning singular error) and AddTasks([]*Task) (always returning multierror)? Then callers of AddTasks would have to consider the multi error.\n\nThe third option is to remove AddTasks(...) completely and ask callers to parallelize (and thus deal with multierrors) themselves. It is now viable API, since we no longer have batch RPC as in GAE Task Queues case.",
+      "parentUuid": "646003ef_8459307d",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 70
+      },
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
