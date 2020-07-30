@@ -153,6 +153,30 @@
       "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1625f14_9de2b47a",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T23:48:45Z",
+      "side": 1,
+      "message": "\u003e This is because transient.Tag.In actually recurses into multi error.\n\u003e This is a surprising behavior to me. Thus I consider \"annotating the multierror\" the worst approach.\n\nOh, I get it now. I incorrectly assumed that .Annotate() would block the recursion, but I was naive. I totally agree with you here about it being the worst approach. Btw, this means I totally screwed up with my ttq code in at least `inproc` package. I\u0027ll revisit it.\n\nLet me think a bit, i\u0027m still in OMG mode after this realization.",
+      "parentUuid": "050928d9_5dd74230",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 70
+      },
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
