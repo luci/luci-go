@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "06a956b2_0a0030c6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "Yeah, saw the code. I agree that this is inevitable.",
+      "parentUuid": "9bb5634b_84196824",
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c32e54f_869c03c7",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "966dc723_872cc01d",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "i believe you, but i\u0027d like to grok what exactly is \"dealing\" here.\nIf all one does is\n\n  if err :\u003d tq.AddTasks(ctx, ...); err !\u003d nil {\n    return errors.Annotae(err, \u0027it hit the fan\u0027).Err()\n  }\n\nthen I guess it doesn\u0027t matter. So, you clearly had something else in mind before writing additional code *here* instead of just adding a transient tag to the `merr` iff all errors inside are transient.",
+      "parentUuid": "4c32e54f_869c03c7",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 70
+      },
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

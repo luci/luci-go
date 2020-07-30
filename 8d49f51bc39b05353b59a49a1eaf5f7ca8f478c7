@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "424057be_b5f86ede",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "(still need to review tests, but left you a few questions)",
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f0c60f9_c6d352fe",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 52,
+        "startChar": 17,
+        "endLine": 52,
+        "endChar": 19
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f936acca_75135582",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "nit: isn\u0027t Go style encouraging \"Id\"?",
+      "range": {
+        "startLine": 104,
+        "startChar": 7,
+        "endLine": 104,
+        "endChar": 8
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6459ed40_0756635d",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "why not error?",
+      "range": {
+        "startLine": 191,
+        "startChar": 4,
+        "endLine": 191,
+        "endChar": 11
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4259667_7724eafc",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "this reads as if you intend to tag and return the `merr` itself, but you are returning individual error.",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 377,
+        "endChar": 72
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba0fb5ca_a1caeec3",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "I\u0027m tandrii and I\u0027m again asking you about the locks 😄 sorry.\n\niiuc, this is the only thing that has to be locked. Can this be done up front for all tasks before all the hashing + serialization?\n\n\nAfter more thought: why do we need to lock clsByTyp at all? Isn\u0027t it OK to distinctly limit dispatcher\u0027s lifetime to two phases: \n * registration (mutable) \n * serving (immutable)\n?\n\nOn pods/services where InstallRoutes is called, that\u0027s a natural boundary.\nOn pods/services which only AddTasks, I guess a Finalize() or Freeze() can be added.",
+      "range": {
+        "startLine": 478,
+        "startChar": 1,
+        "endLine": 481,
+        "endChar": 2
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16bd2158_97996f04",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 573,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "\u0027\\0\u0027 can still be part of cls.ID. How about \n  _ \u003d  binary.Write(h, binary.LittleEndian, int32(len(cls.ID)))\n  h.Write(cls.ID)\n  h.Write([]byte(t.DeduplicationKey))\n?",
+      "range": {
+        "startLine": 573,
+        "startChar": 16,
+        "endLine": 573,
+        "endChar": 17
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d1ba439_5c30db8d",
+        "filename": "server/tq/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "did you really mean \"URI\" and not URL here? If so, pedantic++",
+      "range": {
+        "startLine": 61,
+        "startChar": 14,
+        "endLine": 61,
+        "endChar": 15
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9d56343_f8ea4e7a",
+        "filename": "server/tq/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T05:44:19Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 133,
+        "startChar": 8,
+        "endLine": 133,
+        "endChar": 10
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
