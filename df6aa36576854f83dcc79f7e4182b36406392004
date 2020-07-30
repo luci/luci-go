@@ -16,6 +16,23 @@
       "revId": "df6aa36576854f83dcc79f7e4182b36406392004",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "295de822_d423556f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T22:46:57Z",
+      "side": 1,
+      "message": "Eh, this smells I\u0027ll rework it.",
+      "revId": "df6aa36576854f83dcc79f7e4182b36406392004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
