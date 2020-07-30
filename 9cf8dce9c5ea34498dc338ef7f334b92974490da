@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "6b17539b_e39764e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-07-30T20:18:04Z",
+      "side": 1,
+      "message": "spanner-specific variant of server/tq sounds \u0027meh\u0027. As for 1 vs 2, I think nodir has the most direct experience, so I defer to him (and since he already gave +1, I think it\u0027s probably worth just moving forward with option 1 to not have this ping-pong indefinitely in bikeshed land)",
+      "parentUuid": "cddec62d_da93ecb0",
+      "revId": "9cf8dce9c5ea34498dc338ef7f334b92974490da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9086db8c_624ef469",
         "filename": "resultdb/internal/artifacts/artifact_test.go",
         "patchSetId": 5
