@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/errors"
@@ -215,4 +217,34 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 		}
 	}
 	return nil
+}
+
+func uploadToCAS(ctx context.Context, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
+	cl, err := fl.NewClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer cl.Close()
+
+	uploader := cas.NewUploader(cl)
+	digests, err := uploader.Upload(ctx, opts...)
+	if err != nil {
+		return err
+	}
+
+	if fl.DigestJSON == "" {
+		return nil
+	}
+
+	f, err := os.Create(fl.DigestJSON)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	m := make(map[string]string)
+	for i, o := range opts {
+		m[filesystem.GetFilenameNoExt(o.Isolate)] = digests[i].String()
+	}
+	return json.NewEncoder(f).Encode(m)
 }
