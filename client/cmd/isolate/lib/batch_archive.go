@@ -29,11 +29,11 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -60,6 +60,7 @@ isolate. Format of files is:
 			c := batchArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.loggingFlags.Init(&c.Flags)
+			c.casFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maximum number of in-flight check requests.")
 			c.Flags.IntVar(&c.maxConcurrentUploads, "max-concurrent-uploads", 8, "The maximum number of in-flight uploads.")
@@ -71,6 +72,7 @@ isolate. Format of files is:
 type batchArchiveRun struct {
 	commonServerFlags
 	loggingFlags         loggingFlags
+	casFlags             cas.Flags
 	dumpJSON             string
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
@@ -78,6 +80,9 @@ type batchArchiveRun struct {
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonServerFlags.Parse(); err != nil {
+		return err
+	}
+	if err := c.casFlags.Parse(); err != nil {
 		return err
 	}
 	if len(args) == 0 {
@@ -151,17 +156,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		return errors.Annotate(err, "failed to process input JSONs").Err()
 	}
 
-	authClient, err := c.createAuthClient(ctx)
-	if err != nil {
-		return err
+	if c.casFlags.Instance != "" {
+		return uploadToCAS(ctx, &c.casFlags, opts...)
 	}
-	client := c.createIsolatedClient(authClient)
 
-	al := archiveLogger{
-		start: start,
-		quiet: c.defaultFlags.Quiet,
-	}
-	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, opts)
+	return c.batchArchiveToIsolate(ctx, start, opts)
 }
 
 func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) {
@@ -176,14 +175,25 @@ func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) 
 	return opts, nil
 }
 
-// batchArchive archives a series of isolate files to isolate server.
-func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, opts []*isolate.ArchiveOptions) error {
+// batchArchiveToIsolate archives a series of isolate files to isolate server.
+func (c *batchArchiveRun) batchArchiveToIsolate(ctx context.Context, start time.Time, opts []*isolate.ArchiveOptions) error {
+	authClient, err := c.createAuthClient(ctx)
+	if err != nil {
+		return err
+	}
+	client := c.createIsolatedClient(authClient)
+
+	al := archiveLogger{
+		start: start,
+		quiet: c.defaultFlags.Quiet,
+	}
+
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
-	checker := archiver.NewChecker(ctx, client, concurrentChecks)
-	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
+	checker := archiver.NewChecker(ctx, client, c.maxConcurrentChecks)
+	uploader := archiver.NewUploader(ctx, client, c.maxConcurrentUploads)
 	a := archiver.NewTarringArchiver(checker, uploader)
 
 	var errArchive error
@@ -222,7 +232,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		return err
 	}
 
-	if err := dumpSummaryJSON(dumpJSONPath, isolSummaries...); err != nil {
+	if err := dumpSummaryJSON(c.dumpJSON, isolSummaries...); err != nil {
 		return err
 	}
 
