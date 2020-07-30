@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "e0b2f315_0792b1d1",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-30T19:50:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecbbfaff_ad297276",
+      "range": {
+        "startLine": 48,
+        "startChar": 58,
+        "endLine": 48,
+        "endChar": 68
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2f477d0_9c2c0edf",
         "filename": "resultdb/internal/common.go",
         "patchSetId": 3
@@ -154,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "3d67e359_aa3a0640",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-30T19:50:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2f477d0_9c2c0edf",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 0
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "48ba7777_119031c5",
         "filename": "resultdb/internal/services/deriver/derive_invocation.go",
         "patchSetId": 3
@@ -165,6 +213,30 @@
       "writtenOn": "2020-07-23T09:16:03Z",
       "side": 1,
       "message": "this is the only usage of this func. is there a reason why the func is not in this package?\n\nalso now that this is the only usage, do we still need httpClientCtxKey and the code around it, or can we simply create the http client here and use it in L90?",
+      "range": {
+        "startLine": 79,
+        "startChar": 22,
+        "endLine": 79,
+        "endChar": 42
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41b2a84f_5cd40fb5",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-30T19:50:56Z",
+      "side": 1,
+      "message": "I tried removing the client from the context, but there\u0027s an issue:\n\nTests want to provide their own http client, currently doing this by setting it in the context, I couldn\u0027t think of a way of removing it from the context without changing the signature of the api.\n\nThen I tried moving the functions to inject the client into the context and (getting it out of) into this module, but the issue there is that internal/services/deriver/chromium needs to get the client from the context, and cannot import deriver due to cyclic imports. Instead, I moved the http client related functions into their own file under internal, PTAL.\n\nI think moving the code from this http-client-specific file in the internal module into deriver as you suggested is possible, but would need to do some piping in the deriver/chromium module. So how about I do that in a follow up change?",
+      "parentUuid": "48ba7777_119031c5",
       "range": {
         "startLine": 79,
         "startChar": 22,
@@ -197,6 +269,30 @@
       "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9614598_7d28c36d",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-07-30T19:50:56Z",
+      "side": 1,
+      "message": "unspecified() is internal to pbutil\n\nchanged this to \"unspecified\"",
+      "parentUuid": "fd79eca8_57192e3d",
+      "range": {
+        "startLine": 79,
+        "startChar": 25,
+        "endLine": 79,
+        "endChar": 70
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
