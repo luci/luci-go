@@ -102,7 +102,8 @@ func TestShouldFinalize(t *testing.T) {
 }
 
 func TestFinalizeInvocation(t *testing.T) {
-	Convey(`FinalizeInvocation`, t, func() {
+	// Skip due to https://crbug.com/1042602
+	SkipConvey(`FinalizeInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		Convey(`Changes the state and finalization time`, func() {
