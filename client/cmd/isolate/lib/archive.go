@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -99,18 +98,12 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
-	authCl, err := c.createAuthClient(ctx)
-	if err != nil {
-		return err
-	}
-	client := c.createIsolatedClient(authCl)
 
-	al := archiveLogger{
-		start: start,
-		quiet: c.defaultFlags.Quiet,
+	if c.casFlags.Instance != "" {
+		return uploadToCAS(ctx, &c.casFlags, &c.ArchiveOptions)
 	}
 
-	return c.archive(ctx, client, al)
+	return c.archiveToIsolate(ctx, start)
 }
 
 // archiveLogger reports stats to stderr.
@@ -147,9 +140,20 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	return fmt.Printf("%s"+format, args...)
 }
 
-// archive performs the archive operation for an isolate specified by opts.
+// archiveToIsolate performs the archiveToIsolate operation for an isolate specified by opts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client, al archiveLogger) error {
+func (c *archiveRun) archiveToIsolate(ctx context.Context, start time.Time) error {
+	authCl, err := c.createAuthClient(ctx)
+	if err != nil {
+		return err
+	}
+	client := c.createIsolatedClient(authCl)
+
+	al := archiveLogger{
+		start: start,
+		quiet: c.defaultFlags.Quiet,
+	}
+
 	opts := &c.ArchiveOptions
 	// Parse the incoming isolate file.
 	deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
@@ -157,13 +161,6 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 		return errors.Annotate(err, "isolate %s: failed to process", opts.Isolate).Err()
 	}
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
-
-	if c.casFlags.Instance != "" {
-		if err := uploadToCAS(ctx, &c.casFlags, &c.ArchiveOptions); err != nil {
-			return errors.Annotate(err, "failed to upload to CAS").Err()
-		}
-		return nil
-	}
 
 	// Set up a checker and uploader.
 	checker := archiver.NewChecker(ctx, client, c.maxConcurrentChecks)
