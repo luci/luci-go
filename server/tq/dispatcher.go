@@ -175,6 +175,26 @@ type TaskClass struct {
 	// Required. The queue must exist already.
 	Queue string
 
+	// RoutingPrefix is appended to the dispatcher's routing prefix to get the
+	// final URL prefix for the task handler.
+	//
+	// This can be used to route tasks of particular class to particular
+	// processes.
+	//
+	// For example, if dispatcher's routing prefix is "/internal/tasks/" (default)
+	// and the task class routing prefix is "foo-tasks", all corresponding tasks
+	// will have target URL set to "/internal/tasks/foo-tasks/<something>" and
+	// the ingress layer (e.g. "dispatch.yaml" on GAE) can be configured to route
+	// requests to "/internal/tasks/foo-tasks/*" to a particular service that
+	// implements the task handler.
+	//
+	// Prefixes that start with "_" are reserved for internal use.
+	//
+	// Optional. If unset, the prefix "_t" will be used, but treat this as an
+	// implementation detail. Do not use "_t" in any routing configuration, pick
+	// some non-default prefix instead.
+	RoutingPrefix string
+
 	// Handler will be called by the dispatcher to execute the tasks.
 	//
 	// The handler will receive the task's payload as a proto message of the exact
@@ -289,6 +309,13 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	}
 	if cls.Queue == "" {
 		panic("TaskClass Queue must be set")
+	}
+	if strings.HasPrefix(cls.RoutingPrefix, "_") {
+		panic("RoutingPrefix starting with _ is reserved for internal use")
+	}
+
+	if cls.RoutingPrefix == "" {
+		cls.RoutingPrefix = "_t"
 	}
 
 	typ := cls.Prototype.ProtoReflect().Type()
@@ -451,11 +478,6 @@ var defaultHeaders = map[string]string{"Content-Type": "application/json"}
 // taskClassIDRe is used to validate TaskClass.ID.
 var taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
 
-const (
-	taskPrefix = "t/" // to get e.g. "/internal/tasks/t/..."
-	cronPrefix = "c/" // unused for now
-)
-
 // prepedTask is a populated CreateTaskRequest along with information used
 // to populate it.
 type prepedTask struct {
@@ -578,8 +600,8 @@ func (d *Dispatcher) prepTaskLocked(ctx context.Context, t *Task) (*prepedTask, 
 		},
 	}
 
-	// E.g. /internal/tasks/t/<class>[/<title>].
-	url := taskPrefix + cls.ID
+	// E.g. to get /internal/tasks/_t/<class>[/<title>].
+	url := cls.RoutingPrefix + "/" + cls.ID
 	if t.Title != "" {
 		url += "/" + t.Title
 	}

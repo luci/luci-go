@@ -86,7 +86,7 @@ func TestAddTask(t *testing.T) {
 					MessageType: &taskspb.Task_HttpRequest{
 						HttpRequest: &taskspb.HttpRequest{
 							HttpMethod: taskspb.HttpMethod_POST,
-							Url:        "https://127.0.0.1/external/pfx/t/test-dur/hi",
+							Url:        "https://127.0.0.1/external/pfx/_t/test-dur/hi",
 							Headers:    defaultHeaders,
 							Body:       expectedPayload,
 							AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
@@ -112,7 +112,7 @@ func TestAddTask(t *testing.T) {
 					MessageType: &taskspb.Task_AppEngineHttpRequest{
 						AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
 							HttpMethod:  taskspb.HttpMethod_POST,
-							RelativeUri: "/internal/pfx/t/test-dur/hi",
+							RelativeUri: "/internal/pfx/_t/test-dur/hi",
 							Headers:     defaultHeaders,
 							Body:        expectedPayload,
 						},
@@ -141,7 +141,7 @@ func TestAddTask(t *testing.T) {
 			So(
 				submitter.reqs[0].Task.MessageType.(*taskspb.Task_HttpRequest).HttpRequest.Url,
 				ShouldEqual,
-				"https://127.0.0.1/external/pfx/t/test-dur",
+				"https://127.0.0.1/external/pfx/_t/test-dur",
 			)
 		})
 
