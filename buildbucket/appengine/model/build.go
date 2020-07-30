@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/strpair"
@@ -27,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -139,22 +137,34 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 
 // ToProto returns the *pb.Build representation of this build.
 func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
+	p := b.ToSimpleBuildProto(ctx)
+	if err := LoadBuildBundle(ctx, p, m); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+// ToSimpleBuildProto returns the *pb.Build without loading steps, infra, input/output properties.
+func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	p := proto.Clone(&b.Proto).(*pb.Build)
-	switch inc, err := m.Includes("tags"); {
-	case err != nil:
-		return nil, errors.Annotate(err, "error checking %q field inclusiveness", "tags").Err()
-	case inc != mask.Exclude:
-		for _, t := range b.Tags {
-			k, v := strpair.Parse(t)
-			if !isHiddenTag(k) {
-				p.Tags = append(p.Tags, &pb.StringPair{
-					Key:   k,
-					Value: v,
-				})
-			}
+	for _, t := range b.Tags {
+		k, v := strpair.Parse(t)
+		if !isHiddenTag(k) {
+			p.Tags = append(p.Tags, &pb.StringPair{
+				Key:   k,
+				Value: v,
+			})
 		}
 	}
-	key := datastore.KeyForObj(ctx, b)
+	return p
+}
+
+// LoadBuildBundle loads the build bundle into the proto build and trim it according to the mask.
+func LoadBuildBundle(ctx context.Context, p *pb.Build, m mask.Mask) error {
+	if p.GetId() <= 0 {
+		return errors.Reason("invalid build for %q", p).Err()
+	}
+	key := datastore.KeyForObj(ctx, &Build{ID: p.Id})
 	inf := &BuildInfra{
 		ID:    1,
 		Build: key,
@@ -190,10 +200,10 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	appendIfIncluded("output.properties", out)
 	appendIfIncluded("steps", stp)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := GetIgnoreMissing(ctx, dets); err != nil {
-		return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
+		return errors.Annotate(err, "error fetching build details for %q", key).Err()
 	}
 	p.Infra = &inf.Proto.BuildInfra
 	if p.Input == nil {
@@ -206,19 +216,12 @@ func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	p.Output.Properties = &out.Proto.Struct
 	p.Steps, err = stp.ToProto(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching steps for %q", key).Err()
+		return errors.Annotate(err, "error fetching steps for %q", key).Err()
 	}
 	if err := m.Trim(p); err != nil {
-		return nil, errors.Annotate(err, "error trimming fields for %q", key).Err()
+		return errors.Annotate(err, "error trimming fields for %q", p).Err()
 	}
-	return p, nil
-}
-
-// ToSimpleBuildProto returns the *pb.Build without loading steps, infra, input/output properties.
-func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
-	p := proto.Clone(&b.Proto).(*pb.Build)
-	p.Tags = protoutil.StringPairs(strpair.ParseMap(b.Tags))
-	return p
+	return nil
 }
 
 // GetBuildAndBucket returns the build with the given ID as well as the bucket
