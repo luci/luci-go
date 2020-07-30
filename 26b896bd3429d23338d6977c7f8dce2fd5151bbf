@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e661c4a_de1932c1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T09:18:52Z",
+      "side": 1,
+      "message": "lgtm % I think raw multierror is the worst choice. I\u0027m fine with PS#2 (see my inline response)",
+      "revId": "26b896bd3429d23338d6977c7f8dce2fd5151bbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

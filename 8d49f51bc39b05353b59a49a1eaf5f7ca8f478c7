@@ -113,6 +113,30 @@
     },
     {
       "key": {
+        "uuid": "996d2737_f95f80c7",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T09:18:52Z",
+      "side": 1,
+      "message": "Damn it. It makes no sense, but fine. I\u0027ll update my code then 😞",
+      "parentUuid": "23e9515f_ccc95fee",
+      "range": {
+        "startLine": 104,
+        "startChar": 7,
+        "endLine": 104,
+        "endChar": 8
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6459ed40_0756635d",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 2
@@ -148,6 +172,30 @@
       "side": 1,
       "message": "Fine, but I realized \"0 delay\" is a valid delay value, so Delay is essentially always set.",
       "parentUuid": "6459ed40_0756635d",
+      "range": {
+        "startLine": 191,
+        "startChar": 4,
+        "endLine": 191,
+        "endChar": 11
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "64790441_0e268e06",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T09:18:52Z",
+      "side": 1,
+      "message": "True. I\u0027m also not insisting here.",
+      "parentUuid": "1c76b950_15d5660d",
       "range": {
         "startLine": 191,
         "startChar": 4,
@@ -207,6 +255,30 @@
     },
     {
       "key": {
+        "uuid": "adc39a70_5c07d2c2",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T09:18:52Z",
+      "side": 1,
+      "message": "Thanks for your honesty (though I rarely expect less from you 😄).\nI didn\u0027t mean to insist and I don\u0027t. I actually like careful tagging you are doing here. What I meant above was that L376...L377 comment !\u003d code and I was expecting you to update the comment.\n\n**Personally** and this should not affect this CL:\nI don\u0027t hate multierrors, I consider them for the most part essential complexity, which however can be hidden behind Error interface for code chunks, which don\u0027t need to care about nature of the error. And, when debugging, I find full error graph very useful together stack for each of the error origin (a bit like what uncaught panic() prints on stderr). I do agree that in Go this is super duper annoying to do. I still can\u0027t help but curse every time I have to type error.Annotate 😞\n\n\u003e I just remove the outer wrapping of errors.MultiError and let callers shoot their own feet on their own accord.\n\nI definitely don\u0027t like this. Do you have any reason for doing it other than satisfying my presumed insistence in original review? If not, please undo.",
+      "parentUuid": "af157585_6cfdfea7",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 377,
+        "endChar": 72
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba0fb5ca_a1caeec3",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 2
@@ -242,6 +314,30 @@
       "side": 1,
       "message": "Locking read-write mutex for reading when nothing is writing is essentially free. I prefer simpler API without Finalize/Freeze to saving 1 nanosecond (just launching WorkPool probably takes 10000 times more time). For the same reason I don\u0027t really have New(...) or Initialize(...): you just populate fields of Dispatcher and off to the races (no put intended). I strive to make such APIs, they are harder to misuse.\n\n\u003e On pods/services where InstallRoutes is called, that\u0027s a natural boundary.\n\nIt is not. InstallRoutes may be called either before (if tasks are registered in server.Main(...)) or after (it tasks are registered during init() time).",
       "parentUuid": "ba0fb5ca_a1caeec3",
+      "range": {
+        "startLine": 478,
+        "startChar": 1,
+        "endLine": 481,
+        "endChar": 2
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "315ba474_534b5c18",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T09:18:52Z",
+      "side": 1,
+      "message": "Oh, but you are right. We can have N readers. Sorry for the noise.\n\nAPI-wise, I\u0027m definitely onboard. Also, ACK for InstallRoutes -- I didn\u0027t give it much thought and incorrectly imagined we are installing a handler *per task type*.",
+      "parentUuid": "54678226_fe082806",
       "range": {
         "startLine": 478,
         "startChar": 1,

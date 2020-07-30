@@ -105,6 +105,30 @@
       "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "646003ef_8459307d",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-30T09:18:52Z",
+      "side": 1,
+      "message": "See my other reply, too. \n\n\u003e But tagging a multi-error with transient.Tag makes it no longer be errors.MultiError (for the purpose of type cast). So one would have to do some convoluted checks if they want to dive into the multi errors. \n\nI agree. However, practically these checks should be very rare. Most code would just propagate the returned error regardless of what it was. I am not getting why you logged all errors immediately 😊 I thought that advantage of returning multierror is that the server/tq user can decide when to log (if at all) the errors.\n\nTo conclude, I think the latest patchset is worse than both \"returning first error, gtfo\" and annotating multierror (with an optional transient tag).",
+      "parentUuid": "10782844_516cea64",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 70
+      },
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
