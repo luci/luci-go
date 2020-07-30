@@ -81,6 +81,30 @@
       "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10782844_516cea64",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "I didn\u0027t want to return *just* a multi-error, since everyone would just write the code you just did, thus ignoring transient status of errors. But tagging a multi-error with transient.Tag makes it no longer be errors.MultiError (for the purpose of type cast). So one would have to do some convoluted checks if they want to dive into the multi errors. Thus I wanted to avoid multi errors completely and just return \"here\u0027s a first error that happened, gtfo\".\n\nChange it just to return the multi-error, see my other reply.",
+      "parentUuid": "966dc723_872cc01d",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 70
+      },
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

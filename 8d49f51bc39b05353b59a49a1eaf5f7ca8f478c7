@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "03a63a5a_125c3673",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f0c60f9_c6d352fe",
+      "range": {
+        "startLine": 52,
+        "startChar": 17,
+        "endLine": 52,
+        "endChar": 19
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f936acca_75135582",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 2
@@ -62,6 +86,30 @@
       "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23e9515f_ccc95fee",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "No, it actually encourages ID and go lint or something used to bark on Id. Here\u0027s a random link: https://github.com/golang/lint/issues/124",
+      "parentUuid": "f936acca_75135582",
+      "range": {
+        "startLine": 104,
+        "startChar": 7,
+        "endLine": 104,
+        "endChar": 8
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "1c76b950_15d5660d",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "Fine, but I realized \"0 delay\" is a valid delay value, so Delay is essentially always set.",
+      "parentUuid": "6459ed40_0756635d",
+      "range": {
+        "startLine": 191,
+        "startChar": 4,
+        "endLine": 191,
+        "endChar": 11
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4259667_7724eafc",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 2
@@ -108,6 +180,30 @@
       "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af157585_6cfdfea7",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "I\u0027ll let you on a little secret: I hate multi errors. I hate deep nested graphs of errors, all the errors.Walk and errors.Filter crap. I hate when a function randomly returns an error, a multi error or some cthulhu spawn depending on a phase of the moon. But if you insist...\n\nEdit: the unit test revealed that \n\n  transient.Tag.In(errors.MultiError{transient, fatal}) \u003d\u003d true\n\n:-/\n\nI just remove the outer wrapping of errors.MultiError and let callers shoot their own feet on their own accord.",
+      "parentUuid": "b4259667_7724eafc",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 377,
+        "endChar": 72
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "54678226_fe082806",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "Locking read-write mutex for reading when nothing is writing is essentially free. I prefer simpler API without Finalize/Freeze to saving 1 nanosecond (just launching WorkPool probably takes 10000 times more time). For the same reason I don\u0027t really have New(...) or Initialize(...): you just populate fields of Dispatcher and off to the races (no put intended). I strive to make such APIs, they are harder to misuse.\n\n\u003e On pods/services where InstallRoutes is called, that\u0027s a natural boundary.\n\nIt is not. InstallRoutes may be called either before (if tasks are registered in server.Main(...)) or after (it tasks are registered during init() time).",
+      "parentUuid": "ba0fb5ca_a1caeec3",
+      "range": {
+        "startLine": 478,
+        "startChar": 1,
+        "endLine": 481,
+        "endChar": 2
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16bd2158_97996f04",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 2
@@ -154,6 +274,30 @@
       "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbed5f6b_ddaa4a53",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 573,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "ID is also used in URLs. I\u0027d rather forbid \\0 in ID.",
+      "parentUuid": "16bd2158_97996f04",
+      "range": {
+        "startLine": 573,
+        "startChar": 16,
+        "endLine": 573,
+        "endChar": 17
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -200,6 +344,30 @@
       "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6d38ac0_de6a31c4",
+        "filename": "server/tq/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T06:44:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9d56343_f8ea4e7a",
+      "range": {
+        "startLine": 133,
+        "startChar": 8,
+        "endLine": 133,
+        "endChar": 10
+      },
+      "revId": "8d49f51bc39b05353b59a49a1eaf5f7ca8f478c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
