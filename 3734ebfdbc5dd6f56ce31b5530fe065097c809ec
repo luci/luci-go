@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86148f1b_63b64b7c",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-30T04:44:26Z",
+      "side": 0,
+      "message": "I see, you set tags unconditionally and let mask.Trim remove it if necessary. That makes a lot more sense!",
+      "revId": "3734ebfdbc5dd6f56ce31b5530fe065097c809ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

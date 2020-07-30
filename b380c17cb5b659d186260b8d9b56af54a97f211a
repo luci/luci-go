@@ -16,6 +16,23 @@
       "revId": "b380c17cb5b659d186260b8d9b56af54a97f211a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da963e08_0c90b555",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-07-30T04:44:26Z",
+      "side": 1,
+      "message": "Is doing n concurrent datastore fetches better than doing one datastore fetch for all details of all builds at once? Certainly either option is better than n serial datastore fetches.",
+      "revId": "b380c17cb5b659d186260b8d9b56af54a97f211a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
