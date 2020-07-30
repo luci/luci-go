@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9e645c6_2554d1f7",
+        "filename": "client/cmd/isolated/lib/archive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-07-30T04:48:28Z",
+      "side": 1,
+      "message": "I\u0027d like to point out that this made me prefer to return a map instead of slice in https://github.com/bazelbuild/remote-apis-sdks/pull/156. The added the test in that PR also had to convert the slice to a map.",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 171,
+        "endChar": 2
+      },
+      "revId": "bb1b1d054326511052ff3b2fc5da014f22b24c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
