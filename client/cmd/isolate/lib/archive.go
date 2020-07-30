@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
-	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -160,7 +159,7 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 	if c.casFlags.Instance != "" {
-		if err := c.uploadToCAS(ctx); err != nil {
+		if err := uploadToCAS(ctx, &c.casFlags, &c.ArchiveOptions); err != nil {
 			return errors.Annotate(err, "failed to upload to CAS").Err()
 		}
 		return nil
@@ -197,35 +196,6 @@ func (c *archiveRun) archive(ctx context.Context, client *isolatedclient.Client,
 
 	al.LogSummary(ctx, int64(checker.Hit.Count()), int64(checker.Miss.Count()), units.Size(checker.Hit.Bytes()), units.Size(checker.Miss.Bytes()), []string{string(isolSummary.Digest)})
 	return nil
-}
-
-func (c *archiveRun) uploadToCAS(ctx context.Context) error {
-	fl := c.casFlags
-	cl, err := c.casFlags.NewClient(ctx)
-	if err != nil {
-		return err
-	}
-	defer cl.Close()
-
-	uploader := cas.NewUploader(cl)
-	digests, err := uploader.Upload(ctx, &c.ArchiveOptions)
-	if err != nil {
-		return err
-	}
-
-	if fl.DigestJSON == "" {
-		return nil
-	}
-
-	f, err := os.Create(fl.DigestJSON)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	m := make(map[string]string)
-	m[filesystem.GetFilenameNoExt(c.ArchiveOptions.Isolate)] = digests[0].String()
-	return json.NewEncoder(f).Encode(m)
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
