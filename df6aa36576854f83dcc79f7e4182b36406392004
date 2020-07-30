@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55d6544d_ce50fa06",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T22:25:37Z",
+      "side": 1,
+      "message": "PTAL, this is needed by ResultDB.\n\nFinalization tasks must be handled by \"finalizer\" service, regardless of what service submits them. Same for bqexport tasks.",
+      "revId": "df6aa36576854f83dcc79f7e4182b36406392004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
