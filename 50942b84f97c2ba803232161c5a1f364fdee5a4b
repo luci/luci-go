@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9bb5634b_84196824",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T03:33:46Z",
+      "side": 1,
+      "message": "PTAL\n\nFor GAE case should \"just work\". On non-GAE requires at least `-tq-external-routing-prefix`.\n\nI\u0027m trying to make it compatible with appengine/tq so we can gracefully migrate. Task deduplication will be broken during the migration period though (see the code): a task submitted via appengine/tq may be submitted again via server/tq (since they\u0027ll get different task names).",
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c32e54f_869c03c7",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-30T03:33:46Z",
+      "side": 1,
+      "message": "speaking from experience of using appengine/tq in Scheduler",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 380,
+        "endChar": 70
+      },
+      "revId": "50942b84f97c2ba803232161c5a1f364fdee5a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
