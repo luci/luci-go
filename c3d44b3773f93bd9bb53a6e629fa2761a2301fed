@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd7d3473_a47827fe",
+        "filename": "resultdb/internal/services/recorder/create_artifact_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-31T08:35:53Z",
+      "side": 1,
+      "message": "this skips all tests in this function, while only few (one?) test is flaky",
+      "range": {
+        "startLine": 81,
+        "startChar": 1,
+        "endLine": 81,
+        "endChar": 11
+      },
+      "revId": "c3d44b3773f93bd9bb53a6e629fa2761a2301fed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64dd019e_434e3ef0",
+        "filename": "resultdb/internal/services/recorder/create_artifact_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-31T08:35:53Z",
+      "side": 1,
+      "message": "this is where the test fails.",
+      "range": {
+        "startLine": 237,
+        "startChar": 4,
+        "endLine": 237,
+        "endChar": 20
+      },
+      "revId": "c3d44b3773f93bd9bb53a6e629fa2761a2301fed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
