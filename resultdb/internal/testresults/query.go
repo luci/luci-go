@@ -78,42 +78,16 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 		panic("PageSize < 0")
 	}
 
-	var extraSelect []string
-	readMask := q.Mask
-	if readMask.IsEmpty() {
-		readMask = defaultListMask
-	}
-	selectIfIncluded := func(column, field string) {
-		switch inc, err := readMask.Includes(field); {
-		case err != nil:
-			panic(err)
-		case inc != mask.Exclude:
-			extraSelect = append(extraSelect, column)
-		}
-	}
-	selectIfIncluded("tr.SummaryHtml", "summary_html")
-	selectIfIncluded("tr.Tags", "tags")
-
 	limit := ""
 	if q.PageSize > 0 {
 		limit = `LIMIT @limit`
 	}
 
+	selectSQL, parser := q.selectClause()
+
 	st := spanner.NewStatement(fmt.Sprintf(`
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		SELECT
-			tr.InvocationId,
-			tr.TestId,
-			tr.ResultId,
-			tr.Variant,
-			tr.VariantHash,
-			tr.IsUnexpected,
-			tr.Status,
-			tr.StartTime,
-			tr.RunDurationUsec,
-			tr.TestLocationFileName,
-			tr.TestLocationLine,
-			%s
+		%s
 		FROM TestResults tr
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
@@ -131,7 +105,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 			)
 		ORDER BY InvocationId, TestId, ResultId
 		%s
-	`, strings.Join(extraSelect, ","), limit))
+	`, selectSQL, limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["testVariants"] = []*testVariant(nil)
@@ -165,16 +139,62 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	}
 
 	// Read the results.
-	var summaryHTML spanutil.Compressed
-	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		tr, err := parser(row)
+		if err != nil {
+			return err
+		}
+		return f(tr)
+	})
+}
+
+// select returns the SELECT clause of the SQL statement to fetch test results,
+// as well as a function to convert a Spanner row to a TestResult message.
+// The returned SELECT clause assumes that the TestResults has alias "tr".
+// parser is stateful and must not be called concurrently.
+func (q *Query) selectClause() (sql string, parser func(*spanner.Row) (*pb.TestResult, error)) {
+	sql = `SELECT
+		tr.InvocationId,
+		tr.TestId,
+		tr.ResultId,
+		tr.Variant,
+		tr.VariantHash,
+		tr.IsUnexpected,
+		tr.Status,
+		tr.StartTime,
+		tr.RunDurationUsec,
+		tr.TestLocationFileName,
+		tr.TestLocationLine,
+	`
+
+	// Select extra columns depends on the mask.
+	var extraSelect []string
+	readMask := q.Mask
+	if readMask.IsEmpty() {
+		readMask = defaultListMask
+	}
+	selectIfIncluded := func(column, field string) {
+		switch inc, err := readMask.Includes(field); {
+		case err != nil:
+			panic(err)
+		case inc != mask.Exclude:
+			extraSelect = append(extraSelect, column)
+		}
+	}
+	selectIfIncluded("tr.SummaryHtml", "summary_html")
+	selectIfIncluded("tr.Tags", "tags")
+	sql += strings.Join(extraSelect, ",")
+
+	// Build a parser function.
+	var b spanutil.Buffer
+	var summaryHTML spanutil.Compressed
+	parser = func(row *spanner.Row) (*pb.TestResult, error) {
+		tr := &pb.TestResult{}
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
 		var testLocationFileName spanner.NullString
 		var testLocationLine spanner.NullInt64
-		tr := &pb.TestResult{}
-
 		ptrs := []interface{}{
 			&invID,
 			&tr.TestId,
@@ -188,7 +208,6 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 			&testLocationFileName,
 			&testLocationLine,
 		}
-
 		for _, v := range extraSelect {
 			switch v {
 			case "tr.SummaryHtml":
@@ -200,9 +219,9 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 			}
 		}
 
-		err = b.FromSpanner(row, ptrs...)
+		err := b.FromSpanner(row, ptrs...)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Generate test result name now in case tr.TestId and tr.ResultId become
@@ -213,15 +232,14 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 		populateDurationField(tr, micros)
 		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := q.Mask.Trim(tr); err != nil {
-			return errors.Annotate(
-				err, "error trimming fields for %s", tr.Name).Err()
+			return nil, errors.Annotate(err, "error trimming fields for %s", tr.Name).Err()
 		}
 		// Always include name in tr because name is needed to calculate
 		// page token.
 		tr.Name = trName
-
-		return f(tr)
-	})
+		return tr, nil
+	}
+	return
 }
 
 type testVariant struct {
