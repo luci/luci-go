@@ -16,23 +16,18 @@ package tq
 
 import (
 	"context"
+
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 )
 
-// Default is a dispatcher installed into the server when using NewModule or
-// NewModuleFromFlags.
-//
-// The module takes care of configuring this dispatcher based on the server
-// environment and module's options.
-//
-// You still need to register your tasks in it using RegisterTaskClass.
-var Default Dispatcher
-
-// RegisterTaskClass is a shortcut for Default.RegisterTaskClass.
-func RegisterTaskClass(t TaskClass) {
-	Default.RegisterTaskClass(t)
+// CloudTaskSubmitter implements Submitter on top of Cloud Tasks client.
+type CloudTaskSubmitter struct {
+	Client *cloudtasks.Client
 }
 
-// AddTask is a shortcut for Default.AddTask.
-func AddTask(ctx context.Context, task *Task) error {
-	return Default.AddTask(ctx, task)
+// CreateTask creates a task, returning a gRPC status.
+func (s *CloudTaskSubmitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+	_, err := s.Client.CreateTask(ctx, req)
+	return err
 }

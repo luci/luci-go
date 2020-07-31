@@ -64,6 +64,7 @@ type Module interface {
 // tweak their behavior.
 type HostOptions struct {
 	Prod         bool   // set when running in production (not on a dev workstation)
+	GAE          bool   // set when running on Appengine, implies Prod
 	CloudProject string // name of hosting Google Cloud Project if running in GCP
 	CloudRegion  string // name of a hosting region (e.g. 'us-central1') if known
 }
