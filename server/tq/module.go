@@ -18,7 +18,12 @@ import (
 	"context"
 	"flag"
 
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
 
@@ -26,12 +31,32 @@ import (
 //
 // It will be used to initialize Default dispatcher.
 type ModuleOptions struct {
+	// DefaultTargetHost is a hostname to dispatch Cloud Tasks to by default.
+	//
+	// Individual task classes may override it with their own specific host.
+	//
+	// On GAE defaults to the GAE application itself. Elsewhere has no default:
+	// if the dispatcher can't figure out where to send the task, the task
+	// submission fails.
+	DefaultTargetHost string
+
+	// PushAs is a service account email to be used for generating OIDC tokens.
+	//
+	// The service account must be within the same project. The server account
+	// must have "iam.serviceAccounts.actAs" permission for `PushAs` account.
+	//
+	// By default set to the server's own account.
+	PushAs string
 }
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
-	// TODO(vadimsh): Add some. Probably the external hostname of the server
-	// (for non-GAE Cloud Tasks) and something related to ttq sweeping.
+	f.StringVar(&o.DefaultTargetHost, "tq-default-target-host", "",
+		`Hostname to dispatch Cloud Tasks to by default.`)
+
+	f.StringVar(&o.PushAs, "tq-push-as", "",
+		`Service account email to be used for generating OIDC tokens. `+
+			`Default is server's own account.`)
 }
 
 // NewModule returns a server module that sets up a TQ dispatcher.
@@ -65,14 +90,32 @@ func (*tqModule) Name() string {
 
 // Initialize is part of module.Module interface.
 func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
-	if opts.CloudProject == "" {
-		return nil, errors.Reason("cloud project name is required").Err()
-	}
-	if opts.CloudRegion == "" {
-		return nil, errors.Reason("cloud region name is required").Err()
-	}
+	Default.GAE = opts.GAE
 	Default.CloudProject = opts.CloudProject
 	Default.CloudRegion = opts.CloudRegion
-	Default.InstallRoutes(host.Routes(), "/internal/tasks/")
+	Default.DefaultTargetHost = m.opts.DefaultTargetHost
+
+	if m.opts.PushAs != "" {
+		Default.PushAs = m.opts.PushAs
+	} else {
+		info, err := auth.GetSigner(ctx).ServiceInfo(ctx)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get own service account email").Err()
+		}
+		Default.PushAs = info.ServiceAccountName
+	}
+
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+	}
+	client, err := cloudtasks.NewClient(ctx, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+	}
+	host.RegisterCleanup(func(ctx context.Context) { client.Close() })
+
+	Default.Submitter = &CloudTaskSubmitter{Client: client}
+	Default.InstallRoutes(host.Routes())
 	return ctx, nil
 }
