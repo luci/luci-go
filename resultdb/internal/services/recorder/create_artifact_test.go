@@ -77,7 +77,8 @@ func (w *fakeWriter) Send(req *bytestream.WriteRequest) error {
 }
 
 func TestCreateArtifact(t *testing.T) {
-	Convey(`CreateArtifact`, t, func() {
+	// Skip due to https://crbug.com/1110755
+	SkipConvey(`CreateArtifact`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		w := &fakeWriter{}
