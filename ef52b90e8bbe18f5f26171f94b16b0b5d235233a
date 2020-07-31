@@ -249,6 +249,30 @@
     },
     {
       "key": {
+        "uuid": "83b132ac_79f1a438",
+        "filename": "resultdb/internal/services/deriver/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-31T07:26:25Z",
+      "side": 1,
+      "message": "in the past, there was no \"deriver\" package, so the \"chromium\" package used to make sense. Now both deriver and chromium packages are chromium-specific and little sense to have them separated. When packages are very co-related, cyclic dependencies start to happen. \n\nCombining the packages would be busy work in deprecated codebase, so I don\u0027t recommend that, but we could move this context+client code to chromium package. Then there would be no cycle dep. This or another CL is fine.",
+      "parentUuid": "41b2a84f_5cd40fb5",
+      "range": {
+        "startLine": 79,
+        "startChar": 22,
+        "endLine": 79,
+        "endChar": 42
+      },
+      "revId": "ef52b90e8bbe18f5f26171f94b16b0b5d235233a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd79eca8_57192e3d",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 3
