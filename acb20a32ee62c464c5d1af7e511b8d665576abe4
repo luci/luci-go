@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68c268bb_e7a63c2a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-31T21:39:56Z",
+      "side": 1,
+      "message": "PTAL. Now I have parallelized both queries, so the performance is 3x better. Specifically, the RPCs above improved from 15s to 5s.",
+      "revId": "acb20a32ee62c464c5d1af7e511b8d665576abe4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
