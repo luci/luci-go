@@ -33,6 +33,172 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1b3a1b26_49e09619",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "LGTM % package name/location",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9281477c_3a2d29fb",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "New packages need godoc. If package has just one .go file, then right here \n  // Package git ....\n\notherwise we often create docs.go for this purpose.",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26f1e5d7_3aa81a20",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "i think this should be `footers` package, and then you don\u0027t need \"Footer\" in most func names.",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 11
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26ef8835_869e3a46",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "great idea. Did existing CQ code actually do this?",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3050ec64_b2b628fa",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 65,
+        "startChar": 12,
+        "endLine": 65,
+        "endChar": 13
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ec648a1_1869ce0a",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "I think that\u0027s correct, but where did you learn this from? I can\u0027t find confirmation in `cq/utils/git_footers.py`\nIf there is a public URL, it\u0027d be worth adding it here or at the package-level  doc.",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 66
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58d1cfd7_67e20437",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "nit-nit-nit: I\u0027m not aware of styleguide for this, but in most code I review (and write) we use singular \"Include\", \"Add\".",
+      "range": {
+        "startLine": 116,
+        "startChar": 36,
+        "endLine": 116,
+        "endChar": 44
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18560ed2_3fffcc54",
+        "filename": "cq/common/git/footer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:19:03Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 37,
+        "startChar": 23,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
