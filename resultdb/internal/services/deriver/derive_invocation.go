@@ -77,13 +77,18 @@ func validateDeriveChromiumInvocationRequest(req *pb.DeriveChromiumInvocationReq
 // The invocation returned is associated with the swarming task itself.
 // If the task is deduped against another task, the invocation returned includes the underlying one.
 func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.DeriveChromiumInvocationRequest) (*pb.Invocation, error) {
+	ctx, err := internal.WithProjectTransport(ctx, "chromium")
+	if err != nil {
+		return nil, err
+	}
+
 	if err := validateDeriveChromiumInvocationRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
 	// Get the swarming service to use.
 	swarmingURL := "https://" + in.SwarmingTask.Hostname
-	swarmSvc, err := chromium.GetSwarmSvc(internal.HTTPClient(ctx), swarmingURL)
+	swarmSvc, err := chromium.GetSwarmSvc(internal.MustGetContextHTTPClient(ctx), swarmingURL)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating swarming client for %q", swarmingURL).Err()
 	}

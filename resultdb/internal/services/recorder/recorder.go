@@ -52,7 +52,6 @@ type Options struct {
 func InitServer(srv *server.Server, opt Options) error {
 	pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
 		Service:  &recorderServer{Options: &opt},
-		Prelude:  internal.CommonPrelude,
 		Postlude: internal.CommonPostlude,
 	})
 

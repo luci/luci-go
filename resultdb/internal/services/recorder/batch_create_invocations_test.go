@@ -49,7 +49,12 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 		Convey(`invalid request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
 				now,
-				[]*pb.CreateInvocationRequest{{InvocationId: "u-a"}},
+				[]*pb.CreateInvocationRequest{{
+					InvocationId: "u-a",
+					Invocation: &pb.Invocation{
+						Realm: "testproject:testrealm",
+					},
+				}},
 				"😃",
 			)
 			So(err, ShouldErrLike, "request_id: does not match")
@@ -57,7 +62,12 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 		Convey(`non-matching request id - Batch`, func() {
 			_, err := validateBatchCreateInvocationsRequest(
 				now,
-				[]*pb.CreateInvocationRequest{{InvocationId: "u-a", RequestId: "valid, but different"}},
+				[]*pb.CreateInvocationRequest{{
+					InvocationId: "u-a",
+					Invocation: &pb.Invocation{
+						Realm: "testproject:testrealm",
+					},
+					RequestId: "valid, but different"}},
 				"valid",
 			)
 			So(err, ShouldErrLike, `request_id: "valid" does not match`)
@@ -76,6 +86,9 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 				[]*pb.CreateInvocationRequest{{
 					InvocationId: "u-a",
 					RequestId:    "valid",
+					Invocation: &pb.Invocation{
+						Realm: "testproject:testrealm",
+					},
 				}},
 				"valid",
 			)
@@ -93,9 +106,9 @@ func TestBatchCreateInvocations(t *testing.T) {
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "chromium:public", Permission: permCreateInvocation},
-				{Realm: "chromium:public", Permission: permExportToBigQuery},
-				{Realm: "chromium:public", Permission: permSetProducerResource},
+				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
+				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
+				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
 			},
 		}
 		ctx = auth.WithState(ctx, authState)
@@ -118,10 +131,13 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 		Convey(`idempotent`, func() {
 			req := &pb.BatchCreateInvocationsRequest{
-				Requests: []*pb.CreateInvocationRequest{
-					{InvocationId: "u-batchinv"},
-					{InvocationId: "u-batchinv2"},
-				},
+				Requests: []*pb.CreateInvocationRequest{{
+					InvocationId: "u-batchinv",
+					Invocation:   &pb.Invocation{Realm: "testproject:testrealm"},
+				}, {
+					InvocationId: "u-batchinv2",
+					Invocation:   &pb.Invocation{Realm: "testproject:testrealm"},
+				}},
 				RequestId: "request id",
 			}
 			res, err := recorder.BatchCreateInvocations(ctx, req)
@@ -137,9 +153,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 		Convey(`Same request ID, different identity`, func() {
 			req := &pb.BatchCreateInvocationsRequest{
-				Requests: []*pb.CreateInvocationRequest{
-					{InvocationId: "u-inv"},
-				},
+				Requests: []*pb.CreateInvocationRequest{{
+					InvocationId: "u-inv",
+					Invocation:   &pb.Invocation{Realm: "testproject:testrealm"},
+				}},
 				RequestId: "request id",
 			}
 			_, err := recorder.BatchCreateInvocations(ctx, req)
@@ -169,7 +186,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 								bqExport,
 							},
 							ProducerResource: "//builds.example.com/builds/1",
-							Realm:            "chromium:public",
+							Realm:            "testproject:testrealm",
 						},
 					},
 					{
@@ -181,7 +198,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 								bqExport,
 							},
 							ProducerResource: "//builds.example.com/builds/2",
-							Realm:            "chromium:public",
+							Realm:            "testproject:testrealm",
 						},
 					},
 				},

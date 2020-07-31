@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
@@ -148,10 +147,6 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"TestResultCount":  0,
 	}
 
-	// TODO(crbug.com/1013316): Remove this clause when the realm is required on all APIs that accept invocation protos.
-	if inv.Realm == "" {
-		row["Realm"] = realms.Join("chromium", "public")
-	}
 	if inv.State == pb.Invocation_FINALIZED {
 		// We are ignoring the provided inv.FinalizeTime because it would not
 		// make sense to have an invocation finalized before it was created,
