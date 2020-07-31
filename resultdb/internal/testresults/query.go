@@ -167,7 +167,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	// Read the results.
 	var summaryHTML spanutil.Compressed
 	var b spanutil.Buffer
-	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+	return invocations.ShardQuery(ctx, st, "invIDs", func(row *spanner.Row) error {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
@@ -233,6 +233,8 @@ func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVar
 	ctx, ts := trace.StartSpan(ctx, "testresults.Query.fetchVariantsWithUnexpectedResults")
 	defer func() { ts.End(err) }()
 
+	set := map[testVariant]struct{}{}
+
 	st := spanner.NewStatement(`
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
 		SELECT DISTINCT TestId, VariantHash
@@ -240,17 +242,26 @@ func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVar
 		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
-	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
+	err = invocations.ShardQuery(ctx, st, "invIDs", func(row *spanner.Row) error {
 		var tv testVariant
 		if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
 			return err
 		}
-		testVariants = append(testVariants, tv)
+
+		// Despite using DISTINCT in the query, we still need to use a set
+		// (not a slice), because the query is actually sharded.
+		set[tv] = struct{}{}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	testVariants = make([]testVariant, 0, len(set))
+	for tv := range set {
+		testVariants = append(testVariants, tv)
+	}
+
 	return testVariants, nil
 }
 
