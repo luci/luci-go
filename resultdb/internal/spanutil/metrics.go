@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/server/span"
 )
 
 // RowStatus is a status of a row.
@@ -51,4 +52,11 @@ const (
 // IncRowCount increments the row counter.
 func IncRowCount(ctx context.Context, count int, table Table, rowStatus RowStatus) {
 	rowCounter.Add(ctx, int64(count), string(table), string(rowStatus))
+}
+
+// DeferIncRowCount defers a row counter increment using span.Defer.
+func DeferIncRowCount(ctx context.Context, count int, table Table, rowStatus RowStatus) {
+	span.Defer(ctx, func(ctx context.Context) {
+		IncRowCount(ctx, count, table, rowStatus)
+	})
 }

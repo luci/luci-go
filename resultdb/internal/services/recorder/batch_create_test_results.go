@@ -99,11 +99,11 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	}
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
+		spanutil.DeferIncRowCount(ctx, len(in.Requests), spanutil.TestResults, spanutil.Inserted)
 		return invocations.IncrementTestResultCount(ctx, invID, int64(len(in.Requests)))
 	})
 	if err != nil {
 		return nil, err
 	}
-	spanutil.IncRowCount(ctx, len(in.Requests), spanutil.TestResults, spanutil.Inserted)
 	return ret, nil
 }

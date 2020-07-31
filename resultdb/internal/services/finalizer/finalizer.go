@@ -258,7 +258,6 @@ func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
-	var reach invocations.IDSet
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
@@ -269,8 +268,14 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 		return parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
 			work <- func() (err error) {
-				reach, err = invocations.Reachable(ctx, invocations.NewIDSet(invID))
-				return
+				reach, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
+				if err != nil {
+					return err
+				}
+				span.Defer(ctx, func(ctx context.Context) {
+					invocations.ReachCache(invID).TryWrite(ctx, reach)
+				})
+				return nil
 			}
 
 			// Enqueue tasks to try to finalize invocations that include ours.
@@ -295,16 +300,10 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			}
 		})
 	})
-	switch {
-	case err == errAlreadyFinalized:
-		return nil
-	case err != nil:
-		return err
-	default:
-		// Cache the reachable invocations.
-		invocations.ReachCache(invID).TryWrite(ctx, reach)
-		return nil
+	if err == errAlreadyFinalized {
+		err = nil
 	}
+	return nil
 }
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly

@@ -94,23 +94,18 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 	createdBy := string(auth.CurrentIdentity(ctx))
 	ms := s.createInvocationsRequestsToMutations(ctx, now, reqs, requestID, createdBy)
 
-	var err error
-	deduped := false
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		deduped, err = deduplicateCreateInvocations(ctx, idSet, requestID, createdBy)
-		if err != nil {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		switch deduped, err := deduplicateCreateInvocations(ctx, idSet, requestID, createdBy); {
+		case err != nil:
 			return err
-		}
-		if !deduped {
+		case !deduped:
 			span.BufferWrite(ctx, ms...)
+			spanutil.DeferIncRowCount(ctx, len(reqs), spanutil.Invocations, spanutil.Inserted)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, nil, err
-	}
-	if !deduped {
-		spanutil.IncRowCount(ctx, len(reqs), spanutil.Invocations, spanutil.Inserted)
 	}
 
 	return getCreatedInvocationsAndUpdateTokens(ctx, idSet, reqs)

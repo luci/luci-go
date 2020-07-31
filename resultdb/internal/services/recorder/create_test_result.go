@@ -56,12 +56,12 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	ret, mutation := insertTestResult(ctx, invID, in.RequestId, in.TestResult)
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, mutation)
+		spanutil.DeferIncRowCount(ctx, 1, spanutil.TestResults, spanutil.Inserted)
 		return invocations.IncrementTestResultCount(ctx, invID, 1)
 	})
 	if err != nil {
 		return nil, err
 	}
-	spanutil.IncRowCount(ctx, 1, spanutil.TestResults, spanutil.Inserted)
 	return ret, nil
 }
 
