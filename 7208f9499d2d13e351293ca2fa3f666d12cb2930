@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc761ead_19e5d6db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T00:27:39Z",
+      "side": 1,
+      "message": "PTAL\n\nI redid this CL:\n1. AddTask is singular now to sidestep issues with multi errors.\n2. I tried to add dispatcher to ResultDB and realized few problems:\n  a. Routing needs to be more flexible.\n  b. It should be safe to add server/tq module to the binary if it is unused. Thus there no required CLI flags anymore.\n\nIt is now also possible to generate tasks on GAE, but execute them on non-GAE.",
+      "revId": "7208f9499d2d13e351293ca2fa3f666d12cb2930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
