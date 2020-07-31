@@ -1,0 +1,129 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package git
+
+import (
+	"regexp"
+	"strings"
+
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
+)
+
+var (
+	// Regexp pattern for git commit message footer.
+	footerPattern = regexp.MustCompile(`^\s*([\w-]+): *(.*)$`)
+	// Strings that won't be treated as footer keys.
+	footerKeyIgnorelist = stringset.NewFromSlice("Http", "Https")
+)
+
+// NormalizeKey normalizes a git footer key string.
+// It removes leading and trailing spaces and converts each segment (separated
+// by `-`) to title case.
+func NormalizeKey(footerKey string) string {
+	segs := strings.Split(strings.TrimSpace(footerKey), "-")
+	for i, seg := range segs {
+		segs[i] = strings.Title(strings.ToLower(seg))
+	}
+	return strings.Join(segs, "-")
+}
+
+// ParseFooter tries to extract a footer from a commit message line.
+// Returns a normalized key and value with surrounding space trimmed if
+// the line represents a valid footer. Returns empty strings otherwise.
+func ParseFooter(line string) (string, string) {
+	res := footerPattern.FindStringSubmatch(line)
+	if len(res) == 3 {
+		if key := NormalizeKey(res[1]); !footerKeyIgnorelist.Has(key) {
+			return key, strings.TrimSpace(res[2])
+		}
+	}
+	return "", ""
+}
+
+// ParseFooters extracts all footers from footer lines of the given message.
+// A shorthand for `SplitFooterLines` + `ParseFooterLines`.
+func ParseFooters(message string) strpair.Map {
+	_, footerLines := SplitFooterLines(message)
+	return ParseFooterLines(footerLines)
+}
+
+// ParseFooterLines extracts all footers from the given footer lines.
+// Returns a multimap as a footer key may map to multiple values. The
+// footer in latter line takes precedence and shows up at the front of the
+// value slice. Ideally, this function should be called with the `footerLines`
+// part of the return values of `SplitFooterLines`.
+func ParseFooterLines(lines []string) strpair.Map {
+	ret := strpair.Map{}
+	for i := len(lines) - 1; i >= 0; i-- {
+		if k, v := ParseFooter(lines[i]); k != "" {
+			ret.Add(k, v)
+		}
+	}
+	return ret
+}
+
+// SplitFooterLines splits a commit message to non-footer and footer lines.
+//
+// All leading and trailing white space (including new lines) will be trimmed.
+//
+// Footer lines are all lines in the last paragraph of the message if it:
+//  * contains at least one valid footer (it may contains lines that are not
+//    valid footers in the middle).
+//  * is not the only paragraph in the message.
+//
+// One exception is that if the last paragraph starts with text then followed
+// by valid footers, footer lines will only contains all lines after the first
+// valid footer, all the lines above will be included in non-footer lines and
+// a new line will be appended to separate them from footer lines.
+func SplitFooterLines(message string) (nonFooterLines, footerLines []string) {
+	lines := strings.Split(strings.TrimSpace(message), "\n")
+	var maybeFooterLines []string
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := lines[i]
+		if strings.TrimSpace(line) == "" {
+			break
+		}
+		if k, _ := ParseFooter(line); k != "" {
+			footerLines = append(footerLines, maybeFooterLines...)
+			maybeFooterLines = maybeFooterLines[0:0]
+			footerLines = append(footerLines, line)
+		} else {
+			maybeFooterLines = append(maybeFooterLines, line)
+		}
+	}
+	if len(footerLines)+len(maybeFooterLines) == len(lines) {
+		// The entire message is consists of footers which means those lines
+		// are not footers.
+		return lines, nil
+	}
+
+	nonFooterLines = lines[:len(lines)-len(footerLines)]
+	reverse(footerLines)
+	if len(maybeFooterLines) > 0 {
+		// Leftover some malformed lines. Includes them in non-footer lines and
+		// adds a newline to separate them from valid footer lines.
+		// This mutates `lines` slice but it's okay.
+		nonFooterLines = append(nonFooterLines, "")
+	}
+	return
+}
+
+// reverse reverses a slice of string in place.
+func reverse(s []string) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
