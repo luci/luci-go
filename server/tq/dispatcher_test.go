@@ -16,6 +16,7 @@ package tq
 
 import (
 	"context"
+	"net/http/httptest"
 	"sort"
 	"strings"
 	"sync"
@@ -27,10 +28,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -39,7 +43,7 @@ import (
 func TestAddTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("With dispacher", t, func() {
+	Convey("With dispatcher", t, func() {
 		var now = time.Unix(1442540000, 0)
 
 		ctx, _ := testclock.UseTime(context.Background(), now)
@@ -165,8 +169,88 @@ func TestAddTask(t *testing.T) {
 			err := d.AddTask(ctx, &Task{
 				Payload: &timestamppb.Timestamp{},
 			})
-			So(err, ShouldErrLike, "no TaskClass registered")
+			So(err, ShouldErrLike, "no task class matching type")
 			So(submitter.reqs, ShouldHaveLength, 0)
+		})
+	})
+}
+
+func TestPushHandler(t *testing.T) {
+	t.Parallel()
+
+	Convey("With dispatcher", t, func() {
+		var handlerErr error
+
+		d := Dispatcher{NoAuth: true}
+		d.RegisterTaskClass(TaskClass{
+			ID:        "test-1",
+			Prototype: &emptypb.Empty{},
+			Queue:     "queue",
+			Handler: func(ctx context.Context, payload proto.Message) error {
+				return handlerErr
+			},
+		})
+
+		srv := router.New()
+		d.InstallRoutes(srv, "/pfx")
+
+		call := func(body string) int {
+			req := httptest.NewRequest("POST", "/pfx/ignored/part", strings.NewReader(body))
+			rec := httptest.NewRecorder()
+			srv.ServeHTTP(rec, req)
+			return rec.Result().StatusCode
+		}
+
+		Convey("Using class ID", func() {
+			Convey("Success", func() {
+				So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 200)
+			})
+			Convey("Unknown", func() {
+				So(call(`{"class": "unknown", "body": {}}`), ShouldEqual, 202)
+			})
+		})
+
+		Convey("Using type name", func() {
+			Convey("Success", func() {
+				So(call(`{"type": "google.protobuf.Empty", "body": {}}`), ShouldEqual, 200)
+			})
+			Convey("Totally unknown", func() {
+				So(call(`{"type": "unknown", "body": {}}`), ShouldEqual, 202)
+			})
+			Convey("Not a registered task", func() {
+				So(call(`{"type": "google.protobuf.Duration", "body": {}}`), ShouldEqual, 202)
+			})
+		})
+
+		Convey("Not a JSON body", func() {
+			So(call(`blarg`), ShouldEqual, 202)
+		})
+
+		Convey("Bad envelope", func() {
+			So(call(`{}`), ShouldEqual, 202)
+		})
+
+		Convey("Missing message body", func() {
+			So(call(`{"class": "test-1"}`), ShouldEqual, 202)
+		})
+
+		Convey("Bad message body", func() {
+			So(call(`{"class": "test-1", "body": "huh"}`), ShouldEqual, 202)
+		})
+
+		Convey("Handler asks for retry", func() {
+			handlerErr = errors.New("boo", Retry)
+			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 409)
+		})
+
+		Convey("Handler transient error", func() {
+			handlerErr = errors.New("boo", transient.Tag)
+			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 500)
+		})
+
+		Convey("Handler fatal error", func() {
+			handlerErr = errors.New("boo")
+			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 202)
 		})
 	})
 }
