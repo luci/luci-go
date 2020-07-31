@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ccc93f06_36ad265a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T20:56:55Z",
+      "side": 1,
+      "message": "Chan, Nodir FYI.\n\nIt\u0027ll likely change. I just needed something to figure out how to deploy this stuff to GKE.",
+      "revId": "38b6c944f5d6d5df6f86504675d0a57706d80933",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
