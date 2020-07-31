@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
@@ -269,61 +272,60 @@ func TestSearchBuilds(t *testing.T) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.Identity("user:user"),
+		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		req := &pb.SearchBuildsRequest{
-			Predicate: &pb.BuildPredicate{
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket",
+			Parent: model.ProjectKey(ctx, "project"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:user",
+						Role:     pb.Acl_READER,
+					},
+				},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			Proto: pb.Build{
+				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
 			},
-		}
-
-		Convey("query search on Builds", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
-			})
-			So(datastore.Put(ctx, &model.Bucket{
-				ID:     "bucket",
-				Parent: model.ProjectKey(ctx, "project"),
-				Proto: pb.Bucket{
-					Acls: []*pb.Acl{
-						{
-							Identity: "user:user",
-							Role:     pb.Acl_READER,
-						},
-					},
+			BuilderID: "project/bucket/builder",
+			Tags:      []string{"k1:v1", "k2:v2"},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Build{
+			Proto: pb.Build{
+				Id: 2,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder2",
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
-					Id: 1,
+			},
+			BuilderID: "project/bucket/builder2",
+		}), ShouldBeNil)
+		Convey("query search on Builds", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-				},
-				BuilderID: "project/bucket/builder",
-				Tags:      []string{"k1:v1", "k2:v2"},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
-				Proto: pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder2",
+					Tags: []*pb.StringPair{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
 					},
 				},
-				BuilderID: "project/bucket/builder2",
-			}), ShouldBeNil)
-			req.Predicate.Tags = []*pb.StringPair{
-				{Key: "k1", Value: "v1"},
-				{Key: "k2", Value: "v2"},
 			}
 			rsp, err := srv.SearchBuilds(ctx, req)
 			So(err, ShouldBeNil)
@@ -336,16 +338,79 @@ func TestSearchBuilds(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Tags: []*pb.StringPair{
-							{
-								Key:   "k1",
-								Value: "v1",
-							},
-							{
-								Key:   "k2",
-								Value: "v2",
+						Input: &pb.Build_Input{},
+					},
+				},
+			}
+			So(rsp, ShouldResembleProto, expectedRsp)
+		})
+
+		Convey("search builds with field masks", func() {
+			b := &model.Build{
+				ID: 1,
+			}
+			key := datastore.KeyForObj(ctx, b)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: key,
+				Proto: model.DSBuildInfra{
+					BuildInfra: pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "example.com",
+						},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInputProperties{
+				ID:    1,
+				Build: key,
+				Proto: model.DSStruct{
+					Struct: structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"input": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "input value",
+								},
 							},
 						},
+					},
+				},
+			}), ShouldBeNil)
+
+			req := &pb.SearchBuildsRequest{
+				Fields: &field_mask.FieldMask{
+					Paths: []string{"builds.*.id", "builds.*.input", "builds.*.infra"},
+				},
+			}
+			rsp, err := srv.SearchBuilds(ctx, req)
+			So(err, ShouldBeNil)
+			expectedRsp := &pb.SearchBuildsResponse{
+				Builds: []*pb.Build{
+					{
+						Id: 1,
+						Input: &pb.Build_Input{
+							Properties: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"input": {
+										Kind: &structpb.Value_StringValue{
+											StringValue: "input value",
+										},
+									},
+								},
+							},
+						},
+						Infra: &pb.BuildInfra{
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "example.com",
+							},
+						},
+					},
+					{
+						Id: 2,
+						Input: &pb.Build_Input{
+							Properties: &structpb.Struct{},
+						},
+						Infra: &pb.BuildInfra{},
 					},
 				},
 			}
