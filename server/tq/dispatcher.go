@@ -151,6 +151,8 @@ type TaskClass struct {
 	// existing task classes is a disruptive operation, make sure the queue is
 	// drained first. The dispatcher will permanently fail all Cloud Tasks with
 	// unrecognized class IDs.
+	//
+	// Required.
 	ID string
 
 	// Prototype identifies a proto message type of a task payload.
@@ -162,6 +164,8 @@ type TaskClass struct {
 	// It is safe to arbitrarily change this type as long as JSONPB encoding of
 	// the previous type can be decoded using the new type. The dispatcher will
 	// permanently fail Cloud Tasks with bodies it can't deserialize.
+	//
+	// Required.
 	Prototype proto.Message
 
 	// Queue is a name of Cloud Tasks queue to use for the tasks.
@@ -173,7 +177,7 @@ type TaskClass struct {
 	// If it is a short queue name, the full queue name will be constructed using
 	// dispatcher's CloudProject and CloudRegion if they are set.
 	//
-	// This queue must exist already.
+	// Required. The queue must exist already.
 	Queue string
 
 	// RoutingPrefix is an URL prefix for produced Cloud Tasks.
@@ -194,10 +198,29 @@ type TaskClass struct {
 	// Handler will be called by the dispatcher to execute the tasks.
 	//
 	// The handler will receive the task's payload as a proto message of the exact
-	// same type as type of Prototype.
+	// same type as the type of Prototype. See Handler doc for more info.
 	//
-	// See Handler doc for more info.
+	// Populating this field is equivalent to calling AttachHandler after
+	// registering the class. It may be left nil if the current process just wants
+	// to submit tasks, but not handle them. Some other process would need to
+	// attach the handler then to be able to process tasks.
+	//
+	// The dispatcher will permanently fail Cloud Tasks if it can't find a handler
+	// for them.
 	Handler Handler
+}
+
+// TaskClassRef represents a TaskClass registered in a Dispatcher.
+type TaskClassRef interface {
+	// AttachHandler sets a handler which will be called by the dispatcher to
+	// execute the tasks.
+	//
+	// The handler will receive the task's payload as a proto message of the exact
+	// same type as the type of TaskClass's Prototype. See Handler doc for more
+	// info.
+	//
+	// Panics if the class has already a handler attached.
+	AttachHandler(h Handler)
 }
 
 // Task contains task body and metadata.
@@ -277,15 +300,12 @@ type Handler func(ctx context.Context, payload proto.Message) error
 //
 // Intended to be called during process startup. Panics if there's already
 // a registered task class with the same ID or Prototype.
-func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
+func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	if !taskClassIDRe.MatchString(cls.ID) {
 		panic(fmt.Sprintf("bad TaskClass ID %q", cls.ID))
 	}
 	if cls.Prototype == nil {
 		panic("TaskClass Prototype must be set")
-	}
-	if cls.Handler == nil {
-		panic("TaskClass Handler must be set")
 	}
 	if cls.Queue == "" {
 		panic("TaskClass Queue must be set")
@@ -316,9 +336,10 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
 		panic(fmt.Sprintf("TaskClass with Prototype %q is already registered", proto.MessageName(cls.Prototype)))
 	}
 
-	impl := &taskClassImpl{TaskClass: cls, protoType: typ}
+	impl := &taskClassImpl{TaskClass: cls, disp: d, protoType: typ}
 	d.clsByID[cls.ID] = impl
 	d.clsByTyp[typ] = impl
+	return impl
 }
 
 // InstallRoutes installs HTTP routes under the given prefix.
@@ -418,7 +439,7 @@ var taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
 
 // prepTask converts a task into Cloud Tasks request.
 func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *taskspb.CreateTaskRequest, error) {
-	cls, err := d.classByMsg(t.Payload)
+	cls, _, err := d.classByMsg(t.Payload)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -653,15 +674,19 @@ func (d *Dispatcher) handlePush(ctx context.Context, r *http.Request) error {
 	// Find the matching registered task class. Newer tasks always have `class`
 	// set. Older ones have `type` instead.
 	var cls *taskClassImpl
+	var h Handler
 	if env.Class != "" {
-		cls, err = d.classByID(env.Class)
+		cls, h, err = d.classByID(env.Class)
 	} else if env.Type != "" {
-		cls, err = d.classByTyp(env.Type)
+		cls, h, err = d.classByTyp(env.Type)
 	} else {
 		err = errors.Reason("malformed task body, no class").Err()
 	}
 	if err != nil {
 		return err
+	}
+	if h == nil {
+		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Err()
 	}
 
 	msg, err := cls.deserialize(&env)
@@ -669,44 +694,53 @@ func (d *Dispatcher) handlePush(ctx context.Context, r *http.Request) error {
 		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
 	}
 
-	return cls.Handler(ctx, msg)
+	return h(ctx, msg)
 }
 
 // classByID returns a task class given its ID or an error if no such class.
-func (d *Dispatcher) classByID(id string) (*taskClassImpl, error) {
+//
+// Reads cls.Handler while under the lock as well, since it may be concurrently
+// modified by AttachHandler.
+func (d *Dispatcher) classByID(id string) (*taskClassImpl, Handler, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if cls := d.clsByID[id]; cls != nil {
-		return cls, nil
+		return cls, cls.Handler, nil
 	}
-	return nil, errors.Reason("no task class with ID %q is registered", id).Err()
+	return nil, nil, errors.Reason("no task class with ID %q is registered", id).Err()
 }
 
-// classByMsg returns a task class given proto message  or an error if no
+// classByMsg returns a task class given proto message or an error if no
 // such class.
-func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, error) {
+//
+// Reads cls.Handler while under the lock as well, since it may be concurrently
+// modified by AttachHandler.
+func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, error) {
 	typ := msg.ProtoReflect().Type()
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if cls := d.clsByTyp[typ]; cls != nil {
-		return cls, nil
+		return cls, cls.Handler, nil
 	}
-	return nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Err()
+	return nil, nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Err()
 }
 
 // classByTyp returns a task class given proto message name or an error if no
 // such class.
-func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, error) {
+//
+// Reads cls.Handler while under the lock as well, since it may be concurrently
+// modified by AttachHandler.
+func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 	msgTyp, _ := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typ))
 	if msgTyp == nil {
-		return nil, errors.Reason("no proto message %q is registered", typ).Err()
+		return nil, nil, errors.Reason("no proto message %q is registered", typ).Err()
 	}
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if cls := d.clsByTyp[msgTyp]; cls != nil {
-		return cls, nil
+		return cls, cls.Handler, nil
 	}
-	return nil, errors.Reason("no task class matching type %q is registered", typ).Err()
+	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Err()
 }
 
 // httpReply writes and logs HTTP response.
@@ -724,6 +758,7 @@ func httpReply(c *router.Context, code int, msg string, err error) {
 // taskClassImpl knows how to prepare and handle tasks of a particular class.
 type taskClassImpl struct {
 	TaskClass
+	disp      *Dispatcher
 	protoType protoreflect.MessageType
 }
 
@@ -732,6 +767,19 @@ type envelope struct {
 	Class string           `json:"class,omitempty"` // ID of TaskClass
 	Type  string           `json:"type,omitempty"`  // for compatibility with appengine/tq
 	Body  *json.RawMessage `json:"body"`            // JSONPB-serialized Task.Payload
+}
+
+// AttachHandler implements TaskClassRef interface.
+func (cls *taskClassImpl) AttachHandler(h Handler) {
+	cls.disp.mu.Lock()
+	defer cls.disp.mu.Unlock()
+	if h == nil {
+		panic("The handler must not be nil")
+	}
+	if cls.Handler != nil {
+		panic("The task class has a handler attached already")
+	}
+	cls.Handler = h
 }
 
 // taskName returns a short ID for the task to use to dedup it.

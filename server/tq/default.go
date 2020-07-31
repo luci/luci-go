@@ -28,8 +28,8 @@ import (
 var Default Dispatcher
 
 // RegisterTaskClass is a shortcut for Default.RegisterTaskClass.
-func RegisterTaskClass(t TaskClass) {
-	Default.RegisterTaskClass(t)
+func RegisterTaskClass(t TaskClass) TaskClassRef {
+	return Default.RegisterTaskClass(t)
 }
 
 // AddTask is a shortcut for Default.AddTask.

@@ -61,9 +61,6 @@ func TestAddTask(t *testing.T) {
 			ID:        "test-dur",
 			Prototype: &durationpb.Duration{}, // just some proto type
 			Queue:     "queue-1",
-			Handler: func(ctx context.Context, payload proto.Message) error {
-				panic("unused in this test")
-			},
 		})
 
 		task := &Task{
@@ -182,7 +179,7 @@ func TestPushHandler(t *testing.T) {
 		var handlerErr error
 
 		d := Dispatcher{NoAuth: true}
-		d.RegisterTaskClass(TaskClass{
+		ref := d.RegisterTaskClass(TaskClass{
 			ID:        "test-1",
 			Prototype: &emptypb.Empty{},
 			Queue:     "queue",
@@ -250,6 +247,11 @@ func TestPushHandler(t *testing.T) {
 
 		Convey("Handler fatal error", func() {
 			handlerErr = errors.New("boo")
+			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 202)
+		})
+
+		Convey("No handler", func() {
+			ref.(*taskClassImpl).Handler = nil
 			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 202)
 		})
 	})
