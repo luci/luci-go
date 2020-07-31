@@ -16,6 +16,23 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11cc1a17_73bd0822",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T06:05:57Z",
+      "side": 1,
+      "message": "will look after a meeting, but quick question (sorry for being late) -- have you checked luci/common/ code - isn\u0027t there already some code for this? A library like this isn\u0027t CQ specific yet generally useful, so I\u0027d stick it in common/git or even common/git/footers.",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
