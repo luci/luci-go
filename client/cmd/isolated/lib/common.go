@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
-	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/runtime/profiling"
@@ -33,7 +32,6 @@ import (
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags   common.Flags
-	casFlags       cas.Flags
 	isolatedFlags  isolatedclient.Flags
 	authFlags      authcli.Flags
 	parsedAuthOpts auth.Options
@@ -42,7 +40,6 @@ type commonFlags struct {
 
 func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
-	c.casFlags.Init(&c.Flags)
 	c.isolatedFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
 	c.profilerFlags.AddFlags(&c.Flags)
@@ -54,14 +51,8 @@ func (c *commonFlags) Parse() error {
 		return err
 	}
 
-	if err := c.casFlags.Parse(); err != nil {
+	if err = c.isolatedFlags.Parse(); err != nil {
 		return err
-	}
-
-	if c.casFlags.Instance == "" {
-		if err = c.isolatedFlags.Parse(); err != nil {
-			return err
-		}
 	}
 
 	if err := c.profilerFlags.Start(); err != nil {
