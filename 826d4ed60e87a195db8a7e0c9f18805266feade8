@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "08fe1b80_9f3b7a2f",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T03:20:50Z",
+      "side": 1,
+      "message": "Yes. I need the handler to be associate with a concrete (ID, Prototype) pair. The simplest way to do it is to associate it with already registered TaskClass. I considered tq.RegisterHandler(\u0026ProtoMessage{}), but this requires ID to be registered separate as well. Using using TaskClassRef.AttachHandler enforces this.",
+      "parentUuid": "9aacef98_4d5b57c4",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 224,
+        "endChar": 1
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3f8804c_c728113e",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 8
@@ -62,6 +86,30 @@
       "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aaf2e92_b47830e9",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T03:20:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3f8804c_c728113e",
+      "range": {
+        "startLine": 303,
+        "startChar": 54,
+        "endLine": 303,
+        "endChar": 66
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "2b3f0b70_05cfb8d7",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T03:20:50Z",
+      "side": 1,
+      "message": "Strictly speaking reading cls.Handler will be a race if someone calls AttachHandler at the same time. Reading it under the lock is strictly speaking more correct. In practice no one will likely call AttachHandler concurrently, but reading under the lock is not hard, so I implemented it.",
+      "parentUuid": "194cf278_f3c656e9",
+      "range": {
+        "startLine": 715,
+        "startChar": 14,
+        "endLine": 715,
+        "endChar": 25
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0506379_c721e6e2",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 8
@@ -108,6 +180,30 @@
       "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54f006fe_61da3dd9",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 720,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T03:20:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0506379_c721e6e2",
+      "range": {
+        "startLine": 720,
+        "startChar": 55,
+        "endLine": 720,
+        "endChar": 56
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
