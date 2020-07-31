@@ -93,6 +93,30 @@
     },
     {
       "key": {
+        "uuid": "72c6874d_8990626e",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-07-31T16:24:53Z",
+      "side": 1,
+      "message": "That also sounds reasonable to me, assuming we probably won\u0027t need other functions related to git.",
+      "parentUuid": "26f1e5d7_3aa81a20",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 11
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "26ef8835_869e3a46",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -107,6 +131,24 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18bc02ea_8317288c",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-07-31T16:24:53Z",
+      "side": 1,
+      "message": "Apparently depot_tools git_footers.py did this:\nhttps://source.chromium.org/chromium/chromium/tools/depot_tools/+/master:git_footers.py;l\u003d20\nThat must have been where I copied it from :-)",
+      "parentUuid": "26ef8835_869e3a46",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -126,6 +168,29 @@
         "startChar": 12,
         "endLine": 65,
         "endChar": 13
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29e131a7_9abd4196",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-07-31T16:24:53Z",
+      "side": 1,
+      "message": "contain",
+      "range": {
+        "startLine": 88,
+        "startChar": 44,
+        "endLine": 88,
+        "endChar": 52
       },
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -172,6 +237,76 @@
         "startChar": 36,
         "endLine": 116,
         "endChar": 44
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9cf7ba4_4211315d",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-07-31T16:24:53Z",
+      "side": 1,
+      "message": "I think inside of functions, describing the following lines, I most often see imperative style for short comments that just say what is done, e.g. \"Add an empty line, so that ...\"\n\nAnd otherwise I see regular declarative comments that just explain why something has to be done, but not explicitly what, e.g. \"We need to add an extra blank line because trailing spaces and lines were stripped above.\"\n\n\nIn this case, I\u0027m not sure I understand the comment \"Leftover some malformed lines.\" Could you rephrase it?",
+      "parentUuid": "58d1cfd7_67e20437",
+      "range": {
+        "startLine": 116,
+        "startChar": 36,
+        "endLine": 116,
+        "endChar": 44
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3748f6e_c719f609",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-07-31T16:24:53Z",
+      "side": 1,
+      "message": "Nit: I\u0027d write \"a slice of strings\"",
+      "range": {
+        "startLine": 124,
+        "startChar": 22,
+        "endLine": 124,
+        "endChar": 37
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b464836_1d0744e6",
+        "filename": "cq/common/git/footer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-07-31T16:24:53Z",
+      "side": 1,
+      "message": "Although this is bikeshedding I\u0027d like to decide here what convention we want to use for describing tests, e.g. do we want to capitalize the descriptions?\n\nIn some places, the outer Convey is a general description of a test suite, and the inner conveys are full descriptions of specific scenarios, e.g. https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/common/config_test.go\n\nIn other places, the outer Convey is a subject and the inner Convey are predicates, like what we have here, and in https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/dm/appengine/model/execution_test.go.\n\nI think what you\u0027ve written is good; for the outer Convey though would we rather use the literal function name, (e.g. \"NormalizeKey\", \"ParseFooter\", or some description noun phrase like \"Key normalization\", \"Footer parsing\"? What do you think?",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 52
       },
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
