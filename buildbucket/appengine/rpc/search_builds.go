@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
+	"go.chromium.org/luci/buildbucket/appengine/model"
+
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -121,7 +123,7 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err := validateSearch(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	_, err := getBuildsSubMask(req.GetFields())
+	mask, err := getBuildsSubMask(req.GetFields())
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "fields").Err())
 	}
@@ -130,7 +132,8 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO(crbug/1042991): Loading the steps/properties and trimming the builds by mask.
+	if err = model.LoadBuildBundles(ctx, rsp.Builds, mask); err != nil {
+		return nil, err
+	}
 	return rsp, nil
 }
