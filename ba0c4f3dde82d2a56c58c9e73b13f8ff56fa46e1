@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6bc166c7_d5e67c4f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:20:05Z",
+      "side": 1,
+      "message": "lgtm % but TBH I find it non-trivial to follow the SQL since I\u0027m totally new to ResultDB schemas.",
+      "revId": "ba0c4f3dde82d2a56c58c9e73b13f8ff56fa46e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
