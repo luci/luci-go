@@ -71,7 +71,7 @@ type Query struct {
 }
 
 func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err error) {
-	ctx, ts := trace.StartSpan(ctx, "QueryTestResults.run")
+	ctx, ts := trace.StartSpan(ctx, "testresults.Query.run")
 	defer func() { ts.End(err) }()
 
 	if q.PageSize < 0 {
@@ -94,19 +94,6 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	selectIfIncluded("tr.SummaryHtml", "summary_html")
 	selectIfIncluded("tr.Tags", "tags")
 
-	from := "TestResults tr"
-	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
-		// We must return only test results of test variants that have unexpected results.
-		//
-		// The following query ensures that we first select test variants with
-		// unexpected results, and then for each variant do a lookup in TestResults
-		// table.
-		from = `
-			VariantsWithUnexpectedResults vur
-			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-			`
-	}
-
 	limit := ""
 	if q.PageSize > 0 {
 		limit = `LIMIT @limit`
@@ -114,13 +101,6 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 
 	st := spanner.NewStatement(fmt.Sprintf(`
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		WITH VariantsWithUnexpectedResults AS (
-			# Note: this query is not executed if it ends up not used in the top-level
-			# query.
-			SELECT DISTINCT TestId, VariantHash
-			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
-			WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
-		)
 		SELECT
 			tr.InvocationId,
 			tr.TestId,
@@ -134,7 +114,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 			tr.TestLocationFileName,
 			tr.TestLocationLine,
 			%s
-		FROM %s
+		FROM TestResults tr
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
 			AND (
@@ -142,6 +122,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 				(tr.InvocationId = @afterInvocationId AND tr.TestId > @afterTestId) OR
 				(tr.InvocationId = @afterInvocationId AND tr.TestId = @afterTestId AND tr.ResultId > @afterResultId)
 			)
+			AND (@testVariants IS NULL OR STRUCT(tr.TestId, tr.VariantHash) IN UNNEST(@testVariants))
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
 			AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
 			AND (@variantContains IS NULL
@@ -150,9 +131,22 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 			)
 		ORDER BY InvocationId, TestId, ResultId
 		%s
-	`, strings.Join(extraSelect, ","), from, limit))
+	`, strings.Join(extraSelect, ","), limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
+	st.Params["testVariants"] = []*testVariant(nil)
+
+	// Filter by expectency.
+	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
+		switch testVariants, err := q.fetchVariantsWithUnexpectedResults(ctx); {
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch variants with unexpected results").Err()
+		case len(testVariants) == 0:
+			return nil
+		default:
+			st.Params["testVariants"] = testVariants
+		}
+	}
 
 	// Filter by test id.
 	testIDRegexp := q.Predicate.GetTestIdRegexp()
@@ -228,6 +222,36 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 
 		return f(tr)
 	})
+}
+
+type testVariant struct {
+	TestID      string
+	VariantHash string
+}
+
+func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVariants []testVariant, err error) {
+	ctx, ts := trace.StartSpan(ctx, "testresults.Query.fetchVariantsWithUnexpectedResults")
+	defer func() { ts.End(err) }()
+
+	st := spanner.NewStatement(`
+		@{USE_ADDITIONAL_PARALLELISM=TRUE}
+		SELECT DISTINCT TestId, VariantHash
+		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+	`)
+	st.Params["invIDs"] = q.InvocationIDs
+	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var tv testVariant
+		if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
+			return err
+		}
+		testVariants = append(testVariants, tv)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return testVariants, nil
 }
 
 // Fetch returns a page of test results matching q.
