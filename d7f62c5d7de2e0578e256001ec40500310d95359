@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "53cc3a13_de6c1467",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:33:26Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 25
+      },
+      "revId": "d7f62c5d7de2e0578e256001ec40500310d95359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14f1b7c9_f4847a9e",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 11
@@ -13,6 +36,52 @@
       "writtenOn": "2020-07-31T23:24:55Z",
       "side": 1,
       "message": "generalization did not quite work out. PTAL",
+      "revId": "d7f62c5d7de2e0578e256001ec40500310d95359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4a9c0582_d25c6cb7",
+        "filename": "resultdb/internal/invocations/id_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:33:26Z",
+      "side": 1,
+      "message": "👍very helpful.",
+      "range": {
+        "startLine": 33,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 74
+      },
+      "revId": "d7f62c5d7de2e0578e256001ec40500310d95359",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "10bc9a8d_48657b80",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:33:26Z",
+      "side": 1,
+      "message": "scary.",
+      "range": {
+        "startLine": 135,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 2
+      },
       "revId": "d7f62c5d7de2e0578e256001ec40500310d95359",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false

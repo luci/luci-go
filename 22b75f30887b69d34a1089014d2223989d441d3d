@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7282b395_4c983759",
+        "filename": "resultdb/internal/invocations/id_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:33:26Z",
+      "side": 0,
+      "message": "intentionally removed? Asking because \"ID\" { \"ID\",  \"IDSet\"}  blocks look weird.",
+      "range": {
+        "startLine": 29,
+        "startChar": 9,
+        "endLine": 29,
+        "endChar": 21
+      },
+      "revId": "22b75f30887b69d34a1089014d2223989d441d3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
