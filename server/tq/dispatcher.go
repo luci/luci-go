@@ -20,30 +20,111 @@ package tq
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/router"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
 type Dispatcher struct {
-	// CloudProject is ID of a Google Cloud project that hosts queues.
+	// Submitter is used to submit Cloud Tasks tasks.
+	//
+	// Use CloudTaskSubmitter to create a submitter that sends requests to real
+	// Cloud Tasks.
+	//
+	// If not set, task submissions will fail.
+	Submitter Submitter
+
+	// GAE is true when running on Appengine.
+	//
+	// It alters how tasks are submitted and how incoming HTTP requests are
+	// authenticated.
+	GAE bool
+
+	// CloudProject is ID of a project to use to construct full queue names.
+	//
+	// If not set, submission of tasks that use short queue names will fail.
 	CloudProject string
-	// CloudRegion is a ID of a Google Cloud region that hosts queues.
+
+	// CloudRegion is a ID of a region to use to construct full queue names.
+	//
+	// If not set, submission of tasks that use short queue names will fail.
 	CloudRegion string
 
-	mu           sync.RWMutex
-	routesPrefix string // e.g. "/internal/tasks/", always with trailing '/'
+	// DefaultRoutingPrefix is an URL prefix for produced Cloud Tasks.
+	//
+	// Used only for tasks whose TaskClass doesn't provide some custom
+	// RoutingPrefix.
+	//
+	// Default is "/internal/tasks/t/". It means generated Cloud Tasks by will
+	// have target URL "/internal/tasks/t/<generated-per-task-suffix>".
+	//
+	// A non-default value may be valuable if you host multiple dispatchers in
+	// a single process. This is a niche use case.
+	DefaultRoutingPrefix string
+
+	// DefaultTargetHost is a hostname to dispatch Cloud Tasks to by default.
+	//
+	// Individual task classes may override it with their own specific host.
+	//
+	// On GAE defaults to the GAE application itself. Elsewhere has no default:
+	// if the dispatcher can't figure out where to send the task, the task
+	// submission fails.
+	DefaultTargetHost string
+
+	// PushAs is a service account email to be used for generating OIDC tokens.
+	//
+	// The service account must be within the same project. The server account
+	// must have "iam.serviceAccounts.actAs" permission for `PushAs` account.
+	//
+	// Optional on GAE when submitting tasks targeting GAE. Required in all other
+	// cases. If not set, task submissions will fail.
+	PushAs string
+
+	mu       sync.RWMutex
+	clsByID  map[string]*taskClassImpl
+	clsByTyp map[reflect.Type]*taskClassImpl
+}
+
+// Submitter is used by Dispatcher to submit Cloud Tasks.
+//
+// Use CloudTaskSubmitter to create a submitter based on real Cloud Tasks API.
+type Submitter interface {
+	// CreateTask creates a task, returning a gRPC status.
+	//
+	// AlreadyExists status indicates the task with request name already exists.
+	// Other statuses are handled using their usual semantics.
+	//
+	// Will be called from multiple goroutines at once.
+	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
 }
 
 // TaskClass defines how to handles tasks of a specific proto message type.
 type TaskClass struct {
 	// ID is unique identifier of this class of tasks.
+	//
+	// Must match `[a-zA-Z0-9_\-.]{1,100}`.
 	//
 	// It is used to decide how to deserialize and route the task. Changing IDs of
 	// existing task classes is a disruptive operation, make sure the queue is
@@ -62,6 +143,33 @@ type TaskClass struct {
 	// permanently fail Cloud Tasks with bodies it can't deserialize.
 	Prototype proto.Message
 
+	// Queue is a name of Cloud Tasks queue to use for the tasks.
+	//
+	// It can either be a short name like "default" or a full name like
+	// "projects/<project>/locations/<region>/queues/<name>". If it is a full name
+	// it must have the above format or RegisterTaskClass would panic.
+	//
+	// If it is a short queue name, the full queue name will be constructed using
+	// dispatcher's CloudProject and CloudRegion if they are set.
+	//
+	// This queue must exist already.
+	Queue string
+
+	// RoutingPrefix is an URL prefix for produced Cloud Tasks.
+	//
+	// Default is dispatcher's DefaultRoutingPrefix which itself defaults to
+	// "/internal/tasks/t/". It means generated Cloud Tasks by default will have
+	// target URL "/internal/tasks/t/<generated-per-task-suffix>".
+	//
+	// A non-default value can be used to route tasks of a particular class to
+	// particular processes, assuming the load balancer is configured accordingly.
+	RoutingPrefix string
+
+	// TargetHost is a hostname to dispatch Cloud Tasks to.
+	//
+	// If unset, will use dispatcher's DefaultTargetHost.
+	TargetHost string
+
 	// Handler will be called by the dispatcher to execute the tasks.
 	//
 	// The handler will receive the task's payload as a proto message of the exact
@@ -69,15 +177,6 @@ type TaskClass struct {
 	//
 	// See Handler doc for more info.
 	Handler Handler
-
-	// Queue is a name of Cloud Tasks queue to use for the tasks.
-	//
-	// It is a short queue name within the region. The full queue name would be
-	// "projects/<CloudProject>/locations/<CloudRegion>/queues/<Queue>", where
-	// <CloudProject> and <CloudRegion> come from the Dispatcher configuration.
-	//
-	// This queue must exist already.
-	Queue string
 }
 
 // Task contains task body and metadata.
@@ -156,9 +255,49 @@ type Handler func(ctx context.Context, payload proto.Message) error
 // particular type.
 //
 // Intended to be called during process startup. Panics if there's already
-// a registered task class with the same ID or Payload.
-func (d *Dispatcher) RegisterTaskClass(t TaskClass) {
-	// ...
+// a registered task class with the same ID or Prototype.
+func (d *Dispatcher) RegisterTaskClass(cls TaskClass) {
+	if !taskClassIDRe.MatchString(cls.ID) {
+		panic(fmt.Sprintf("bad TaskClass ID %q", cls.ID))
+	}
+	if cls.Prototype == nil {
+		panic("TaskClass Prototype must be set")
+	}
+	if cls.Handler == nil {
+		panic("TaskClass Handler must be set")
+	}
+	if cls.Queue == "" {
+		panic("TaskClass Queue must be set")
+	}
+	if strings.ContainsRune(cls.Queue, '/') && !isValidQueue(cls.Queue) {
+		panic(fmt.Sprintf("not a valid full queue name %q", cls.Queue))
+	}
+	if cls.RoutingPrefix != "" && !strings.HasPrefix(cls.RoutingPrefix, "/") {
+		panic("TaskClass RoutingPrefix must start with /")
+	}
+
+	typ := reflect.TypeOf(cls.Prototype)
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.clsByID == nil {
+		d.clsByID = make(map[string]*taskClassImpl, 1)
+	}
+	if d.clsByTyp == nil {
+		d.clsByTyp = make(map[reflect.Type]*taskClassImpl, 1)
+	}
+
+	if _, ok := d.clsByID[cls.ID]; ok {
+		panic(fmt.Sprintf("TaskClass with ID %q is already registered", cls.ID))
+	}
+	if _, ok := d.clsByTyp[typ]; ok {
+		panic(fmt.Sprintf("TaskClass with Prototype %T is already registered", cls.Prototype))
+	}
+
+	impl := &taskClassImpl{TaskClass: cls}
+	d.clsByID[cls.ID] = impl
+	d.clsByTyp[typ] = impl
 }
 
 // InstallRoutes installs HTTP routes under the given prefix.
@@ -167,25 +306,20 @@ func (d *Dispatcher) RegisterTaskClass(t TaskClass) {
 //
 // The exposed HTTP endpoints are called by Cloud Tasks service when it is time
 // to execute a task.
-func (d *Dispatcher) InstallRoutes(r *router.Router, prefix string) {
+func (d *Dispatcher) InstallRoutes(r *router.Router) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-
-	if d.routesPrefix != "" {
-		panic("InstallRoutes called twice")
-	}
-	d.routesPrefix = strings.TrimRight(prefix, "/") + "/"
 
 	// TODO(vadimsh): Actually install routes.
 }
 
-// AddTask submits one or more tasks for later execution.
+// AddTask submits a task for later execution.
 //
 // The task payload type should match some registered TaskClass. Its ID will
 // be used to identify the task class in the serialized Cloud Tasks task body.
 //
 // At some later time, in some other process, the dispatcher will invoke
-// a handler specified in the corresponding TaskClass, based on its ID extracted
+// a handler attached to the corresponding TaskClass, based on its ID extracted
 // from the task body.
 //
 // If the given context is transactional, inherits the transaction. It means
@@ -193,15 +327,252 @@ func (d *Dispatcher) InstallRoutes(r *router.Router, prefix string) {
 // successfully commits.
 //
 // If the task has a DeduplicationKey and there already was a recent task with
-// the same TaskClass ID and DeduplicationKey, silently ignores the task being
-// added now. This works only outside of transactions. Using DeduplicationKey
-// with transactional tasks results in an error.
+// the same TaskClass ID and DeduplicationKey, silently ignores the added task.
+// This works only outside of transactions. Using DeduplicationKey with
+// transactional tasks results in an error.
 //
-// If given multiple tasks and running outside of a transaction, the operation
-// is *not* atomic: if AddTask returns an error, it means it may have submitted
-// some (but not all) tasks. There's no way to figure out which ones.
+// Annotates retriable errors with transient.Tag.
+func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
+	if d.Submitter == nil {
+		return errors.New("unconfigured Dispatcher: needs a Submitter")
+	}
+	cls, req, err := d.prepTask(ctx, task)
+	if err != nil {
+		return err
+	}
+
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/tq.AddTask")
+	span.Attribute("cr.dev/class", cls.ID)
+	span.Attribute("cr.dev/title", task.Title)
+	defer func() { span.End(err) }()
+
+	ctx = logging.SetFields(ctx, logging.Fields{
+		"cr.dev/class": cls.ID,
+		"cr.dev/title": task.Title,
+	})
+
+	// Each individual RPC should be pretty quick. Also Cloud Tasks client bugs
+	// out if the context has a large deadline.
+	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
+	defer cancel()
+
+	err = d.Submitter.CreateTask(ctx, req)
+
+	code := status.Code(err)
+	span.Attribute("cr.dev/code", code)
+
+	switch code {
+	case codes.OK, codes.AlreadyExists:
+		return nil
+	case codes.Internal, codes.Unknown, codes.Unavailable:
+		return transient.Tag.Apply(err)
+	default:
+		return err
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// defaultHeaders are added to all submitted Cloud Tasks.
+var defaultHeaders = map[string]string{"Content-Type": "application/json"}
+
+// taskClassIDRe is used to validate TaskClass.ID.
+var taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
+
+// prepTask converts a task into Cloud Tasks request.
+func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *taskspb.CreateTaskRequest, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	// TODO(vadimsh): replace with classByTyp(...).
+	cls, ok := d.clsByTyp[reflect.TypeOf(t.Payload)]
+	if !ok {
+		return nil, nil, errors.Reason("no TaskClass registered for type %T", t.Payload).Err()
+	}
+
+	body, err := cls.serialize(t)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	queueID, err := d.queueID(cls.Queue)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	taskID := ""
+	if t.DeduplicationKey != "" {
+		taskID = queueID + "/tasks/" + cls.taskName(t)
+	}
+
+	var scheduleTime *timestamppb.Timestamp
+	switch {
+	case !t.ETA.IsZero():
+		if t.Delay != 0 {
+			return nil, nil, errors.New("bad task: either ETA or Delay should be given, not both")
+		}
+		scheduleTime = timestamppb.New(t.ETA)
+	case t.Delay > 0:
+		scheduleTime = timestamppb.New(clock.Now(ctx).Add(t.Delay))
+	}
+
+	// E.g. ("example.com", "/internal/tasks/t/<class>[/<title>]").
+	host, relativeURI, err := d.taskTarget(cls, t)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// We need to populate one of Task.MessageType oneof alternatives. It has
+	// unexported type, so we have to instantiate the message now and then mutate
+	// it.
+	req := &taskspb.CreateTaskRequest{
+		Parent: queueID,
+		Task: &taskspb.Task{
+			Name:         taskID,
+			ScheduleTime: scheduleTime,
+			// TODO(vadimsh): Make DispatchDeadline configurable?
+		},
+	}
+
+	// On GAE we by default push to the GAE itself.
+	if host == "" && d.GAE {
+		req.Task.MessageType = &taskspb.Task_AppEngineHttpRequest{
+			AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
+				HttpMethod:  taskspb.HttpMethod_POST,
+				RelativeUri: relativeURI,
+				Headers:     defaultHeaders,
+				Body:        body,
+			},
+		}
+		return cls, req, nil
+	}
+
+	// Elsewhere we need to know a target host and how to authenticate to it.
+	if host == "" {
+		return nil, nil, errors.Reason("bad task class %q: no TargetHost", cls.ID).Err()
+	}
+	if d.PushAs == "" {
+		return nil, nil, errors.Reason("unconfigured Dispatcher: PushAs is not set").Err()
+	}
+
+	req.Task.MessageType = &taskspb.Task_HttpRequest{
+		HttpRequest: &taskspb.HttpRequest{
+			HttpMethod: taskspb.HttpMethod_POST,
+			Url:        "https://" + host + relativeURI,
+			Headers:    defaultHeaders,
+			Body:       body,
+			AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
+				OidcToken: &taskspb.OidcToken{
+					ServiceAccountEmail: d.PushAs,
+				},
+			},
+		},
+	}
+	return cls, req, nil
+}
+
+// queueID expands `id` into a full queue name if necessary.
+func (d *Dispatcher) queueID(id string) (string, error) {
+	if strings.HasPrefix(id, "projects/") {
+		return id, nil // already full name
+	}
+	if d.CloudProject == "" {
+		return "", errors.Reason("can't construct full queue name: no cloud project").Err()
+	}
+	if d.CloudRegion == "" {
+		return "", errors.Reason("can't construct full queue name: no cloud region").Err()
+	}
+	return fmt.Sprintf("projects/%s/locations/%s/queues/%s", d.CloudProject, d.CloudRegion, id), nil
+}
+
+// taskTarget constructs a target URL for a task.
 //
-// Tags errors related to RPCs with transient.Tag.
-func (d *Dispatcher) AddTask(ctx context.Context, tasks ...*Task) error {
-	return nil
+// `host` will be "" if no explicit host is configured anywhere. On GAE this
+// means "send the task back to the GAE app". On non-GAE this fails AddTask.
+func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relativeURI string, err error) {
+	if cls.TargetHost != "" {
+		host = cls.TargetHost
+	} else {
+		host = d.DefaultTargetHost
+	}
+
+	pfx := cls.RoutingPrefix
+	if pfx == "" {
+		pfx = d.DefaultRoutingPrefix
+	}
+	if pfx == "" {
+		pfx = "/internal/tasks/t/"
+	}
+
+	if !strings.HasPrefix(pfx, "/") {
+		return "", "", errors.Reason("bad routing prefix %q: must start with /", pfx).Err()
+	}
+	if !strings.HasSuffix(pfx, "/") {
+		pfx += "/"
+	}
+
+	relativeURI = pfx + cls.ID
+	if t.Title != "" {
+		relativeURI += "/" + t.Title
+	}
+	return
+}
+
+// isValidQueue is true if q looks like "projects/.../locations/.../queues/...".
+func isValidQueue(q string) bool {
+	chunks := strings.Split(q, "/")
+	return len(chunks) == 6 &&
+		chunks[0] == "projects" &&
+		chunks[1] != "" &&
+		chunks[2] == "locations" &&
+		chunks[3] != "" &&
+		chunks[4] == "queues" &&
+		chunks[5] != ""
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// taskClassImpl knows how to prepare and handle tasks of a particular class.
+type taskClassImpl struct {
+	TaskClass
+}
+
+// envelope is what we put into all Cloud Tasks.
+type envelope struct {
+	Class string           `json:"class,omitempty"` // ID of TaskClass
+	Type  string           `json:"type,omitempty"`  // for compatibility with appengine/tq
+	Body  *json.RawMessage `json:"body"`            // JSONPB-serialized Task.Payload
+}
+
+// taskName returns a short ID for the task to use to dedup it.
+func (cls *taskClassImpl) taskName(t *Task) string {
+	// If we need to run in "appengine/tq" compatible mode, cls.ID below should be
+	// replaced with proto.MessageName(t.Payload). But a breaking migration is
+	// inevitable at some point (there's no way to have *two* different task names
+	// at the same time), so might just as well start using ID instead of
+	// MesasgeName right away. Migrating users would have to deal with potentially
+	// duplicate messages for some period of time.
+	h := sha256.New()
+	h.Write([]byte(cls.ID))
+	h.Write([]byte{0})
+	h.Write([]byte(t.DeduplicationKey))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// serialize serializes the task body into JSONPB.
+func (cls *taskClassImpl) serialize(t *Task) ([]byte, error) {
+	opts := protojson.MarshalOptions{
+		Indent:         "\t",
+		UseEnumNumbers: true,
+	}
+	blob, err := opts.Marshal(t.Payload)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to serialize %T", t.Payload).Err()
+	}
+	raw := json.RawMessage(blob)
+	return json.MarshalIndent(envelope{
+		Class: cls.ID,
+		Type:  string(proto.MessageName(t.Payload)),
+		Body:  &raw,
+	}, "", "\t")
 }
