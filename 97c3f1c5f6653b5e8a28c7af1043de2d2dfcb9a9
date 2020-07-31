@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "23fc6d5f_e7ea454a",
+        "filename": "resultdb/internal/services/bqexporter/test_result_row_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-31T20:53:31Z",
+      "side": 1,
+      "message": "gofmt",
+      "range": {
+        "startLine": 36,
+        "startChar": 10,
+        "endLine": 36,
+        "endChar": 11
+      },
+      "revId": "97c3f1c5f6653b5e8a28c7af1043de2d2dfcb9a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
