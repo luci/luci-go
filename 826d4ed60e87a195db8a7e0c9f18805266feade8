@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8cc3e0ae_c5809dfb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:13:00Z",
+      "side": 1,
+      "message": "i have a feeling i\u0027m not grokking your intent here.",
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aacef98_4d5b57c4",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:13:00Z",
+      "side": 1,
+      "message": "not sure I like this, but i might be imagining a different use than you do.\n\nAFAIU the intent is to have user code like:\n\n    // every process registers all kinds of tasks\n    cls1 :\u003d TaskClass{..} // no Handler\n    ref1 :\u003d tq.RegisterTaskClass(cls1)\n    cls2 :\u003d TaskClass{..} // no Handler\n    ref2 :\u003d tq.RegisterTaskClass(cls2)\n\n    if taskHandlingProcess {\n      handler1 :\u003d ...\n      ref1.AttachHandler(handler1)\n    }\n\n\nRight?\nIf so, why can\u0027t the handling process code look like:\n\n    if taskHandlingProcess {\n      ref1.AttachHandler(cls1, handler1)\n    }\n\n\nUPDATE: Oh, i see. The advantage of your approach is that it\u0027ll be attached to exactly the same Dispatcher with exactly the same `cls`. Can you confirm?",
+      "range": {
+        "startLine": 213,
+        "startChar": 0,
+        "endLine": 224,
+        "endChar": 1
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b3f8804c_c728113e",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:13:00Z",
+      "side": 1,
+      "message": "default.go\u0027s tq.RegisterTaskClass should also be modified, right?",
+      "range": {
+        "startLine": 303,
+        "startChar": 54,
+        "endLine": 303,
+        "endChar": 66
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "194cf278_f3c656e9",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:13:00Z",
+      "side": 1,
+      "message": "here and in clasByTyp it\u0027s cls.Handler. Why return Handler separately at all if callee can do cls.Handler on non-nil errors?",
+      "range": {
+        "startLine": 715,
+        "startChar": 14,
+        "endLine": 715,
+        "endChar": 25
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0506379_c721e6e2",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 720,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:13:00Z",
+      "side": 1,
+      "message": "nit: del space",
+      "range": {
+        "startLine": 720,
+        "startChar": 55,
+        "endLine": 720,
+        "endChar": 56
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8dd4eea_7256b051",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:13:00Z",
+      "side": 1,
+      "message": "why? it\u0027s always nil and not used by callers.",
+      "range": {
+        "startLine": 722,
+        "startChar": 68,
+        "endLine": 722,
+        "endChar": 75
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
