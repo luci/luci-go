@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9371ca9c_0053d5aa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-31T03:39:59Z",
+      "side": 1,
+      "message": "Hi Sana, I switched to use datastore.Get to fetch all bundles at once with the reason replied in the comment. PTAL. thx.",
+      "revId": "d730b31e11b425829c8c6362248ddfaa4ed202fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

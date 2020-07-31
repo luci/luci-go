@@ -33,6 +33,24 @@
       "revId": "b380c17cb5b659d186260b8d9b56af54a97f211a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "674f62a4_99ac5d7c",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-07-31T03:39:59Z",
+      "side": 1,
+      "message": "After doing some research, I found people suggest to use datastore GetAll instead of goroutines (https://groups.google.com/g/google-appengine-go/c/nAZvStUPkYI). I also compared the runtime for goroutines and  luci datastore.Get in Dev. There is no big difference between them. I saw the underlaying implementation of luci datastore.Get handles those batch Fetches in certain way. So utilizing the existing func is better than writing the goroutines on the client side.",
+      "parentUuid": "da963e08_0c90b555",
+      "revId": "b380c17cb5b659d186260b8d9b56af54a97f211a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
