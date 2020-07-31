@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/errors"
@@ -78,16 +80,42 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 		panic("PageSize < 0")
 	}
 
+	var extraSelect []string
+	readMask := q.Mask
+	if readMask.IsEmpty() {
+		readMask = defaultListMask
+	}
+	selectIfIncluded := func(column, field string) {
+		switch inc, err := readMask.Includes(field); {
+		case err != nil:
+			panic(err)
+		case inc != mask.Exclude:
+			extraSelect = append(extraSelect, column)
+		}
+	}
+	selectIfIncluded("tr.SummaryHtml", "summary_html")
+	selectIfIncluded("tr.Tags", "tags")
+
 	limit := ""
 	if q.PageSize > 0 {
 		limit = `LIMIT @limit`
 	}
 
-	selectSQL, parser := q.selectClause()
-
 	st := spanner.NewStatement(fmt.Sprintf(`
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		%s
+		SELECT
+			tr.InvocationId,
+			tr.TestId,
+			tr.ResultId,
+			tr.Variant,
+			tr.VariantHash,
+			tr.IsUnexpected,
+			tr.Status,
+			tr.StartTime,
+			tr.RunDurationUsec,
+			tr.TestLocationFileName,
+			tr.TestLocationLine,
+			%s
 		FROM TestResults tr
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
@@ -105,7 +133,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 			)
 		ORDER BY InvocationId, TestId, ResultId
 		%s
-	`, selectSQL, limit))
+	`, strings.Join(extraSelect, ","), limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["testVariants"] = []*testVariant(nil)
@@ -139,56 +167,9 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	}
 
 	// Read the results.
-	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		tr, err := parser(row)
-		if err != nil {
-			return err
-		}
-		return f(tr)
-	})
-}
-
-// select returns the SELECT clause of the SQL statement to fetch test results,
-// as well as a function to convert a Spanner row to a TestResult message.
-// The returned SELECT clause assumes that the TestResults has alias "tr".
-// The returned parser is stateful and must not be called concurrently.
-func (q *Query) selectClause() (sql string, parser func(*spanner.Row) (*pb.TestResult, error)) {
-	sql = `SELECT
-		tr.InvocationId,
-		tr.TestId,
-		tr.ResultId,
-		tr.Variant,
-		tr.VariantHash,
-		tr.IsUnexpected,
-		tr.Status,
-		tr.StartTime,
-		tr.RunDurationUsec,
-		tr.TestLocationFileName,
-		tr.TestLocationLine,
-	`
-
-	// Select extra columns depending on the mask.
-	var extraSelect []string
-	readMask := q.Mask
-	if readMask.IsEmpty() {
-		readMask = defaultListMask
-	}
-	selectIfIncluded := func(column, field string) {
-		switch inc, err := readMask.Includes(field); {
-		case err != nil:
-			panic(err)
-		case inc != mask.Exclude:
-			extraSelect = append(extraSelect, column)
-		}
-	}
-	selectIfIncluded("tr.SummaryHtml", "summary_html")
-	selectIfIncluded("tr.Tags", "tags")
-	sql += strings.Join(extraSelect, ",")
-
-	// Build a parser function.
-	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
-	parser = func(row *spanner.Row) (*pb.TestResult, error) {
+	var b spanutil.Buffer
+	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
 		var micros spanner.NullInt64
@@ -221,9 +202,9 @@ func (q *Query) selectClause() (sql string, parser func(*spanner.Row) (*pb.TestR
 			}
 		}
 
-		err := b.FromSpanner(row, ptrs...)
+		err = b.FromSpanner(row, ptrs...)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		// Generate test result name now in case tr.TestId and tr.ResultId become
@@ -234,14 +215,15 @@ func (q *Query) selectClause() (sql string, parser func(*spanner.Row) (*pb.TestR
 		populateDurationField(tr, micros)
 		populateTestLocation(tr, testLocationFileName, testLocationLine)
 		if err := q.Mask.Trim(tr); err != nil {
-			return nil, errors.Annotate(err, "error trimming fields for %s", tr.Name).Err()
+			return errors.Annotate(
+				err, "error trimming fields for %s", tr.Name).Err()
 		}
 		// Always include name in tr because name is needed to calculate
 		// page token.
 		tr.Name = trName
-		return tr, nil
-	}
-	return
+
+		return f(tr)
+	})
 }
 
 type testVariant struct {
@@ -253,24 +235,41 @@ func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVar
 	ctx, ts := trace.StartSpan(ctx, "testresults.Query.fetchVariantsWithUnexpectedResults")
 	defer func() { ts.End(err) }()
 
-	st := spanner.NewStatement(`
-		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		SELECT DISTINCT TestId, VariantHash
-		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
-		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
-	`)
-	st.Params["invIDs"] = q.InvocationIDs
-	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		var tv testVariant
-		if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
-			return err
-		}
-		testVariants = append(testVariants, tv)
-		return nil
-	})
-	if err != nil {
+	set := map[testVariant]struct{}{}
+	var mu sync.Mutex
+
+	eg, ctx := errgroup.WithContext(ctx)
+	for _, batch := range q.InvocationIDs.Batches() {
+		st := spanner.NewStatement(`
+			@{USE_ADDITIONAL_PARALLELISM=TRUE}
+			SELECT DISTINCT TestId, VariantHash
+			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+			WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+		`)
+		st.Params["invIDs"] = batch
+		eg.Go(func() error {
+			return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+				var tv testVariant
+				if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
+					return err
+				}
+
+				mu.Lock()
+				set[tv] = struct{}{}
+				mu.Unlock()
+				return nil
+			})
+		})
+	}
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
+
+	testVariants = make([]testVariant, 0, len(set))
+	for tv := range set {
+		testVariants = append(testVariants, tv)
+	}
+
 	return testVariants, nil
 }
 
