@@ -24,10 +24,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/archiver"
@@ -130,45 +126,11 @@ func getRoot(dirs, files isolated.ScatterGather) (string, error) {
 	return wd0, nil
 }
 
-func (c *archiveRun) doCASArchive(ctx context.Context) error {
-	root, err := getRoot(c.dirs, c.files)
-	if err != nil {
-		return err
-	}
+// Does the archive by uploading to isolate-server, then return the archive stats and error.
+func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *archiver.Stats, err error) {
+	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
+	signals.HandleInterrupt(cancel)
 
-	is := command.InputSpec{}
-	for dir := range c.dirs {
-		is.Inputs = append(is.Inputs, dir)
-	}
-	for file := range c.files {
-		is.Inputs = append(is.Inputs, file)
-	}
-
-	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
-	if err != nil {
-		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
-	}
-
-	client, err := c.casFlags.NewClient(ctx)
-	if err != nil {
-		return errors.Annotate(err, "failed to create cas client").Err()
-	}
-	defer client.Close()
-
-	if err := client.UploadIfMissing(ctx, chunkers...); err != nil {
-		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
-	}
-
-	if c.dumpHash != "" {
-		if err := ioutil.WriteFile(c.dumpHash, []byte(rootDg.String()), 0644); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *archiveRun) doIsolatedArchive(ctx context.Context) (stats *archiver.Stats, err error) {
 	isolatedClient, isolErr := c.createIsolatedClient(ctx, c.CommandOptions)
 	if isolErr != nil {
 		err = errors.Annotate(isolErr, "failed to create isolated client").Err()
@@ -218,19 +180,6 @@ func (c *archiveRun) doIsolatedArchive(ctx context.Context) (stats *archiver.Sta
 		}
 	}
 	return
-}
-
-// Does the archive by uploading to isolate-server, then return the archive stats and error.
-func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *archiver.Stats, err error) {
-	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
-	signals.HandleInterrupt(cancel)
-
-	if c.casFlags.Instance != "" {
-		// TODO(crbug.com/1110569): get stats
-		return &archiver.Stats{}, c.doCASArchive(ctx)
-	}
-
-	return c.doIsolatedArchive(ctx)
 }
 
 func (c *archiveRun) postprocessStats(stats *archiver.Stats, start time.Time) error {
