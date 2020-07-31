@@ -160,6 +160,30 @@
     },
     {
       "key": {
+        "uuid": "a44cbf7b_b942f0ec",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T03:26:48Z",
+      "side": 1,
+      "message": "Oh, of course! Sorry for not noticing. Please, add a comment here. It\u0027s really not clear if one reads just this chunk of code w/o remembering about AttachHandler.",
+      "parentUuid": "2b3f0b70_05cfb8d7",
+      "range": {
+        "startLine": 715,
+        "startChar": 14,
+        "endLine": 715,
+        "endChar": 25
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b0506379_c721e6e2",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 8
