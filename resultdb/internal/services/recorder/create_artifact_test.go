@@ -232,7 +232,8 @@ func TestCreateArtifact(t *testing.T) {
 				return send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "")
 			}
 
-			Convey(`Single request`, func() {
+			// Skip due to https://crbug.com/1110755
+			SkipConvey(`Single request`, func() {
 				rec := casSend()
 				So(rec.Code, ShouldEqual, http.StatusNoContent)
 				So(w.requests, ShouldHaveLength, 1)
