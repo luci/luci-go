@@ -184,6 +184,30 @@
     },
     {
       "key": {
+        "uuid": "cd128165_aa5833dd",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 715,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T03:34:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a44cbf7b_b942f0ec",
+      "range": {
+        "startLine": 715,
+        "startChar": 14,
+        "endLine": 715,
+        "endChar": 25
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0506379_c721e6e2",
         "filename": "server/tq/dispatcher.go",
         "patchSetId": 8
@@ -251,6 +275,30 @@
       "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89371440_22770943",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-07-31T03:34:33Z",
+      "side": 1,
+      "message": "oh, it should be cls.Handler\n\nIt\u0027s not really used, but classByMsg looks very similar to classByID and classByTyp and it would have been weird if it has different signature",
+      "parentUuid": "b8dd4eea_7256b051",
+      "range": {
+        "startLine": 722,
+        "startChar": 68,
+        "endLine": 722,
+        "endChar": 75
+      },
+      "revId": "826d4ed60e87a195db8a7e0c9f18805266feade8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
