@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "612e5363_7867dbc2",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:34:29Z",
+      "side": 1,
+      "message": "is this important? In my reading of callee code, it wasn\u0027t.",
+      "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
