@@ -446,6 +446,7 @@ func (o *Options) shouldEnableTracing() bool {
 func (o *Options) hostOptions() module.HostOptions {
 	return module.HostOptions{
 		Prod:         o.Prod,
+		GAE:          o.GAE,
 		CloudProject: o.CloudProject,
 		CloudRegion:  o.CloudRegion,
 	}
