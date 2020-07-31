@@ -17,8 +17,10 @@ package invocations
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
@@ -125,4 +127,45 @@ func TokenToMap(token string, dest map[string]interface{}, keys ...string) error
 		}
 		return nil
 	}
+}
+
+// ShardQuery splits the query into multiple shards by invocation parameter, and
+// runs them concurrently. For example, if a query retrieves test results from a
+// set of invocations, then ShardQuery splits the set of invocations into
+// subsets, and runs the query for each of them.
+// It typically results in a better performance.
+//
+// st must have a parameter named `invIDsParamName`, and it must have a type
+// IDSet.
+// f calls are synchronized.
+func ShardQuery(ctx context.Context, st spanner.Statement, invIDsParamName string, f func(*spanner.Row) error) error {
+	idSet := st.Params[invIDsParamName].(IDSet)
+
+	eg, ctx := errgroup.WithContext(ctx)
+	var mu sync.Mutex
+	for _, batch := range idSet.Batches() {
+		subStmt := cloneStatement(st)
+		subStmt.Params[invIDsParamName] = batch
+		eg.Go(func() error {
+			return spanutil.Query(ctx, subStmt, func(row *spanner.Row) error {
+				mu.Lock()
+				defer mu.Unlock()
+				return f(row)
+			})
+		})
+	}
+	return eg.Wait()
+}
+
+// cloneStatement returns a shallowish copy of st: parameter values are not
+// cloned.
+func cloneStatement(st spanner.Statement) spanner.Statement {
+	clone := spanner.Statement{
+		SQL:    st.SQL,
+		Params: make(map[string]interface{}, len(st.Params)),
+	}
+	for k, v := range st.Params {
+		clone.Params[k] = v
+	}
+	return clone
 }
