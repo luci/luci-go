@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "ad078ffe_4f501a20",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "I do have checked and I don\u0027t see it there. Tricium has a partial implementation[1] but it\u0027s incomplete for CQ usage. I saw the comment on the other CLs. I will make it to `common/git/footers`.\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/infra/tricium/appengine/backend/poll.go;l\u003d547;drc\u003dbeefa9d309075bbb9961e982334b0ce912b91c9e",
+      "parentUuid": "11cc1a17_73bd0822",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9281477c_3a2d29fb",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -67,6 +85,24 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87f08323_ae46f02b",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "I wasn\u0027t sure what would be inside this package so I didn\u0027t add doc at first. Now that it is moved to `common/git/footer` pkg, I\u0027ve added doc",
+      "parentUuid": "9281477c_3a2d29fb",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +153,30 @@
     },
     {
       "key": {
+        "uuid": "75a5961b_2a42f993",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "\u003e i think this should be `footers` package, and then you don\u0027t need \"Footer\" in most func names.\n\nRenamed most of the functions\n\n\u003e That also sounds reasonable to me, assuming we probably won\u0027t need other functions related to git.\n\nThis is located in `common/git/footer` pkg, if we need more functionality related to git, we can have new pkg under `common/git` or make `common/git` a pkg.",
+      "parentUuid": "72c6874d_8990626e",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 11
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26ef8835_869e3a46",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -152,6 +212,24 @@
     },
     {
       "key": {
+        "uuid": "0f68713e_79d13e7e",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "yes exactly. CQ forks an older version of git_footers.py in depot_tools which doesn\u0027t include this scenario. I think it is useful so that I decide to include this functionality.",
+      "parentUuid": "18bc02ea_8317288c",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3050ec64_b2b628fa",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -172,6 +250,30 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "309c5f7b_ea028d41",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3050ec64_b2b628fa",
+      "range": {
+        "startLine": 65,
+        "startChar": 12,
+        "endLine": 65,
+        "endChar": 13
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -198,6 +300,30 @@
     },
     {
       "key": {
+        "uuid": "9abfa2fc_c2384083",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29e131a7_9abd4196",
+      "range": {
+        "startLine": 88,
+        "startChar": 44,
+        "endLine": 88,
+        "endChar": 52
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ec648a1_1869ce0a",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -218,6 +344,30 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53157e86_38e48f1d",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "This logic is located in `git_footer.py` in depot_tools[1]. Since this git_footers.py is a fork of that in depot_tools, I use the depot tool one as the reference. Added that in the package doc.\n\n[1]: https://source.chromium.org/chromium/chromium/tools/depot_tools/+/master:git_footers.py;l\u003d92-95;drc\u003d098586197089d3bd63bcdee543c546c5eb4c2bdf",
+      "parentUuid": "8ec648a1_1869ce0a",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 66
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -268,6 +418,30 @@
     },
     {
       "key": {
+        "uuid": "ea707283_0a948f9a",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "Great suggestions for both. I\u0027ve reword the whole sentence and use singular verb.",
+      "parentUuid": "e9cf7ba4_4211315d",
+      "range": {
+        "startLine": 116,
+        "startChar": 36,
+        "endLine": 116,
+        "endChar": 44
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3748f6e_c719f609",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -291,6 +465,30 @@
     },
     {
       "key": {
+        "uuid": "9e71e6ce_32c9cbc7",
+        "filename": "cq/common/git/footer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "Fixed",
+      "parentUuid": "a3748f6e_c719f609",
+      "range": {
+        "startLine": 124,
+        "startChar": 22,
+        "endLine": 124,
+        "endChar": 37
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b464836_1d0744e6",
         "filename": "cq/common/git/footer_test.go",
         "patchSetId": 2
@@ -311,6 +509,30 @@
       "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09d8dc35_5de0f8e6",
+        "filename": "cq/common/git/footer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T20:08:46Z",
+      "side": 1,
+      "message": "Thanks for bring that up. I was naming whatever I want before and now that I\u0027ve learnt there\u0027s a convention :) Renamed all literals.",
+      "parentUuid": "2b464836_1d0744e6",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 52
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
