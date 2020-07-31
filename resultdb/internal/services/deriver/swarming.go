@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package chromium
+package deriver
 
 import (
 	"bytes"
@@ -45,8 +45,8 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/formats"
-	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/util"
+	"go.chromium.org/luci/resultdb/internal/services/deriver/formats"
+	"go.chromium.org/luci/resultdb/internal/services/deriver/util"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
