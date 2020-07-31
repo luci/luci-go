@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "624987e7_23e6b611",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T23:57:08Z",
+      "side": 1,
+      "message": "PTAL. Thank you!\n\nI have some open questions commented inline.",
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92f5c65a_be7ce5ae",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T23:57:08Z",
+      "side": 1,
+      "message": "I put this code in gerrit package as of now because I assume it is related to Gerrit. I can move it under `common/git/tag` or `common/git/gerrit` if you think it\u0027s better as this package is more about implementing a REST client for Gerrit.",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 14
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e28b7bf5_f4b8ce1e",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T23:57:08Z",
+      "side": 1,
+      "message": "L18 of base.py (this is internal stuff. is it okay to share the link here?) seems to imply that the tag is SNAKE_CASE, but the pattern match is case insensitive. I saw all key passed by CQ are SNAKE_CASE only so that I restrict the pattern here. WDYT?",
+      "range": {
+        "startLine": 25,
+        "startChar": 40,
+        "endLine": 25,
+        "endChar": 44
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6f92580_d6c2b492",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-07-31T23:57:08Z",
+      "side": 1,
+      "message": "I assume this is legacy stuff from Rietveld era? I couldn\u0027t find any documentation about it.",
+      "range": {
+        "startLine": 27,
+        "startChar": 24,
+        "endLine": 27,
+        "endChar": 30
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
