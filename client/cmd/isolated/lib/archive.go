@@ -89,43 +89,6 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-// getRoot returns root directory if there is only one working directory.
-func getRoot(dirs, files isolated.ScatterGather) (string, error) {
-	var rel0, wd0 string
-	pickedOne := false
-	for rel, wd := range dirs {
-		if !pickedOne {
-			rel0 = rel
-			wd0 = wd
-			pickedOne = true
-			continue
-		}
-
-		if wd0 != wd {
-			return "", errors.Reason("different root (working) directory is not supported: %s:%s vs %s:%s", wd0, rel0, wd, rel).Err()
-		}
-	}
-
-	for rel, wd := range files {
-		if !pickedOne {
-			rel0 = rel
-			wd0 = wd
-			pickedOne = true
-			continue
-		}
-
-		if wd0 != wd {
-			return "", errors.Reason("different root (working) directory is not supported: %s:%s vs %s:%s", wd0, rel0, wd, rel).Err()
-		}
-	}
-
-	if !pickedOne {
-		return "", errors.Reason("-dirs or -files should be specified at least once").Err()
-	}
-
-	return wd0, nil
-}
-
 // Does the archive by uploading to isolate-server, then return the archive stats and error.
 func (c *archiveRun) doArchive(a subcommands.Application, args []string) (stats *archiver.Stats, err error) {
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
