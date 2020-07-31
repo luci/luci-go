@@ -71,6 +71,24 @@
     },
     {
       "key": {
+        "uuid": "ab468e59_cfd8d569",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:10:10Z",
+      "side": 1,
+      "message": "I checked and didn\u0027t find anything so far. But I did find https://chromium-review.googlesource.com/c/infra/infra/+/2293312 -- the first user of your library 😊",
+      "parentUuid": "11cc1a17_73bd0822",
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9281477c_3a2d29fb",
         "filename": "cq/common/git/footer.go",
         "patchSetId": 2
@@ -524,6 +542,30 @@
       "side": 1,
       "message": "Thanks for bring that up. I was naming whatever I want before and now that I\u0027ve learnt there\u0027s a convention :) Renamed all literals.",
       "parentUuid": "2b464836_1d0744e6",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 52
+      },
+      "revId": "4590974a2f6b3a637d2fb176bafadfe913f09a95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d2d71436_09eec4f5",
+        "filename": "cq/common/git/footer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-07-31T23:10:10Z",
+      "side": 1,
+      "message": "FWIW, I don\u0027t think this is important (\u003d you didn\u0027t convince me yet) to spend mental cycles on keeping convey naming consistent across _test.go files.",
+      "parentUuid": "09d8dc35_5de0f8e6",
       "range": {
         "startLine": 28,
         "startChar": 0,
