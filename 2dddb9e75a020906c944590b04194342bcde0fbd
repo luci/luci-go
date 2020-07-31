@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "018e98dd_9676809e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-31T08:13:14Z",
+      "side": 1,
+      "message": "Sorry, I missed that.",
+      "revId": "2dddb9e75a020906c944590b04194342bcde0fbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0fd5ed9e_4f00ca87",
+        "filename": "client/cmd/cas/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-07-31T08:13:14Z",
+      "side": 1,
+      "message": "nit: it might be better to mention that this is a thin wrapper of remote-apis-sdk and small difference from RE client.",
+      "revId": "2dddb9e75a020906c944590b04194342bcde0fbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
