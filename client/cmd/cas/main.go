@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main is a .isolate compiler that compiles .isolate files into
-// .isolated files and can also act as a client to an Isolate server.
+// Package main is a CAS client.
 //
-// It is designed to be compatible with the reference python implementation at
-// https://github.com/luci/luci-py/tree/master/client.
+// This is a thin wrapper of remote-apis-sdks to upload/download files from CAS
+// efficiently.
 package main
 
 import (
