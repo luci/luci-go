@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "402290ba_d75593f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-07-31T20:51:01Z",
+      "side": 1,
+      "message": "PTAL.\n\nConsider performance differences between \nhttps://results.api.cr.dev/rpcexplorer/services/luci.resultdb.v1.ResultDB/QueryTestResults\nand\nhttps://nodir.api.cr.dev/rpcexplorer/services/luci.resultdb.v1.ResultDB/QueryTestResults\ngiven this huge query: https://paste.googleplex.com/6060823166320640",
+      "revId": "07099c282ef32eaa7dfe3881b9c1eb65c111ab4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
