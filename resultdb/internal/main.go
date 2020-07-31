@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 )
 
 // Main registers all dependencies and runs a service.
@@ -32,6 +33,7 @@ func Main(init func(srv *server.Server) error) {
 		secrets.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		span.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
 	}
 
 	// TODO(vadimsh): Should this be removed?
