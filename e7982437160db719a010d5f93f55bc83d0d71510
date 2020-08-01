@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a850c07_76ee55b3",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:33:31Z",
+      "side": 1,
+      "message": "for clarity, how about \"earliest to execute\" (as opposed to earliest created)?",
+      "range": {
+        "startLine": 50,
+        "startChar": 60,
+        "endLine": 50,
+        "endChar": 68
+      },
+      "revId": "e7982437160db719a010d5f93f55bc83d0d71510",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a0dd423_598da9b0",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:33:31Z",
+      "side": 1,
+      "message": "I like this change 👍",
+      "range": {
+        "startLine": 256,
+        "startChar": 1,
+        "endLine": 272,
+        "endChar": 2
+      },
+      "revId": "e7982437160db719a010d5f93f55bc83d0d71510",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
