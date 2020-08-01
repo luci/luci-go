@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "d691b780_a964a440",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T23:58:04Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 20,
+        "startChar": 20,
+        "endLine": 20,
+        "endChar": 27
+      },
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f93c04d9_2b18c728",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T23:58:04Z",
+      "side": 1,
+      "message": "typo: debug",
+      "range": {
+        "startLine": 59,
+        "startChar": 35,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c44263b_86d31751",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T23:58:04Z",
+      "side": 1,
+      "message": "IIUC, the race is theoretically not a problem any more according to your CL comments?",
+      "range": {
+        "startLine": 69,
+        "startChar": 12,
+        "endLine": 69,
+        "endChar": 62
+      },
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f8e022f3_4888b0d1",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
@@ -13,6 +82,41 @@
       "writtenOn": "2020-08-01T19:26:24Z",
       "side": 1,
       "message": "So looking at the butler code deeper, I think that there isn\u0027t a bug like I thought.\n\nThe \u0027streamserver\u0027 has a loop where it does connection.Accept calls; when the butler tears-down\nit sets a closed flag and then closes the connection.\n\nOnce the connection is accepted, it increments a wait group and fires a goroutine to handle the\nnew connection handshake. Stopping the streamserver causes it to wait for all processing goroutines\nto finish.\n\nThe Connect/Accept pair from client to server is a blocking operation; the client won\u0027t progress to writing/quit until the connection happens. This means that in the worst case where a client does connect+write+close+quit, the server MUST be in the body of the streamserver loop, after the Accept call. The only way for the server to proceed forward will increment the waitgroup in the streamserver, and waiting for the waitgroup to be Done is one of the criteria during butler\u0027s teardown process.\n\nSo I think this may actually be fine?",
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7b327dde_2853eb0b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T23:58:04Z",
+      "side": 1,
+      "message": "LGTM+1000000 on this.\n\nI assume we can avoid all this complexity with ButlerV2?\n\n",
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4f6e0cb1_61ccbc47",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T23:58:04Z",
+      "side": 1,
+      "message": "I just examine the code as well and I think what you said are right. Furthermore, I think teardown process won\u0027t start before the StreamCount drop to zero[1]. So I think it should not be a issue. \n\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/client/butler/butler.go;l\u003d519-526;drc\u003d5caafd034bb2975b7c99465f953be9c44b6cf917",
+      "parentUuid": "f8e022f3_4888b0d1",
       "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
