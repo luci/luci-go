@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/pbutil"
 )
 
 var (
@@ -39,18 +38,24 @@ var (
 	permListArtifacts        = realms.RegisterPermission("resultdb.artifacts.list")
 )
 
-// verifyPermission checks if the caller has the specified permission on the
-// realm that the invocation with the specified id belongs to.
 func verifyPermission(ctx context.Context, permission realms.Permission, id invocations.ID) error {
-	realm, err := invocations.ReadRealm(span.Single(ctx), id)
+	return verifyPermissionBatch(ctx, permission, invocations.NewIDSet(id))
+}
+
+// verifyPermissionBatch checks if the caller has the specified permission in the
+// realms that the invocations with the specified id belongs to.
+func verifyPermissionBatch(ctx context.Context, permission realms.Permission, ids invocations.IDSet) error {
+	realms, err := invocations.ReadRealms(span.Single(ctx), ids)
 	if err != nil {
 		return err
 	}
-	switch allowed, err := auth.HasPermission(ctx, permission, realm); {
-	case err != nil:
-		return err
-	case !allowed:
-		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of invocation %s`, permission, id)
+	for id, realm := range realms {
+		switch allowed, err := auth.HasPermission(ctx, permission, realm); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of invocation %s`, permission, id)
+		}
 	}
 	return nil
 }
@@ -58,14 +63,9 @@ func verifyPermission(ctx context.Context, permission realms.Permission, id invo
 // verifyPermissionInvNames does the same as verifyPermission but accepts
 // invocation names (variadic)  instead of a single  invocations.ID.
 func verifyPermissionInvNames(ctx context.Context, permission realms.Permission, invNames ...string) error {
-	for _, n := range invNames {
-		invIDStr, inputErr := pbutil.ParseInvocationName(n)
-		if inputErr != nil {
-			return appstatus.BadRequest(inputErr)
-		}
-		if err := verifyPermission(ctx, permission, invocations.ID(invIDStr)); err != nil {
-			return err
-		}
+	ids, err := invocations.ParseNames(invNames)
+	if err != nil {
+		return appstatus.BadRequest(err)
 	}
-	return nil
+	return verifyPermissionBatch(ctx, permission, ids)
 }
