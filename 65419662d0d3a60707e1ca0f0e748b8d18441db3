@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d31f9948_625f2b61",
+        "filename": "resultdb/internal/invocations/id.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-01T01:40:27Z",
+      "side": 1,
+      "message": "should this be \u003c\u003d ?",
+      "range": {
+        "startLine": 203,
+        "startChar": 14,
+        "endLine": 203,
+        "endChar": 15
+      },
+      "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "612e5363_7867dbc2",
         "filename": "resultdb/internal/invocations/misc.go",
         "patchSetId": 12
@@ -13,6 +36,29 @@
       "writtenOn": "2020-07-31T23:34:29Z",
       "side": 1,
       "message": "is this important? In my reading of callee code, it wasn\u0027t.",
+      "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef4a2a28_da2b35cd",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-01T01:40:27Z",
+      "side": 1,
+      "message": "should invIDsParamName be quoted?",
+      "range": {
+        "startLine": 139,
+        "startChar": 35,
+        "endLine": 139,
+        "endChar": 50
+      },
       "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
