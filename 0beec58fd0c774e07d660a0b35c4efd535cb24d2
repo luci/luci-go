@@ -19,6 +19,46 @@
     },
     {
       "key": {
+        "uuid": "6c035a70_efedc9f8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "lgtm % package + update some docs.",
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa728dcf_f38f5f98",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "20, unless you forked this.",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92f5c65a_be7ce5ae",
         "filename": "common/api/gerrit/tag.go",
         "patchSetId": 2
@@ -42,6 +82,47 @@
     },
     {
       "key": {
+        "uuid": "6ffa6bf3_6acead84",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "It\u0027s actually not at all related to Gerrt. This is in chrome-infra based on internal use in Google3 where it\u0027s still the state of the art to write BUG\u003d.\n\nThe word \"tag\" is unfortunately very confusing in the context of `git`.\nSince footers essentially supersede tags for us, I vote adding this to your newly created common/git/footers package.",
+      "parentUuid": "92f5c65a_be7ce5ae",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 14
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af68abfb_826a322a",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "per above comment, please don\u0027t refer to \"Gerrit CL Tag\". I\u0027d say \"legacy \u003cTAG\u003e\u003d\u003cVALUE\u003e style metadata\"",
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e28b7bf5_f4b8ce1e",
         "filename": "common/api/gerrit/tag.go",
         "patchSetId": 2
@@ -53,6 +134,30 @@
       "writtenOn": "2020-07-31T23:57:08Z",
       "side": 1,
       "message": "L18 of base.py (this is internal stuff. is it okay to share the link here?) seems to imply that the tag is SNAKE_CASE, but the pattern match is case insensitive. I saw all key passed by CQ are SNAKE_CASE only so that I restrict the pattern here. WDYT?",
+      "range": {
+        "startLine": 25,
+        "startChar": 40,
+        "endLine": 25,
+        "endChar": 44
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a35ed2d_195379a1",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "re internal stuff: I use _short URls for them\n\nre case: restricting is probably fine.",
+      "parentUuid": "e28b7bf5_f4b8ce1e",
       "range": {
         "startLine": 25,
         "startChar": 40,
@@ -85,6 +190,70 @@
       "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fc49dc63_3aadac84",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "as I wrote above, yes, legacy indeed. Rietveld got it from google3.",
+      "parentUuid": "f6f92580_d6c2b492",
+      "range": {
+        "startLine": 27,
+        "startChar": 24,
+        "endLine": 27,
+        "endChar": 30
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c8dec045_56a0e7dc",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "you mean \"multimap\"?",
+      "range": {
+        "startLine": 28,
+        "startChar": 11,
+        "endLine": 28,
+        "endChar": 25
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d189035_8f11ae28",
+        "filename": "common/api/gerrit/tag_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T02:06:31Z",
+      "side": 1,
+      "message": "maybe add TAG_lowercase",
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
