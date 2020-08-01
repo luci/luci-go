@@ -16,6 +16,322 @@
       "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e10c5fbe_8f6a5de7",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "how?",
+      "range": {
+        "startLine": 72,
+        "startChar": 18,
+        "endLine": 72,
+        "endChar": 21
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48cb869f_ca2b9ba0",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 76,
+        "startChar": 21,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b65f9e86_78696be0",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "else if \nor better a switch. We shouldn\u0027t need to waste RAM on non-named tasks.",
+      "range": {
+        "startLine": 126,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 3
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa9345af_ffdaaee9",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "I think L196 can use c.wakeUp and local var can be deleted.\n\nTBH, I first read this as a function *def*, not a call, and it very confused. Then, I noticed L153 () and thinks make more sense now. So, removal local var would have saved me 1 minute of \"WTF\".",
+      "range": {
+        "startLine": 144,
+        "startChar": 1,
+        "endLine": 144,
+        "endChar": 7
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cf722ba_27a9d26b",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 167,
+        "startChar": 44,
+        "endLine": 168,
+        "endChar": 33
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d748d5b2_4468f44c",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 177,
+        "startChar": 70,
+        "endLine": 177,
+        "endChar": 71
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e992226_370dd455",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "WDYT: force-abort via panic if task.Attempt \u003e100 to save CQ \u0026 local dev time?\nRationale: tests should never need to retry 100 times, so hitting 100 means bad test and/or code.",
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "440e102a_a9f57cd0",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "Tasks",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 208,
+        "endChar": 8
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a360bc30_ae6d618e",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "by",
+      "range": {
+        "startLine": 212,
+        "startChar": 21,
+        "endLine": 212,
+        "endChar": 23
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec7c95ec_d31058e9",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "case",
+      "range": {
+        "startLine": 232,
+        "startChar": 2,
+        "endLine": 233,
+        "endChar": 5
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b9f10dc_6933901d",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "nit: I read it as \"callee must unlock\", how about \"pickUpTask\"?",
+      "range": {
+        "startLine": 259,
+        "startChar": 20,
+        "endLine": 259,
+        "endChar": 27
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84bd83fe_bbe13f62",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "I admit, I\u0027d have used s.clock.Now() instead of this. I guess you aim for more canonical LUCI code, right?",
+      "range": {
+        "startLine": 266,
+        "startChar": 37,
+        "endLine": 266,
+        "endChar": 51
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85ecb1d0_c852c6f0",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "grrr, seeing this for N-th time, and every time I have to search for rational.",
+      "range": {
+        "startLine": 320,
+        "startChar": 16,
+        "endLine": 320,
+        "endChar": 37
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "30e9116e_3a8f8b92",
+        "filename": "server/tq/tqtesting/scheduler_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:29:03Z",
+      "side": 1,
+      "message": "I earlier thought you forgot to separate `seen` by queue, then this reminded me that task.Name isn\u0027t just a hash.",
+      "range": {
+        "startLine": 80,
+        "startChar": 4,
+        "endLine": 80,
+        "endChar": 49
+      },
+      "revId": "6c6956fce2d24ed7cc9503040c8d20edd7188d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
