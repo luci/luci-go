@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5b8acc8d_f2390783",
+        "filename": "resultdb/internal/invocations/id.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-01T04:08:30Z",
+      "side": 1,
+      "message": "it seems to be the same? anyway I have refactored this code, it is more intuitive now",
+      "parentUuid": "d31f9948_625f2b61",
+      "range": {
+        "startLine": 203,
+        "startChar": 14,
+        "endLine": 203,
+        "endChar": 15
+      },
+      "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "612e5363_7867dbc2",
         "filename": "resultdb/internal/invocations/misc.go",
         "patchSetId": 12
@@ -39,6 +63,24 @@
       "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3ef2230_773a09ea",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-01T04:08:30Z",
+      "side": 1,
+      "message": "it will be important later, because I would like to parallelize a query that has ORDER BY",
+      "parentUuid": "612e5363_7867dbc2",
+      "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57ccd24c_8afaa007",
+        "filename": "resultdb/internal/invocations/misc.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-01T04:08:30Z",
+      "side": 1,
+      "message": "removed quotes",
+      "parentUuid": "ef4a2a28_da2b35cd",
+      "range": {
+        "startLine": 139,
+        "startChar": 35,
+        "endLine": 139,
+        "endChar": 50
+      },
+      "revId": "65419662d0d3a60707e1ca0f0e748b8d18441db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
