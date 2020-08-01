@@ -83,6 +83,30 @@
     },
     {
       "key": {
+        "uuid": "7985b1b8_705e66c4",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:41:24Z",
+      "side": 1,
+      "message": "I still haven\u0027t figured it out. What we should do is teach Tricium to do it.",
+      "parentUuid": "1b617cb4_fd441d7a",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92f5c65a_be7ce5ae",
         "filename": "common/api/gerrit/tag.go",
         "patchSetId": 2

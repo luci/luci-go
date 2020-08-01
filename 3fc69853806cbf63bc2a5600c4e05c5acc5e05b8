@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "950dbe92_a8972930",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:41:24Z",
+      "side": 1,
+      "message": "lgtm % nits",
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "744f8c04_a54cac51",
+        "filename": "common/git/footer/footer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:41:24Z",
+      "side": 1,
+      "message": "imo, move this to the doc.go, too.",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 92
+      },
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "040657d2_d3dd997b",
+        "filename": "common/git/footer/tag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:41:24Z",
+      "side": 1,
+      "message": "nit: \u003cValue\u003e or \u003carbitrary value\u003e since VALUE suggests it must be capitalized, too.",
+      "range": {
+        "startLine": 24,
+        "startChar": 37,
+        "endLine": 24,
+        "endChar": 42
+      },
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ae960d7_ff2989ce",
+        "filename": "common/git/footer/tag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:41:24Z",
+      "side": 1,
+      "message": "nit: metadataPattern is regexp ...\nthough strictly speaking this doc overall isn\u0027t isn\u0027t necessary.",
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bf6fed9_b538a571",
+        "filename": "common/git/footer/tag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-01T05:41:24Z",
+      "side": 1,
+      "message": "for users of http://godoc.org/go.chromium.org/luci/common/git/footers (there is a way to preview it with \"go doc\", i think)\nit won\u0027t be clear what this is about. Maybe:\n\n... extracts legacy style KEY\u003dvalue metadata ...\n\n+ I\u0027d also mention that *unlike* Git footers, this works across *all* lines.",
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
