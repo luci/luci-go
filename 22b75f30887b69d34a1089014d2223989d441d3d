@@ -22,6 +22,30 @@
       "revId": "22b75f30887b69d34a1089014d2223989d441d3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4337bb9c_bdb1caf8",
+        "filename": "resultdb/internal/invocations/id_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-01T18:25:30Z",
+      "side": 0,
+      "message": "yes, InvocationID is the ex-name of ID before it was in \"invocations\" package (it used to be span.InvocationID)",
+      "parentUuid": "7282b395_4c983759",
+      "range": {
+        "startLine": 29,
+        "startChar": 9,
+        "endLine": 29,
+        "endChar": 21
+      },
+      "revId": "22b75f30887b69d34a1089014d2223989d441d3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
