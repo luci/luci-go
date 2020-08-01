@@ -126,3 +126,38 @@ func TokenToMap(token string, dest map[string]interface{}, keys ...string) error
 		return nil
 	}
 }
+
+// ShardStatement splits the statement into multiple shards by invocation
+// parameter. For example, if a query retrieves test results from a
+// set of invocations, then ShardQuery splits the set of invocations into
+// subsets, and returns a statement for each of them.
+// The returned statements are ordered by invocation row id.
+//
+// Users of this function must be careful with LIMIT and ORDER BY operator,
+// because each statement would have its own LIMIT and order.
+//
+// st must have a parameter with the name invIDsParamName, and it must have a
+// type IDSet.
+func ShardStatement(st spanner.Statement, invIDsParamName string) []spanner.Statement {
+	idSet := st.Params[invIDsParamName].(IDSet)
+	batches := idSet.Batches()
+	ret := make([]spanner.Statement, len(batches))
+	for i, batch := range idSet.Batches() {
+		ret[i] = cloneStatement(st)
+		ret[i].Params[invIDsParamName] = batch
+	}
+	return ret
+}
+
+// cloneStatement returns a shallowish copy of st: parameter values are not
+// cloned.
+func cloneStatement(st spanner.Statement) spanner.Statement {
+	clone := spanner.Statement{
+		SQL:    st.SQL,
+		Params: make(map[string]interface{}, len(st.Params)),
+	}
+	for k, v := range st.Params {
+		clone.Params[k] = v
+	}
+	return clone
+}
