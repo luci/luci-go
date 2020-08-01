@@ -28,18 +28,9 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
-// ReadCloseWriteCloser represents a client connection.
-//
-// CloseWrite must be called once this stream has been registered/accounted
-// for, and lets the client know that the server will be reading its data.
-type ReadCloseWriteCloser interface {
-	io.ReadCloser
-	CloseWrite() error
-}
-
 type listener interface {
 	io.Closer
-	Accept() (ReadCloseWriteCloser, error)
+	Accept() (io.ReadCloser, error)
 	Addr() net.Addr
 }
 
@@ -51,19 +42,19 @@ type accepterImpl struct {
 	net.Listener
 }
 
-func (a *accepterImpl) Accept() (ReadCloseWriteCloser, error) {
+func (a *accepterImpl) Accept() (io.ReadCloser, error) {
 	conn, err := a.Listener.Accept()
 	if err != nil {
 		return nil, err
 	}
-	return conn.(ReadCloseWriteCloser), nil
+	return conn.(io.ReadCloser), nil
 }
 
 // streamParams are parameters representing a negotiated stream ready to
 // deliver.
 type streamParams struct {
 	// The stream's ReadCloser connection.
-	rc ReadCloseWriteCloser
+	rc io.ReadCloser
 	// Negotiated stream descriptor.
 	descriptor *logpb.LogStreamDescriptor
 }
@@ -135,7 +126,7 @@ func (s *StreamServer) Listen() error {
 
 // Next blocks, returning a new Stream when one is available. If the stream
 // server has closed, this will return nil.
-func (s *StreamServer) Next() (ReadCloseWriteCloser, *logpb.LogStreamDescriptor) {
+func (s *StreamServer) Next() (io.ReadCloser, *logpb.LogStreamDescriptor) {
 	if streamParams, ok := <-s.streamParamsC; ok {
 		return streamParams.rc, streamParams.descriptor
 	}
@@ -239,9 +230,9 @@ func (s *StreamServer) serve() {
 type streamClient struct {
 	log logging.Logger
 
-	closedC chan struct{}        // Signal channel to indicate that the server has closed.
-	id      int                  // Client ID, used for debugging correlation.
-	conn    ReadCloseWriteCloser // The underlying client connection.
+	closedC chan struct{} // Signal channel to indicate that the server has closed.
+	id      int           // Client ID, used for debugging correlation.
+	conn    io.ReadCloser // The underlying client connection.
 
 	// decoupleMu is used to ensure that decoupleConn is called at most one time.
 	decoupleMu sync.Mutex
@@ -300,7 +291,7 @@ func (c *streamClient) closeConn() {
 
 // Decouples the active connection, returning it and setting the connection to
 // nil.
-func (c *streamClient) decoupleConn() (conn ReadCloseWriteCloser) {
+func (c *streamClient) decoupleConn() (conn io.ReadCloser) {
 	c.decoupleMu.Lock()
 	defer c.decoupleMu.Unlock()
 

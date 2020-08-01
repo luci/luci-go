@@ -30,7 +30,7 @@ var bufferLogs = true
 // startButler sets up a Butler streamserver, and exports it to the environment.
 func startButler(ctx context.Context, opts *Options) (*butler.Butler, error) {
 	butlerCtx := ctx
-	if logging.GetLevel(ctx) < opts.ButlerLogLevel {
+	if logging.GetLevel(ctx) > opts.ButlerLogLevel {
 		butlerCtx = logging.SetLevel(ctx, opts.ButlerLogLevel)
 	}
 
