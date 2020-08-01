@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8e022f3_4888b0d1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-01T19:26:24Z",
+      "side": 1,
+      "message": "So looking at the butler code deeper, I think that there isn\u0027t a bug like I thought.\n\nThe \u0027streamserver\u0027 has a loop where it does connection.Accept calls; when the butler tears-down\nit sets a closed flag and then closes the connection.\n\nOnce the connection is accepted, it increments a wait group and fires a goroutine to handle the\nnew connection handshake. Stopping the streamserver causes it to wait for all processing goroutines\nto finish.\n\nThe Connect/Accept pair from client to server is a blocking operation; the client won\u0027t progress to writing/quit until the connection happens. This means that in the worst case where a client does connect+write+close+quit, the server MUST be in the body of the streamserver loop, after the Accept call. The only way for the server to proceed forward will increment the waitgroup in the streamserver, and waiting for the waitgroup to be Done is one of the criteria during butler\u0027s teardown process.\n\nSo I think this may actually be fine?",
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
