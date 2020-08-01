@@ -24,8 +24,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/tq/tqtesting"
 )
 
 // ModuleOptions contain configuration of the TQ server module.
@@ -115,7 +117,6 @@ func (*tqModule) Name() string {
 // Initialize is part of module.Module interface.
 func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	Default.GAE = opts.GAE
-	Default.NoAuth = !opts.Prod
 	Default.CloudProject = opts.CloudProject
 	Default.CloudRegion = opts.CloudRegion
 	Default.DefaultTargetHost = m.opts.DefaultTargetHost
@@ -131,19 +132,43 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 		Default.PushAs = info.ServiceAccountName
 	}
 
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+	if opts.Prod {
+		// When running for real use real Cloud Tasks service.
+		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+		}
+		client, err := cloudtasks.NewClient(ctx, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+		}
+		host.RegisterCleanup(func(ctx context.Context) { client.Close() })
+		Default.Submitter = &CloudTaskSubmitter{Client: client}
+	} else {
+		// When running locally use a simple in-memory scheduler.
+		router := host.Routes()
+		scheduler := &tqtesting.Scheduler{}
+		host.RunInBackground("luci.tq", func(ctx context.Context) {
+			scheduler.Run(ctx, &tqtesting.LoopbackHTTPExecutor{
+				Handler: router,
+			})
+		})
+		Default.NoAuth = true
+		Default.Submitter = scheduler
+		if Default.CloudProject == "" {
+			Default.CloudProject = "tq-project"
+		}
+		if Default.CloudRegion == "" {
+			Default.CloudRegion = "tq-region"
+		}
+		if Default.DefaultTargetHost == "" {
+			Default.DefaultTargetHost = "127.0.0.1" // not actually used
+		}
 	}
-	client, err := cloudtasks.NewClient(ctx, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
-	}
-	host.RegisterCleanup(func(ctx context.Context) { client.Close() })
 
-	Default.Submitter = &CloudTaskSubmitter{Client: client}
 	if m.opts.ServingPrefix != "-" {
 		Default.InstallRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
+
 	return ctx, nil
 }
