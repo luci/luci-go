@@ -59,6 +59,30 @@
     },
     {
       "key": {
+        "uuid": "1b617cb4_fd441d7a",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T04:39:01Z",
+      "side": 1,
+      "message": "eh.. fixed. Forget the change this after copying from other file which means really I should configure my IDE to auto-generate this for me upon new file creation.",
+      "parentUuid": "aa728dcf_f38f5f98",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92f5c65a_be7ce5ae",
         "filename": "common/api/gerrit/tag.go",
         "patchSetId": 2
@@ -106,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "5e30e456_1080c7a1",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T04:39:01Z",
+      "side": 1,
+      "message": "sgtm! moved to `common/git/footers`",
+      "parentUuid": "6ffa6bf3_6acead84",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 14
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "af68abfb_826a322a",
         "filename": "common/api/gerrit/tag.go",
         "patchSetId": 2
@@ -120,6 +168,24 @@
       "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "804f270a_24d3dd10",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T04:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af68abfb_826a322a",
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -167,6 +233,30 @@
       "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cf4ea17_a462779b",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T04:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a35ed2d_195379a1",
+      "range": {
+        "startLine": 25,
+        "startChar": 40,
+        "endLine": 25,
+        "endChar": 44
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -240,6 +330,30 @@
     },
     {
       "key": {
+        "uuid": "9a972a52_814cd225",
+        "filename": "common/api/gerrit/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T04:39:01Z",
+      "side": 1,
+      "message": "oops..",
+      "parentUuid": "c8dec045_56a0e7dc",
+      "range": {
+        "startLine": 28,
+        "startChar": 11,
+        "endLine": 28,
+        "endChar": 25
+      },
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d189035_8f11ae28",
         "filename": "common/api/gerrit/tag_test.go",
         "patchSetId": 2
@@ -254,6 +368,24 @@
       "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55a30aa6_a0d669eb",
+        "filename": "common/api/gerrit/tag_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-01T04:39:01Z",
+      "side": 1,
+      "message": "Makes sense, added!",
+      "parentUuid": "6d189035_8f11ae28",
+      "revId": "0beec58fd0c774e07d660a0b35c4efd535cb24d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
