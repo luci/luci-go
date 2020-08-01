@@ -51,7 +51,7 @@ func newTestListener() *testListener {
 	}
 }
 
-func (l *testListener) Accept() (ReadCloseWriteCloser, error) {
+func (l *testListener) Accept() (io.ReadCloser, error) {
 	if l.err != nil {
 		return nil, l.err
 	}
@@ -91,8 +91,7 @@ func (c *testListenerConn) Read(d []byte) (int, error) {
 	return c.Buffer.Read(d)
 }
 
-func (c *testListenerConn) Close() error      { return nil }
-func (c *testListenerConn) CloseWrite() error { return nil }
+func (c *testListenerConn) Close() error { return nil }
 
 func TestListenerStreamServer(t *testing.T) {
 	t.Parallel()
@@ -262,11 +261,6 @@ func testClientServer(svr *StreamServer, client *streamclient.Client) {
 		ContentType: "text/plain",
 		Timestamp:   stamp,
 	})
-
-	// now we need to close down the write side; normally the Butler would do
-	// this. We currently ignore the error because the client does not block on
-	// reading from `rc`.
-	rc.CloseWrite()
 
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(rc)
