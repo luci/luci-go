@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
-	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -296,7 +295,7 @@ func (b *Butler) DrainNamespace(ctx context.Context, namespace types.StreamName)
 // TODO(iannucci): internalize streamserver to butler; there's no need for it to
 // be managed by the user.
 type StreamServer interface {
-	Next() (streamserver.ReadCloseWriteCloser, *logpb.LogStreamDescriptor)
+	Next() (io.ReadCloser, *logpb.LogStreamDescriptor)
 	Close()
 }
 
@@ -356,9 +355,12 @@ func (b *Butler) AddStreamServer(streamServer StreamServer) {
 				// NOTE: On POSIX, closing the write end is a bit racy; it may return
 				// "socket is not connected" if the client already wrote everything it
 				// wanted to and closed their end. So, we just ignore these errors.
-				if err := rc.CloseWrite(); runtime.GOOS == "windows" && err != nil {
-					logging.Warningf(ctx, "failed to CloseWrite %q: %s", config.Name, err)
+				if cw, ok := rc.(interface{ CloseWrite() error }); ok {
+					if err := cw.CloseWrite(); runtime.GOOS == "windows" && err != nil {
+						logging.Warningf(ctx, "failed to CloseWrite %q: %s", config.Name, err)
+					}
 				}
+
 			}
 		}
 	}()
