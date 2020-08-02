@@ -193,3 +193,30 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 	err := ReadColumns(ctx, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
 }
+
+// ReadRealms returns the invocations' realms.
+// Makes a single RPC.
+func ReadRealms(ctx context.Context, ids IDSet) (map[ID]string, error) {
+	ret := make(map[ID]string, len(ids))
+	var b spanutil.Buffer
+	err := span.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationId", "Realm"}).Do(func(row *spanner.Row) error {
+		var id ID
+		var realm spanner.NullString
+		if err := b.FromSpanner(row, &id, &realm); err != nil {
+			return err
+		}
+		ret[id] = realm.StringVal
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Return a NotFound error if ret is missing a requested invocation.
+	for id := range ids {
+		if _, ok := ret[id]; !ok {
+			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+		}
+	}
+	return ret, nil
+}
