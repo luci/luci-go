@@ -16,6 +16,46 @@
       "revId": "8352a0614df0592539037b82007d0dacb75b8a73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "67ca0ca2_ef11f203",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-02T06:52:41Z",
+      "side": 1,
+      "message": "ed",
+      "range": {
+        "startLine": 198,
+        "startChar": 63,
+        "endLine": 198,
+        "endChar": 64
+      },
+      "revId": "8352a0614df0592539037b82007d0dacb75b8a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83cde483_13f4c616",
+        "filename": "ttq/ttqspanner/iface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-02T06:52:41Z",
+      "side": 1,
+      "message": "as discussed in IM, feel free to get rid of these entirely.",
+      "revId": "8352a0614df0592539037b82007d0dacb75b8a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
