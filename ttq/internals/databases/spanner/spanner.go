@@ -13,40 +13,44 @@
 // limitations under the License.
 
 // Package spanner implements TTQ Database backend on top of Cloud Spanner.
+//
+// Uses "go.chromium.org/luci/server/span" library, requires all transactions to
+// be initiated via its ReadWriteTransaction function.
 package spanner
 
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
-type DB struct {
-	Client *spanner.Client
-}
+type DB struct{}
 
-var _ databases.Database = (*DB)(nil)
+var _ databases.Database = DB{}
 
-// Kind is used only for monitoring/logging purposes.
-func (d *DB) Kind() string {
+func (DB) Kind() string {
 	return "spanner"
 }
 
-func (d *DB) SaveReminder(_ context.Context, _ *reminder.Reminder) error {
+func (DB) Defer(ctx context.Context, cb func(context.Context)) {
+	span.Defer(ctx, cb)
+}
+
+func (DB) SaveReminder(_ context.Context, _ *reminder.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *DB) DeleteReminder(_ context.Context, _ *reminder.Reminder) error {
+func (DB) DeleteReminder(_ context.Context, _ *reminder.Reminder) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) ([]*reminder.Reminder, error) {
+func (DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) ([]*reminder.Reminder, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (d *DB) FetchReminderPayloads(_ context.Context, _ []*reminder.Reminder) ([]*reminder.Reminder, error) {
+func (DB) FetchReminderPayloads(_ context.Context, _ []*reminder.Reminder) ([]*reminder.Reminder, error) {
 	panic("not implemented") // TODO: Implement
 }
