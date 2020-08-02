@@ -145,9 +145,6 @@ func (s Set) ToSortedSlice() []string {
 
 // Intersect returns a new Set which is the intersection of this set with the
 // other set.
-//
-// `other` must have the same underlying type as the current set, or this will
-// panic.
 func (s Set) Intersect(other Set) Set {
 	smallLen := len(s)
 	if lo := len(other); lo < smallLen {
@@ -164,9 +161,6 @@ func (s Set) Intersect(other Set) Set {
 
 // Difference returns a new Set which is this set with all elements from other
 // removed (i.e. `self - other`).
-//
-// `other` must have the same underlying type as the current set, or this will
-// panic.
 func (s Set) Difference(other Set) Set {
 	ret := make(Set)
 	for k := range s {
@@ -179,9 +173,6 @@ func (s Set) Difference(other Set) Set {
 
 // Union returns a new Set which contains all element from this set, as well
 // as all elements from the other set.
-//
-// `other` must have the same underlying type as the current set, or this will
-// panic.
 func (s Set) Union(other Set) Set {
 	ret := make(Set, len(s))
 	for k := range s {
