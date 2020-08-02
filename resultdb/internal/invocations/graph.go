@@ -80,7 +80,20 @@ var TooManyTag = errors.BoolTag{
 // Reachable returns all invocations reachable from roots along the inclusion
 // edges.
 // May return an appstatus-annotated error.
-func Reachable(ctx context.Context, roots IDSet) (reachable IDSet, err error) {
+func Reachable(ctx context.Context, roots IDSet) (IDSet, error) {
+	return reachable(ctx, roots, true)
+}
+
+// ReachableSkipRootCache is similar to Reachable, but it ignores cache
+// for the roots.
+//
+// Useful to keep cache-hit stats high in cases where the roots are known not to
+// have cache.
+func ReachableSkipRootCache(ctx context.Context, roots IDSet) (IDSet, error) {
+	return reachable(ctx, roots, false)
+}
+
+func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable IDSet, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.readReachableInvocations")
 	defer func() { ts.End(err) }()
 
@@ -93,11 +106,11 @@ func Reachable(ctx context.Context, roots IDSet) (reachable IDSet, err error) {
 
 	reachable = make(IDSet, len(roots))
 	var mu sync.Mutex
-	var visit func(id ID) error
 
 	spanSem := semaphore.NewWeighted(64) // limits Spanner RPC concurrency.
 
-	visit = func(id ID) error {
+	var visit func(id ID, useCache bool) error
+	visit = func(id ID, useCache bool) error {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -120,25 +133,27 @@ func Reachable(ctx context.Context, roots IDSet) (reachable IDSet, err error) {
 				return err
 			}
 
-			// First check the cache.
-			switch ids, err := ReachCache(id).Read(ctx); {
-			case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
-				// Ignore this error.
-			case err != nil:
-				logging.Warningf(ctx, "ReachCache: failed to read %s: %s", id, err)
-			default:
-				// Cache hit. Copy the results to `reachable` and exit without
-				// recursion.
-				mu.Lock()
-				defer mu.Unlock()
-				reachable.Union(ids)
-				if len(reachable) > MaxNodes {
-					return tooMany()
+			if useCache {
+				// First check the cache.
+				switch ids, err := ReachCache(id).Read(ctx); {
+				case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
+					// Ignore this error.
+				case err != nil:
+					logging.Warningf(ctx, "ReachCache: failed to read %s: %s", id, err)
+				default:
+					// Cache hit. Copy the results to `reachable` and exit without
+					// recursion.
+					mu.Lock()
+					defer mu.Unlock()
+					reachable.Union(ids)
+					if len(reachable) > MaxNodes {
+						return tooMany()
+					}
+					return nil
 				}
-				return nil
+				// Cache miss. => Read from Spanner.
 			}
 
-			// Cache miss. => Read from Spanner.
 			if err := spanSem.Acquire(ctx, 1); err != nil {
 				return err
 			}
@@ -149,7 +164,8 @@ func Reachable(ctx context.Context, roots IDSet) (reachable IDSet, err error) {
 			}
 
 			for id := range included {
-				if err := visit(id); err != nil {
+				// Always use cache for children.
+				if err := visit(id, true); err != nil {
 					return err
 				}
 			}
@@ -160,7 +176,7 @@ func Reachable(ctx context.Context, roots IDSet) (reachable IDSet, err error) {
 
 	// Trigger fetching by requesting all roots.
 	for id := range roots {
-		if err := visit(id); err != nil {
+		if err := visit(id, useRootCache); err != nil {
 			return nil, err
 		}
 	}
