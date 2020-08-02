@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -192,4 +193,35 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 	var realm string
 	err := ReadColumns(ctx, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
+}
+
+// ReadRealms returns the invocations' realms.
+// Makes a single RPC.
+func ReadRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.invocations.ReadRealms")
+	ts.Attribute("cr.dev/count", len(ids))
+	defer func() { ts.End(err) }()
+
+	realms = make(map[ID]string, len(ids))
+	var b spanutil.Buffer
+	err = span.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationId", "Realm"}).Do(func(row *spanner.Row) error {
+		var id ID
+		var realm spanner.NullString
+		if err := b.FromSpanner(row, &id, &realm); err != nil {
+			return err
+		}
+		realms[id] = realm.StringVal
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Return a NotFound error if ret is missing a requested invocation.
+	for id := range ids {
+		if _, ok := realms[id]; !ok {
+			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+		}
+	}
+	return realms, nil
 }

@@ -164,13 +164,26 @@ func (s *IDSet) FromSpanner(b *spanutil.Buffer) error {
 	return nil
 }
 
+// ParseNames converts invocation names to IDSet.
+func ParseNames(names []string) (IDSet, error) {
+	ids := make(IDSet, len(names))
+	for _, name := range names {
+		id, err := pbutil.ParseInvocationName(name)
+		if err != nil {
+			return nil, err
+		}
+		ids.Add(ID(id))
+	}
+	return ids, nil
+}
+
 // MustParseNames converts invocation names to IDSet.
 // Panics if a name is invalid. Useful for situations when names were already
 // validated.
 func MustParseNames(names []string) IDSet {
-	ids := make(IDSet, len(names))
-	for _, name := range names {
-		ids.Add(MustParseName(name))
+	ids, err := ParseNames(names)
+	if err != nil {
+		panic(err)
 	}
 	return ids
 }
