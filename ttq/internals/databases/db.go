@@ -18,7 +18,7 @@ package databases
 import (
 	"context"
 
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // Database abstracts out specific storage implementation.

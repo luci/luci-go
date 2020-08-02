@@ -12,22 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
-
-import (
-	"strings"
-
-	"go.chromium.org/luci/common/errors"
-)
-
-// ValidateQueueName does quick check for some necessary conditions.
-// It doesn't guarantee that queue is actually valid and exists.
-func ValidateQueueName(q string) error {
-	switch qs := strings.Split(q, "/"); {
-	case q == "":
-		return errors.New("queue name not given")
-	case len(qs) != 6 || qs[0] != "projects" || qs[2] != "locations" || qs[4] != "queues":
-		return errors.Reason("queue %q must be in format 'projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID'", q).Err()
-	}
-	return nil
-}
+// Package internal holds all common to all transaction task enqueue
+// implementation details.
+package internals

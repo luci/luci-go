@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package internals
 
 import (
 	"context"
@@ -34,9 +34,9 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/ttq"
-	"go.chromium.org/luci/ttq/internal/databases"
-	"go.chromium.org/luci/ttq/internal/partition"
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/databases"
+	"go.chromium.org/luci/ttq/internals/partition"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // Impl implements abstract transaction enqueue semantics on top of Database

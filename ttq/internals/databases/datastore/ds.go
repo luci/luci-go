@@ -25,7 +25,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 type DB struct {

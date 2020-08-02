@@ -36,10 +36,10 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/ttq/internal"
-	dslessor "go.chromium.org/luci/ttq/internal/lessors/datastore"
-	"go.chromium.org/luci/ttq/internal/partition"
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals"
+	dslessor "go.chromium.org/luci/ttq/internals/lessors/datastore"
+	"go.chromium.org/luci/ttq/internals/partition"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // NewSweeper creates a new Sweeper.
@@ -79,8 +79,8 @@ import (
 // For ease of debugging, if pathPrefix and queue don't meet some necessary
 // requirements, panics. However, no panic doesn't mean queue name is correct
 // or that it actually exists.
-func NewSweeper(impl *internal.Impl, pathPrefix, queue string, tasksClient internal.TasksClient) *Sweeper {
-	switch err := internal.ValidateQueueName(queue); {
+func NewSweeper(impl *internals.Impl, pathPrefix, queue string, tasksClient internals.TasksClient) *Sweeper {
+	switch err := internals.ValidateQueueName(queue); {
 	case err != nil:
 		panic(err)
 	case !strings.HasPrefix(pathPrefix, "/"):
@@ -91,7 +91,7 @@ func NewSweeper(impl *internal.Impl, pathPrefix, queue string, tasksClient inter
 	return &Sweeper{
 		pathPrefix:     pathPrefix,
 		queue:          queue,
-		tasksClient:    internal.UnborkTasksClient(tasksClient),
+		tasksClient:    internals.UnborkTasksClient(tasksClient),
 		impl:           impl,
 		ppBatchSize:    50,
 		ppBatchWorkers: 8,
@@ -103,8 +103,8 @@ func NewSweeper(impl *internal.Impl, pathPrefix, queue string, tasksClient inter
 type Sweeper struct {
 	pathPrefix  string
 	queue       string
-	tasksClient internal.TasksClient
-	impl        *internal.Impl
+	tasksClient internals.TasksClient
+	impl        *internals.Impl
 	lessor      dslessor.Lessor
 
 	ppBatchSize    int // max reminders to PostProcess in a batch.
@@ -121,20 +121,20 @@ func (s *Sweeper) InstallRoutes(r *router.Router, mw router.MiddlewareChain) {
 func (s *Sweeper) handleCron(rctx *router.Context) {
 	scanItems := s.impl.SweepAll()
 	err := s.createTasks(rctx.Context, scanItems)
-	internal.StatusOffError(rctx, err)
+	internals.StatusOffError(rctx, err)
 }
 
 func (s *Sweeper) handleTask(rctx *router.Context) {
 	var err error
 	var body []byte
-	defer func() { internal.StatusOffError(rctx, err) }()
+	defer func() { internals.StatusOffError(rctx, err) }()
 
 	body, err = ioutil.ReadAll(rctx.Request.Body)
 	if err != nil {
 		err = errors.Annotate(err, "failed to read request body").Err()
 		return
 	}
-	scan := internal.ScanItem{}
+	scan := internals.ScanItem{}
 	if err = json.Unmarshal(body, &scan); err != nil {
 		err = errors.Annotate(err, "failed to unmarshal request body").Err()
 		return
@@ -142,7 +142,7 @@ func (s *Sweeper) handleTask(rctx *router.Context) {
 	err = s.execTask(rctx.Context, scan)
 }
 
-func (s *Sweeper) createTask(ctx context.Context, scan internal.ScanItem) error {
+func (s *Sweeper) createTask(ctx context.Context, scan internals.ScanItem) error {
 	body, err := json.MarshalIndent(scan, "", "  ")
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal %v", scan).Err()
@@ -173,7 +173,7 @@ func (s *Sweeper) createTask(ctx context.Context, scan internal.ScanItem) error 
 
 // execTask executes one scan task and any follow postProcessing as a result.
 // If more scans required as a followup, schedules them via push tasks.
-func (s *Sweeper) execTask(ctx context.Context, scan internal.ScanItem) error {
+func (s *Sweeper) execTask(ctx context.Context, scan internals.ScanItem) error {
 	// Ensure there is time to postProcess Reminders produced by scan.
 	scanTimeout := time.Minute
 	if d, ok := ctx.Deadline(); ok {
@@ -201,7 +201,7 @@ func (s *Sweeper) execTask(ctx context.Context, scan internal.ScanItem) error {
 	return lerr.Get() // nil if no errors
 }
 
-func (s *Sweeper) createTasks(ctx context.Context, scans []internal.ScanItem) error {
+func (s *Sweeper) createTasks(ctx context.Context, scans []internals.ScanItem) error {
 	// 16 is the default number of shards.
 	return parallel.WorkPool(16, func(workChan chan<- func() error) {
 		for _, scan := range scans {
@@ -211,7 +211,7 @@ func (s *Sweeper) createTasks(ctx context.Context, scans []internal.ScanItem) er
 	})
 }
 
-func (s *Sweeper) postProcessAll(ctx context.Context, scanResult internal.ScanResult) error {
+func (s *Sweeper) postProcessAll(ctx context.Context, scanResult internals.ScanResult) error {
 	l := len(scanResult.Reminders)
 	if l == 0 {
 		return nil
@@ -223,7 +223,7 @@ func (s *Sweeper) postProcessAll(ctx context.Context, scanResult internal.ScanRe
 	var errProcess error
 	leaseErr := s.lessor.WithLease(ctx, scanResult.Shard, desired, time.Minute,
 		func(leaseCtx context.Context, leased partition.SortedPartitions) {
-			reminders := internal.OnlyLeased(scanResult.Reminders, leased)
+			reminders := internals.OnlyLeased(scanResult.Reminders, leased)
 			errProcess = s.postProcessWithLease(leaseCtx, reminders)
 		})
 	switch {

@@ -45,9 +45,9 @@ import (
 	"go.chromium.org/gae/filter/txndefer"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/ttq"
-	"go.chromium.org/luci/ttq/internal"
-	"go.chromium.org/luci/ttq/internal/databases/datastore"
-	"go.chromium.org/luci/ttq/internal/sweepdrivers/gaecron"
+	"go.chromium.org/luci/ttq/internals"
+	"go.chromium.org/luci/ttq/internals/databases/datastore"
+	"go.chromium.org/luci/ttq/internals/sweepdrivers/gaecron"
 )
 
 // TTQ provides transaction task enqueueing with Datastore backend on AppEngine.
@@ -55,7 +55,7 @@ import (
 // Designed to be the least disruptive replacement for transaction task enqueing
 // on classic AppEngine.
 type TTQ struct {
-	impl internal.Impl
+	impl internals.Impl
 }
 
 // New creates a new TTQ for Datastore on AppEngine.
@@ -64,10 +64,10 @@ func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
-	return &TTQ{impl: internal.Impl{
+	return &TTQ{impl: internals.Impl{
 		Options:     opts,
 		DB:          &datastore.DB{},
-		TasksClient: internal.UnborkTasksClient(c),
+		TasksClient: internals.UnborkTasksClient(c),
 	}}, nil
 }
 

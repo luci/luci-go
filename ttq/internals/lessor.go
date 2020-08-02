@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package internals
 
 import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/ttq/internal/partition"
+	"go.chromium.org/luci/ttq/internals/partition"
 )
 
 // WithLeaseClbk executes with active lease on the provided SortedPartitions.

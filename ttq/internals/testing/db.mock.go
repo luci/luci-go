@@ -6,7 +6,7 @@ package testing
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	reminder "go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/reminder"
 	reflect "reflect"
 )
 

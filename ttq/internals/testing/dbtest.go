@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/ttq/internal/databases"
-	"go.chromium.org/luci/ttq/internal/partition"
-	reminder "go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/databases"
+	"go.chromium.org/luci/ttq/internals/partition"
+	"go.chromium.org/luci/ttq/internals/reminder"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
