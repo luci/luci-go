@@ -22,18 +22,26 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/gae/filter/txndefer"
 	ds "go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
-type DB struct {
+type DB struct{}
+
+var _ databases.Database = DB{}
+
+func (DB) Kind() string {
+	return "datastore"
 }
 
-// Kind is used only for monitoring/logging purposes.
-func (d *DB) Kind() string {
-	return "datastore"
+func (DB) Defer(ctx context.Context, cb func(context.Context)) {
+	txndefer.Defer(ctx, cb)
 }
 
 const reminderKind = "ttq.Reminder"
@@ -70,7 +78,7 @@ func (d DSReminder) toReminder(r *reminder.Reminder) *reminder.Reminder {
 }
 
 // SaveReminder persists reminder in a transaction context.
-func (d *DB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
+func (DB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
 	v := DSReminder{}
 	if err := ds.Put(ctx, v.fromReminder(r)); err != nil {
 		return errors.Annotate(err, "failed to persist to datastore").Tag(transient.Tag).Err()
@@ -79,7 +87,7 @@ func (d *DB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
 }
 
 // DeleteReminder deletes reminder in a non-tranasction context.
-func (d *DB) DeleteReminder(ctx context.Context, r *reminder.Reminder) error {
+func (DB) DeleteReminder(ctx context.Context, r *reminder.Reminder) error {
 	v := DSReminder{}
 	if err := ds.Delete(ctx, v.fromReminder(r)); err != nil {
 		return errors.Annotate(err, "failed to delete the Reminder %s", r.Id).Tag(transient.Tag).Err()
@@ -96,7 +104,7 @@ func (d *DB) DeleteReminder(ctx context.Context, r *reminder.Reminder) error {
 // In case of error, partial result of fetched Reminders so far should be
 // returned alongside the error. The caller will later call this method again
 // to fetch the remaining of Reminders in range of [<lastReturned.Id+1> .. high).
-func (d *DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) (items []*reminder.Reminder, err error) {
+func (DB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) (items []*reminder.Reminder, err error) {
 	q := ds.NewQuery(reminderKind).Order("__key__")
 	q = q.Gte("__key__", ds.NewKey(ctx, reminderKind, low, 0, nil))
 	q = q.Lt("__key__", ds.NewKey(ctx, reminderKind, high, 0, nil))
@@ -117,7 +125,7 @@ func (d *DB) FetchRemindersMeta(ctx context.Context, low string, high string, li
 // batch.
 // In case of any other error, partial result of fetched Reminders so far
 // should be returned alongside the error.
-func (d *DB) FetchReminderPayloads(ctx context.Context, batch []*reminder.Reminder) ([]*reminder.Reminder, error) {
+func (DB) FetchReminderPayloads(ctx context.Context, batch []*reminder.Reminder) ([]*reminder.Reminder, error) {
 	vs := make([]*DSReminder, len(batch))
 	for i, r := range batch {
 		vs[i] = (&DSReminder{}).fromReminder(r)

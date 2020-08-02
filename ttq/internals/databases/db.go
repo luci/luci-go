@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package databases defines common database interface.
+// Package databases defines common database interface.
 package databases
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
@@ -26,9 +27,19 @@ type Database interface {
 	// Kind is used only for monitoring/logging purposes.
 	Kind() string
 
+	// Defer defers the execution of the callback until the transaction lands.
+	//
+	// Panics if called outside of a transaction.
+	//
+	// The callback will receive the original non-transactional context.
+	Defer(context.Context, func(context.Context))
+
 	// SaveReminder persists reminder in a transaction context.
+	//
+	// Tags retriable errors as transient.
 	SaveReminder(context.Context, *reminder.Reminder) error
-	// DeleteReminder deletes reminder in a non-tranasction context.
+
+	// DeleteReminder deletes reminder in a non-transaction context.
 	DeleteReminder(context.Context, *reminder.Reminder) error
 
 	// FetchRemindersMeta fetches Reminders with Ids in [low..high) range.
@@ -50,4 +61,34 @@ type Database interface {
 	// In case of any other error, partial result of fetched Reminders so far
 	// should be returned alongside the error.
 	FetchReminderPayloads(context.Context, []*reminder.Reminder) ([]*reminder.Reminder, error)
+}
+
+var dbs []func(context.Context) Database
+
+// Register registers a "prober" that probes a context for an active
+// transaction, returning a DB of the corresponding kind that can be used to
+// transactionally submit reminders.
+//
+// Must be called during init() time.
+func Register(db func(context.Context) Database) {
+	dbs = append(dbs, db)
+}
+
+// TxnDB returns Database that matches the context or nil.
+//
+// The process has a list of database engines registered via Register. Given
+// a context, TxnDB examines if it carries a transaction with any of the
+// registered DBs.
+//
+// Panics if more than one database matches the context.
+func TxnDB(ctx context.Context) (db Database) {
+	for _, probe := range dbs {
+		if d := probe(ctx); d != nil {
+			if db != nil {
+				panic(fmt.Sprintf("multiple databases match the context: %q and %q", db.Kind(), d.Kind()))
+			}
+			db = d
+		}
+	}
+	return
 }

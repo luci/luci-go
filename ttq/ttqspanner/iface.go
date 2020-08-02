@@ -46,13 +46,13 @@ type TTQ struct {
 
 // New creates a new TTQ for Spanner.
 // You must also call InstallRoutes in at least one of your app's microservices.
-func New(c *cloudtasks.Client, opts ttq.Options, sp *spanner.Client) (*TTQ, error) {
+func New(c *cloudtasks.Client, opts ttq.Options) (*TTQ, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
 	return &TTQ{impl: internals.Impl{
 		Options:     opts,
-		DB:          &spandb.DB{Client: sp},
+		DB:          spandb.DB{},
 		TasksClient: c,
 	}}, nil
 }

@@ -24,11 +24,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -43,6 +45,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -51,6 +54,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/ttq/internals/databases"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
@@ -141,6 +147,29 @@ type Submitter interface {
 	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
 }
 
+// TaskKind describes how a task class interoperates with transactions.
+type TaskKind int
+
+const (
+	// NonTransactional is a task kind for tasks that must be enqueued outside
+	// of a transaction.
+	NonTransactional TaskKind = 0
+
+	// Transactional is a task kind for tasks that must be enqueued only from
+	// a transaction.
+	//
+	// Using transactional tasks requires setting up a sweeper first, see
+	// ModuleOptions.
+	Transactional TaskKind = 1
+
+	// FollowsContext is a task kind for tasks that are enqueue transactionally
+	// if the context is transactional or non-transactionally otherwise.
+	//
+	// Using transactional tasks requires setting up a sweeper first, see
+	// ModuleOptions.
+	FollowsContext TaskKind = 2
+)
+
 // TaskClass defines how to handles tasks of a specific proto message type.
 type TaskClass struct {
 	// ID is unique identifier of this class of tasks.
@@ -167,6 +196,15 @@ type TaskClass struct {
 	//
 	// Required.
 	Prototype proto.Message
+
+	// Kind indicates whether the task requires a transaction to be enqueued.
+	//
+	// Note that using transactional tasks requires setting up a sweeper first,
+	// see ModuleOptions.
+	//
+	// Default is NonTransactional which means that tasks can be enqueued only
+	// outside of transactions.
+	Kind TaskKind
 
 	// Queue is a name of Cloud Tasks queue to use for the tasks.
 	//
@@ -380,9 +418,12 @@ func (d *Dispatcher) InstallRoutes(r *router.Router, prefix string) {
 // a handler attached to the corresponding TaskClass, based on its ID extracted
 // from the task body.
 //
-// If the given context is transactional, inherits the transaction. It means
-// the task will eventually be executed if and only if the transaction
-// successfully commits.
+// If the given context is transactional, inherits the transaction if allowed
+// according to the TaskClass's Kind. A transactional task will eventually be
+// submitted to Cloud Tasks if and only if the transaction successfully commits.
+// This requires a sweeper instance to be running somewhere, see ModuleOptions.
+// Note that a failure to submit the task to Cloud Tasks will not abort
+// the transaction.
 //
 // If the task has a DeduplicationKey and there already was a recent task with
 // the same TaskClass ID and DeduplicationKey, silently ignores the added task.
@@ -399,30 +440,117 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		return err
 	}
 
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/tq.AddTask")
-	span.Attribute("cr.dev/class", cls.ID)
-	span.Attribute("cr.dev/title", task.Title)
-	defer func() { span.End(err) }()
+	// Examine the context to see if we are inside a transaction.
+	db := databases.TxnDB(ctx)
+	switch cls.Kind {
+	case FollowsContext:
+		// do nothing, will use `db` if it is non-nil
+	case Transactional:
+		if db == nil {
+			return errors.Reason("enqueuing of tasks %q must be done from inside a transaction", cls.ID).Err()
+		}
+	case NonTransactional:
+		if db != nil {
+			return errors.Reason("enqueuing of tasks %q must be done outside of a transaction", cls.ID).Err()
+		}
+	default:
+		panic(fmt.Sprintf("unrecognized TaskKind %v", cls.Kind))
+	}
 
-	ctx = logging.SetFields(ctx, logging.Fields{
+	// If not inside a transaction, submit the task right away.
+	if db == nil {
+		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.Enqueue", logging.Fields{
+			"cr.dev/class": cls.ID,
+			"cr.dev/title": task.Title,
+		})
+		defer func() { span.End(err) }()
+		return d.enqueueTask(ctx, req)
+	}
+
+	// Named transactional tasks are not supported.
+	if req.Task.Name != "" {
+		return errors.Reason("when enqueuing %q: can't use DeduplicationKey for a transactional task", cls.ID).Err()
+	}
+
+	// Otherwise transactionally commit a reminder and schedule a best-effort
+	// post-transaction enqueuing of the actual task. If it fails, the sweeper
+	// will eventually discover the reminder and enqueue the task.
+	ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.Reminder", logging.Fields{
 		"cr.dev/class": cls.ID,
 		"cr.dev/title": task.Title,
 	})
+	defer func() { span.End(err) }()
+	r, err := d.makeReminder(ctx, req)
+	if err != nil {
+		return errors.Annotate(err, "failed to prepare a reminder").Err()
+	}
+	span.Attribute("cr.dev/reminder", r.Id)
+	if err := db.SaveReminder(ctx, r); err != nil {
+		return errors.Annotate(err, "failed to store a transactional enqueue reminder").Err()
+	}
 
+	once := int32(0)
+	db.Defer(ctx, func(ctx context.Context) {
+		if count := atomic.AddInt32(&once, 1); count > 1 {
+			panic("transaction defer has already been called")
+		}
+
+		// TODO(vadimsh): Add metrics.
+
+		// `ctx` here is an outer non-transactional context.
+		var err error
+		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.DeferredEnqueue", logging.Fields{
+			"cr.dev/class":    cls.ID,
+			"cr.dev/title":    task.Title,
+			"cr.dev/reminder": r.Id,
+		})
+		defer func() { span.End(err) }()
+
+		// Don't enqueue the task if we are too late and the sweeper has likely
+		// picked up the reminder already.
+		if clock.Now(ctx).After(r.FreshUntil) {
+			logging.Warningf(ctx, "Happy path DeferredEnqueue has no time to run")
+			err = errors.New("happy path DeferredEnqueue has no time to run")
+			return
+		}
+
+		// Actually submit the task.
+		err = d.enqueueTask(ctx, req)
+
+		// Delete the reminder if the task was successfully enqueued or it is
+		// a non-retriable failure. Keep the reminder if the failure was transient,
+		// we'll let the sweeper try to submit the task later.
+		if !transient.Tag.In(err) {
+			if rerr := db.DeleteReminder(ctx, r); rerr != nil {
+				logging.Warningf(ctx, "Failed to delete the reminder: %s", rerr)
+				if err == nil {
+					err = rerr
+				}
+			}
+		}
+	})
+
+	return nil
+}
+
+// enqueueTask submits the prepared task.
+//
+// Recognized AlreadyExists as a success. Annotated retriable errors with
+// transient.Tag.
+func (d *Dispatcher) enqueueTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
 	// Each individual RPC should be pretty quick. Also Cloud Tasks client bugs
 	// out if the context has a large deadline.
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
 	defer cancel()
 
-	err = d.Submitter.CreateTask(ctx, req)
-
-	code := status.Code(err)
-	span.Attribute("cr.dev/code", code)
-
-	switch code {
+	switch err := d.Submitter.CreateTask(ctx, req); status.Code(err) {
 	case codes.OK, codes.AlreadyExists:
 		return nil
-	case codes.Internal, codes.Unknown, codes.Unavailable:
+	case codes.Internal,
+		codes.Unknown,
+		codes.Unavailable,
+		codes.DeadlineExceeded,
+		codes.Canceled:
 		return transient.Tag.Apply(err)
 	default:
 		return err
@@ -436,6 +564,30 @@ var defaultHeaders = map[string]string{"Content-Type": "application/json"}
 
 // taskClassIDRe is used to validate TaskClass.ID.
 var taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
+
+const (
+	// reminderKeySpaceBytes defines the space of the Reminder Ids.
+	//
+	// Because Reminder.Id is hex-encoded, actual length is doubled.
+	//
+	// 16 is chosen is big enough to avoid collisions in practice yet small enough
+	// for easier human-debugging of key ranges in queries.
+	reminderKeySpaceBytes = 16
+
+	// happyPathMaxDuration caps how long the happy path will be waited for.
+	happyPathMaxDuration = time.Minute
+)
+
+// startSpan starts a new span and puts `meta` into its attributes and into
+// logger fields.
+func startSpan(ctx context.Context, title string, meta logging.Fields) (context.Context, trace.Span) {
+	ctx = logging.SetFields(ctx, meta)
+	ctx, span := trace.StartSpan(ctx, title)
+	for k, v := range meta {
+		span.Attribute(k, v)
+	}
+	return ctx, span
+}
 
 // prepTask converts a task into Cloud Tasks request.
 func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *taskspb.CreateTaskRequest, error) {
@@ -570,6 +722,40 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 		relativeURI += "/" + t.Title
 	}
 	return
+}
+
+// makeReminder prepares a reminder to be stored in the database to remind
+// the sweeper to submit the task if best-effort post-transactional submit
+// fails.
+//
+// Mutates the task request to include an auto-generated task name (the same one
+// as stored in the reminder).
+func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*reminder.Reminder, error) {
+	buf := make([]byte, reminderKeySpaceBytes)
+	if _, err := io.ReadFull(cryptorand.Get(ctx), buf); err != nil {
+		return nil, errors.Annotate(err, "failed to get random bytes").Tag(transient.Tag).Err()
+	}
+
+	// Note: length of the generate ID here is different from length of IDs
+	// we generate when using DeduplicationKey, so there'll be no collisions
+	// between two different sorts of named tasks.
+	r := &reminder.Reminder{Id: hex.EncodeToString(buf)}
+	req.Task.Name = req.Parent + "/tasks/" + r.Id
+
+	// Bound FreshUntil to at most current context deadline.
+	r.FreshUntil = clock.Now(ctx).Add(happyPathMaxDuration)
+	if deadline, ok := ctx.Deadline(); ok && r.FreshUntil.After(deadline) {
+		// TODO(tandrii): allow propagating custom deadline for the async happy
+		// path which won't bind the context's deadline.
+		r.FreshUntil = deadline
+	}
+	r.FreshUntil = r.FreshUntil.UTC().Truncate(reminder.FreshUntilPrecision)
+
+	var err error
+	if r.Payload, err = proto.Marshal(req); err != nil {
+		return nil, errors.Annotate(err, "failed to marshal the task").Err()
+	}
+	return r, nil
 }
 
 // isValidQueue is true if q looks like "projects/.../locations/.../queues/...".

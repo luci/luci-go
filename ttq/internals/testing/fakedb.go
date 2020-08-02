@@ -19,16 +19,35 @@ import (
 	"sort"
 	"sync"
 
+	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
+
+var fakeDBKey = "FakeDB"
+
+func init() {
+	databases.Register(func(ctx context.Context) databases.Database {
+		if db, _ := ctx.Value(&fakeDBKey).(*FakeDB); db != nil {
+			return db
+		}
+		return nil
+	})
+}
 
 // FakeDB implements Database in RAM.
 type FakeDB struct {
 	mu        sync.RWMutex
 	reminders map[string]*reminder.Reminder
+	defers    []func(context.Context)
 }
 
-func (_ *FakeDB) Kind() string { return "FakeDB" }
+func (f *FakeDB) Kind() string { return "FakeDB" }
+
+func (f *FakeDB) Defer(_ context.Context, cb func(context.Context)) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.defers = append(f.defers, cb)
+}
 
 func (f *FakeDB) SaveReminder(_ context.Context, r *reminder.Reminder) error {
 	f.mu.Lock()
@@ -101,6 +120,11 @@ func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*reminder.Reminde
 
 // Not part of Database interface, but useful in tests.
 
+// Inject inserts `f` into the context to make it transactional.
+func (f *FakeDB) Inject(ctx context.Context) context.Context {
+	return context.WithValue(ctx, &fakeDBKey, f)
+}
+
 // AllReminders returns all currently saved reminders.
 func (f *FakeDB) AllReminders() []*reminder.Reminder {
 	f.mu.RLock()
@@ -117,4 +141,15 @@ func (f *FakeDB) AllReminders() []*reminder.Reminder {
 		})
 	}
 	return out
+}
+
+// ExecDefers executes all registered defers in reverse order.
+func (f *FakeDB) ExecDefers(ctx context.Context) {
+	f.mu.Lock()
+	defers := f.defers
+	f.defers = nil
+	f.mu.Unlock()
+	for i := len(defers) - 1; i >= 0; i-- {
+		defers[i](ctx)
+	}
 }

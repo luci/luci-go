@@ -6,7 +6,7 @@ package testing
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	"go.chromium.org/luci/ttq/internals/reminder"
+	reminder "go.chromium.org/luci/ttq/internals/reminder"
 	reflect "reflect"
 )
 
@@ -45,6 +45,32 @@ func (m *MockDatabase) Kind() string {
 func (mr *MockDatabaseMockRecorder) Kind() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockDatabase)(nil).Kind))
+}
+
+// IsTxnContext mocks base method.
+func (m *MockDatabase) IsTxnContext(arg0 context.Context) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTxnContext", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsTxnContext indicates an expected call of IsTxnContext.
+func (mr *MockDatabaseMockRecorder) IsTxnContext(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxnContext", reflect.TypeOf((*MockDatabase)(nil).IsTxnContext), arg0)
+}
+
+// Defer mocks base method.
+func (m *MockDatabase) Defer(arg0 context.Context, arg1 func(context.Context)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Defer", arg0, arg1)
+}
+
+// Defer indicates an expected call of Defer.
+func (mr *MockDatabaseMockRecorder) Defer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Defer", reflect.TypeOf((*MockDatabase)(nil).Defer), arg0, arg1)
 }
 
 // SaveReminder mocks base method.
