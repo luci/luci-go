@@ -19,7 +19,7 @@ import (
 	"sort"
 	"sync"
 
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // FakeDB implements Database in RAM.

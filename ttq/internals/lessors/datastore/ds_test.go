@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
-	"go.chromium.org/luci/ttq/internal/partition"
+	"go.chromium.org/luci/ttq/internals/partition"
 
 	. "github.com/smartystreets/goconvey/convey"
 	// . "go.chromium.org/luci/common/testing/assertions"
