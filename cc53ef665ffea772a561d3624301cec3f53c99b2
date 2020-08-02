@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1dcc1d75_64e37ede",
+        "filename": "resultdb/internal/invocations/read.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-02T20:58:04Z",
+      "side": 1,
+      "message": "nit: \n\n  ts.Attribute(\"cr.dev/count\", len(ids))",
+      "range": {
+        "startLine": 201,
+        "startChar": 1,
+        "endLine": 202,
+        "endChar": 31
+      },
+      "revId": "cc53ef665ffea772a561d3624301cec3f53c99b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36ee92ab_4016daf6",
+        "filename": "resultdb/internal/invocations/read_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-02T20:58:04Z",
+      "side": 1,
+      "message": "nit: sort imports",
+      "revId": "cc53ef665ffea772a561d3624301cec3f53c99b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f520538_c8e13740",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-02T20:58:04Z",
+      "side": 1,
+      "message": "it still would be better to skip checking the exact same realm multiple times, e.g. use a stringset to accumulate already checked realms. I suspect in many cases the batch belongs to a single realm, so this would be pretty effective.",
+      "range": {
+        "startLine": 59,
+        "startChar": 5,
+        "endLine": 59,
+        "endChar": 44
+      },
+      "revId": "cc53ef665ffea772a561d3624301cec3f53c99b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
