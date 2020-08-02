@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9eaa3b0_b69216ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-02T23:34:57Z",
+      "side": 1,
+      "message": "This CL reduces the latency of https://paste.googleplex.com/6060823166320640 RPC by 10x!",
+      "revId": "715d61fab5d26b0fb0850a1cd7ef9329cd4d39b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
