@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27263ab6_94296256",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-02T02:33:34Z",
+      "side": 1,
+      "message": "PTAL, no tests yet.\n\nTell me if you really want me to reuse more of ttq public interface and Impl, I\u0027ll try to figure out how. But at least for enqueuing it is much more natural to use DB and Reminder APIs directly.",
+      "revId": "8352a0614df0592539037b82007d0dacb75b8a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
