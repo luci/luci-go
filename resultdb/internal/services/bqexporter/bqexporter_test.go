@@ -64,8 +64,8 @@ func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
-			insert.Invocation("a", pb.Invocation_FINALIZED, nil),
-			insert.Invocation("b", pb.Invocation_FINALIZED, nil),
+			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
 			insert.Inclusion("a", "b"))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
@@ -109,7 +109,9 @@ func TestExportToBigQuery(t *testing.T) {
 				tr := m.Struct.(*TestResultRow)
 				So(tr.TestID, ShouldBeIn, expectedTestIDs)
 				So(tr.ParentInvocation.ID, ShouldBeIn, []string{"a", "b"})
+				So(tr.ParentInvocation.Realm, ShouldEqual, "testproject:testrealm")
 				So(tr.ExportedInvocation.ID, ShouldEqual, "a")
+				So(tr.ExportedInvocation.Realm, ShouldEqual, "testproject:testrealm")
 				So(tr.Exonerated, ShouldEqual, tr.TestID == "A" || tr.TestID == "D")
 			}
 		})

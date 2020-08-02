@@ -194,5 +194,14 @@ func TestReachCache(t *testing.T) {
 				{"EXPIRE", "reach:inv", 2592000},
 			})
 		})
+
+		Convey(`Write itself`, func() {
+			err := cache.Write(ctx, NewIDSet(ID(cache)))
+			So(err, ShouldBeNil)
+			So(conn.received, ShouldResemble, [][]interface{}{
+				{"SET", "reach:inv", []byte("\n")},
+				{"EXPIRE", "reach:inv", 2592000},
+			})
+		})
 	})
 }

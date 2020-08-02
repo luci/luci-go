@@ -205,15 +205,14 @@ func (c ReachCache) Write(ctx context.Context, value IDSet) (err error) {
 	key := c.key()
 
 	marshaled := &bytes.Buffer{}
-	if len(value) == 0 {
+	for id := range value {
+		if id != ID(c) {
+			fmt.Fprintln(marshaled, id)
+		}
+	}
+	if marshaled.Len() == 0 {
 		// Redis does not support empty values. Write just "\n".
 		fmt.Fprintln(marshaled)
-	} else {
-		for id := range value {
-			if id != ID(c) {
-				fmt.Fprintln(marshaled, id)
-			}
-		}
 	}
 	ts.Attribute("size", marshaled.Len())
 
