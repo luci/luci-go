@@ -30,6 +30,10 @@ type FakeDB struct {
 
 func (_ *FakeDB) Kind() string { return "FakeDB" }
 
+func (_ *FakeDB) IsTxnContext(context.Context) bool { panic("must not be called") }
+
+func (_ *FakeDB) Defer(context.Context, func(context.Context)) { panic("must not be called") }
+
 func (f *FakeDB) SaveReminder(_ context.Context, r *reminder.Reminder) error {
 	f.mu.Lock()
 	if f.reminders == nil {
