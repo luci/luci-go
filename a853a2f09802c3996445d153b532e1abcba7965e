@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7c2347bd_e0743570",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-02T15:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d691b780_a964a440",
+      "range": {
+        "startLine": 20,
+        "startChar": 20,
+        "endLine": 20,
+        "endChar": 27
+      },
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f93c04d9_2b18c728",
         "filename": "/COMMIT_MSG",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86096d8e_f9f3734f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-02T15:48:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f93c04d9_2b18c728",
+      "range": {
+        "startLine": 59,
+        "startChar": 35,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "118f51dd_d1f3dbc3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-02T15:48:28Z",
+      "side": 1,
+      "message": "er, yes, missed this.",
+      "parentUuid": "97d005be_443caadf",
+      "range": {
+        "startLine": 69,
+        "startChar": 12,
+        "endLine": 69,
+        "endChar": 62
+      },
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8e022f3_4888b0d1",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
@@ -141,6 +213,42 @@
       "side": 1,
       "message": "I just examine the code as well and I think what you said are right. Furthermore, I think teardown process won\u0027t start before the StreamCount drop to zero[1]. So I think it should not be a issue. \n\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/logdog/client/butler/butler.go;l\u003d519-526;drc\u003d5caafd034bb2975b7c99465f953be9c44b6cf917",
       "parentUuid": "f8e022f3_4888b0d1",
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5112bfc5_33b538ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-02T15:48:28Z",
+      "side": 1,
+      "message": "It will certainly be easier to reason about; In v2 you make a full round trip via http to establish the stream, meaning that we know FOR SURE that the butler actually is consuming the stream (and it\u0027s fully registered, etc.) before we do any writes to it or close it.",
+      "parentUuid": "7b327dde_2853eb0b",
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33148785_6b3020c5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-02T15:48:28Z",
+      "side": 1,
+      "message": "If \"accept\" thread is stuck after the Accept call, but before the main butler code \u0027pulls\u0027 the stream, I think the stream count could actually be zero?",
+      "parentUuid": "4f6e0cb1_61ccbc47",
       "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
