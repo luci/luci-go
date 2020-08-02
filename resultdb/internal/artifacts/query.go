@@ -128,7 +128,11 @@ func (q *Query) Fetch(ctx context.Context) (arts []*pb.Artifact, nextPageToken s
 	}
 
 	st.Params["ParentIdRegexp"] = q.parentIDRegexp()
-	testresults.PopulateVariantParams(&st, q.TestResultPredicate.GetVariant())
+
+	// TODO(cbrug.com/1090197): remove these default values by refactoring artifacts/query.go.
+	st.Params["variantHashEquals"] = spanner.NullString{}
+	st.Params["variantContains"] = []string(nil)
+	testresults.PopulateVariantParams(st.Params, q.TestResultPredicate.GetVariant())
 
 	var b spanutil.Buffer
 	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
