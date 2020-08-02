@@ -20,8 +20,8 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/ttq/internal/databases"
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals/databases"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 type DB struct {

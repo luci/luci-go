@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/ttq/internal"
-	"go.chromium.org/luci/ttq/internal/partition"
+	"go.chromium.org/luci/ttq/internals"
+	"go.chromium.org/luci/ttq/internals/partition"
 )
 
 // Lessor implements internal.Lessor on top of Cloud Datastore.
@@ -37,7 +37,7 @@ type Lessor struct {
 // WithLease acquires the lease and executes WithLeaseClbk.
 // The obtained lease duration may be shorter than requested.
 // The obtained lease may be only for some parts of the desired Partition.
-func (l *Lessor) WithLease(ctx context.Context, shard int, part *partition.Partition, dur time.Duration, clbk internal.WithLeaseClbk) error {
+func (l *Lessor) WithLease(ctx context.Context, shard int, part *partition.Partition, dur time.Duration, clbk internals.WithLeaseClbk) error {
 	expiresAt := clock.Now(ctx).Add(dur)
 	if d, ok := ctx.Deadline(); ok && expiresAt.After(d) {
 		expiresAt = d
@@ -56,7 +56,7 @@ func (l *Lessor) WithLease(ctx context.Context, shard int, part *partition.Parti
 	return nil
 }
 
-var _ internal.Lessor = (*Lessor)(nil)
+var _ internals.Lessor = (*Lessor)(nil)
 
 func (*Lessor) acquire(ctx context.Context, shard int, desired *partition.Partition, expiresAt time.Time) (*lease, error) {
 	var acquired *lease

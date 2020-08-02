@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-	"go.chromium.org/luci/ttq/internal"
-	"go.chromium.org/luci/ttq/internal/reminder"
+	"go.chromium.org/luci/ttq/internals"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 type Options struct {
@@ -56,7 +56,7 @@ type Options struct {
 //
 // Each of the impl.Options.Shards is swept separately.
 type Sweeper struct {
-	Impl *internal.Impl
+	Impl *internals.Impl
 	Opts *Options
 
 	// shouldContinue is used in tests only as a callback after each iteration.
@@ -104,15 +104,15 @@ func (s *Sweeper) SweepContinuously(ctx context.Context) {
 // Finally, in close() it suffices to close channels and wait on their
 // worker goroutines to terminate.
 type shard struct {
-	impl      *internal.Impl
+	impl      *internals.Impl
 	opts      *Options
-	firstScan internal.ScanItem
+	firstScan internals.ScanItem
 
 	// iterCtx is dependency injection of per-iteration context to functions
 	// called from goroutines created in initShard before any iterations start.
 	iterCtx context.Context
 
-	scanChan      chan internal.ScanItem
+	scanChan      chan internals.ScanItem
 	scanItemsWG   sync.WaitGroup
 	scanWorkersWG sync.WaitGroup
 
@@ -126,7 +126,7 @@ type shard struct {
 	shouldContinue func(shard int, iteration int64) bool
 }
 
-func (s *Sweeper) initShard(ctx context.Context, firstScan internal.ScanItem) (context.Context, *shard, error) {
+func (s *Sweeper) initShard(ctx context.Context, firstScan internals.ScanItem) (context.Context, *shard, error) {
 	ctx = logging.SetField(ctx, "shard", firstScan.Shard)
 	shard := &shard{
 		opts:      s.Opts,
@@ -160,7 +160,7 @@ func (s *Sweeper) initShard(ctx context.Context, firstScan internal.ScanItem) (c
 		return nil, nil, errors.Annotate(err, "invalid static configuration").Err()
 	}
 
-	shard.scanChan = make(chan internal.ScanItem, s.Opts.MaxScansBacklog)
+	shard.scanChan = make(chan internals.ScanItem, s.Opts.MaxScansBacklog)
 	shard.scanWorkersWG.Add(s.Opts.MaxConcurrentScansPerShard)
 	for i := 0; i < s.Opts.MaxConcurrentScansPerShard; i++ {
 		go func() {
@@ -240,7 +240,7 @@ func (s *shard) addError(err error) {
 	s.errs = append(s.errs, err)
 }
 
-func (s *shard) doScan(w internal.ScanItem) {
+func (s *shard) doScan(w internals.ScanItem) {
 	defer s.scanItemsWG.Done()
 
 	moreScans, scanResult, err := s.impl.Scan(s.iterCtx, w)

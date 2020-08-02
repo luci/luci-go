@@ -31,8 +31,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/ttq/internal"
-	ttqtesting "go.chromium.org/luci/ttq/internal/testing"
+	"go.chromium.org/luci/ttq/internals"
+	ttqtesting "go.chromium.org/luci/ttq/internals/testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -51,7 +51,7 @@ func TestSweeper(t *testing.T) {
 
 		db := ttqtesting.FakeDB{}
 		userCT := ttqtesting.FakeCloudTasks{}
-		impl := internal.Impl{DB: &db, TasksClient: &userCT, Options: ttq.Options{
+		impl := internals.Impl{DB: &db, TasksClient: &userCT, Options: ttq.Options{
 			Shards:              2,
 			SecondaryScanShards: 2,
 			TasksPerScan:        10,

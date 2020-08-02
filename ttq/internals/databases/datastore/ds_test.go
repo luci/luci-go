@@ -24,8 +24,8 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/ttq/internal/reminder"
-	ttqtesting "go.chromium.org/luci/ttq/internal/testing"
+	"go.chromium.org/luci/ttq/internals/reminder"
+	ttqtesting "go.chromium.org/luci/ttq/internals/testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

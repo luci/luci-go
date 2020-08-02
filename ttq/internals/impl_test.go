@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package internals
 
 import (
 	"context"
@@ -38,9 +38,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/ttq"
-	"go.chromium.org/luci/ttq/internal/partition"
-	"go.chromium.org/luci/ttq/internal/reminder"
-	ttqtesting "go.chromium.org/luci/ttq/internal/testing"
+	"go.chromium.org/luci/ttq/internals/partition"
+	"go.chromium.org/luci/ttq/internals/reminder"
+	ttqtesting "go.chromium.org/luci/ttq/internals/testing"
 
 	"github.com/golang/mock/gomock"
 
