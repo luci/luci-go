@@ -269,7 +269,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 		return parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
 			work <- func() (err error) {
-				reach, err = invocations.Reachable(ctx, invocations.NewIDSet(invID))
+				reach, err = invocations.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID))
 				return
 			}
 
