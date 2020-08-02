@@ -36,6 +36,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
+	ttqt "go.chromium.org/luci/ttq/internals/testing"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -253,6 +255,105 @@ func TestPushHandler(t *testing.T) {
 		Convey("No handler", func() {
 			ref.(*taskClassImpl).Handler = nil
 			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 202)
+		})
+	})
+}
+
+func TestTransactionalEnqueue(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		var now = time.Unix(1442540000, 0)
+
+		submitter := &submitter{}
+		db := ttqt.FakeDB{}
+		d := Dispatcher{
+			Submitter:         submitter,
+			CloudProject:      "proj",
+			CloudRegion:       "reg",
+			DefaultTargetHost: "example.com",
+			PushAs:            "push-as@example.com",
+		}
+		d.RegisterTaskClass(TaskClass{
+			ID:        "test-dur",
+			Prototype: &durationpb.Duration{}, // just some proto type
+			Kind:      Transactional,
+			Queue:     "queue-1",
+		})
+
+		ctx, tc := testclock.UseTime(context.Background(), now)
+		txn := db.Inject(ctx)
+
+		Convey("Happy path", func() {
+			err := d.AddTask(txn, &Task{
+				Payload: durationpb.New(5 * time.Second),
+				Delay:   10 * time.Second,
+			})
+			So(err, ShouldBeNil)
+
+			// Created the reminder.
+			So(db.AllReminders(), ShouldHaveLength, 1)
+			rem := db.AllReminders()[0]
+
+			// But didn't submitted the task yet.
+			So(submitter.reqs, ShouldBeEmpty)
+
+			// The defer will submit the task and wipe the reminder.
+			db.ExecDefers(ctx)
+			So(db.AllReminders(), ShouldBeEmpty)
+			So(submitter.reqs, ShouldHaveLength, 1)
+			req := submitter.reqs[0]
+
+			// Make sure the reminder and the task look as expected.
+			remReq := &taskspb.CreateTaskRequest{}
+			So(proto.Unmarshal(rem.Payload, remReq), ShouldBeNil)
+			So(req, ShouldResembleProto, remReq)
+			So(rem.Id, ShouldHaveLength, reminderKeySpaceBytes*2)
+			So(req.Task.Name, ShouldEqual, "projects/proj/locations/reg/queues/queue-1/tasks/"+rem.Id)
+			So(rem.FreshUntil.Equal(now.Add(happyPathMaxDuration)), ShouldBeTrue)
+		})
+
+		Convey("Fatal CreateTask error", func() {
+			submitter.err = func(string) error { return status.Errorf(codes.PermissionDenied, "boom") }
+
+			err := d.AddTask(txn, &Task{
+				Payload: durationpb.New(5 * time.Second),
+				Delay:   10 * time.Second,
+			})
+			So(err, ShouldBeNil)
+
+			So(db.AllReminders(), ShouldHaveLength, 1)
+			db.ExecDefers(ctx)
+			So(db.AllReminders(), ShouldBeEmpty)
+		})
+
+		Convey("Transient CreateTask error", func() {
+			submitter.err = func(string) error { return status.Errorf(codes.Internal, "boom") }
+
+			err := d.AddTask(txn, &Task{
+				Payload: durationpb.New(5 * time.Second),
+				Delay:   10 * time.Second,
+			})
+			So(err, ShouldBeNil)
+
+			So(db.AllReminders(), ShouldHaveLength, 1)
+			db.ExecDefers(ctx)
+			So(db.AllReminders(), ShouldHaveLength, 1)
+		})
+
+		Convey("Slow", func() {
+			err := d.AddTask(txn, &Task{
+				Payload: durationpb.New(5 * time.Second),
+				Delay:   10 * time.Second,
+			})
+			So(err, ShouldBeNil)
+
+			tc.Add(happyPathMaxDuration + 1*time.Second)
+
+			So(db.AllReminders(), ShouldHaveLength, 1)
+			db.ExecDefers(ctx)
+			So(db.AllReminders(), ShouldHaveLength, 1)
+			So(submitter.reqs, ShouldBeEmpty)
 		})
 	})
 }
