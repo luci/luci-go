@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ae9caad6_f2865c5b",
+        "filename": "resultdb/internal/services/resultdb/permissions.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-02T23:19:37Z",
+      "side": 1,
+      "message": "this now has non-deterministic error messages since order of `realmToInv` traversal is randomized\n\nWhy not just:\n\n  checked :\u003d stringset.New(0)\n  for i, realm :\u003d range realms {\n    if !checked.Add(realm) {\n      continue // already checked\n    }\n    // Do the check\n  }\n\n?",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 2
+      },
+      "revId": "c0a1ebb65c5ceaad454f54217aa406d8291aaa66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
