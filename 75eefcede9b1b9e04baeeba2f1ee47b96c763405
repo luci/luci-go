@@ -82,6 +82,54 @@
     },
     {
       "key": {
+        "uuid": "6ca3e54b_0ddd2c05",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T01:50:10Z",
+      "side": 1,
+      "message": "We cannot use \u0027\\\u0027 for such purpose in raw string literal.\nhttps://golang.org/ref/spec#String_literals",
+      "parentUuid": "2a07228a_8bbe2cd7",
+      "range": {
+        "startLine": 38,
+        "startChar": 12,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cd75585_d16071d6",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T01:50:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "357d717d_cc963f78",
+      "range": {
+        "startLine": 38,
+        "startChar": 52,
+        "endLine": 38,
+        "endChar": 77
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bc932063_bb36aad6",
         "filename": "client/cmd/cas/lib/archive.go",
         "patchSetId": 9
@@ -128,6 +176,54 @@
     },
     {
       "key": {
+        "uuid": "7e0c3993_dcfa96ae",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T01:50:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc932063_bb36aad6",
+      "range": {
+        "startLine": 39,
+        "startChar": 11,
+        "endLine": 39,
+        "endChar": 12
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ca5cb7c_c4d7e55e",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T01:50:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a726cd9_bd518492",
+      "range": {
+        "startLine": 39,
+        "startChar": 7,
+        "endLine": 39,
+        "endChar": 10
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "174d0076_c0becfd6",
         "filename": "client/cmd/cas/lib/archive.go",
         "patchSetId": 9
@@ -148,6 +244,30 @@
       "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09147cb0_1dd6e178",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T01:50:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "174d0076_c0becfd6",
+      "range": {
+        "startLine": 42,
+        "startChar": 14,
+        "endLine": 42,
+        "endChar": 18
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
