@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/span"
 
@@ -98,6 +100,36 @@ func TestReadBatch(t *testing.T) {
 		Convey(`Not found`, func() {
 			_, err := ReadBatch(ctx, NewIDSet("inv0", "x"))
 			So(err, ShouldErrLike, `invocations/x not found`)
+		})
+	})
+}
+
+func TestReadRealms(t *testing.T) {
+	Convey(`TestReadRealms`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		Convey(`Works`, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
+				insertInvocation("inv1", map[string]interface{}{"Realm": "1"}),
+				insertInvocation("inv2", map[string]interface{}{"Realm": "2"}),
+			)
+
+			realms, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
+			So(err, ShouldBeNil)
+			So(realms, ShouldResemble, map[ID]string{
+				"inv0": "0",
+				"inv1": "1",
+				"inv2": "2",
+			})
+		})
+		Convey(`NotFound`, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
+			)
+
+			_, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
+			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv1 not found")
 		})
 	})
 }
