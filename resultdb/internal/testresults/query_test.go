@@ -105,27 +105,48 @@ func TestQueryTestResults(t *testing.T) {
 
 		Convey(`Expectancy filter`, func() {
 			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
-				insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T4", nil, pb.TestStatus_FAIL),
-			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
-			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
-			actual, _ := mustFetch(q)
-			pbutil.NormalizeTestResultSlice(actual)
 
-			So(mustFetchNames(q), ShouldResemble, []string{
-				"invocations/inv0/tests/T1/results/0",
-				"invocations/inv0/tests/T1/results/1",
-				"invocations/inv0/tests/T2/results/0",
-				"invocations/inv1/tests/T1/results/0",
-				"invocations/inv1/tests/T2/results/0",
-				"invocations/inv1/tests/T4/results/0",
+			Convey(`VARIANTS_WITH_UNEXPECTED_RESULTS`, func() {
+				testutil.MustApply(ctx, testutil.CombineMutations(
+					insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+					insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
+					insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
+					insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
+					insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
+					insert.TestResults("inv1", "T4", nil, pb.TestStatus_FAIL),
+				)...)
+
+				q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
+				So(mustFetchNames(q), ShouldResemble, []string{
+					"invocations/inv0/tests/T1/results/0",
+					"invocations/inv0/tests/T1/results/1",
+					"invocations/inv0/tests/T2/results/0",
+					"invocations/inv1/tests/T1/results/0",
+					"invocations/inv1/tests/T2/results/0",
+					"invocations/inv1/tests/T4/results/0",
+				})
+			})
+
+			Convey(`VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS`, func() {
+				testutil.MustApply(ctx, testutil.CombineMutations(
+					insert.TestResults("inv0", "flaky", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+					insert.TestResults("inv0", "passing", nil, pb.TestStatus_PASS),
+					insert.TestResults("inv0", "F0", nil, pb.TestStatus_FAIL),
+					insert.TestResults("inv0", "in_both_invocations", nil, pb.TestStatus_FAIL),
+					// Same test, but different variant.
+					insert.TestResults("inv1", "F0", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
+					insert.TestResults("inv1", "in_both_invocations", nil, pb.TestStatus_PASS),
+					insert.TestResults("inv1", "F1", nil, pb.TestStatus_FAIL, pb.TestStatus_FAIL),
+				)...)
+
+				q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
+				So(mustFetchNames(q), ShouldResemble, []string{
+					"invocations/inv0/tests/F0/results/0",
+					"invocations/inv1/tests/F1/results/0",
+					"invocations/inv1/tests/F1/results/1",
+				})
 			})
 		})
 

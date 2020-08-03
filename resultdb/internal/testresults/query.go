@@ -89,7 +89,8 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	params["limit"] = q.PageSize
 
 	// Filter by expectancy.
-	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
+	switch q.Predicate.GetExpectancy() {
+	case pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS, pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS:
 		switch testVariants, err := q.fetchVariantsWithUnexpectedResults(ctx); {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch variants with unexpected results").Err()
@@ -108,10 +109,12 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 
 	// Execute the query.
 	st := q.genStatement("testResults", map[string]interface{}{
-		"params":  params,
-		"columns": strings.Join(columns, ", "),
+		"params":         params,
+		"columns":        strings.Join(columns, ", "),
+		"onlyUnexpected": q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS,
 	})
 	logging.Debugf(ctx, "Test result query: %s", st.SQL)
+	fmt.Printf("\n\n---------%s----------\n\n", st.SQL)
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		tr, err := parser(row)
 		if err != nil {
@@ -337,9 +340,11 @@ func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.V
 var queryTmpl = template.Must(template.New("").Parse(`
 	{{define "testResults"}}
 		@{USE_ADDITIONAL_PARALLELISM=TRUE}
-		SELECT {{.columns}}
-		FROM TestResults tr
-		WHERE InvocationId IN UNNEST(@invIDs)
+		{{if .onlyUnexpected}}
+			{{template "testResultsWithOnlyUnexpectedResults" .}}
+		{{else}}
+ 			{{template "testResultsBase" .}}
+		{{end}}
 
 		{{/* Apply the page token */}}
 		{{if .params.afterInvocationId}}
@@ -349,7 +354,31 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ResultId > @afterResultId)
 			)
 		{{end}}
+		ORDER BY InvocationId, TestId, ResultId
+		{{if .params.limit}}LIMIT @limit{{end}}
+	{{end}}
 
+	{{define "testResultsWithOnlyUnexpectedResults"}}
+		WITH
+			withUnexpected AS ({{template "testResultsBase" .}}),
+			onlyWithUnexpected AS (
+				SELECT TestId, VariantHash, ARRAY_AGG(tr) trs
+				FROM withUnexpected tr
+				GROUP BY TestId, VariantHash
+				{{/*
+					All results of the TestID and VariantHash are unexpected.
+					IFNULL() is significant because LOGICAL_AND() skips nulls.
+				*/}}
+				HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
+			)
+		SELECT tr.*
+		FROM onlyWithUnexpected owu, owu.trs tr
+	{{end}}
+
+	{{define "testResultsBase"}}
+		SELECT {{.columns}}
+		FROM TestResults tr
+		WHERE InvocationId IN UNNEST(@invIDs)
 		{{if .params.testVariants}}
 			{{/*
 				Use HashJoin algorithm, as opposed to CrossApply, otherwise
@@ -362,9 +391,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			{{/* Apply TestId and VariantHash only if we don't filter by @testVariants */}}
 			{{template "testIDAndVariantFilter" .}}
 		{{end}}
-
-		ORDER BY InvocationId, TestId, ResultId
-		{{if .params.limit}}LIMIT @limit{{end}}
 	{{end}}
 
 	{{define "variantsWithUnexpectedResults"}}
@@ -390,7 +416,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		{{end}}
 	{{end}}
 `))
-
 
 func (*Query) genStatement(templateName string, input map[string]interface{}) spanner.Statement {
 	var sql bytes.Buffer
