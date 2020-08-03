@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -97,13 +99,58 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 	}
+	var realm string
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
-		return invocations.IncrementTestResultCount(ctx, invID, int64(len(in.Requests)))
+		eg, ctx := errgroup.WithContext(ctx)
+		eg.Go(func() (err error) {
+			realm, err = invocations.ReadRealm(ctx, invID)
+			return
+		})
+		eg.Go(func() error {
+			return invocations.IncrementTestResultCount(ctx, invID, int64(len(in.Requests)))
+		})
+		return eg.Wait()
 	})
 	if err != nil {
 		return nil, err
 	}
-	spanutil.IncRowCount(ctx, len(in.Requests), spanutil.TestResults, spanutil.Inserted)
+	spanutil.IncRowCount(ctx, len(in.Requests), spanutil.TestResults, spanutil.Inserted, realm)
 	return ret, nil
+}
+
+func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
+	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
+	// the response
+	ret := proto.Clone(body).(*pb.TestResult)
+	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
+
+	// handle values for nullable columns
+	var runDuration spanner.NullInt64
+	if ret.Duration != nil {
+		runDuration.Int64 = pbutil.MustDuration(ret.Duration).Microseconds()
+		runDuration.Valid = true
+	}
+
+	row := map[string]interface{}{
+		"InvocationId":    invID,
+		"TestId":          ret.TestId,
+		"ResultId":        ret.ResultId,
+		"Variant":         ret.Variant,
+		"VariantHash":     pbutil.VariantHash(ret.Variant),
+		"CommitTimestamp": spanner.CommitTimestamp,
+		"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !body.Expected},
+		"Status":          ret.Status,
+		"SummaryHTML":     spanutil.Compressed(ret.SummaryHtml),
+		"StartTime":       ret.StartTime,
+		"RunDurationUsec": runDuration,
+		"Tags":            ret.Tags,
+	}
+	if ret.TestLocation != nil {
+		row["TestLocationFileName"] = ret.TestLocation.FileName
+		// Spanner client does not support int32
+		row["TestLocationLine"] = int(ret.TestLocation.Line)
+	}
+	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
+	return ret, mutation
 }

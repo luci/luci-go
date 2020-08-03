@@ -110,7 +110,9 @@ func (s *recorderServer) createInvocations(ctx context.Context, reqs []*pb.Creat
 		return nil, nil, err
 	}
 	if !deduped {
-		spanutil.IncRowCount(ctx, len(reqs), spanutil.Invocations, spanutil.Inserted)
+		for _, r := range reqs {
+			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, r.Invocation.GetRealm())
+		}
 	}
 
 	return getCreatedInvocationsAndUpdateTokens(ctx, idSet, reqs)

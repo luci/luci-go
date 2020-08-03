@@ -36,7 +36,9 @@ var rowCounter = metric.NewCounter(
 	"Number of Spanner rows",
 	nil,
 	field.String("table"),  // See Table type.
-	field.String("status")) // See RowStatus type.
+	field.String("status"), // See RowStatus type.
+	field.String("realm"),  // Invocation realm
+)
 
 // Table identifies a Spanner table.
 // Used in metrics.
@@ -49,6 +51,6 @@ const (
 )
 
 // IncRowCount increments the row counter.
-func IncRowCount(ctx context.Context, count int, table Table, rowStatus RowStatus) {
-	rowCounter.Add(ctx, int64(count), string(table), string(rowStatus))
+func IncRowCount(ctx context.Context, count int, table Table, rowStatus RowStatus, realm string) {
+	rowCounter.Add(ctx, int64(count), string(table), string(rowStatus), realm)
 }

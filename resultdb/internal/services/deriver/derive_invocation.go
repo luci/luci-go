@@ -148,7 +148,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	case err != nil:
 		return nil, err
 	default:
-		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
 
 		// Cache the set of all invocations reachable from invID.
 		reach.Add(originInvID)
@@ -259,7 +259,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	case err != nil:
 		return nil, nil, err
 	default:
-		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
 		// Cache the included invocations.
 		invocations.ReachCache(originInvID).TryWrite(ctx, batchInvs)
 		return originInv, batchInvs, nil
@@ -329,8 +329,8 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 			// Memorize that this invocation does not include anything.
 			invocations.ReachCache(batchID).TryWrite(ctx, nil)
 
-			spanutil.IncRowCount(ctx, len(batch), spanutil.TestResults, spanutil.Inserted)
-			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
+			spanutil.IncRowCount(ctx, len(batch), spanutil.TestResults, spanutil.Inserted, defaultRealm)
+			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
 			return nil
 		})
 	}

@@ -100,8 +100,12 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 
 	// Check that invocation hasn't been purged already.
 	var expirationTime spanner.NullTime
-	ptrs := map[string]interface{}{"ExpectedTestResultsExpirationTime": &expirationTime}
-	if err := invocations.ReadColumns(ctx, invID, ptrs); err != nil {
+	var realm spanner.NullString
+	err := invocations.ReadColumns(ctx, invID, map[string]interface{}{
+		"ExpectedTestResultsExpirationTime": &expirationTime,
+		"Realm":                             &realm,
+	})
+	if err != nil {
 		return err
 	}
 	if expirationTime.IsNull() {
@@ -116,7 +120,7 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 	// test results and artifacts.
 	var ms []*spanner.Mutation
 	count := 0
-	err := rowsToPurge(ctx, invID, func(table string, key spanner.Key) error {
+	err = rowsToPurge(ctx, invID, func(table string, key spanner.Key) error {
 		count++
 		ms = append(ms, spanner.Delete(table, key))
 		// Flush if the batch is too large.
@@ -127,7 +131,7 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 			if _, err := span.Apply(ctx, ms); err != nil {
 				return err
 			}
-			spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted)
+			spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted, realm.StringVal)
 			ms = ms[:0]
 		}
 		return nil
@@ -141,7 +145,7 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 		if _, err := span.Apply(ctx, ms); err != nil {
 			return err
 		}
-		spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted)
+		spanutil.IncRowCount(ctx, len(ms), spanutil.TestResults, spanutil.Deleted, realm.StringVal)
 	}
 
 	// Set the invocation's result expiration to null.
