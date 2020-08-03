@@ -268,10 +268,6 @@ func TestDownloaderWithCache(t *testing.T) {
 			MaxItems: 1024,
 		}
 		var cacheObj cache.Cache
-		Convey("memcache", func() {
-			cacheObj = cache.NewMemory(policy, namespace)
-		})
-
 		Convey("diskcache", func() {
 			cacheDir := filepath.Join(tmpDir, "cache")
 			So(os.MkdirAll(cacheDir, os.ModePerm), ShouldBeNil)
@@ -299,13 +295,11 @@ func TestDownloaderWithCache(t *testing.T) {
 
 func TestFetchAndMap(t *testing.T) {
 	t.Parallel()
-	Convey(`TestFetchAndMap`, t, func() {
+
+	Convey(`TestFetchAndMap`, t, testfs.MustWithTempDir(t, "", func(tmpdir string) {
 		ctx := context.Background()
-		tmpDir, err := ioutil.TempDir("", "isolated")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpDir), ShouldBeNil)
-		}()
+		isolatedDir := filepath.Join(tmpdir, "isolated")
+		So(os.Mkdir(isolatedDir, 0o700), ShouldBeNil)
 
 		data1 := []byte("hello world!")
 
@@ -336,9 +330,13 @@ func TestFetchAndMap(t *testing.T) {
 			MaxSize:  1024 * 1024,
 			MaxItems: 1024,
 		}
-		memcache := cache.NewMemory(policy, namespace)
+		diskcache, err := cache.NewDisk(policy, filepath.Join(tmpdir, "cache"), namespace)
+		So(err, ShouldBeNil)
+		defer func() {
+			So(diskcache.Close(), ShouldBeNil)
+		}()
 
-		isomap, stats, err := FetchAndMap(ctx, isolated1hash, client, memcache, tmpDir)
+		isomap, stats, err := FetchAndMap(ctx, isolated1hash, client, diskcache, isolatedDir)
 		So(err, ShouldBeNil)
 		So(isomap, ShouldResemble, &isolated.Isolated{
 			Algo:    "sha-1",
@@ -349,10 +347,10 @@ func TestFetchAndMap(t *testing.T) {
 		So(stats.ItemsCold, ShouldResemble, []byte{120, 156, 226, 249, 162, 15, 8, 0, 0, 255, 255, 2, 62, 1, 48})
 		So(stats.ItemsHot, ShouldResemble, []byte(nil))
 
-		buf, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
+		buf, err := ioutil.ReadFile(filepath.Join(isolatedDir, onePath))
 		So(err, ShouldBeNil)
 		So(buf, ShouldResemble, data1)
 
-		So(memcache.Touch(tarhash), ShouldBeTrue)
-	})
+		So(diskcache.Touch(tarhash), ShouldBeTrue)
+	}))
 }
