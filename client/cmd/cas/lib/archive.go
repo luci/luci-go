@@ -42,8 +42,9 @@ When specifying directories and files, you must also specify a current working
 directory for each file and directory. The current working directory will not be
 included in the archived path. For example, to archive './usr/foo/bar' and have
 it appear as 'foo/bar' in the CAS tree, specify '-files ./usr:foo/bar' or
-'-files usr:foo/bar'. When the CAS tree is then downloaded, it will then appear
-under 'foo/bar' in the desired directory.
+'-files usr:foo/bar'. And all workind directories should be the same. When the
+CAS tree is then downloaded, it will then appear under 'foo/bar' in the desired
+directory.
 
 Note that '.' may be omitted in general, so to upload 'foo' from the current
 working directory, '-files :foo' is sufficient.`,
@@ -110,7 +111,7 @@ func getRoot(dirs, files isolated.ScatterGather) (string, error) {
 	return wd0, nil
 }
 
-// Does the archive by uploading to isolate-server, then return the archive stats and error.
+// Does the archive by uploading to isolate-server.
 func (c *archiveRun) doArchive(ctx context.Context, args []string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
