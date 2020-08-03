@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package footer implements parsing git footers from commit message.
-//
-// This is a slimmed downed version of git_footers.py in depot_tools.
-// See: https://chromium.googlesource.com/chromium/tools/depot_tools/+/master/git_footers.py
 package footer
 
 import (
