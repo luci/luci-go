@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolated"
-	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	isol "go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/signals"
@@ -150,7 +149,7 @@ func (c *archiveRun) postprocessStats(stats *archiver.Stats, start time.Time) er
 		duration := time.Since(start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration.Round(time.Millisecond))
 	}
 	if c.dumpStatsJSON != "" {
 		return dumpStatsJSON(c.dumpStatsJSON, stats)
