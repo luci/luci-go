@@ -52,6 +52,24 @@
       "revId": "42a47af1fb0ed2fe786c05de4c789f034a4fb438",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "be2a81c4_b5620197",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T04:26:58Z",
+      "side": 1,
+      "message": "\u003e \u003e use exclusive lock in that case.\n\u003e \n\u003e If the src is created, and two more dests are linked to this same src, then they will both use Reader lock?\n\nYes in this CL, but no if we use exclusive lock.",
+      "parentUuid": "df66d4f2_2eaf2fce",
+      "revId": "42a47af1fb0ed2fe786c05de4c789f034a4fb438",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
