@@ -100,7 +100,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	signals.HandleInterrupt(cancel)
 
 	if c.casFlags.Instance != "" {
-		return uploadToCAS(ctx, &c.casFlags, &c.ArchiveOptions)
+		return uploadToCAS(ctx, c.dumpJSON, &c.casFlags, &c.ArchiveOptions)
 	}
 
 	return c.archiveToIsolate(ctx, start)
