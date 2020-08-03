@@ -291,7 +291,7 @@ func convertTaskToResult(testID string, task *swarmingAPI.SwarmingRpcsTaskResult
 func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix, locationPrefix string, inv *pb.Invocation, req *pb.DeriveChromiumInvocationRequest) ([]*TestResult, error) {
 
 	isoClient := isolatedclient.NewClient(
-		outputsRef.Isolatedserver, isolatedclient.WithAuthClient(internal.HTTPClient(ctx)), isolatedclient.WithNamespace(outputsRef.Namespace))
+		outputsRef.Isolatedserver, isolatedclient.WithAuthClient(internal.MustGetContextHTTPClient(ctx)), isolatedclient.WithNamespace(outputsRef.Namespace))
 
 	// Get the isolated outputs.
 	outputs, err := GetOutputs(ctx, isoClient, outputsRef)

@@ -75,7 +75,6 @@ func InitServer(srv *server.Server, opts Options) error {
 		Service: &resultDBServer{
 			generateArtifactURL: contentServer.GenerateSignedURL,
 		},
-		Prelude:  internal.CommonPrelude,
 		Postlude: internal.CommonPostlude,
 	})
 

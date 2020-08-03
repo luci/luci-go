@@ -84,10 +84,14 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 			permissions: {
 				name: "resultdb.invocations.create"
 			}
+			permissions: {
+				name: "resultdb.invocations.get"
+			}
 			realms: {
-				name: "chromium:public"
+				name: "testproject:testrealm"
 				bindings: {
 					permissions: 0
+					permissions: 1
 					principals: "anonymous:anonymous"
 				}
 			}

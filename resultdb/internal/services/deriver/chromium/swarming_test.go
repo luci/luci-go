@@ -46,7 +46,7 @@ import (
 func TestSwarming(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	ctx = internal.WithHTTPClient(ctx, &http.Client{
+	ctx = internal.WithTestHTTPClient(ctx, &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
@@ -174,7 +174,7 @@ func TestSwarming(t *testing.T) {
 		}))
 		defer swarmingFake.Close()
 
-		swarmSvc, err := GetSwarmSvc(internal.HTTPClient(ctx), swarmingFake.URL)
+		swarmSvc, err := GetSwarmSvc(internal.MustGetContextHTTPClient(ctx), swarmingFake.URL)
 		So(err, ShouldBeNil)
 
 		// Define base request we'll be using.

@@ -77,27 +77,6 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 				{Realm: "chromium:ci", Permission: permCreateInvocation},
 			},
 		})
-		Convey(`legacy permissions`, func() {
-			ctx = auth.WithState(context.Background(), &authtest.FakeState{
-				Identity:       "user:someone@example.com",
-				IdentityGroups: []string{"luci-resultdb-trusted-invocation-creators"},
-			})
-			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
-				InvocationId: "build:8765432100",
-				Invocation: &pb.Invocation{
-					ProducerResource: "//builds.example.com/builds/1",
-					BigqueryExports: []*pb.BigQueryExport{
-						{
-							Project:     "project",
-							Dataset:     "dataset",
-							Table:       "table",
-							TestResults: &pb.BigQueryExport_TestResults{},
-						},
-					},
-				},
-			})
-			So(err, ShouldBeNil)
-		})
 		Convey(`reserved prefix`, func() {
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "build:8765432100",
@@ -218,18 +197,6 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `does not have permission to create invocations`)
 		})
-		Convey(`creation allowed, legacy`, func() {
-			ctx = auth.WithState(context.Background(), &authtest.FakeState{
-				Identity:            "user:someone@example.com",
-				IdentityPermissions: []authtest.RealmPermission{},
-			})
-			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
-				InvocationId: "u-someguid",
-				Invocation:   &pb.Invocation{},
-				// No Realm.
-			})
-			So(err, ShouldBeNil)
-		})
 	})
 
 }
@@ -261,7 +228,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
-					Tags: pbutil.StringPairs("1", "a"),
+					Realm: "chromium:ci",
+					Tags:  pbutil.StringPairs("1", "a"),
 				},
 			}, now)
 			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
@@ -272,6 +240,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u-abc",
 				Invocation: &pb.Invocation{
+					Realm:    "chromium:ci",
 					Deadline: deadline,
 				},
 			}, now)
@@ -295,6 +264,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+					Realm:    "chromium:ci",
 					BigqueryExports: []*pb.BigQueryExport{
 						{
 							Project: "project",
@@ -312,6 +282,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+					Realm:    "chromium:ci",
 				},
 			}, now)
 			So(err, ShouldBeNil)
@@ -326,10 +297,10 @@ func TestCreateInvocation(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "chromium:public", Permission: permCreateInvocation},
-				{Realm: "chromium:public", Permission: permCreateWithReservedID},
-				{Realm: "chromium:public", Permission: permExportToBigQuery},
-				{Realm: "chromium:public", Permission: permSetProducerResource},
+				{Realm: "testproject:testrealm", Permission: permCreateInvocation},
+				{Realm: "testproject:testrealm", Permission: permCreateWithReservedID},
+				{Realm: "testproject:testrealm", Permission: permExportToBigQuery},
+				{Realm: "testproject:testrealm", Permission: permSetProducerResource},
 			},
 		})
 
@@ -351,12 +322,22 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `bad request: invocation_id: unspecified`)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation: unspecified`)
+		})
+		Convey(`missing invocation id`, func() {
+			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Realm: "testproject:testrealm",
+				},
+			})
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation_id: unspecified`)
 		})
 
 		req := &pb.CreateInvocationRequest{
 			InvocationId: "u-inv",
-			Invocation:   &pb.Invocation{},
+			Invocation: &pb.Invocation{
+				Realm: "testproject:testrealm",
+			},
 		}
 
 		Convey(`already exists`, func() {
@@ -377,16 +358,17 @@ func TestCreateInvocation(t *testing.T) {
 		})
 
 		Convey(`no invocation in request`, func() {
-			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "u-inv"})
-			So(err, ShouldBeNil)
-			So(inv.Name, ShouldEqual, "invocations/u-inv")
+			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "u-inv"})
+			So(err, ShouldErrLike, "invocation: unspecified")
 		})
 
 		Convey(`idempotent`, func() {
 			req := &pb.CreateInvocationRequest{
 				InvocationId: "u-inv",
-				Invocation:   &pb.Invocation{},
-				RequestId:    "request id",
+				Invocation: &pb.Invocation{
+					Realm: "testproject:testrealm",
+				},
+				RequestId: "request id",
 			}
 			res, err := recorder.CreateInvocation(ctx, req)
 			So(err, ShouldBeNil)
@@ -414,7 +396,7 @@ func TestCreateInvocation(t *testing.T) {
 						bqExport,
 					},
 					ProducerResource: "//builds.example.com/builds/1",
-					Realm:            "chromium:public",
+					Realm:            "testproject:testrealm",
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))

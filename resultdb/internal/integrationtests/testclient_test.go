@@ -38,7 +38,7 @@ type testClient struct {
 
 func (c *testClient) CreateInvocation(ctx context.Context, id string) {
 	md := metadata.MD{}
-	req := &pb.CreateInvocationRequest{InvocationId: id}
+	req := &pb.CreateInvocationRequest{InvocationId: id, Invocation: &pb.Invocation{Realm: "testproject:testrealm"}}
 	inv, err := c.app.Recorder.CreateInvocation(ctx, req, prpc.Header(&md))
 	So(err, ShouldBeNil)
 	So(md.Get(recorder.UpdateTokenMetadataKey), ShouldHaveLength, 1)

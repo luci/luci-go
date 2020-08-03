@@ -46,13 +46,6 @@ func verifyPermission(ctx context.Context, permission realms.Permission, id invo
 	if err != nil {
 		return err
 	}
-	// TODO(crbug.com/1013316): Remove this fallback when realm is required
-	// in all invocations.
-	//
-	// Legacy realm assigned to invocations that predate its use.
-	if realm == "chromium:public" {
-		return nil
-	}
 	switch allowed, err := auth.HasPermission(ctx, permission, realm); {
 	case err != nil:
 		return err
