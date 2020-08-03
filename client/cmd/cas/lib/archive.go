@@ -55,7 +55,7 @@ working directory, '-files :foo' is sufficient.`,
 			c.Init()
 			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
-			c.Flags.StringVar(&c.DigestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
+			c.Flags.StringVar(&c.digestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
 			return &c
 		},
 	}
@@ -65,7 +65,7 @@ type archiveRun struct {
 	commonFlags
 	dirs       isolated.ScatterGather
 	files      isolated.ScatterGather
-	DigestJSON string
+	digestJSON string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -148,7 +148,7 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 
-	dj := c.DigestJSON
+	dj := c.digestJSON
 	if dj == "" {
 		return nil
 	}
