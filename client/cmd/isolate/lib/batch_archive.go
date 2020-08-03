@@ -157,7 +157,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	}
 
 	if c.casFlags.Instance != "" {
-		return uploadToCAS(ctx, &c.casFlags, opts...)
+		return uploadToCAS(ctx, c.dumpJSON, &c.casFlags, opts...)
 	}
 
 	return c.batchArchiveToIsolate(ctx, start, opts)
