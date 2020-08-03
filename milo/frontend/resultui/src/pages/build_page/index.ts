@@ -94,6 +94,19 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           },
         ),
       },
+      {
+        id: 'related-builds',
+        label: 'Related Builds',
+        href: router.urlForName(
+          'build-related-builds',
+          {
+            'project': this.builder.project,
+            'bucket': this.builder.bucket,
+            'builder': this.builder.builder,
+            'build_num_or_id': this.buildNumOrId,
+          },
+        ),
+      },
     ];
   }
 
@@ -111,7 +124,7 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
       ></tr-status-bar>
       <tr-tab-bar
         .tabs=${this.tabDefs}
-        .selectedTabId=${'test-results'}
+        .selectedTabId=${this.appState.selectedTabId}
       ></tr-tab-bar>
       <slot></slot>
     `;
