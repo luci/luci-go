@@ -59,6 +59,10 @@ message TestResultPredicate {
   // Most clients would want to override this field because the default
   // typically causes a large response size.
   Expectancy expectancy = 3;
+
+  // If true, filter out exonerated test variants.
+  // Mutually exclusive with Expectancy.ALL.
+  bool not_exonerated = 4;
 }
 
 // Represents a function TestExoneration -> bool.
