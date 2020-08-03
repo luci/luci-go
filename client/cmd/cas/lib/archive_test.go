@@ -30,13 +30,13 @@ func TestGetRoot(t *testing.T) {
 		So(dirs.Add("wd1", "rel"), ShouldBeNil)
 		So(dirs.Add("wd1", "rel2"), ShouldBeNil)
 
-		wd, err := getRoot(dirs, nil)
+		wd, err := getRoot(dirs)
 		So(err, ShouldBeNil)
 		So(wd, ShouldEqual, "wd1")
 
 		So(dirs.Add("wd2", "rel3"), ShouldBeNil)
 
-		_, err = getRoot(dirs, nil)
+		_, err = getRoot(dirs)
 		So(err, ShouldNotBeNil)
 	})
 }

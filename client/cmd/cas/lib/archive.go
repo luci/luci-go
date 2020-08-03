@@ -36,25 +36,24 @@ import (
 func CmdArchive() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "archive <options>...",
-		ShortDesc: "archive files to CAS",
+		ShortDesc: "archive dirs/files to CAS",
 		LongDesc: `Given a list of files and directories, creates a CAS tree and digest file for
 that and uploads the tree to the CAS server.
 
 When specifying directories and files, you must also specify a current working
 directory for each file and directory. The current working directory will not be
 included in the archived path. For example, to archive './usr/foo/bar' and have
-it appear as 'foo/bar' in the CAS tree, specify '-files ./usr:foo/bar' or
-'-files usr:foo/bar'. And all workind directories should be the same. When the
+it appear as 'foo/bar' in the CAS tree, specify '-paths ./usr:foo/bar' or
+'-paths usr:foo/bar'. And all workind directories should be the same. When the
 CAS tree is then downloaded, it will then appear under 'foo/bar' in the desired
 directory.
 
 Note that '.' may be omitted in general, so to upload 'foo' from the current
-working directory, '-files :foo' is sufficient.`,
+working directory, '-paths :foo' is sufficient.`,
 		CommandRun: func() subcommands.CommandRun {
 			c := archiveRun{}
 			c.Init()
-			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
-			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
+			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
 			c.Flags.StringVar(&c.digestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
 			return &c
 		},
@@ -63,8 +62,7 @@ working directory, '-files :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	dirs       isolated.ScatterGather
-	files      isolated.ScatterGather
+	paths      isolated.ScatterGather
 	digestJSON string
 }
 
@@ -79,23 +77,10 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 // getRoot returns root directory if there is only one working directory.
-func getRoot(dirs, files isolated.ScatterGather) (string, error) {
+func getRoot(paths isolated.ScatterGather) (string, error) {
 	var rel0, wd0 string
 	pickedOne := false
-	for rel, wd := range dirs {
-		if !pickedOne {
-			rel0 = rel
-			wd0 = wd
-			pickedOne = true
-			continue
-		}
-
-		if wd0 != wd {
-			return "", errors.Reason("different root (working) directory is not supported: %s:%s vs %s:%s", wd0, rel0, wd, rel).Err()
-		}
-	}
-
-	for rel, wd := range files {
+	for rel, wd := range paths {
 		if !pickedOne {
 			rel0 = rel
 			wd0 = wd
@@ -120,17 +105,14 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
 
-	root, err := getRoot(c.dirs, c.files)
+	root, err := getRoot(c.paths)
 	if err != nil {
 		return err
 	}
 
 	is := command.InputSpec{}
-	for dir := range c.dirs {
-		is.Inputs = append(is.Inputs, dir)
-	}
-	for file := range c.files {
-		is.Inputs = append(is.Inputs, file)
+	for path := range c.paths {
+		is.Inputs = append(is.Inputs, path)
 	}
 
 	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
