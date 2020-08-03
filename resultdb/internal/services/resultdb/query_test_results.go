@@ -70,6 +70,7 @@ func validateQueryRequest(req queryRequest) error {
 			return errors.Annotate(err, "page_size").Err()
 		}
 	}
+
 	return nil
 }
 
