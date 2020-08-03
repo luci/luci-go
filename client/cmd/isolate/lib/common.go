@@ -219,7 +219,7 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 	return nil
 }
 
-func uploadToCAS(ctx context.Context, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
+func uploadToCAS(ctx context.Context, dumpJSON string, fl *cas.Flags, opts ...*isolate.ArchiveOptions) error {
 	cl, err := fl.NewClient(ctx)
 	if err != nil {
 		return err
@@ -232,11 +232,11 @@ func uploadToCAS(ctx context.Context, fl *cas.Flags, opts ...*isolate.ArchiveOpt
 		return err
 	}
 
-	if fl.DigestJSON == "" {
+	if dumpJSON == "" {
 		return nil
 	}
 
-	f, err := os.Create(fl.DigestJSON)
+	f, err := os.Create(dumpJSON)
 	if err != nil {
 		return err
 	}

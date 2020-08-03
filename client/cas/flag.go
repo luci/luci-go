@@ -17,24 +17,19 @@ package cas
 import (
 	"context"
 	"flag"
-	"os"
 	"regexp"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
-	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
-	"github.com/golang/protobuf/jsonpb"
 
 	"go.chromium.org/luci/common/errors"
 )
 
 type Flags struct {
-	Instance   string
-	DigestJSON string
+	Instance string
 }
 
 func (c *Flags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Instance, "cas-instance", "", "CAS instance (GCP). Format is either a project ID, or \"projects/<project_id>/instances/<instance_id>\"")
-	f.StringVar(&c.DigestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
 }
 
 func (c *Flags) Parse() error {
@@ -63,25 +58,6 @@ func parseCASInstance(ins string) (string, error) {
 		return ins, nil
 	}
 	return "", errors.Reason("invalid CAS instance: %s", ins).Err()
-}
-
-func (c *Flags) WriteDigest(d digest.Digest) error {
-	dj := c.DigestJSON
-	if dj == "" {
-		return nil
-	}
-
-	f, err := os.Create(dj)
-	if err != nil {
-		errors.Annotate(err, "failed to create file").Err()
-	}
-	defer f.Close()
-
-	if err := (&jsonpb.Marshaler{}).Marshal(f, d.ToProto()); err != nil {
-		return errors.Annotate(err, "failed to marshal digest proto").Err()
-	}
-
-	return nil
 }
 
 func (c *Flags) NewClient(ctx context.Context) (*client.Client, error) {

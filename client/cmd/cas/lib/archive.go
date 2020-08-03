@@ -17,11 +17,13 @@ package lib
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/isolated"
@@ -53,6 +55,7 @@ working directory, '-files :foo' is sufficient.`,
 			c.Init()
 			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive. Specify as <working directory>:<relative path to dir>")
 			c.Flags.Var(&c.files, "files", "Individual file(s) to archive. Specify as <working directory>:<relative path to file>")
+			c.Flags.StringVar(&c.DigestJSON, "digest-json", "", "Outputs a JSON file to store the CAS root digest")
 			return &c
 		},
 	}
@@ -60,8 +63,9 @@ working directory, '-files :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	dirs  isolated.ScatterGather
-	files isolated.ScatterGather
+	dirs       isolated.ScatterGather
+	files      isolated.ScatterGather
+	DigestJSON string
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -144,7 +148,22 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 
-	return c.casFlags.WriteDigest(rootDg)
+	dj := c.DigestJSON
+	if dj == "" {
+		return nil
+	}
+
+	f, err := os.Create(dj)
+	if err != nil {
+		errors.Annotate(err, "failed to create file").Err()
+	}
+	defer f.Close()
+
+	if err := (&jsonpb.Marshaler{}).Marshal(f, rootDg.ToProto()); err != nil {
+		return errors.Annotate(err, "failed to marshal digest proto").Err()
+	}
+
+	return nil
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
