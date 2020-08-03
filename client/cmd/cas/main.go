@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/cmd/cas/lib"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -45,6 +46,9 @@ func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
+
+			lib.CmdArchive(),
+
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
