@@ -128,12 +128,6 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 	return expected
 }
 
-func TestNewMemory(t *testing.T) {
-	Convey(`Test the memory-based cache of objects.`, t, func() {
-		testCache(t, NewMemory(Policies{MaxSize: 1024, MaxItems: 2}, isolatedclient.DefaultNamespace))
-	})
-}
-
 func TestNewDisk(t *testing.T) {
 	Convey(`Test the disk-based cache of objects.`, t, func() {
 		td, err := ioutil.TempDir("", "cache")
