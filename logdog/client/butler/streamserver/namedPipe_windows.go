@@ -59,7 +59,6 @@ func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) 
 			l, err := winio.ListenPipe(realPath, &winio.PipeConfig{
 				InputBufferSize:  1024 * 1024,
 				OutputBufferSize: 1024 * 1024,
-				MessageMode:      true,
 			})
 			if err != nil {
 				return nil, errors.Annotate(err, "failed to listen on named pipe").Err()
