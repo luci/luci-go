@@ -252,6 +252,24 @@
       "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "90626051_546c8939",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-03T17:29:43Z",
+      "side": 1,
+      "message": "\u003e If \"accept\" thread is stuck after the Accept call, but before the main butler code \u0027pulls\u0027 the stream, I think the stream count could actually be zero?\n\nah.. you are right! scratch this then. I thought it is registered within the handshake.",
+      "parentUuid": "33148785_6b3020c5",
+      "revId": "a853a2f09802c3996445d153b532e1abcba7965e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
