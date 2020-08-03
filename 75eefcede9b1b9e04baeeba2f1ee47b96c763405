@@ -336,6 +336,30 @@
     },
     {
       "key": {
+        "uuid": "3d6807a3_6cb1409a",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T02:21:44Z",
+      "side": 1,
+      "message": "made https://crrev.com/c/2334127",
+      "parentUuid": "49d93db0_4668195a",
+      "range": {
+        "startLine": 44,
+        "startChar": 56,
+        "endLine": 44,
+        "endChar": 61
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "455a83e3_eaddf390",
         "filename": "client/cmd/cas/lib/archive.go",
         "patchSetId": 9
@@ -347,6 +371,30 @@
       "writtenOn": "2020-08-03T01:59:23Z",
       "side": 1,
       "message": "No stats yet?",
+      "range": {
+        "startLine": 113,
+        "startChar": 68,
+        "endLine": 113,
+        "endChar": 81
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b49ae663_e8078f0c",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-03T02:21:44Z",
+      "side": 1,
+      "message": "made https://crrev.com/c/2334127",
+      "parentUuid": "455a83e3_eaddf390",
       "range": {
         "startLine": 113,
         "startChar": 68,
