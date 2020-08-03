@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "788d950f_3fb520fa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-03T08:09:37Z",
+      "side": 1,
+      "message": "Not sure I remember correctly, is the idea that a tool would run *locally* from an individual workstation?",
+      "range": {
+        "startLine": 10,
+        "startChar": 22,
+        "endLine": 11,
+        "endChar": 24
+      },
+      "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64e17104_08b8e560",
+        "filename": "common/lhttp/roundtripper.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-03T08:09:37Z",
+      "side": 1,
+      "message": "why make it public?",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "778a8b17_9f2e7b33",
+        "filename": "common/lhttp/roundtripper_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-03T08:09:37Z",
+      "side": 1,
+      "message": "I think this will be flaky if test process is starving of CPU.\nI\u0027d use ShouldBeLessThanOrEqual.",
+      "range": {
+        "startLine": 84,
+        "startChar": 11,
+        "endLine": 84,
+        "endChar": 22
+      },
+      "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
