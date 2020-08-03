@@ -17,9 +17,12 @@ package cas
 import (
 	"context"
 	"flag"
+	"os"
 	"regexp"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
+	"github.com/golang/protobuf/jsonpb"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -60,6 +63,25 @@ func parseCASInstance(ins string) (string, error) {
 		return ins, nil
 	}
 	return "", errors.Reason("invalid CAS instance: %s", ins).Err()
+}
+
+func (c *Flags) WriteDigest(d digest.Digest) error {
+	dj := c.DigestJSON
+	if dj == "" {
+		return nil
+	}
+
+	f, err := os.Create(dj)
+	if err != nil {
+		errors.Annotate(err, "failed to create file").Err()
+	}
+	defer f.Close()
+
+	if err := (&jsonpb.Marshaler{}).Marshal(f, d.ToProto()); err != nil {
+		return errors.Annotate(err, "failed to marshal digest proto").Err()
+	}
+
+	return nil
 }
 
 func (c *Flags) NewClient(ctx context.Context) (*client.Client, error) {
