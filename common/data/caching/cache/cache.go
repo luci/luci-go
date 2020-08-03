@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -304,8 +305,8 @@ type disk struct {
 	h        crypto.Hash
 
 	// Lock protected.
-	mu  sync.Mutex // This protects modification of cached entries under |path| too.
-	lru lruDict    // Implements LRU based eviction.
+	mu  sync.RWMutex // This protects modification of cached entries under |path| too.
+	lru lruDict      // Implements LRU based eviction.
 
 	statsMu sync.Mutex // Protects the stats below
 	// TODO(maruel): Add stats about: # removed.
@@ -443,7 +444,7 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 
 func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
 	return d.add(digest, src, func() error {
-		if err := d.Hardlink(digest, dest, perm); err != nil {
+		if err := d.hardlinkUnlocked(digest, dest, perm); err != nil {
 			_ = os.Remove(d.itemPath(digest))
 			return errors.Annotate(err, "failed to call Hardlink(%s, %s)", digest, dest).Err()
 		}
@@ -452,6 +453,18 @@ func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest st
 }
 
 func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
+	if runtime.GOOS == "darwin" {
+		// Accessing the path, which is being replaced, with os.Link
+		// seems to cause flaky 'operation not permitted' failure on
+		// macOS (https://crbug.com/1076468). So prevent that by holding
+		// read lock here.
+		d.mu.RLock()
+		defer d.mu.RUnlock()
+	}
+	return d.hardlinkUnlocked(digest, dest, perm)
+}
+
+func (d *disk) hardlinkUnlocked(digest isolated.HexDigest, dest string, perm os.FileMode) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
