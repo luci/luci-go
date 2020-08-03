@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/client/internal/common"
-	"go.chromium.org/luci/common/data/text/units"
 )
 
 // Group identifies a column group to keep progress for.
@@ -153,7 +152,7 @@ func (p *progress) printStep() (io.Writer, string) {
 	}
 	p.valueChanged = false
 	// Zap resolution at .1s level. We're slow anyway.
-	duration := units.Round(time.Since(p.start), 100*time.Millisecond)
+	duration := time.Since(p.start).Round(100 * time.Millisecond)
 	return p.out, fmt.Sprintf("%s %s%s", renderValues(p.columns), duration, p.EOL)
 }
 

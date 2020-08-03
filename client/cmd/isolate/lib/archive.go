@@ -120,7 +120,7 @@ func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int64, byt
 		duration := end.Sub(al.start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", hits, bytesHit)
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", misses, bytesPushed)
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration.Round(time.Millisecond))
 	}
 }
 
