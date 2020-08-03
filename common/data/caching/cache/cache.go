@@ -15,7 +15,6 @@
 package cache
 
 import (
-	"bytes"
 	"crypto"
 	"encoding/json"
 	"fmt"
@@ -92,16 +91,6 @@ type Policies struct {
 
 var ErrInvalidHash = errors.New("invalid hash")
 
-// NewMemory creates a purely in-memory cache.
-func NewMemory(policies Policies, namespace string) Cache {
-	return &memory{
-		policies: policies,
-		h:        isolated.GetHash(namespace),
-		data:     map[isolated.HexDigest][]byte{},
-		lru:      makeLRUDict(namespace),
-	}
-}
-
 // NewDisk creates a disk based cache.
 //
 // It may return both a valid Cache and an error if it failed to load the
@@ -160,143 +149,6 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 }
 
 // Private details.
-
-type memory struct {
-	// Immutable.
-	policies Policies
-	h        crypto.Hash
-
-	// Lock protected.
-	mu   sync.Mutex
-	data map[isolated.HexDigest][]byte // Contains the actual content.
-	lru  lruDict                       // Implements LRU based eviction.
-
-	added []int64
-	used  []int64
-}
-
-func (m *memory) Close() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return nil
-}
-
-func (m *memory) Keys() isolated.HexDigests {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.lru.keys()
-}
-
-func (m *memory) Touch(digest isolated.HexDigest) bool {
-	if !digest.Validate(m.h) {
-		return false
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if _, ok := m.data[digest]; !ok {
-		return false
-	}
-	m.lru.touch(digest)
-	return true
-}
-
-func (m *memory) Evict(digest isolated.HexDigest) {
-	if !digest.Validate(m.h) {
-		return
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.data, digest)
-	m.lru.pop(digest)
-}
-
-func (m *memory) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
-	if !digest.Validate(m.h) {
-		return nil, os.ErrInvalid
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	content, ok := m.data[digest]
-	if !ok {
-		return nil, os.ErrNotExist
-	}
-	m.used = append(m.used, int64(len(content)))
-	return ioutil.NopCloser(bytes.NewBuffer(content)), nil
-}
-
-func (m *memory) add(digest isolated.HexDigest, src io.Reader) ([]byte, error) {
-	if !digest.Validate(m.h) {
-		return nil, os.ErrInvalid
-	}
-	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
-	content, err := ioutil.ReadAll(src)
-	if err != nil {
-		return nil, err
-	}
-	if d := isolated.HashBytes(m.h, content); d != digest {
-		return nil, errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
-	}
-	if units.Size(len(content)) > m.policies.MaxSize {
-		return nil, errors.Reason("item too large, size=%d, limit=%d", len(content), m.policies.MaxSize).Err()
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.added = append(m.added, int64(len(content)))
-	m.data[digest] = content
-	m.lru.pushFront(digest, units.Size(len(content)))
-	m.respectPolicies()
-	return content, nil
-}
-
-func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
-	_, err := m.add(digest, src)
-	return err
-}
-
-func (m *memory) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
-	content, err := m.add(digest, src)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(dest, content, perm)
-}
-
-func (m *memory) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
-	if !digest.Validate(m.h) {
-		return os.ErrInvalid
-	}
-	m.mu.Lock()
-	content, ok := m.data[digest]
-	if ok {
-		m.used = append(m.used, int64(len(content)))
-	}
-	m.mu.Unlock()
-	if !ok {
-		return os.ErrNotExist
-	}
-	return ioutil.WriteFile(dest, content, perm)
-}
-
-func (m *memory) respectPolicies() {
-	for m.lru.length() > m.policies.MaxItems || m.lru.sum > m.policies.MaxSize {
-		k, _ := m.lru.popOldest()
-		delete(m.data, k)
-	}
-}
-
-func (m *memory) GetAdded() []int64 {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return append([]int64{}, m.added...)
-}
-
-func (m *memory) GetUsed() []int64 {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return append([]int64{}, m.used...)
-}
 
 type disk struct {
 	// Immutable.
