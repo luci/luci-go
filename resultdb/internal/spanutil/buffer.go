@@ -28,6 +28,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+var nonNilEmptyStringSlice = []string{}
+
 // Value can be converted to a Spanner value.
 // Typically if type T implements Value, then *T implements Ptr.
 type Value interface {
@@ -209,7 +211,12 @@ func ToSpanner(v interface{}) interface{} {
 		return int64(v)
 
 	case *pb.Variant:
-		return pbutil.VariantToStrings(v)
+		spValue := pbutil.VariantToStrings(v)
+		// Never write NULL variants.
+		if spValue == nil {
+			spValue = nonNilEmptyStringSlice
+		}
+		return spValue
 
 	case []*pb.StringPair:
 		return pbutil.StringPairsToStrings(v...)
