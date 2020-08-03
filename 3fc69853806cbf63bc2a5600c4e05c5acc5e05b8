@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "bc31e536_329aca39",
+        "filename": "common/git/footer/footer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-03T18:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "744f8c04_a54cac51",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 92
+      },
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "040657d2_d3dd997b",
         "filename": "common/git/footer/tag.go",
         "patchSetId": 4
@@ -82,6 +106,48 @@
     },
     {
       "key": {
+        "uuid": "10084ce3_34b5d4fd",
+        "filename": "common/git/footer/tag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-03T18:41:29Z",
+      "side": 1,
+      "message": "Good point. Done!",
+      "parentUuid": "040657d2_d3dd997b",
+      "range": {
+        "startLine": 24,
+        "startChar": 37,
+        "endLine": 24,
+        "endChar": 42
+      },
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "99a44843_775fe457",
+        "filename": "common/git/footer/tag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-03T18:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ae960d7_ff2989ce",
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3bf6fed9_b538a571",
         "filename": "common/git/footer/tag.go",
         "patchSetId": 4
@@ -96,6 +162,24 @@
       "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f74cd2ac_041d55f5",
+        "filename": "common/git/footer/tag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-03T18:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3bf6fed9_b538a571",
+      "revId": "3fc69853806cbf63bc2a5600c4e05c5acc5e05b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
