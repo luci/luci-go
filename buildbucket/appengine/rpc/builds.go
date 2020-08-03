@@ -105,11 +105,6 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
 
-// UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
-func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
-}
-
 // NewBuilds returns a new pb.BuildsServer.
 func NewBuilds() pb.BuildsServer {
 	return &pb.DecoratedBuilds{
