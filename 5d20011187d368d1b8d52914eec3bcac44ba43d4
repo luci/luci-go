@@ -16,6 +16,24 @@
       "revId": "5d20011187d368d1b8d52914eec3bcac44ba43d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2317128f_56d960ce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-03T05:00:22Z",
+      "side": 1,
+      "message": "Roberto, I have another CL on top of this one (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2333984/8), which is an optimization. Also, I have https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2334393 which is not on top of the optimization CL, but still requires it to land because it is also an optimization: I need to measure perf of the combination, and it is easier if this and next CLs are landed.\n\nI\u0027d like to land this CL. I hope you don\u0027t mind, since it is almost monday.",
+      "parentUuid": "6fcfe10f_a0d618e3",
+      "revId": "5d20011187d368d1b8d52914eec3bcac44ba43d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
