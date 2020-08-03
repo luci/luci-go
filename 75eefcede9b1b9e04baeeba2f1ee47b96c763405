@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "83460950_f51ea3fd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:45:39Z",
+      "side": 1,
+      "message": "Add link https://crrev.com/c/2325337 for the record.",
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41750659_29c24548",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:45:39Z",
+      "side": 1,
+      "message": "LGTM since the code was already reviewed in https://crrev.com/c/2325337.",
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "357d717d_cc963f78",
         "filename": "client/cmd/cas/lib/archive.go",
         "patchSetId": 9
