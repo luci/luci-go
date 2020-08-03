@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "357d717d_cc963f78",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:41:33Z",
+      "side": 1,
+      "message": "and a tree.",
+      "range": {
+        "startLine": 38,
+        "startChar": 52,
+        "endLine": 38,
+        "endChar": 77
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a07228a_8bbe2cd7",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:41:33Z",
+      "side": 1,
+      "message": "Start from next line? I\u0027m not sure if `\\ or something work.",
+      "range": {
+        "startLine": 38,
+        "startChar": 12,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc932063_bb36aad6",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:41:33Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 39,
+        "startChar": 11,
+        "endLine": 39,
+        "endChar": 12
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a726cd9_bd518492",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:41:33Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 39,
+        "startChar": 7,
+        "endLine": 39,
+        "endChar": 10
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "174d0076_c0becfd6",
+        "filename": "client/cmd/cas/lib/archive.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T01:41:33Z",
+      "side": 1,
+      "message": "IIUC, \"for each\"?",
+      "range": {
+        "startLine": 42,
+        "startChar": 14,
+        "endLine": 42,
+        "endChar": 18
+      },
+      "revId": "75eefcede9b1b9e04baeeba2f1ee47b96c763405",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
