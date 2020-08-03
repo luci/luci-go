@@ -16,7 +16,6 @@ package units
 
 import (
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -43,28 +42,6 @@ func TestSizeToString(t *testing.T) {
 		}
 		for _, line := range data {
 			So(SizeToString(line.in), ShouldResemble, line.expected)
-		}
-	})
-}
-
-func TestRound(t *testing.T) {
-	t.Parallel()
-	Convey(`Unit values should round correctly.`, t, func() {
-		data := []struct {
-			in       time.Duration
-			round    time.Duration
-			expected time.Duration
-		}{
-			{-time.Second, time.Second, -time.Second},
-			{-500 * time.Millisecond, time.Second, -time.Second},
-			{-499 * time.Millisecond, time.Second, 0},
-			{0, time.Second, 0},
-			{499 * time.Millisecond, time.Second, 0},
-			{500 * time.Millisecond, time.Second, time.Second},
-			{time.Second, time.Second, time.Second},
-		}
-		for _, line := range data {
-			So(Round(line.in, line.round), ShouldResemble, line.expected)
 		}
 	})
 }

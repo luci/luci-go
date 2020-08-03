@@ -16,7 +16,6 @@ package units
 
 import (
 	"fmt"
-	"time"
 )
 
 var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"}
@@ -45,14 +44,4 @@ func SizeToString(s int64) string {
 		return fmt.Sprintf("%.1f%s", v, units[i])
 	}
 	return fmt.Sprintf("%.2f%s", v, units[i])
-}
-
-// Round rounds a time.Duration at round.
-func Round(value time.Duration, resolution time.Duration) time.Duration {
-	if value < 0 {
-		value -= resolution / 2
-	} else {
-		value += resolution / 2
-	}
-	return value / resolution * resolution
 }

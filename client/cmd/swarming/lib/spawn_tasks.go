@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/system/signals"
@@ -134,7 +133,7 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		return errors.Annotate(err, "writing json output").Err()
 	}
 
-	log.Printf("Duration: %s\n", units.Round(time.Since(start), time.Millisecond))
+	log.Printf("Duration: %s\n", time.Since(start).Round(time.Millisecond))
 	return merr
 }
 

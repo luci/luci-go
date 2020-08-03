@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/flag/stringlistflag"
@@ -305,7 +304,7 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 	}
 
 	duration := time.Since(start)
-	log.Printf("Duration: %s\n", units.Round(duration, time.Millisecond))
+	log.Printf("Duration: %s\n", duration.Round(time.Millisecond))
 	return nil
 }
 
