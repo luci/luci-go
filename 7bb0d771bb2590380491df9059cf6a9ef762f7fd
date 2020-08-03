@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f677b7ea_c1caecfa",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-03T23:50:35Z",
+      "side": 1,
+      "message": "better to add test for a regular case at least.",
+      "range": {
+        "startLine": 158,
+        "startChar": 22,
+        "endLine": 158,
+        "endChar": 25
+      },
+      "revId": "7bb0d771bb2590380491df9059cf6a9ef762f7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
