@@ -80,8 +80,11 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
 
-	if q.PageSize < 0 {
+	switch {
+	case q.PageSize < 0:
 		panic("PageSize < 0")
+	case q.Predicate.GetNotExonerated() && q.Predicate.GetExpectancy() == pb.TestResultPredicate_ALL:
+		panic("NotExonerated and Expectancy=ALL are mutually exclusive")
 	}
 
 	columns, parser := q.selectClause()
@@ -94,9 +97,9 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 		pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
 		pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS:
 
-		switch testVariants, err := q.fetchVariantsWithUnexpectedResults(ctx); {
+		switch testVariants, err := q.fetchTestVariants(ctx); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch variants with unexpected results").Err()
+			return errors.Annotate(err, "failed to fetch variants").Err()
 		case len(testVariants) == 0:
 			// No test variant to match.
 			return nil
@@ -227,16 +230,60 @@ type testVariant struct {
 	VariantHash string
 }
 
-func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVariants []testVariant, err error) {
-	ctx, ts := trace.StartSpan(ctx, "testresults.Query.fetchVariantsWithUnexpectedResults")
+// fetchTestVariants returns test variants with unexpected results.
+// If q.Predicate.NotExonerated is true, returned exonerated test variants are
+// excluded.
+func (q *Query) fetchTestVariants(ctx context.Context) ([]testVariant, error) {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	// Fetch test variants with unexpected results.
+	var testVariants map[testVariant]struct{}
+	eg.Go(func() (err error) {
+		testVariants, err = q.executeTestVariantQuery(ctx, "variantsWithUnexpectedResults")
+		return
+	})
+
+	// Fetch exonerated test variants in parallel, if needed.
+	// Don't use SQL to implement exclusion because Spanner severely limits
+	// parallelism.
+	var exonerated map[testVariant]struct{}
+	if q.Predicate.GetNotExonerated() {
+		eg.Go(func() (err error) {
+			exonerated, err = q.executeTestVariantQuery(ctx, "exonerated")
+			return
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Exclude exonerated results.
+	for tv := range exonerated {
+		delete(testVariants, tv)
+	}
+
+	ret := make([]testVariant, 0, len(testVariants))
+	for tv := range testVariants {
+		ret = append(ret, tv)
+	}
+	return ret, nil
+}
+
+// executeTestVariantQuery executes a query a set of test variants.
+// It must return TestID and VariantHash columns.
+// templateName is a name of a template in queryTmpl.
+// The query execution is manually sharded to maximize parallelism.
+func (q *Query) executeTestVariantQuery(ctx context.Context, templateName string) (testVariants map[testVariant]struct{}, err error) {
+	ctx, ts := trace.StartSpan(ctx, "testresults.Query.executeTestVariantQuery")
+	ts.Attribute("cr.dev/queryName", templateName)
 	defer func() { ts.End(err) }()
 
-	set := map[testVariant]struct{}{}
+	testVariants = map[testVariant]struct{}{}
 	var mu sync.Mutex
 
-	params := q.baseParams()
-	st := q.genStatement("variantsWithUnexpectedResults", map[string]interface{}{
-		"params": params,
+	st := q.genStatement(templateName, map[string]interface{}{
+		"params": q.baseParams(),
 	})
 	subStmts := invocations.ShardStatement(st, "invIDs")
 
@@ -251,7 +298,7 @@ func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVar
 				}
 
 				mu.Lock()
-				set[tv] = struct{}{}
+				testVariants[tv] = struct{}{}
 				mu.Unlock()
 				return nil
 			})
@@ -259,11 +306,6 @@ func (q *Query) fetchVariantsWithUnexpectedResults(ctx context.Context) (testVar
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
-	}
-
-	testVariants = make([]testVariant, 0, len(set))
-	for tv := range set {
-		testVariants = append(testVariants, tv)
 	}
 
 	ts.Attribute("cr.dev/count", len(testVariants))
@@ -402,6 +444,14 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 		{{template "testIDAndVariantFilter" .}}
 	{{end}}
+
+	{{define "exonerated"}}
+		@{USE_ADDITIONAL_PARALLELISM=TRUE}
+		SELECT DISTINCT TestId, VariantHash
+		FROM TestExonerations
+		WHERE InvocationId IN UNNEST(@invIDs)
+		{{template "testIDAndVariantFilter" .}}
+  {{end}}
 
 	{{define "testIDAndVariantFilter"}}
 		{{/* Filter by Test ID */}}

@@ -103,3 +103,13 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateTestResultPredicate(t *testing.T) {
+	t.Parallel()
+	Convey(`ValidateTestResultPredicate`, t, func() {
+		Convey(`Expectancy and NotExonerated`, func() {
+			err := ValidateTestResultPredicate(&pb.TestResultPredicate{NotExonerated: true})
+			So(err, ShouldErrLike, "mutually exclusive")
+		})
+	})
+}
