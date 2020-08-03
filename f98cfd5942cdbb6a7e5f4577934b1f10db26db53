@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56c537b8_aa4f1e54",
+        "filename": "common/tsmon/monitor/stackdriver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1351147
+      },
+      "writtenOn": "2020-08-03T21:00:02Z",
+      "side": 1,
+      "message": "If I read the code right, region isn\u0027t set in the New* function, so this will be the empty string.",
+      "revId": "f98cfd5942cdbb6a7e5f4577934b1f10db26db53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
