@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "52cc4477_93beb3b9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-03T15:57:02Z",
+      "side": 1,
+      "message": "yes, since most of the heavy-lifting is done by servers (ResultDB, BigQuery)",
+      "parentUuid": "788d950f_3fb520fa",
+      "range": {
+        "startLine": 10,
+        "startChar": 22,
+        "endLine": 11,
+        "endChar": 24
+      },
+      "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64e17104_08b8e560",
         "filename": "common/lhttp/roundtripper.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "eaa079a9_b671e04a",
+        "filename": "common/lhttp/roundtripper.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-03T15:57:02Z",
+      "side": 1,
+      "message": "code outside of this package also needs to implement am http.RoundTripper sometimes, and this makes the code much more compact, compared to a type declaration",
+      "parentUuid": "64e17104_08b8e560",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "778a8b17_9f2e7b33",
         "filename": "common/lhttp/roundtripper_test.go",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d675ab1_b691e0d1",
+        "filename": "common/lhttp/roundtripper_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-03T15:57:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "778a8b17_9f2e7b33",
+      "range": {
+        "startLine": 84,
+        "startChar": 11,
+        "endLine": 84,
+        "endChar": 22
+      },
+      "revId": "970ecec9e3bb5dc78c6c58f4a50cbf1f6a61387b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
