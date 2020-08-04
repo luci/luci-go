@@ -145,14 +145,14 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 		host.RegisterCleanup(func(ctx context.Context) { client.Close() })
 		Default.Submitter = &CloudTaskSubmitter{Client: client}
 	} else {
-		// When running locally use a simple in-memory scheduler.
-		router := host.Routes()
-		scheduler := &tqtesting.Scheduler{}
-		host.RunInBackground("luci.tq", func(ctx context.Context) {
-			scheduler.Run(ctx, &tqtesting.LoopbackHTTPExecutor{
-				Handler: router,
-			})
-		})
+		// When running locally use a simple in-memory scheduler, but go through
+		// HTTP layer to pick up logging, middlewares, etc.
+		scheduler := &tqtesting.Scheduler{
+			Executor: &tqtesting.LoopbackHTTPExecutor{
+				Handler: host.Routes(),
+			},
+		}
+		host.RunInBackground("luci.tq", func(ctx context.Context) { scheduler.Run(ctx) })
 		Default.NoAuth = true
 		Default.Submitter = scheduler
 		if Default.CloudProject == "" {

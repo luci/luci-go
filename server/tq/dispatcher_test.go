@@ -31,10 +31,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	ttqt "go.chromium.org/luci/ttq/internals/testing"
 
@@ -354,6 +356,51 @@ func TestTransactionalEnqueue(t *testing.T) {
 			db.ExecDefers(ctx)
 			So(db.AllReminders(), ShouldHaveLength, 1)
 			So(submitter.reqs, ShouldBeEmpty)
+		})
+	})
+}
+
+func TestTesting(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		var epoch = testclock.TestRecentTimeUTC
+
+		ctx, tc := testclock.UseTime(context.Background(), epoch)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			if testclock.HasTags(t, tqtesting.ClockTag) {
+				tc.Add(d)
+			}
+		})
+
+		disp := Dispatcher{}
+		sched := disp.SchedulerForTest()
+
+		m := sync.Mutex{}
+		etas := []time.Duration{}
+
+		disp.RegisterTaskClass(TaskClass{
+			ID:        "test-dur",
+			Prototype: &durationpb.Duration{}, // just some proto type
+			Queue:     "queue-1",
+			Handler: func(ctx context.Context, msg proto.Message) error {
+				m.Lock()
+				etas = append(etas, clock.Now(ctx).Sub(epoch))
+				m.Unlock()
+				if clock.Now(ctx).Sub(epoch) < 3*time.Second {
+					disp.AddTask(ctx, &Task{
+						Payload: &durationpb.Duration{},
+						Delay:   time.Second,
+					})
+				}
+				return nil
+			},
+		})
+
+		So(disp.AddTask(ctx, &Task{Payload: &durationpb.Duration{}}), ShouldBeNil)
+		sched.Run(ctx, tqtesting.StopWhenDrained())
+		So(etas, ShouldResemble, []time.Duration{
+			0, 1 * time.Second, 2 * time.Second, 3 * time.Second,
 		})
 	})
 }
