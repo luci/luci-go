@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium/util"
+	"go.chromium.org/luci/resultdb/internal/services/deriver/util"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
