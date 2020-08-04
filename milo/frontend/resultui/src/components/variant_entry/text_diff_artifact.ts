@@ -15,23 +15,21 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
 import * as Diff2Html from 'diff2html';
-import { css, customElement, html, property } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
+import '../expandable_entry';
 
 /**
  * Renders a text diff artifact.
  */
 @customElement('tr-text-diff-artifact')
 export class TextDiffArtifactElement extends MobxLitElement {
-  @property() artifact!: Artifact;
-
-  @observable.ref private expanded = true;
+  @observable.ref artifact!: Artifact;
 
   @computed
   private get contentRes(): IPromiseBasedObservable<string> {
@@ -47,55 +45,22 @@ export class TextDiffArtifactElement extends MobxLitElement {
   protected render() {
     return html`
       <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-      <div
-        class="expandable-header"
-        @click=${() => this.expanded = !this.expanded}
-      >
-        <mwc-icon class="expand-toggle">${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <span class="one-line-content">
+      <tr-expandable-entry .expanded=${true} .hideContentRuler=${true}>
+        <span id="header" slot="header">
           Unexpected text output from
           <a href=${router.urlForName('text-diff-artifact', {'artifact_name': this.artifact.name})} target="_blank">${this.artifact.artifactId}</a>
           (<a href=${this.artifact.fetchUrl} target="_blank">view raw</a>)
         </span>
-      </div>
-      <div id="container" style=${styleMap({display: this.expanded ? '' : 'none'})}>
-        ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false}))}
-      </div>
+        <div id="content" slot="content">
+          ${sanitizeHTML(Diff2Html.html(this.content, {drawFileList: false}))}
+        </div>
+      </tr-expandable-entry>
     `;
   }
 
   static styles = css`
-    .expandable-header {
-      display: grid;
-      grid-template-columns: 24px 1fr;
-      grid-template-rows: 24px;
-      grid-gap: 5px;
-      cursor: pointer;
-    }
-    .expandable-header .expand-toggle {
-      grid-row: 1;
-      grid-column: 1;
-    }
-    .expandable-header .one-line-content {
-      grid-row: 1;
-      grid-column: 2;
-      line-height: 24px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    #entry-header .one-line-content {
-      font-size: 14px;
-      letter-spacing: 0.1px;
-      font-weight: 500;
-    }
-
-    #container {
-      padding: 0 10px;
-      margin: 5px;
-      position: relative;
-      overflow-y: auto;
-      max-height: 500px;
+    #content {
+      padding-top: 5px;
     }
     .d2h-code-linenumber {
       cursor: default;
