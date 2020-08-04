@@ -55,6 +55,7 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/server/tq/tqtesting"
 	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
@@ -396,7 +397,13 @@ func (d *Dispatcher) InstallRoutes(r *router.Router, prefix string) {
 	// compatibility with "appengine/tq" which used totally different URL format.
 	prefix = strings.TrimRight(prefix, "/") + "/*path"
 	r.POST(prefix, d.authorize(), func(c *router.Context) {
-		switch err := d.handlePush(c.Context, c.Request); {
+		// TODO(vadimsh): Parse magic headers to get the attempt count.
+		body, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			httpReply(c, 500, "Failed to read the request", err)
+			return
+		}
+		switch err := d.handlePush(c.Context, body); {
 		case err == nil:
 			httpReply(c, 200, "OK", nil)
 		case Retry.In(err):
@@ -555,6 +562,57 @@ func (d *Dispatcher) enqueueTask(ctx context.Context, req *taskspb.CreateTaskReq
 	default:
 		return err
 	}
+}
+
+// SchedulerForTest switches the dispatcher into testing mode.
+//
+// In this mode tasks are enqueued into a tqtesting.Scheduler, which executes
+// them by submitting them back into the Dispatcher (each task in a separate
+// goroutine).
+//
+// SchedulerForTest should be called before first AddTask call.
+//
+// Returns the instantiated tqtesting.Scheduler. It is in the stopped state.
+func (d *Dispatcher) SchedulerForTest() *tqtesting.Scheduler {
+	if d.Submitter != nil {
+		panic("Dispatcher is already configured to use some submitter")
+	}
+	if d.CloudProject == "" {
+		d.CloudProject = "tq-project"
+	}
+	if d.CloudRegion == "" {
+		d.CloudRegion = "tq-region"
+	}
+	if d.DefaultTargetHost == "" {
+		d.DefaultTargetHost = "127.0.0.1" // not actually used
+	}
+	if d.PushAs == "" {
+		d.PushAs = "tq-pusher@example.com"
+	}
+	sched := &tqtesting.Scheduler{Executor: directExecutor{d}}
+	d.Submitter = sched
+	return sched
+}
+
+// directExecutor implements tqtesting.Executor via handlePush.
+type directExecutor struct {
+	d *Dispatcher
+}
+
+func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
+	go func() {
+		var body []byte
+		switch mt := t.Task.MessageType.(type) {
+		case *taskspb.Task_HttpRequest:
+			body = mt.HttpRequest.Body
+		case *taskspb.Task_AppEngineHttpRequest:
+			body = mt.AppEngineHttpRequest.Body
+		default:
+			panic(fmt.Sprintf("Bad task, no payload: %q", t.Task))
+		}
+		err := e.d.handlePush(ctx, body)
+		done(Retry.In(err) || transient.Tag.In(err))
+	}()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -843,14 +901,7 @@ func (d *Dispatcher) isAuthorizedPusher(ident identity.Identity) bool {
 //
 // Returns errors annotated in the same style as errors from Handler, see its
 // doc.
-func (d *Dispatcher) handlePush(ctx context.Context, r *http.Request) error {
-	// TODO(vadimsh): Parse magic headers to get the attempt count.
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return errors.Annotate(err, "failed to read the request").Tag(transient.Tag).Err()
-	}
-
+func (d *Dispatcher) handlePush(ctx context.Context, body []byte) error {
 	// See taskClassImpl.serialize().
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
@@ -861,6 +912,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, r *http.Request) error {
 	// set. Older ones have `type` instead.
 	var cls *taskClassImpl
 	var h Handler
+	var err error
 	if env.Class != "" {
 		cls, h, err = d.classByID(env.Class)
 	} else if env.Type != "" {

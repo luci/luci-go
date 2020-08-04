@@ -36,18 +36,20 @@ func TestScheduler(t *testing.T) {
 	t.Parallel()
 
 	Convey("With scheduler", t, func() {
-		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		var epoch = testclock.TestRecentTimeUTC
+
+		ctx, tc := testclock.UseTime(context.Background(), epoch)
 		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 			if testclock.HasTags(t, ClockTag) {
 				tc.Add(d)
 			}
 		})
 
-		sched := Scheduler{}
 		exec := testExecutor{
 			ctx: ctx,
 			ch:  make(chan *Task, 1000), // ~= infinite buffer
 		}
+		sched := Scheduler{Executor: &exec}
 
 		run := func(untilCount int) {
 			ctx, cancel := context.WithCancel(ctx)
@@ -55,7 +57,7 @@ func TestScheduler(t *testing.T) {
 			done := make(chan struct{})
 			go func() {
 				defer close(done)
-				sched.Run(ctx, &exec)
+				sched.Run(ctx)
 			}()
 
 			exec.waitForTasks(untilCount)
@@ -177,6 +179,35 @@ func TestScheduler(t *testing.T) {
 			So(payloads(captured), ShouldResemble, []string{"A 1", "B 1", "A 2", "B 2"})
 			So(captured[0].Executing, ShouldBeTrue)
 			So(captured[1].Executing, ShouldBeFalse)
+		})
+
+		Convey("Run(StopWhenDrained)", func() {
+			Convey("Noop if already drained", func() {
+				exec.execute = func(string, *Task) bool { panic("must no be called") }
+				sched.Run(ctx, StopWhenDrained())
+				So(clock.Now(ctx).Equal(epoch), ShouldBeTrue)
+			})
+
+			Convey("Stops after executing a pending task", func() {
+				exec.execute = func(string, *Task) bool { return true }
+				enqueue("1", "", epoch.Add(5*time.Second))
+				sched.Run(ctx, StopWhenDrained())
+				So(clock.Now(ctx).Sub(epoch), ShouldEqual, 5*time.Second)
+				So(exec.tasks, ShouldHaveLength, 1)
+			})
+
+			Convey("Stops after draining", func() {
+				exec.execute = func(title string, _ *Task) bool {
+					if title == "1" {
+						enqueue("2", "", clock.Now(ctx).Add(5*time.Second))
+					}
+					return true
+				}
+				enqueue("1", "", epoch.Add(5*time.Second))
+				sched.Run(ctx, StopWhenDrained())
+				So(clock.Now(ctx).Sub(epoch), ShouldEqual, 10*time.Second)
+				So(exec.tasks, ShouldHaveLength, 2)
+			})
 		})
 	})
 }
