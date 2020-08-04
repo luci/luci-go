@@ -266,6 +266,23 @@ type TaskClass struct {
 	// If unset, will use dispatcher's DefaultTargetHost.
 	TargetHost string
 
+	// Custom, if given, will be called to generate a custom Cloud Tasks payload
+	// (i.e. a to-be-sent HTTP request) from the task's proto payload.
+	//
+	// Useful for interoperability with existing code that doesn't use dispatcher.
+	//
+	// It is possible to customize HTTP method, relative URI, headers and the
+	// request body this way. Other properties of the task (such as the target
+	// host, the queue, the task name, authentication headers) are not
+	// customizable.
+	//
+	// Such produced tasks are generally not routable by the Dispatcher. You'll
+	// need to make sure there's an HTTP handler that accepts them.
+	//
+	// Receives the exact same context as passed to AddTask. If returns nil
+	// result, the task will be dispatched as usual.
+	Custom func(ctx context.Context, m proto.Message) (*CustomPayload, error)
+
 	// Handler will be called by the dispatcher to execute the tasks.
 	//
 	// The handler will receive the task's payload as a proto message of the exact
@@ -279,6 +296,14 @@ type TaskClass struct {
 	// The dispatcher will permanently fail Cloud Tasks if it can't find a handler
 	// for them.
 	Handler Handler
+}
+
+// CustomPayload is returned by TaskClass's Custom, see its doc.
+type CustomPayload struct {
+	Method      string            // e.g. "GET" or "POST"
+	RelativeURI string            // an URI relative to the task's target host
+	Headers     map[string]string // HTTP headers to attach
+	Body        []byte            // serialized body of the request
 }
 
 // TaskClassRef represents a TaskClass registered in a Dispatcher.
@@ -758,11 +783,6 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 		return nil, nil, err
 	}
 
-	body, err := cls.serialize(t)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	queueID, err := d.queueID(cls.Queue)
 	if err != nil {
 		return nil, nil, err
@@ -785,9 +805,36 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 	}
 
 	// E.g. ("example.com", "/internal/tasks/t/<class>[/<title>]").
+	// Note: relativeURI is discarded when using custom payload.
 	host, relativeURI, err := d.taskTarget(cls, t)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	var payload *CustomPayload
+	if cls.Custom != nil {
+		if payload, err = cls.Custom(ctx, t.Payload); err != nil {
+			return nil, nil, err
+		}
+	}
+	if payload == nil {
+		// This is not really a "custom" payload, we are just reusing the struct.
+		payload = &CustomPayload{
+			Method:      "POST",
+			RelativeURI: relativeURI,
+			Headers:     defaultHeaders,
+		}
+		if payload.Body, err = cls.serialize(t); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
+	if method == 0 {
+		return nil, nil, errors.Reason("bad HTTP method %q", payload.Method).Err()
+	}
+	if !strings.HasPrefix(payload.RelativeURI, "/") {
+		return nil, nil, errors.Reason("bad relative URI %q", payload.RelativeURI).Err()
 	}
 
 	// We need to populate one of Task.MessageType oneof alternatives. It has
@@ -806,10 +853,10 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 	if host == "" && d.GAE {
 		req.Task.MessageType = &taskspb.Task_AppEngineHttpRequest{
 			AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
-				HttpMethod:  taskspb.HttpMethod_POST,
-				RelativeUri: relativeURI,
-				Headers:     defaultHeaders,
-				Body:        body,
+				HttpMethod:  method,
+				RelativeUri: payload.RelativeURI,
+				Headers:     payload.Headers,
+				Body:        payload.Body,
 			},
 		}
 		return cls, req, nil
@@ -825,10 +872,10 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 
 	req.Task.MessageType = &taskspb.Task_HttpRequest{
 		HttpRequest: &taskspb.HttpRequest{
-			HttpMethod: taskspb.HttpMethod_POST,
-			Url:        "https://" + host + relativeURI,
-			Headers:    defaultHeaders,
-			Body:       body,
+			HttpMethod: method,
+			Url:        "https://" + host + payload.RelativeURI,
+			Headers:    payload.Headers,
+			Body:       payload.Body,
 			AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 				OidcToken: &taskspb.OidcToken{
 					ServiceAccountEmail: d.PushAs,
