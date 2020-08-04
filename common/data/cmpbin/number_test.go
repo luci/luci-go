@@ -38,32 +38,32 @@ func (t testCaseSlice) Less(i, j int) bool { return t[i].val < t[j].val }
 func (t testCaseSlice) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
 
 var cases = testCaseSlice{
-	{[]byte{b01000000, b01111111, b11111111, b11111111, b11111111, 0xff, 0xff, 0xff, b11111111}, -math.MaxInt64 - 1},
-	{[]byte{b01000001, b00000000, b00000000, b00000000, b00000000, 0, 0, 0, b00000001}, -math.MaxInt64},
-	{[]byte{b01000001, b00000000, b00000000, b00000000, b00000000, 0, 0, 0, b00000011}, -math.MaxInt64 + 1},
-	{[]byte{b01100000, b01111111, b11111111, b11111111, b11111111}, -math.MaxInt32 - 1},
-	{[]byte{b01100001, b00000000, b00000000, b00000000, b00000001}, -math.MaxInt32},
-	{[]byte{b01100001, b00000000, b00000000, b00000000, b00000011}, -math.MaxInt32 + 1},
-	{[]byte{b01110000, b01111111, b11111111}, -math.MaxInt16 - 1},
-	{[]byte{b01111000, b01111110}, -129},
-	{[]byte{b01111000, b01111111}, -128},
-	{[]byte{b01111001, b00000001}, -127},
-	{[]byte{b01111001, b01111101}, -65},
-	{[]byte{b01111001, b01111111}, -64},
-	{[]byte{b01111010, b00000011}, -63},
-	{[]byte{b01111101, b01011111}, -5},
-	{[]byte{b01111110, b00111111}, -3},
-	{[]byte{b01111111, b01111111}, -1},
-	{[]byte{b10000000, b00000000}, 0},
-	{[]byte{b10000010, b10100000}, 5},
-	{[]byte{b10000100, b10001000}, 17},
-	{[]byte{b10000101, b11111100}, 63},
-	{[]byte{b10000110, b10000000}, 64},
-	{[]byte{b10000110, b10000010}, 65},
-	{[]byte{b10000111, b10000000}, 128},
-	{[]byte{b10011110, b11111111, 0xff, 0xff, b11111110}, math.MaxInt32},
-	{[]byte{b10011111, b10000000, 0, 0, 0}, math.MaxInt32 + 1},
-	{[]byte{b10111110, b11111111, 0xff, 0xff, b11111111, 0xff, 0xff, 0xff, b11111110}, math.MaxInt64},
+	{[]byte{0b01000000, 0b01111111, 0b11111111, 0b11111111, 0b11111111, 0xff, 0xff, 0xff, 0b11111111}, -math.MaxInt64 - 1},
+	{[]byte{0b01000001, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0, 0, 0, 0b00000001}, -math.MaxInt64},
+	{[]byte{0b01000001, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0, 0, 0, 0b00000011}, -math.MaxInt64 + 1},
+	{[]byte{0b01100000, 0b01111111, 0b11111111, 0b11111111, 0b11111111}, -math.MaxInt32 - 1},
+	{[]byte{0b01100001, 0b00000000, 0b00000000, 0b00000000, 0b00000001}, -math.MaxInt32},
+	{[]byte{0b01100001, 0b00000000, 0b00000000, 0b00000000, 0b00000011}, -math.MaxInt32 + 1},
+	{[]byte{0b01110000, 0b01111111, 0b11111111}, -math.MaxInt16 - 1},
+	{[]byte{0b01111000, 0b01111110}, -129},
+	{[]byte{0b01111000, 0b01111111}, -128},
+	{[]byte{0b01111001, 0b00000001}, -127},
+	{[]byte{0b01111001, 0b01111101}, -65},
+	{[]byte{0b01111001, 0b01111111}, -64},
+	{[]byte{0b01111010, 0b00000011}, -63},
+	{[]byte{0b01111101, 0b01011111}, -5},
+	{[]byte{0b01111110, 0b00111111}, -3},
+	{[]byte{0b01111111, 0b01111111}, -1},
+	{[]byte{0b10000000, 0b00000000}, 0},
+	{[]byte{0b10000010, 0b10100000}, 5},
+	{[]byte{0b10000100, 0b10001000}, 17},
+	{[]byte{0b10000101, 0b11111100}, 63},
+	{[]byte{0b10000110, 0b10000000}, 64},
+	{[]byte{0b10000110, 0b10000010}, 65},
+	{[]byte{0b10000111, 0b10000000}, 128},
+	{[]byte{0b10011110, 0b11111111, 0xff, 0xff, 0b11111110}, math.MaxInt32},
+	{[]byte{0b10011111, 0b10000000, 0, 0, 0}, math.MaxInt32 + 1},
+	{[]byte{0b10111110, 0b11111111, 0xff, 0xff, 0b11111111, 0xff, 0xff, 0xff, 0b11111110}, math.MaxInt64},
 }
 
 func TestWrite(t *testing.T) {
@@ -167,12 +167,12 @@ func TestSort(t *testing.T) {
 }
 
 func TestErrors(t *testing.T) {
-	smallerInt64 := []byte{b01000000, b01111111, b11111111, b11111111, b11111111, 0xff, 0xff, 0xff, b11111110}
+	smallerInt64 := []byte{0b01000000, 0b01111111, 0b11111111, 0b11111111, 0b11111111, 0xff, 0xff, 0xff, 0b11111110}
 
-	prettyBigUint64 := []byte{b10111111, b10000000, 0, 0, 0, 0, 0, 0, 0}
+	prettyBigUint64 := []byte{0b10111111, 0b10000000, 0, 0, 0, 0, 0, 0, 0}
 	prettyBigUint64Val := uint64(math.MaxInt64 + 1)
 
-	reallyBigUint64 := []byte{b10111111, b11111111, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	reallyBigUint64 := []byte{0b10111111, 0b11111111, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 	reallyBigUint64Val := uint64(math.MaxUint64)
 	tests := []struct {
 		name string
@@ -188,7 +188,7 @@ func TestErrors(t *testing.T) {
 	}{
 		{
 			name: "Too big!!",
-			buf:  []byte{b11000000}, // 65 bits!?
+			buf:  []byte{0b11000000}, // 65 bits!?
 			err:  ErrOverflow,
 			uerr: ErrOverflow,
 		}, {
