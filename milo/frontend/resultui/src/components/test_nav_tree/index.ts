@@ -110,9 +110,6 @@ export class TestNavTreeElement extends MobxLitElement {
       white-space: nowrap;
       text-overflow: ellipsis;
     }
-    .expandable-header.selected {
-      background-color: #66ccff;
-    }
 
     #body {
       overflow-y: auto;
