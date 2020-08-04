@@ -69,6 +69,30 @@
       "revId": "fe7fef1fe2bfec5422f1f9d98d9ddb390d54e009",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bf782332_324492bb",
+        "filename": "ttq/internals/lessor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-04T23:38:26Z",
+      "side": 1,
+      "message": "Something like that, I haven\u0027t figured out the details yet :)",
+      "parentUuid": "57b7b8ab_5da532b7",
+      "range": {
+        "startLine": 64,
+        "startChar": 20,
+        "endLine": 64,
+        "endChar": 80
+      },
+      "revId": "fe7fef1fe2bfec5422f1f9d98d9ddb390d54e009",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
