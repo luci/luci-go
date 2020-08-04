@@ -16,6 +16,63 @@
       "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dc2d92a3_57af6a22",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-04T08:18:32Z",
+      "side": 1,
+      "message": "Since this is in rpc, consider naming these with a little more detail. It\u0027s not necessarily obvious what rpc.mode or rpc.New means.",
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2d88643_b8664148",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-04T08:18:32Z",
+      "side": 1,
+      "message": "\"commit\" singular (assuming you are referencing \"commit/gitiles\" in the regex\").",
+      "range": {
+        "startLine": 127,
+        "startChar": 41,
+        "endLine": 127,
+        "endChar": 48
+      },
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3814d9cf_68fe394d",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-04T08:18:32Z",
+      "side": 1,
+      "message": "Seems like the seenBuilderTagValue and seenGitilesCommit checks are different. The \"builder\" tag may be specified more than once, as long as it\u0027s the same value every time. On the other hand, the \"buildset\" tag with \"commit/gitiles/...\" value may not be specified more than once even if it\u0027s a redundant same value.",
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

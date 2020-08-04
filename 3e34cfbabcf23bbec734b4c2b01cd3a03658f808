@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87212720_2e8e9637",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-04T08:18:32Z",
+      "side": 0,
+      "message": "I think we discussed this in the chat, but I forgot the conclusion. Do we need to validate these for search? If there are old builds with weird tags that don\u0027t conform to the rules, validating tags on search makes it impossible to search for them. On the other hand, if we require tags to be well-formed in order to formulate the search query in the first place, then of course we have to validate them.\n\nIf a tag key contains a colon, does that break search? Or will it simply return nothing?",
+      "revId": "3e34cfbabcf23bbec734b4c2b01cd3a03658f808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
