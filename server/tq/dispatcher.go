@@ -74,6 +74,14 @@ type Dispatcher struct {
 	// If not set, task submissions will fail.
 	Submitter Submitter
 
+	// Namespace is a namespace for tasks that use DeduplicationKey.
+	//
+	// This is needed if two otherwise independent deployments share a single
+	// Cloud Tasks instance.
+	//
+	// Must be valid per ValidateNamespace. Default is "".
+	Namespace string
+
 	// GAE is true when running on Appengine.
 	//
 	// It alters how tasks are submitted and how incoming HTTP requests are
@@ -357,6 +365,18 @@ var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
 //
 // An untagged error (or success) marks the task as "done", it won't be retried.
 type Handler func(ctx context.Context, payload proto.Message) error
+
+// ValidateNamespace returns an error if `n` is not a valid namespace name.
+//
+// An empty string is a valid namespace (denoting the default namespace). Other
+// valid namespaces must start with an ASCII letter or '_', contain only
+// ASCII letters, digits or '_', and be less than 50 chars in length.
+func ValidateNamespace(n string) error {
+	if n != "" && !namespaceRe.MatchString(n) {
+		return errors.New("must start with a letter or '_' and contain only letters, numbers and '_'")
+	}
+	return nil
+}
 
 // RegisterTaskClass tells the dispatcher how to route and handle tasks of some
 // particular type.
@@ -700,8 +720,12 @@ func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 // defaultHeaders are added to all submitted Cloud Tasks.
 var defaultHeaders = map[string]string{"Content-Type": "application/json"}
 
-// taskClassIDRe is used to validate TaskClass.ID.
-var taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
+var (
+	// namespaceRe is used to validate Dispatcher.Namespace.
+	namespaceRe = regexp.MustCompile(`^[a-zA-Z_][0-9a-zA-Z_]{0,49}$`)
+	// taskClassIDRe is used to validate TaskClass.ID.
+	taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
+)
 
 const (
 	// reminderKeySpaceBytes defines the space of the Reminder Ids.
@@ -746,7 +770,7 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 
 	taskID := ""
 	if t.DeduplicationKey != "" {
-		taskID = queueID + "/tasks/" + cls.taskName(t)
+		taskID = queueID + "/tasks/" + cls.taskName(t, d.Namespace)
 	}
 
 	var scheduleTime *timestamppb.Timestamp
@@ -1022,14 +1046,10 @@ func (cls *taskClassImpl) AttachHandler(h Handler) {
 }
 
 // taskName returns a short ID for the task to use to dedup it.
-func (cls *taskClassImpl) taskName(t *Task) string {
-	// If we need to run in "appengine/tq" compatible mode, cls.ID below should be
-	// replaced with proto.MessageName(t.Payload). But a breaking migration is
-	// inevitable at some point (there's no way to have *two* different task names
-	// at the same time), so might just as well start using ID instead of
-	// MesasgeName right away. Migrating users would have to deal with potentially
-	// duplicate messages for some period of time.
+func (cls *taskClassImpl) taskName(t *Task, namespace string) string {
 	h := sha256.New()
+	h.Write([]byte(namespace))
+	h.Write([]byte{0})
 	h.Write([]byte(cls.ID))
 	h.Write([]byte{0})
 	h.Write([]byte(t.DeduplicationKey))
