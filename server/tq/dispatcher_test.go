@@ -133,7 +133,7 @@ func TestAddTask(t *testing.T) {
 			So(submitter.reqs, ShouldHaveLength, 1)
 			So(submitter.reqs[0].Task.Name, ShouldEqual,
 				"projects/proj/locations/reg/queues/queue-1/tasks/"+
-					"cd953b04d276a05bdd0846091e9f0171d4e32465add60314d65aef9ef5fded0b")
+					"ca0a124846df4b453ae63e3ad7c63073b0d25941c6e63e5708fd590c016edcef")
 		})
 
 		Convey("Titleless task", func() {
