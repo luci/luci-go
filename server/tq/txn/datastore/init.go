@@ -30,6 +30,9 @@ import (
 
 	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/databases/datastore"
+
+	// Register "datastore" lessor.
+	_ "go.chromium.org/luci/ttq/internals/lessors/datastore"
 )
 
 var db datastore.DB
