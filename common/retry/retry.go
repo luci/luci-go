@@ -48,6 +48,18 @@ type Iterator interface {
 	Next(context.Context, error) time.Duration
 }
 
+type nextFunc func(context.Context, error) time.Duration
+
+func (f nextFunc) Next(ctx context.Context, err error) time.Duration {
+	return f(ctx, err)
+}
+
+// NewIterator creates an Iterator based on a "next" function.
+// It is a concise way to implement an Iterator.
+func NewIterator(next func(context.Context, error) time.Duration) Iterator {
+	return nextFunc(next)
+}
+
 // Factory is a function that produces an independent Iterator instance.
 //
 // Since each Iterator is mutated as it is iterated through, this is used to
