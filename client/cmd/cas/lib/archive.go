@@ -94,7 +94,7 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 	}
 
 	if !pickedOne {
-		return "", errors.Reason("-dirs or -files should be specified at least once").Err()
+		return "", errors.Reason("-paths should be specified at least once").Err()
 	}
 
 	return wd0, nil
