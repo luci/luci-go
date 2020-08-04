@@ -40,6 +40,14 @@ type ModuleOptions struct {
 	// Default is the global Default instance.
 	Dispatcher *Dispatcher
 
+	// Namespace is a namespace for tasks that use DeduplicationKey.
+	//
+	// This is needed if two otherwise independent deployments share a single
+	// Cloud Tasks instance.
+	//
+	// Default is "".
+	Namespace string
+
 	// DefaultTargetHost is a hostname to dispatch Cloud Tasks to by default.
 	//
 	// Individual task classes may override it with their own specific host.
@@ -172,6 +180,9 @@ type ModuleOptions struct {
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
+	f.StringVar(&o.Namespace, "tq-namespace", "",
+		`Namespace for tasks that use deduplication keys (optional).`)
+
 	f.StringVar(&o.DefaultTargetHost, "tq-default-target-host", "",
 		`Hostname to dispatch Cloud Tasks to by default.`)
 
@@ -259,6 +270,11 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	disp.CloudRegion = opts.CloudRegion
 	disp.DefaultTargetHost = m.opts.DefaultTargetHost
 	disp.AuthorizedPushers = m.opts.AuthorizedPushers
+
+	if err := ValidateNamespace(m.opts.Namespace); err != nil {
+		return errors.Annotate(err, "bad TQ namespace %q", m.opts.Namespace).Err()
+	}
+	disp.Namespace = m.opts.Namespace
 
 	if m.opts.PushAs != "" {
 		disp.PushAs = m.opts.PushAs
