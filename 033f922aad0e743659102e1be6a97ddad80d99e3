@@ -39,6 +39,30 @@
       "revId": "033f922aad0e743659102e1be6a97ddad80d99e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b86b3357_ee75599f",
+        "filename": "server/tq/tqtesting/options.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-04T02:41:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d24e0cd8_338e219c",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 23
+      },
+      "revId": "033f922aad0e743659102e1be6a97ddad80d99e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
