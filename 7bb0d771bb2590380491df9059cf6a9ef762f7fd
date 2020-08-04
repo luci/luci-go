@@ -70,6 +70,30 @@
       "revId": "7bb0d771bb2590380491df9059cf6a9ef762f7fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86657727_dfc49dcb",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-04T04:23:09Z",
+      "side": 1,
+      "message": "We need to take client from\nhttps://github.com/bazelbuild/remote-apis-sdks/blob/6f048255943e502b14630709f22412f23a7395c3/go/pkg/fakes/server.go#L72",
+      "parentUuid": "b3c6de55_bc91f072",
+      "range": {
+        "startLine": 158,
+        "startChar": 22,
+        "endLine": 158,
+        "endChar": 25
+      },
+      "revId": "7bb0d771bb2590380491df9059cf6a9ef762f7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
