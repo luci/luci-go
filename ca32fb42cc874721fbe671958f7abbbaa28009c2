@@ -22,6 +22,30 @@
       "revId": "ca32fb42cc874721fbe671958f7abbbaa28009c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e9f714c_77f8c1e6",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-04T04:45:12Z",
+      "side": 1,
+      "message": "not sure what exactly you are asking: I think it is \"why revision wasn\u0027t added in this CL\".\n\nThe use case is to lookup metadata by filename. For that we need filename, but don\u0027t need revision.\n\nI am generally adding features when there is a specific use case, to ensure that what I am implementing is actually useful, and to minimize unnecessary complexity. Implementing something without use cases has a risk of implementing something that nobody needs because use case might turn out different from what we expected, with some nuances missed.",
+      "parentUuid": "30d29a92_041eba51",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 53
+      },
+      "revId": "ca32fb42cc874721fbe671958f7abbbaa28009c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
