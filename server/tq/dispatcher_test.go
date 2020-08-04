@@ -16,6 +16,7 @@ package tq
 
 import (
 	"context"
+	"fmt"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -172,6 +173,46 @@ func TestAddTask(t *testing.T) {
 			})
 			So(err, ShouldErrLike, "no task class matching type")
 			So(submitter.reqs, ShouldHaveLength, 0)
+		})
+
+		Convey("Custom task payload on GAE", func() {
+			d.GAE = true
+			d.DefaultTargetHost = ""
+			d.RegisterTaskClass(TaskClass{
+				ID:        "test-ts",
+				Prototype: &timestamppb.Timestamp{}, // just some proto type
+				Queue:     "queue-1",
+				Custom: func(ctx context.Context, m proto.Message) (*CustomPayload, error) {
+					ts := m.(*timestamppb.Timestamp)
+					return &CustomPayload{
+						Method:      "GET",
+						Headers:     map[string]string{"k": "v"},
+						RelativeURI: "/zzz",
+						Body:        []byte(fmt.Sprintf("%d", ts.Seconds)),
+					}, nil
+				},
+			})
+
+			So(d.AddTask(ctx, &Task{
+				Payload: &timestamppb.Timestamp{Seconds: 123},
+				Delay:   444 * time.Second,
+			}), ShouldBeNil)
+
+			So(submitter.reqs, ShouldHaveLength, 1)
+			So(submitter.reqs[0], ShouldResembleProto, &taskspb.CreateTaskRequest{
+				Parent: "projects/proj/locations/reg/queues/queue-1",
+				Task: &taskspb.Task{
+					ScheduleTime: timestamppb.New(now.Add(444 * time.Second)),
+					MessageType: &taskspb.Task_AppEngineHttpRequest{
+						AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
+							HttpMethod:  taskspb.HttpMethod_GET,
+							RelativeUri: "/zzz",
+							Headers:     map[string]string{"k": "v"},
+							Body:        []byte("123"),
+						},
+					},
+				},
+			})
 		})
 	})
 }
