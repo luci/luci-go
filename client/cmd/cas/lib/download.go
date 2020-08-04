@@ -39,7 +39,7 @@ func CmdDownload() *subcommands.Command {
 		ShortDesc: "download directory tree from a CAS server.",
 		LongDesc: `Downloads directory tree from the CAS server.
 
-Tree is referenced by their digest`,
+Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
 			c.Init()
