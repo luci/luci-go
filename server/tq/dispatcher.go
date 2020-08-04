@@ -50,17 +50,21 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"go.chromium.org/luci/ttq/internals/databases"
+	"go.chromium.org/luci/ttq/internals/partition"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
+//
+// Can be instantiated directly in tests. Production code should generally use
+// the dispatcher configured by the tq server module (which is global Default
+// dispatcher). See NewModuleWithFlags() and ModuleOptions.
 type Dispatcher struct {
 	// Submitter is used to submit Cloud Tasks tasks.
 	//
@@ -91,7 +95,7 @@ type Dispatcher struct {
 	// If not set, submission of tasks that use short queue names will fail.
 	CloudRegion string
 
-	// DefaultRoutingPrefix is an URL prefix for produced Cloud Tasks.
+	// DefaultRoutingPrefix is a URL prefix for produced Cloud Tasks.
 	//
 	// Used only for tasks whose TaskClass doesn't provide some custom
 	// RoutingPrefix.
@@ -130,6 +134,18 @@ type Dispatcher struct {
 	// Optional.
 	AuthorizedPushers []string
 
+	// Sweeper knows how to launch sweeps of the transactional tasks reminders.
+	Sweeper Sweeper
+
+	// SweepShards defines how many subtasks to produce in each Sweep.
+	//
+	// Default is 16.
+	SweepShards int
+
+	// SweepInitiationLaunchers is a list of service account emails authorized to
+	// launch sweeps via the exposed HTTP endpoint.
+	SweepInitiationLaunchers []string
+
 	mu       sync.RWMutex
 	clsByID  map[string]*taskClassImpl
 	clsByTyp map[protoreflect.MessageType]*taskClassImpl
@@ -146,6 +162,14 @@ type Submitter interface {
 	//
 	// Will be called from multiple goroutines at once.
 	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
+}
+
+// Sweeper knows how to launch sweeps of the transaction tasks reminders.
+type Sweeper interface {
+	// startSweep initiates an asynchronous sweep of given partitions.
+	//
+	// They are sorted, disjoint and together cover the entire key space.
+	startSweep(ctx context.Context, partitions []*partition.Partition) error
 }
 
 // TaskKind describes how a task class interoperates with transactions.
@@ -219,7 +243,7 @@ type TaskClass struct {
 	// Required. The queue must exist already.
 	Queue string
 
-	// RoutingPrefix is an URL prefix for produced Cloud Tasks.
+	// RoutingPrefix is a URL prefix for produced Cloud Tasks.
 	//
 	// Default is dispatcher's DefaultRoutingPrefix which itself defaults to
 	// "/internal/tasks/t/". It means generated Cloud Tasks by default will have
@@ -381,41 +405,6 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	return impl
 }
 
-// InstallRoutes installs HTTP routes under the given prefix.
-//
-// The exposed HTTP endpoints are called by Cloud Tasks service when it is time
-// to execute a task.
-func (d *Dispatcher) InstallRoutes(r *router.Router, prefix string) {
-	if prefix == "" {
-		prefix = "/internal/tasks/"
-	} else if !strings.HasPrefix(prefix, "/") {
-		panic("the prefix should start with /")
-	}
-
-	// We don't really care about the exact format of URLs. At the same time
-	// accepting all requests under InternalRoutingPrefix is necessary for
-	// compatibility with "appengine/tq" which used totally different URL format.
-	prefix = strings.TrimRight(prefix, "/") + "/*path"
-	r.POST(prefix, d.authorize(), func(c *router.Context) {
-		// TODO(vadimsh): Parse magic headers to get the attempt count.
-		body, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			httpReply(c, 500, "Failed to read the request", err)
-			return
-		}
-		switch err := d.handlePush(c.Context, body); {
-		case err == nil:
-			httpReply(c, 200, "OK", nil)
-		case Retry.In(err):
-			httpReply(c, 409, "The handler asked for retry", err)
-		case transient.Tag.In(err):
-			httpReply(c, 500, "Transient error", err)
-		default:
-			httpReply(c, 202, "Fatal error", err)
-		}
-	})
-}
-
 // AddTask submits a task for later execution.
 //
 // The task payload type should match some registered TaskClass. Its ID will
@@ -540,6 +529,20 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	return nil
 }
 
+// Sweep initiates a sweep of transactional tasks reminders.
+//
+// It must be called periodically (e.g. once per minute) somewhere in the fleet.
+func (d *Dispatcher) Sweep(ctx context.Context) error {
+	if d.Sweeper == nil {
+		return errors.New("can't sweep: the Sweeper is not set")
+	}
+	shards := d.SweepShards
+	if shards <= 0 {
+		shards = 16
+	}
+	return d.Sweeper.startSweep(ctx, partition.Universe(reminderKeySpaceBytes).Split(shards))
+}
+
 // enqueueTask submits the prepared task.
 //
 // Recognized AlreadyExists as a success. Annotated retriable errors with
@@ -613,6 +616,83 @@ func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fun
 		err := e.d.handlePush(ctx, body)
 		done(Retry.In(err) || transient.Tag.In(err))
 	}()
+}
+
+// InstallTasksRoutes installs tasks HTTP routes under the given prefix.
+//
+// The exposed HTTP endpoints are called by Cloud Tasks service when it is time
+// to execute a task.
+func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
+	if prefix == "" {
+		prefix = "/internal/tasks/"
+	} else if !strings.HasPrefix(prefix, "/") {
+		panic("the prefix should start with /")
+	}
+
+	var mw router.MiddlewareChain
+	if !d.NoAuth {
+		// Tasks are primarily submitted as `PushAs`, but we also accept all
+		// `AuthorizedPushers`.
+		pushers := append([]string{d.PushAs}, d.AuthorizedPushers...)
+		// On GAE X-Appengine-* headers can be trusted. Check we are being called
+		// by Cloud Tasks. We don't care by which queue exactly though. It is
+		// easier to move tasks between queues that way.
+		header := ""
+		if d.GAE {
+			header = "X-Appengine-Queue"
+		}
+		mw = authMiddleware(pushers, header)
+	}
+
+	// We don't really care about the exact format of URLs. At the same time
+	// accepting all requests under InternalRoutingPrefix is necessary for
+	// compatibility with "appengine/tq" which used totally different URL format.
+	prefix = strings.TrimRight(prefix, "/") + "/*path"
+	r.POST(prefix, mw, func(c *router.Context) {
+		// TODO(vadimsh): Parse magic headers to get the attempt count.
+		body, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			httpReply(c, 500, "Failed to read the request", err)
+			return
+		}
+		switch err := d.handlePush(c.Context, body); {
+		case err == nil:
+			httpReply(c, 200, "OK", nil)
+		case Retry.In(err):
+			httpReply(c, 409, "The handler asked for retry", err)
+		case transient.Tag.In(err):
+			httpReply(c, 500, "Transient error", err)
+		default:
+			httpReply(c, 202, "Fatal error", err)
+		}
+	})
+}
+
+// InstallSweepRoute installs a route that initiates a sweep.
+//
+// It may be called periodically (e.g. by Cloud Scheduler) to launch sweeps.
+func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
+	var mw router.MiddlewareChain
+	if !d.NoAuth {
+		// On GAE X-Appengine-* headers can be trusted. Check we are being called
+		// by Cloud Scheduler.
+		header := ""
+		if d.GAE {
+			header = "X-Appengine-Cron"
+		}
+		mw = authMiddleware(d.SweepInitiationLaunchers, header)
+	}
+
+	r.GET(path, mw, func(c *router.Context) {
+		switch err := d.Sweep(c.Context); {
+		case err == nil:
+			httpReply(c, 200, "OK", nil)
+		case transient.Tag.In(err):
+			httpReply(c, 500, "Transient error", err)
+		default:
+			httpReply(c, 202, "Fatal error", err)
+		}
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -828,75 +908,6 @@ func isValidQueue(q string) bool {
 		chunks[5] != ""
 }
 
-// authorize returns a middleware chain that authorizes requests to handlers.
-func (d *Dispatcher) authorize() router.MiddlewareChain {
-	if d.NoAuth {
-		return router.MiddlewareChain{}
-	}
-
-	// We first want to validate the OpenID Connect token in the request (if any)
-	// and then check that thus authenticated caller is authorized to push tasks
-	// to us. On GAE we also trust X-AppEngine-* headers.
-	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-		AudienceCheck: openid.AudienceMatchesHost,
-	})
-	return router.NewMiddlewareChain(oidc, func(c *router.Context, next router.Handler) {
-		// On GAE X-AppEngine-* headers can be trusted. Check we are being called
-		// by Cloud Tasks. We don't care by which queue exactly though. It is
-		// easier to move tasks between queues that way.
-		if d.GAE && c.Request.Header.Get("X-AppEngine-QueueName") != "" {
-			next(c)
-			return
-		}
-
-		// If this is an HttpRequest task, it must have an OpenID token. This can
-		// happen on GAE too if the task was submitted as HttpRequest instead of
-		// AppEngineHttpRequest.
-		if ident := auth.CurrentIdentity(c.Context); ident.Kind() != identity.Anonymous {
-			if d.isAuthorizedPusher(ident) {
-				next(c)
-			} else {
-				httpReply(c, 403,
-					fmt.Sprintf("Caller %q is not authorized", ident),
-					errors.Reason("expecting %q or any of %q", d.PushAs, d.AuthorizedPushers).Err(),
-				)
-			}
-			return
-		}
-
-		// An anonymous request on GAE likely indicates an attempt to use magic
-		// headers.
-		if d.GAE {
-			httpReply(c, 403,
-				"This endpoint can only be called by Cloud Tasks",
-				errors.Reason("no OIDC token and no X-AppEngine-QueueName header").Err(),
-			)
-		} else {
-			httpReply(c, 403,
-				"This endpoint can only be called by Cloud Tasks",
-				errors.Reason("no OIDC token").Err(),
-			)
-		}
-	})
-}
-
-// isAuthorizedPusher is true if `ident` is allowed to push tasks to us.
-func (d *Dispatcher) isAuthorizedPusher(ident identity.Identity) bool {
-	if ident.Kind() != identity.User {
-		return false // we want service accounts
-	}
-	email := ident.Email()
-	if email == d.PushAs {
-		return true
-	}
-	for _, extra := range d.AuthorizedPushers {
-		if email == extra {
-			return true
-		}
-	}
-	return false
-}
-
 // handlePush handles one incoming task.
 //
 // Returns errors annotated in the same style as errors from Handler, see its
@@ -981,16 +992,6 @@ func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Err()
 }
 
-// httpReply writes and logs HTTP response.
-//
-// `msg` is sent to the caller as is. `err` is logged, but not sent.
-func httpReply(c *router.Context, code int, msg string, err error) {
-	if err != nil {
-		logging.Errorf(c.Context, "%s: %s", msg, err)
-	}
-	http.Error(c.Writer, msg, code)
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 // taskClassImpl knows how to prepare and handle tasks of a particular class.
@@ -1066,4 +1067,71 @@ func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
 		return nil, err
 	}
 	return msg, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// authMiddleware returns a middleware chain that authorizes requests from given
+// callers.
+//
+// Checks OpenID Connect tokens have us in the audience, and the email in them
+// is in `callers` list.
+//
+// If `header` is set, will also accept requests that have this header,
+// regardless of its value. This is used to authorize GAE tasks and cron based
+// on `X-AppEngine-*` headers.
+func authMiddleware(callers []string, header string) router.MiddlewareChain {
+	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+		AudienceCheck: openid.AudienceMatchesHost,
+	})
+	return router.NewMiddlewareChain(oidc, func(c *router.Context, next router.Handler) {
+		if header != "" && c.Request.Header.Get(header) != "" {
+			next(c)
+			return
+		}
+
+		if ident := auth.CurrentIdentity(c.Context); ident.Kind() != identity.Anonymous {
+			if checkContainsIdent(callers, ident) {
+				next(c)
+			} else {
+				httpReply(c, 403,
+					fmt.Sprintf("Caller %q is not authorized", ident),
+					errors.Reason("expecting any of %q", callers).Err(),
+				)
+			}
+			return
+		}
+
+		var err error
+		if header != "" {
+			err = errors.Reason("no OIDC token and no %s header", header).Err()
+		} else {
+			err = errors.Reason("no OIDC token").Err()
+		}
+		httpReply(c, 403, "Authentication required", err)
+	})
+}
+
+// checkContainsIdent is true if `ident` emails matches some of `callers`.
+func checkContainsIdent(callers []string, ident identity.Identity) bool {
+	if ident.Kind() != identity.User {
+		return false // we want service accounts
+	}
+	email := ident.Email()
+	for _, c := range callers {
+		if email == c {
+			return true
+		}
+	}
+	return false
+}
+
+// httpReply writes and logs HTTP response.
+//
+// `msg` is sent to the caller as is. `err` is logged, but not sent.
+func httpReply(c *router.Context, code int, msg string, err error) {
+	if err != nil {
+		logging.Errorf(c.Context, "%s: %s", msg, err)
+	}
+	http.Error(c.Writer, msg, code)
 }

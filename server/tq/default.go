@@ -36,3 +36,8 @@ func RegisterTaskClass(t TaskClass) TaskClassRef {
 func AddTask(ctx context.Context, task *Task) error {
 	return Default.AddTask(ctx, task)
 }
+
+// Sweep is a shortcut for Default.Sweep.
+func Sweep(ctx context.Context) error {
+	return Default.Sweep(ctx)
+}

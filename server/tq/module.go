@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
+
 	"go.chromium.org/luci/server/tq/tqtesting"
 )
 
@@ -34,6 +35,11 @@ import (
 //
 // It will be used to initialize Default dispatcher.
 type ModuleOptions struct {
+	// Dispatcher is a dispatcher to use.
+	//
+	// Default is the global Default instance.
+	Dispatcher *Dispatcher
+
 	// DefaultTargetHost is a hostname to dispatch Cloud Tasks to by default.
 	//
 	// Individual task classes may override it with their own specific host.
@@ -48,25 +54,120 @@ type ModuleOptions struct {
 	// The service account must be within the same project. The server account
 	// must have "iam.serviceAccounts.actAs" permission for `PushAs` account.
 	//
-	// By default set to the server's own account.
+	// Default is the server's own account.
 	PushAs string
 
 	// AuthorizedPushers is a list of service account emails to accept pushes from
 	// in addition to PushAs.
 	//
-	// See Dispatcher for more info.
+	// This is handy when migrating from one PushAs account to another, or when
+	// submitting tasks from one service, but handing them in another.
 	//
 	// Optional.
 	AuthorizedPushers []string
 
-	// ServingPrefix is an URL path prefix to serve registered task handlers from.
+	// ServingPrefix is a URL path prefix to serve registered task handlers from.
 	//
-	// POSTs to an URL under this prefix (regardless which one) will be treated
+	// POSTs to a URL under this prefix (regardless which one) will be treated
 	// as Cloud Tasks pushes.
 	//
 	// Default is "/internal/tasks". If set to literal "-", no routes will be
 	// registered at all.
 	ServingPrefix string
+
+	// SweepMode defines how to perform sweeps of the transaction tasks reminders.
+	//
+	// This process is necessary to make sure all transactionally submitted tasks
+	// eventually execute, even if Cloud Tasks RPCs fail. When enqueueing a task
+	// the client transactionally commits a special "reminder" record, which
+	// indicates an intent to submit a Cloud Task. If the subsequent Cloud Tasks
+	// RPC fails (or the process crashes before attempting it), the reminder
+	// record is discovered by the sweep process and used to ensure the task is
+	// eventually submitted.
+	//
+	// There are two stages: the sweep initiation and the actual processing.
+	//
+	// The initiation should happen periodically and centrally: no mater how many
+	// replicas of the process are running, there needs to be only one sweep
+	// initiator. But it doesn't have to be the same process each time. Also
+	// multiple concurrent initiations are not catastrophic, though they impose
+	// huge overhead and should be avoided.
+	//
+	// Two ways to do sweep initiations are:
+	//   * Based on a periodic external signal such as a Cloud Scheduler job or
+	//     GAE cron handler. See SweepInitiationEndpoint and
+	//     SweepInitiationLaunchers.
+	//   * Based on a timer inside some *single* primary process. For example
+	//     on Kubernetes this may be a single pod Deployment, or a zero-indexed
+	//     replica in a StatefulSet. See Sweep().
+	//
+	// Once the initiation happens, there are two ways to process the sweep (and
+	// this is what SweepMode defines):
+	//   * "inproc" - do all the processing right inside the replica that
+	//     performed the initiation. This has scalability and reliability limits,
+	//     but it doesn't require any additional infrastructure setup and has
+	//     somewhat better observability.
+	//   * "distributed" - use Cloud Tasks itself to distribute the work across
+	//     many replicas. This requires some configuration. See SweepTaskQueue,
+	//     SweepTaskPrefix and SweepTargetHost.
+	//
+	// Default is "distributed" mode.
+	SweepMode string
+
+	// SweepInitiationEndpoint is a URL path that can be hit to initiate a sweep.
+	//
+	// GET requests to this endpoint (if they have proper authentication headers)
+	// will initiate sweeps. If SweepMode is "inproc" the sweep will happen in
+	// the same process that handled the request.
+	//
+	// On GAE default is "/internal/tasks/c/sweep". On non-GAE it is "-", meaning
+	// the endpoint is not exposed. When not using the endpoint there should be
+	// some single process somewhere that calls Sweep() to periodically initiate
+	// sweeps.
+	SweepInitiationEndpoint string
+
+	// SweepInitiationLaunchers is a list of service account emails authorized to
+	// launch sweeps via SweepInitiationEndpoint.
+	//
+	// Additionally on GAE the Appengine service itself is always authorized to
+	// launch sweeps via cron or task queues.
+	//
+	// Default is the server's own account.
+	SweepInitiationLaunchers []string
+
+	// SweepTaskQueue is a Cloud Tasks queue name to use to distribute sweep
+	// subtasks when running in "distributed" SweepMode.
+	//
+	// Can be in short or full form. See Queue in TaskClass for details. The queue
+	// should be configured to allows to least 10 QPS.
+	//
+	// Default is "default".
+	SweepTaskQueue string
+
+	// SweepTaskPrefix is a URL prefix to use for sweep subtasks when running
+	// in "distributed" SweepMode.
+	//
+	// There should be a Dispatcher instance somewhere that is configured to
+	// receive such tasks (via non-default ServingPrefix). This is useful if
+	// you want to limit what processes process the sweeps.
+	//
+	// If unset defaults to the value of ServingPrefix.
+	SweepTaskPrefix string
+
+	// SweepTargetHost is a hostname to dispatch sweep subtasks to when running
+	// in "distributed" SweepMode.
+	//
+	// This usually should be DefaultTargetHost, but it may be different if you
+	// want to route sweep subtasks somewhere else.
+	//
+	// If unset defaults to the value of DefaultTargetHost.
+	SweepTargetHost string
+
+	// SweepShards defines how many subtasks are submitted when initiating
+	// a sweep.
+	//
+	// It is safe to change it any time. Default is 16.
+	SweepShards int
 }
 
 // Register registers the command line flags.
@@ -83,6 +184,27 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 
 	f.StringVar(&o.ServingPrefix, "tq-serving-prefix", "/internal/tasks",
 		`URL prefix to serve registered task handlers from. Set to '-' to disable serving.`)
+
+	f.StringVar(&o.SweepMode, "tq-sweep-mode", "distributed",
+		`How to do sweeps of transactional task reminders: either "distributed" or "inproc".`)
+
+	f.StringVar(&o.SweepInitiationEndpoint, "tq-sweep-initiation-endpoint", "",
+		`URL path of an endpoint that launches sweeps.`)
+
+	f.Var(luciflag.StringSlice(&o.SweepInitiationLaunchers), "tq-sweep-initiation-launcher",
+		`Service account email allowed to hit -tq-sweep-initiation-endpoint. May be repeated.`)
+
+	f.StringVar(&o.SweepTaskQueue, "tq-sweep-task-queue", "default",
+		`A queue name to use to distribute sweep subtasks`)
+
+	f.StringVar(&o.SweepTaskPrefix, "tq-sweep-task-prefix", "",
+		`URL prefix to use for sweep subtasks. Defaults to -tq-serving-prefix.`)
+
+	f.StringVar(&o.SweepTargetHost, "tq-sweep-target-host", "",
+		`Hostname to dispatch sweep subtasks to. Defaults to -tq-default-target-host.`)
+
+	f.IntVar(&o.SweepShards, "tq-sweep-shards", 16,
+		`How many subtasks are submitted when initiating a sweep.`)
 }
 
 // NewModule returns a server module that sets up a TQ dispatcher.
@@ -116,34 +238,50 @@ func (*tqModule) Name() string {
 
 // Initialize is part of module.Module interface.
 func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
-	Default.GAE = opts.GAE
-	Default.CloudProject = opts.CloudProject
-	Default.CloudRegion = opts.CloudRegion
-	Default.DefaultTargetHost = m.opts.DefaultTargetHost
-	Default.AuthorizedPushers = m.opts.AuthorizedPushers
+	if m.opts.Dispatcher == nil {
+		m.opts.Dispatcher = &Default
+	}
+	if err := m.initDispatching(ctx, host, opts); err != nil {
+		return nil, err
+	}
+	if err := m.initSweeping(ctx, host, opts); err != nil {
+		return nil, err
+	}
+	return ctx, nil
+}
+
+func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts module.HostOptions) error {
+	disp := m.opts.Dispatcher
+
+	disp.GAE = opts.GAE
+	disp.NoAuth = !opts.Prod
+	disp.CloudProject = opts.CloudProject
+	disp.CloudRegion = opts.CloudRegion
+	disp.DefaultTargetHost = m.opts.DefaultTargetHost
+	disp.AuthorizedPushers = m.opts.AuthorizedPushers
 
 	if m.opts.PushAs != "" {
-		Default.PushAs = m.opts.PushAs
+		disp.PushAs = m.opts.PushAs
 	} else {
 		info, err := auth.GetSigner(ctx).ServiceInfo(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get own service account email").Err()
+			return errors.Annotate(err, "failed to get own service account email").Err()
 		}
-		Default.PushAs = info.ServiceAccountName
+		disp.PushAs = info.ServiceAccountName
 	}
 
 	if opts.Prod {
 		// When running for real use real Cloud Tasks service.
 		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+			return errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 		}
 		client, err := cloudtasks.NewClient(ctx, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+			return errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
 		}
 		host.RegisterCleanup(func(ctx context.Context) { client.Close() })
-		Default.Submitter = &CloudTaskSubmitter{Client: client}
+		disp.Submitter = &CloudTaskSubmitter{Client: client}
 	} else {
 		// When running locally use a simple in-memory scheduler, but go through
 		// HTTP layer to pick up logging, middlewares, etc.
@@ -158,17 +296,73 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 		if Default.CloudProject == "" {
 			Default.CloudProject = "tq-project"
 		}
-		if Default.CloudRegion == "" {
-			Default.CloudRegion = "tq-region"
+		if disp.CloudRegion == "" {
+			disp.CloudRegion = "tq-region"
 		}
-		if Default.DefaultTargetHost == "" {
-			Default.DefaultTargetHost = "127.0.0.1" // not actually used
+		if disp.DefaultTargetHost == "" {
+			disp.DefaultTargetHost = "127.0.0.1" // not actually used
 		}
 	}
 
 	if m.opts.ServingPrefix != "-" {
-		Default.InstallRoutes(host.Routes(), m.opts.ServingPrefix)
+		disp.InstallTasksRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
 
-	return ctx, nil
+	return nil
+}
+
+func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts module.HostOptions) error {
+	// Fill in defaults.
+	if m.opts.SweepInitiationEndpoint == "" {
+		if opts.GAE || !opts.Prod {
+			m.opts.SweepInitiationEndpoint = "/internal/tasks/c/sweep"
+		} else {
+			m.opts.SweepInitiationEndpoint = "-"
+		}
+	}
+
+	if len(m.opts.SweepInitiationLaunchers) == 0 {
+		info, err := auth.GetSigner(ctx).ServiceInfo(ctx)
+		if err != nil {
+			return errors.Annotate(err, "failed to get own service account email").Err()
+		}
+		m.opts.SweepInitiationLaunchers = []string{info.ServiceAccountName}
+	}
+
+	if m.opts.SweepTaskPrefix == "" {
+		if m.opts.ServingPrefix != "-" {
+			m.opts.SweepTaskPrefix = m.opts.ServingPrefix
+		} else {
+			m.opts.SweepTaskPrefix = "/internal/tasks"
+		}
+	}
+
+	if m.opts.SweepTargetHost == "" {
+		m.opts.SweepTargetHost = m.opts.DefaultTargetHost // may be "" on GAE
+	}
+
+	disp := m.opts.Dispatcher
+
+	// Setup the sweep processing.
+	switch m.opts.SweepMode {
+	case "distributed":
+		disp.Sweeper = NewDistributedSweeper(disp, TaskClass{
+			ID:            "tq-sweep-shard",
+			Queue:         m.opts.SweepTaskQueue,
+			RoutingPrefix: m.opts.SweepTaskPrefix,
+			TargetHost:    m.opts.SweepTargetHost,
+		})
+	case "inproc":
+		return errors.Reason("-sweep-mode inproc is not implemented yet").Err()
+	default:
+		return errors.Reason(`invalid -sweep-mode %q, must be either "distributed" or "inproc"`, m.opts.SweepMode).Err()
+	}
+
+	// Setup the sweep initiation.
+	disp.SweepShards = m.opts.SweepShards
+	if m.opts.SweepInitiationEndpoint != "-" {
+		disp.InstallSweepRoute(host.Routes(), m.opts.SweepInitiationEndpoint)
+	}
+
+	return nil
 }
