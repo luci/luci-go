@@ -48,6 +48,20 @@ type Iterator interface {
 	Next(context.Context, error) time.Duration
 }
 
+type delegatedIterator struct {
+	next func(context.Context, error) time.Duration
+}
+
+func (i *delegatedIterator) Next(ctx context.Context, err error) time.Duration {
+	return i.next(ctx, err)
+}
+
+// NewIterator creates an Iterator based on a "next" function.
+// It is a concise way to implement an Iterator.
+func NewIterator(next func(context.Context, error) time.Duration) Iterator {
+	return &delegatedIterator{next: next}
+}
+
 // Factory is a function that produces an independent Iterator instance.
 //
 // Since each Iterator is mutated as it is iterated through, this is used to
