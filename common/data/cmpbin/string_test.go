@@ -51,7 +51,7 @@ func TestBytes(t *testing.T) {
 		})
 
 		Convey("bad (bad varint)", func() {
-			_, n, err := ReadBytes(bytes.NewBuffer([]byte{b10001111}))
+			_, n, err := ReadBytes(bytes.NewBuffer([]byte{0b10001111}))
 			So(err, ShouldEqual, io.EOF)
 			So(n, ShouldEqual, 1)
 		})
@@ -120,7 +120,7 @@ func TestStrings(t *testing.T) {
 			n, err := WriteString(b, "1")
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
-			So(b.Bytes(), ShouldResemble, []byte{b00110001, b10000000})
+			So(b.Bytes(), ShouldResemble, []byte{0b00110001, 0b10000000})
 			r, n, err := ReadString(b)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
@@ -133,8 +133,8 @@ func TestStrings(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, (len(s)*8)/7+1)
 			So(b.Bytes()[:8], ShouldResemble, []byte{
-				b01110101, b00110101, b00011011, b00101111, b00110011, b00000011,
-				b10100101, b11100111,
+				0b01110101, 0b00110101, 0b00011011, 0b00101111, 0b00110011, 0b00000011,
+				0b10100101, 0b11100111,
 			})
 			exn := b.Len()
 			r, n, err := ReadString(b)
