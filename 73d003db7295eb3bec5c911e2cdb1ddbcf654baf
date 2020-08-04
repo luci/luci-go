@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cef48b54_0f0023cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T00:43:18Z",
+      "side": 1,
+      "message": "Vadim\u0027s much better reviewer than me for Realms.",
+      "revId": "73d003db7295eb3bec5c911e2cdb1ddbcf654baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
