@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ab66132_149af942",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-04T21:04:53Z",
+      "side": 1,
+      "message": "Should this log be removed or not?",
+      "range": {
+        "startLine": 114,
+        "startChar": 1,
+        "endLine": 114,
+        "endChar": 53
+      },
+      "revId": "7b5f9ed3e2746d09ff29d3b732b261e60195929d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9103ef7f_e7938f2f",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 362,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-04T21:04:53Z",
+      "side": 1,
+      "message": "Maybe mention that\u0027s because @testVariants should already be filtered by TestId and VariantHash?",
+      "range": {
+        "startLine": 362,
+        "startChar": 8,
+        "endLine": 362,
+        "endChar": 77
+      },
+      "revId": "7b5f9ed3e2746d09ff29d3b732b261e60195929d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
