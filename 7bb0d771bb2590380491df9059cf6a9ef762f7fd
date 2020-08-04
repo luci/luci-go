@@ -22,6 +22,30 @@
       "revId": "7bb0d771bb2590380491df9059cf6a9ef762f7fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02b77a9c_adb950b9",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-04T04:08:40Z",
+      "side": 1,
+      "message": "that is currently not so easy due to fake implementation does not support GetTree called from GetDirectoryTree\nhttps://github.com/bazelbuild/remote-apis-sdks/blob/6f048255943e502b14630709f22412f23a7395c3/go/pkg/fakes/cas.go#L390",
+      "parentUuid": "f677b7ea_c1caecfa",
+      "range": {
+        "startLine": 158,
+        "startChar": 22,
+        "endLine": 158,
+        "endChar": 25
+      },
+      "revId": "7bb0d771bb2590380491df9059cf6a9ef762f7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
