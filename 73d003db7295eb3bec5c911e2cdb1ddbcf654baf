@@ -16,6 +16,24 @@
       "revId": "73d003db7295eb3bec5c911e2cdb1ddbcf654baf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "606db4fd_9a195826",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-04T06:57:44Z",
+      "side": 1,
+      "message": "Thanks.\n\nWas going to comment why did you mark it as ready for review.\nThen realised that I couldn\u0027t comment without marking it as ready.",
+      "parentUuid": "cef48b54_0f0023cb",
+      "revId": "73d003db7295eb3bec5c911e2cdb1ddbcf654baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6114b2da_77aa48e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-04T06:57:44Z",
+      "side": 1,
+      "message": "\u003e Patch Set 10:\n\u003e \n\u003e (1 comment)\n\u003e \n\u003e This change is ready for review.\n\nDemo:\nhttps://weiweilin-dot-luci-milo-dev.appspot.com/p/infra-experimental/g/realm-test/console\n\nYou can edit\nhttps://chromium.googlesource.com/infra/experimental/+/refs/heads/infra/config/realms-dev.cfg#16\nto grant yourself access.",
+      "revId": "f85ab9d34695a860457de76370f1665953afef6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
