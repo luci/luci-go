@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cff32679_84c8aee8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-04T22:14:20Z",
+      "side": 1,
+      "message": "Demo:\nhttps://weiweilin-1-dot-luci-milo-dev.appspot.com/ui/inv/task-chromium-swarm.appspot.com-4dd2bf5f27cdf011-batch-12/test-results\n",
+      "revId": "0ea126e3395c94665a3375d3095774910403e29e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
