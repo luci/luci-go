@@ -223,6 +223,16 @@ func TestValidateSearchBuilds(t *testing.T) {
 			err := validatePageToken("id>123", tags)
 			So(err, ShouldErrLike, "invalid page_token")
 		})
+
+		Convey("invalid tags", func() {
+			pr := &pb.BuildPredicate{
+				Tags: []*pb.StringPair{
+					{Key: "k:1", Value: "v"},
+				},
+			}
+			err := validatePredicate(pr)
+			So(err, ShouldNotBeNil)
+		})
 	})
 
 	Convey("validateSearch", t, func() {
