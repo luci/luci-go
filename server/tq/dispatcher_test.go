@@ -193,7 +193,7 @@ func TestPushHandler(t *testing.T) {
 		})
 
 		srv := router.New()
-		d.InstallRoutes(srv, "/pfx")
+		d.InstallTasksRoutes(srv, "/pfx")
 
 		call := func(body string) int {
 			req := httptest.NewRequest("POST", "/pfx/ignored/part", strings.NewReader(body))
