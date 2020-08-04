@@ -39,6 +39,30 @@
       "revId": "5ed204fc3388998e28e49bdf716109de3ac0f0ca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecbd86ef_dea495a8",
+        "filename": "server/tq/internal/sweep/sweeppb/tasks.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "74825e8a_47f08a92",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 44
+      },
+      "revId": "5ed204fc3388998e28e49bdf716109de3ac0f0ca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -1,0 +1,268 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0b853d63_ba83bc80",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "OK, I grokked it, I think. Makes sense. LGTM % just nits",
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46a90eb1_eb6cdea1",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 624,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "it\u0027s not \"given\".",
+      "range": {
+        "startLine": 624,
+        "startChar": 22,
+        "endLine": 624,
+        "endChar": 80
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bb820fd_8d3e03be",
+        "filename": "server/tq/internal/sweep/distributed.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 27,
+        "startChar": 59,
+        "endLine": 27,
+        "endChar": 61
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43f1b20a_5e23c250",
+        "filename": "server/tq/internal/sweep/sweeppb/tasks.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "The",
+      "range": {
+        "startLine": 24,
+        "startChar": 49,
+        "endLine": 24,
+        "endChar": 50
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ee0303f_528832e0",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "s/an URL/a URL/g \n\n:)",
+      "range": {
+        "startLine": 69,
+        "startChar": 20,
+        "endLine": 69,
+        "endChar": 28
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd37f972_a973e752",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "nit: sweeps of the transaction tasks reminders",
+      "range": {
+        "startLine": 78,
+        "startChar": 36,
+        "endLine": 78,
+        "endChar": 71
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c26cffa0_756b9589",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "to",
+      "range": {
+        "startLine": 83,
+        "startChar": 24,
+        "endLine": 83,
+        "endChar": 26
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a2739d6_0d18434d",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "not sure why this is important. Do you mean to say that sweep initiation will be done synchronously?",
+      "range": {
+        "startLine": 120,
+        "startChar": 32,
+        "endLine": 120,
+        "endChar": 52
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0aa4ed48_cb55cf6e",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "long names not supported?",
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9f0c7ec_bfed92ac",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "when",
+      "range": {
+        "startLine": 144,
+        "startChar": 63,
+        "endLine": 144,
+        "endChar": 67
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c6a844c_05830c75",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 52
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5bf9ced2_d99a5fa5",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-04T05:54:08Z",
+      "side": 1,
+      "message": "nitty-nit: i\u0027d move down s.t. NewDistributedSweeper and its comment about this indirection are first in code.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 1
+      },
+      "revId": "9bd16f8a60ef519345739f8f90d6ffae920bde87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
