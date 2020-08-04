@@ -21,7 +21,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -288,24 +286,6 @@ func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 		return nil, errors.Annotate(err, "invalid archive command").Err()
 	}
 	return opts, nil
-}
-
-// strippedIsolatedName returns the base name of an isolated path, with the extension (if any) removed.
-func strippedIsolatedName(isolated string) string {
-	name := filepath.Base(isolated)
-	// Strip the extension if there is one.
-	if dotIndex := strings.LastIndex(name, "."); dotIndex != -1 {
-		return name[0:dotIndex]
-	}
-	return name
-}
-
-func writeJSONDigestFile(filePath string, data map[string]isolated.HexDigest) error {
-	digestBytes, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return errors.Annotate(err, "encoding digest JSON").Err()
-	}
-	return writeFile(filePath, digestBytes)
 }
 
 // writeFile writes data to filePath. File permission is set to user only.
