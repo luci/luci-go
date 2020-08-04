@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/tq/internal/sweep"
 	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
+	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/partition"
 )
 
@@ -46,17 +47,25 @@ type sweeperImpl struct {
 	enqueue func(ctx context.Context, task *sweeppb.SweepTask) error
 }
 
-// startSweep initiates an asynchronous sweep of given partitions.
+// startSweep initiates an asynchronous sweep of given partitions across all
+// registered databases.
 func (s sweeperImpl) startSweep(ctx context.Context, partitions []*partition.Partition) error {
 	return parallel.WorkPool(16, func(work chan<- func() error) {
-		for shard, part := range partitions {
-			task := &sweeppb.SweepTask{
-				Partition:  part.String(),
-				ShardCount: int32(len(partitions)),
-				ShardIndex: int32(shard),
-				Level:      0,
+		for _, db := range databases.Kinds() {
+			for shard, part := range partitions {
+				task := &sweeppb.SweepTask{
+					Db:                  db,
+					Partition:           part.String(),
+					LockId:              fmt.Sprintf("%s_%d_%d", db, shard, len(partitions)),
+					ShardCount:          int32(len(partitions)),
+					ShardIndex:          int32(shard),
+					Level:               0,
+					KeySpaceBytes:       int32(reminderKeySpaceBytes),
+					TasksPerScan:        2048, // TODO: make configurable
+					SecondaryScanShards: 16,   // TODO: make configurable
+				}
+				work <- func() error { return s.enqueue(ctx, task) }
 			}
-			work <- func() error { return s.enqueue(ctx, task) }
 		}
 	})
 }

@@ -81,7 +81,7 @@ func FromString(s string) (*Partition, error) {
 		return nil, err
 	}
 	if p.Low.Cmp(&p.High) > 0 {
-		return nil, errors.Reason("Partition %s is invalid", p.String()).Err()
+		return nil, errors.Reason("partition %s is invalid", p.String()).Err()
 	}
 	return p, nil
 }
