@@ -20,8 +20,23 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestValidateTestResult(t *testing.T) {
+	t.Parallel()
+	Convey(`ValidateTestResult`, t, func() {
+		tr, cancel := validTestResult()
+		defer cancel()
+
+		Convey(`TestLocation`, func() {
+			tr.TestLocation.FileName = ""
+			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+			So(err, ShouldErrLike, "test_location: file_name: unspecified")
+		})
+	})
+}
 
 func TestValidateArtifacts(t *testing.T) {
 	t.Parallel()

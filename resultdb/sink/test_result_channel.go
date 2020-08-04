@@ -98,14 +98,15 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 			tr := d.(*sinkpb.TestResult)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
-					TestId:      tr.GetTestId(),
-					ResultId:    tr.GetResultId(),
-					Variant:     c.cfg.BaseVariant,
-					Expected:    tr.GetExpected(),
-					SummaryHtml: tr.GetSummaryHtml(),
-					StartTime:   tr.GetStartTime(),
-					Duration:    tr.GetDuration(),
-					Tags:        tr.GetTags(),
+					TestId:       tr.GetTestId(),
+					ResultId:     tr.GetResultId(),
+					Variant:      c.cfg.BaseVariant,
+					Expected:     tr.GetExpected(),
+					SummaryHtml:  tr.GetSummaryHtml(),
+					StartTime:    tr.GetStartTime(),
+					Duration:     tr.GetDuration(),
+					Tags:         tr.GetTags(),
+					TestLocation: tr.GetTestLocation(),
 				},
 			}
 		}
