@@ -21,6 +21,7 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
 
 import { TestNode } from '../../models/test_node';
+import '../expandable_entry';
 import { consumeTreeState, TestNavTreeState } from './context';
 
 
