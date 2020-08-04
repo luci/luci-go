@@ -28,10 +28,12 @@ import (
 	"go.chromium.org/luci/ttq/internals/partition"
 
 	. "github.com/smartystreets/goconvey/convey"
-	// . "go.chromium.org/luci/common/testing/assertions"
 )
 
-const shard13 = 13
+const (
+	lockA = "lockA"
+	lockB = "lockB"
+)
 
 func TestLeasing(t *testing.T) {
 	t.Parallel()
@@ -44,25 +46,25 @@ func TestLeasing(t *testing.T) {
 		lessor := Lessor{}
 
 		Convey("noop for save and load", func() {
-			l, err := save(ctx, shard13, epoch.Add(time.Minute), nil)
+			l, err := save(ctx, lockA, epoch.Add(time.Minute), nil)
 			So(err, ShouldBeNil)
 			So(l.Id, ShouldEqual, 0)
 
-			active, expired, err := loadAll(ctx, shard13)
+			active, expired, err := loadAll(ctx, lockA)
 			So(err, ShouldBeNil)
 			So(len(active)+len(expired), ShouldEqual, 0)
 		})
 
 		// Save 3 leases with 1, 2, 3 minutes expirty, respectively.
-		l1, err := save(ctx, shard13, epoch.Add(time.Minute), partition.SortedPartitions{
+		l1, err := save(ctx, lockA, epoch.Add(time.Minute), partition.SortedPartitions{
 			partition.FromInts(10, 15),
 		})
 		So(err, ShouldBeNil)
-		l2, err := save(ctx, shard13, epoch.Add(2*time.Minute), partition.SortedPartitions{
+		l2, err := save(ctx, lockA, epoch.Add(2*time.Minute), partition.SortedPartitions{
 			partition.FromInts(20, 25),
 		})
 		So(err, ShouldBeNil)
-		l3, err := save(ctx, shard13, epoch.Add(3*time.Minute), partition.SortedPartitions{
+		l3, err := save(ctx, lockA, epoch.Add(3*time.Minute), partition.SortedPartitions{
 			partition.FromInts(30, 35),
 		})
 		So(err, ShouldBeNil)
@@ -71,14 +73,13 @@ func TestLeasing(t *testing.T) {
 		l3.parts = nil
 
 		Convey("diff shard", func() {
-			shard14 := 14
-			active, expired, err := loadAll(ctx, shard14)
+			active, expired, err := loadAll(ctx, lockB)
 			So(err, ShouldBeNil)
 			So(len(active)+len(expired), ShouldEqual, 0)
 
 			Convey("WithLease sets context deadline at lease expiry", func() {
 				i := inLease{}
-				err = lessor.WithLease(ctx, shard14, partition.FromInts(13, 33), time.Minute, i.clbk)
+				err = lessor.WithLease(ctx, lockB, partition.FromInts(13, 33), time.Minute, i.clbk)
 				So(err, ShouldBeNil)
 				So(i.deadline(), ShouldEqual, clock.Now(ctx).Add(time.Minute))
 				So(i.parts(), ShouldResemble, partition.SortedPartitions{partition.FromInts(13, 33)})
@@ -88,20 +89,20 @@ func TestLeasing(t *testing.T) {
 				ctx, cancel := clock.WithTimeout(ctx, time.Second)
 				defer cancel()
 				i := inLease{}
-				err = lessor.WithLease(ctx, shard14, partition.FromInts(13, 33), time.Minute, i.clbk)
+				err = lessor.WithLease(ctx, lockB, partition.FromInts(13, 33), time.Minute, i.clbk)
 				So(err, ShouldBeNil)
 				So(i.deadline(), ShouldEqual, clock.Now(ctx).Add(time.Second))
 			})
 		})
 
 		Convey("only active", func() {
-			active, expired, err := loadAll(ctx, shard13)
+			active, expired, err := loadAll(ctx, lockA)
 			So(err, ShouldBeNil)
 			So(sortLeases(active...), ShouldResemble, sortLeases(l1, l2, l3))
 			So(len(expired), ShouldEqual, 0)
 
 			i := inLease{}
-			err = lessor.WithLease(ctx, shard13, partition.FromInts(13, 33), time.Minute, i.clbk)
+			err = lessor.WithLease(ctx, lockA, partition.FromInts(13, 33), time.Minute, i.clbk)
 			So(err, ShouldBeNil)
 			So(i.parts(), ShouldResemble, partition.SortedPartitions{
 				partition.FromInts(15, 20),
@@ -110,7 +111,7 @@ func TestLeasing(t *testing.T) {
 
 			Convey("WithLease may lease no partitons", func() {
 				i := inLease{}
-				err = lessor.WithLease(ctx, shard13, partition.FromInts(13, 15), time.Minute, i.clbk)
+				err = lessor.WithLease(ctx, lockA, partition.FromInts(13, 15), time.Minute, i.clbk)
 				So(err, ShouldBeNil)
 				i.assertCalled()
 				So(len(i.parts()), ShouldEqual, 0)
@@ -119,13 +120,13 @@ func TestLeasing(t *testing.T) {
 
 		tclock.Add(90 * time.Second)
 		Convey("active and expired", func() {
-			active, expired, err := loadAll(ctx, shard13)
+			active, expired, err := loadAll(ctx, lockA)
 			So(err, ShouldBeNil)
 			So(sortLeases(active...), ShouldResemble, sortLeases(l2, l3))
 			So(sortLeases(expired...), ShouldResemble, sortLeases(l1))
 
 			i := inLease{}
-			err = lessor.WithLease(ctx, shard13, partition.FromInts(13, 33), time.Minute, i.clbk)
+			err = lessor.WithLease(ctx, lockA, partition.FromInts(13, 33), time.Minute, i.clbk)
 			So(err, ShouldBeNil)
 			So(i.parts(), ShouldResemble, partition.SortedPartitions{
 				partition.FromInts(13, 20),
@@ -135,13 +136,13 @@ func TestLeasing(t *testing.T) {
 
 		tclock.Add(90 * time.Second)
 		Convey("only expired", func() {
-			active, expired, err := loadAll(ctx, shard13)
+			active, expired, err := loadAll(ctx, lockA)
 			So(err, ShouldBeNil)
 			So(len(active), ShouldEqual, 0)
 			So(sortLeases(expired...), ShouldResemble, sortLeases(l1, l2, l3))
 
 			i := inLease{}
-			err = lessor.WithLease(ctx, shard13, partition.FromInts(13, 33), time.Minute, i.clbk)
+			err = lessor.WithLease(ctx, lockA, partition.FromInts(13, 33), time.Minute, i.clbk)
 			So(err, ShouldBeNil)
 			So(i.parts(), ShouldResemble, partition.SortedPartitions{partition.FromInts(13, 33)})
 		})
@@ -161,7 +162,7 @@ type inLease struct {
 
 func (i *inLease) clbk(ctx context.Context, sp partition.SortedPartitions) {
 	if i.ctx != nil {
-		panic("calld twice")
+		panic("called twice")
 	}
 	i.ctx = ctx
 	i.sp = sp

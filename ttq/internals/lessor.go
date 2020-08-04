@@ -35,5 +35,5 @@ type Lessor interface {
 	// WithLease acquires the lease and executes WithLeaseClbk.
 	// The obtained lease duration may be shorter than requested.
 	// The obtained lease may be only for some parts of the desired Partition.
-	WithLease(ctx context.Context, shard int, part *partition.Partition, dur time.Duration, clbk WithLeaseClbk) error
+	WithLease(ctx context.Context, lockID string, part *partition.Partition, dur time.Duration, clbk WithLeaseClbk) error
 }

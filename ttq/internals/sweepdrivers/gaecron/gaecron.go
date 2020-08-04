@@ -220,8 +220,9 @@ func (s *Sweeper) postProcessAll(ctx context.Context, scanResult internals.ScanR
 	if err != nil {
 		return errors.Annotate(err, "invalid Reminder Id(s)").Err()
 	}
+	lockID := fmt.Sprintf("%d", scanResult.Shard)
 	var errProcess error
-	leaseErr := s.lessor.WithLease(ctx, scanResult.Shard, desired, time.Minute,
+	leaseErr := s.lessor.WithLease(ctx, lockID, desired, time.Minute,
 		func(leaseCtx context.Context, leased partition.SortedPartitions) {
 			reminders := internals.OnlyLeased(scanResult.Reminders, leased)
 			errProcess = s.postProcessWithLease(leaseCtx, reminders)
