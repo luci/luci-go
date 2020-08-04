@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "30d29a92_041eba51",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-04T04:23:16Z",
+      "side": 1,
+      "message": "I don\u0027t think I understand the issue addressed in crbug.com/1103287, but guess that this URL field would include the revision, and wonder why including the revision in `message TestLocation` wasn\u0027t super necessary in the described use case. line number and file name sound a revision specific data.",
+      "range": {
+        "startLine": 120,
+        "startChar": 2,
+        "endLine": 120,
+        "endChar": 53
+      },
+      "revId": "ca32fb42cc874721fbe671958f7abbbaa28009c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
