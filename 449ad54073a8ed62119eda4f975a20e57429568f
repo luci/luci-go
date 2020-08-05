@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "ce5075d8_f1bb1296",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T19:25:57Z",
+      "side": 1,
+      "message": "+1\n\nthis code will panic (there is no test) because an appstatus-annotated error may not be annotated again",
+      "parentUuid": "13bf9f5b_a7ae01c0",
+      "range": {
+        "startLine": 91,
+        "startChar": 9,
+        "endLine": 91,
+        "endChar": 77
+      },
+      "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8d9eb30c_efd2161b",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 2
@@ -58,6 +82,76 @@
         "startChar": 3,
         "endLine": 120,
         "endChar": 77
+      },
+      "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cefaaa1_ff8eb950",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T19:25:57Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "8d9eb30c_efd2161b",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 77
+      },
+      "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "164bfd00_1752dea0",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T19:25:57Z",
+      "side": 1,
+      "message": "ShouldHaveAppStatus",
+      "range": {
+        "startLine": 211,
+        "startChar": 11,
+        "endLine": 211,
+        "endChar": 24
+      },
+      "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11d7eb07_7119b812",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T19:25:57Z",
+      "side": 1,
+      "message": "ShouldHaveAppStatus",
+      "range": {
+        "startLine": 270,
+        "startChar": 11,
+        "endLine": 270,
+        "endChar": 24
       },
       "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
