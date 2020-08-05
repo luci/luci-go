@@ -26,11 +26,21 @@ import (
 var fakeDBKey = "FakeDB"
 
 func init() {
-	databases.Register(func(ctx context.Context) databases.Database {
-		if db, _ := ctx.Value(&fakeDBKey).(*FakeDB); db != nil {
-			return db
-		}
-		return nil
+	databases.Register(databases.Impl{
+		Kind: "FakeDB",
+		ProbeForTxn: func(ctx context.Context) databases.Database {
+			if db, _ := ctx.Value(&fakeDBKey).(*FakeDB); db != nil {
+				return db
+			}
+			return nil
+		},
+		NonTxn: func(ctx context.Context) databases.Database {
+			// The same implementation, FakeDB doesn't really care.
+			if db, _ := ctx.Value(&fakeDBKey).(*FakeDB); db != nil {
+				return db
+			}
+			return nil
+		},
 	})
 }
 

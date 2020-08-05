@@ -177,7 +177,7 @@ func (s *Sweeper) execTask(ctx context.Context, scan internals.ScanItem) error {
 	// Ensure there is time to postProcess Reminders produced by scan.
 	scanTimeout := time.Minute
 	if d, ok := ctx.Deadline(); ok {
-		scanTimeout = clock.Now(ctx).Sub(d) / 5
+		scanTimeout = d.Sub(clock.Now(ctx)) / 5
 	}
 	scanCtx, cancel := clock.WithTimeout(ctx, scanTimeout)
 	defer cancel()
