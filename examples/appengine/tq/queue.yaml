@@ -1,0 +1,11 @@
+queue:
+
+# A queue for user tasks. Can have any name. There can be more queues like that.
+# See main.go.
+- name: tq-countdown-tasks
+  rate: 500/s
+
+# A queue for internal sweep tasks. Must be setup when using transactional
+# enqueuing. Optional otherwise.
+- name: tq-sweep
+  rate: 500/s
