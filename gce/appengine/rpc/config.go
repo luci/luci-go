@@ -60,11 +60,27 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	cfg := &model.Config{
-		ID:     req.Id,
-		Config: *req.Config,
+		ID: req.Id,
 	}
-	if err := datastore.Put(c, cfg); err != nil {
-		return nil, errors.Annotate(err, "failed to store config").Err()
+	if err := datastore.RunInTransaction(c, func(c context.Context) error {
+		var priorAmount int32
+		switch err := datastore.Get(c, cfg); {
+		case err == nil:
+			// Don't forget potentially custom amount set via Update RPC.
+			priorAmount = cfg.Config.CurrentAmount
+		case err == datastore.ErrNoSuchEntity:
+			priorAmount = 0
+		default:
+			return errors.Annotate(err, "failed to fetch config").Err()
+		}
+		cfg.Config = *req.Config
+		cfg.Config.CurrentAmount = priorAmount
+		if err := datastore.Put(c, cfg); err != nil {
+			return errors.Annotate(err, "failed to store config").Err()
+		}
+		return nil
+	}, nil); err != nil {
+		return nil, err
 	}
 	return &cfg.Config, nil
 }
