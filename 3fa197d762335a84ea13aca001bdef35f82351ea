@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f9f32093_0ae2c86b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-05T14:48:57Z",
+      "side": 1,
+      "message": "Thanks for this.",
+      "revId": "3fa197d762335a84ea13aca001bdef35f82351ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51f0f11d_7cc7cbe7",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-05T14:48:57Z",
+      "side": 1,
+      "message": "As it is now, this RPC will always ignore the incoming CurrentAmount, making setting CurrentAmount to min in config/config.go L177 pointless. I would additionally remove L177 in config/config.go then change the tests in that package to assert that CurrentAmount is 0.\n\nThere\u0027s nothing wrong with the correctness of this, cron will compute the correct CurrentAmount anyway, but I think it\u0027s confusing for readers of the code that config import specifically sets a CurrentAmount that is subsequently ignored.",
+      "revId": "3fa197d762335a84ea13aca001bdef35f82351ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
