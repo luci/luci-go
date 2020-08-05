@@ -16,6 +16,167 @@
       "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "24895c66_a7911ec9",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "^",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 172,
+        "endChar": 1
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "113fc299_b100fcd1",
+        "filename": "server/tq/internal/submit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "copy-pasta because you need it to be usable by server/tq *users* as well as here. Right?",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 0
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5940ad1_63c8f5cd",
+        "filename": "server/tq/internal/sweep/distributed.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "it is more likely to be \"additionally\", not \"re\" (unless there a billions of tombstones).",
+      "range": {
+        "startLine": 87,
+        "startChar": 69,
+        "endLine": 87,
+        "endChar": 71
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55f9f5ab_5275f622",
+        "filename": "server/tq/internal/sweep/distributed.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "Yeah, now that I learned about recursive scanning, +100.",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 63
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "be7e19ed_2122c022",
+        "filename": "server/tq/internal/sweep/distributed.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "nit-nit: maybe BUG? Or do we have a precedent of \"bug:\"?\n\nfwiw, In personal projects, I use FIXME.",
+      "range": {
+        "startLine": 168,
+        "startChar": 23,
+        "endLine": 168,
+        "endChar": 26
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849fe298_b9055e9e",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 67,
+        "startChar": 61,
+        "endLine": 67,
+        "endChar": 76
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33462384_c6301604",
+        "filename": "ttq/internals/databases/db.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T04:05:50Z",
+      "side": 1,
+      "message": "to",
+      "range": {
+        "startLine": 69,
+        "startChar": 17,
+        "endLine": 69,
+        "endChar": 18
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
