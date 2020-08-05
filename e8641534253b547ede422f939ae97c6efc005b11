@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39c54c4b_407db048",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T05:03:26Z",
+      "side": 1,
+      "message": "LGTM, but I am not sure it will help\nhttps://ci.chromium.org/p/fuchsia/builders/try/fuchsia-arm64-release/b8872932953473016912\ngot stuck for 40min. This smells like a race/deadlock",
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f55fb3cf_bdfd2424",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T05:03:26Z",
+      "side": 1,
+      "message": "this looks magical. \ndispatcher never asks for more than 1, so I think this should stay 1\nhttps://godoc.org/golang.org/x/time/rate#Limiter.Burst",
+      "range": {
+        "startLine": 54,
+        "startChar": 61,
+        "endLine": 54,
+        "endChar": 62
+      },
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c81126e4_dc9decb7",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T05:03:26Z",
+      "side": 1,
+      "message": "server will reject requests with \u003e500 items.\nperhaps we should add a comment about this here, so that we don\u0027t attempt to increase this again",
+      "range": {
+        "startLine": 56,
+        "startChar": 18,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
