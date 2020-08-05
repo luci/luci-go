@@ -125,36 +125,33 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 		}
 	}
 
-	cfg, err := getConfigByID(c, req.Id)
-	if err != nil {
-		return nil, err
-	}
+	var ret *config.Config
 
-	amt, err := cfg.Config.ComputeAmount(req.Config.GetCurrentAmount(), clock.Now(c))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to parse amount").Err()
-	}
-	if amt == cfg.Config.CurrentAmount {
-		return &cfg.Config, nil
-	}
 	if err := datastore.RunInTransaction(c, func(c context.Context) error {
-		switch err := datastore.Get(c, cfg); {
-		case err == datastore.ErrNoSuchEntity:
-			return status.Errorf(codes.NotFound, "no config found with ID %q", req.Id)
+		cfg, err := getConfigByID(c, req.Id)
+		if err != nil {
+			return err
+		}
+		ret = &cfg.Config
+
+		amt, err := cfg.Config.ComputeAmount(req.Config.GetCurrentAmount(), clock.Now(c))
+		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch config").Err()
-		case cfg.Config.CurrentAmount == amt:
+			return errors.Annotate(err, "failed to parse amount").Err()
+		case amt == cfg.Config.CurrentAmount:
+			return nil
+		default:
+			cfg.Config.CurrentAmount = amt
+			if err := datastore.Put(c, cfg); err != nil {
+				return errors.Annotate(err, "failed to store config").Err()
+			}
 			return nil
 		}
-		cfg.Config.CurrentAmount = amt
-		if err := datastore.Put(c, cfg); err != nil {
-			return errors.Annotate(err, "failed to store config").Err()
-		}
-		return nil
 	}, nil); err != nil {
 		return nil, err
 	}
-	return &cfg.Config, nil
+
+	return ret, nil
 }
 
 // configPrelude ensures the user is authorized to use the config API.
