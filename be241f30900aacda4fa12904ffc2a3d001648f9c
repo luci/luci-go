@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24f792cb_dbc26b4d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-05T00:22:31Z",
+      "side": 1,
+      "message": "Do you have a bug for the context on this?",
+      "revId": "be241f30900aacda4fa12904ffc2a3d001648f9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
