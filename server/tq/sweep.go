@@ -21,8 +21,10 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/sync/parallel"
+
 	"go.chromium.org/luci/server/tq/internal/sweep"
 	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
+	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/partition"
 )
 
@@ -31,10 +33,16 @@ import (
 //
 // TaskClass's Payload, Kind and Handler will be set to necessary values. Rest
 // of the fields (used to decide how to route the task) are used as given.
+//
+// Will use the dispatcher's Submitter to submit Cloud Tasks. It should be set
+// already.
 func NewDistributedSweeper(disp *Dispatcher, tc TaskClass) Sweeper {
 	// We adapt sweep.Distributed to use Dispatcher task routing since it can't
 	// do it itself due to package import cycles.
-	distr := &sweep.Distributed{}
+	if disp.Submitter == nil {
+		panic("the Dispatcher has no Submitter set")
+	}
+	distr := &sweep.Distributed{Submitter: disp.Submitter}
 	distr.EnqueueSweepTask = sweepTaskRouting(disp, tc, distr.ExecSweepTask)
 	return sweeperImpl{enqueue: distr.EnqueueSweepTask}
 }
@@ -46,17 +54,26 @@ type sweeperImpl struct {
 	enqueue func(ctx context.Context, task *sweeppb.SweepTask) error
 }
 
-// startSweep initiates an asynchronous sweep of given partitions.
+// startSweep initiates an asynchronous sweep of given partitions across all
+// registered databases.
 func (s sweeperImpl) startSweep(ctx context.Context, partitions []*partition.Partition) error {
 	return parallel.WorkPool(16, func(work chan<- func() error) {
-		for shard, part := range partitions {
-			task := &sweeppb.SweepTask{
-				Partition:  part.String(),
-				ShardCount: int32(len(partitions)),
-				ShardIndex: int32(shard),
-				Level:      0,
+		for _, db := range databases.Kinds() {
+			for shard, part := range partitions {
+				task := &sweeppb.SweepTask{
+					Db:                  db,
+					Partition:           part.String(),
+					LessorId:            db, // TODO: make configurable
+					LeaseSectionId:      fmt.Sprintf("%s_%d_%d", db, shard, len(partitions)),
+					ShardCount:          int32(len(partitions)),
+					ShardIndex:          int32(shard),
+					Level:               0,
+					KeySpaceBytes:       int32(reminderKeySpaceBytes),
+					TasksPerScan:        2048, // TODO: make configurable
+					SecondaryScanShards: 16,   // TODO: make configurable
+				}
+				work <- func() error { return s.enqueue(ctx, task) }
 			}
-			work <- func() error { return s.enqueue(ctx, task) }
 		}
 	})
 }
