@@ -117,6 +117,8 @@ func TestQueryTestResults(t *testing.T) {
 					insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
 					insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
 					insert.TestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
+
+					insert.TestExonerations("inv0", "T1", nil, 1),
 				)...)
 
 				Convey(`Works`, func() {
@@ -144,6 +146,14 @@ func TestQueryTestResults(t *testing.T) {
 						},
 					}
 					So(mustFetchNames(q), ShouldResemble, []string{
+						"invocations/inv1/tests/T4/results/0",
+					})
+				})
+				Convey(`ExcludeExonerated`, func() {
+					q.Predicate.ExcludeExonerated = true
+					So(mustFetchNames(q), ShouldResemble, []string{
+						"invocations/inv0/tests/T2/results/0",
+						"invocations/inv1/tests/T2/results/0",
 						"invocations/inv1/tests/T4/results/0",
 					})
 				})
