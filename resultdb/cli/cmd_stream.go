@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -107,6 +108,11 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	}
 	if err := pbutil.ValidateVariant(&pb.Variant{Def: r.vars}); err != nil {
 		return errors.Annotate(err, "invalid variant").Err()
+	}
+	if r.realm != "" {
+		if err := realms.ValidateRealmName(r.realm, realms.GlobalScope); err != nil {
+			return errors.Annotate(err, "invalid realm").Err()
+		}
 	}
 	return nil
 }
