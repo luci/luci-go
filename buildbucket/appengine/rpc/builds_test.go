@@ -49,6 +49,12 @@ func TestBuilds(t *testing.T) {
 				So(err, ShouldErrLike, "method not implemented")
 				So(rsp, ShouldBeNil)
 			})
+
+			Convey("UpdateBuild", func() {
+				rsp, err := srv.UpdateBuild(ctx, nil)
+				So(err, ShouldErrLike, "method not implemented")
+				So(rsp, ShouldBeNil)
+			})
 		})
 	})
 }

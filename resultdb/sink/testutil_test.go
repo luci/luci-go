@@ -112,9 +112,6 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		Artifacts: map[string]*sinkpb.Artifact{
 			"art1": artf,
 		},
-		TestLocation: &pb.TestLocation{
-			FileName: "//a_test.cc",
-		},
 	}, cleanup
 }
 

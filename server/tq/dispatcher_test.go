@@ -16,7 +16,6 @@ package tq
 
 import (
 	"context"
-	"fmt"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -32,12 +31,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/tq/tqtesting"
 
 	ttqt "go.chromium.org/luci/ttq/internals/testing"
 
@@ -134,7 +131,7 @@ func TestAddTask(t *testing.T) {
 			So(submitter.reqs, ShouldHaveLength, 1)
 			So(submitter.reqs[0].Task.Name, ShouldEqual,
 				"projects/proj/locations/reg/queues/queue-1/tasks/"+
-					"ca0a124846df4b453ae63e3ad7c63073b0d25941c6e63e5708fd590c016edcef")
+					"cd953b04d276a05bdd0846091e9f0171d4e32465add60314d65aef9ef5fded0b")
 		})
 
 		Convey("Titleless task", func() {
@@ -174,46 +171,6 @@ func TestAddTask(t *testing.T) {
 			So(err, ShouldErrLike, "no task class matching type")
 			So(submitter.reqs, ShouldHaveLength, 0)
 		})
-
-		Convey("Custom task payload on GAE", func() {
-			d.GAE = true
-			d.DefaultTargetHost = ""
-			d.RegisterTaskClass(TaskClass{
-				ID:        "test-ts",
-				Prototype: &timestamppb.Timestamp{}, // just some proto type
-				Queue:     "queue-1",
-				Custom: func(ctx context.Context, m proto.Message) (*CustomPayload, error) {
-					ts := m.(*timestamppb.Timestamp)
-					return &CustomPayload{
-						Method:      "GET",
-						Headers:     map[string]string{"k": "v"},
-						RelativeURI: "/zzz",
-						Body:        []byte(fmt.Sprintf("%d", ts.Seconds)),
-					}, nil
-				},
-			})
-
-			So(d.AddTask(ctx, &Task{
-				Payload: &timestamppb.Timestamp{Seconds: 123},
-				Delay:   444 * time.Second,
-			}), ShouldBeNil)
-
-			So(submitter.reqs, ShouldHaveLength, 1)
-			So(submitter.reqs[0], ShouldResembleProto, &taskspb.CreateTaskRequest{
-				Parent: "projects/proj/locations/reg/queues/queue-1",
-				Task: &taskspb.Task{
-					ScheduleTime: timestamppb.New(now.Add(444 * time.Second)),
-					MessageType: &taskspb.Task_AppEngineHttpRequest{
-						AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
-							HttpMethod:  taskspb.HttpMethod_GET,
-							RelativeUri: "/zzz",
-							Headers:     map[string]string{"k": "v"},
-							Body:        []byte("123"),
-						},
-					},
-				},
-			})
-		})
 	})
 }
 
@@ -234,7 +191,7 @@ func TestPushHandler(t *testing.T) {
 		})
 
 		srv := router.New()
-		d.InstallTasksRoutes(srv, "/pfx")
+		d.InstallRoutes(srv, "/pfx")
 
 		call := func(body string) int {
 			req := httptest.NewRequest("POST", "/pfx/ignored/part", strings.NewReader(body))
@@ -397,51 +354,6 @@ func TestTransactionalEnqueue(t *testing.T) {
 			db.ExecDefers(ctx)
 			So(db.AllReminders(), ShouldHaveLength, 1)
 			So(submitter.reqs, ShouldBeEmpty)
-		})
-	})
-}
-
-func TestTesting(t *testing.T) {
-	t.Parallel()
-
-	Convey("Works", t, func() {
-		var epoch = testclock.TestRecentTimeUTC
-
-		ctx, tc := testclock.UseTime(context.Background(), epoch)
-		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
-			if testclock.HasTags(t, tqtesting.ClockTag) {
-				tc.Add(d)
-			}
-		})
-
-		disp := Dispatcher{}
-		sched := disp.SchedulerForTest()
-
-		m := sync.Mutex{}
-		etas := []time.Duration{}
-
-		disp.RegisterTaskClass(TaskClass{
-			ID:        "test-dur",
-			Prototype: &durationpb.Duration{}, // just some proto type
-			Queue:     "queue-1",
-			Handler: func(ctx context.Context, msg proto.Message) error {
-				m.Lock()
-				etas = append(etas, clock.Now(ctx).Sub(epoch))
-				m.Unlock()
-				if clock.Now(ctx).Sub(epoch) < 3*time.Second {
-					disp.AddTask(ctx, &Task{
-						Payload: &durationpb.Duration{},
-						Delay:   time.Second,
-					})
-				}
-				return nil
-			},
-		})
-
-		So(disp.AddTask(ctx, &Task{Payload: &durationpb.Duration{}}), ShouldBeNil)
-		sched.Run(ctx, tqtesting.StopWhenDrained())
-		So(etas, ShouldResemble, []time.Duration{
-			0, 1 * time.Second, 2 * time.Second, 3 * time.Second,
 		})
 	})
 }

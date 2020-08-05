@@ -37,8 +37,6 @@ const (
 	invocationExpirationDuration = 2 * 365 * day // 2 y
 )
 
-var defaultRealm = realms.Join("chromium", "public")
-
 // rowOfInvocation returns Invocation row values to be inserted to create the
 // invocation.
 // inv.CreateTime is ignored in favor of spanner.CommitTime.
@@ -48,7 +46,7 @@ func (s *deriverServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation,
 		"InvocationId": invocations.MustParseName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, invocations.Shards),
 		"State":        inv.State,
-		"Realm":        defaultRealm,
+		"Realm":        realms.Join("chromium", "public"),
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
 		"ExpectedTestResultsExpirationTime": now.Add(s.ExpectedResultsExpiration),

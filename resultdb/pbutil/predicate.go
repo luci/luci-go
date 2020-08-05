@@ -52,6 +52,10 @@ func ValidateTestResultPredicate(p *pb.TestResultPredicate) error {
 		return errors.Annotate(err, "expectancy").Err()
 	}
 
+	if p.GetExcludeExonerated() && p.GetExpectancy() == pb.TestResultPredicate_ALL {
+		return errors.Reason("exclude_exonerated and expectancy=ALL are mutually exclusive").Err()
+	}
+
 	return validateTestObjectPredicate(p)
 }
 

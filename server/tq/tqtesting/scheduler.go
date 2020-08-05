@@ -39,15 +39,10 @@ const ClockTag = "tq-scheduler-sleep"
 // Scheduler knows how to execute submitted tasks when they are due.
 //
 // This is a very primitive in-memory version of Cloud Tasks service that can be
-// used in tests and on localhost. Must be configured before the first Run call.
-// Can be reconfigured between Run calls, but changing the configuration while
-// Run is running is not allowed.
+// used in tests and on localhost.
 //
 // Scheduler implements tq.Submitter interface.
 type Scheduler struct {
-	// Executor knows how to execute tasks when their ETA arrives.
-	Executor Executor
-
 	// MaxAttempts is the maximum number of attempts for a task, including the
 	// first attempt.
 	//
@@ -204,13 +199,14 @@ func (s *Scheduler) Tasks() []*Task {
 	return tasks
 }
 
-// Run executes the scheduler's loop until the context is canceled or one of
-// the stop conditions are hit.
+// Run executes the scheduler's loop until the context is canceled.
 //
-// Upon exit all executing tasks has finished, there still may be pending tasks.
+// Upon exit:
+//   * The context is canceled.
+//   * All executing tasks has finished, there still may be pending tasks.
 //
 // Panics if Run is already running (perhaps in another goroutine).
-func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
+func (s *Scheduler) Run(ctx context.Context, e Executor) {
 	func() {
 		s.m.Lock()
 		defer s.m.Unlock()
@@ -232,15 +228,12 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 	defer s.wg.Wait()
 
 	for ctx.Err() == nil {
-		if s.shouldStop(opts) {
-			return
-		}
 		switch task, nextETA, taskDone := s.tryDequeueTask(ctx); {
 		case task != nil:
 			// Pass the task to the executor. It may either execute it right away
 			// or asynchronously later. Either way, when it is done it will call
 			// the finalization callback.
-			s.Executor.Execute(ctx, task, taskDone)
+			e.Execute(ctx, task, taskDone)
 		case !nextETA.IsZero():
 			select {
 			case <-s.wakeUp:
@@ -258,14 +251,9 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 // enqueueLocked adds the task to the task heap and wakes up the scheduler.
 func (s *Scheduler) enqueueLocked(task *Task) {
 	heap.Push(&s.tasks, task)
-	s.wakeUpLocked()
-}
 
-// wakeUpLocked signals s.wakeUp channel.
-//
-// This would wake up Run if it is listening or does nothing if wakeUp is nil
-// (i.e. Run is not running).
-func (s *Scheduler) wakeUpLocked() {
+	// This would wake up Run if it is listening or does nothing if wakeUp is nil
+	// (i.e. Run is not running).
 	select {
 	case s.wakeUp <- struct{}{}:
 	default:
@@ -324,10 +312,6 @@ func (s *Scheduler) tryDequeueTask(ctx context.Context) (t *Task, eta time.Time,
 				reenqueued = true
 			}
 		}
-
-		if !reenqueued {
-			s.wakeUpLocked() // to let Run examine stop conditions
-		}
 	}
 }
 
@@ -357,20 +341,6 @@ func (s *Scheduler) evalRetryLocked(t *Task) (retry bool, delay time.Duration) {
 		delay = maxBackoff
 	}
 	return true, delay
-}
-
-// shouldStop returns true if the scheduler should stop now.
-//
-// TODO(vadimsh): Support more complicated stop conditions.
-func (s *Scheduler) shouldStop(opts []RunOption) bool {
-	s.m.Lock()
-	defer s.m.Unlock()
-	for _, opt := range opts {
-		if _, ok := opt.(stopWhenDrained); ok && len(s.tasks) == 0 && len(s.executing) == 0 {
-			return true
-		}
-	}
-	return false
 }
 
 // checkClockLocked panics if `ctx` uses an unexpected clock.

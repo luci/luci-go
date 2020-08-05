@@ -66,14 +66,13 @@ func TestReportTestResults(t *testing.T) {
 		defer cleanup()
 
 		expected := &pb.TestResult{
-			TestId:       tr.TestId,
-			ResultId:     tr.ResultId,
-			Expected:     tr.Expected,
-			SummaryHtml:  tr.SummaryHtml,
-			StartTime:    tr.StartTime,
-			Duration:     tr.Duration,
-			Tags:         tr.Tags,
-			TestLocation: tr.TestLocation,
+			TestId:      tr.TestId,
+			ResultId:    tr.ResultId,
+			Expected:    tr.Expected,
+			SummaryHtml: tr.SummaryHtml,
+			StartTime:   tr.StartTime,
+			Duration:    tr.Duration,
+			Tags:        tr.Tags,
 		}
 
 		Convey("works", func() {

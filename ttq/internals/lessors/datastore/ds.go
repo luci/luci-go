@@ -26,32 +26,25 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-
 	"go.chromium.org/luci/ttq/internals"
 	"go.chromium.org/luci/ttq/internals/partition"
 )
-
-func init() {
-	internals.RegisterLessor("datastore", func(context.Context) (internals.Lessor, error) {
-		return &Lessor{}, nil
-	})
-}
 
 // Lessor implements internal.Lessor on top of Cloud Datastore.
 type Lessor struct {
 }
 
-// WithLease acquires the lease and executes WithLeaseCB.
+// WithLease acquires the lease and executes WithLeaseClbk.
 // The obtained lease duration may be shorter than requested.
 // The obtained lease may be only for some parts of the desired Partition.
-func (l *Lessor) WithLease(ctx context.Context, sectionID string, part *partition.Partition, dur time.Duration, clbk internals.WithLeaseCB) error {
+func (l *Lessor) WithLease(ctx context.Context, shard int, part *partition.Partition, dur time.Duration, clbk internals.WithLeaseClbk) error {
 	expiresAt := clock.Now(ctx).Add(dur)
 	if d, ok := ctx.Deadline(); ok && expiresAt.After(d) {
 		expiresAt = d
 	}
 	expiresAt = ds.RoundTime(expiresAt)
 
-	lease, err := l.acquire(ctx, sectionID, part, expiresAt)
+	lease, err := l.acquire(ctx, shard, part, expiresAt)
 	if err != nil {
 		return err
 	}
@@ -65,12 +58,12 @@ func (l *Lessor) WithLease(ctx context.Context, sectionID string, part *partitio
 
 var _ internals.Lessor = (*Lessor)(nil)
 
-func (*Lessor) acquire(ctx context.Context, sectionID string, desired *partition.Partition, expiresAt time.Time) (*lease, error) {
+func (*Lessor) acquire(ctx context.Context, shard int, desired *partition.Partition, expiresAt time.Time) (*lease, error) {
 	var acquired *lease
 	deletedExpired := 0
 	err := ds.RunInTransaction(ctx, func(ctx context.Context) error {
 		deletedExpired = 0 // reset in case of retries.
-		active, expired, err := loadAll(ctx, sectionID)
+		active, expired, err := loadAll(ctx, shard)
 		if err != nil {
 			return err
 		}
@@ -89,7 +82,7 @@ func (*Lessor) acquire(ctx context.Context, sectionID string, desired *partition
 		if err != nil {
 			return errors.Annotate(err, "failed to decode available leases").Err()
 		}
-		acquired, err = save(ctx, sectionID, expiresAt, parts)
+		acquired, err = save(ctx, shard, expiresAt, parts)
 		return err
 	}, &ds.TransactionOptions{Attempts: 5})
 	if err != nil {
@@ -103,8 +96,10 @@ func (*Lessor) acquire(ctx context.Context, sectionID string, desired *partition
 	return acquired, nil
 }
 
-func leasesRootKey(ctx context.Context, sectionID string) *ds.Key {
-	return ds.NewKey(ctx, "ttq.leasesRoot", sectionID, 0, nil)
+func leasesRootKey(ctx context.Context, shard int) *ds.Key {
+	// Integer ID of 0 are not allowed, so add 1000000 s.t. it's clear which shard
+	// an entity belongs to visually.
+	return ds.NewKey(ctx, "ttq.leasesRoot", "", 1000000+int64(shard), nil)
 }
 
 type lease struct {
@@ -119,7 +114,7 @@ type lease struct {
 	parts partition.SortedPartitions `gae:"-"`
 }
 
-func save(ctx context.Context, sectionID string, expiresAt time.Time, parts partition.SortedPartitions) (*lease, error) {
+func save(ctx context.Context, shard int, expiresAt time.Time, parts partition.SortedPartitions) (*lease, error) {
 	if len(parts) == 0 {
 		return &lease{
 			ExpiresAt: expiresAt,
@@ -129,7 +124,7 @@ func save(ctx context.Context, sectionID string, expiresAt time.Time, parts part
 
 	l := &lease{
 		// ID will be autoassgined.
-		Parent:          leasesRootKey(ctx, sectionID),
+		Parent:          leasesRootKey(ctx, shard),
 		SerializedParts: make([]string, len(parts)),
 		ExpiresAt:       expiresAt.UTC(),
 		parts:           parts,
@@ -149,14 +144,14 @@ func (l *lease) delete(ctx context.Context) {
 	}
 	if err := ds.Delete(ctx, l); err != nil {
 		// Log only. Once lease expires, it'll garbage-collected next time a new
-		// lease is acquired for the same sectionID.
+		// lease is acquired for the same shard.
 		logging.Warningf(ctx, "failed to delete lease %v", l)
 	}
 }
 
-func loadAll(ctx context.Context, sectionID string) (active, expired []*lease, err error) {
+func loadAll(ctx context.Context, shard int) (active, expired []*lease, err error) {
 	var all []*lease
-	q := ds.NewQuery("ttq.lease").Ancestor(leasesRootKey(ctx, sectionID))
+	q := ds.NewQuery("ttq.lease").Ancestor(leasesRootKey(ctx, shard))
 	if err := ds.GetAll(ctx, q, &all); err != nil {
 		return nil, nil, errors.Annotate(err, "failed to fetch leases").Tag(transient.Tag).Err()
 	}

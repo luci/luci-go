@@ -50,21 +50,16 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/server/tq/tqtesting"
 	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/partition"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
-//
-// Can be instantiated directly in tests. Production code should generally use
-// the dispatcher configured by the tq server module (which is global Default
-// dispatcher). See NewModuleWithFlags() and ModuleOptions.
 type Dispatcher struct {
 	// Submitter is used to submit Cloud Tasks tasks.
 	//
@@ -73,14 +68,6 @@ type Dispatcher struct {
 	//
 	// If not set, task submissions will fail.
 	Submitter Submitter
-
-	// Namespace is a namespace for tasks that use DeduplicationKey.
-	//
-	// This is needed if two otherwise independent deployments share a single
-	// Cloud Tasks instance.
-	//
-	// Must be valid per ValidateNamespace. Default is "".
-	Namespace string
 
 	// GAE is true when running on Appengine.
 	//
@@ -103,7 +90,7 @@ type Dispatcher struct {
 	// If not set, submission of tasks that use short queue names will fail.
 	CloudRegion string
 
-	// DefaultRoutingPrefix is a URL prefix for produced Cloud Tasks.
+	// DefaultRoutingPrefix is an URL prefix for produced Cloud Tasks.
 	//
 	// Used only for tasks whose TaskClass doesn't provide some custom
 	// RoutingPrefix.
@@ -142,18 +129,6 @@ type Dispatcher struct {
 	// Optional.
 	AuthorizedPushers []string
 
-	// Sweeper knows how to launch sweeps of the transactional tasks reminders.
-	Sweeper Sweeper
-
-	// SweepShards defines how many subtasks to produce in each Sweep.
-	//
-	// Default is 16.
-	SweepShards int
-
-	// SweepInitiationLaunchers is a list of service account emails authorized to
-	// launch sweeps via the exposed HTTP endpoint.
-	SweepInitiationLaunchers []string
-
 	mu       sync.RWMutex
 	clsByID  map[string]*taskClassImpl
 	clsByTyp map[protoreflect.MessageType]*taskClassImpl
@@ -170,14 +145,6 @@ type Submitter interface {
 	//
 	// Will be called from multiple goroutines at once.
 	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
-}
-
-// Sweeper knows how to launch sweeps of the transaction tasks reminders.
-type Sweeper interface {
-	// startSweep initiates an asynchronous sweep of given partitions.
-	//
-	// They are sorted, disjoint and together cover the entire key space.
-	startSweep(ctx context.Context, partitions []*partition.Partition) error
 }
 
 // TaskKind describes how a task class interoperates with transactions.
@@ -251,7 +218,7 @@ type TaskClass struct {
 	// Required. The queue must exist already.
 	Queue string
 
-	// RoutingPrefix is a URL prefix for produced Cloud Tasks.
+	// RoutingPrefix is an URL prefix for produced Cloud Tasks.
 	//
 	// Default is dispatcher's DefaultRoutingPrefix which itself defaults to
 	// "/internal/tasks/t/". It means generated Cloud Tasks by default will have
@@ -266,23 +233,6 @@ type TaskClass struct {
 	// If unset, will use dispatcher's DefaultTargetHost.
 	TargetHost string
 
-	// Custom, if given, will be called to generate a custom Cloud Tasks payload
-	// (i.e. a to-be-sent HTTP request) from the task's proto payload.
-	//
-	// Useful for interoperability with existing code that doesn't use dispatcher.
-	//
-	// It is possible to customize HTTP method, relative URI, headers and the
-	// request body this way. Other properties of the task (such as the target
-	// host, the queue, the task name, authentication headers) are not
-	// customizable.
-	//
-	// Such produced tasks are generally not routable by the Dispatcher. You'll
-	// need to make sure there's an HTTP handler that accepts them.
-	//
-	// Receives the exact same context as passed to AddTask. If returns nil
-	// result, the task will be dispatched as usual.
-	Custom func(ctx context.Context, m proto.Message) (*CustomPayload, error)
-
 	// Handler will be called by the dispatcher to execute the tasks.
 	//
 	// The handler will receive the task's payload as a proto message of the exact
@@ -296,14 +246,6 @@ type TaskClass struct {
 	// The dispatcher will permanently fail Cloud Tasks if it can't find a handler
 	// for them.
 	Handler Handler
-}
-
-// CustomPayload is returned by TaskClass's Custom, see its doc.
-type CustomPayload struct {
-	Method      string            // e.g. "GET" or "POST"
-	RelativeURI string            // an URI relative to the task's target host
-	Headers     map[string]string // HTTP headers to attach
-	Body        []byte            // serialized body of the request
 }
 
 // TaskClassRef represents a TaskClass registered in a Dispatcher.
@@ -391,18 +333,6 @@ var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
 // An untagged error (or success) marks the task as "done", it won't be retried.
 type Handler func(ctx context.Context, payload proto.Message) error
 
-// ValidateNamespace returns an error if `n` is not a valid namespace name.
-//
-// An empty string is a valid namespace (denoting the default namespace). Other
-// valid namespaces must start with an ASCII letter or '_', contain only
-// ASCII letters, digits or '_', and be less than 50 chars in length.
-func ValidateNamespace(n string) error {
-	if n != "" && !namespaceRe.MatchString(n) {
-		return errors.New("must start with a letter or '_' and contain only letters, numbers and '_'")
-	}
-	return nil
-}
-
 // RegisterTaskClass tells the dispatcher how to route and handle tasks of some
 // particular type.
 //
@@ -448,6 +378,35 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	d.clsByID[cls.ID] = impl
 	d.clsByTyp[typ] = impl
 	return impl
+}
+
+// InstallRoutes installs HTTP routes under the given prefix.
+//
+// The exposed HTTP endpoints are called by Cloud Tasks service when it is time
+// to execute a task.
+func (d *Dispatcher) InstallRoutes(r *router.Router, prefix string) {
+	if prefix == "" {
+		prefix = "/internal/tasks/"
+	} else if !strings.HasPrefix(prefix, "/") {
+		panic("the prefix should start with /")
+	}
+
+	// We don't really care about the exact format of URLs. At the same time
+	// accepting all requests under InternalRoutingPrefix is necessary for
+	// compatibility with "appengine/tq" which used totally different URL format.
+	prefix = strings.TrimRight(prefix, "/") + "/*path"
+	r.POST(prefix, d.authorize(), func(c *router.Context) {
+		switch err := d.handlePush(c.Context, c.Request); {
+		case err == nil:
+			httpReply(c, 200, "OK", nil)
+		case Retry.In(err):
+			httpReply(c, 409, "The handler asked for retry", err)
+		case transient.Tag.In(err):
+			httpReply(c, 500, "Transient error", err)
+		default:
+			httpReply(c, 202, "Fatal error", err)
+		}
+	})
 }
 
 // AddTask submits a task for later execution.
@@ -574,20 +533,6 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	return nil
 }
 
-// Sweep initiates a sweep of transactional tasks reminders.
-//
-// It must be called periodically (e.g. once per minute) somewhere in the fleet.
-func (d *Dispatcher) Sweep(ctx context.Context) error {
-	if d.Sweeper == nil {
-		return errors.New("can't sweep: the Sweeper is not set")
-	}
-	shards := d.SweepShards
-	if shards <= 0 {
-		shards = 16
-	}
-	return d.Sweeper.startSweep(ctx, partition.Universe(reminderKeySpaceBytes).Split(shards))
-}
-
 // enqueueTask submits the prepared task.
 //
 // Recognized AlreadyExists as a success. Annotated retriable errors with
@@ -612,145 +557,13 @@ func (d *Dispatcher) enqueueTask(ctx context.Context, req *taskspb.CreateTaskReq
 	}
 }
 
-// SchedulerForTest switches the dispatcher into testing mode.
-//
-// In this mode tasks are enqueued into a tqtesting.Scheduler, which executes
-// them by submitting them back into the Dispatcher (each task in a separate
-// goroutine).
-//
-// SchedulerForTest should be called before first AddTask call.
-//
-// Returns the instantiated tqtesting.Scheduler. It is in the stopped state.
-func (d *Dispatcher) SchedulerForTest() *tqtesting.Scheduler {
-	if d.Submitter != nil {
-		panic("Dispatcher is already configured to use some submitter")
-	}
-	if d.CloudProject == "" {
-		d.CloudProject = "tq-project"
-	}
-	if d.CloudRegion == "" {
-		d.CloudRegion = "tq-region"
-	}
-	if d.DefaultTargetHost == "" {
-		d.DefaultTargetHost = "127.0.0.1" // not actually used
-	}
-	if d.PushAs == "" {
-		d.PushAs = "tq-pusher@example.com"
-	}
-	sched := &tqtesting.Scheduler{Executor: directExecutor{d}}
-	d.Submitter = sched
-	return sched
-}
-
-// directExecutor implements tqtesting.Executor via handlePush.
-type directExecutor struct {
-	d *Dispatcher
-}
-
-func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
-	go func() {
-		var body []byte
-		switch mt := t.Task.MessageType.(type) {
-		case *taskspb.Task_HttpRequest:
-			body = mt.HttpRequest.Body
-		case *taskspb.Task_AppEngineHttpRequest:
-			body = mt.AppEngineHttpRequest.Body
-		default:
-			panic(fmt.Sprintf("Bad task, no payload: %q", t.Task))
-		}
-		err := e.d.handlePush(ctx, body)
-		done(Retry.In(err) || transient.Tag.In(err))
-	}()
-}
-
-// InstallTasksRoutes installs tasks HTTP routes under the given prefix.
-//
-// The exposed HTTP endpoints are called by Cloud Tasks service when it is time
-// to execute a task.
-func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
-	if prefix == "" {
-		prefix = "/internal/tasks/"
-	} else if !strings.HasPrefix(prefix, "/") {
-		panic("the prefix should start with /")
-	}
-
-	var mw router.MiddlewareChain
-	if !d.NoAuth {
-		// Tasks are primarily submitted as `PushAs`, but we also accept all
-		// `AuthorizedPushers`.
-		pushers := append([]string{d.PushAs}, d.AuthorizedPushers...)
-		// On GAE X-Appengine-* headers can be trusted. Check we are being called
-		// by Cloud Tasks. We don't care by which queue exactly though. It is
-		// easier to move tasks between queues that way.
-		header := ""
-		if d.GAE {
-			header = "X-Appengine-Queue"
-		}
-		mw = authMiddleware(pushers, header)
-	}
-
-	// We don't really care about the exact format of URLs. At the same time
-	// accepting all requests under InternalRoutingPrefix is necessary for
-	// compatibility with "appengine/tq" which used totally different URL format.
-	prefix = strings.TrimRight(prefix, "/") + "/*path"
-	r.POST(prefix, mw, func(c *router.Context) {
-		// TODO(vadimsh): Parse magic headers to get the attempt count.
-		body, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			httpReply(c, 500, "Failed to read the request", err)
-			return
-		}
-		switch err := d.handlePush(c.Context, body); {
-		case err == nil:
-			httpReply(c, 200, "OK", nil)
-		case Retry.In(err):
-			httpReply(c, 409, "The handler asked for retry", err)
-		case transient.Tag.In(err):
-			httpReply(c, 500, "Transient error", err)
-		default:
-			httpReply(c, 202, "Fatal error", err)
-		}
-	})
-}
-
-// InstallSweepRoute installs a route that initiates a sweep.
-//
-// It may be called periodically (e.g. by Cloud Scheduler) to launch sweeps.
-func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
-	var mw router.MiddlewareChain
-	if !d.NoAuth {
-		// On GAE X-Appengine-* headers can be trusted. Check we are being called
-		// by Cloud Scheduler.
-		header := ""
-		if d.GAE {
-			header = "X-Appengine-Cron"
-		}
-		mw = authMiddleware(d.SweepInitiationLaunchers, header)
-	}
-
-	r.GET(path, mw, func(c *router.Context) {
-		switch err := d.Sweep(c.Context); {
-		case err == nil:
-			httpReply(c, 200, "OK", nil)
-		case transient.Tag.In(err):
-			httpReply(c, 500, "Transient error", err)
-		default:
-			httpReply(c, 202, "Fatal error", err)
-		}
-	})
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 // defaultHeaders are added to all submitted Cloud Tasks.
 var defaultHeaders = map[string]string{"Content-Type": "application/json"}
 
-var (
-	// namespaceRe is used to validate Dispatcher.Namespace.
-	namespaceRe = regexp.MustCompile(`^[a-zA-Z_][0-9a-zA-Z_]{0,49}$`)
-	// taskClassIDRe is used to validate TaskClass.ID.
-	taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
-)
+// taskClassIDRe is used to validate TaskClass.ID.
+var taskClassIDRe = regexp.MustCompile(`^[a-zA-Z0-9_\-.]{1,100}$`)
 
 const (
 	// reminderKeySpaceBytes defines the space of the Reminder Ids.
@@ -783,6 +596,11 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 		return nil, nil, err
 	}
 
+	body, err := cls.serialize(t)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	queueID, err := d.queueID(cls.Queue)
 	if err != nil {
 		return nil, nil, err
@@ -790,7 +608,7 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 
 	taskID := ""
 	if t.DeduplicationKey != "" {
-		taskID = queueID + "/tasks/" + cls.taskName(t, d.Namespace)
+		taskID = queueID + "/tasks/" + cls.taskName(t)
 	}
 
 	var scheduleTime *timestamppb.Timestamp
@@ -805,36 +623,9 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 	}
 
 	// E.g. ("example.com", "/internal/tasks/t/<class>[/<title>]").
-	// Note: relativeURI is discarded when using custom payload.
 	host, relativeURI, err := d.taskTarget(cls, t)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	var payload *CustomPayload
-	if cls.Custom != nil {
-		if payload, err = cls.Custom(ctx, t.Payload); err != nil {
-			return nil, nil, err
-		}
-	}
-	if payload == nil {
-		// This is not really a "custom" payload, we are just reusing the struct.
-		payload = &CustomPayload{
-			Method:      "POST",
-			RelativeURI: relativeURI,
-			Headers:     defaultHeaders,
-		}
-		if payload.Body, err = cls.serialize(t); err != nil {
-			return nil, nil, err
-		}
-	}
-
-	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
-	if method == 0 {
-		return nil, nil, errors.Reason("bad HTTP method %q", payload.Method).Err()
-	}
-	if !strings.HasPrefix(payload.RelativeURI, "/") {
-		return nil, nil, errors.Reason("bad relative URI %q", payload.RelativeURI).Err()
 	}
 
 	// We need to populate one of Task.MessageType oneof alternatives. It has
@@ -853,10 +644,10 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 	if host == "" && d.GAE {
 		req.Task.MessageType = &taskspb.Task_AppEngineHttpRequest{
 			AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
-				HttpMethod:  method,
-				RelativeUri: payload.RelativeURI,
-				Headers:     payload.Headers,
-				Body:        payload.Body,
+				HttpMethod:  taskspb.HttpMethod_POST,
+				RelativeUri: relativeURI,
+				Headers:     defaultHeaders,
+				Body:        body,
 			},
 		}
 		return cls, req, nil
@@ -872,10 +663,10 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 
 	req.Task.MessageType = &taskspb.Task_HttpRequest{
 		HttpRequest: &taskspb.HttpRequest{
-			HttpMethod: method,
-			Url:        "https://" + host + payload.RelativeURI,
-			Headers:    payload.Headers,
-			Body:       payload.Body,
+			HttpMethod: taskspb.HttpMethod_POST,
+			Url:        "https://" + host + relativeURI,
+			Headers:    defaultHeaders,
+			Body:       body,
 			AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 				OidcToken: &taskspb.OidcToken{
 					ServiceAccountEmail: d.PushAs,
@@ -979,11 +770,87 @@ func isValidQueue(q string) bool {
 		chunks[5] != ""
 }
 
+// authorize returns a middleware chain that authorizes requests to handlers.
+func (d *Dispatcher) authorize() router.MiddlewareChain {
+	if d.NoAuth {
+		return router.MiddlewareChain{}
+	}
+
+	// We first want to validate the OpenID Connect token in the request (if any)
+	// and then check that thus authenticated caller is authorized to push tasks
+	// to us. On GAE we also trust X-AppEngine-* headers.
+	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+		AudienceCheck: openid.AudienceMatchesHost,
+	})
+	return router.NewMiddlewareChain(oidc, func(c *router.Context, next router.Handler) {
+		// On GAE X-AppEngine-* headers can be trusted. Check we are being called
+		// by Cloud Tasks. We don't care by which queue exactly though. It is
+		// easier to move tasks between queues that way.
+		if d.GAE && c.Request.Header.Get("X-AppEngine-QueueName") != "" {
+			next(c)
+			return
+		}
+
+		// If this is an HttpRequest task, it must have an OpenID token. This can
+		// happen on GAE too if the task was submitted as HttpRequest instead of
+		// AppEngineHttpRequest.
+		if ident := auth.CurrentIdentity(c.Context); ident.Kind() != identity.Anonymous {
+			if d.isAuthorizedPusher(ident) {
+				next(c)
+			} else {
+				httpReply(c, 403,
+					fmt.Sprintf("Caller %q is not authorized", ident),
+					errors.Reason("expecting %q or any of %q", d.PushAs, d.AuthorizedPushers).Err(),
+				)
+			}
+			return
+		}
+
+		// An anonymous request on GAE likely indicates an attempt to use magic
+		// headers.
+		if d.GAE {
+			httpReply(c, 403,
+				"This endpoint can only be called by Cloud Tasks",
+				errors.Reason("no OIDC token and no X-AppEngine-QueueName header").Err(),
+			)
+		} else {
+			httpReply(c, 403,
+				"This endpoint can only be called by Cloud Tasks",
+				errors.Reason("no OIDC token").Err(),
+			)
+		}
+	})
+}
+
+// isAuthorizedPusher is true if `ident` is allowed to push tasks to us.
+func (d *Dispatcher) isAuthorizedPusher(ident identity.Identity) bool {
+	if ident.Kind() != identity.User {
+		return false // we want service accounts
+	}
+	email := ident.Email()
+	if email == d.PushAs {
+		return true
+	}
+	for _, extra := range d.AuthorizedPushers {
+		if email == extra {
+			return true
+		}
+	}
+	return false
+}
+
 // handlePush handles one incoming task.
 //
 // Returns errors annotated in the same style as errors from Handler, see its
 // doc.
-func (d *Dispatcher) handlePush(ctx context.Context, body []byte) error {
+func (d *Dispatcher) handlePush(ctx context.Context, r *http.Request) error {
+	// TODO(vadimsh): Parse magic headers to get the attempt count.
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return errors.Annotate(err, "failed to read the request").Tag(transient.Tag).Err()
+	}
+
 	// See taskClassImpl.serialize().
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
@@ -994,7 +861,6 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte) error {
 	// set. Older ones have `type` instead.
 	var cls *taskClassImpl
 	var h Handler
-	var err error
 	if env.Class != "" {
 		cls, h, err = d.classByID(env.Class)
 	} else if env.Type != "" {
@@ -1063,6 +929,16 @@ func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Err()
 }
 
+// httpReply writes and logs HTTP response.
+//
+// `msg` is sent to the caller as is. `err` is logged, but not sent.
+func httpReply(c *router.Context, code int, msg string, err error) {
+	if err != nil {
+		logging.Errorf(c.Context, "%s: %s", msg, err)
+	}
+	http.Error(c.Writer, msg, code)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // taskClassImpl knows how to prepare and handle tasks of a particular class.
@@ -1093,10 +969,14 @@ func (cls *taskClassImpl) AttachHandler(h Handler) {
 }
 
 // taskName returns a short ID for the task to use to dedup it.
-func (cls *taskClassImpl) taskName(t *Task, namespace string) string {
+func (cls *taskClassImpl) taskName(t *Task) string {
+	// If we need to run in "appengine/tq" compatible mode, cls.ID below should be
+	// replaced with proto.MessageName(t.Payload). But a breaking migration is
+	// inevitable at some point (there's no way to have *two* different task names
+	// at the same time), so might just as well start using ID instead of
+	// MesasgeName right away. Migrating users would have to deal with potentially
+	// duplicate messages for some period of time.
 	h := sha256.New()
-	h.Write([]byte(namespace))
-	h.Write([]byte{0})
 	h.Write([]byte(cls.ID))
 	h.Write([]byte{0})
 	h.Write([]byte(t.DeduplicationKey))
@@ -1134,71 +1014,4 @@ func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
 		return nil, err
 	}
 	return msg, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// authMiddleware returns a middleware chain that authorizes requests from given
-// callers.
-//
-// Checks OpenID Connect tokens have us in the audience, and the email in them
-// is in `callers` list.
-//
-// If `header` is set, will also accept requests that have this header,
-// regardless of its value. This is used to authorize GAE tasks and cron based
-// on `X-AppEngine-*` headers.
-func authMiddleware(callers []string, header string) router.MiddlewareChain {
-	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
-		AudienceCheck: openid.AudienceMatchesHost,
-	})
-	return router.NewMiddlewareChain(oidc, func(c *router.Context, next router.Handler) {
-		if header != "" && c.Request.Header.Get(header) != "" {
-			next(c)
-			return
-		}
-
-		if ident := auth.CurrentIdentity(c.Context); ident.Kind() != identity.Anonymous {
-			if checkContainsIdent(callers, ident) {
-				next(c)
-			} else {
-				httpReply(c, 403,
-					fmt.Sprintf("Caller %q is not authorized", ident),
-					errors.Reason("expecting any of %q", callers).Err(),
-				)
-			}
-			return
-		}
-
-		var err error
-		if header != "" {
-			err = errors.Reason("no OIDC token and no %s header", header).Err()
-		} else {
-			err = errors.Reason("no OIDC token").Err()
-		}
-		httpReply(c, 403, "Authentication required", err)
-	})
-}
-
-// checkContainsIdent is true if `ident` emails matches some of `callers`.
-func checkContainsIdent(callers []string, ident identity.Identity) bool {
-	if ident.Kind() != identity.User {
-		return false // we want service accounts
-	}
-	email := ident.Email()
-	for _, c := range callers {
-		if email == c {
-			return true
-		}
-	}
-	return false
-}
-
-// httpReply writes and logs HTTP response.
-//
-// `msg` is sent to the caller as is. `err` is logged, but not sent.
-func httpReply(c *router.Context, code int, msg string, err error) {
-	if err != nil {
-		logging.Errorf(c.Context, "%s: %s", msg, err)
-	}
-	http.Error(c.Writer, msg, code)
 }
