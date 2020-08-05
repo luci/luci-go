@@ -348,6 +348,30 @@
     },
     {
       "key": {
+        "uuid": "59de6bee_c2cd57f0",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T05:39:03Z",
+      "side": 1,
+      "message": "yes it does.",
+      "parentUuid": "ed00800d_4851ccd7",
+      "range": {
+        "startLine": 56,
+        "startChar": 24,
+        "endLine": 56,
+        "endChar": 43
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b44f979_df58dcde",
         "filename": "resultdb/proto/v1/predicate.proto",
         "patchSetId": 3
@@ -392,6 +416,30 @@
       "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6aa03e2e_fd408622",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T05:39:03Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3f1288c0_aa8a5269",
+      "range": {
+        "startLine": 65,
+        "startChar": 7,
+        "endLine": 65,
+        "endChar": 21
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
