@@ -138,6 +138,8 @@ func TokenToMap(token string, dest map[string]interface{}, keys ...string) error
 //
 // st must have a parameter with the name invIDsParamName, and it must have a
 // type IDSet.
+//
+// TODO(crbug.com/1113071): remove this function.
 func ShardStatement(st spanner.Statement, invIDsParamName string) []spanner.Statement {
 	idSet := st.Params[invIDsParamName].(IDSet)
 	batches := idSet.Batches()
