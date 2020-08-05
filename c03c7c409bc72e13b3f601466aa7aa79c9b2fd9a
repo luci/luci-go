@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab524c88_79a12f79",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "this is no longer the only important part. You\u0027ve also added options.",
+      "range": {
+        "startLine": 7,
+        "startChar": 12,
+        "endLine": 7,
+        "endChar": 52
+      },
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e743ef21_15dad8e0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "lgtm % description.\n\nthe test is excellent!",
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c438006_07c8d235",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 41,
+        "startChar": 51,
+        "endLine": 41,
+        "endChar": 52
+      },
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a303f87_5ace8dd8",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "this can be confusing with actual user-tasks, for instance in TasksPerScan.\nWDYT about \"job\"?",
+      "range": {
+        "startLine": 44,
+        "startChar": 55,
+        "endLine": 44,
+        "endChar": 63
+      },
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70ed3d36_0208efc8",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "job",
+      "range": {
+        "startLine": 60,
+        "startChar": 59,
+        "endLine": 60,
+        "endChar": 66
+      },
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15b3a6e1_f3599b7b",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "identifies",
+      "range": {
+        "startLine": 74,
+        "startChar": 13,
+        "endLine": 74,
+        "endChar": 24
+      },
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df866bfa_7be391d7",
+        "filename": "server/tq/sweep.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T21:39:14Z",
+      "side": 1,
+      "message": "affect",
+      "range": {
+        "startLine": 160,
+        "startChar": 66,
+        "endLine": 160,
+        "endChar": 75
+      },
+      "revId": "c03c7c409bc72e13b3f601466aa7aa79c9b2fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
