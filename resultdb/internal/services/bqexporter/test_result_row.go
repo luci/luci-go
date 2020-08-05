@@ -172,8 +172,8 @@ func variantToStringPairs(vr *pb.Variant) []StringPair {
 
 func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 	return Invocation{
-		ID:   string(invocations.MustParseName(inv.Name)),
-		Tags: stringPairProtosToStringPairs(inv.Tags),
+		ID:    string(invocations.MustParseName(inv.Name)),
+		Tags:  stringPairProtosToStringPairs(inv.Tags),
 		Realm: inv.Realm,
 	}
 }
