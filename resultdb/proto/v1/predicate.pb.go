@@ -57,8 +57,6 @@ const (
 	TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS TestResultPredicate_Expectancy = 1
 	// Similar to VARIANTS_WITH_UNEXPECTED_RESULTS, but the test variant
 	// must not have any expected results.
-	// These are the test results that must have caused the build to fail,
-	// or CL to be rejected.
 	TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS TestResultPredicate_Expectancy = 2
 )
 
