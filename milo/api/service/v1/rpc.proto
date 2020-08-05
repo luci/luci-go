@@ -1,0 +1,70 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.milo.v1;
+
+import "go.chromium.org/luci/common/proto/git/commit.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+
+option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
+
+// Service to query infomation associated with a build
+service Build {
+  // Retrieves blamelist of a build.
+  //
+  // The blamelist of a build is defined as [start_commit, end_commit),
+  // where start_commit is the last commit of the build,
+  // end_commit is the closest ancestor commit with an associated build that is
+  // from the same builder and is not expired, cancelled, or has infra failure.
+  rpc QueryBlamelist(QueryBlamelistRequest) returns (QueryBlamelistResponse) {};
+}
+
+// A request message for QueryBlamelist RPC.
+message QueryBlamelistRequest {
+  // Gitiles hostname.
+  string host = 1;
+
+  // Repository name on the host.
+  string project = 2;
+
+  // First commit of the blamelist.
+  //
+  // See documentation on QueryBlamelist rpc for details.
+  // It can be set to the last commit ID from the previous response to query the
+  // next page.
+  string start_commit_id = 3;
+
+  // Whether the start commit should be included in the returned commits.
+  //
+  // Set this to true when querying the first page and set this to false (or
+  // leave it empty) when querying the subsequent pages.
+  bool include_start_commit = 4;
+
+  // The builder of the blamelist.
+  buildbucket.v2.BuilderID builder = 5;
+
+  // The maximum number of commits to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 commits will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 limit = 6;
+}
+
+// A response message for QueryBlamelist RPC.
+message QueryBlamelistResponse {
+  repeated git.Commit commits = 1;
+}
