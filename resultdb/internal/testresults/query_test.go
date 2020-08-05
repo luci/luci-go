@@ -104,6 +104,9 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
+			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
+
 			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
@@ -111,21 +114,36 @@ func TestQueryTestResults(t *testing.T) {
 				insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
 				insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
 				insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "T4", nil, pb.TestStatus_FAIL),
+				insert.TestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
 			)...)
 
-			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
-			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
-			actual, _ := mustFetch(q)
-			pbutil.NormalizeTestResultSlice(actual)
+			Convey(`Works`, func() {
+				So(mustFetchNames(q), ShouldResemble, []string{
+					"invocations/inv0/tests/T1/results/0",
+					"invocations/inv0/tests/T1/results/1",
+					"invocations/inv0/tests/T2/results/0",
+					"invocations/inv1/tests/T1/results/0",
+					"invocations/inv1/tests/T2/results/0",
+					"invocations/inv1/tests/T4/results/0",
+				})
+			})
 
-			So(mustFetchNames(q), ShouldResemble, []string{
-				"invocations/inv0/tests/T1/results/0",
-				"invocations/inv0/tests/T1/results/1",
-				"invocations/inv0/tests/T2/results/0",
-				"invocations/inv1/tests/T1/results/0",
-				"invocations/inv1/tests/T2/results/0",
-				"invocations/inv1/tests/T4/results/0",
+			Convey(`TestID filter`, func() {
+				q.Predicate.TestIdRegexp = "T4"
+				So(mustFetchNames(q), ShouldResemble, []string{
+					"invocations/inv1/tests/T4/results/0",
+				})
+			})
+
+			Convey(`Variant filter`, func() {
+				q.Predicate.Variant = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Equals{
+						Equals: pbutil.Variant("a", "b"),
+					},
+				}
+				So(mustFetchNames(q), ShouldResemble, []string{
+					"invocations/inv1/tests/T4/results/0",
+				})
 			})
 		})
 

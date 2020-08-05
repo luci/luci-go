@@ -205,7 +205,7 @@ CREATE TABLE Artifacts (
 -- It includes TestId to be able to find all unexpected test result with a
 -- given test id or a test id prefix.
 CREATE NULL_FILTERED INDEX UnexpectedTestResults
-  ON TestResults (InvocationId, TestId, IsUnexpected) STORING (VariantHash),
+  ON TestResults (InvocationId, TestId, IsUnexpected) STORING (VariantHash, Variant),
   INTERLEAVE IN Invocations;
 
 
