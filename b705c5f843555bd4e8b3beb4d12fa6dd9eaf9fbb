@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "39aede78_64576c18",
+        "filename": "server/tq/internal/submit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T08:09:45Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "113fc299_b100fcd1",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 0
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5940ad1_63c8f5cd",
         "filename": "server/tq/internal/sweep/distributed.go",
         "patchSetId": 4
@@ -85,6 +109,30 @@
       "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4935e4e0_8180f7df",
+        "filename": "server/tq/internal/sweep/distributed.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T08:09:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5940ad1_63c8f5cd",
+      "range": {
+        "startLine": 87,
+        "startChar": 69,
+        "endLine": 87,
+        "endChar": 71
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +182,30 @@
     },
     {
       "key": {
+        "uuid": "1df5e0b5_220ce398",
+        "filename": "server/tq/internal/sweep/distributed.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T08:09:45Z",
+      "side": 1,
+      "message": "I just follow the convention from your own code: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/ttq/internals/impl.go#157",
+      "parentUuid": "be7e19ed_2122c022",
+      "range": {
+        "startLine": 168,
+        "startChar": 23,
+        "endLine": 168,
+        "endChar": 26
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "849fe298_b9055e9e",
         "filename": "server/tq/sweep.go",
         "patchSetId": 4
@@ -177,6 +249,30 @@
       "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61b76cef_0480a501",
+        "filename": "ttq/internals/databases/db.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T08:09:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33462384_c6301604",
+      "range": {
+        "startLine": 69,
+        "startChar": 17,
+        "endLine": 69,
+        "endChar": 18
+      },
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
