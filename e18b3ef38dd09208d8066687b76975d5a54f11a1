@@ -16,6 +16,23 @@
       "revId": "e18b3ef38dd09208d8066687b76975d5a54f11a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b67f44c8_10702607",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T05:40:26Z",
+      "side": 1,
+      "message": "btw, tryjobs won\u0027t turn green until https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2334483 lands",
+      "revId": "e18b3ef38dd09208d8066687b76975d5a54f11a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
