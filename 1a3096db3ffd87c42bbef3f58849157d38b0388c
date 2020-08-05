@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "027f0b3c_8eb64d53",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T05:26:13Z",
+      "side": 1,
+      "message": "I think this comment is still not accurate: we cannot know that for sure with unexpected results alone, they could be exonerated as well. \n.",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 28
+      },
+      "revId": "1a3096db3ffd87c42bbef3f58849157d38b0388c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
