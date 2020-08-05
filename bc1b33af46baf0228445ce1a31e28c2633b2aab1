@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c93a2667_055c950a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T18:14:54Z",
+      "side": 1,
+      "message": "this broke some code that relied on \"/inv\" prefix.\nWhen making a breaking change in a public API (URL is API), please let others know explicitly that they need to change their code",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 61
+      },
+      "revId": "bc1b33af46baf0228445ce1a31e28c2633b2aab1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
