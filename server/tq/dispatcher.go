@@ -33,8 +33,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -54,6 +52,7 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"go.chromium.org/luci/ttq/internals/databases"
 	"go.chromium.org/luci/ttq/internals/partition"
@@ -505,7 +504,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 			"cr.dev/title": task.Title,
 		})
 		defer func() { span.End(err) }()
-		return d.enqueueTask(ctx, req)
+		return internal.Submit(ctx, d.Submitter, req)
 	}
 
 	// Named transactional tasks are not supported.
@@ -536,8 +535,6 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 			panic("transaction defer has already been called")
 		}
 
-		// TODO(vadimsh): Add metrics.
-
 		// `ctx` here is an outer non-transactional context.
 		var err error
 		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.DeferredEnqueue", logging.Fields{
@@ -547,27 +544,18 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		})
 		defer func() { span.End(err) }()
 
-		// Don't enqueue the task if we are too late and the sweeper has likely
-		// picked up the reminder already.
 		if clock.Now(ctx).After(r.FreshUntil) {
+			// Don't enqueue the task if we are too late and the sweeper has likely
+			// picked up the reminder already.
 			logging.Warningf(ctx, "Happy path DeferredEnqueue has no time to run")
 			err = errors.New("happy path DeferredEnqueue has no time to run")
-			return
-		}
-
-		// Actually submit the task.
-		err = d.enqueueTask(ctx, req)
-
-		// Delete the reminder if the task was successfully enqueued or it is
-		// a non-retriable failure. Keep the reminder if the failure was transient,
-		// we'll let the sweeper try to submit the task later.
-		if !transient.Tag.In(err) {
-			if rerr := db.DeleteReminder(ctx, r); rerr != nil {
-				logging.Warningf(ctx, "Failed to delete the reminder: %s", rerr)
-				if err == nil {
-					err = rerr
-				}
-			}
+			// TODO: add metric for this
+		} else {
+			// Actually submit the task and delete the reminder if the task was
+			// successfully enqueued or it is a non-retriable failure. This keeps the
+			// reminder if the failure was transient, we'll let the sweeper try to
+			// submit the task later.
+			err = internal.SubmitFromReminder(ctx, d.Submitter, db, r, req)
 		}
 	})
 
@@ -586,30 +574,6 @@ func (d *Dispatcher) Sweep(ctx context.Context) error {
 		shards = 16
 	}
 	return d.Sweeper.startSweep(ctx, partition.Universe(reminderKeySpaceBytes).Split(shards))
-}
-
-// enqueueTask submits the prepared task.
-//
-// Recognized AlreadyExists as a success. Annotated retriable errors with
-// transient.Tag.
-func (d *Dispatcher) enqueueTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
-	// Each individual RPC should be pretty quick. Also Cloud Tasks client bugs
-	// out if the context has a large deadline.
-	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
-	defer cancel()
-
-	switch err := d.Submitter.CreateTask(ctx, req); status.Code(err) {
-	case codes.OK, codes.AlreadyExists:
-		return nil
-	case codes.Internal,
-		codes.Unknown,
-		codes.Unavailable,
-		codes.DeadlineExceeded,
-		codes.Canceled:
-		return transient.Tag.Apply(err)
-	default:
-		return err
-	}
 }
 
 // SchedulerForTest switches the dispatcher into testing mode.

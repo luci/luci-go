@@ -399,7 +399,8 @@ func makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*reminde
 }
 
 // OnlyLeased shrinks the given slice of Reminders sorted by their ID to contain
-func OnlyLeased(sorted []*reminder.Reminder, leased partition.SortedPartitions) []*reminder.Reminder {
+// only ones that belong to any of the leased partitions.
+func OnlyLeased(sorted []*reminder.Reminder, leased partition.SortedPartitions, keySpaceBytes int) []*reminder.Reminder {
 	reuse := sorted[:]
 	l := 0
 	keyOf := func(i int) string {

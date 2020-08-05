@@ -386,7 +386,7 @@ func TestLeaseHelpers(t *testing.T) {
 				&reminder.Reminder{Id: "0000000000000000000000000000000f"}, // ie 15
 			}
 			leased := partition.SortedPartitions{partition.FromInts(5, 9)}
-			So(OnlyLeased(reminders, leased), ShouldResemble, []*reminder.Reminder{
+			So(OnlyLeased(reminders, leased, keySpaceBytes), ShouldResemble, []*reminder.Reminder{
 				&reminder.Reminder{Id: "00000000000000000000000000000005"},
 			})
 		})

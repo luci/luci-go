@@ -24,7 +24,10 @@ import (
 
 // Database abstracts out specific storage implementation.
 type Database interface {
-	// Kind is used only for monitoring/logging purposes.
+	// Kind identifies this particular database implementation.
+	//
+	// Among other things it is used in Cloud Tasks messages involved in the
+	// implementation of the distributed sweeping.
 	Kind() string
 
 	// Defer defers the execution of the callback until the transaction lands.
@@ -63,18 +66,52 @@ type Database interface {
 	FetchReminderPayloads(context.Context, []*reminder.Reminder) ([]*reminder.Reminder, error)
 }
 
-var dbs []func(context.Context) Database
+// Impl knows how to instantiate Database instances.
+type Impl struct {
+	// Kind identifies this particular database implementation.
+	//
+	// Must match Kind() of the produced Database instance.
+	Kind string
 
-// Register registers a "prober" that probes a context for an active
-// transaction, returning a DB of the corresponding kind that can be used to
-// transactionally submit reminders.
-//
-// Must be called during init() time.
-func Register(db func(context.Context) Database) {
-	dbs = append(dbs, db)
+	// ProbeForTxn "probes" a context for an active transaction, returning a DB
+	// that can be used to transactionally submit reminders or nil if this is not
+	// a transactional context.
+	ProbeForTxn func(context.Context) Database
+
+	// NonTxn returns an instance of Database that can be used outside of
+	// transactions.
+	//
+	// This is used by the sweeper to enumerate reminders.
+	NonTxn func(context.Context) Database
 }
 
-// TxnDB returns Database that matches the context or nil.
+var impls []Impl
+
+// Register registers a database implementation.
+//
+// Must be called during init() time.
+func Register(db Impl) {
+	if db.Kind == "" {
+		panic("Kind must not be empty")
+	}
+	for _, impl := range impls {
+		if impl.Kind == db.Kind {
+			panic(fmt.Sprintf("DB %q is already registered", db.Kind))
+		}
+	}
+	impls = append(impls, db)
+}
+
+// Kinds returns IDs of registered database implementations.
+func Kinds() []string {
+	kinds := make([]string, len(impls))
+	for i, impl := range impls {
+		kinds[i] = impl.Kind
+	}
+	return kinds
+}
+
+// TxnDB returns a Database that matches the context or nil.
 //
 // The process has a list of database engines registered via Register. Given
 // a context, TxnDB examines if it carries a transaction with any of the
@@ -82,8 +119,8 @@ func Register(db func(context.Context) Database) {
 //
 // Panics if more than one database matches the context.
 func TxnDB(ctx context.Context) (db Database) {
-	for _, probe := range dbs {
-		if d := probe(ctx); d != nil {
+	for _, impl := range impls {
+		if d := impl.ProbeForTxn(ctx); d != nil {
 			if db != nil {
 				panic(fmt.Sprintf("multiple databases match the context: %q and %q", db.Kind(), d.Kind()))
 			}
@@ -91,4 +128,14 @@ func TxnDB(ctx context.Context) (db Database) {
 		}
 	}
 	return
+}
+
+// NonTxnDB returns a database with given ID or nil if not registered.
+func NonTxnDB(ctx context.Context, id string) Database {
+	for _, impl := range impls {
+		if impl.Kind == id {
+			return impl.NonTxn(ctx)
+		}
+	}
+	return nil
 }
