@@ -197,6 +197,19 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `does not have permission to create invocations`)
 		})
+		Convey(`invalid realm`, func() {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity:            "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "build:8765432100",
+				Invocation: &pb.Invocation{
+					Realm: "invalid:",
+				},
+			})
+			So(err, ShouldErrLike, `bad global realm name`)
+		})
 	})
 
 }
