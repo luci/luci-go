@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "e2b0e374_21939857",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-05T21:39:38Z",
+      "side": 1,
+      "message": "Renamed it to tagValidationMode",
+      "parentUuid": "dc2d92a3_57af6a22",
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2d88643_b8664148",
         "filename": "buildbucket/appengine/rpc/common.go",
         "patchSetId": 2
@@ -59,6 +77,30 @@
     },
     {
       "key": {
+        "uuid": "7f83ba83_965a5b9e",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-05T21:39:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2d88643_b8664148",
+      "range": {
+        "startLine": 127,
+        "startChar": 41,
+        "endLine": 127,
+        "endChar": 48
+      },
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3814d9cf_68fe394d",
         "filename": "buildbucket/appengine/rpc/common.go",
         "patchSetId": 2
@@ -73,6 +115,24 @@
       "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e238a792_8939c985",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-05T21:39:38Z",
+      "side": 1,
+      "message": "Chatted with the Nodir to learn the reason why the `builder` is handled like this. The intention of that code is to ensure only unique value for the builder key. That\u0027s why the error msg says like `builder:xxx` conflicts with tag `builder:xx`. In validation, we allow the duplicate tags to pass and don\u0027t throw the errors. All the tags are eventually placed in a set and duplicates are removed when storing into the DB. So I added a note in this function comment to explain the intention for future developers.  \n\nAs for the `buildset` different `commit/gitiles` value is literally invalid.",
+      "parentUuid": "3814d9cf_68fe394d",
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
