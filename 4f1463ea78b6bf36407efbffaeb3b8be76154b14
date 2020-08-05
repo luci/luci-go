@@ -16,6 +16,23 @@
       "revId": "4f1463ea78b6bf36407efbffaeb3b8be76154b14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "840e58d7_349f532b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T18:53:09Z",
+      "side": 1,
+      "message": "Thanks! Please don\u0027t forget to update the depot_tools pin too",
+      "revId": "4f1463ea78b6bf36407efbffaeb3b8be76154b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
