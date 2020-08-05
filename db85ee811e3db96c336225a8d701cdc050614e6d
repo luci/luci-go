@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b4bfc8b_b935a7b0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 40
+      },
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9621a86c_dc829e93",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ebf1ccbe_b9575646",
+        "filename": "examples/appengine/tq/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "annoying, but I don\u0027t have better ideas.",
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "771a022c_cf5d222e",
+        "filename": "examples/appengine/tq/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "Changing it is safe as long as ....",
+      "range": {
+        "startLine": 85,
+        "startChar": 28,
+        "endLine": 85,
+        "endChar": 78
+      },
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3bf9af0_453883b8",
+        "filename": "examples/appengine/tq/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 97,
+        "startChar": 10,
+        "endLine": 97,
+        "endChar": 13
+      },
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35c3fc27_896837f9",
+        "filename": "examples/appengine/tq/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "Should we just get rid of module-level tq.AddTask then?",
+      "range": {
+        "startLine": 150,
+        "startChar": 4,
+        "endLine": 151,
+        "endChar": 74
+      },
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "834582b2_f29419bf",
+        "filename": "examples/appengine/tq/queue.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-05T22:54:45Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 5,
+        "startChar": 8,
+        "endLine": 5,
+        "endChar": 11
+      },
+      "revId": "db85ee811e3db96c336225a8d701cdc050614e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
