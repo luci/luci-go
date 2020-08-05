@@ -14,6 +14,7 @@
     "copy-to-clipboard": "^3.3.1",
     "diff2html": "^3.1.9",
     "dompurify": "^2.0.12",
+    "json-bigint": "^1.0.0",
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
     "lodash-es": "^4.17.15",
