@@ -49,9 +49,11 @@ message TestResultPredicate {
     // the variant satisfies the predicate.
     VARIANTS_WITH_UNEXPECTED_RESULTS = 1;
 
-    // Note: if you need unexpected results, VARIANTS_WITH_UNEXPECTED_RESULTS
-    // generally does the job, but if you need *ONLY* unexpected results, feel
-    // free to file a feature request.
+    // Similar to VARIANTS_WITH_UNEXPECTED_RESULTS, but the test variant
+    // must not have any expected results.
+    // These are the test results that must have caused the build to fail,
+    // or CL to be rejected.
+    VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS = 2;
   }
 
   // A test result must match this predicate based on TestResult.expected field.
