@@ -244,7 +244,7 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 	}
 
 	ret = lucictx.ResultDBInvocation{Name: resp.Name, UpdateToken: tks[0]}
-	fmt.Fprintf(os.Stderr, "created invocation: https://ci.chromium.org/inv/%s\n", invID)
+	fmt.Fprintf(os.Stderr, "created invocation: https://ci.chromium.org/ui/inv/%s\n", invID)
 	return
 }
 
