@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d53ffe8c_08fe02f6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T00:23:02Z",
+      "side": 1,
+      "message": "Changes in test_result_row seems to be irrelevant, but since they are for format so it should be fine. ",
+      "revId": "24d5eca9560c47afef3b4c02e72b3f7e0f853432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
