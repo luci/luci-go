@@ -1,6 +1,6 @@
 queue:
 
-- name: ttq-sweeper
+- name: tq-sweep
   # TODO(crbug/1042991): Target backend-go once it exists.
   target: default-go
   rate: 500/s
