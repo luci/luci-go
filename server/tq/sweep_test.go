@@ -39,7 +39,7 @@ func TestSweepRouting(t *testing.T) {
 		calls := []*sweeppb.SweepTask{}
 
 		enqueue := sweepTaskRouting(&disp,
-			TaskClass{ID: "zzz", Queue: "zzz"},
+			SweeperOptions{TaskQueue: "zzz"},
 			func(_ context.Context, task *sweeppb.SweepTask) error {
 				mu.Lock()
 				calls = append(calls, task)
