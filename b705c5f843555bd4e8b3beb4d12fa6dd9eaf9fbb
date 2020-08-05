@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbfcda19_34eab429",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T03:05:45Z",
+      "side": 1,
+      "message": "PTAL, I\u0027m porting tests now.\n\nIt is mostly semantically identical to your code with big copy-pasted chunks, except I split it up in more individual chunks.\n\nFew big differences:\n  * Scan options now travel through the task queue with the sweep task. I found its easier to follow what is going this way.\n  * The sweep task logs various individual errors instead of silently returning a giant deeply nested error that will be logged as \"Something blew up (and 1000 other errors)\" which is not very useful. Such error also high chance of passing transient.Tag.In(...)\u003d\u003dtrue check which would result in retries which we don\u0027t really need.",
+      "revId": "b705c5f843555bd4e8b3beb4d12fa6dd9eaf9fbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
