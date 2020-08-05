@@ -147,7 +147,7 @@ type ModuleOptions struct {
 	// subtasks when running in "distributed" SweepMode.
 	//
 	// Can be in short or full form. See Queue in TaskClass for details. The queue
-	// should be configured to allows to least 10 QPS.
+	// should be configured to allow at least 10 QPS.
 	//
 	// Default is "default".
 	SweepTaskQueue string
@@ -362,11 +362,14 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 	// Setup the sweep processing.
 	switch m.opts.SweepMode {
 	case "distributed":
-		disp.Sweeper = NewDistributedSweeper(disp, TaskClass{
-			ID:            "tq-sweep-shard",
-			Queue:         m.opts.SweepTaskQueue,
-			RoutingPrefix: m.opts.SweepTaskPrefix,
-			TargetHost:    m.opts.SweepTargetHost,
+		disp.Sweeper = NewDistributedSweeper(disp, SweeperOptions{
+			SweepShards:         m.opts.SweepShards,
+			TasksPerScan:        2048, // TODO: make configurable if necessary
+			SecondaryScanShards: 16,   // TODO: make configurable if necessary
+			LessorID:            "",   // TODO: make configurable if necessary
+			TaskQueue:           m.opts.SweepTaskQueue,
+			TaskPrefix:          m.opts.SweepTaskPrefix,
+			TaskHost:            m.opts.SweepTargetHost,
 		})
 	case "inproc":
 		return errors.Reason("-sweep-mode inproc is not implemented yet").Err()
@@ -375,7 +378,6 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 	}
 
 	// Setup the sweep initiation.
-	disp.SweepShards = m.opts.SweepShards
 	if m.opts.SweepInitiationEndpoint != "-" {
 		disp.InstallSweepRoute(host.Routes(), m.opts.SweepInitiationEndpoint)
 	}

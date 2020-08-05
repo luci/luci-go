@@ -55,7 +55,6 @@ import (
 	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/tqtesting"
 	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/partition"
 	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
@@ -72,6 +71,11 @@ type Dispatcher struct {
 	//
 	// If not set, task submissions will fail.
 	Submitter Submitter
+
+	// Sweeper knows how to launch sweeps of the transactional tasks reminders.
+	//
+	// If not set, Sweep calls will fail.
+	Sweeper Sweeper
 
 	// Namespace is a namespace for tasks that use DeduplicationKey.
 	//
@@ -141,14 +145,6 @@ type Dispatcher struct {
 	// Optional.
 	AuthorizedPushers []string
 
-	// Sweeper knows how to launch sweeps of the transactional tasks reminders.
-	Sweeper Sweeper
-
-	// SweepShards defines how many subtasks to produce in each Sweep.
-	//
-	// Default is 16.
-	SweepShards int
-
 	// SweepInitiationLaunchers is a list of service account emails authorized to
 	// launch sweeps via the exposed HTTP endpoint.
 	SweepInitiationLaunchers []string
@@ -173,10 +169,8 @@ type Submitter interface {
 
 // Sweeper knows how to launch sweeps of the transaction tasks reminders.
 type Sweeper interface {
-	// startSweep initiates an asynchronous sweep of given partitions.
-	//
-	// They are sorted, disjoint and together cover the entire key space.
-	startSweep(ctx context.Context, partitions []*partition.Partition) error
+	// startSweep initiates an asynchronous sweep of the reminders keyspace.
+	startSweep(ctx context.Context, reminderKeySpaceBytes int) error
 }
 
 // TaskKind describes how a task class interoperates with transactions.
@@ -569,11 +563,7 @@ func (d *Dispatcher) Sweep(ctx context.Context) error {
 	if d.Sweeper == nil {
 		return errors.New("can't sweep: the Sweeper is not set")
 	}
-	shards := d.SweepShards
-	if shards <= 0 {
-		shards = 16
-	}
-	return d.Sweeper.startSweep(ctx, partition.Universe(reminderKeySpaceBytes).Split(shards))
+	return d.Sweeper.startSweep(ctx, reminderKeySpaceBytes)
 }
 
 // SchedulerForTest switches the dispatcher into testing mode.
