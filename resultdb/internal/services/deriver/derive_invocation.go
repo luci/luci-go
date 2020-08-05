@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/services/deriver/chromium"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -87,18 +88,18 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 
 	// Get the swarming service to use.
 	swarmingURL := "https://" + in.SwarmingTask.Hostname
-	swarmSvc, err := GetSwarmSvc(internal.MustGetContextHTTPClient(ctx), swarmingURL)
+	swarmSvc, err := chromium.GetSwarmSvc(internal.MustGetContextHTTPClient(ctx), swarmingURL)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating swarming client for %q", swarmingURL).Err()
 	}
 
 	// Get the swarming task.
-	task, err := GetSwarmingTask(ctx, in.SwarmingTask.Id, swarmSvc)
+	task, err := chromium.GetSwarmingTask(ctx, in.SwarmingTask.Id, swarmSvc)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting swarming task %q on %q",
 			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
 	}
-	invID := GetInvocationID(task, in)
+	invID := chromium.GetInvocationID(task, in)
 
 	// Check if we need to write this invocation.
 	switch err := shouldWriteInvocation(span.Single(ctx), invID); {
@@ -110,7 +111,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 		return nil, err
 	}
 
-	inv, err := DeriveChromiumInvocation(task, in)
+	inv, err := chromium.DeriveChromiumInvocation(task, in)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +148,7 @@ func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.Der
 	case err != nil:
 		return nil, err
 	default:
-		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
 
 		// Cache the set of all invocations reachable from invID.
 		reach.Add(originInvID)
@@ -194,12 +195,12 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 
 	// Get the origin task that the task is deduped against. Or the task
 	// itself if it's not deduped.
-	originTask, err := GetOriginTask(ctx, task, swarmSvc)
+	originTask, err := chromium.GetOriginTask(ctx, task, swarmSvc)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "getting origin for swarming task %q on %q",
 			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
 	}
-	originInvID := GetInvocationID(originTask, in)
+	originInvID := chromium.GetInvocationID(originTask, in)
 
 	// Check if we need to write origin invocation.
 	switch err := shouldWriteInvocation(span.Single(ctx), originInvID); {
@@ -211,13 +212,13 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 		return nil, nil, err
 	}
 
-	if originInv, err = DeriveChromiumInvocation(originTask, in); err != nil {
+	if originInv, err = chromium.DeriveChromiumInvocation(originTask, in); err != nil {
 		return nil, nil, err
 	}
 
 	// Get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", originTask.TaskId, in.SwarmingTask.Hostname)
-	results, err := DeriveTestResults(ctx, originTask, in, originInv)
+	results, err := chromium.DeriveTestResults(ctx, originTask, in, originInv)
 	if err != nil {
 		return nil, nil, errors.Annotate(err,
 			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, originTask.Name).Err()
@@ -258,7 +259,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 	case err != nil:
 		return nil, nil, err
 	default:
-		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
 		// Cache the included invocations.
 		invocations.ReachCache(originInvID).TryWrite(ctx, batchInvs)
 		return originInv, batchInvs, nil
@@ -283,7 +284,7 @@ func readExistingInv(ctx context.Context, id invocations.ID) (inv *pb.Invocation
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
 // returning container ids.
-func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*TestResult, batchSize int) (invocations.IDSet, error) {
+func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*chromium.TestResult, batchSize int) (invocations.IDSet, error) {
 	batches := batchTestResults(trs, batchSize)
 	includedInvs := make(invocations.IDSet, len(batches))
 
@@ -328,8 +329,8 @@ func (s *deriverServer) batchInsertTestResults(ctx context.Context, inv *pb.Invo
 			// Memorize that this invocation does not include anything.
 			invocations.ReachCache(batchID).TryWrite(ctx, nil)
 
-			spanutil.IncRowCount(ctx, len(batch), spanutil.TestResults, spanutil.Inserted, defaultRealm)
-			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, defaultRealm)
+			spanutil.IncRowCount(ctx, len(batch), spanutil.TestResults, spanutil.Inserted)
+			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted)
 			return nil
 		})
 	}
@@ -347,8 +348,8 @@ func batchInvocationID(invID invocations.ID, batchInd int) invocations.ID {
 }
 
 // batchTestResults batches the given TestResults given the maximum batch size.
-func batchTestResults(trs []*TestResult, batchSize int) [][]*TestResult {
-	batches := make([][]*TestResult, 0, len(trs)/batchSize+1)
+func batchTestResults(trs []*chromium.TestResult, batchSize int) [][]*chromium.TestResult {
+	batches := make([][]*chromium.TestResult, 0, len(trs)/batchSize+1)
 	for len(trs) > 0 {
 		end := batchSize
 		if end > len(trs) {

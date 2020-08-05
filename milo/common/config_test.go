@@ -176,14 +176,6 @@ func TestConfig(t *testing.T) {
 				So(cs.Def.Header.TreeStatusHost, ShouldEqual, "blarg.example.com")
 			})
 
-			Convey("Check Console config updated with realm", func() {
-				cs, err := GetConsole(c, "foo", "realm_test_console")
-				So(err, ShouldBeNil)
-				So(cs.ID, ShouldEqual, "realm_test_console")
-				So(cs.Ordinal, ShouldEqual, 2)
-				So(cs.Realm, ShouldEqual, "foo:fake_realm")
-			})
-
 			Convey("Check external Console is resolved", func() {
 				cs, err := GetConsole(c, "external", "foo-default")
 				So(err, ShouldBeNil)
@@ -320,14 +312,6 @@ consoles: {
 		short_name: "o"
 	}
 	header_id: "main_header"
-}
-consoles: {
-	id: "realm_test_console"
-	name: "realm_test"
-	repo_url: "https://chromium.googlesource.com/foo/bar"
-	refs: "refs/heads/master"
-	realm: "foo:fake_realm"
-	manifest_name: "REVISION"
 }
 `
 

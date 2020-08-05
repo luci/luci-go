@@ -69,10 +69,18 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`*pb.Variant`, t, func() {
-		test(
-			pbutil.Variant("a", "1", "b", "2"),
-			[]string{"a:1", "b:2"},
-		)
+		Convey(`Works`, func() {
+			test(
+				pbutil.Variant("a", "1", "b", "2"),
+				[]string{"a:1", "b:2"},
+			)
+		})
+		Convey(`Empty`, func() {
+			test(
+				(*pb.Variant)(nil),
+				[]string{},
+			)
+		})
 	})
 
 	Convey(`[]*pb.StringPair`, t, func() {

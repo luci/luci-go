@@ -36,6 +36,8 @@ const (
 
 // Buildbucket normalizes cr-buildbucket.cfg config.
 func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
+	normalizeUnflattenedBuildbucketCfg(cfg)
+
 	// Install or update 'flatten_buildbucket_cfg' tool.
 	bin, err := installFlattenBuildbucketCfg(c)
 	if err != nil {
@@ -73,7 +75,6 @@ func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 		return err
 	}
 
-	normalizeUnflattenedBuildbucketCfg(cfg)
 	return nil
 }
 

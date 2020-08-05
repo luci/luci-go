@@ -116,9 +116,6 @@ type Console struct {
 	// but with ExternalId and ExternalProject also set.
 	Def config.Console `gae:",noindex"`
 
-	// Realm that the console exists under.
-	Realm string
-
 	// _ is a "black hole" which absorbs any extra props found during a
 	// datastore Get. These props are not written back on a datastore Put.
 	_ datastore.PropertyMap `gae:"-,extra"`
@@ -530,7 +527,6 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			ConfigRevision: meta.Revision,
 			Builders:       pc.AllBuilderIDs(),
 			Def:            *pc,
-			Realm:          pc.Realm,
 		})
 	}
 	return toPut, nil
