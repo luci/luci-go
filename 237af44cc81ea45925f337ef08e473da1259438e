@@ -16,6 +16,29 @@
       "revId": "237af44cc81ea45925f337ef08e473da1259438e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7644e328_6e473b38",
+        "filename": "resultdb/internal/spanutil/buffer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T00:58:15Z",
+      "side": 1,
+      "message": "Looks like VariantToStrings is only used here: https://source.chromium.org/search?q\u003dVariantToStrings\n\nThen why not change in pbutil instead?",
+      "range": {
+        "startLine": 214,
+        "startChar": 20,
+        "endLine": 214,
+        "endChar": 36
+      },
+      "revId": "237af44cc81ea45925f337ef08e473da1259438e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
