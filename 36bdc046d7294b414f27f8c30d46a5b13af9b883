@@ -16,6 +16,46 @@
       "revId": "36bdc046d7294b414f27f8c30d46a5b13af9b883",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "81818dd7_fbfa43dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T00:55:09Z",
+      "side": 1,
+      "message": "lgtm with a comment",
+      "revId": "36bdc046d7294b414f27f8c30d46a5b13af9b883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45f6ea19_37724046",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T00:55:09Z",
+      "side": 1,
+      "message": "How about unexpected passes and skips?",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 71
+      },
+      "revId": "36bdc046d7294b414f27f8c30d46a5b13af9b883",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
