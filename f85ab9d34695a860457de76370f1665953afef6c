@@ -16,6 +16,23 @@
       "revId": "f85ab9d34695a860457de76370f1665953afef6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b4f68862_213474b2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T03:47:44Z",
+      "side": 1,
+      "message": "Can you integrate with https://godoc.org/go.chromium.org/luci/server/auth#HasPermissionDryRun for now instead? I.e. use existing ACL for everything, but also compare it to what realms have by using HasPermissionDryRun: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/scheduler/appengine/engine/permissions.go;l\u003d75?q\u003dHasPermissionDryRun\u0026ss\u003dchromium\n\nActual realms.cfg configs don\u0027t exist or totally unverified, they should not be used yet for any real checks.",
+      "revId": "f85ab9d34695a860457de76370f1665953afef6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
