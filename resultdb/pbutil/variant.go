@@ -54,10 +54,13 @@ func Variant(pairs ...string) *pb.Variant {
 	return vr
 }
 
+var nonNilEmptyStringSlice = []string{}
+
 // VariantToStrings returns a key:val string slice representation of the Variant.
+// Never returns nil.
 func VariantToStrings(vr *pb.Variant) []string {
-	if vr == nil {
-		return nil
+	if len(vr.GetDef()) == 0 {
+		return nonNilEmptyStringSlice
 	}
 
 	keys := SortedVariantKeys(vr)
