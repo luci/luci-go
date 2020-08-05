@@ -33,6 +33,24 @@
       "revId": "f85ab9d34695a860457de76370f1665953afef6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71b5384c_c1902d6f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-05T05:01:29Z",
+      "side": 1,
+      "message": "Hmm. Currently, users have access to all the consoles as long as they have access to the project, doesn\u0027t that mean we will always return true when checking permission? I don\u0027t think we will get any meaningful check out of it.\nAlso, what to do with the project-scoped permission check?\nDo we want to convert that to use realm too?",
+      "parentUuid": "b4f68862_213474b2",
+      "revId": "f85ab9d34695a860457de76370f1665953afef6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
