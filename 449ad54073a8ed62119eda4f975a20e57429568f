@@ -16,6 +16,29 @@
       "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "13bf9f5b_a7ae01c0",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T19:06:29Z",
+      "side": 1,
+      "message": "I think the returned err can be unchanged to be consistent with others?",
+      "range": {
+        "startLine": 91,
+        "startChar": 9,
+        "endLine": 91,
+        "endChar": 77
+      },
+      "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
