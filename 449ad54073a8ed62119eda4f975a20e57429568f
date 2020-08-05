@@ -39,6 +39,29 @@
       "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d9eb30c_efd2161b",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-05T19:16:00Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/grpc/appstatus/helpers.go;l\u003d31\n\nappstatus.BadRequest() attaches codes.InvalidArgument to the given error.",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 77
+      },
+      "revId": "449ad54073a8ed62119eda4f975a20e57429568f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
