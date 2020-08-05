@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a686098_99f00c1f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T05:48:47Z",
+      "side": 1,
+      "message": "LGTM.\n\nAuto submit was not triggered because \"This change has unresolved comments and/or drafts. Not triggering AutoSubmit.\"",
+      "revId": "2648b39fcecbbe5aa0aaaf811f8b93964e12a5b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
