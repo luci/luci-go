@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "f12dc363_a51e6e9f",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf0fd59f_2d70b116",
+      "range": {
+        "startLine": 233,
+        "startChar": 3,
+        "endLine": 233,
+        "endChar": 67
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a691a63a_9b30649d",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 3
@@ -62,6 +86,30 @@
       "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aed8359e_b32b14bd",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a691a63a_9b30649d",
+      "range": {
+        "startLine": 234,
+        "startChar": 41,
+        "endLine": 234,
+        "endChar": 49
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "6db145e8_6c23e32c",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14df3b0b_d53948ab",
+      "range": {
+        "startLine": 247,
+        "startChar": 49,
+        "endLine": 248,
+        "endChar": 16
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7719d4df_85457ec8",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 3
@@ -108,6 +180,30 @@
       "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db685e44_e0178f35",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "then we don\u0027t filter by exoneration. Clarified in the proto.",
+      "parentUuid": "7719d4df_85457ec8",
+      "range": {
+        "startLine": 250,
+        "startChar": 4,
+        "endLine": 250,
+        "endChar": 34
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "7e7089e7_de8695b7",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9be59bad_868ed1a4",
+      "range": {
+        "startLine": 273,
+        "startChar": 27,
+        "endLine": 273,
+        "endChar": 67
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94c45c5d_8dd59fa3",
         "filename": "resultdb/internal/testresults/query.go",
         "patchSetId": 3
@@ -154,6 +274,30 @@
       "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de9840cb_8c63ab1d",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "fixed the meaning, ptal",
+      "parentUuid": "94c45c5d_8dd59fa3",
+      "range": {
+        "startLine": 274,
+        "startChar": 3,
+        "endLine": 274,
+        "endChar": 49
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +324,30 @@
     },
     {
       "key": {
+        "uuid": "ed00800d_4851ccd7",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "sorry, what do you mean?\n\ni wonder if my edit in predicate.proto comment resolves the confusion",
+      "parentUuid": "c993674c_6b2a435a",
+      "range": {
+        "startLine": 56,
+        "startChar": 24,
+        "endLine": 56,
+        "endChar": 43
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b44f979_df58dcde",
         "filename": "resultdb/proto/v1/predicate.proto",
         "patchSetId": 3
@@ -191,6 +359,30 @@
       "writtenOn": "2020-08-05T01:44:54Z",
       "side": 1,
       "message": "I think exonerated should be more intuitive?",
+      "range": {
+        "startLine": 65,
+        "startChar": 7,
+        "endLine": 65,
+        "endChar": 21
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f1288c0_aa8a5269",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T04:35:44Z",
+      "side": 1,
+      "message": "Renamed to exclude_exonerated. Hopefully this is much more clear. PTAL",
+      "parentUuid": "5b44f979_df58dcde",
       "range": {
         "startLine": 65,
         "startChar": 7,
