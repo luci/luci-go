@@ -39,6 +39,30 @@
       "revId": "237af44cc81ea45925f337ef08e473da1259438e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d6198b2_24187e85",
+        "filename": "resultdb/internal/spanutil/buffer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-05T05:50:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7644e328_6e473b38",
+      "range": {
+        "startLine": 214,
+        "startChar": 20,
+        "endLine": 214,
+        "endChar": 36
+      },
+      "revId": "237af44cc81ea45925f337ef08e473da1259438e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
