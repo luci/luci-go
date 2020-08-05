@@ -16,10 +16,22 @@ package sweep
 
 import (
 	"context"
+	"sync"
+	"time"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 
+	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
+	"go.chromium.org/luci/ttq/internals"
+	"go.chromium.org/luci/ttq/internals/databases"
+	"go.chromium.org/luci/ttq/internals/partition"
+	"go.chromium.org/luci/ttq/internals/reminder"
 )
 
 // Distributed implements distributed sweeping.
@@ -30,11 +42,192 @@ import (
 type Distributed struct {
 	// EnqueueSweepTask submits the task for execution somewhere in the fleet.
 	EnqueueSweepTask func(ctx context.Context, task *sweeppb.SweepTask) error
+	// Submitter is used to submit Cloud Tasks request.
+	Submitter internal.Submitter
 }
 
 // ExecSweepTask executes a previously enqueued sweep task.
 func (d *Distributed) ExecSweepTask(ctx context.Context, task *sweeppb.SweepTask) error {
-	// TODO(vadimsh): Implement.
-	logging.Infof(ctx, "Sweeping %q", task.Partition)
-	return nil
+	logging.Infof(ctx, "Sweeping %s lvl%d %d/%d: %s",
+		task.Db, task.Level, task.ShardIndex, task.ShardCount, task.Partition)
+
+	// The corresponding DB must be registered in the process, otherwise we won't
+	// know how to enumerate reminders.
+	db := databases.NonTxnDB(ctx, task.Db)
+	if db == nil {
+		return errors.Reason("no TQ db kind %q registered in the process", task.Db).Err()
+	}
+
+	// Similarly a lessor is needed to process reminders.
+	lessor, err := internals.GetLessor(ctx, task.LessorId)
+	if err != nil {
+		return errors.Annotate(err, "can't initialize lessor %q", task.LessorId).Err()
+	}
+
+	// Ensure there is time to process reminders produced by the scan.
+	scanTimeout := time.Minute
+	if d, ok := ctx.Deadline(); ok {
+		scanTimeout = clock.Now(ctx).Sub(d) / 5
+	}
+	scanCtx, cancel := clock.WithTimeout(ctx, scanTimeout)
+	defer cancel()
+
+	part, err := partition.FromString(task.Partition)
+	if err != nil {
+		return errors.Annotate(err, "bad task payload").Err()
+	}
+
+	// Discover stale reminders and a list of partitions we may need to rescan.
+	// This call may return both results and an error.
+	reminders, moreParts, err := Scan(scanCtx, ScanParams{
+		DB:                  db,
+		Partition:           part,
+		KeySpaceBytes:       int(task.KeySpaceBytes),
+		TasksPerScan:        int(task.TasksPerScan),
+		SecondaryScanShards: int(task.SecondaryScanShards),
+		Level:               int(task.Level),
+	})
+	if err != nil {
+		if len(reminders) == 0 && len(moreParts) == 0 {
+			return err // really bad error, couldn't do anything
+		}
+		logging.Warningf(ctx,
+			"Got %d reminders, %d follow-up ranges even though scanning failed with: %s",
+			len(reminders), len(moreParts), err)
+	} else {
+		logging.Infof(ctx, "Got %d reminders, %d follow-up ranges", len(reminders), len(moreParts))
+	}
+
+	// Refuse to scan deeper than 2 levels.
+	if task.Level >= 2 && len(moreParts) != 0 {
+		logging.Errorf(ctx, "Refusing to recurse deeper, abandoning scans of %v", moreParts)
+		moreParts = nil
+	}
+
+	wg := sync.WaitGroup{}
+	lerr := errors.NewLazyMultiError(2)
+
+	if len(moreParts) != 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			lerr.Assign(0, d.enqueueFollowUpSweeps(ctx, task, moreParts))
+		}()
+	}
+
+	if len(reminders) != 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			lerr.Assign(1, d.processReminders(ctx, lessor, task.LeaseSectionId, db, reminders))
+		}()
+	}
+
+	wg.Wait()
+	return lerr.Get() // nil if no errors
+}
+
+// enqueueFollowUpSweeps enqueues more sweep tasks that derive from `orig`.
+func (d *Distributed) enqueueFollowUpSweeps(ctx context.Context, orig *sweeppb.SweepTask, parts partition.SortedPartitions) error {
+	return parallel.WorkPool(16, func(work chan<- func() error) {
+		for _, part := range parts {
+			task := proto.Clone(orig).(*sweeppb.SweepTask)
+			task.Partition = part.String()
+			task.Level += 1 // we need to go deeper
+			work <- func() error { return d.EnqueueSweepTask(ctx, task) }
+		}
+	})
+}
+
+// processReminders leases sub-ranges of the partition and processes reminders
+// there.
+func (d *Distributed) processReminders(ctx context.Context, lessor internals.Lessor, sectionID string, db databases.Database, reminders []*reminder.Reminder) error {
+	l := len(reminders)
+	if l == 0 {
+		return nil
+	}
+	desired, err := partition.SpanInclusive(reminders[0].Id, reminders[l-1].Id)
+	if err != nil {
+		return errors.Annotate(err, "invalid Reminder Id(s)").Err()
+	}
+
+	var errProcess error
+	leaseErr := lessor.WithLease(ctx, sectionID, desired, time.Minute,
+		func(leaseCtx context.Context, leased partition.SortedPartitions) {
+			reminders := internals.OnlyLeased(reminders, leased)
+			errProcess = d.processLeasedReminders(leaseCtx, db, reminders)
+		})
+	switch {
+	case leaseErr != nil:
+		return errors.Annotate(leaseErr, "failed to acquire the lease").Err()
+	case errProcess != nil:
+		return errors.Annotate(errProcess, "failed to process all reminders").Err()
+	default:
+		return nil
+	}
+}
+
+// processLeasedReminders processes given reminders by splitting them in
+// batches and calling processBatch for each batch.
+func (d *Distributed) processLeasedReminders(ctx context.Context, db databases.Database, reminders []*reminder.Reminder) error {
+	const (
+		batchWorkers = 8
+		batchSize    = 50
+	)
+	return parallel.WorkPool(batchWorkers, func(work chan<- func() error) {
+		for {
+			var batch []*reminder.Reminder
+			switch l := len(reminders); {
+			case l == 0:
+				return
+			case l < batchSize:
+				batch, reminders = reminders, nil
+			default:
+				batch, reminders = reminders[:batchSize], reminders[batchSize:]
+			}
+			work <- func() error { return d.processBatch(ctx, db, batch) }
+		}
+	})
+}
+
+// processBatch process a batch of reminders by submitting corresponding
+// Cloud Tasks and deleting reminders.
+//
+// Reminders batch will be modified to fetch Reminders' Payload.
+//
+// RAM usage is equivalent to O(total Payload size of each Reminder in batch).
+func (d *Distributed) processBatch(ctx context.Context, db databases.Database, batch []*reminder.Reminder) error {
+	payloaded, err := db.FetchReminderPayloads(ctx, batch)
+	switch missing := len(batch) - len(payloaded); {
+	case missing < 0:
+		panic(errors.Reason("%s.FetchReminderPayloads returned %d but asked for %d Reminders",
+			db.Kind(), len(payloaded), len(batch)).Err())
+	case err != nil:
+		logging.Warningf(ctx, "Failed to fetch %d/%d Reminders: %s", missing, len(batch), err)
+		// Continue processing whatever was fetched anyway.
+	case missing > 0:
+		logging.Warningf(ctx, "%d stale Reminders were unexpectedly deleted by something else. "+
+			"If this persists, check for a misconfiguration of the sweeping or the happy path timeout",
+			missing)
+	}
+
+	// Note: this can be optimized further by batching deletion of Reminders,
+	// but the current version was good enough in load tests already.
+	merr := parallel.WorkPool(16, func(work chan<- func() error) {
+		for _, r := range payloaded {
+			r := r
+			work <- func() error {
+				return internal.SubmitFromReminder(ctx, d.Submitter, db, r, nil)
+			}
+		}
+	})
+	switch {
+	case err == nil:
+		return merr
+	case merr == nil:
+		return err
+	default:
+		e := merr.(errors.MultiError)
+		return append(e, err)
+	}
 }

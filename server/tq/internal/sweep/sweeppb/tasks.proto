@@ -18,24 +18,36 @@ package luci.server.tq.sweep;
 
 option go_package = "go.chromium.org/luci/server/tq/internal/sweep/sweeppb";
 
+// SweepTask is used to distribute sweeping work items and options when doing
+// distributed sweeps.
+//
+// All fields are required.
 message SweepTask {
+  // DB is an identifier of the database used for reminders.
+  //
+  // It must be registered in the process that does the sweeping.
+  string db = 1;
+
   // Partition specifies the range of keys to scan as [Low..High).
   //
-  // This is the primary payload of this message. The rest of the fields is used
-  // only for monitoring/debugging purposes.
-  //
   // It is a string of the form "<hex-low>_<hex-high>".
-  string partition = 1;
+  string partition = 2;
 
-  // Shards is total number of shards used when this task was generated.
+  // Identifies a registered Lessor implementation to grab leases through.
+  string lessor_id = 3;
+
+  // Identifier of a lease section ID to grab leases on sub-partitions through.
+  string lease_section_id = 4;
+
+  // Total number of shards used when this task was generated.
   //
   // Used FYI only in logs.
-  int32 shard_count = 2;
+  int32 shard_count = 5;
 
   // Shard number in the range of [0 .. Shards).
   //
   // Used FYI only in logs.
-  int32 shard_index = 3;
+  int32 shard_index = 6;
 
   // Level counts recursion level for monitoring/debugging purposes.
   //
@@ -44,5 +56,20 @@ message SweepTask {
   // normally happen and indicates either a bug or a very overloaded system.
   //
   // level > 2 won't be executed at all.
-  int32 level = 4;
+  int32 level = 7;
+
+  // Length of the reminder keys in the partition.
+  //
+  // Used to figure out the upper bound of the scan. Usually 16.
+  int32 key_space_bytes = 8;
+
+  // Caps maximum number of reminders to process.
+  //
+  // Usually in hundreds.
+  int32 tasks_per_scan = 9;
+
+  // Caps the number of follow-up scans.
+  //
+  // Usually 16.
+  int32 secondary_scan_shards = 10;
 }

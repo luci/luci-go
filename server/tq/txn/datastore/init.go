@@ -38,10 +38,16 @@ import (
 var db datastore.DB
 
 func init() {
-	databases.Register(func(ctx context.Context) databases.Database {
-		if ds.CurrentTransaction(ctx) != nil {
+	databases.Register(databases.Impl{
+		Kind: db.Kind(),
+		ProbeForTxn: func(ctx context.Context) databases.Database {
+			if ds.CurrentTransaction(ctx) != nil {
+				return db
+			}
+			return nil
+		},
+		NonTxn: func(ctx context.Context) databases.Database {
 			return db
-		}
-		return nil
+		},
 	})
 }
