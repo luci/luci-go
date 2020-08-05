@@ -21,6 +21,7 @@ import (
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/filemetadata"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
 	"github.com/golang/protobuf/jsonpb"
@@ -101,13 +102,13 @@ func getRoot(paths isolated.ScatterGather) (string, error) {
 }
 
 // Does the archive by uploading to isolate-server.
-func (c *archiveRun) doArchive(ctx context.Context, args []string) error {
+func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Digest, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	signals.HandleInterrupt(cancel)
 
 	root, err := getRoot(c.paths)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	is := command.InputSpec{}
@@ -117,35 +118,36 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) error {
 
 	rootDg, chunkers, _, err := tree.ComputeMerkleTree(root, &is, chunker.DefaultChunkSize, filemetadata.NewNoopCache())
 	if err != nil {
-		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
 	client, err := c.casFlags.NewClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to create cas client").Err()
+		return nil, errors.Annotate(err, "failed to create cas client").Err()
 	}
 	defer client.Close()
 
-	if err := client.UploadIfMissing(ctx, chunkers...); err != nil {
-		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
+	uploadedDigests, err := client.UploadIfMissing(ctx, chunkers...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 
 	dj := c.digestJSON
 	if dj == "" {
-		return nil
+		return uploadedDigests, nil
 	}
 
 	f, err := os.Create(dj)
 	if err != nil {
-		errors.Annotate(err, "failed to create file").Err()
+		return nil, errors.Annotate(err, "failed to create file").Err()
 	}
 	defer f.Close()
 
 	if err := (&jsonpb.Marshaler{}).Marshal(f, rootDg.ToProto()); err != nil {
-		return errors.Annotate(err, "failed to marshal digest proto").Err()
+		return nil, errors.Annotate(err, "failed to marshal digest proto").Err()
 	}
 
-	return nil
+	return uploadedDigests, nil
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -156,7 +158,8 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 		return 1
 	}
 
-	if err := c.doArchive(ctx, args); err != nil {
+	// TODO: handle the stats
+	if _, err := c.doArchive(ctx, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
