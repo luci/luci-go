@@ -51,12 +51,12 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	var err error
 	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(1, 1),
+		QPSLimit: rate.NewLimiter(rate.Every(50*time.Millisecond), 4),
 		Buffer: buffer.Options{
-			BatchSize:     400,
+			BatchSize:     800,
 			MaxLeases:     4,
 			BatchDuration: time.Second,
-			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
