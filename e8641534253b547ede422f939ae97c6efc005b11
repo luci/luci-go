@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "c6552c6a_6394775e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-05T06:04:54Z",
+      "side": 1,
+      "message": "lgtm w/ nodir\u0027s comments",
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f55fb3cf_bdfd2424",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7
