@@ -33,7 +33,7 @@ func TestGenerateBQRow(t *testing.T) {
 			exported: &pb.Invocation{
 				Name:       "invocations/exported",
 				CreateTime: pbutil.MustTimestampProto(testclock.TestRecentTimeUTC),
-				Realm: "testproject:testrealm",
+				Realm:      "testproject:testrealm",
 			},
 			parent: &pb.Invocation{
 				Name: "invocations/parent",
