@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package config knows how import configs from LUCI-config.
 package config
 
 import (
@@ -286,8 +287,9 @@ func sync(c context.Context, cfg *Config) error {
 	return nil
 }
 
-// Import fetches and validates configs from the config service.
-func Import(c context.Context) error {
+// doImport fetches and validates configs from the config service.
+// doImport could have been named "import" but it's a reserved keyword.
+func doImport(c context.Context) error {
 	cfg, err := fetch(c)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch configs").Err()
@@ -316,7 +318,7 @@ func Import(c context.Context) error {
 func importHandler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 
-	if err := Import(c.Context); err != nil {
+	if err := doImport(c.Context); err != nil {
 		errors.Log(c.Context, err)
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 		return
