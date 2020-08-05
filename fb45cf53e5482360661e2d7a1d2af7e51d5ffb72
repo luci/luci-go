@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd419034_d08939de",
+        "filename": "server/tq/txn/datastore/integration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T09:24:14Z",
+      "side": 1,
+      "message": "oops, forgot to add this part (but the test fails already...)",
+      "range": {
+        "startLine": 47,
+        "startChar": 44,
+        "endLine": 47,
+        "endChar": 65
+      },
+      "revId": "fb45cf53e5482360661e2d7a1d2af7e51d5ffb72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59bc51f9_6acbedec",
+        "filename": "server/tq/txn/datastore/integration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-05T09:24:14Z",
+      "side": 1,
+      "message": "It is currently failing here! Probably some stupid bug somewhere, I\u0027m too sleepy to find it right now.",
+      "range": {
+        "startLine": 179,
+        "startChar": 2,
+        "endLine": 179,
+        "endChar": 43
+      },
+      "revId": "fb45cf53e5482360661e2d7a1d2af7e51d5ffb72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
