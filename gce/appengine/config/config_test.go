@@ -17,12 +17,8 @@ package config
 import (
 	"context"
 	"testing"
-	"time"
-
-	"google.golang.org/genproto/googleapis/type/dayofweek"
 
 	gae "go.chromium.org/gae/impl/memory"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -230,10 +226,6 @@ func TestNormalize(t *testing.T) {
 												Duration: "1h",
 											},
 										},
-										Start: &gce.TimeOfDay{
-											Day:  dayofweek.DayOfWeek_MONDAY,
-											Time: "1:00",
-										},
 									},
 								},
 							},
@@ -243,52 +235,6 @@ func TestNormalize(t *testing.T) {
 			}
 			So(normalize(c, cfg), ShouldBeNil)
 			So(cfg.VMs.GetVms()[0].Amount.Change[0].Length.GetSeconds(), ShouldEqual, 3600)
-		})
-
-		Convey("current amount", func() {
-			cfg := &Config{
-				VMs: &gce.Configs{
-					Vms: []*gce.Config{
-						{
-							Amount: &gce.Amount{
-								Max: 2,
-								Min: 2,
-								Change: []*gce.Schedule{
-									{
-										Min: 5,
-										Max: 5,
-										Length: &gce.TimePeriod{
-											Time: &gce.TimePeriod_Duration{
-												Duration: "1h",
-											},
-										},
-										Start: &gce.TimeOfDay{
-											Day:  dayofweek.DayOfWeek_MONDAY,
-											Time: "1:00",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			}
-
-			Convey("default", func() {
-				now := time.Time{}
-				So(now.Weekday(), ShouldEqual, time.Monday)
-				c, _ = testclock.UseTime(c, now)
-				So(normalize(c, cfg), ShouldBeNil)
-				So(cfg.VMs.GetVms()[0].CurrentAmount, ShouldEqual, 2)
-			})
-
-			Convey("scheduled", func() {
-				now := time.Time{}.Add(time.Hour)
-				So(now.Weekday(), ShouldEqual, time.Monday)
-				c, _ = testclock.UseTime(c, now)
-				So(normalize(c, cfg), ShouldBeNil)
-				So(cfg.VMs.GetVms()[0].CurrentAmount, ShouldEqual, 5)
-			})
 		})
 
 		Convey("lifetime", func() {

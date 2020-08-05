@@ -23,7 +23,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
@@ -176,11 +175,6 @@ func normalize(c context.Context, cfg *Config) error {
 				return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 			}
 		}
-		amt, err := v.ComputeAmount(v.GetCurrentAmount(), clock.Now(c))
-		if err != nil {
-			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
-		}
-		v.CurrentAmount = amt
 		if err := v.Lifetime.Normalize(); err != nil {
 			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
 		}

@@ -96,19 +96,41 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("valid", func() {
-				cfg, err := srv.Ensure(c, &config.EnsureRequest{
-					Id: "id",
-					Config: &config.Config{
+				Convey("new", func() {
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
+						Id: "id",
+						Config: &config.Config{
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Project: "project",
+								Zone:    "zone",
+							},
+							Lifetime: &config.TimePeriod{
+								Time: &config.TimePeriod_Seconds{
+									Seconds: 3600,
+								},
+							},
+							Prefix: "prefix",
+						},
+					})
+					So(err, ShouldBeNil)
+					So(cfg, ShouldResembleProto, &config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
 							},
 							MachineType: "type",
+							Project:     "project",
 							NetworkInterface: []*config.NetworkInterface{
 								{},
 							},
-							Project: "project",
-							Zone:    "zone",
+							Zone: "zone",
 						},
 						Lifetime: &config.TimePeriod{
 							Time: &config.TimePeriod_Seconds{
@@ -116,27 +138,76 @@ func TestConfig(t *testing.T) {
 							},
 						},
 						Prefix: "prefix",
-					},
+					})
 				})
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResembleProto, &config.Config{
-					Attributes: &config.VM{
-						Disk: []*config.Disk{
-							{},
+
+				Convey("update doesn't erase currentAmount", func() {
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
+							Amount: &config.Amount{
+								Max: 20,
+								Min: 10,
+							},
+							CurrentAmount: 15,
+							Owner: []string{
+								"owners",
+							},
+							Prefix: "prefix",
 						},
-						MachineType: "type",
-						Project:     "project",
-						NetworkInterface: []*config.NetworkInterface{
-							{},
+					}), ShouldBeNil)
+
+					cfg, err := srv.Ensure(c, &config.EnsureRequest{
+						Id: "id",
+						Config: &config.Config{
+							Amount: &config.Amount{
+								Max: 100,
+								Min: 50,
+							},
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Project: "project",
+								Zone:    "zone",
+							},
+							Lifetime: &config.TimePeriod{
+								Time: &config.TimePeriod_Seconds{
+									Seconds: 3600,
+								},
+							},
+							Prefix: "prefix",
 						},
-						Zone: "zone",
-					},
-					Lifetime: &config.TimePeriod{
-						Time: &config.TimePeriod_Seconds{
-							Seconds: 3600,
+					})
+					So(err, ShouldBeNil)
+					So(cfg, ShouldResembleProto, &config.Config{
+						Amount: &config.Amount{
+							Max: 100,
+							Min: 50,
 						},
-					},
-					Prefix: "prefix",
+						CurrentAmount: 15, // Same as before.
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{},
+							},
+							MachineType: "type",
+							Project:     "project",
+							NetworkInterface: []*config.NetworkInterface{
+								{},
+							},
+							Zone: "zone",
+						},
+						Lifetime: &config.TimePeriod{
+							Time: &config.TimePeriod_Seconds{
+								Seconds: 3600,
+							},
+						},
+						Prefix: "prefix",
+					})
 				})
 			})
 		})
