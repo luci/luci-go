@@ -88,7 +88,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "invocation.realm").Err()
+		return appstatus.Errorf(codes.InvalidArgument, "invocation.realm: %s", err)
 	}
 
 	if inv.GetDeadline() != nil {
@@ -115,6 +115,9 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	realm := inv.Realm
 	if realm == "" {
 		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err())
+	}
+	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+		return appstatus.Errorf(codes.InvalidArgument, "invocation.realm: %s", err)
 	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm); {
