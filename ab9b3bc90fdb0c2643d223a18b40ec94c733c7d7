@@ -16,6 +16,190 @@
       "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bf0fd59f_2d70b116",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "If this function still returns test variants with unexpected results only, I think the original name \"fetchVariantsWithUnexpectedResults\" is better.\n\nunexonerated variants are a subset anyways.",
+      "range": {
+        "startLine": 233,
+        "startChar": 3,
+        "endLine": 233,
+        "endChar": 67
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a691a63a_9b30649d",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 234,
+        "startChar": 41,
+        "endLine": 234,
+        "endChar": 49
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14df3b0b_d53948ab",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "Do we expect this to be fixed one day? If yes, does it worth a todo?",
+      "range": {
+        "startLine": 247,
+        "startChar": 49,
+        "endLine": 248,
+        "endChar": 16
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7719d4df_85457ec8",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "What if not_exonerated is false?",
+      "range": {
+        "startLine": 250,
+        "startChar": 4,
+        "endLine": 250,
+        "endChar": 34
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9be59bad_868ed1a4",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "broken sentence?",
+      "range": {
+        "startLine": 273,
+        "startChar": 27,
+        "endLine": 273,
+        "endChar": 67
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94c45c5d_8dd59fa3",
+        "filename": "resultdb/internal/testresults/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "It returns a testVariant set, right?",
+      "range": {
+        "startLine": 274,
+        "startChar": 3,
+        "endLine": 274,
+        "endChar": 49
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c993674c_6b2a435a",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "It\u0027s not necessarily not_exonerated\u003dtrue, is it?",
+      "range": {
+        "startLine": 56,
+        "startChar": 24,
+        "endLine": 56,
+        "endChar": 43
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b44f979_df58dcde",
+        "filename": "resultdb/proto/v1/predicate.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-05T01:44:54Z",
+      "side": 1,
+      "message": "I think exonerated should be more intuitive?",
+      "range": {
+        "startLine": 65,
+        "startChar": 7,
+        "endLine": 65,
+        "endChar": 21
+      },
+      "revId": "ab9b3bc90fdb0c2643d223a18b40ec94c733c7d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
