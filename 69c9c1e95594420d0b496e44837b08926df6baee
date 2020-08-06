@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9fe9198_fd6500a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T04:33:27Z",
+      "side": 1,
+      "message": "Is there a demo link?\n",
+      "revId": "69c9c1e95594420d0b496e44837b08926df6baee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c9a4681_825a3922",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T04:33:27Z",
+      "side": 1,
+      "message": "I prefer changing this to a computed property.\nThe advantage is that if any of the dependencies of the computed property is changed, the property is re-computed and the observers are notified automatically.\nFor instance, if this.buildState.buildPageData.id is updated, the related build will be re-computed.\n\nHere\u0027s an example:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/resultui/src/context/build_state/build_state.ts;l\u003d47",
+      "revId": "69c9c1e95594420d0b496e44837b08926df6baee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91c5a555_a83b3a3c",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T04:33:27Z",
+      "side": 1,
+      "message": "I understand this is temporary. But I think it\u0027s better to just render something trivial (e.g. the length of the related build).",
+      "revId": "69c9c1e95594420d0b496e44837b08926df6baee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
