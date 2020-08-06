@@ -118,6 +118,9 @@ message TestResult {
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
   string variant_hash = 12
       [ (google.api.field_behavior) = IMMUTABLE ];
+
+  // Specifies how to present the test result in UI.
+  TestResultPresentation presentation = 13;
 }
 
 // Location of the test definition.
@@ -209,4 +212,25 @@ message TestExoneration {
   // Hash of the variant.
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
   string variant_hash = 6 [ (google.api.field_behavior) = IMMUTABLE ];
+}
+
+// Describes how to present a test result in UI.
+message TestResultPresentation {
+  // An ordered list of categories that the test belongs to (not test result).
+  // The elements form a hierarchy: test_category[i+1] is a sub-category of
+  // test_category[i].
+  //
+  // Based on categories of different tests, UI builds as a tree of
+  // categories and displays tests categories. For example, if tests report
+  // categories ["a", "b"], ["a", "b", "c"] and ["x"], then the formed hierarchy
+  // is
+  // <root>
+  //   a
+  //     b
+  //       c
+  //   x
+  //
+  // Results of the same test SHOULD specify the same category, otherwise
+  // UI might be make little sense.
+  repeated string test_category = 1;
 }
