@@ -1,0 +1,262 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d45872c4_0693d779",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "lgtm % suggestions \u0026 nits.",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5b567eba_b039a3ea",
+        "filename": "cq/internal/submission/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "FYI: Go generally encourages creating smaller packages with smaller APIs.\n\nFor me calling Gerrit RPCs is orthogonal to determining submission order, so I\u0027d have diff packages.\n\n\nIt\u0027s fine to leave as is for now.",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "843f740f_6976a20b",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "Remove the impl. detail.",
+      "range": {
+        "startLine": 45,
+        "startChar": 17,
+        "endLine": 45,
+        "endChar": 39
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c09858eb_35f3b27c",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "just \"Dependency cycle is broken ...",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "baed40b2_b2e17343",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 59,
+        "startChar": 18,
+        "endLine": 59,
+        "endChar": 19
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6921af4d_6d9841b8",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "Golang automatically sticks things on the heap, if necessary.\nIn this case, however, it\u0027s not necessary. This should work:\n\no :\u003d optimizer{CLs: cls}\nreturn o.optimize()",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 10
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d516ec5_bdd05c1e",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "doesn\u0027t need to be public, but see my suggestion about not using any struct at all.",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 4
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44d70a04_22a1112d",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "on naming: http://go/java-practices/naming#positive-booleans\n!unvisited is harder to read than \"!remaining\"",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 13
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d9cf0a4_4c49b167",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "Copying here is weird for a slice seemingly owned by optimizer.\nBetter to do this copying *before* you create an optimizer{} struct.\n\nGiven how little code there is here, consider (I don\u0027t insist) to just define vars \u0026 inner function instead of a dedicated struct (basically, same as my Python code):\n\nfunc OptimizeOrder(...) cls {\n  cls, _, _ ... :\u003d optimize(...)\n}\n\nfunc optimize(...) (everything you want to test against) {\n  // copy cls and initialize temporary maps \n\n  visit :\u003d func(...){\n  }\n\n  ...\n  return ordered, \u003cother stuff\u003e\n}",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 3
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4408789_e34ad6f2",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "make(..., len(cls))",
+      "range": {
+        "startLine": 97,
+        "startChar": 18,
+        "endLine": 97,
+        "endChar": 33
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c177669_200b4583",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "when returning an error is easy, ie you don\u0027t need to propagate it through layers and layers of otherwise clean algorithmic functions, just return it. At call site, it\u0027d be easier to log additional details.\n\nand to remain succinct in tests, use helper to assert error:\n  run :\u003d func(...) []cls{\n    res, err :\u003d Optimize(...)\n    if err !\u003d nil {panic(err)}  \n    return res\n  }\n\n\n(I use panic in helpers instead of So(err, ShouldBeNil) to get full stack in GoConvey Web UI instead of useless line number)",
+      "range": {
+        "startLine": 111,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 58
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5558a4ae_c0f98a4b",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T05:41:58Z",
+      "side": 1,
+      "message": "// visit returns ...",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
