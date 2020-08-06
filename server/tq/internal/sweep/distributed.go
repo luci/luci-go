@@ -28,11 +28,11 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/server/tq/internal"
-	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
-	"go.chromium.org/luci/ttq/internals"
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/partition"
-	"go.chromium.org/luci/ttq/internals/reminder"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/lessor"
+	"go.chromium.org/luci/server/tq/internal/partition"
+	"go.chromium.org/luci/server/tq/internal/reminder"
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
 
 // Distributed implements distributed sweeping.
@@ -42,7 +42,7 @@ import (
 // different process).
 type Distributed struct {
 	// EnqueueSweepTask submits the task for execution somewhere in the fleet.
-	EnqueueSweepTask func(ctx context.Context, task *sweeppb.SweepTask) error
+	EnqueueSweepTask func(ctx context.Context, task *tqpb.SweepTask) error
 	// Submitter is used to submit Cloud Tasks requests.
 	Submitter internal.Submitter
 }
@@ -54,19 +54,19 @@ type Distributed struct {
 // blow up with exponential number of tasks. Better just to wait for the next
 // fresh sweep. For that reason the implementation is careful not to return
 // errors marked with transient.Tag.
-func (d *Distributed) ExecSweepTask(ctx context.Context, task *sweeppb.SweepTask) error {
+func (d *Distributed) ExecSweepTask(ctx context.Context, task *tqpb.SweepTask) error {
 	logging.Infof(ctx, "Sweeping %s (level %d, %d/%d): %s",
 		task.Db, task.Level, task.ShardIndex, task.ShardCount, task.Partition)
 
 	// The corresponding DB must be registered in the process, otherwise we won't
 	// know how to enumerate reminders.
-	db := databases.NonTxnDB(ctx, task.Db)
+	db := db.NonTxnDB(ctx, task.Db)
 	if db == nil {
 		return errors.Reason("no TQ db kind %q registered in the process", task.Db).Err()
 	}
 
 	// Similarly a lessor is needed for coordination.
-	lessor, err := internals.GetLessor(ctx, task.LessorId)
+	lessor, err := lessor.Get(ctx, task.LessorId)
 	if err != nil {
 		return errors.Annotate(err, "can't initialize lessor %q", task.LessorId).Err()
 	}
@@ -139,10 +139,10 @@ func (d *Distributed) ExecSweepTask(ctx context.Context, task *sweeppb.SweepTask
 // enqueueFollowUp enqueues sweep tasks that derive from `orig`.
 //
 // Logs errors inside.
-func (d *Distributed) enqueueFollowUp(ctx context.Context, orig *sweeppb.SweepTask, parts partition.SortedPartitions) error {
+func (d *Distributed) enqueueFollowUp(ctx context.Context, orig *tqpb.SweepTask, parts partition.SortedPartitions) error {
 	return parallel.WorkPool(16, func(work chan<- func() error) {
 		for _, part := range parts {
-			task := proto.Clone(orig).(*sweeppb.SweepTask)
+			task := proto.Clone(orig).(*tqpb.SweepTask)
 			task.Partition = part.String()
 			task.Level += 1 // we need to go deeper
 			work <- func() error {
@@ -161,12 +161,12 @@ func (d *Distributed) enqueueFollowUp(ctx context.Context, orig *sweeppb.SweepTa
 //
 // Logs errors inside. Returns the total number of successfully processed
 // reminders.
-func (d *Distributed) processReminders(ctx context.Context, lessor internals.Lessor, sectionID string, db databases.Database, reminders []*reminder.Reminder, keySpaceBytes int) (int, error) {
+func (d *Distributed) processReminders(ctx context.Context, lessor lessor.Lessor, sectionID string, db db.DB, reminders []*reminder.Reminder, keySpaceBytes int) (int, error) {
 	l := len(reminders)
 	if l == 0 {
 		return 0, nil
 	}
-	desired, err := partition.SpanInclusive(reminders[0].Id, reminders[l-1].Id)
+	desired, err := partition.SpanInclusive(reminders[0].ID, reminders[l-1].ID)
 	if err != nil {
 		logging.Errorf(ctx, "bug: invalid Reminder ID(s): %s", err)
 		return 0, errors.Annotate(err, "invalid Reminder ID(s)").Err()
@@ -176,7 +176,7 @@ func (d *Distributed) processReminders(ctx context.Context, lessor internals.Les
 	var count int
 	leaseErr := lessor.WithLease(ctx, sectionID, desired, time.Minute,
 		func(leaseCtx context.Context, leased partition.SortedPartitions) {
-			reminders := internals.OnlyLeased(reminders, leased, keySpaceBytes)
+			reminders := onlyLeased(reminders, leased, keySpaceBytes)
 			count, errProcess = d.processLeasedReminders(leaseCtx, db, reminders)
 		})
 	switch {
@@ -195,7 +195,7 @@ func (d *Distributed) processReminders(ctx context.Context, lessor internals.Les
 //
 // Logs errors inside. Returns the total number of successfully processed
 // reminders.
-func (d *Distributed) processLeasedReminders(ctx context.Context, db databases.Database, reminders []*reminder.Reminder) (int, error) {
+func (d *Distributed) processLeasedReminders(ctx context.Context, db db.DB, reminders []*reminder.Reminder) (int, error) {
 	const (
 		batchWorkers = 8
 		batchSize    = 50
@@ -230,7 +230,7 @@ func (d *Distributed) processLeasedReminders(ctx context.Context, db databases.D
 //
 // Logs errors inside. Returns the total number of successfully processed
 // reminders.
-func (d *Distributed) processBatch(ctx context.Context, db databases.Database, batch []*reminder.Reminder) (int, error) {
+func (d *Distributed) processBatch(ctx context.Context, db db.DB, batch []*reminder.Reminder) (int, error) {
 	payloaded, err := db.FetchReminderPayloads(ctx, batch)
 	switch missing := len(batch) - len(payloaded); {
 	case missing < 0:
@@ -255,7 +255,7 @@ func (d *Distributed) processBatch(ctx context.Context, db databases.Database, b
 			work <- func() error {
 				err := internal.SubmitFromReminder(ctx, d.Submitter, db, r, nil)
 				if err != nil {
-					logging.Errorf(ctx, "Failed to process reminder %q: %s", r.Id, err)
+					logging.Errorf(ctx, "Failed to process reminder %q: %s", r.ID, err)
 				} else {
 					atomic.AddInt32(&success, 1)
 				}

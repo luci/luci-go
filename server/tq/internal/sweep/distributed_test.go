@@ -29,11 +29,11 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 
-	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
-	"go.chromium.org/luci/ttq/internals"
-	"go.chromium.org/luci/ttq/internals/partition"
-	"go.chromium.org/luci/ttq/internals/reminder"
-	ttqt "go.chromium.org/luci/ttq/internals/testing"
+	"go.chromium.org/luci/server/tq/internal/lessor"
+	"go.chromium.org/luci/server/tq/internal/partition"
+	"go.chromium.org/luci/server/tq/internal/reminder"
+	"go.chromium.org/luci/server/tq/internal/testutil"
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -49,17 +49,17 @@ func TestDistributed(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), epoch)
 		sub := &submitter{}
 
-		db := &ttqt.FakeDB{}
+		db := &testutil.FakeDB{}
 		ctx = db.Inject(ctx)
 
 		lessor := &fakeLessor{}
 		ctx = lessor.Inject(ctx)
 
 		var mu sync.Mutex
-		var enqueued []*sweeppb.SweepTask
+		var enqueued []*tqpb.SweepTask
 
 		dist := Distributed{
-			EnqueueSweepTask: func(_ context.Context, task *sweeppb.SweepTask) error {
+			EnqueueSweepTask: func(_ context.Context, task *tqpb.SweepTask) error {
 				mu.Lock()
 				enqueued = append(enqueued, task)
 				mu.Unlock()
@@ -71,8 +71,8 @@ func TestDistributed(t *testing.T) {
 		tasksPerScan := 10000
 		secondaryScanShards := 2
 
-		sweepTask := func(low, high int64, level int) *sweeppb.SweepTask {
-			return &sweeppb.SweepTask{
+		sweepTask := func(low, high int64, level int) *tqpb.SweepTask {
+			return &tqpb.SweepTask{
 				Db:                  db.Kind(),
 				Partition:           partition.FromInts(low, high).String(),
 				LessorId:            "fakeLessor",
@@ -88,7 +88,7 @@ func TestDistributed(t *testing.T) {
 
 		mkReminder := func(id int, fresh bool, body string) *reminder.Reminder {
 			rem := &reminder.Reminder{}
-			rem.Id, _ = partition.FromInts(int64(id), int64(id)+1).QueryBounds(keySpaceBytes)
+			rem.ID, _ = partition.FromInts(int64(id), int64(id)+1).QueryBounds(keySpaceBytes)
 			if fresh {
 				rem.FreshUntil = epoch.Add(5 * time.Second)
 			} else {
@@ -211,7 +211,7 @@ type fakeLessor struct {
 	leased partition.SortedPartitions
 }
 
-func (f *fakeLessor) WithLease(ctx context.Context, sectionID string, part *partition.Partition, dur time.Duration, cb internals.WithLeaseCB) error {
+func (f *fakeLessor) WithLease(ctx context.Context, sectionID string, part *partition.Partition, dur time.Duration, cb lessor.WithLeaseCB) error {
 	l := f.leased
 	if l == nil {
 		l = partition.SortedPartitions{part}
@@ -227,7 +227,7 @@ func (f *fakeLessor) Inject(ctx context.Context) context.Context {
 }
 
 func init() {
-	internals.RegisterLessor("fakeLessor", func(ctx context.Context) (internals.Lessor, error) {
+	lessor.Register("fakeLessor", func(ctx context.Context) (lessor.Lessor, error) {
 		l, _ := ctx.Value(&fakeLessorKey).(*fakeLessor)
 		return l, nil
 	})

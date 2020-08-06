@@ -23,8 +23,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/ttq/internals/reminder"
-	ttqt "go.chromium.org/luci/ttq/internals/testing"
+	"go.chromium.org/luci/server/tq/internal/reminder"
+	"go.chromium.org/luci/server/tq/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,11 +34,11 @@ func TestSubmitFromReminder(t *testing.T) {
 
 	Convey("With mocks", t, func() {
 		ctx := context.Background()
-		db := ttqt.FakeDB{}
+		db := testutil.FakeDB{}
 		sub := submitter{}
 		ctx = db.Inject(ctx)
 
-		r := &reminder.Reminder{Id: "rem"}
+		r := &reminder.Reminder{ID: "rem"}
 		r.Payload, _ = proto.Marshal(&taskspb.CreateTaskRequest{
 			Parent: "from rem",
 		})
