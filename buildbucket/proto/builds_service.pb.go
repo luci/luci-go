@@ -383,8 +383,14 @@ type UpdateBuildRequest struct {
 	// https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
 	//
 	// Currently supports only the following path strings:
-	// - build.steps
+	// - build.output
 	// - build.output.properties
+	// - build.output.gitiles_commit
+	// - build.status
+	// - build.status_details
+	// - build.steps
+	// - build.summary_markdown
+	// - build.tags
 	UpdateMask *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	// Fields to include in the response. See also GetBuildRequest.fields.
 	Fields *field_mask.FieldMask `protobuf:"bytes,100,opt,name=fields,proto3" json:"fields,omitempty"`
