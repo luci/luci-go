@@ -116,6 +116,9 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	if realm == "" {
 		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation.realm").Err())
 	}
+	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+		return appstatus.BadRequest(errors.Annotate(err, "invocation.realm").Err())
+	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm); {
 	case err != nil:

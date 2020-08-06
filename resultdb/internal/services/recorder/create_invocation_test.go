@@ -197,6 +197,19 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `does not have permission to create invocations`)
 		})
+		Convey(`invalid realm`, func() {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity:            "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "build:8765432100",
+				Invocation: &pb.Invocation{
+					Realm: "invalid:",
+				},
+			})
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `invocation.realm: bad global realm name`)
+		})
 	})
 
 }
@@ -323,6 +336,17 @@ func TestCreateInvocation(t *testing.T) {
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation: unspecified`)
+		})
+		Convey(`invalid realm`, func() {
+			req := &pb.CreateInvocationRequest{
+				InvocationId: "u-inv",
+				Invocation: &pb.Invocation{
+					Realm: "testproject:",
+				},
+				RequestId: "request id",
+			}
+			_, err := recorder.CreateInvocation(ctx, req)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invocation.realm`)
 		})
 		Convey(`missing invocation id`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
