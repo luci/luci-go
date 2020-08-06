@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "29a63356_c72c2ced",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-06T21:11:44Z",
+      "side": 1,
+      "message": "Consider https://godoc.org/go.chromium.org/luci/common/data/stringset, I think it would be more straightforward.",
+      "revId": "9cfccc90b0f0542fbb2351cf667ee22810b6e920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
