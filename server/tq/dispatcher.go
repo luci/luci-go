@@ -48,10 +48,11 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/reminder"
+
+	"go.chromium.org/luci/server/tq/internal"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
@@ -471,7 +472,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	}
 
 	// Examine the context to see if we are inside a transaction.
-	db := databases.TxnDB(ctx)
+	db := db.TxnDB(ctx)
 	switch cls.Kind {
 	case FollowsContext:
 		// do nothing, will use `db` if it is non-nil
@@ -514,7 +515,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare a reminder").Err()
 	}
-	span.Attribute("cr.dev/reminder", r.Id)
+	span.Attribute("cr.dev/reminder", r.ID)
 	if err := db.SaveReminder(ctx, r); err != nil {
 		return errors.Annotate(err, "failed to store a transactional enqueue reminder").Err()
 	}
@@ -530,7 +531,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.DeferredEnqueue", logging.Fields{
 			"cr.dev/class":    cls.ID,
 			"cr.dev/title":    task.Title,
-			"cr.dev/reminder": r.Id,
+			"cr.dev/reminder": r.ID,
 		})
 		defer func() { span.End(err) }()
 
@@ -705,7 +706,7 @@ var (
 const (
 	// reminderKeySpaceBytes defines the space of the Reminder Ids.
 	//
-	// Because Reminder.Id is hex-encoded, actual length is doubled.
+	// Because Reminder.ID is hex-encoded, actual length is doubled.
 	//
 	// 16 is chosen is big enough to avoid collisions in practice yet small enough
 	// for easier human-debugging of key ranges in queries.
@@ -898,8 +899,8 @@ func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRe
 	// Note: length of the generate ID here is different from length of IDs
 	// we generate when using DeduplicationKey, so there'll be no collisions
 	// between two different sorts of named tasks.
-	r := &reminder.Reminder{Id: hex.EncodeToString(buf)}
-	req.Task.Name = req.Parent + "/tasks/" + r.Id
+	r := &reminder.Reminder{ID: hex.EncodeToString(buf)}
+	req.Task.Name = req.Parent + "/tasks/" + r.ID
 
 	// Bound FreshUntil to at most current context deadline.
 	r.FreshUntil = clock.Now(ctx).Add(happyPathMaxDuration)

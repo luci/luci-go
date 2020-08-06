@@ -19,8 +19,9 @@ import (
 	"sync"
 	"testing"
 
-	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
 	"go.chromium.org/luci/server/tq/tqtesting"
+
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -36,11 +37,11 @@ func TestSweepRouting(t *testing.T) {
 		sched := disp.SchedulerForTest()
 
 		mu := sync.Mutex{}
-		calls := []*sweeppb.SweepTask{}
+		calls := []*tqpb.SweepTask{}
 
 		enqueue := sweepTaskRouting(&disp,
 			SweeperOptions{TaskQueue: "zzz"},
-			func(_ context.Context, task *sweeppb.SweepTask) error {
+			func(_ context.Context, task *tqpb.SweepTask) error {
 				mu.Lock()
 				calls = append(calls, task)
 				mu.Unlock()
@@ -48,7 +49,7 @@ func TestSweepRouting(t *testing.T) {
 			},
 		)
 
-		submitted := &sweeppb.SweepTask{ShardCount: 123}
+		submitted := &tqpb.SweepTask{ShardCount: 123}
 		enqueue(ctx, submitted)
 
 		sched.Run(ctx, tqtesting.StopWhenDrained())
