@@ -151,6 +151,24 @@
       "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26571f37_1f20dba9",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-06T23:51:30Z",
+      "side": 1,
+      "message": "ok, I got your point. Yeah, the same commit/gitiles tag values should be allowed in validation and then be deduped in future code path, just like the builder tag.",
+      "parentUuid": "4592b116_f4707bbb",
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
