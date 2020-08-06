@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9db85811_573c0d0c",
+        "filename": "milo/frontend/resultui/src/context/build_state/build_state.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T23:54:01Z",
+      "side": 1,
+      "message": "Use @computed({keepAlive: true})\nSo it won\u0027t be GCed when there\u0027s no observer (when user switches to another tab).",
+      "revId": "92ff01d5e17911686a6738a1267b6dc0ee16b848",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
