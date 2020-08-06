@@ -36,6 +36,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -56,6 +57,8 @@ func main() {
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
+		srv.Context = tasks.WithDispatcher(srv.Context, tasks.NewDispatcher(&tq.Default))
+
 		// Proxy buildbucket.v2.Builds pRPC requests back to the Python
 		// service in order to achieve a programmatic traffic split.
 		// Because of the way dispatch routes work, requests are proxied
