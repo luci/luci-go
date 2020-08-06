@@ -59,6 +59,30 @@
     },
     {
       "key": {
+        "uuid": "6a6ff3e2_ac1dfac0",
+        "filename": "cq/internal/submission/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "eh.. fixed",
+      "parentUuid": "71a02a6d_1a24d0c2",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a26d906_d3c3b7cf",
         "filename": "cq/internal/submission/doc.go",
         "patchSetId": 6
@@ -82,6 +106,30 @@
     },
     {
       "key": {
+        "uuid": "ebc922d0_e3b39d72",
+        "filename": "cq/internal/submission/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a26d906_d3c3b7cf",
+      "range": {
+        "startLine": 15,
+        "startChar": 31,
+        "endLine": 15,
+        "endChar": 75
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b567eba_b039a3ea",
         "filename": "cq/internal/submission/doc.go",
         "patchSetId": 6
@@ -93,6 +141,24 @@
       "writtenOn": "2020-08-06T05:41:58Z",
       "side": 1,
       "message": "FYI: Go generally encourages creating smaller packages with smaller APIs.\n\nFor me calling Gerrit RPCs is orthogonal to determining submission order, so I\u0027d have diff packages.\n\n\nIt\u0027s fine to leave as is for now.",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0f95902b_1de33e54",
+        "filename": "cq/internal/submission/doc.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "\u003e FYI: Go generally encourages creating smaller packages with smaller APIs.\n\u003e \n\u003e For me calling Gerrit RPCs is orthogonal to determining submission order, so I\u0027d have diff packages.\n\nAck\n\n\u003e It\u0027s fine to leave as is for now.\n\nI also prefer leave it as it is for now since the final packages layout is still uncertain at this moment. I\u0027ll add a TODO to make a note of that.",
+      "parentUuid": "5b567eba_b039a3ea",
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -145,6 +211,54 @@
     },
     {
       "key": {
+        "uuid": "78bcb454_bc1ec7d1",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "ComputeOrder SGTM.",
+      "parentUuid": "915327bd_4354dc1f",
+      "range": {
+        "startLine": 44,
+        "startChar": 3,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ed2d4c2d_b0aeaa7c",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db4d76e9_43d30d31",
+      "range": {
+        "startLine": 44,
+        "startChar": 27,
+        "endLine": 44,
+        "endChar": 37
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "843f740f_6976a20b",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -165,6 +279,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "318c29a2_4817b12f",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "843f740f_6976a20b",
+      "range": {
+        "startLine": 45,
+        "startChar": 17,
+        "endLine": 45,
+        "endChar": 39
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -191,6 +329,30 @@
     },
     {
       "key": {
+        "uuid": "10c73308_b71b2bc6",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c09858eb_35f3b27c",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baed40b2_b2e17343",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -211,6 +373,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee69be8e_29bcf62c",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baed40b2_b2e17343",
+      "range": {
+        "startLine": 59,
+        "startChar": 18,
+        "endLine": 59,
+        "endChar": 19
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +423,30 @@
     },
     {
       "key": {
+        "uuid": "c8e248f7_5785997d",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Awesome. Thanks for pointing out! It turns out my interpretation of method set is incomplete https://golang.org/ref/spec#Method_sets . I though that a value type T can only call methods declared with receiver type T but not *T. Now that I learned this: https://screenshot.googleplex.com/7dwTUjiyHdp",
+      "parentUuid": "6921af4d_6d9841b8",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 10
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d516ec5_bdd05c1e",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -257,6 +467,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80897341_e792e764",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Remove the struct entirely",
+      "parentUuid": "3d516ec5_bdd05c1e",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 4
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -283,6 +517,30 @@
     },
     {
       "key": {
+        "uuid": "e47623a7_c16b4adc",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44d70a04_22a1112d",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 13
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5fe52f6_ddbd73d8",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -303,6 +561,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d025ccd_109aa575",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5fe52f6_ddbd73d8",
+      "range": {
+        "startLine": 75,
+        "startChar": 54,
+        "endLine": 75,
+        "endChar": 59
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -329,6 +611,30 @@
     },
     {
       "key": {
+        "uuid": "5203eb28_4a4c1d8d",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2b665e1_e937acba",
+      "range": {
+        "startLine": 76,
+        "startChar": 3,
+        "endLine": 76,
+        "endChar": 55
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "767c85df_f087d7a6",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -352,6 +658,30 @@
     },
     {
       "key": {
+        "uuid": "81cf7e6b_b23d8358",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "767c85df_f087d7a6",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 53
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2736e20_969a0aad",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -366,6 +696,24 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04514e6c_b5f96905",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2736e20_969a0aad",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -392,6 +740,30 @@
     },
     {
       "key": {
+        "uuid": "73fbeb94_5e4d4fbb",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ffabfc18_242841b5",
+      "range": {
+        "startLine": 86,
+        "startChar": 3,
+        "endLine": 86,
+        "endChar": 47
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5a49b55_1ddebe08",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -412,6 +784,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad5dc97_e6d67283",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5a49b55_1ddebe08",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 16
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -438,6 +834,30 @@
     },
     {
       "key": {
+        "uuid": "d3678cd3_856b9f4a",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Changed the use vars \u0026 inner func :)",
+      "parentUuid": "9d9cf0a4_4c49b167",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 3
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4408789_e34ad6f2",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -458,6 +878,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2275d668_d5a85037",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4408789_e34ad6f2",
+      "range": {
+        "startLine": 97,
+        "startChar": 18,
+        "endLine": 97,
+        "endChar": 33
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -484,6 +928,30 @@
     },
     {
       "key": {
+        "uuid": "c4430879_30bd2f52",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Honestly, I still doesn\u0027t quite get the best practice in GO about when to return error and when to panic. But\n\n\u003e when returning an error is easy, ie you don\u0027t need to propagate it through layers and layers of otherwise clean algorithmic functions, just return it. At call site, it\u0027d be easier to log additional details.\n\nMakes sense to me.\n\n\u003e and to remain succinct in tests, use helper to assert error:\n\u003e   run :\u003d func(...) []cls{\n\u003e     res, err :\u003d Optimize(...)\n\u003e     if err !\u003d nil {panic(err)}  \n\u003e     return res\n\u003e   }\n\u003e \n\u003e \n\u003e (I use panic in helpers instead of So(err, ShouldBeNil) to get full stack in GoConvey Web UI instead of useless line number)\n\nDone",
+      "parentUuid": "5c177669_200b4583",
+      "range": {
+        "startLine": 111,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 58
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5558a4ae_c0f98a4b",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -501,6 +969,24 @@
     },
     {
       "key": {
+        "uuid": "9ea706e9_cf2a65ca",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5558a4ae_c0f98a4b",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eadc02d4_6847735e",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -512,6 +998,30 @@
       "writtenOn": "2020-08-06T06:05:47Z",
       "side": 1,
       "message": "I\u0027d bet this is where all the time is burned. If dep.Key was an index of a CL in a cls list, then this wouldn\u0027t be a problem.\nThis can be pre-computed in O(E). In fact, CLs themselves can be identified by index, too.\n\nLet\u0027s not do this yet in this CL, but please add a TODO somewhere in code to do this once we define internally a CL for CQ.",
+      "range": {
+        "startLine": 129,
+        "startChar": 14,
+        "endLine": 129,
+        "endChar": 37
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e2d266f_f1a0be34",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "\u003e I\u0027d bet this is where all the time is burned. If dep.Key was an index of a CL in a cls list, then this wouldn\u0027t be a problem.\n\u003e This can be pre-computed in O(E). In fact, CLs themselves can be identified by index, too.\n\nWould you mind explain more on this? Are you indicating that for actual CL struct in the future, it probably won\u0027t have attribute Key which needs to be computed over and over again (i.e. host+number)?",
+      "parentUuid": "eadc02d4_6847735e",
       "range": {
         "startLine": 129,
         "startChar": 14,
@@ -547,6 +1057,30 @@
     },
     {
       "key": {
+        "uuid": "d82a5e80_094f5cc4",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a2f71bf_347c9f16",
+      "range": {
+        "startLine": 33,
+        "startChar": 10,
+        "endLine": 33,
+        "endChar": 20
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0c3470b_55e3d81d",
         "filename": "cq/internal/submission/order_test.go",
         "patchSetId": 6
@@ -570,6 +1104,30 @@
     },
     {
       "key": {
+        "uuid": "9f57baa0_01c68c5f",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0c3470b_55e3d81d",
+      "range": {
+        "startLine": 146,
+        "startChar": 3,
+        "endLine": 146,
+        "endChar": 12
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df3fba5a_70165f85",
         "filename": "cq/internal/submission/order_test.go",
         "patchSetId": 6
@@ -590,6 +1148,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "268d7960_4b65d78f",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df3fba5a_70165f85",
+      "range": {
+        "startLine": 149,
+        "startChar": 18,
+        "endLine": 149,
+        "endChar": 26
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

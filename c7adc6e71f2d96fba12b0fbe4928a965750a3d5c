@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c722f648_8ff8c440",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-06T23:03:32Z",
+      "side": 1,
+      "message": "Thank for reviewing! \n\n@Andrii, PTAL the unresolved comment, I don\u0027t think I fully comprehend that.",
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
