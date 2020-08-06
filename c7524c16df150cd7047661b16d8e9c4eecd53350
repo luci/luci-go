@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94eb5e30_b7c6e280",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T06:27:46Z",
+      "side": 1,
+      "message": "It\u0027s probably better to move this and this.relatedBuildsData to buildState.\nBecause when user switches to another tab, this component will be GCed, and the data will need to be fetched again.\nIf we add it to the build state, as long as the user stays on the build page, we can always reuse the data.",
+      "revId": "c7524c16df150cd7047661b16d8e9c4eecd53350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "886ba9d7_5cba5861",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T06:27:46Z",
+      "side": 1,
+      "message": "According to nodir (\u0026 go/chip-200), we should not add too many plain JSON endpoints.\nI think we can convert this to a pRPC endpoint.\nWe don\u0027t need to do that in this CL though.\nBut we can add a comment to indicate that this is temporary.\nI\u0027m setting up a pRPC service at the moment, we can convert the endpoint over after I finish that.",
+      "revId": "c7524c16df150cd7047661b16d8e9c4eecd53350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
