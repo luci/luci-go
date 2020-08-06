@@ -15,10 +15,30 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { observable} from 'mobx';
+import { observable, computed} from 'mobx';
+import { fromPromise, FULFILLED, IPromiseBasedObservable } from 'mobx-utils';
+import { BuildState, consumeBuildState } from '../context/build_state/build_state';
+import { RelatedBuildsData } from "../services/build_page"
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref buildState!: BuildState;
+
+  @computed
+  get relatedBuildsDataReq(): IPromiseBasedObservable<RelatedBuildsData> {
+    if (!this.appState.buildPageService || !this.buildState.buildPageData) {
+      return fromPromise(new Promise(() => {}));
+    }
+    return fromPromise(this.appState.buildPageService.getRelatedBuilds(this.buildState.buildPageData!.id));
+  }
+
+  @computed
+  get relatedBuildsData(): RelatedBuildsData | null {
+    if (this.relatedBuildsDataReq.state !== FULFILLED) {
+      return null;
+    }
+    return this.relatedBuildsDataReq.value;
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -27,11 +47,13 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div>This is the Related Build Tab<div>
+      There are ${this.relatedBuildsData?.related_builds.length} related builds
     `;
   }
 }
 
 customElement('tr-related-builds-tab')(
-  consumeAppState(RelatedBuildsTabElement),
+  consumeBuildState(
+    consumeAppState(RelatedBuildsTabElement),
+  )
 );
