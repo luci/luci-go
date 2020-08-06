@@ -26,8 +26,8 @@ import (
 
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/reminder"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
 // TODO(vadimsh): Add metrics.
@@ -66,7 +66,7 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest) er
 // or a fatal error.
 //
 // If `req` is nil, the request will be deserialized from the reminder payload.
-func SubmitFromReminder(ctx context.Context, s Submitter, db databases.Database, r *reminder.Reminder, req *taskspb.CreateTaskRequest) error {
+func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest) error {
 	var err error
 	if req == nil {
 		req = &taskspb.CreateTaskRequest{}

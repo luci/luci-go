@@ -26,10 +26,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/partition"
-	"go.chromium.org/luci/ttq/internals/reminder"
-	ttqt "go.chromium.org/luci/ttq/internals/testing"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/partition"
+	"go.chromium.org/luci/server/tq/internal/reminder"
+	"go.chromium.org/luci/server/tq/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -42,11 +42,11 @@ func TestScan(t *testing.T) {
 	Convey("Scan works", t, func() {
 		epoch := testclock.TestRecentTimeLocal
 		ctx, tclock := testclock.UseTime(context.Background(), epoch)
-		db := databases.Database(&ttqt.FakeDB{})
+		db := db.DB(&testutil.FakeDB{})
 
 		mkReminder := func(id int64, freshUntil time.Time) *reminder.Reminder {
 			low, _ := partition.FromInts(id, id+1).QueryBounds(keySpaceBytes)
-			return &reminder.Reminder{Id: low, FreshUntil: freshUntil}
+			return &reminder.Reminder{ID: low, FreshUntil: freshUntil}
 		}
 		part0to10 := partition.FromInts(0, 10)
 
@@ -126,7 +126,7 @@ func TestScan(t *testing.T) {
 		Convey("Abnormal operation", func() {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockDB := ttqt.NewMockDatabase(ctrl)
+			mockDB := testutil.NewMockDB(ctrl)
 			mockDB.EXPECT().Kind().AnyTimes().Return("mockdb")
 
 			db = mockDB

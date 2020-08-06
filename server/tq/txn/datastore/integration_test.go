@@ -101,7 +101,7 @@ func TestEventuallyExecutes(t *testing.T) {
 		sched := disp.SchedulerForTest()
 
 		// Use smaller sweep tasks to hit more edge cases.
-		disp.Sweeper = tq.NewDistributedSweeper(disp, tq.SweeperOptions{
+		disp.Sweeper = tq.NewDistributedSweeper(disp, tq.DistributedSweeperOptions{
 			SweepShards:         4,
 			TasksPerScan:        10,
 			SecondaryScanShards: 4,
@@ -166,7 +166,7 @@ func TestEventuallyExecutes(t *testing.T) {
 		// be stuck. Use panics instead of So(...) to avoid spamming goconvey with
 		// lots and lots of assertion dots.
 		for {
-			reminders, err := datastore.Count(ctx, datastore.NewQuery("ttq.Reminder"))
+			reminders, err := datastore.Count(ctx, datastore.NewQuery(reminderKind))
 			if err != nil {
 				panic(err)
 			}

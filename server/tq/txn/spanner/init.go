@@ -28,23 +28,22 @@ import (
 
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/databases/spanner"
+	"go.chromium.org/luci/server/tq/internal/db"
 )
 
-var db spanner.DB
+var impl spanDB
 
 func init() {
-	databases.Register(databases.Impl{
-		Kind: db.Kind(),
-		ProbeForTxn: func(ctx context.Context) databases.Database {
+	db.Register(db.Impl{
+		Kind: impl.Kind(),
+		ProbeForTxn: func(ctx context.Context) db.DB {
 			if span.RW(ctx) != nil {
-				return db
+				return impl
 			}
 			return nil
 		},
-		NonTxn: func(ctx context.Context) databases.Database {
-			return db
+		NonTxn: func(ctx context.Context) db.DB {
+			return impl
 		},
 	})
 }

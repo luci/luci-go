@@ -19,35 +19,39 @@
 // installed. It is installed by default in LUCI server contexts.
 //
 // This package is normally imported unnamed:
-//
 //   import _ "go.chromium.org/luci/server/tq/txn/datastore"
+//
+// Will take ownership of entities with kinds "tq.*" (e.g. "tq.Reminder").
 package datastore
 
 import (
 	"context"
 
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/databases/datastore"
-
-	// Register "datastore" lessor.
-	_ "go.chromium.org/luci/ttq/internals/lessors/datastore"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/lessor"
 )
 
-var db datastore.DB
+var impl dsDB
 
 func init() {
-	databases.Register(databases.Impl{
-		Kind: db.Kind(),
-		ProbeForTxn: func(ctx context.Context) databases.Database {
-			if ds.CurrentTransaction(ctx) != nil {
-				return db
+	db.Register(db.Impl{
+		Kind: impl.Kind(),
+		ProbeForTxn: func(ctx context.Context) db.DB {
+			if datastore.CurrentTransaction(ctx) != nil {
+				return impl
 			}
 			return nil
 		},
-		NonTxn: func(ctx context.Context) databases.Database {
-			return db
+		NonTxn: func(ctx context.Context) db.DB {
+			return impl
 		},
+	})
+}
+
+func init() {
+	lessor.Register("datastore", func(context.Context) (lessor.Lessor, error) {
+		return &dsLessor{}, nil
 	})
 }

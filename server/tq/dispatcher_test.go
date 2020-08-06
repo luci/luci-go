@@ -37,9 +37,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	ttqt "go.chromium.org/luci/ttq/internals/testing"
+	"go.chromium.org/luci/server/tq/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -309,7 +310,7 @@ func TestTransactionalEnqueue(t *testing.T) {
 		var now = time.Unix(1442540000, 0)
 
 		submitter := &submitter{}
-		db := ttqt.FakeDB{}
+		db := testutil.FakeDB{}
 		d := Dispatcher{
 			Submitter:         submitter,
 			CloudProject:      "proj",
@@ -351,8 +352,8 @@ func TestTransactionalEnqueue(t *testing.T) {
 			remReq := &taskspb.CreateTaskRequest{}
 			So(proto.Unmarshal(rem.Payload, remReq), ShouldBeNil)
 			So(req, ShouldResembleProto, remReq)
-			So(rem.Id, ShouldHaveLength, reminderKeySpaceBytes*2)
-			So(req.Task.Name, ShouldEqual, "projects/proj/locations/reg/queues/queue-1/tasks/"+rem.Id)
+			So(rem.ID, ShouldHaveLength, reminderKeySpaceBytes*2)
+			So(req.Task.Name, ShouldEqual, "projects/proj/locations/reg/queues/queue-1/tasks/"+rem.ID)
 			So(rem.FreshUntil.Equal(now.Add(happyPathMaxDuration)), ShouldBeTrue)
 		})
 
