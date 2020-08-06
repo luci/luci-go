@@ -16,11 +16,14 @@ package rpc
 
 import (
 	"context"
+	"regexp"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -28,6 +31,25 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
+)
+
+type tagValidationMode int
+
+const (
+	TagNew tagValidationMode = iota
+	TagAppend
+)
+
+const (
+	buildSetMaxLength = 1024
+)
+
+var (
+	blocklistKeyForAppend = stringset.NewFromSlice("build_address", "buildset", "builder")
+	reservedKeys          = stringset.NewFromSlice("build_address")
+	gitilesCommitRegex    = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
+	gerritCLRegex         = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
 )
 
 // commonPostlude converts an appstatus error to a gRPC error and logs it.
@@ -75,4 +97,74 @@ func getBuild(ctx context.Context, id int64) (*model.Build, error) {
 	default:
 		return bld, nil
 	}
+}
+
+// validateTags validates build tags.
+// tagValidationMode should be one of the enum - TagNew, TagAppend
+// Note: Duplicate tags can pass the validation, which will be eventually deduplicated when storing into DB.
+func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
+	if tags == nil {
+		return nil
+	}
+	var k, v string
+	var seenBuilderTagValue string
+	var seenGitilesCommit string
+	for _, tag := range tags {
+		k = tag.Key
+		v = tag.Value
+		if strings.Contains(k, ":") {
+			return errors.Reason(`tag key "%s" cannot have a colon`, k).Err()
+		}
+		if m == TagAppend && blocklistKeyForAppend.Has(k) {
+			return errors.Reason(`tag key "%s" cannot be added to an existing build`, k).Err()
+		}
+		if k == "buildset" {
+			if err := validateBuildSet(v); err != nil {
+				return err
+			}
+			if gitilesCommitRegex.MatchString(v) {
+				if seenGitilesCommit != "" && v != seenGitilesCommit {
+					return errors.Reason(`tag "buildset:%s" conflicts with tag "buildset:%s"`, v, seenGitilesCommit).Err()
+				}
+				seenGitilesCommit = v
+			}
+		}
+		if k == "builder" {
+			if seenBuilderTagValue == "" {
+				seenBuilderTagValue = v
+			} else if v != seenBuilderTagValue {
+				return errors.Reason(`tag "builder:%s" conflicts with tag "builder:%s"`, v, seenBuilderTagValue).Err()
+			}
+		}
+		if reservedKeys.Has(k) {
+			return errors.Reason(`tag "%s" is reserved`, k).Err()
+		}
+	}
+	return nil
+}
+
+func validateBuildSet(bs string) error {
+	if len("buildset:")+len(bs) > buildSetMaxLength {
+		return errors.Reason("buildset tag is too long").Err()
+	}
+
+	// Verify that a buildset with a known prefix is well formed.
+	if strings.HasPrefix(bs, "commit/gitiles/") {
+		matches := gitilesCommitRegex.FindStringSubmatch(bs)
+		if len(matches) == 0 {
+			return errors.Reason(`does not match regex "%s"`, gitilesCommitRegex).Err()
+		}
+		project := matches[2]
+		if strings.HasPrefix(project, "a/") {
+			return errors.Reason(`gitiles project must not start with "a/"`).Err()
+		}
+		if strings.HasSuffix(project, ".git") {
+			return errors.Reason(`gitiles project must not end with ".git"`).Err()
+		}
+	} else if strings.HasPrefix(bs, "patch/gerrit/") {
+		if !gerritCLRegex.MatchString(bs) {
+			return errors.Reason(`does not match regex "%s"`, gerritCLRegex).Err()
+		}
+	}
+	return nil
 }
