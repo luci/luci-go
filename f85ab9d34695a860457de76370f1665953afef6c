@@ -69,6 +69,24 @@
       "revId": "f85ab9d34695a860457de76370f1665953afef6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aff285af_c24b7dfb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T00:40:15Z",
+      "side": 1,
+      "message": "\u003e The realm check will replace \"access to the project\" check.\nI see. I thought the realm check should be added in addition to the project check.\nIn the front page, we need to display all the visible projects.\nAfter we replace the `access to the project check` with the `access to the console\u0027s realm` check, do we just treat all projects without visible console as invisible?\nOr do we need to add something like \u0027milo.projects.get\u0027?\n\n\u003e What do you mean by \"project-scoped permission check\"?\nNVM, I meant the \"access to the project\" check",
+      "parentUuid": "30939cca_ff0aec0c",
+      "revId": "f85ab9d34695a860457de76370f1665953afef6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
