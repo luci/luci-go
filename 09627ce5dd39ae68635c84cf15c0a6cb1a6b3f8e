@@ -174,6 +174,29 @@
     },
     {
       "key": {
+        "uuid": "767c85df_f087d7a6",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T06:05:47Z",
+      "side": 1,
+      "message": "we should remove this comment.\nThe usual E and V is are actually 0 and 1 respectively, and this is exactly when we don\u0027t care about this algo\u0027s perforamnce.\nAnd in fact most attempts with large V are usually 1 or 2 long stacks, that is E ~\u003d V^2.",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 53
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d9cf0a4_4c49b167",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -254,6 +277,29 @@
       "writtenOn": "2020-08-06T05:41:58Z",
       "side": 1,
       "message": "// visit returns ...",
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eadc02d4_6847735e",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-06T06:05:47Z",
+      "side": 1,
+      "message": "I\u0027d bet this is where all the time is burned. If dep.Key was an index of a CL in a cls list, then this wouldn\u0027t be a problem.\nThis can be pre-computed in O(E). In fact, CLs themselves can be identified by index, too.\n\nLet\u0027s not do this yet in this CL, but please add a TODO somewhere in code to do this once we define internally a CL for CQ.",
+      "range": {
+        "startLine": 129,
+        "startChar": 14,
+        "endLine": 129,
+        "endChar": 37
+      },
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
