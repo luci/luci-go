@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
@@ -149,7 +150,7 @@ type ModuleOptions struct {
 	// Can be in short or full form. See Queue in TaskClass for details. The queue
 	// should be configured to allow at least 10 QPS.
 	//
-	// Default is "default".
+	// Default is "tq-sweep".
 	SweepTaskQueue string
 
 	// SweepTaskPrefix is a URL prefix to use for sweep subtasks when running
@@ -205,7 +206,7 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.Var(luciflag.StringSlice(&o.SweepInitiationLaunchers), "tq-sweep-initiation-launcher",
 		`Service account email allowed to hit -tq-sweep-initiation-endpoint. May be repeated.`)
 
-	f.StringVar(&o.SweepTaskQueue, "tq-sweep-task-queue", "default",
+	f.StringVar(&o.SweepTaskQueue, "tq-sweep-task-queue", "tq-sweep",
 		`A queue name to use to distribute sweep subtasks`)
 
 	f.StringVar(&o.SweepTaskPrefix, "tq-sweep-task-prefix", "",
@@ -321,6 +322,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	}
 
 	if m.opts.ServingPrefix != "-" {
+		logging.Infof(ctx, "TQ is serving tasks from %q", m.opts.ServingPrefix)
 		disp.InstallTasksRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
 
@@ -362,6 +364,7 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 	// Setup the sweep processing.
 	switch m.opts.SweepMode {
 	case "distributed":
+		logging.Infof(ctx, "TQ sweep task queue is %q", m.opts.SweepTaskQueue)
 		disp.Sweeper = NewDistributedSweeper(disp, SweeperOptions{
 			SweepShards:         m.opts.SweepShards,
 			TasksPerScan:        2048, // TODO: make configurable if necessary
@@ -379,6 +382,7 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 
 	// Setup the sweep initiation.
 	if m.opts.SweepInitiationEndpoint != "-" {
+		logging.Infof(ctx, "TQ sweep initiation endpoint is %q", m.opts.SweepInitiationEndpoint)
 		disp.InstallSweepRoute(host.Routes(), m.opts.SweepInitiationEndpoint)
 	}
 

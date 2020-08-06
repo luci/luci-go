@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tq provides a task queue implementation on top of Cloud Tasks.
-//
-// It exposes a high-level API that operates with proto messages and hides
-// gory details such as serialization, routing, authentication, etc.
 package tq
 
 import (
@@ -638,7 +634,7 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 		// easier to move tasks between queues that way.
 		header := ""
 		if d.GAE {
-			header = "X-Appengine-Queue"
+			header = "X-Appengine-Queuename"
 		}
 		mw = authMiddleware(pushers, header)
 	}
