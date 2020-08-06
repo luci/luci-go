@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "98eb571e_c048416d",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-06T22:58:28Z",
+      "side": 1,
+      "message": "I think symlink failed if directory is not there.",
+      "parentUuid": "7a1eeafb_a6bae400",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 3
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "af30ac5c_43918fd7",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2020-08-06T15:35:25Z",
       "side": 1,
       "message": "Is the default 600 already? In that case, it needs to update only for 700.",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 55
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dad402b_d86fe0c5",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-06T22:58:28Z",
+      "side": 1,
+      "message": "no\nhttps://github.com/bazelbuild/remote-apis-sdks/blob/75100dc5a2638da1746998410d162f42401fb5cf/go/pkg/client/cas.go#L717",
+      "parentUuid": "af30ac5c_43918fd7",
       "range": {
         "startLine": 137,
         "startChar": 0,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fd80d08a_73b170d2",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-06T22:58:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3c9a591b_6959c032",
+      "range": {
+        "startLine": 150,
+        "startChar": 0,
+        "endLine": 150,
+        "endChar": 27
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d836057_fb509985",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 7
@@ -82,6 +154,30 @@
       "writtenOn": "2020-08-06T15:35:25Z",
       "side": 1,
       "message": "Is there possibility that the digests are the same with different modes?",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 0
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b036d096_6de91ce4",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-06T22:58:28Z",
+      "side": 1,
+      "message": "Yes, that happens for directory tree something like below.\n```\n$ touch a\n$ touch b\n$ chmod +x a\n```",
+      "parentUuid": "5d836057_fb509985",
       "range": {
         "startLine": 154,
         "startChar": 0,
