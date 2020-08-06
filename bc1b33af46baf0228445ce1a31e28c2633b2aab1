@@ -22,6 +22,30 @@
       "revId": "bc1b33af46baf0228445ce1a31e28c2633b2aab1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac7cfd07_36d741a3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T06:12:32Z",
+      "side": 1,
+      "message": "My bad.\nDidn\u0027t know the URL is already embedded in other services.\nWill send out a notification in advance next time.",
+      "parentUuid": "c93a2667_055c950a",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 61
+      },
+      "revId": "bc1b33af46baf0228445ce1a31e28c2633b2aab1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
