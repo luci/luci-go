@@ -42,10 +42,6 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// testResultBatchSizeMax is the maximum number of TestResults to include per transaction.
-// Note that the same transaction is used for both test results and artifacts.
-const testResultBatchSizeMax = 500
-
 var urlPrefixes = []string{"http://", "https://"}
 
 // validateDeriveChromiumInvocationRequest returns an error if req is invalid.
@@ -226,7 +222,7 @@ func (s *deriverServer) deriveInvocationForOriginTask(
 
 	// Write test results in batches concurrently, updating inv with the names of the invocations
 	// that will be included.
-	batchInvs, err := s.batchInsertTestResults(ctx, originInv, results, testResultBatchSizeMax)
+	batchInvs, err := s.batchInsertTestResults(ctx, originInv, results, pbutil.BatchRequestCountLimit)
 	if err != nil {
 		return nil, nil, err
 	}

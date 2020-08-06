@@ -26,6 +26,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// BatchRequestCountLimit is the maximum number of RPC requests that can be included
+// in a single batch request.
+//
+// For example, it is the maximum number CreateTestResultRequest{}s that can be
+// included in a single BatchCreateTestResultsRequest{}.
+const BatchRequestCountLimit = 500
+
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
 func regexpf(patternFormat string, subpatterns ...interface{}) *regexp.Regexp {
@@ -82,9 +89,8 @@ func ValidateRequestID(requestID string) error {
 // ValidateBatchRequestCount validates the number of requests in a batch
 // request.
 func ValidateBatchRequestCount(count int) error {
-	const limit = 500
-	if count > limit {
-		return errors.Reason("the number of requests in the batch exceeds %d", limit).Err()
+	if count > BatchRequestCountLimit {
+		return errors.Reason("the number of requests in the batch exceeds %d", BatchRequestCountLimit).Err()
 	}
 	return nil
 }

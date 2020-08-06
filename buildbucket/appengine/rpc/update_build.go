@@ -16,15 +16,68 @@ package rpc
 
 import (
 	"context"
+	"sort"
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+var (
+	// valPaths is a list of UpdateBuildRequest field paths updatable via UpdateBuild RPC.
+	valPaths = []string{
+		"build.output",
+		"build.output.properties",
+		"build.output.gitiles_commit",
+		"build.status",
+		"build.status_details",
+		"build.steps",
+		"build.summary_markdown",
+		"build.tags",
+	}
+)
+
+func init() {
+	sort.Strings(valPaths)
+}
+
+// validateUpdate validates the given request.
+func validateUpdate(req *pb.UpdateBuildRequest) error {
+	// validate the mask
+	var unsupported []string
+	var reqPaths []string
+	if req.GetUpdateMask() != nil {
+		reqPaths = req.GetUpdateMask().GetPaths()
+		sort.Strings(req.UpdateMask.Paths)
+	}
+	for i, j := 0, 0; i < len(reqPaths); i++ {
+		for ; j < len(valPaths) && reqPaths[i] > valPaths[j]; j++ {
+		}
+		if j == len(valPaths) || reqPaths[i] != valPaths[j] {
+			unsupported = append(unsupported, reqPaths[i])
+		}
+	}
+
+	if len(unsupported) > 0 {
+		return errors.Reason("unsupported path(s) %q", unsupported).Err()
+	}
+
+	// validate the build
+	switch {
+	case req.GetBuild().GetId() == 0:
+		return errors.Reason("id is required").Err()
+		// TODO(1110990): validate the rest of the message fields
+	}
+	return nil
+}
+
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
+	if err := validateUpdate(req); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
 	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
 }
