@@ -15,14 +15,41 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { observable} from 'mobx';
+import { when, observable, computed} from 'mobx';
+import { BuildState, consumeBuildState } from '../context/build_state/build_state';
+import { BuildPageService, RelatedBuildsData } from "../services/build_page"
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref buildState!: BuildState;
+
+  private disposers: Array<() => void> = [];
+
+  private async loadRelatedBuilds(): Promise<RelatedBuildsData> {
+    const buildPageService = new BuildPageService(this.appState.accessToken);
+    return await buildPageService.getRelatedBuilds(this.buildState.buildPageData!.id);
+  }
 
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'related-builds';
+    this.disposers.push(
+      when(
+        () => this.isBuildPageDataReady,
+        () => this.loadRelatedBuilds().then(result => console.log(result))
+      )
+    );
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    for (const disposer of this.disposers) {
+      disposer();
+    }
+  }
+
+  @computed get isBuildPageDataReady(): boolean {
+    return this.buildState.buildPageData != null && this.appState.accessToken != "";
   }
 
   protected render() {
@@ -33,5 +60,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 }
 
 customElement('tr-related-builds-tab')(
-  consumeAppState(RelatedBuildsTabElement),
+  consumeBuildState(
+    consumeAppState(RelatedBuildsTabElement),
+  )
 );
