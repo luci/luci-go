@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3f011acd_dc26e7e2",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-06T07:26:33Z",
+      "side": 1,
+      "message": "I think that makes sense.",
+      "parentUuid": "94eb5e30_b7c6e280",
+      "revId": "c7524c16df150cd7047661b16d8e9c4eecd53350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "886ba9d7_5cba5861",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "c7524c16df150cd7047661b16d8e9c4eecd53350",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "325ee261_bc36aeb5",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-06T07:26:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "886ba9d7_5cba5861",
+      "revId": "c7524c16df150cd7047661b16d8e9c4eecd53350",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
