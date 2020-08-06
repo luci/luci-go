@@ -16,7 +16,64 @@ package rpc
 
 import (
 	"testing"
+
+	"google.golang.org/genproto/protobuf/field_mask"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestUpdateBuild(t *testing.T) {
+func TestValidateUpdate(t *testing.T) {
+	t.Parallel()
+
+	Convey("validateUpdate", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+
+		Convey("succeeds", func() {
+			Convey("with nil mask", func() {
+				So(validateUpdate(req), ShouldBeNil)
+			})
+
+			Convey("with empty path", func() {
+				req.UpdateMask = &field_mask.FieldMask{}
+				So(validateUpdate(req), ShouldBeNil)
+			})
+
+			Convey("with valid paths", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
+					"build.tags",
+					"build.output",
+					"build.status_details",
+					"build.output.gitiles_commit",
+					"build.summary_markdown",
+				}}
+				So(validateUpdate(req), ShouldBeNil)
+			})
+		})
+
+		Convey("fails", func() {
+			Convey("with nil request", func() {
+				So(validateUpdate(nil), ShouldErrLike, "id is required")
+			})
+
+			Convey("with an invalid path", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
+					"bucket.name",
+				}}
+				So(validateUpdate(req), ShouldErrLike, `unsupported path(s) ["bucket.name"]`)
+			})
+
+			Convey("with a mix of valid and invalid paths", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
+					"build.tags",
+					"bucket.name",
+					"build.output",
+					"build.ts",
+				}}
+				So(validateUpdate(req), ShouldErrLike, `unsupported path(s) ["bucket.name" "build.ts"]`)
+			})
+		})
+	})
 }
