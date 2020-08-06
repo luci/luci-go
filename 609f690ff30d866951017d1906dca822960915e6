@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "9b54787b_14e6bd11",
+        "filename": "resultdb/proto/v1/test_result.pb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-06T23:51:29Z",
+      "side": 1,
+      "message": "I see. That\u0027s good enough.",
+      "parentUuid": "dd0a2979_d1d8b099",
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87d0636e_cb96a0ac",
         "filename": "resultdb/proto/v1/test_result.proto",
         "patchSetId": 3
