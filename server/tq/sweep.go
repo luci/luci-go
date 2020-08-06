@@ -81,7 +81,7 @@ type SweeperOptions struct {
 	// Can be in short or full form. See Queue in TaskClass for details. The queue
 	// should be configured to allow at least 10 QPS.
 	//
-	// Default is "default".
+	// Default is "tq-sweep".
 	TaskQueue string
 
 	// SweepTaskPrefix is a URL prefix to use for sweep jobs.
@@ -119,7 +119,7 @@ func NewDistributedSweeper(disp *Dispatcher, opts SweeperOptions) Sweeper {
 		opts.SecondaryScanShards = 16
 	}
 	if opts.TaskQueue == "" {
-		opts.TaskQueue = "default"
+		opts.TaskQueue = "tq-sweep"
 	}
 	if opts.TaskPrefix == "" {
 		opts.TaskPrefix = "/internal/tasks"

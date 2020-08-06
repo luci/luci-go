@@ -1,0 +1,7 @@
+cron:
+
+# A cron that launches sweeps of transactional tasks reminders. Must be set up
+# when using transactional enqueuing. Optional otherwise. If used, make sure
+# to configure `tq-sweep` queue in queue.yaml too.
+- url: /internal/tasks/c/sweep
+  schedule: every 1 minutes
