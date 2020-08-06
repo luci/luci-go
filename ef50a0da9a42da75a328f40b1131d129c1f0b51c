@@ -133,6 +133,24 @@
       "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4592b116_f4707bbb",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-06T07:11:30Z",
+      "side": 1,
+      "message": "Yes but if the buildset tag is passed twice with the same value, is that invalid? Can\u0027t you just let it be deduped? Above you consider it invalid.",
+      "parentUuid": "e238a792_8939c985",
+      "revId": "ef50a0da9a42da75a328f40b1131d129c1f0b51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
