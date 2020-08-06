@@ -280,6 +280,32 @@ func recursiveChmod(path string, filter func(string) bool, chmod func(mode os.Fi
 	return nil
 }
 
+// Copy makes a copy of the file.
+func Copy(outfile, infile string, mode os.FileMode) (err error) {
+	in, err := os.Open(infile)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := in.Close(); err == nil {
+			err = cerr
+		}
+	}()
+
+	out, err := os.OpenFile(outfile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := out.Close(); err == nil {
+			err = cerr
+		}
+	}()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
 // ReadableCopy makes a copy of the file that is readable by everyone.
 func ReadableCopy(outfile, infile string) error {
 	in, err := os.Open(infile)
