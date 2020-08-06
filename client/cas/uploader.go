@@ -101,7 +101,8 @@ func (up *Uploader) Upload(ctx context.Context, opts ...*isolate.ArchiveOptions)
 		rootDgs = append(rootDgs, rootDg)
 		chunkers = append(chunkers, up.deduper.Deduplicate(chks)...)
 	}
-	if err := up.cas.UploadIfMissing(ctx, chunkers...); err != nil {
+	// TODO: handle the stats
+	if _, err := up.cas.UploadIfMissing(ctx, chunkers...); err != nil {
 		return nil, errors.Annotate(err, "failed to upload to CAS").Err()
 	}
 	return rootDgs, nil
