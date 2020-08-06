@@ -23,10 +23,10 @@ import (
 
 	"go.chromium.org/luci/common/sync/parallel"
 
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/sweep"
-	"go.chromium.org/luci/server/tq/internal/sweep/sweeppb"
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/partition"
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
 
 // SweeperOptions configures the process of "sweeping" of transactional tasks
@@ -151,7 +151,7 @@ func NewDistributedSweeper(disp *Dispatcher, opts SweeperOptions) Sweeper {
 type sweeperImpl struct {
 	opts    SweeperOptions
 	disp    *Dispatcher
-	enqueue func(ctx context.Context, task *sweeppb.SweepTask) error
+	enqueue func(ctx context.Context, task *tqpb.SweepTask) error
 }
 
 // CreateTask delegates to disp.Submitter.CreateTask.
@@ -166,17 +166,17 @@ func (s *sweeperImpl) CreateTask(ctx context.Context, req *taskspb.CreateTaskReq
 func (s *sweeperImpl) startSweep(ctx context.Context, reminderKeySpaceBytes int) error {
 	partitions := partition.Universe(reminderKeySpaceBytes).Split(s.opts.SweepShards)
 	return parallel.WorkPool(16, func(work chan<- func() error) {
-		for _, db := range databases.Kinds() {
+		for _, kind := range db.Kinds() {
 			for shard, part := range partitions {
 				lessorID := s.opts.LessorID
 				if lessorID == "" {
-					lessorID = db
+					lessorID = kind
 				}
-				task := &sweeppb.SweepTask{
-					Db:                  db,
+				task := &tqpb.SweepTask{
+					Db:                  kind,
 					Partition:           part.String(),
 					LessorId:            lessorID,
-					LeaseSectionId:      fmt.Sprintf("%s_%d_%d", db, shard, len(partitions)),
+					LeaseSectionId:      fmt.Sprintf("%s_%d_%d", kind, shard, len(partitions)),
 					ShardCount:          int32(len(partitions)),
 					ShardIndex:          int32(shard),
 					Level:               0,
@@ -190,24 +190,24 @@ func (s *sweeperImpl) startSweep(ctx context.Context, reminderKeySpaceBytes int)
 	})
 }
 
-type sweepEnqueue func(context.Context, *sweeppb.SweepTask) error
-type sweepExecute func(context.Context, *sweeppb.SweepTask) error
+type sweepEnqueue func(context.Context, *tqpb.SweepTask) error
+type sweepExecute func(context.Context, *tqpb.SweepTask) error
 
 // sweepTaskRouting sets up a route so that a task enqueued via the returned
 // callback eventually results in `exec` call somewhere.
 func sweepTaskRouting(disp *Dispatcher, opts SweeperOptions, exec sweepExecute) sweepEnqueue {
 	disp.RegisterTaskClass(TaskClass{
 		ID:            "tq-sweep",
-		Prototype:     (*sweeppb.SweepTask)(nil),
+		Prototype:     (*tqpb.SweepTask)(nil),
 		Kind:          NonTransactional,
 		Queue:         opts.TaskQueue,
 		RoutingPrefix: opts.TaskPrefix,
 		TargetHost:    opts.TaskHost,
 		Handler: func(ctx context.Context, msg proto.Message) error {
-			return exec(ctx, msg.(*sweeppb.SweepTask))
+			return exec(ctx, msg.(*tqpb.SweepTask))
 		},
 	})
-	return func(ctx context.Context, task *sweeppb.SweepTask) error {
+	return func(ctx context.Context, task *tqpb.SweepTask) error {
 		return disp.AddTask(ctx, &Task{
 			Payload: task,
 			Title:   fmt.Sprintf("l%d_%d_%d", task.Level, task.ShardIndex, task.ShardCount),

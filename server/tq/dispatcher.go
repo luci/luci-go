@@ -48,10 +48,11 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/reminder"
+
+	"go.chromium.org/luci/server/tq/internal"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
@@ -471,7 +472,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	}
 
 	// Examine the context to see if we are inside a transaction.
-	db := databases.TxnDB(ctx)
+	db := db.TxnDB(ctx)
 	switch cls.Kind {
 	case FollowsContext:
 		// do nothing, will use `db` if it is non-nil

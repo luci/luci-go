@@ -166,7 +166,7 @@ func TestEventuallyExecutes(t *testing.T) {
 		// be stuck. Use panics instead of So(...) to avoid spamming goconvey with
 		// lots and lots of assertion dots.
 		for {
-			reminders, err := datastore.Count(ctx, datastore.NewQuery("ttq.Reminder"))
+			reminders, err := datastore.Count(ctx, datastore.NewQuery(reminderKind))
 			if err != nil {
 				panic(err)
 			}

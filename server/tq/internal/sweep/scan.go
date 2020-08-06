@@ -26,9 +26,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 
-	"go.chromium.org/luci/ttq/internals/databases"
-	"go.chromium.org/luci/ttq/internals/partition"
-	"go.chromium.org/luci/ttq/internals/reminder"
+	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/partition"
+	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
 var (
@@ -66,7 +66,7 @@ var (
 
 // ScanParams contains parameters for the Scan call.
 type ScanParams struct {
-	DB            databases.Database   // DB to use to fetch reminders
+	DB            db.DB                // DB to use to fetch reminders
 	Partition     *partition.Partition // the keyspace partition to scan
 	KeySpaceBytes int                  // length of the reminder keys (usually 16)
 
