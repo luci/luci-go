@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a1eeafb_a6bae400",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-06T15:35:25Z",
+      "side": 1,
+      "message": "Just curious why you need to move this.",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 3
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af30ac5c_43918fd7",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-06T15:35:25Z",
+      "side": 1,
+      "message": "Is the default 600 already? In that case, it needs to update only for 700.",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 55
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c9a591b_6959c032",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-06T15:35:25Z",
+      "side": 1,
+      "message": "IIUC, this for loop copies duplicated files from the downloaded files to the destination.\nA simple comment on \"var dups[]*tree.Output\" and/or this for loop would help readability.",
+      "range": {
+        "startLine": 150,
+        "startChar": 0,
+        "endLine": 150,
+        "endChar": 27
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d836057_fb509985",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-06T15:35:25Z",
+      "side": 1,
+      "message": "Is there possibility that the digests are the same with different modes?",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 0
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
