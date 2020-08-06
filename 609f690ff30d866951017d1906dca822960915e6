@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "dd0a2979_d1d8b099",
+        "filename": "resultdb/proto/v1/test_result.pb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-06T07:31:01Z",
+      "side": 1,
+      "message": "ResultDB server cannot guarantee this at scale, but we explicitly document that same tests should have same category here:\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2340507/3/resultdb/proto/v1/test_result.proto#234",
+      "parentUuid": "34c4d775_e0092a08",
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "87d0636e_cb96a0ac",
         "filename": "resultdb/proto/v1/test_result.proto",
         "patchSetId": 3
@@ -47,6 +65,30 @@
       "writtenOn": "2020-08-06T06:57:19Z",
       "side": 1,
       "message": "Is it possible that some tests set categories as [\"a\", \"b\u0027] and some others set as [\"b\", \"a\"]?\n\nFor example, in the same build, is it possible that gpu tests set categories as [\"gpu\", \"test_suite\"] and browser tests set categories as [\"test_suite\", \"gpu\"]?",
+      "range": {
+        "startLine": 225,
+        "startChar": 16,
+        "endLine": 225,
+        "endChar": 54
+      },
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b3c937c_8079fa0d",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-06T07:31:01Z",
+      "side": 1,
+      "message": "Nothing prevents them from doing this mistake, if that\u0027s what you mean.\nAlso nothing prevents them from writing a completely wrong values here.\n\nI think in practice common values will be written by same code, so I wonder under what circumstances do you think this might actually happen",
+      "parentUuid": "87d0636e_cb96a0ac",
       "range": {
         "startLine": 225,
         "startChar": 16,
