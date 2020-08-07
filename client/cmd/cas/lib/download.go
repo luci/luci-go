@@ -76,7 +76,7 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := r.casFlags.NewClient(ctx)
+	c, err := r.casFlags.NewClient(ctx, true)
 	if err != nil {
 		return err
 	}
