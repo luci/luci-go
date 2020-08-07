@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "078b0056_e95ef84e",
+        "filename": "cq/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T22:57:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa533300_02416ad7",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e071c13_7d0fa0e8",
         "filename": "cv/OWNERS",
         "patchSetId": 2
@@ -71,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "acee929c_76e3c678",
+        "filename": "cv/OWNERS",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T22:57:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4627bd38_5b3165f0",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e5deae5_2d046540",
         "filename": "cv/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -85,6 +121,24 @@
       "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5e2402b_8f3767c0",
+        "filename": "cv/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T22:57:03Z",
+      "side": 1,
+      "message": "Done\n\nAlso I notice now that this has a Chromium license header whereas most of the code here as a separate LUCI license header. Do you know if these should be changed?",
+      "parentUuid": "8e5deae5_2d046540",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -135,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "0c37d59d_af5b8750",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T22:57:03Z",
+      "side": 1,
+      "message": "Done, thanks for catching this.",
+      "parentUuid": "9cf0e4e4_098f6313",
+      "range": {
+        "startLine": 19,
+        "startChar": 42,
+        "endLine": 19,
+        "endChar": 44
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf2f857b_6b1f4a3c",
         "filename": "cv/api/config/v2/gen.go",
         "patchSetId": 2
@@ -158,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "59dc30a2_fb77e3b6",
+        "filename": "cv/api/config/v2/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T22:57:03Z",
+      "side": 1,
+      "message": "Hm. Yeah. API is usually used to mean something with a set of functions/methods that a service provides.\n\n\"Data model\" sounds a bit better to me. Or maybe schema? I see luci-config uses \"schema\" in URLs like http://luci-config.appspot.com/schemas/projects:luci-milo.cfg",
+      "parentUuid": "bf2f857b_6b1f4a3c",
+      "range": {
+        "startLine": 17,
+        "startChar": 37,
+        "endLine": 17,
+        "endChar": 40
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69ccbc79_7c352038",
         "filename": "cv/api/recipe/v1/gen.go",
         "patchSetId": 2
@@ -169,6 +271,30 @@
       "writtenOn": "2020-08-07T18:02:47Z",
       "side": 1,
       "message": "FWIW, if this proto is only being used and will only be used in recipe engine, can we just move it to the recipe `cq` module so that we don\u0027t avoid copying this to the new code base?",
+      "range": {
+        "startLine": 21,
+        "startChar": 12,
+        "endLine": 21,
+        "endChar": 20
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad58309_bad6f49c",
+        "filename": "cv/api/recipe/v1/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T22:57:03Z",
+      "side": 1,
+      "message": "I\u0027m not sure; Andrii, do you know whether this could be moved elsewhere, or whether we prefer it to be here for some reason? Is it here just to keep related protos together?",
+      "parentUuid": "69ccbc79_7c352038",
       "range": {
         "startLine": 21,
         "startChar": 12,
