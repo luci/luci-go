@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "5c3f1d70_360591eb",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-07T00:34:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "98eb571e_c048416d",
+      "range": {
+        "startLine": 115,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 3
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "af30ac5c_43918fd7",
         "filename": "client/cmd/cas/lib/download.go",
         "patchSetId": 7
@@ -93,6 +117,30 @@
       "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de80d722_e0b5f048",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-07T00:34:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2dad402b_d86fe0c5",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 55
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -187,6 +235,30 @@
       "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7aa854c9_2cd84f8e",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-07T00:34:26Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b036d096_6de91ce4",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 0
+      },
+      "revId": "d0efa436e198c42a13b7f1bb3a018258c32bfee7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
