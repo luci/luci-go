@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "59bc1b3e_51de9cc1",
+        "filename": "milo/api/service/v1/generate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T04:25:21Z",
+      "side": 1,
+      "message": "Should be 2020?",
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "19cba943_072a0ef0",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -25,6 +42,23 @@
     },
     {
       "key": {
+        "uuid": "e0083c22_e0680303",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T04:25:21Z",
+      "side": 1,
+      "message": "This is a bit confusing for me, so based on the timeline, the start_commit happens *after* the end_commit? Should we flip the 2?",
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f1810301_e9a9883d",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -42,6 +76,23 @@
         "endLine": 32,
         "endChar": 13
       },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de959042_54e941ac",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T04:25:21Z",
+      "side": 1,
+      "message": "Just wonder why do we need all those information? I am imagining we can just give the RPC a buildID (may be + builderID, and the pagination info), and it can give back the blamelist. Am I missing anything here?",
       "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -111,6 +162,23 @@
         "endLine": 67,
         "endChar": 13
       },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "405ee039_0996be02",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T04:25:21Z",
+      "side": 1,
+      "message": "How do you know if this is the end and we don\u0027t need to fetch more?",
       "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
