@@ -121,10 +121,15 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
 func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getCheckout CheckoutFunc, history HistoryFunc) error {
-	luciProject := build.Builder.Project
 	gCommit := build.Input.GetGitilesCommit()
-	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
+	if gCommit != nil && gCommit.Id == "" {
+		// Ignore builds without an associated commit ID. We can't order them,
+		// and otherwise we'll end up making invalid gitiles requests and
+		// returning errors. These are usually manually-created builds.
+		return nil
+	}
 
+	luciProject := build.Builder.Project
 	project := &config.Project{Name: luciProject}
 	switch ex, err := datastore.Exists(c, project); {
 	case err != nil:
@@ -175,6 +180,7 @@ func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getChecko
 	}
 
 	keepGoing := false
+	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:
