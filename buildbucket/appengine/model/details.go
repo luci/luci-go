@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
@@ -176,10 +175,6 @@ func (s *BuildSteps) CancelIncomplete(ctx context.Context, now *timestamppb.Time
 		if !protoutil.IsEnded(s.Status) {
 			s.EndTime = now
 			s.Status = pb.Status_CANCELED
-			if s.SummaryMarkdown != "" {
-				s.SummaryMarkdown = fmt.Sprintf("%s\n", s.SummaryMarkdown)
-			}
-			s.SummaryMarkdown = fmt.Sprintf("%sstep was canceled because it did not end before build ended", s.SummaryMarkdown)
 			changed = true
 		}
 	}

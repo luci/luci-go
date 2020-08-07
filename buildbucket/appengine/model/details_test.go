@@ -114,10 +114,9 @@ func TestDetails(t *testing.T) {
 					b, err = proto.Marshal(&pb.Build{
 						Steps: []*pb.Step{
 							{
-								EndTime:         now,
-								Name:            "step",
-								Status:          pb.Status_CANCELED,
-								SummaryMarkdown: "step was canceled because it did not end before build ended",
+								EndTime: now,
+								Name:    "step",
+								Status:  pb.Status_CANCELED,
 							},
 						},
 					})
