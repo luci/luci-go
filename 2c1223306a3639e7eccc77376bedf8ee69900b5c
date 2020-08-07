@@ -16,6 +16,23 @@
       "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7385a9b3_060281b7",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-07T15:22:53Z",
+      "side": 1,
+      "message": ".",
+      "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
