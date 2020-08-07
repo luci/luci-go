@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b21dac60_f32b4f9f",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T02:19:20Z",
+      "side": 1,
+      "message": "i think we should use build.Output.GetGitilesCommit() instead. It represents what was actually checked out.\n\nit is currently to possible to have output.gitiles_commit non-nil and without id, but that looks like a bug. \nLeft a comment here: https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1110990#c2",
+      "range": {
+        "startLine": 124,
+        "startChar": 18,
+        "endLine": 124,
+        "endChar": 23
+      },
+      "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
