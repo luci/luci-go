@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "662dec9b_aa37508b",
+        "filename": "milo/frontend/resultui/src/@types/index.d.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T06:51:32Z",
+      "side": 1,
+      "message": "You declare this in index.d.ts, the reason is for it to be available everywhere, without needing to import?",
+      "revId": "4bbf645d841f74e0afa93c63a3b9aa83aba4735c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad7b227e_0561fa15",
+        "filename": "milo/frontend/resultui/src/@types/index.d.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T06:51:32Z",
+      "side": 1,
+      "message": "Nit: Declared",
+      "revId": "4bbf645d841f74e0afa93c63a3b9aa83aba4735c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e2fbc41_c28a2850",
+        "filename": "milo/frontend/resultui/src/@types/index.d.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-07T06:51:32Z",
+      "side": 1,
+      "message": "While I understand the purpose of the CL, I think I am still not clear how the real \"injection\" work. I see that we are making a request to /config.js to the server side, but after that, how does the value got injected?",
+      "revId": "4bbf645d841f74e0afa93c63a3b9aa83aba4735c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
