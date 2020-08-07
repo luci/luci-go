@@ -118,6 +118,30 @@
       "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "773677c1_17772774",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-08-07T04:22:43Z",
+      "side": 1,
+      "message": "Thanks for the explanation, I\u0027d wondered why this is the case. Regardless of what we do with respect to output commits, we need to handle builds with an input commit with no id (e.g. https://cr-buildbucket.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?request\u003d{%20%20%20%20%22id%22:%20%228872818846215071920%22}), so I\u0027ll land this CL as-is.",
+      "parentUuid": "cc149796_ae188557",
+      "range": {
+        "startLine": 124,
+        "startChar": 18,
+        "endLine": 124,
+        "endChar": 23
+      },
+      "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
