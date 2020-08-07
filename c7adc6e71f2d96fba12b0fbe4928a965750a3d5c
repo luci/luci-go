@@ -36,6 +36,23 @@
     },
     {
       "key": {
+        "uuid": "2f2e91b2_9c9b3b6f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:18:36Z",
+      "side": 1,
+      "message": "lgtm % nits.",
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "517f5ff1_8f612d38",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 8
