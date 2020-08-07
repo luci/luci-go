@@ -22,6 +22,30 @@
       "revId": "d80b364fcc96f3389dec7a509f8261d05fa39580",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "981e00ca_bf4d7357",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-07T20:10:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93582b98_e5d85690",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "d80b364fcc96f3389dec7a509f8261d05fa39580",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
