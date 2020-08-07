@@ -157,8 +157,8 @@ type disk struct {
 	h        crypto.Hash
 
 	// Lock protected.
-	mu  sync.RWMutex // This protects modification of cached entries under |path| too.
-	lru lruDict      // Implements LRU based eviction.
+	mu  sync.Mutex // This protects modification of cached entries under |path| too.
+	lru lruDict    // Implements LRU based eviction.
 
 	statsMu sync.Mutex // Protects the stats below
 	// TODO(maruel): Add stats about: # removed.
@@ -309,9 +309,9 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		// Accessing the path, which is being replaced, with os.Link
 		// seems to cause flaky 'operation not permitted' failure on
 		// macOS (https://crbug.com/1076468). So prevent that by holding
-		// read lock here.
-		d.mu.RLock()
-		defer d.mu.RUnlock()
+		// lock here.
+		d.mu.Lock()
+		defer d.mu.Unlock()
 	}
 	return d.hardlinkUnlocked(digest, dest, perm)
 }
