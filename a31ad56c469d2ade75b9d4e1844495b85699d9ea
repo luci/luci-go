@@ -16,6 +16,115 @@
       "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4b89488f_99995e47",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:56:55Z",
+      "side": 1,
+      "message": "nit: \\n",
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d53ff6a_fc021a67",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:56:55Z",
+      "side": 1,
+      "message": "what does this mean? Will putting a specific limit make it any faster? Our keys is 32 bytes (16 actually). Also, maybe this should be BYTES(16)? Using hex is wasting space in indexes etc. (but I\u0027m nitpicking).",
+      "range": {
+        "startLine": 32,
+        "startChar": 19,
+        "endLine": 32,
+        "endChar": 22
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "042e7189_56cd93ce",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:56:55Z",
+      "side": 1,
+      "message": "Just \"ID\". The table is already named \"reminders\".",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 11
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93b388a0_7011ebc3",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:56:55Z",
+      "side": 1,
+      "message": "I think this should go in docs. Maybe a short section \"Using with Spanner\" here https://godoc.org/go.chromium.org/luci/server/tq",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 1
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0923c38a_66ce7938",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:56:55Z",
+      "side": 1,
+      "message": "I looked how this is implemented in the Spanner client and I\u0027m horrified: https://github.com/googleapis/google-cloud-go/blob/spanner/v1.8.0/spanner/key.go#L383\n\nUsing this construction results in keySetProto() making len(batch) *recursive* calls, allocating O(len(batch)) slices and concatenating them O(len(batch)) times in a funny way: new \u003d append([]{one}, wholebunch...). This results in O(len(batch)^2) overall complexity.\n\nPlease change this to:\n\n  ks :\u003d make([]spanner.KeySet, len(batch))\n  for i,r :\u003d range batch {\n    ks[i] \u003d ...\n  }\n  \n  iter :\u003d span.Read(..., spanner.KeySets(ks...), ...)\n\nIt at least will be O(N).",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
