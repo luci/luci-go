@@ -16,6 +16,115 @@
       "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7881056_6878dae7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:16:47Z",
+      "side": 1,
+      "message": "one sec, i forgot to check latest patch",
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "517f5ff1_8f612d38",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:16:47Z",
+      "side": 1,
+      "message": "breaking",
+      "range": {
+        "startLine": 49,
+        "startChar": 21,
+        "endLine": 49,
+        "endChar": 28
+      },
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c637e297_89c5ba5a",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:16:47Z",
+      "side": 1,
+      "message": "maybe just \"their number\"",
+      "range": {
+        "startLine": 50,
+        "startChar": 14,
+        "endLine": 50,
+        "endChar": 47
+      },
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a33a5688_b461bf4e",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:16:47Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 53,
+        "startChar": 23,
+        "endLine": 53,
+        "endChar": 26
+      },
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "357271c1_6d107946",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:16:47Z",
+      "side": 1,
+      "message": "should",
+      "range": {
+        "startLine": 53,
+        "startChar": 46,
+        "endLine": 53,
+        "endChar": 48
+      },
+      "revId": "c7adc6e71f2d96fba12b0fbe4928a965750a3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
