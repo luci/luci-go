@@ -32,15 +32,16 @@ func MustGetContextHTTPClient(ctx context.Context) *http.Client {
 	return client
 }
 
-// WithProjectTransport sets an http client in the context using project-based
-// auth transport.
-func WithProjectTransport(ctx context.Context, project string) (context.Context, error) {
+// WithSelfTransport sets an http client in the context using the service's own authroity.
+// WARNING: Use this only when using auth.AsProject is not possible, as using this to
+// authorize RPCs that touch project data leads to "confused deputy" problems.
+func WithSelfTransport(ctx context.Context) (context.Context, error) {
 	// If a client is already present in the context, do not replace it, it may be a test.
 	if _, ok := ctx.Value(&httpClientCtxKey).(*http.Client); ok {
 		return ctx, nil
 	}
 
-	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}

@@ -76,7 +76,9 @@ func validateDeriveChromiumInvocationRequest(req *pb.DeriveChromiumInvocationReq
 // The invocation returned is associated with the swarming task itself.
 // If the task is deduped against another task, the invocation returned includes the underlying one.
 func (s *deriverServer) DeriveChromiumInvocation(ctx context.Context, in *pb.DeriveChromiumInvocationRequest) (*pb.Invocation, error) {
-	ctx, err := internal.WithProjectTransport(ctx, "chromium")
+	// Only because deriver will go away soon.
+	// Bad idea(TM), under other circumstances.
+	ctx, err := internal.WithSelfTransport(ctx)
 	if err != nil {
 		return nil, err
 	}
