@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93582b98_e5d85690",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T00:10:52Z",
+      "side": 1,
+      "message": "simpler:\n\n  unsupported :\u003d NewFromSlice(req.GetUpdateMask().GetPaths()).Difference(...\n\nwithout if statement\n\nnote that in practice all requests have update mask",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "d80b364fcc96f3389dec7a509f8261d05fa39580",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
