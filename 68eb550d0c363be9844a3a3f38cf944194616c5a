@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c10a934_3bd73be5",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T04:33:23Z",
+      "side": 1,
+      "message": "Do you have any reason to make it configurable via tq module opts?",
+      "revId": "68eb550d0c363be9844a3a3f38cf944194616c5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "838e63c9_f07a1750",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T04:33:23Z",
+      "side": 1,
+      "message": "Where do you think is the best place to stick this? Docs for tq module options? Godoc for this package?",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 1
+      },
+      "revId": "68eb550d0c363be9844a3a3f38cf944194616c5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
