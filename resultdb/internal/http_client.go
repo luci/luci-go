@@ -18,10 +18,12 @@ import (
 	"context"
 	"net/http"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 )
 
 var httpClientCtxKey = "context key for a *http.Client"
+var AcknowledgeRisks = "context key for a positive acknowledgement of the risks of using auth.AsSelf"
 
 // MustGetContextHTTPClient retrieves the current http.client from the context.
 func MustGetContextHTTPClient(ctx context.Context) *http.Client {
@@ -32,15 +34,20 @@ func MustGetContextHTTPClient(ctx context.Context) *http.Client {
 	return client
 }
 
-// WithProjectTransport sets an http client in the context using project-based
-// auth transport.
-func WithProjectTransport(ctx context.Context, project string) (context.Context, error) {
+// WithSelfTransport sets an http client in the context using the service's own account.
+// Only use in deriver module.
+func WithSelfTransport(ctx context.Context) (context.Context, error) {
 	// If a client is already present in the context, do not replace it, it may be a test.
 	if _, ok := ctx.Value(&httpClientCtxKey).(*http.Client); ok {
 		return ctx, nil
 	}
 
-	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
+	// Avoid accidental use of this function by requiring a special value in the context.
+	if ack := ctx.Value(&AcknowledgeRisks); ack == nil {
+		return nil, errors.Reason("Do not use WithSelfTransport").Err()
+	}
+
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
