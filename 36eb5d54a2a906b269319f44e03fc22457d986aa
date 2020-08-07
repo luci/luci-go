@@ -142,6 +142,24 @@
     },
     {
       "key": {
+        "uuid": "771a2905_f61b1f76",
+        "filename": "cv/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T23:11:45Z",
+      "side": 1,
+      "message": "Yes, it should be LUCI, but IMO, do it as a follow up *after* you are done moving things around.",
+      "parentUuid": "d5e2402b_8f3767c0",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c759ed51_f176d3a7",
         "filename": "cv/api/config/v2/cq.proto",
         "patchSetId": 2
@@ -260,6 +278,30 @@
     },
     {
       "key": {
+        "uuid": "b8ec84e5_028b0777",
+        "filename": "cv/api/config/v2/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T23:11:45Z",
+      "side": 1,
+      "message": "API isn\u0027t just RPCs, it\u0027s the entire surface area between outside systems and your system. Hence, Config is one of the APIs.\n\nSo, I\u0027d keep as is, but it\u0027s not important to me.",
+      "parentUuid": "59dc30a2_fb77e3b6",
+      "range": {
+        "startLine": 17,
+        "startChar": 37,
+        "endLine": 17,
+        "endChar": 40
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69ccbc79_7c352038",
         "filename": "cv/api/recipe/v1/gen.go",
         "patchSetId": 2
@@ -295,6 +337,30 @@
       "side": 1,
       "message": "I\u0027m not sure; Andrii, do you know whether this could be moved elsewhere, or whether we prefer it to be here for some reason? Is it here just to keep related protos together?",
       "parentUuid": "69ccbc79_7c352038",
+      "range": {
+        "startLine": 21,
+        "startChar": 12,
+        "endLine": 21,
+        "endChar": 20
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c78d098_9d1f0ab4",
+        "filename": "cv/api/recipe/v1/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T23:11:45Z",
+      "side": 1,
+      "message": "The proto is used to both emit and read properties. Hence, CQ needs it and so does recipe engine. Let\u0027s keep it here. If anyone thinks differently, let\u0027s revisit in the follow up after the move is complete.",
+      "parentUuid": "6ad58309_bad6f49c",
       "range": {
         "startLine": 21,
         "startChar": 12,
