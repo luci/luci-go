@@ -976,6 +976,30 @@
     },
     {
       "key": {
+        "uuid": "14d811a1_d0061c12",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-07T05:39:08Z",
+      "side": 1,
+      "message": "ACKed :)",
+      "parentUuid": "699c16e2_49e5835c",
+      "range": {
+        "startLine": 111,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 58
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5558a4ae_c0f98a4b",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -1079,6 +1103,30 @@
       "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "175fb0e4_518bc654",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-07T05:39:08Z",
+      "side": 1,
+      "message": "oh, I finally get it!!! Thanks for the detailed explanation. This is an excellent idea. (Learning algo from Andrii all the time :)). I\u0027ve left a todo in code so that we can improve it once the deps implementation is clear.",
+      "parentUuid": "a9dbe2ac_aca15357",
+      "range": {
+        "startLine": 129,
+        "startChar": 14,
+        "endLine": 129,
+        "endChar": 37
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
