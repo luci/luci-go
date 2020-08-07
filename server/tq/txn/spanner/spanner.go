@@ -17,10 +17,23 @@ package spanner
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 )
+
+const tableName = "TQReminders"
+
+const initSQL = `
+CREATE TABLE TQReminders (
+	ReminderId STRING(MAX) NOT NULL,
+	FreshUntil TIMESTAMP NOT NULL,
+	Payload BYTES(102400) NOT NULL,
+) PRIMARY KEY (ReminderId ASC);
+`
 
 type spanDB struct{}
 
@@ -32,18 +45,62 @@ func (spanDB) Defer(ctx context.Context, cb func(context.Context)) {
 	span.Defer(ctx, cb)
 }
 
-func (spanDB) SaveReminder(_ context.Context, _ *reminder.Reminder) error {
-	panic("not implemented") // TODO: Implement
+func (spanDB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
+	span.BufferWrite(ctx, spanner.Insert(
+		tableName,
+		[]string{"ReminderID", "FreshUntil", "Payload"},
+		[]interface{}{r.ID, r.FreshUntil, r.Payload}))
+	return nil
 }
 
-func (spanDB) DeleteReminder(_ context.Context, _ *reminder.Reminder) error {
-	panic("not implemented") // TODO: Implement
+func (spanDB) DeleteReminder(ctx context.Context, r *reminder.Reminder) error {
+	_, err := span.Apply(ctx, []*spanner.Mutation{
+		spanner.Delete(tableName, spanner.Key{r.ID}),
+	}, spanner.ApplyAtLeastOnce())
+	if err != nil {
+		return errors.Annotate(err, "failed to delete the Reminder %s", r.ID).Tag(transient.Tag).Err()
+	}
+	return nil
 }
 
-func (spanDB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) ([]*reminder.Reminder, error) {
-	panic("not implemented") // TODO: Implement
+func (spanDB) FetchRemindersMeta(ctx context.Context, low string, high string, limit int) (res []*reminder.Reminder, err error) {
+	iter := span.ReadWithOptions(span.Single(ctx),
+		tableName,
+		spanner.KeyRange{Start: spanner.Key{low}, End: spanner.Key{high}},
+		[]string{"ReminderId", "FreshUntil"},
+		&spanner.ReadOptions{Limit: limit})
+	err = iter.Do(func(row *spanner.Row) error {
+		r := &reminder.Reminder{}
+		if err := row.Columns(&r.ID, &r.FreshUntil); err != nil {
+			return err
+		}
+		res = append(res, r)
+		return nil
+	})
+	if err != nil && err != context.DeadlineExceeded {
+		err = errors.Annotate(err, "failed to fetch Reminder keys").Tag(transient.Tag).Err()
+	}
+	return
 }
 
-func (spanDB) FetchReminderPayloads(_ context.Context, _ []*reminder.Reminder) ([]*reminder.Reminder, error) {
-	panic("not implemented") // TODO: Implement
+func (spanDB) FetchReminderPayloads(ctx context.Context, batch []*reminder.Reminder) ([]*reminder.Reminder, error) {
+	ks := spanner.KeySets()
+	for _, r := range batch {
+		ks = spanner.KeySets(ks, spanner.Key{r.ID})
+	}
+
+	iter := span.Read(span.Single(ctx), tableName, ks,
+		[]string{"ReminderId", "FreshUntil", "Payload"})
+	i := 0
+	err := iter.Do(func(row *spanner.Row) error {
+		if err := row.Columns(&batch[i].ID, &batch[i].FreshUntil, &batch[i].Payload); err != nil {
+			return err
+		}
+		i++
+		return nil
+	})
+	if err != nil {
+		return batch[:i], errors.Annotate(err, "failed to fetch Reminders").Tag(transient.Tag).Err()
+	}
+	return batch[:i], nil
 }
