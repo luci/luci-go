@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bfe4a1f5_02ecccaa",
+        "filename": "server/tq/internal/workset/workset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T06:02:58Z",
+      "side": 1,
+      "message": "I like this package. I hope we\u0027ll move it to the common/sync/ smth",
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5221b8d4_4488f332",
+        "filename": "server/tq/internal/workset/workset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T06:02:58Z",
+      "side": 1,
+      "message": "Using map just to randomize order is wasteful. \nHow about a slice with random selection of index swap the last item and return in Pop()?",
+      "range": {
+        "startLine": 30,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 35
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "422de874_7a00bb9f",
+        "filename": "server/tq/internal/workset/workset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T06:02:58Z",
+      "side": 1,
+      "message": "😞 I still don\u0027t get why Go doesn\u0027t just provide it as part of standard library.",
+      "range": {
+        "startLine": 62,
+        "startChar": 70,
+        "endLine": 64,
+        "endChar": 54
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33940401_a63e7547",
+        "filename": "server/tq/internal/workset/workset_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T06:02:58Z",
+      "side": 1,
+      "message": "del?",
+      "range": {
+        "startLine": 39,
+        "startChar": 12,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b662c06_a23e9dd2",
+        "filename": "server/tq/internal/workset/workset_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T06:02:58Z",
+      "side": 1,
+      "message": "😊 I enjoyed this.",
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
