@@ -94,6 +94,30 @@
       "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc149796_ae188557",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T04:10:49Z",
+      "side": 1,
+      "message": "ah, you are right. Getting output commit in all builds was not easy because bot_update is fragile, and some projects don\u0027t use it, so output commit is much more likely to be absent, compared to input commit.\n\nwe could fallback to input commit if output commit is missing. It would cover the case of *periodic* builders that fetch the latest version (whatever it is). up to you. LGTM anyway.",
+      "parentUuid": "1ac62eb3_9cf9d884",
+      "range": {
+        "startLine": 124,
+        "startChar": 18,
+        "endLine": 124,
+        "endChar": 23
+      },
+      "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
