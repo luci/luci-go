@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e071c13_7d0fa0e8",
+        "filename": "cv/OWNERS",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-07T18:02:47Z",
+      "side": 1,
+      "message": "nit: Shall we add both of us :P",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c759ed51_f176d3a7",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-07T18:02:47Z",
+      "side": 1,
+      "message": "Should it be cv? You will also need to regenerate the proto if you rename it to cv.\n\nIf this is part of the part 2 then scratch this comment :)",
+      "range": {
+        "startLine": 19,
+        "startChar": 42,
+        "endLine": 19,
+        "endChar": 44
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf2f857b_6b1f4a3c",
+        "filename": "cv/api/config/v2/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-07T18:02:47Z",
+      "side": 1,
+      "message": "nit: Maybe \"Package config contains CQ Config data model.\"? API sounds like something else to me or I may mis-interpret that.",
+      "range": {
+        "startLine": 17,
+        "startChar": 37,
+        "endLine": 17,
+        "endChar": 40
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69ccbc79_7c352038",
+        "filename": "cv/api/recipe/v1/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-07T18:02:47Z",
+      "side": 1,
+      "message": "FWIW, if this proto is only being used and will only be used in recipe engine, can we just move it to the recipe `cq` module so that we don\u0027t avoid copying this to the new code base?",
+      "range": {
+        "startLine": 21,
+        "startChar": 12,
+        "endLine": 21,
+        "endChar": 20
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
