@@ -113,6 +113,30 @@
     },
     {
       "key": {
+        "uuid": "d009c869_5c471e28",
+        "filename": "server/tq/internal/workset/workset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T21:46:13Z",
+      "side": 1,
+      "message": "sync.Cond.Wait and entire sync.Cond is useless for me, so I won\u0027t miss it.",
+      "parentUuid": "a66adbeb_824619cb",
+      "range": {
+        "startLine": 62,
+        "startChar": 70,
+        "endLine": 64,
+        "endChar": 54
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33940401_a63e7547",
         "filename": "server/tq/internal/workset/workset_test.go",
         "patchSetId": 1
