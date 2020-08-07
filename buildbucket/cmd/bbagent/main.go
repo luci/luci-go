@@ -103,8 +103,17 @@ func mainImpl() int {
 	defer cancel()
 
 	if input.Build.GetInfra().GetResultdb().GetInvocation() != "" {
+		// For buildbucket builds, buildbucket creates the invocations and saves the
+		// info in build proto.
+		// Then bbagent uses the info from build proto to set resultdb
+		// parameters in the luci context.
 		cctx, err = setResultDBContext(cctx, input.Build)
 		check(err)
+	} else {
+		// For led builds, swarming creates the invocations and sets resultdb
+		// parameters in luci context.
+		// Then bbagent gets the parameters from luci context and updates build proto.
+		setResultDBFromContext(cctx, input.Build)
 	}
 
 	opts := &host.Options{
