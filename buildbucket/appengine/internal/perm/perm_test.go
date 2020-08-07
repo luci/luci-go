@@ -202,3 +202,49 @@ func TestGetRole(t *testing.T) {
 		})
 	})
 }
+
+func TestBucketsByPerm(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetAccessibleBuckets", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.Identity("user:user"),
+		})
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket1",
+			Parent: model.ProjectKey(ctx, "project"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:user",
+						Role:     pb.Acl_READER,
+					},
+				},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket2",
+			Parent: model.ProjectKey(ctx, "project"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:user",
+						Role:     pb.Acl_WRITER,
+					},
+				},
+			},
+		}), ShouldBeNil)
+
+		buckets1, err := BucketsByPerm(ctx, BuildersList)
+		So(err, ShouldBeNil)
+		So(buckets1, ShouldResemble, []string{"project/bucket1", "project/bucket2"})
+
+		buckets2, err := BucketsByPerm(ctx, BuildsCancel)
+		So(err, ShouldBeNil)
+		So(buckets2, ShouldResemble, []string{"project/bucket2"})
+	})
+}
