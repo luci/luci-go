@@ -154,12 +154,14 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 	ctx := cli.GetContext(a, c, env)
 
 	if err := c.Parse(a, args); err != nil {
+		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
 
 	// TODO: handle the stats
 	if _, err := c.doArchive(ctx, args); err != nil {
+		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
