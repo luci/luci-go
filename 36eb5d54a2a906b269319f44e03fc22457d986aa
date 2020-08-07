@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "681a2c26_4d126312",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T22:34:38Z",
+      "side": 1,
+      "message": "lgtm. I\u0027m surprised Gerrit doesn\u0027t show diff.",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa533300_02416ad7",
+        "filename": "cq/README.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T22:34:38Z",
+      "side": 1,
+      "message": "i\u0027d say that appengine/ will remain here to provide config validation until it\u0027s migrated to the new system.\nThis way we can keep the setup for existing commit-queue apps as is until deletion.",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4e071c13_7d0fa0e8",
         "filename": "cv/OWNERS",
         "patchSetId": 2
@@ -19,6 +53,41 @@
     },
     {
       "key": {
+        "uuid": "4627bd38_5b3165f0",
+        "filename": "cv/OWNERS",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T22:34:38Z",
+      "side": 1,
+      "message": "yes please. Also, please change this to tandrii@google.com",
+      "parentUuid": "4e071c13_7d0fa0e8",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e5deae5_2d046540",
+        "filename": "cv/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T22:34:38Z",
+      "side": 1,
+      "message": "while we are it, please place it into v1 folder, similar to how project config is in v2.",
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c759ed51_f176d3a7",
         "filename": "cv/api/config/v2/cq.proto",
         "patchSetId": 2
@@ -30,6 +99,30 @@
       "writtenOn": "2020-08-07T18:02:47Z",
       "side": 1,
       "message": "Should it be cv? You will also need to regenerate the proto if you rename it to cv.\n\nIf this is part of the part 2 then scratch this comment :)",
+      "range": {
+        "startLine": 19,
+        "startChar": 42,
+        "endLine": 19,
+        "endChar": 44
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cf0e4e4_098f6313",
+        "filename": "cv/api/config/v2/cq.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T22:34:38Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "c759ed51_f176d3a7",
       "range": {
         "startLine": 19,
         "startChar": 42,
