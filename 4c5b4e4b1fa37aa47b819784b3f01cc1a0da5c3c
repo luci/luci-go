@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19cba943_072a0ef0",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T04:18:39Z",
+      "side": 1,
+      "message": "what other RPCs do you have in mind for this service?\ni wonder if we should generalize this to something like \"Milo\", so that if we need to add another RPC *not about* builds, then we can put it into the same service.",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1810301_e9a9883d",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T04:18:39Z",
+      "side": 1,
+      "message": "\"or infra-failed\"",
+      "range": {
+        "startLine": 31,
+        "startChar": 58,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1166efd4_462f7f4b",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T04:18:39Z",
+      "side": 1,
+      "message": "gitiles_host, otherwise ambiguous (buildbucket host?)\n\nsame below: gitiles_project (luci project?)",
+      "range": {
+        "startLine": 39,
+        "startChar": 9,
+        "endLine": 39,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "187d3ee5_31188e17",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T04:18:39Z",
+      "side": 1,
+      "message": "does this mean this API supports up 2 pages?\n\nstandard pattern: https://google.aip.dev/158",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 56
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cea15a99_988a01fa",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T04:18:39Z",
+      "side": 1,
+      "message": "\"page_size\"\nhttps://google.aip.dev/158",
+      "range": {
+        "startLine": 67,
+        "startChar": 8,
+        "endLine": 67,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
