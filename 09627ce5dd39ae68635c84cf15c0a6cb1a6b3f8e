@@ -952,6 +952,30 @@
     },
     {
       "key": {
+        "uuid": "699c16e2_49e5835c",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:13:53Z",
+      "side": 1,
+      "message": "early on, there was a mantra of \"never panic, always error\". Then I started noticing panics in standard library and stopped paying even lip service to this doctrine 😊",
+      "parentUuid": "c4430879_30bd2f52",
+      "range": {
+        "startLine": 111,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 58
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5558a4ae_c0f98a4b",
         "filename": "cq/internal/submission/order.go",
         "patchSetId": 6
@@ -1022,6 +1046,30 @@
       "side": 1,
       "message": "\u003e I\u0027d bet this is where all the time is burned. If dep.Key was an index of a CL in a cls list, then this wouldn\u0027t be a problem.\n\u003e This can be pre-computed in O(E). In fact, CLs themselves can be identified by index, too.\n\nWould you mind explain more on this? Are you indicating that for actual CL struct in the future, it probably won\u0027t have attribute Key which needs to be computed over and over again (i.e. host+number)?",
       "parentUuid": "eadc02d4_6847735e",
+      "range": {
+        "startLine": 129,
+        "startChar": 14,
+        "endLine": 129,
+        "endChar": 37
+      },
+      "revId": "09627ce5dd39ae68635c84cf15c0a6cb1a6b3f8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9dbe2ac_aca15357",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-07T00:13:53Z",
+      "side": 1,
+      "message": "no. CL will have a key. I dunno how deps will look like.\n\nWhat\u0027s certain here is that in the worst case, this line will be executed O(E*V) times, which I think is where we pay major cost (but needs profiling to be sure).\nIf we precompute at the start of optimize deps for each CL based on *indexes*, then we can save O(E*V) hashing of strings.\n\nFrom big-O notation, what i\u0027m saying is that hashtable access is actually foremost computing hash of a string key, denoted HASH(key), not O(1).\nSo, right now we pay O(E*V*HASH) \u003d O(V^3*HASH). We could instead pay \n  O(E*HASH)  // replace Dep.Key with Dep.Index\n  + \n  O(E*V*1)       // this line becomes true O(1)\n\nIn your benchmarks, len(key) \u003c\u003d 3. In real life, it\u0027d be ~40-50 chars.\nIn practice, hash computation has high initial overhead, so it probably won\u0027t get 20x slow, i\u0027d say ~3x slower. You can change benchmark to generate smth like\n\"chromium-review.googlesource.com/123124\" and see if it changes things.\n\nIn any case, this isn\u0027t important right now. This CL should land as is.",
+      "parentUuid": "5e2d266f_f1a0be34",
       "range": {
         "startLine": 129,
         "startChar": 14,
