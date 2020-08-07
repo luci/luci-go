@@ -157,6 +157,30 @@
       "revId": "609f690ff30d866951017d1906dca822960915e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fb769bf_ddcaff35",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-07T17:16:41Z",
+      "side": 1,
+      "message": "IIUC in this CL, each test can attach a single categorization and then the UI will group similar categories together.\n\nIs there any possibility that a user would want a test result to show up in multiple categorizations? E.g. \"group by X\" where \"X\" is a user-selected arbitrary grouping (perhaps by different users)?\n\nIt seems to me that `test_category` will end up adding a lot of redundant data, though maybe this cannot be helped?\n\nIs there enough structured data about the test results to, e.g. have external grouping filter rules where teams could configure the UI to group them in the ways they want? So maybe milo could have various \u0027test view presets\u0027 owned by different teams, and the grouping applies in post on top of the raw data?\n\n(not saying this is wrong, just trying to catch up on the design tradeoffs on the bug+CL)",
+      "parentUuid": "198d52e4_657726d5",
+      "range": {
+        "startLine": 225,
+        "startChar": 16,
+        "endLine": 225,
+        "endChar": 54
+      },
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
