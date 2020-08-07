@@ -46,6 +46,30 @@
       "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "454e0f56_a451fa47",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-07T02:43:09Z",
+      "side": 1,
+      "message": "LGTM because this CL is clearly an improvement, but my point is.. if you your changing this, why not replace it with build.GetOutput().GetGitilesCommit()? It would both 1) solve the problem immediately 2) support those builds that don\u0027t have input.gitiles_commit.id, but have output.gitiles_commit.id",
+      "parentUuid": "28f1e010_ac6c612b",
+      "range": {
+        "startLine": 124,
+        "startChar": 18,
+        "endLine": 124,
+        "endChar": 23
+      },
+      "revId": "b44ae1791e65af53c5ceeebdc22f0731e379de73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
