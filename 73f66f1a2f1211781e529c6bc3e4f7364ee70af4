@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "8732a133_67b12c6d",
+        "filename": "server/tq/internal/workset/workset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T21:36:03Z",
+      "side": 1,
+      "message": "It will make it into a \"multiset\", but fine, it doesn\u0027t matter for inproc sweeper. Done.",
+      "parentUuid": "5221b8d4_4488f332",
+      "range": {
+        "startLine": 30,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 35
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "422de874_7a00bb9f",
         "filename": "server/tq/internal/workset/workset.go",
         "patchSetId": 1
@@ -53,6 +77,30 @@
       "writtenOn": "2020-08-07T06:02:58Z",
       "side": 1,
       "message": "😞 I still don\u0027t get why Go doesn\u0027t just provide it as part of standard library.",
+      "range": {
+        "startLine": 62,
+        "startChar": 70,
+        "endLine": 64,
+        "endChar": 54
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a66adbeb_824619cb",
+        "filename": "server/tq/internal/workset/workset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T21:36:03Z",
+      "side": 1,
+      "message": "I saw a proposal to remove sync.Cond in Go2 to fix the glitch :)",
+      "parentUuid": "422de874_7a00bb9f",
       "range": {
         "startLine": 62,
         "startChar": 70,
@@ -85,6 +133,30 @@
       "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2018aa1a_03017928",
+        "filename": "server/tq/internal/workset/workset_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T21:36:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33940401_a63e7547",
+      "range": {
+        "startLine": 39,
+        "startChar": 12,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "73f66f1a2f1211781e529c6bc3e4f7364ee70af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
