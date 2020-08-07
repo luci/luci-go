@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77f9f029_c59cbf2c",
+        "filename": "buildbucket/appengine/tasks/tasks_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-07T16:18:48Z",
+      "side": 1,
+      "message": "appengine/tq/tqtesting lets me assert that task X is or isn\u0027t in queue Y, which is largely good enough for me (to test any further I\u0027d just call the task handler directly). Could GetScheduledTasks be added to server/tq/tqtesting?",
+      "revId": "d780a171ddc9ff241f7268d3b4bc59cc45e57942",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cf77d9a_139fb7da",
+        "filename": "buildbucket/appengine/tasks/tasks_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-07T16:18:48Z",
+      "side": 1,
+      "message": "It says I need a transaction even if I wrap the CancelSwarmingTask call in datastore.RunInTransaction, but I didn\u0027t bother to figure out why so I\u0027ve omitted these tests for now.",
+      "revId": "d780a171ddc9ff241f7268d3b4bc59cc45e57942",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
