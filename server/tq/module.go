@@ -367,9 +367,9 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 		logging.Infof(ctx, "TQ sweep task queue is %q", m.opts.SweepTaskQueue)
 		disp.Sweeper = NewDistributedSweeper(disp, DistributedSweeperOptions{
 			SweepShards:         m.opts.SweepShards,
-			TasksPerScan:        2048, // TODO: make configurable if necessary
-			SecondaryScanShards: 16,   // TODO: make configurable if necessary
-			LessorID:            "",   // TODO: make configurable if necessary
+			TasksPerScan:        2048,        // TODO: make configurable if necessary
+			SecondaryScanShards: 16,          // TODO: make configurable if necessary
+			LessorID:            "datastore", // TODO: make configurable if necessary
 			TaskQueue:           m.opts.SweepTaskQueue,
 			TaskPrefix:          m.opts.SweepTaskPrefix,
 			TaskHost:            m.opts.SweepTargetHost,
