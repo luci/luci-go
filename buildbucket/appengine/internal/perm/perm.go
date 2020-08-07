@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 var (
@@ -161,4 +162,25 @@ func getRole(ctx context.Context, id identity.Identity, acls []*pb.Acl) (pb.Acl_
 	}
 
 	return role, nil
+}
+
+func BucketsByPerm(ctx context.Context, p realms.Permission) ([]string, error) {
+	var bucketKeys []*datastore.Key
+	query := datastore.NewQuery(model.BucketKind).KeysOnly(true)
+	datastore.Run(ctx, query, func(bucketKey *datastore.Key) {
+		bucketKeys = append(bucketKeys, bucketKey)
+	})
+
+	var buckets []string
+	for _, bk := range bucketKeys {
+		if err := HasInBucket(ctx, p, bk.Parent().StringID(), bk.StringID()); err != nil {
+			status, ok := appstatus.Get(err)
+			if ok && (status.Code() == codes.PermissionDenied || status.Code() == codes.NotFound) {
+				continue
+			}
+			return nil, err
+		}
+		buckets = append(buckets, protoutil.FormatBucketID(bk.Parent().StringID(), bk.StringID()))
+	}
+	return buckets, nil
 }
