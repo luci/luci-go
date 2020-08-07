@@ -26,10 +26,15 @@ import (
 
 type Flags struct {
 	Instance string
+
+	// Whether to use application default credentials.
+	useADC bool
 }
 
 func (c *Flags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Instance, "cas-instance", "", "CAS instance (GCP). Format is either a project ID, or \"projects/<project_id>/instances/<instance_id>\"")
+
+	f.BoolVar(&c.useADC, "use-application-default-crendetials", false, "Use application default credentials if it is set")
 }
 
 func (c *Flags) Parse() error {
@@ -65,6 +70,6 @@ func (c *Flags) NewClient(ctx context.Context) (*client.Client, error) {
 		client.DialParams{
 			Service: "remotebuildexecution.googleapis.com:443",
 			// TODO(crbug.com/1066839): Integrate with LUCI Realm
-			UseApplicationDefault: true,
+			UseApplicationDefault: c.useADC,
 		})
 }
