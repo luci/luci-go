@@ -1,1 +1,6 @@
 runtime: go113
+
+entrypoint: >
+  main
+  -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+  -spanner-database projects/tandrii-test-crbug-1080423/instances/span-test/databases/db

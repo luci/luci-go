@@ -20,4 +20,5 @@ option go_package = "go.chromium.org/luci/examples/appengine/tq/taskspb";
 
 message CountDownTask {
   int64 number = 1;
+  string kind = 2;
 }
