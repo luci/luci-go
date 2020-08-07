@@ -79,6 +79,30 @@
       "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "303af199_b2f0d5cb",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:17:09Z",
+      "side": 1,
+      "message": "Also it is actually parallelized in Python too:\n\n  yield [has_perm_async(perm, bid) for bid in all_buckets]\n\nYielding an iterable of futures launches them all in parallel.",
+      "parentUuid": "bc29b2ed_a70949ad",
+      "range": {
+        "startLine": 179,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 2
+      },
+      "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
