@@ -33,6 +33,52 @@
       "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab9bc95c_402800b3",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:15:46Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/gae/service/datastore#GetAll will be a bit shorter. I believe the following will do the right thing:\n\n  err :\u003d datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), \u0026bucketKeys)",
+      "range": {
+        "startLine": 171,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 3
+      },
+      "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc29b2ed_a70949ad",
+        "filename": "buildbucket/appengine/internal/perm/perm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:15:46Z",
+      "side": 1,
+      "message": "This will make a lot of datastore fetches in HasInBucket sequentially. It would be better if this is parallelized, e.g. see https://source.chromium.org/search?q\u003dparallel.WorkPool\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 179,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 2
+      },
+      "revId": "2c1223306a3639e7eccc77376bedf8ee69900b5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
