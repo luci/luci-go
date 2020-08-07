@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "a089bbd3_28fa79d7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:23:37Z",
+      "side": 1,
+      "message": "LGMT ~ tests",
+      "revId": "d780a171ddc9ff241f7268d3b4bc59cc45e57942",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d72d0da6_1b185ec7",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:23:37Z",
+      "side": 1,
+      "message": "Moving this to tasks.go should resolve the issue with RunInTransaction not being recognized as a transaction. TQ just doesn\u0027t know about datastore if this package is not imported (and it isn\u0027t in tests).",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 49
+      },
+      "revId": "d780a171ddc9ff241f7268d3b4bc59cc45e57942",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "77f9f029_c59cbf2c",
         "filename": "buildbucket/appengine/tasks/tasks_test.go",
         "patchSetId": 2
@@ -13,6 +53,24 @@
       "writtenOn": "2020-08-07T16:18:48Z",
       "side": 1,
       "message": "appengine/tq/tqtesting lets me assert that task X is or isn\u0027t in queue Y, which is largely good enough for me (to test any further I\u0027d just call the task handler directly). Could GetScheduledTasks be added to server/tq/tqtesting?",
+      "revId": "d780a171ddc9ff241f7268d3b4bc59cc45e57942",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "421ce935_092567c1",
+        "filename": "buildbucket/appengine/tasks/tasks_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T20:23:37Z",
+      "side": 1,
+      "message": "There\u0027s https://godoc.org/go.chromium.org/luci/server/tq/tqtesting#Scheduler.Tasks. Since you don\u0027t really need to execute tasks, there\u0027s no need to call Run, just see what have been scheduled via Tasks():\n\n  So(d.CancelSwarmingTask(...), ...)\n  So(sch.Tasks(), ShouldHaveLength, 1) // yay, works\n\nOne caveat is that there\u0027s no deserialized proto.Message in tqtesting.Task yet (only Cloud Tasks Task proto which has the tq task payload in JSONPB form). I plan to add it soon. But Looks like it is not necessary for this test yet.",
+      "parentUuid": "77f9f029_c59cbf2c",
       "revId": "d780a171ddc9ff241f7268d3b4bc59cc45e57942",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
