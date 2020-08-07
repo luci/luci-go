@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -101,18 +101,22 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to call FlattenTree").Err()
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	to := make(map[digest.Digest]*tree.Output)
 
-	l := logging.Get(ctx)
+	// Files have the same digest are downloaded only once, so we need to
+	// copy duplicates files later.
+	var dups []*tree.Output
 
 	for path, output := range outputs {
-		l.Debugf("start %s %v", path, *output)
-
 		if output.IsEmptyDirectory {
 			if err := os.MkdirAll(path, 0o700); err != nil {
 				return errors.Annotate(err, "failed to create directory").Err()
 			}
 			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			return errors.Annotate(err, "failed to create directory").Err()
 		}
 
 		if output.SymlinkTarget != "" {
@@ -122,32 +126,43 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			continue
 		}
 
-		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-			return errors.Annotate(err, "failed to create dir").Err()
+		if _, ok := to[output.Digest]; ok {
+			dups = append(dups, output)
+		} else {
+			to[output.Digest] = output
 		}
+	}
 
-		path, output := path, output
+	if err := c.DownloadFiles(ctx, ".", to); err != nil {
+		return errors.Annotate(err, "failed to download files").Err()
+	}
 
+	// DownloadFiles does not set desired file permission.
+	for _, output := range to {
+		mode := 0o600
+		if output.IsExecutable {
+			mode = 0o700
+		}
+		if err := os.Chmod(output.Path, os.FileMode(mode)); err != nil {
+			return errors.Annotate(err, "failed to change mode").Err()
+		}
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	for _, dup := range dups {
+		src := to[dup.Digest]
+		dst := dup
 		eg.Go(func() (err error) {
 			mode := 0o600
-			if output.IsExecutable {
+			if dst.IsExecutable {
 				mode = 0o700
 			}
 
-			f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(mode))
-			if err != nil {
-				return errors.Annotate(err, "failed to open file").Err()
+			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
+				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
 			}
-			defer func() {
-				if ferr := f.Close(); ferr != nil && err == nil {
-					err = errors.Annotate(ferr, "failed to close file").Err()
-				}
-			}()
 
-			if _, err := c.ReadBlobStreamed(ctx, output.Digest, f); err != nil {
-				return errors.Annotate(err, "failed to read blob(%s) to %s", output.Digest, path).Err()
-			}
-			l.Debugf("finish %s %v", path, *output)
 			return nil
 		})
 	}

@@ -349,6 +349,35 @@ func TestReadableCopy(t *testing.T) {
 	})
 }
 
+func TestCopy(t *testing.T) {
+	Convey("Copy", t, func() {
+		withTempDir(t, func(dir string) {
+			out := filepath.Join(dir, "out")
+			in := filepath.Join(dir, "in")
+			content := []byte("test")
+			So(ioutil.WriteFile(in, content, 0o644), ShouldBeNil)
+
+			// Change umask on unix so that test is not affected by default umask.
+			old := umask(0o22)
+			So(Copy(out, in, 0o644), ShouldBeNil)
+			umask(old)
+
+			buf, err := ioutil.ReadFile(out)
+			So(err, ShouldBeNil)
+			So(buf, ShouldResemble, content)
+
+			ostat, err := os.Stat(out)
+			So(err, ShouldBeNil)
+			_, err = os.Stat(in)
+			So(err, ShouldBeNil)
+
+			if runtime.GOOS != "windows" {
+				So(ostat.Mode(), ShouldEqual, 0o644)
+			}
+		})
+	})
+}
+
 func TestHardlinkRecursively(t *testing.T) {
 	t.Parallel()
 
