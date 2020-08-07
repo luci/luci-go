@@ -20,7 +20,7 @@
 // project, so use some experimental Cloud Project for this:
 //
 //   $ go run . -cloud-project your-experimental-project
-//   $ curl http://127.0.0.1:8800/count-down/10
+//   $ curl http://127.0.0.1:8800/count-down/10/spanner
 //   <observe logs>
 //   $ curl http://127.0.0.1:8800/internal/tasks/c/sweep
 //   <observe logs>
@@ -48,11 +48,14 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
 
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
+	// Enable spanner transactional tasks support.
+	_ "go.chromium.org/luci/server/tq/txn/spanner"
 
 	"go.chromium.org/luci/examples/appengine/tq/taskspb"
 )
@@ -104,10 +107,10 @@ func (c *CountDownChain) Register(disp *tq.Dispatcher) {
 }
 
 // Enqueue enqueues a count down task.
-func (c *CountDownChain) Enqueue(ctx context.Context, num int64) error {
+func (c *CountDownChain) Enqueue(ctx context.Context, num int64, kind string) error {
 	return c.dispatcher.AddTask(ctx, &tq.Task{
 		// The body of the task. Also identifies what TaskClass to use.
-		Payload: &taskspb.CountDownTask{Number: num},
+		Payload: &taskspb.CountDownTask{Number: num, Kind: kind},
 		// Title appears in logs and URLs, useful for debugging.
 		Title: fmt.Sprintf("count-%d", num),
 		// How long to wait before executing this task. Not super precise.
@@ -123,7 +126,13 @@ func (c *CountDownChain) taskHandler(ctx context.Context, payload proto.Message)
 	if task.Number <= 0 {
 		return nil // stop counting
 	}
-
+	if task.Kind == "spanner" {
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			return c.Enqueue(ctx, task.Number-1, task.Kind)
+		})
+		return err
+	}
+	// default to datastore.
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Update some entity.
 		err := datastore.Put(ctx, &ExampleEntity{
@@ -135,13 +144,14 @@ func (c *CountDownChain) taskHandler(ctx context.Context, payload proto.Message)
 		}
 		// And transactionally enqueue the next task. Note if you need to submit
 		// more tasks, it is fine to call multiple Enqueue (or AddTask) in parallel.
-		return c.Enqueue(ctx, task.Number-1)
+		return c.Enqueue(ctx, task.Number-1, task.Kind)
 	}, nil)
 }
 
 func main() {
 	modules := []module.Module{
 		gaeemulation.NewModuleFromFlags(), // to use Cloud Datastore
+		span.NewModuleFromFlags(),         // to use Spanner
 		tq.NewModuleFromFlags(),           // to transactionally submit Cloud Tasks
 	}
 
@@ -154,14 +164,15 @@ func main() {
 	chain.Register(&tq.Default)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		srv.Routes.GET("/count-down/:From", router.MiddlewareChain{}, func(c *router.Context) {
+		srv.Routes.GET("/count-down/:From/:Kind", router.MiddlewareChain{}, func(c *router.Context) {
 			num, err := strconv.ParseInt(c.Params.ByName("From"), 10, 32)
 			if err != nil {
 				http.Error(c.Writer, "Not a number", http.StatusBadRequest)
 				return
 			}
+			kind := c.Params.ByName("Kind")
 			// Kick off the chain by enqueuing the starting task.
-			if err = chain.Enqueue(c.Context, num); err != nil {
+			if err = chain.Enqueue(c.Context, num, kind); err != nil {
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			} else {
 				c.Writer.Write([]byte("OK\n"))

@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/span"
@@ -42,7 +43,9 @@ func (spanDB) Kind() string {
 }
 
 func (spanDB) Defer(ctx context.Context, cb func(context.Context)) {
-	span.Defer(ctx, cb)
+	if i := mathrand.Int(ctx); i&1 == 1 { // ~50% chance.
+		span.Defer(ctx, cb)
+	}
 }
 
 func (spanDB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
