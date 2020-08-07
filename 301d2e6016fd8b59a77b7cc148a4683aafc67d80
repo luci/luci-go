@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea61a319_a024e664",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-07T04:37:37Z",
+      "side": 1,
+      "message": "I guess this serializes all the execution of https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/downloader/downloader.go;l\u003d466;drc\u003dfb1bb1765b68837a22d59726161ce87c8f6e68e4, which may not be a problem, though.",
+      "revId": "301d2e6016fd8b59a77b7cc148a4683aafc67d80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
