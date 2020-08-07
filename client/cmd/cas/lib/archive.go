@@ -121,7 +121,7 @@ func (c *archiveRun) doArchive(ctx context.Context, args []string) ([]digest.Dig
 		return nil, errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 
-	client, err := c.casFlags.NewClient(ctx)
+	client, err := c.casFlags.NewClient(ctx, false)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create cas client").Err()
 	}
