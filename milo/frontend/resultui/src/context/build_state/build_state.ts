@@ -20,6 +20,7 @@ import { consumeContext, provideContext } from '../../libs/context';
 import { BuilderID } from '../../services/buildbucket';
 import { BuildPageData } from '../../services/build_page';
 import { AppState } from '../app_state/app_state';
+import { RelatedBuildsData } from "../../services/build_page"
 
 /**
  * Records state of a build.
@@ -49,6 +50,22 @@ export class BuildState {
       return null;
     }
     return this.buildPageDataReq.value;
+  }
+
+  @computed({keepAlive: true})
+  get relatedBuildsDataReq(): IPromiseBasedObservable<RelatedBuildsData> {
+    if (!this.appState.buildPageService || !this.buildPageData) {
+      return fromPromise(new Promise(() => {}));
+    }
+    return fromPromise(this.appState.buildPageService.getRelatedBuilds(this.buildPageData!.id));
+  }
+
+  @computed
+  get relatedBuildsData(): RelatedBuildsData | null {
+    if (this.relatedBuildsDataReq.state !== FULFILLED) {
+      return null;
+    }
+    return this.relatedBuildsDataReq.value;
   }
 }
 

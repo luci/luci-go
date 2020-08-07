@@ -108,6 +108,25 @@ func handleLUCIBuildData(c *router.Context) error {
 	return nil
 }
 
+// handleLUCIRelatedBuilds returns related builds to a given build ID.
+// TODO (crbug.com/1112224): convert this to pRPC.
+func handleLUCIRelatedBuilds(c *router.Context) error {
+	logging.Infof(c.Context, "Inside handleLUCIRelatedBuilds")
+	rbt, err := getRelatedBuilds(c)
+	if err != nil {
+		return err
+	}
+
+	if err := json.NewEncoder(c.Writer).Encode(rbt); err != nil {
+		logging.Errorf(c.Context, "Failed to JSON encode output - %s", err)
+		return err
+	}
+
+	c.Writer.Header().Add("Content-Type", "application/json")
+	c.Writer.WriteHeader(http.StatusOK)
+	return nil
+}
+
 // renderBuild is a shortcut for rendering build or returning err if it is not nil.
 func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 	if err != nil {
@@ -148,21 +167,28 @@ func redirectLUCIBuild(c *router.Context) error {
 }
 
 func handleGetRelatedBuildsTable(c *router.Context) error {
-	idInput := c.Params.ByName("id")
-
-	id, err := strconv.ParseInt(idInput, 10, 64)
+	rbt, err := getRelatedBuilds(c)
 	if err != nil {
-		return errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
+		return err
 	}
-	rbt, err := buildbucket.GetRelatedBuildsTable(c.Context, id)
-	if err != nil {
-		return errors.Annotate(err, "error when getting related builds table").Err()
-	}
-
 	templates.MustRender(c.Context, c.Writer, "widgets/related_builds_table.html", templates.Args{
 		"RelatedBuildsTable": rbt,
 	})
 	return nil
+}
+
+func getRelatedBuilds(c *router.Context) (*ui.RelatedBuildsTable, error) {
+	idInput := c.Params.ByName("id")
+
+	id, err := strconv.ParseInt(idInput, 10, 64)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+	rbt, err := buildbucket.GetRelatedBuildsTable(c.Context, id)
+	if err != nil {
+		return nil, errors.Annotate(err, "error when getting related builds table").Err()
+	}
+	return rbt, nil
 }
 
 func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
