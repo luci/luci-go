@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da36c053_7f9d20f4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "Thanks; LGTM based mainly on tests; I have a few more optional nits.",
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d5253123_ebdb25d6",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "Nit: DFS-based",
+      "range": {
+        "startLine": 70,
+        "startChar": 15,
+        "endLine": 70,
+        "endChar": 18
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "582d2a06_ac2493c8",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "dependency edges",
+      "range": {
+        "startLine": 73,
+        "startChar": 36,
+        "endLine": 73,
+        "endChar": 54
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fdd2e5b_3df02002",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "Maybe: whether a cycle was detected that can\u0027t be resolved yet.",
+      "range": {
+        "startLine": 98,
+        "startChar": 18,
+        "endLine": 98,
+        "endChar": 71
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1711ec20_8783b56b",
+        "filename": "cq/internal/submission/order.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "Nit: \"This is why this algorithm is...\"",
+      "range": {
+        "startLine": 133,
+        "startChar": 50,
+        "endLine": 133,
+        "endChar": 69
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20421921_4edd9354",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "Nit: \"...if there\u0027s a cycle\"",
+      "range": {
+        "startLine": 79,
+        "startChar": 37,
+        "endLine": 79,
+        "endChar": 42
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9cea4e7_a81ce3df",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "Nit: rename to numCLs (as below).",
+      "range": {
+        "startLine": 159,
+        "startChar": 8,
+        "endLine": 159,
+        "endChar": 16
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aed1ea89_7e953cd1",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "or perhaps \"creates\"",
+      "range": {
+        "startLine": 169,
+        "startChar": 16,
+        "endLine": 169,
+        "endChar": 25
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2ea4e47_fd306937",
+        "filename": "cq/internal/submission/order_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-07T16:52:19Z",
+      "side": 1,
+      "message": "form",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 13
+      },
+      "revId": "3fb6cbf68fb56f781899436ef68f00790ab6dcf7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
