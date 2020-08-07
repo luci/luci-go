@@ -53,10 +53,29 @@ type QueryBlamelistRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The name of the invocation to request, see Invocation.name.
-	FromCommit *git.Commit       `protobuf:"bytes,1,opt,name=from_commit,json=fromCommit,proto3" json:"from_commit,omitempty"`
-	Builder    *proto1.BuilderID `protobuf:"bytes,2,opt,name=builder,proto3" json:"builder,omitempty"`
-	Limit      int32             `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Gitiles hostname.
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// Repository name on the host.
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	// First commit of the blamelist.
+	//
+	// See documentation on QueryBlamelist rpc for details.
+	// It can be set to the last commit ID from the previous response to query the
+	// next page.
+	StartCommitId string `protobuf:"bytes,3,opt,name=start_commit_id,json=startCommitId,proto3" json:"start_commit_id,omitempty"`
+	// Whether the start commit should be included in the returned commits.
+	//
+	// Set this to true when querying the first page and set this to false (or
+	// leave it empty) when querying the subsequent pages.
+	IncludeStartCommit bool `protobuf:"varint,4,opt,name=include_start_commit,json=includeStartCommit,proto3" json:"include_start_commit,omitempty"`
+	// The builder of the blamelist.
+	Builder *proto1.BuilderID `protobuf:"bytes,5,opt,name=builder,proto3" json:"builder,omitempty"`
+	// The maximum number of commits to return.
+	//
+	// The service may return fewer than this value.
+	// If unspecified, at most 100 commits will be returned.
+	// The maximum value is 1000; values above 1000 will be coerced to 1000.
+	Limit int32 `protobuf:"varint,6,opt,name=limit,proto3" json:"limit,omitempty"`
 }
 
 func (x *QueryBlamelistRequest) Reset() {
@@ -91,11 +110,32 @@ func (*QueryBlamelistRequest) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *QueryBlamelistRequest) GetFromCommit() *git.Commit {
+func (x *QueryBlamelistRequest) GetHost() string {
 	if x != nil {
-		return x.FromCommit
+		return x.Host
 	}
-	return nil
+	return ""
+}
+
+func (x *QueryBlamelistRequest) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *QueryBlamelistRequest) GetStartCommitId() string {
+	if x != nil {
+		return x.StartCommitId
+	}
+	return ""
+}
+
+func (x *QueryBlamelistRequest) GetIncludeStartCommit() bool {
+	if x != nil {
+		return x.IncludeStartCommit
+	}
+	return false
 }
 
 func (x *QueryBlamelistRequest) GetBuilder() *proto1.BuilderID {
@@ -112,7 +152,8 @@ func (x *QueryBlamelistRequest) GetLimit() int32 {
 	return 0
 }
 
-type QueryBlamelistRespoonse struct {
+// A response message for QueryBlamelist RPC.
+type QueryBlamelistResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -120,8 +161,8 @@ type QueryBlamelistRespoonse struct {
 	Commits []*git.Commit `protobuf:"bytes,1,rep,name=commits,proto3" json:"commits,omitempty"`
 }
 
-func (x *QueryBlamelistRespoonse) Reset() {
-	*x = QueryBlamelistRespoonse{}
+func (x *QueryBlamelistResponse) Reset() {
+	*x = QueryBlamelistResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -129,13 +170,13 @@ func (x *QueryBlamelistRespoonse) Reset() {
 	}
 }
 
-func (x *QueryBlamelistRespoonse) String() string {
+func (x *QueryBlamelistResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryBlamelistRespoonse) ProtoMessage() {}
+func (*QueryBlamelistResponse) ProtoMessage() {}
 
-func (x *QueryBlamelistRespoonse) ProtoReflect() protoreflect.Message {
+func (x *QueryBlamelistResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -147,12 +188,12 @@ func (x *QueryBlamelistRespoonse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QueryBlamelistRespoonse.ProtoReflect.Descriptor instead.
-func (*QueryBlamelistRespoonse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryBlamelistResponse.ProtoReflect.Descriptor instead.
+func (*QueryBlamelistResponse) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *QueryBlamelistRespoonse) GetCommits() []*git.Commit {
+func (x *QueryBlamelistResponse) GetCommits() []*git.Commit {
 	if x != nil {
 		return x.Commits
 	}
@@ -172,31 +213,36 @@ var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
 	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69,
 	0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x62,
-	0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x90, 0x01, 0x0a,
+	0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xea, 0x01, 0x0a,
 	0x15, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2c, 0x0a, 0x0b, 0x66, 0x72, 0x6f, 0x6d, 0x5f, 0x63,
-	0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x67, 0x69,
-	0x74, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x0a, 0x66, 0x72, 0x6f, 0x6d, 0x43, 0x6f,
-	0x6d, 0x6d, 0x69, 0x74, 0x12, 0x33, 0x0a, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
-	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x49, 0x44,
-	0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x6c, 0x69, 0x6d,
-	0x69, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x22,
-	0x40, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73,
-	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x25, 0x0a, 0x07, 0x63, 0x6f,
-	0x6d, 0x6d, 0x69, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x67, 0x69,
-	0x74, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
-	0x73, 0x32, 0x6c, 0x0a, 0x0a, 0x4d, 0x69, 0x6c, 0x6f, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x12,
-	0x5e, 0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73,
-	0x74, 0x12, 0x23, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c, 0x6f, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69,
-	0x6c, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65,
-	0x6c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42,
-	0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x6d, 0x69, 0x6c, 0x6f, 0x2f, 0x61, 0x70, 0x69,
-	0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x69, 0x6c, 0x6f,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72,
+	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x12, 0x26, 0x0a, 0x0f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x63, 0x6f,
+	0x6d, 0x6d, 0x69, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x73,
+	0x74, 0x61, 0x72, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x49, 0x64, 0x12, 0x30, 0x0a, 0x14,
+	0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x63, 0x6f,
+	0x6d, 0x6d, 0x69, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x12, 0x69, 0x6e, 0x63, 0x6c,
+	0x75, 0x64, 0x65, 0x53, 0x74, 0x61, 0x72, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x12, 0x33,
+	0x0a, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
+	0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x49, 0x44, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x06, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x22, 0x3f, 0x0a, 0x16, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x25, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x67, 0x69, 0x74, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x73, 0x32, 0x66, 0x0a, 0x05, 0x42, 0x75,
+	0x69, 0x6c, 0x64, 0x12, 0x5d, 0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d,
+	0x65, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x23, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c,
+	0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c,
+	0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x6c, 0x75, 0x63,
+	0x69, 0x2e, 0x6d, 0x69, 0x6c, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42,
+	0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x6d, 0x69, 0x6c, 0x6f, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6d,
+	0x69, 0x6c, 0x6f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -213,22 +259,21 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP() []byt
 
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_goTypes = []interface{}{
-	(*QueryBlamelistRequest)(nil),   // 0: luci.milo.v1.QueryBlamelistRequest
-	(*QueryBlamelistRespoonse)(nil), // 1: luci.milo.v1.QueryBlamelistRespoonse
-	(*git.Commit)(nil),              // 2: git.Commit
-	(*proto1.BuilderID)(nil),        // 3: buildbucket.v2.BuilderID
+	(*QueryBlamelistRequest)(nil),  // 0: luci.milo.v1.QueryBlamelistRequest
+	(*QueryBlamelistResponse)(nil), // 1: luci.milo.v1.QueryBlamelistResponse
+	(*proto1.BuilderID)(nil),       // 2: buildbucket.v2.BuilderID
+	(*git.Commit)(nil),             // 3: git.Commit
 }
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_depIdxs = []int32{
-	2, // 0: luci.milo.v1.QueryBlamelistRequest.from_commit:type_name -> git.Commit
-	3, // 1: luci.milo.v1.QueryBlamelistRequest.builder:type_name -> buildbucket.v2.BuilderID
-	2, // 2: luci.milo.v1.QueryBlamelistRespoonse.commits:type_name -> git.Commit
-	0, // 3: luci.milo.v1.MiloServer.QueryBlamelist:input_type -> luci.milo.v1.QueryBlamelistRequest
-	1, // 4: luci.milo.v1.MiloServer.QueryBlamelist:output_type -> luci.milo.v1.QueryBlamelistRespoonse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2, // 0: luci.milo.v1.QueryBlamelistRequest.builder:type_name -> buildbucket.v2.BuilderID
+	3, // 1: luci.milo.v1.QueryBlamelistResponse.commits:type_name -> git.Commit
+	0, // 2: luci.milo.v1.Build.QueryBlamelist:input_type -> luci.milo.v1.QueryBlamelistRequest
+	1, // 3: luci.milo.v1.Build.QueryBlamelist:output_type -> luci.milo.v1.QueryBlamelistResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_init() }
@@ -250,7 +295,7 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryBlamelistRespoonse); i {
+			switch v := v.(*QueryBlamelistResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -290,90 +335,100 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// MiloServerClient is the client API for MiloServer service.
+// BuildClient is the client API for Build service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type MiloServerClient interface {
-	// Retrieves an invocation.
-	QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistRespoonse, error)
+type BuildClient interface {
+	// Retrieves blamelist of a build.
+	//
+	// The blamelist of a build is defined as [start_commit, end_commit),
+	// where start_commit is the last commit of the build,
+	// end_commit is the closest ancestor commit with an associated build that is
+	// from the same builder and is not expired, cancelled, or has infra failure.
+	QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistResponse, error)
 }
-type miloServerPRPCClient struct {
+type buildPRPCClient struct {
 	client *prpc.Client
 }
 
-func NewMiloServerPRPCClient(client *prpc.Client) MiloServerClient {
-	return &miloServerPRPCClient{client}
+func NewBuildPRPCClient(client *prpc.Client) BuildClient {
+	return &buildPRPCClient{client}
 }
 
-func (c *miloServerPRPCClient) QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistRespoonse, error) {
-	out := new(QueryBlamelistRespoonse)
-	err := c.client.Call(ctx, "luci.milo.v1.MiloServer", "QueryBlamelist", in, out, opts...)
+func (c *buildPRPCClient) QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistResponse, error) {
+	out := new(QueryBlamelistResponse)
+	err := c.client.Call(ctx, "luci.milo.v1.Build", "QueryBlamelist", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-type miloServerClient struct {
+type buildClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewMiloServerClient(cc grpc.ClientConnInterface) MiloServerClient {
-	return &miloServerClient{cc}
+func NewBuildClient(cc grpc.ClientConnInterface) BuildClient {
+	return &buildClient{cc}
 }
 
-func (c *miloServerClient) QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistRespoonse, error) {
-	out := new(QueryBlamelistRespoonse)
-	err := c.cc.Invoke(ctx, "/luci.milo.v1.MiloServer/QueryBlamelist", in, out, opts...)
+func (c *buildClient) QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistResponse, error) {
+	out := new(QueryBlamelistResponse)
+	err := c.cc.Invoke(ctx, "/luci.milo.v1.Build/QueryBlamelist", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// MiloServerServer is the server API for MiloServer service.
-type MiloServerServer interface {
-	// Retrieves an invocation.
-	QueryBlamelist(context.Context, *QueryBlamelistRequest) (*QueryBlamelistRespoonse, error)
+// BuildServer is the server API for Build service.
+type BuildServer interface {
+	// Retrieves blamelist of a build.
+	//
+	// The blamelist of a build is defined as [start_commit, end_commit),
+	// where start_commit is the last commit of the build,
+	// end_commit is the closest ancestor commit with an associated build that is
+	// from the same builder and is not expired, cancelled, or has infra failure.
+	QueryBlamelist(context.Context, *QueryBlamelistRequest) (*QueryBlamelistResponse, error)
 }
 
-// UnimplementedMiloServerServer can be embedded to have forward compatible implementations.
-type UnimplementedMiloServerServer struct {
+// UnimplementedBuildServer can be embedded to have forward compatible implementations.
+type UnimplementedBuildServer struct {
 }
 
-func (*UnimplementedMiloServerServer) QueryBlamelist(context.Context, *QueryBlamelistRequest) (*QueryBlamelistRespoonse, error) {
+func (*UnimplementedBuildServer) QueryBlamelist(context.Context, *QueryBlamelistRequest) (*QueryBlamelistResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryBlamelist not implemented")
 }
 
-func RegisterMiloServerServer(s prpc.Registrar, srv MiloServerServer) {
-	s.RegisterService(&_MiloServer_serviceDesc, srv)
+func RegisterBuildServer(s prpc.Registrar, srv BuildServer) {
+	s.RegisterService(&_Build_serviceDesc, srv)
 }
 
-func _MiloServer_QueryBlamelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Build_QueryBlamelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryBlamelistRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MiloServerServer).QueryBlamelist(ctx, in)
+		return srv.(BuildServer).QueryBlamelist(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luci.milo.v1.MiloServer/QueryBlamelist",
+		FullMethod: "/luci.milo.v1.Build/QueryBlamelist",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MiloServerServer).QueryBlamelist(ctx, req.(*QueryBlamelistRequest))
+		return srv.(BuildServer).QueryBlamelist(ctx, req.(*QueryBlamelistRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _MiloServer_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "luci.milo.v1.MiloServer",
-	HandlerType: (*MiloServerServer)(nil),
+var _Build_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "luci.milo.v1.Build",
+	HandlerType: (*BuildServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "QueryBlamelist",
-			Handler:    _MiloServer_QueryBlamelist_Handler,
+			Handler:    _Build_QueryBlamelist_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
