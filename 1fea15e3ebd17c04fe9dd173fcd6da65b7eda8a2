@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "465b1bd6_3c800e38",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-07T03:23:56Z",
+      "side": 1,
+      "message": "This RPC will be used to get the blamelist data to render the blamelist tab.\n",
+      "revId": "1fea15e3ebd17c04fe9dd173fcd6da65b7eda8a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
