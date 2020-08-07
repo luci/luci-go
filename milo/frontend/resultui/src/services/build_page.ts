@@ -16,6 +16,7 @@
 // TODO(crbug/1108200): Replace this file with direct queries to services.
 
 import { Build, BuilderID, Step } from './buildbucket';
+import jsonbigint from 'json-bigint';
 
 export interface GetBuildPageDataRequest {
   builder: BuilderID;
@@ -103,18 +104,36 @@ export interface Logo extends LogoBase {
   count: number;
 }
 
+export interface RelatedBuildsData {
+  build: Build;
+  related_builds: Build[];
+}
+
 /**
  * A helper class for querying Milo build page data.
  */
 export class BuildPageService {
   constructor(private accessToken: string) {}
+  private reviver = (k: any, v: any) => k === "id"? v.toString() : v;
 
   async getBuildPageData(req: GetBuildPageDataRequest): Promise<BuildPageData> {
     const res = await fetch(
       `/p/${req.builder.project}/builders/${req.builder.bucket}/${req.builder.builder}/${req.buildNumOrId}/data`,
       {headers: {'Authorization': `Bearer ${this.accessToken}`}},
     );
-    const buildPageData = await res.json();
+    const buildPageDataText = await res.text();
+    const buildPageData = jsonbigint.parse(buildPageDataText, this.reviver);
     return buildPageData as BuildPageData;
+  }
+
+  async getRelatedBuilds(bbId: string): Promise<RelatedBuildsData> {
+    const fetchUrl = `/related_builds/${bbId}`;
+    const res = await fetch(
+      fetchUrl,
+      {headers: {'Authorization': `Bearer ${this.accessToken}`}},
+    );
+    const relatedBuildsDataText = await res.text();
+    const relatedBuildsData = jsonbigint.parse(relatedBuildsDataText, this.reviver);
+    return relatedBuildsData as RelatedBuildsData;
   }
 }

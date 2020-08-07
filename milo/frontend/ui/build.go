@@ -150,10 +150,10 @@ type BuildPage struct {
 // RelatedBuildsTable represents a related builds table on Milo.
 type RelatedBuildsTable struct {
 	// Build is the underlying build proto for the build page.
-	Build
+	Build `json:"build,omitempty"`
 
 	// RelatedBuilds are build summaries with the same buildset.
-	RelatedBuilds []*Build
+	RelatedBuilds []*Build `json:"related_builds,omitempty"`
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {

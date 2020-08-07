@@ -79,6 +79,7 @@ func Run(templatePath string) {
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", optionalProjectMW, handleError(handleLUCIBuild))
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId/data", optionalProjectMW, handleError(handleLUCIBuildData))
+	r.GET("/related_builds/:id", htmlMW, handleError(handleLUCIRelatedBuilds))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {

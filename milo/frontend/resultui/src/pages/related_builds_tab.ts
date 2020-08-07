@@ -16,9 +16,11 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { observable} from 'mobx';
+import { BuildState, consumeBuildState } from '../context/build_state/build_state';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
+  @observable.ref buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();
@@ -27,11 +29,13 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div>This is the Related Build Tab<div>
+      There are ${this.buildState.relatedBuildsData?.related_builds.length} related builds
     `;
   }
 }
 
 customElement('tr-related-builds-tab')(
-  consumeAppState(RelatedBuildsTabElement),
+  consumeBuildState(
+    consumeAppState(RelatedBuildsTabElement),
+  )
 );
