@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a731285b_8007df2c",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T00:13:45Z",
+      "side": 1,
+      "message": "this is not necessary, it is impossible, let it panic instead\n  \n   task :\u003d m.(*taskdefs.CancelSwarmingTask)",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 60,
+        "endChar": 68
+      },
+      "revId": "4b1622152b440a598e689ced95577300595aaa44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbdffee1_bfbf6692",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T00:13:45Z",
+      "side": 1,
+      "message": "Better to check this in CancelSwarmingTask(). Once `Custom` is removed, it will have to go into CancelSwarmingTask() anyhow.",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 65,
+        "endChar": 4
+      },
+      "revId": "4b1622152b440a598e689ced95577300595aaa44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78ebd38c_22a7726e",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T00:13:45Z",
+      "side": 1,
+      "message": "Left a comment in https://chromium-review.googlesource.com/c/infra/infra/+/2341048\n\nI think using protojson here is misleading and more busy work than necessary. This code path exists exclusively for interoperatbility with Python. It will be removed when Python is gone. Let it construct tasks in Python format.",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 36
+      },
+      "revId": "4b1622152b440a598e689ced95577300595aaa44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d69acc7_175cd776",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-07T00:13:45Z",
+      "side": 1,
+      "message": "This would be more helpful:\n\n  fmt.Sprintf(\"%s-%s\", task.Hostname, task.TaskId)\n\nOr just remove it completely. TaskClass.ID is already in logs, duplicating it in Title adds no information.",
+      "range": {
+        "startLine": 93,
+        "startChar": 11,
+        "endLine": 93,
+        "endChar": 33
+      },
+      "revId": "4b1622152b440a598e689ced95577300595aaa44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
