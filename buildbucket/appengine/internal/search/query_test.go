@@ -280,6 +280,7 @@ func TestMainFetchFlow(t *testing.T) {
 						Builder: "builder",
 					},
 				},
+				BucketID:  "project/bucket",
 				BuilderID: "project/bucket/builder",
 			}), ShouldBeNil)
 
@@ -308,9 +309,24 @@ func TestFetchOnBuild(t *testing.T) {
 
 	Convey("FetchOnBuild", t, func() {
 		ctx := memory.Use(context.Background())
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.Identity("user:user"),
+		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
+		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket",
+			Parent: model.ProjectKey(ctx, "project"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:user",
+						Role:     pb.Acl_READER,
+					},
+				},
+			},
+		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 100,
 			Proto: pb.Build{
@@ -324,6 +340,7 @@ func TestFetchOnBuild(t *testing.T) {
 			},
 			Status:    pb.Status_SUCCESS,
 			Project:   "project",
+			BucketID:  "project/bucket",
 			BuilderID: "project/bucket/builder1",
 			Tags:      []string{"k1:v1", "k2:v2"},
 		}), ShouldBeNil)
@@ -340,6 +357,7 @@ func TestFetchOnBuild(t *testing.T) {
 			},
 			Status:    pb.Status_CANCELED,
 			Project:   "project",
+			BucketID:  "project/bucket",
 			BuilderID: "project/bucket/builder2",
 		}), ShouldBeNil)
 
@@ -474,8 +492,14 @@ func TestFetchOnBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 8764414515958775808,
 				Proto: pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder5808",
+					},
 					Id: 8764414515958775808,
 				},
+				BucketID: "project/bucket",
 			}), ShouldBeNil)
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
@@ -491,6 +515,11 @@ func TestFetchOnBuild(t *testing.T) {
 				Builds: []*pb.Build{
 					{
 						Id: 8764414515958775808,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder5808",
+						},
 					},
 				},
 			}
@@ -504,8 +533,14 @@ func TestFetchOnBuild(t *testing.T) {
 				Proto: pb.Build{
 					Id:        1111,
 					CreatedBy: "project:infra",
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder1111",
+					},
 				},
 				CreatedBy: "project:infra",
+				BucketID:  "project/bucket",
 			}), ShouldBeNil)
 			req := &pb.SearchBuildsRequest{
 				Predicate: &pb.BuildPredicate{
@@ -519,6 +554,11 @@ func TestFetchOnBuild(t *testing.T) {
 					{
 						Id:        1111,
 						CreatedBy: "project:infra",
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder1111",
+						},
 					},
 				},
 			}
@@ -527,14 +567,27 @@ func TestFetchOnBuild(t *testing.T) {
 			So(actualRsp, ShouldResembleProto, expectedRsp)
 		})
 		Convey("pagination", func() {
-			req := &pb.SearchBuildsRequest{
-				Predicate: &pb.BuildPredicate{
+			// a build which can be fetched from db but not accessible by the user.
+			So(datastore.Put(ctx, &model.Build{
+				ID: 300,
+				Proto: pb.Build{
+					Id: 300,
 					Builder: &pb.BuilderID{
-						Project: "project",
+						Project: "project_no_access",
+						Bucket:  "bucket",
+						Builder: "builder",
 					},
 				},
+				Project:   "project_no_access",
+				BucketID:  "project_no_access/bucket",
+				BuilderID: "project_no_access/bucket/builder",
+			}), ShouldBeNil)
+
+			req := &pb.SearchBuildsRequest{
 				PageSize: 1,
 			}
+
+			// fetch 1st page.
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnBuild(ctx)
 			expectedBuilds := []*pb.Build{
@@ -556,6 +609,33 @@ func TestFetchOnBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(actualRsp.Builds, ShouldResembleProto, expectedBuilds)
 			So(actualRsp.NextPageToken, ShouldNotBeEmpty)
+
+			// fetch the following page.
+			req.PageToken = actualRsp.NextPageToken
+			query = NewQuery(req)
+			actualRsp, err = query.fetchOnBuild(ctx)
+			expectedBuilds = []*pb.Build{
+				{
+					Id: 200,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder2",
+					},
+					Status: pb.Status_CANCELED,
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(actualRsp.Builds, ShouldResembleProto, expectedBuilds)
+			So(actualRsp.NextPageToken, ShouldNotBeEmpty)
+
+			// should get empty result as the rest build is not accessible by this user.
+			req.PageToken = actualRsp.NextPageToken
+			query = NewQuery(req)
+			actualRsp, err = query.fetchOnBuild(ctx)
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
 		})
 	})
 }

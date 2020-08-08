@@ -73,7 +73,7 @@ type Query struct {
 func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	if req.GetPredicate() == nil {
 		return &Query{
-			PageSize:    req.GetPageSize(),
+			PageSize:    fixPageSize(req.GetPageSize()),
 			StartCursor: req.GetPageToken(),
 		}
 	}
@@ -200,12 +200,30 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 
 	logging.Debugf(ctx, "datastore query for FetchOnBuild: %s", dq.String())
 	rsp := &pb.SearchBuildsResponse{}
-	err := paged.Query(ctx, q.PageSize, q.StartCursor, rsp, dq, func(build *model.Build) error {
-		rsp.Builds = append(rsp.Builds, build.ToSimpleBuildProto(ctx))
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	token := q.StartCursor
+	var buckets stringset.Set
+	var err error
+	if q.Builder.GetBucket() == "" {
+		buckets, err = getAccessibleBuckets(ctx, q.Builder.GetProject())
+		if err != nil {
+			return rsp, err
+		}
+	}
+	for len(rsp.Builds) < int(q.PageSize) {
+		toFetchCount := q.PageSize - int32(len(rsp.Builds))
+		err = paged.Query(ctx, toFetchCount, token, rsp, dq, func(build *model.Build) error {
+			if buckets.Len() == 0 || buckets.Has(build.BucketID) {
+				rsp.Builds = append(rsp.Builds, build.ToSimpleBuildProto(ctx))
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		// no more results.
+		if rsp.NextPageToken == "" {
+			break
+		}
 	}
 
 	return rsp, nil
@@ -385,6 +403,27 @@ func mustTimestamp(ts *timestamp.Timestamp) time.Time {
 		panic(err)
 	}
 	return t
+}
+
+// getAccessibleBuckets returns a set of user accessible buckets under the given
+// project if the project string is not empty.
+func getAccessibleBuckets(ctx context.Context, project string) (stringset.Set, error) {
+	buckets, err := perm.BucketsByPerm(ctx, perm.BuildersList)
+	if err != nil {
+		return nil, err
+	}
+	if project == "" {
+		return stringset.NewFromSlice(buckets...), nil
+	}
+
+	var filteredBuckets []string
+	for _, bucket := range buckets {
+		proj, _, _ := protoutil.ParseBucketID(bucket)
+		if proj == project {
+			filteredBuckets = append(filteredBuckets, bucket)
+		}
+	}
+	return stringset.NewFromSlice(filteredBuckets...), nil
 }
 
 // minHeap holds a slice of TagIndexEntry and implements heap.Interface.
