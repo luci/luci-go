@@ -51,13 +51,18 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	var err error
 	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(1, 1),
+		QPSLimit: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		Buffer: buffer.Options{
-			BatchSize:     400,
+			BatchSize:     500,
 			MaxLeases:     4,
 			BatchDuration: time.Second,
-			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
+	}
+	if opts.Buffer.BatchSize > 500 {
+		// BatchRequest can include up to 500 requests. Keep BatchSize <= 500 to keep
+		// report() simple.
+		panic(fmt.Sprintf("BatchSize must be <= 500, but %d", opts.Buffer.BatchSize))
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
 		return c.report(ctx, b)
