@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "e8fa0430_f7404c99",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-08T00:54:28Z",
+      "side": 1,
+      "message": "I have the same doubt. but this greatly reduces the total execution time in normal cases, anyways.\n: https://paste.googleplex.com/4915344184442880\n\nI will add stat-logging in the next CL, so that we can gather information about what happened.",
+      "parentUuid": "39c54c4b_407db048",
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f55fb3cf_bdfd2424",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7
@@ -59,6 +77,30 @@
     },
     {
       "key": {
+        "uuid": "84cf2e8d_5b60a791",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-08T00:54:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f55fb3cf_bdfd2424",
+      "range": {
+        "startLine": 54,
+        "startChar": 61,
+        "endLine": 54,
+        "endChar": 62
+      },
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c81126e4_dc9decb7",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 7
@@ -79,6 +121,30 @@
       "revId": "e8641534253b547ede422f939ae97c6efc005b11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "690a3e8d_2486452d",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-08T00:54:28Z",
+      "side": 1,
+      "message": "Added a check with panic(). PTAL",
+      "parentUuid": "c81126e4_dc9decb7",
+      "range": {
+        "startLine": 56,
+        "startChar": 18,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "e8641534253b547ede422f939ae97c6efc005b11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
