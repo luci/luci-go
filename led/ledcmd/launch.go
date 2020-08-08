@@ -93,6 +93,14 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// Enable swarming/resultdb integration.
+	if rdb := jd.GetBuildbucket().BbagentArgs.Build.Infra.GetResultdb(); rdb != nil {
+		st.Resultdb = &swarming.SwarmingRpcsResultDBCfg{
+			Enable: true,
+		}
+	}
+
 	logging.Infof(ctx, "building swarming task: done")
 
 	if opts.DryRun {
