@@ -302,6 +302,30 @@
     },
     {
       "key": {
+        "uuid": "6d123424_5b98022f",
+        "filename": "cv/api/config/v2/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-08T00:11:17Z",
+      "side": 1,
+      "message": "It\u0027s a nit so I\u0027m okay with keeping it :P",
+      "parentUuid": "b8ec84e5_028b0777",
+      "range": {
+        "startLine": 17,
+        "startChar": 37,
+        "endLine": 17,
+        "endChar": 40
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69ccbc79_7c352038",
         "filename": "cv/api/recipe/v1/gen.go",
         "patchSetId": 2
@@ -370,6 +394,30 @@
       "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b15b1247_846784e5",
+        "filename": "cv/api/recipe/v1/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-08T00:11:17Z",
+      "side": 1,
+      "message": "sgtm :)",
+      "parentUuid": "5c78d098_9d1f0ab4",
+      "range": {
+        "startLine": 21,
+        "startChar": 12,
+        "endLine": 21,
+        "endChar": 20
+      },
+      "revId": "36eb5d54a2a906b269319f44e03fc22457d986aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
