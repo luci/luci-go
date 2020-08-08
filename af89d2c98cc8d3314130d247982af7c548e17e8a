@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6362aa37_7c97ab0f",
+        "filename": "buildbucket/appengine/tasks/tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T08:47:31Z",
+      "side": 1,
+      "message": "I just manually inspected that it didn\u0027t drop empty \"realm\". Asserting something about sch.Tasks[0].Task.MessageType.Body is annoying and won\u0027t be necessary once the queue is implemented in Go anyway.",
+      "revId": "af89d2c98cc8d3314130d247982af7c548e17e8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

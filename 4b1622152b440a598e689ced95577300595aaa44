@@ -211,6 +211,30 @@
       "revId": "4b1622152b440a598e689ced95577300595aaa44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49905bfb_12a82e94",
+        "filename": "buildbucket/appengine/tasks/tasks.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T08:47:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5556fda0_97a9e21e",
+      "range": {
+        "startLine": 93,
+        "startChar": 11,
+        "endLine": 93,
+        "endChar": 33
+      },
+      "revId": "4b1622152b440a598e689ced95577300595aaa44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
