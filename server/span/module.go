@@ -32,11 +32,20 @@ import (
 
 // ModuleOptions contain configuration of the Cloud Spanner server module.
 type ModuleOptions struct {
+	SpannerEndpoint string // the Spanner endpoint to connect to
 	SpannerDatabase string // identifier of Cloud Spanner database to connect to
 }
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
+	f.StringVar(
+		&o.SpannerEndpoint,
+		"spanner-endpoint",
+		o.SpannerEndpoint,
+		"The Spanner endpoint to connect to. "+
+			"The default is defined by the Cloud Spanner library, "+
+			"but usually it is spanner.googleapis.com:443",
+	)
 	f.StringVar(
 		&o.SpannerDatabase,
 		"spanner-database",
@@ -102,6 +111,10 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	}
 
 	// Initialize the client.
+	options := []option.ClientOption{option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds))}
+	if m.opts.SpannerEndpoint != "" {
+		options = append(options, option.WithEndpoint(m.opts.SpannerEndpoint))
+	}
 	client, err := spanner.NewClientWithConfig(ctx,
 		m.opts.SpannerDatabase,
 		spanner.ClientConfig{
@@ -109,7 +122,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 				TrackSessionHandles: !opts.Prod,
 			},
 		},
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
+		options...,
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to instantiate Cloud Spanner client").Err()
