@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "e5a3dc21_31e86337",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-08T04:20:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b89488f_99995e47",
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d53ff6a_fc021a67",
         "filename": "server/tq/txn/spanner/spanner.go",
         "patchSetId": 2
@@ -82,6 +100,54 @@
     },
     {
       "key": {
+        "uuid": "4796064a_0b199936",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-08T04:20:44Z",
+      "side": 1,
+      "message": "I don\u0027t personally care, I just followed ResultDB structure. Changed.",
+      "parentUuid": "042e7189_56cd93ce",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 11
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d77f9672_3d36433a",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-08T04:20:44Z",
+      "side": 1,
+      "message": "This means I\u0027m saying arbitrary string length should be allowed (within Spanner\u0027s limits).\nI\u0027m not aware of any performance benefit *for our usage* of formally constraining length of the string. OTH, limiting it to 16 now means having to update schema later if we decide on a fancier key structure e.g. v2_.... \n\nSo, I left as is.",
+      "parentUuid": "7d53ff6a_fc021a67",
+      "range": {
+        "startLine": 32,
+        "startChar": 19,
+        "endLine": 32,
+        "endChar": 22
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93b388a0_7011ebc3",
         "filename": "server/tq/txn/spanner/spanner.go",
         "patchSetId": 2
@@ -105,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "21ef5b32_38cffc59",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-08T04:20:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93b388a0_7011ebc3",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 1
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0923c38a_66ce7938",
         "filename": "server/tq/txn/spanner/spanner.go",
         "patchSetId": 2
@@ -125,6 +215,30 @@
       "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ef8bf98_cd6334c6",
+        "filename": "server/tq/txn/spanner/spanner.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-08T04:20:44Z",
+      "side": 1,
+      "message": "👍 Done.",
+      "parentUuid": "0923c38a_66ce7938",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "a31ad56c469d2ade75b9d4e1844495b85699d9ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
