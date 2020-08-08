@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "e7405ff6_35a482c0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T10:22:33Z",
+      "side": 1,
+      "message": "This may be sufficiently slow that it\u0027s worth modifying gae/datastore package to support it.",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "13417891_95bd00d1",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -16,6 +33,80 @@
       "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "096e1d63_ee54ec69",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T10:22:33Z",
+      "side": 1,
+      "message": "return nil, err? Though I think the prpc router nils this if there is an error anyway...",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "440f84cf_095d1180",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T10:22:33Z",
+      "side": 1,
+      "message": "I wonder, if the accessible buckets are known, if it\u0027s faster to do n queries in parallel each restricted with dq.Eq(\"bucket_id\", buckets[i]). It may load too many entities in memory though since there could be up to pageSize * len(buckets) results...\n\nAn alternative in case modifying gae/datastore is infeasible.",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5fbaaf6_03640f7c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T10:22:33Z",
+      "side": 1,
+      "message": "You\u0027re treating this as the user has permission in all buckets it seems. What if the user has permission in no buckets? Does perm.BucketsByPerm return an error or does it return zero buckets? I\u0027d add that information to getAccessibleBuckets doc.",
+      "range": {
+        "startLine": 215,
+        "startChar": 6,
+        "endLine": 215,
+        "endChar": 24
+      },
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd8109c4_78292645",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 410,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-08T10:22:33Z",
+      "side": 1,
+      "message": "Add that if the project is empty then it returns all user accessible buckets.",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
