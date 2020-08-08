@@ -1,0 +1,217 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package bigquery;
+
+import "google/protobuf/timestamp.proto";
+
+
+// Attempt includes the state of one CQ attempt.
+//
+// An attempt involves doing checks for one or more CLs that could
+// potentially be submitted together.
+//
+// Next ID: 13.
+message Attempt {
+  // The opaque key unique to this Attempt.
+  string key = 1;
+  // The LUCI project that this Attempt belongs to.
+  string luci_project = 2;
+  // The name of the config group that this Attempt belongs to.
+  string config_group = 11;
+
+  // An opaque key that is unique for a given set of Gerrit change patchsets.
+  // (or, equivalently, buildsets). The same cl_group_key will be used if
+  // another Attempt is made for the same set of changes at a different time.
+  string cl_group_key = 3;
+  // Similar to cl_group_key, except the key will be the same when the
+  // earliest_equivalent_patchset values are the same, even if the patchset
+  // values are different.
+  //
+  // For example, when a new "trivial" patchset is uploaded, then the
+  // cl_group_key will change but the equivalent_cl_group_key will stay the
+  // same.
+  string equivalent_cl_group_key = 4;
+
+  // The time when the Attempt started (trigger time of the last CL triggered).
+  google.protobuf.Timestamp start_time = 5;
+  // The time when the Attempt ended (released by CQ).
+  google.protobuf.Timestamp end_time = 6;
+
+  // Gerrit changes, with specific patchsets, in this Attempt.
+  // There should be one or more.
+  repeated GerritChange gerrit_changes = 7;
+
+  // Relevant builds as of this Attempt's end time.
+  //
+  // While Attempt is processed, CQ may consider more builds than included here.
+  //
+  // For example, the following builds will be not be included:
+  //   * builds triggered before this Attempt started, considered temporarily by
+  //     CQ, but then ignored because they ultimately failed such that CQ had to
+  //     trigger new builds instead.
+  //   * successful builds which were fresh enough at the Attempt start time,
+  //     but which were ignored after they became too old for consideration such
+  //     that CQ had to trigger new builds instead.
+  //   * builds triggered as part of this Attempt, which were later removed from
+  //     project CQ config and hence were no longer required by CQ by Attempt
+  //     end time.
+  repeated Build builds = 8;
+
+  // Final status of the Attempt.
+  AttemptStatus status = 9;
+
+  // A more fine-grained status the explains more details about the status.
+  AttemptSubstatus substatus = 10;
+
+  // Whether or not the required builds for this attempt include additional
+  // "opted-in" builders by the user via the `Cq-Include-Trybots` footer.
+  bool has_custom_requirement = 12;
+}
+
+// GerritChange represents one revision (patchset) of one Gerrit change
+// in an Attempt.
+//
+// See also: GerritChange in buildbucket/proto/common.proto.
+message GerritChange {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+  // Gerrit project, e.g. "chromium/src".
+  string project = 2;
+  // Change number, e.g. 12345.
+  int64 change = 3;
+  // Patch set number, e.g. 1.
+  int64 patchset = 4;
+  // The earliest patchset of the CL that is considered equivalent to the
+  // patchset above.
+  int64 earliest_equivalent_patchset = 5;
+
+  // The time that the CQ was triggered for this CL in this Attempt.
+  google.protobuf.Timestamp trigger_time = 6;
+  // CQ Mode for this CL, e.g. dry run or full run.
+  Mode mode = 7;
+
+  enum SubmitStatus {
+    // Default. Never set.
+    SUBMIT_STATUS_UNSPECIFIED = 0;
+
+    // CQ didn't try submitting this CL.
+    //
+    // Includes a case where CQ tried submitting the CL, but submission failed
+    // due to transient error leaving CL as is, and CQ didn't try again.
+    PENDING = 1;
+
+    // CQ tried to submit, but got presumably transient errors and couldn't
+    // ascertain whether submission was successful.
+    //
+    // It's possible that change was actually submitted, but CQ didn't receive
+    // a confirmation from Gerrit and follow up checks of the change status
+    // failed, too.
+    UNKNOWN = 2;
+
+    // CQ tried to submit, but Gerrit rejected the submission because this
+    // Change can't be submitted.
+    // Typically, this is because a rebase conflict needs to be resolved,
+    // or rarely because the change needs some kind of approval.
+    FAILURE = 3;
+
+    // CQ submitted this change (aka "merged" in Gerrit jargon).
+    //
+    // Submission of Gerrit CLs in an Attempt is not an atomic operation,
+    // so it's possible that only some of the GerritChanges are submitted.
+    SUCCESS = 4;
+  }
+  // Whether CQ tried to submit this change and the result of the operation.
+  SubmitStatus submit_status = 8;
+}
+
+enum Mode {
+  // Default, never set.
+  MODE_UNSPECIFIED = 0;
+  // Run all tests but do not submit.
+  DRY_RUN = 1;
+  // Run all tests and potentially submit.
+  FULL_RUN = 2;
+}
+
+// Build represents one tryjob Buildbucket build.
+//
+// See also: Build in buildbucket/proto/build.proto.
+message Build {
+  // Buildbucket build ID, unique per Buildbucket instance.
+  int64 id = 1;
+  // Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+  string host = 2;
+
+  enum Origin {
+    // Default. Never set.
+    ORIGIN_UNSPECIFIED = 0;
+    // Build was triggered as part of this attempt
+    // because reuse was disabled for its builder.
+    NOT_REUSABLE = 1;
+    // Build was triggered as part of this attempt,
+    // but if there was an already existing build it would have been reused.
+    NOT_REUSED = 2;
+    // Build was reused.
+    REUSED = 3;
+  }
+  // Information about whether this build was triggered previously and reused,
+  // or triggered because there was no reusable build, or because builds by
+  // this builder are all not reusable.
+  Origin origin = 3;
+
+  // Whether the CQ must wait for this build to pass in order for the CLs to be
+  // considered ready to submit. True means this builder must pass, false means
+  // this builder is "optional", and so this build should not be used to assess
+  // the correctness of the CLs in the Attempt. For example, builds added
+  // because of the Cq-Include-Trybots footer are still critical; experimental
+  // builders are not.
+  //
+  // Tip: join this with the Buildbucket BigQuery table to figure out which
+  // builder this build belongs to.
+  bool critical = 4;
+}
+
+enum AttemptStatus {
+  // Default, never set.
+  ATTEMPT_STATUS_UNSPECIFIED = 0;
+  // Started but not completed. Used by CQ API, TBD.
+  STARTED = 1;
+  // Ready to submit, all checks passed.
+  SUCCESS = 2;
+  // Attempt stopped before completion, due to some external event and not
+  // a failure of the CLs to pass all tests. For example, this may happen
+  // when a new patchset is uploaded, a CL is deleted, etc.
+  ABORTED = 3;
+  // Completed and failed some check. This may happen when a build failed,
+  // footer syntax was incorrect, or CL was not approved.
+  FAILURE = 4;
+  // Failure in CQ itself caused the Attempt to be dropped.
+  INFRA_FAILURE = 5;
+}
+
+enum AttemptSubstatus {
+  // Default, never set.
+  ATTEMPT_SUBSTATUS_UNSPECIFIED = 0;
+  // There is no more detailed status set.
+  NO_SUBSTATUS = 1;
+  // Failed at least one critical tryjob.
+  FAILED_TRYJOBS = 2;
+  // Failed an initial quick check of CL and CL description state.
+  FAILED_LINT = 3;
+  // A CL didn't get sufficient approval for submitting via CQ.
+  UNAPPROVED = 4;
+  // A CQ triggerer doesn't have permission to trigger CQ.
+  PERMISSION_DENIED = 5;
+  // There was a problem with a dependency CL, e.g. some dependencies
+  // were not submitted or not grouped together in this attempt.
+  UNSATISFIED_DEPENDENCY = 6;
+  // Aborted because of a manual cancelation.
+  MANUAL_CANCEL = 7;
+  // A request to buildbucket failed because CQ didn't have permission to
+  // trigger builds.
+  BUILDBUCKET_MISCONFIGURATION = 8;
+}
