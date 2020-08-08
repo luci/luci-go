@@ -55,13 +55,18 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	var err error
 	c := &artifactChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		// TODO(1087955) - tune QPSLimit and MaxLeases
-		QPSLimit: rate.NewLimiter(rate.Every(100*time.Millisecond), 4),
+		QPSLimit: rate.NewLimiter(rate.Every(100*time.Millisecond), 1),
 		Buffer: buffer.Options{
 			BatchSize:    1,
 			MaxLeases:    4,
-			FullBehavior: &buffer.BlockNewItems{MaxItems: 2000},
+			FullBehavior: &buffer.BlockNewItems{MaxItems: 4000},
 		},
+	}
+	if opts.Buffer.BatchSize > 500 {
+		// BatchRequest can include up to 500 requests. Keep BatchSize <= 500 to keep
+		// report() simple. For more details, visit
+		// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateTestResultsRequest
+		panic(fmt.Sprintf("BatchSize must be <= 500, but %d", opts.Buffer.BatchSize))
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
 		task := b.Data[0].(*uploadTask)
