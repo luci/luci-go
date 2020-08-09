@@ -69,7 +69,7 @@ type Dispatcher struct {
 	// If not set, task submissions will fail.
 	Submitter Submitter
 
-	// Sweeper knows how to launch sweeps of the transactional tasks reminders.
+	// Sweeper knows how to sweep transactional tasks reminders.
 	//
 	// If not set, Sweep calls will fail.
 	Sweeper Sweeper
@@ -164,10 +164,10 @@ type Submitter interface {
 	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
 }
 
-// Sweeper knows how to launch sweeps of the transaction tasks reminders.
+// Sweeper knows how sweep transaction tasks reminders.
 type Sweeper interface {
-	// startSweep initiates an asynchronous sweep of the reminders keyspace.
-	startSweep(ctx context.Context, reminderKeySpaceBytes int) error
+	// sweep either performs the full sweep itself or schedules a task to do it.
+	sweep(ctx context.Context, s Submitter, reminderKeySpaceBytes int) error
 }
 
 // TaskKind describes how a task class interoperates with transactions.
@@ -560,7 +560,10 @@ func (d *Dispatcher) Sweep(ctx context.Context) error {
 	if d.Sweeper == nil {
 		return errors.New("can't sweep: the Sweeper is not set")
 	}
-	return d.Sweeper.startSweep(ctx, reminderKeySpaceBytes)
+	if d.Submitter == nil {
+		return errors.New("can't sweep: the Submitter is not set")
+	}
+	return d.Sweeper.sweep(ctx, d.Submitter, reminderKeySpaceBytes)
 }
 
 // SchedulerForTest switches the dispatcher into testing mode.

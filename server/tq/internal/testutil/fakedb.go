@@ -35,11 +35,10 @@ func init() {
 			return nil
 		},
 		NonTxn: func(ctx context.Context) db.DB {
-			// The same implementation, FakeDB doesn't really care.
 			if db, _ := ctx.Value(&fakeDBKey).(*FakeDB); db != nil {
 				return db
 			}
-			return nil
+			return &FakeDB{} // assume the DB empty otherwise
 		},
 	})
 }
