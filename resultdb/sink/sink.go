@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
@@ -207,7 +208,10 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 	// re-used, the new context would be passed to Shutdown in the deferred function after
 	// being cancelled.
 	cbCtx, cancel := context.WithCancel(s.Export(ctx))
-	defer cancel()
+	defer func() {
+		logging.Infof(cbCtx, "Run callback terminated")
+		cancel()
+	}()
 	go func() {
 		select {
 		case <-s.Done():
@@ -246,14 +250,18 @@ func (s *Server) Start(ctx context.Context) error {
 		defer func() {
 			// close SinkServer to complete all the outgoing requests before closing doneC
 			// to send a signal.
+			logging.Infof(ctx, "Waiting for all the scheduled uploads to be completed....")
 			closeSinkServer(ctx, ss)
+			logging.Infof(ctx, "SinkServer closed")
 			close(s.doneC)
 		}()
 
 		var err error
 		if s.cfg.testListener == nil {
 			// err will be written to s.err after the channel fully drained.
+			logging.Infof(ctx, "Starting HTTP server")
 			err = s.httpSrv.ListenAndServe()
+			logging.Infof(ctx, "HTTP server shut down")
 		} else {
 			// In test mode, the the listener MUST be prepared already.
 			err = s.httpSrv.Serve(s.cfg.testListener)
@@ -279,6 +287,7 @@ func (s *Server) Start(ctx context.Context) error {
 // the provided context expires before the shutdown is complete, Shutdown returns
 // the context's error.
 func (s *Server) Shutdown(ctx context.Context) error {
+	logging.Infof(ctx, "Shutting down Sink...")
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started
 		return ErrCloseBeforeStart
@@ -290,6 +299,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	select {
 	case <-s.Done():
 		// Shutdown always returns nil as long as the server was closed and drained.
+		logging.Infof(ctx, "Shutdown completed")
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -303,7 +313,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // that all the pending results have been uploaded.
 //
 // It's recommended to use Shutdown() instead of Close with Done.
-func (s *Server) Close() error {
+func (s *Server) Close(ctx context.Context) error {
+	logging.Infof(ctx, "Closing Sink...")
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started
 		return ErrCloseBeforeStart
