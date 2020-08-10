@@ -375,7 +375,14 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 			TaskHost:            m.opts.SweepTargetHost,
 		})
 	case "inproc":
-		return errors.Reason("-sweep-mode inproc is not implemented yet").Err()
+		logging.Infof(ctx, "TQ is using inproc sweeper")
+		disp.Sweeper = NewInProcSweeper(InProcSweeperOptions{
+			SweepShards:             m.opts.SweepShards,
+			TasksPerScan:            2048, // TODO: make configurable if necessary
+			SecondaryScanShards:     16,   // TODO: make configurable if necessary
+			SubmitBatchSize:         128,  // TODO: make configurable if necessary
+			SubmitConcurrentBatches: 32,   // TODO: make configurable if necessary
+		})
 	default:
 		return errors.Reason(`invalid -sweep-mode %q, must be either "distributed" or "inproc"`, m.opts.SweepMode).Err()
 	}
