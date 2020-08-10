@@ -53,8 +53,8 @@ func TestScan(t *testing.T) {
 		tasksPerScan := 100
 		secondaryScanShards := 16
 
-		scan := func(ctx context.Context, part *partition.Partition) ([]*reminder.Reminder, partition.SortedPartitions, error) {
-			return Scan(ctx, ScanParams{
+		scan := func(ctx context.Context, part *partition.Partition) ([]*reminder.Reminder, partition.SortedPartitions) {
+			return Scan(ctx, &ScanParams{
 				DB:                  db,
 				Partition:           part,
 				KeySpaceBytes:       keySpaceBytes,
@@ -65,8 +65,7 @@ func TestScan(t *testing.T) {
 
 		Convey("Normal operation", func() {
 			Convey("Empty", func() {
-				rems, more, err := scan(ctx, part0to10)
-				So(err, ShouldBeNil)
+				rems, more := scan(ctx, part0to10)
 				So(rems, ShouldBeEmpty)
 				So(more, ShouldBeEmpty)
 			})
@@ -87,8 +86,7 @@ func TestScan(t *testing.T) {
 			Convey("Scan complete partition", func() {
 				tasksPerScan = 10
 
-				rems, more, err := scan(ctx, part0to10)
-				So(err, ShouldBeNil)
+				rems, more := scan(ctx, part0to10)
 				So(more, ShouldBeEmpty)
 				So(rems, ShouldResemble, []*reminder.Reminder{
 					mkReminder(2, stale),
@@ -96,8 +94,7 @@ func TestScan(t *testing.T) {
 				})
 
 				Convey("but only within given partition", func() {
-					rems, more, err := scan(ctx, partition.FromInts(0, 4))
-					So(err, ShouldBeNil)
+					rems, more := scan(ctx, partition.FromInts(0, 4))
 					So(more, ShouldBeEmpty)
 					So(rems, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
 				})
@@ -109,9 +106,8 @@ func TestScan(t *testing.T) {
 				tasksPerScan = 3
 				secondaryScanShards = 2
 
-				rems, more, err := scan(ctx, part0to10)
+				rems, more := scan(ctx, part0to10)
 
-				So(err, ShouldBeNil)
 				So(rems, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
 
 				Convey("Scan returns correct follow up ScanItems", func() {
@@ -149,13 +145,11 @@ func TestScan(t *testing.T) {
 			So(ctx.Err(), ShouldResemble, context.DeadlineExceeded)
 
 			Convey("Timeout without anything fetched", func() {
-				errExpected := errors.Annotate(ctx.Err(), "failed to fetch all").Err()
 				mockDB.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil, errExpected)
+					Return(nil, errors.Annotate(ctx.Err(), "failed to fetch all").Err())
 
-				rems, more, err := scan(ctx, part0to10)
+				rems, more := scan(ctx, part0to10)
 
-				So(err, ShouldResemble, errExpected)
 				So(rems, ShouldBeEmpty)
 				So(len(more), ShouldEqual, secondaryScanShards)
 				So(more[0].Low, ShouldResemble, *big.NewInt(0))
@@ -166,9 +160,8 @@ func TestScan(t *testing.T) {
 				mockDB.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(someReminders, ctx.Err())
 
-				rems, more, err := scan(ctx, part0to10)
+				rems, more := scan(ctx, part0to10)
 
-				So(err, ShouldResemble, context.DeadlineExceeded)
 				So(rems, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
 				So(more, ShouldHaveLength, 1) // partition is so small, only 1 follow up scan suffices.
 				So(more[0].Low, ShouldResemble, *big.NewInt(2 + 1))
