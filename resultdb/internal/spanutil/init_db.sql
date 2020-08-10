@@ -75,7 +75,33 @@ CREATE TABLE Invocations (
 
   -- Counter of TesultResults that belongs to this invocation directly.
   TestResultCount INT64,
+
+  -- A string, e.g. 'gitiles://<host>/<project>/<ref>', that provides context
+  -- for the Ordinal column, e.g. if it is to be treated as a commit position.
+  OrdinalDomain STRING(MAX),
+  Ordinal INT64,
+
+  -- The common prefix of the test id's that this invocation contains test
+  -- results for.
+  CommonTestIDPrefix STRING(MAX),
+
+  -- The serialization of the union of test variants of the results contained
+  -- in this invocation.
+  -- Like CommonTestIDPrefix above, this is used to efficiently traverse the
+  -- invocation graph when searching for test results that match a certain
+  -- predicate.
+  UnionOfTestResultVariants ARRAY<STRING(MAX)>,
 ) PRIMARY KEY (InvocationId);
+
+-- Used by test results history to find a history of test results ordered by
+-- invocation creation timestamp.
+CREATE INDEX InvocationsByCreateTime
+  ON Invocations (Realm, CreateTime DESC);
+
+-- Used by test results history, to find test results ordered by e.g. commit
+-- position.
+CREATE INDEX InvocationsByOrdinal
+  ON Invocations (Realm, Ordinal DESC);
 
 -- Index of invocations by expiration time.
 -- Used by a cron job that periodically removes expired invocations.
