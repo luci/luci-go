@@ -85,9 +85,8 @@ func (d *Distributed) ExecSweepTask(ctx context.Context, task *tqpb.SweepTask) e
 	defer cancel()
 
 	// Discover stale reminders and a list of partitions we need to additionally
-	// scan. Use the configuration passed with the task. Note that this call may
-	// return both results and an error.
-	reminders, followUp, err := Scan(scanCtx, ScanParams{
+	// scan. Use the configuration passed with the task.
+	reminders, followUp := Scan(scanCtx, &ScanParams{
 		DB:                  db,
 		Partition:           part,
 		KeySpaceBytes:       int(task.KeySpaceBytes),
@@ -95,21 +94,6 @@ func (d *Distributed) ExecSweepTask(ctx context.Context, task *tqpb.SweepTask) e
 		SecondaryScanShards: int(task.SecondaryScanShards),
 		Level:               int(task.Level),
 	})
-	if err != nil {
-		if len(reminders) == 0 && len(followUp) == 0 {
-			logging.Errorf(ctx, "Scan failed without returning any results: %s", err)
-			return errors.New("scan failed without returning any results")
-		}
-		logging.Warningf(ctx, "Got %d reminders and %d follow-up ranges and then failed with: %s", len(reminders), len(followUp), err)
-	} else if len(reminders) != 0 || len(followUp) != 0 {
-		logging.Infof(ctx, "Got %d reminders and %d follow-up ranges", len(reminders), len(followUp))
-	}
-
-	// Refuse to scan deeper than 2 levels.
-	if task.Level >= 2 && len(followUp) != 0 {
-		logging.Errorf(ctx, "Refusing to recurse deeper, abandoning scans of %v", followUp)
-		followUp = nil
-	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -191,7 +175,7 @@ func (d *Distributed) processReminders(ctx context.Context, lessor lessor.Lessor
 }
 
 // processLeasedReminders processes given reminders by splitting them in
-// batches and calling processBatch for each batch.
+// batches and calling internal.SubmitBatch for each batch.
 //
 // Logs errors inside. Returns the total number of successfully processed
 // reminders.
@@ -213,66 +197,11 @@ func (d *Distributed) processLeasedReminders(ctx context.Context, db db.DB, remi
 				batch, reminders = reminders[:batchSize], reminders[batchSize:]
 			}
 			work <- func() error {
-				processed, err := d.processBatch(ctx, db, batch)
+				processed, err := internal.SubmitBatch(ctx, d.Submitter, db, batch)
 				atomic.AddInt32(&total, int32(processed))
 				return err
 			}
 		}
 	})
 	return int(atomic.LoadInt32(&total)), err
-}
-
-// processBatch process a batch of reminders by submitting corresponding
-// Cloud Tasks and deleting reminders.
-//
-// Reminders batch will be modified to fetch Reminders' Payload. RAM usage is
-// equivalent to O(total Payload size of each Reminder in batch).
-//
-// Logs errors inside. Returns the total number of successfully processed
-// reminders.
-func (d *Distributed) processBatch(ctx context.Context, db db.DB, batch []*reminder.Reminder) (int, error) {
-	payloaded, err := db.FetchReminderPayloads(ctx, batch)
-	switch missing := len(batch) - len(payloaded); {
-	case missing < 0:
-		panic(errors.Reason("%s.FetchReminderPayloads returned %d but asked for %d Reminders",
-			db.Kind(), len(payloaded), len(batch)).Err())
-	case err != nil:
-		logging.Warningf(ctx, "Failed to fetch %d/%d Reminders: %s", missing, len(batch), err)
-		// Continue processing whatever was fetched anyway.
-	case missing > 0:
-		logging.Warningf(ctx, "%d stale Reminders were unexpectedly deleted by something else. "+
-			"If this persists, check for a misconfiguration of the sweeping or the happy path timeout",
-			missing)
-	}
-
-	var success int32
-
-	// Note: this can be optimized further by batching deletion of Reminders,
-	// but the current version was good enough in load tests already.
-	merr := parallel.WorkPool(16, func(work chan<- func() error) {
-		for _, r := range payloaded {
-			r := r
-			work <- func() error {
-				err := internal.SubmitFromReminder(ctx, d.Submitter, db, r, nil)
-				if err != nil {
-					logging.Errorf(ctx, "Failed to process reminder %q: %s", r.ID, err)
-				} else {
-					atomic.AddInt32(&success, 1)
-				}
-				return err
-			}
-		}
-	})
-
-	count := int(atomic.LoadInt32(&success))
-
-	switch {
-	case err == nil:
-		return count, merr
-	case merr == nil:
-		return count, err
-	default:
-		e := merr.(errors.MultiError)
-		return count, append(e, err)
-	}
 }

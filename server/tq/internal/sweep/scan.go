@@ -73,7 +73,7 @@ type ScanParams struct {
 	TasksPerScan        int // caps maximum number of reminders to process
 	SecondaryScanShards int // caps the number of follow-up scans
 
-	Level int // recursion level (0 == the root task), used for metrics
+	Level int // recursion level (0 == the root task)
 }
 
 // Scan scans the given partition of the Reminders' keyspace.
@@ -83,13 +83,12 @@ type ScanParams struct {
 // calls and delete these reminders, lest they'll be rediscovered during the
 // next scan.
 //
-// If unable to complete the scan of the given part of the keyspace,
-// it intelligently partitions the not-yet-scanned keyspace into several
-// partitions for the follow up and returns them as well.
+// If unable to complete the scan of the given part of the keyspace and Level is
+// less than 2, it intelligently partitions the not-yet-scanned keyspace into
+// several partitions for the follow up and returns them as well.
 //
-// May return something even if eventually fails: the return value must be
-// examined even if err != nil.
-func Scan(ctx context.Context, p ScanParams) ([]*reminder.Reminder, partition.SortedPartitions, error) {
+// Logs errors inside, but doesn't return them.
+func Scan(ctx context.Context, p *ScanParams) ([]*reminder.Reminder, partition.SortedPartitions) {
 	l, h := p.Partition.QueryBounds(p.KeySpaceBytes)
 
 	startedAt := clock.Now(ctx)
@@ -144,7 +143,26 @@ func Scan(ctx context.Context, p ScanParams) ([]*reminder.Reminder, partition.So
 		}
 	}
 
-	return filterOutTooFresh(ctx, rs, p.Level, p.DB.Kind()), scanParts, err
+	// Keep only sufficiently old reminders.
+	filtered := filterOutTooFresh(ctx, rs, p.Level, p.DB.Kind())
+
+	if err != nil {
+		if len(filtered) == 0 && len(scanParts) == 0 {
+			logging.Errorf(ctx, "Scan failed without returning any results: %s", err)
+			return nil, nil
+		}
+		logging.Warningf(ctx, "Got %d reminders and %d follow-up ranges and then failed with: %s", len(filtered), len(scanParts), err)
+	} else if len(filtered) != 0 || len(scanParts) != 0 {
+		logging.Infof(ctx, "Got %d reminders and %d follow-up ranges", len(filtered), len(scanParts))
+	}
+
+	// Refuse to scan deeper than 2 levels.
+	if p.Level >= 2 && len(scanParts) != 0 {
+		logging.Errorf(ctx, "Refusing to recurse deeper, abandoning scans of %v", scanParts)
+		scanParts = nil
+	}
+
+	return filtered, scanParts
 }
 
 // filterOutTooFresh throws away reminders that are too fresh.
