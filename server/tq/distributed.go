@@ -127,7 +127,7 @@ func NewDistributedSweeper(disp *Dispatcher, opts DistributedSweeperOptions) Swe
 	distr := &sweep.Distributed{Submitter: impl}
 	distr.EnqueueSweepTask = sweepTaskRouting(disp, opts, distr.ExecSweepTask)
 
-	// Make startSweep submit initial sweep tasks in the same way too.
+	// Make `sweep` submit initial sweep tasks in the same way too.
 	impl.enqueue = distr.EnqueueSweepTask
 
 	return impl
@@ -151,8 +151,8 @@ func (s *distributedSweeper) CreateTask(ctx context.Context, req *taskspb.Create
 	return s.disp.Submitter.CreateTask(ctx, req)
 }
 
-// startSweep initiates an asynchronous sweep of the entire reminder keyspace.
-func (s *distributedSweeper) startSweep(ctx context.Context, reminderKeySpaceBytes int) error {
+// sweep initiates an asynchronous sweep of the entire reminder keyspace.
+func (s *distributedSweeper) sweep(ctx context.Context, _ Submitter, reminderKeySpaceBytes int) error {
 	partitions := partition.Universe(reminderKeySpaceBytes).Split(s.opts.SweepShards)
 	return parallel.WorkPool(16, func(work chan<- func() error) {
 		for _, kind := range db.Kinds() {
