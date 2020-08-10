@@ -83,14 +83,14 @@ func TestServer(t *testing.T) {
 			})
 
 			Convey("after being closed", func() {
-				So(srv.Close(), ShouldBeNil)
+				So(srv.Close(ctx), ShouldBeNil)
 				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
 			})
 		})
 
 		Convey("Close closes the HTTP server", func() {
 			So(srv.Start(ctx), ShouldBeNil)
-			So(srv.Close(), ShouldBeNil)
+			So(srv.Close(ctx), ShouldBeNil)
 
 			_, err := reportTestResults(ctx, addr, "secret", req)
 			// The error could be a connection error or write-error.
@@ -103,7 +103,7 @@ func TestServer(t *testing.T) {
 		})
 
 		Convey("Close fails before Start being called", func() {
-			So(srv.Close(), ShouldErrLike, ErrCloseBeforeStart)
+			So(srv.Close(ctx), ShouldErrLike, ErrCloseBeforeStart)
 		})
 
 		Convey("Shutdown closes Done", func() {

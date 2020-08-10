@@ -212,7 +212,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		defer exported.Close()
 		exported.SetInCmd(cmd)
 
-		logging.Debugf(ctx, "Starting: %q", cmd.Args)
+		logging.Infof(ctx, "rdb-stream: starting the test command - %q", cmd.Args)
 		if err := cmd.Start(); err != nil {
 			return errors.Annotate(err, "cmd.start").Err()
 		}
