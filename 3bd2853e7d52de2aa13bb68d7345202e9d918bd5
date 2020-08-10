@@ -16,6 +16,75 @@
       "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "877ed39d_64d87de1",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-10T17:37:21Z",
+      "side": 1,
+      "message": "same comment as in the other file, but.. see comment below",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 65,
+        "endChar": 33
+      },
+      "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcdca851_8751cc9f",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-10T17:37:21Z",
+      "side": 1,
+      "message": "this isn\u0027t true. artifact are never uploaded in batches. my earlier comment applied only to test results.\n\nif you want to add a comment in this file, it should talk about the fact that the artifact upload endpoint accepts only one artifact per request.",
+      "range": {
+        "startLine": 66,
+        "startChar": 36,
+        "endLine": 66,
+        "endChar": 39
+      },
+      "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb3ef615_5c806f22",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-10T17:37:21Z",
+      "side": 1,
+      "message": "hmmm, this code checks the constant that we just set 3 lines above. This code inside the if statement is dead - it never executes.\n\nall i meant is just a comment for humans, because a only a human can change opts.Buffer.BatchSize (in L60) because it is a constant here. In particular, this value is not dynamic, so it cannot be set by a program (thus, no need for programmatic solution)",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 2
+      },
+      "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
