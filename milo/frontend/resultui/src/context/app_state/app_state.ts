@@ -14,6 +14,7 @@
 
 import { computed, observable } from 'mobx';
 
+import CONFIGS from 'configs';
 import { consumeContext, provideContext } from '../../libs/context';
 import { BuildPageService } from '../../services/build_page';
 import { ResultDb } from '../../services/resultdb';
@@ -23,15 +24,14 @@ import { ResultDb } from '../../services/resultdb';
  */
 export class AppState {
   @observable.ref accessToken = '';
-  @observable.ref resultDbHost = '';
   @observable.ref selectedTabId = '';
 
   @computed
   get resultDb(): ResultDb | null {
-    if (!this.accessToken || !this.resultDbHost) {
+    if (!this.accessToken) {
       return null;
     }
-    return new ResultDb(this.resultDbHost, this.accessToken);
+    return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
   }
 
   @computed
