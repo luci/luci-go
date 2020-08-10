@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b37eabf1_740aff3f",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-10T11:26:04Z",
+      "side": 1,
+      "message": "I\u0027m not sure I ever tested loading 512 payloads at once. Are you confident it works?",
+      "range": {
+        "startLine": 383,
+        "startChar": 3,
+        "endLine": 383,
+        "endChar": 18
+      },
+      "revId": "f49450e236777816e847d86471ee6bea35a02014",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7257bb89_1b71e47d",
+        "filename": "server/tq/txn/datastore/integration_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-10T11:26:04Z",
+      "side": 1,
+      "message": "i take that this is the same code from before, right?\n(I didn\u0027t review it this time)",
+      "revId": "f49450e236777816e847d86471ee6bea35a02014",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
