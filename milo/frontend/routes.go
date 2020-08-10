@@ -127,7 +127,7 @@ func Run(templatePath string) {
 	r.GET("/internal_widgets/related_builds/:id", htmlMW, handleError(handleGetRelatedBuildsTable))
 
 	// Config for ResultUI frontend.
-	r.GET("/configs.js", baseMW, configsJSHandler)
+	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
 
 	http.DefaultServeMux.Handle("/", r)
 }
@@ -195,12 +195,11 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 }
 
 // configsJSHandler serves /configs.js used by ResultUI frontend code.
-func configsJSHandler(c *router.Context) {
+func configsJSHandler(c *router.Context) error {
 	template, err := template.ParseFiles("templates/configs.template.js")
 	if err != nil {
 		logging.Errorf(c.Context, "Failed to load configs.template.js: %s", err)
-		http.Error(c.Writer, "Internal server error", 500)
-		return
+		return err
 	}
 
 	rdbHost := ""
@@ -208,17 +207,25 @@ func configsJSHandler(c *router.Context) {
 		rdbHost = settings.Resultdb.Host
 	}
 
+	clientID, err := auth.GetFrontendClientID(c.Context)
+	if err != nil {
+		return err
+	}
+
 	c.Writer.Header().Set("content-type", "application/javascript")
 	err = template.Execute(c.Writer, map[string]interface{}{
 		"ResultDB": map[string]string{
 			"Host": rdbHost,
 		},
+		"OAuth2": map[string]string{
+			"ClientID": clientID,
+		},
 	})
 
 	if err != nil {
-		// Note: we may have already written something to c.Writer and it may be too
-		// late to send a status code.
 		logging.Errorf(c.Context, "Failed to execute configs.template.js: %s", err)
-		http.Error(c.Writer, "Internal server error", 500)
+		return err
 	}
+
+	return nil
 }

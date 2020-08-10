@@ -18,7 +18,6 @@ import { customElement, html, LitElement } from 'lit-element';
 import { action } from 'mobx';
 
 import { router } from '../../routes';
-import { consumeResultDbHost } from '../config_provider';
 import { AppState, provideAppState } from './app_state';
 
 /**
@@ -27,14 +26,12 @@ import { AppState, provideAppState } from './app_state';
  */
 export class AppStateProviderElement extends LitElement implements BeforeEnterObserver {
   appState = new AppState();
-  resultDbHost = '';
 
   onBeforeEnter() {
     this.refreshAccessToken();
   }
   connectedCallback() {
     super.connectedCallback();
-    this.appState.resultDbHost = this.resultDbHost;
     window.addEventListener('user-update', this.refreshAccessToken);
     this.refreshAccessToken();
   }
@@ -74,8 +71,6 @@ export class AppStateProviderElement extends LitElement implements BeforeEnterOb
 
 customElement('tr-app-state-provider')(
   provideAppState(
-    consumeResultDbHost(
-      AppStateProviderElement,
-    ),
+    AppStateProviderElement,
   ),
 );

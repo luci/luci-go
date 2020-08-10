@@ -49,6 +49,9 @@ const config: webpack.Configuration = {
   resolve: {
     extensions: ['.js', '.ts'],
   },
+  externals: {
+    'configs': 'CONFIGS',
+  },
   optimization: {
     runtimeChunk: 'single',
     splitChunks: {
@@ -80,13 +83,13 @@ const config: webpack.Configuration = {
     historyApiFallback: true,
     before: (app) => {
       const devConfig = require('./local-dev-config.json');
-      app.get('/auth/api/v1/server/client_id', (_req, res) => {
-        res.json({client_id: devConfig.client_id});
-      });
       app.get('/configs.js', async (_req, res) => {
         res.set('context-type', 'application/javascript');
         const configsTemplate = readFileSync('./configs.template.js', 'utf8');
-        res.send(configsTemplate.replace('{{.ResultDB.Host}}', devConfig.result_db.host));
+        const config = configsTemplate
+          .replace('{{.ResultDB.Host}}', devConfig.result_db.host)
+          .replace('{{.OAuth2.ClientID}}', devConfig.client_id);
+        res.send(config);
       });
       app.use(/^(?!\/(ui|static\/(dist|style))\/).*/, createProxyMiddleware({target: devConfig.milo.url, changeOrigin: true}));
     },
