@@ -195,12 +195,18 @@ func TestDistributed(t *testing.T) {
 }
 
 type submitter struct {
+	cb  func(req *taskspb.CreateTaskRequest) error
 	err error
 	mu  sync.Mutex
 	req []*taskspb.CreateTaskRequest
 }
 
 func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+	if s.cb != nil {
+		if err := s.cb(req); err != nil {
+			return err
+		}
+	}
 	s.mu.Lock()
 	s.req = append(s.req, req)
 	s.mu.Unlock()
