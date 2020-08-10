@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6bbd9d1f_fd71e7f5",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T12:15:54Z",
+      "side": 1,
+      "message": "Copied the comment over.\nIt doesn\u0027t look quite right to me though.\nBecause it\u0027s not quite clear what \u0027start commit\u0027 is without copying everything over.",
+      "parentUuid": "0040d309_8e52a885",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 59
+      },
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "132e7b11_c74c05de",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 8
@@ -36,6 +60,24 @@
       "writtenOn": "2020-08-10T04:36:54Z",
       "side": 1,
       "message": "Is the limit (1000) here because the server need to make some calls that have 1000 as the limit?",
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "819d89bb_749f837a",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T12:15:54Z",
+      "side": 1,
+      "message": "1000 is a somewhat arbitrary number.\nBut we do need a limit according to https://google.aip.dev/144",
+      "parentUuid": "132e7b11_c74c05de",
       "revId": "276a5811c719103f860d8075bde314ab51be9279",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "7aab1eea_d5509d74",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T12:15:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fd8edb2_555113cc",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 17
+      },
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b274e55c_83df504d",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 8
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "19bc0104_2eb4f958",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T12:15:54Z",
+      "side": 1,
+      "message": "it will return INVALID_ARGUMENT.\nhttps://google.aip.dev/158",
+      "parentUuid": "b274e55c_83df504d",
+      "range": {
+        "startLine": 60,
+        "startChar": 72,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49b953cc_68c0542e",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 8
@@ -102,6 +192,24 @@
       "revId": "276a5811c719103f860d8075bde314ab51be9279",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bedfb97b_81dca4f1",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T12:15:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49b953cc_68c0542e",
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
