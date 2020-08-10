@@ -70,6 +70,30 @@
       "revId": "4240d4b193f5849ac8d1eb899259ff2e8ceade4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a07eb8c_cddae0b2",
+        "filename": "server/tq/internal/sweep/batching.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-10T19:32:18Z",
+      "side": 1,
+      "message": "Yay, yeah, I somehow ignored that the canceled context also cancels sleep in CloseAndDrain. I removed WaitGroup.",
+      "parentUuid": "87389dab_570dce5f",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "4240d4b193f5849ac8d1eb899259ff2e8ceade4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
