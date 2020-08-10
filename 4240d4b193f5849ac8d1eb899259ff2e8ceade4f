@@ -22,6 +22,30 @@
       "revId": "4240d4b193f5849ac8d1eb899259ff2e8ceade4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1d33db60_96b9d6f4",
+        "filename": "server/tq/internal/sweep/batching.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-10T11:13:13Z",
+      "side": 1,
+      "message": "Oh, that\u0027s true. But you can use \n\np.ch.Close()  // Or even close(p.ch.C)\n\u003c-p.DrainC\n\nto actually block on draining, since we know processBatch respects context.Context.\n\n\nIs this the only reason you\u0027ve counted items by hand via p.wg?",
+      "parentUuid": "83f40fe4_4ec7d396",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "4240d4b193f5849ac8d1eb899259ff2e8ceade4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
