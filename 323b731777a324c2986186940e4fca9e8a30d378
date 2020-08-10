@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c50cb65f_87aac832",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T03:54:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7278f690_690386ef",
+      "range": {
+        "startLine": 7,
+        "startChar": 11,
+        "endLine": 7,
+        "endChar": 18
+      },
+      "revId": "323b731777a324c2986186940e4fca9e8a30d378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39330d18_ad0c5b62",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 8
@@ -62,6 +86,30 @@
       "revId": "323b731777a324c2986186940e4fca9e8a30d378",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd172b6c_7677d44d",
+        "filename": "milo/frontend/resultui/src/@types/configs.d.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T03:54:56Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "10bf70be_101ff095",
+      "range": {
+        "startLine": 19,
+        "startChar": 66,
+        "endLine": 19,
+        "endChar": 76
+      },
+      "revId": "323b731777a324c2986186940e4fca9e8a30d378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
