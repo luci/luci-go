@@ -75,3 +75,13 @@ message QueryBlamelistResponse {
   // If this field is omitted, there are no subsequent pages.
   string next_page_token = 2;
 }
+
+// A stateless page token for QueryBlamelist RPC.
+message QueryBlamelistPageToken {
+  // Hash of the original request, used to verify whether the parameters in the
+  // new request match the original one.
+  string req_hash = 1;
+
+  // The first commit in the next page.
+  string next_commit_id = 2;
+}
