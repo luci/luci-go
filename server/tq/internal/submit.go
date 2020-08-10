@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/reminder"
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
 
 // TODO(vadimsh): Add metrics.
@@ -46,7 +47,7 @@ type Submitter interface {
 //
 // Recognizes AlreadyExists as success. Annotates retriable errors with
 // transient.Tag.
-func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest) error {
+func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) error {
 	// Each individual RPC should be pretty quick. Also Cloud Tasks client bugs
 	// out if the context has a large deadline.
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
@@ -69,16 +70,20 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest) er
 // SubmitFromReminder submits the request and deletes the reminder on success
 // or a fatal error.
 //
-// If `req` is nil, the request will be deserialized from the reminder payload.
-func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest) error {
+// If `req` and/or `extra` are nil, they will be deserialized from the reminder.
+func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) error {
 	var err error
 	if req == nil {
 		req = &taskspb.CreateTaskRequest{}
 		err = proto.Unmarshal(r.Payload, req)
 	}
+	if err == nil && extra == nil && len(r.Extra) != 0 {
+		extra = &tqpb.Extra{}
+		err = proto.Unmarshal(r.Extra, extra)
+	}
 
 	if err == nil {
-		err = Submit(ctx, s, req)
+		err = Submit(ctx, s, req, extra)
 	}
 
 	// Delete the reminder if the task was successfully enqueued or it is
@@ -125,7 +130,7 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 		for _, r := range payloaded {
 			r := r
 			work <- func() error {
-				err := SubmitFromReminder(ctx, sub, db, r, nil)
+				err := SubmitFromReminder(ctx, sub, db, r, nil, nil)
 				if err != nil {
 					logging.Errorf(ctx, "Failed to process reminder %q: %s", r.ID, err)
 				} else {

@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/reminder"
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
 
 // Dispatcher submits and handles Cloud Tasks tasks.
@@ -471,6 +472,13 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		return err
 	}
 
+	// Extra information about the task for monitoring/tracing.
+	extra := &tqpb.Extra{
+		TaskClass:   cls.ID,
+		Created:     timestamppb.New(clock.Now(ctx)),
+		SpanContext: trace.SpanContext(ctx),
+	}
+
 	// Examine the context to see if we are inside a transaction.
 	db := db.TxnDB(ctx)
 	switch cls.Kind {
@@ -495,7 +503,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 			"cr.dev/title": task.Title,
 		})
 		defer func() { span.End(err) }()
-		return internal.Submit(ctx, d.Submitter, req)
+		return internal.Submit(ctx, d.Submitter, req, extra)
 	}
 
 	// Named transactional tasks are not supported.
@@ -511,7 +519,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		"cr.dev/title": task.Title,
 	})
 	defer func() { span.End(err) }()
-	r, err := d.makeReminder(ctx, req)
+	r, err := d.makeReminder(ctx, req, extra)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare a reminder").Err()
 	}
@@ -546,7 +554,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 			// successfully enqueued or it is a non-retriable failure. This keeps the
 			// reminder if the failure was transient, we'll let the sweeper try to
 			// submit the task later.
-			err = internal.SubmitFromReminder(ctx, d.Submitter, db, r, req)
+			err = internal.SubmitFromReminder(ctx, d.Submitter, db, r, req, extra)
 		}
 	})
 
@@ -893,7 +901,7 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 //
 // Mutates the task request to include an auto-generated task name (the same one
 // as stored in the reminder).
-func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest) (*reminder.Reminder, error) {
+func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) (*reminder.Reminder, error) {
 	buf := make([]byte, reminderKeySpaceBytes)
 	if _, err := io.ReadFull(cryptorand.Get(ctx), buf); err != nil {
 		return nil, errors.Annotate(err, "failed to get random bytes").Tag(transient.Tag).Err()
@@ -917,6 +925,9 @@ func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRe
 	var err error
 	if r.Payload, err = proto.Marshal(req); err != nil {
 		return nil, errors.Annotate(err, "failed to marshal the task").Err()
+	}
+	if r.Extra, err = proto.Marshal(extra); err != nil {
+		return nil, errors.Annotate(err, "failed to marshal internal extra info").Err()
 	}
 	return r, nil
 }
