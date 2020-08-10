@@ -22,9 +22,10 @@ import '.';
 import { InvocationPageElement } from '.';
 import { AppState } from '../../context/app_state/app_state';
 import { InvocationState } from '../../context/invocation_state/invocation_state';
+import { NOT_FOUND_URL } from '../../routes';
 
 
-describe('Invocation Test Page', () => {
+describe('Invocation Page', () => {
   it('should get invocation ID from URL', async () => {
     const appState = new AppState();
     const invocationState = new InvocationState(appState);
@@ -41,7 +42,7 @@ describe('Invocation Test Page', () => {
     assert.strictEqual(page.invocationState.invocationId, location.params['invocation_id']);
   });
 
-  it('should redirect to "/not-found" when invocation_id is not provided', async () => {
+  it('should redirect to the not found page when invocation_id is not provided', async () => {
     const appState = new AppState();
     const invocationState = new InvocationState(appState);
     const page = await fixture<InvocationPageElement>(html`
@@ -54,6 +55,6 @@ describe('Invocation Test Page', () => {
     const redirect = sinon.spy();
     const cmd = {redirect} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
-    assert.isTrue(redirect.calledOnceWith('/not-found'));
+    assert.isTrue(redirect.calledOnceWith(NOT_FOUND_URL));
   });
 });
