@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b40f8456_1f163953",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T00:57:38Z",
+      "side": 1,
+      "message": "Hi Tuan,\nI\u0027ve updated the way to provide config again.\nCould you have another look?\n",
+      "revId": "a0db819abe2290edae4747ee234b9263b464a5da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
