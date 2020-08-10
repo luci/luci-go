@@ -33,6 +33,7 @@ import (
 //   ID STRING(MAX) NOT NULL,
 //   FreshUntil TIMESTAMP NOT NULL,
 //   Payload BYTES(102400) NOT NULL,
+//   Extra BYTES(1024) NOT NULL,
 // ) PRIMARY KEY (ID ASC);
 //
 // If you ever need to change this, change also user-visible server/tq doc.
@@ -51,8 +52,8 @@ func (spanDB) Defer(ctx context.Context, cb func(context.Context)) {
 func (spanDB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
 	span.BufferWrite(ctx, spanner.Insert(
 		tableName,
-		[]string{"ID", "FreshUntil", "Payload"},
-		[]interface{}{r.ID, r.FreshUntil, r.Payload}))
+		[]string{"ID", "FreshUntil", "Payload", "Extra"},
+		[]interface{}{r.ID, r.FreshUntil, r.Payload, r.Extra}))
 	return nil
 }
 
@@ -93,10 +94,10 @@ func (spanDB) FetchReminderPayloads(ctx context.Context, batch []*reminder.Remin
 	}
 
 	iter := span.Read(span.Single(ctx), tableName, spanner.KeySets(ks...),
-		[]string{"ID", "FreshUntil", "Payload"})
+		[]string{"ID", "FreshUntil", "Payload", "Extra"})
 	i := 0
 	err := iter.Do(func(row *spanner.Row) error {
-		if err := row.Columns(&batch[i].ID, &batch[i].FreshUntil, &batch[i].Payload); err != nil {
+		if err := row.Columns(&batch[i].ID, &batch[i].FreshUntil, &batch[i].Payload, &batch[i].Extra); err != nil {
 			return err
 		}
 		i++

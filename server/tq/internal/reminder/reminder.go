@@ -43,6 +43,12 @@ type Reminder struct {
 	// Always has a name set, so even if the reminder is processed more than once,
 	// only one task will be enqueued.
 	Payload []byte
+
+	// Extra is a proto-serialized tqpb.Extra.
+	//
+	// It is internal data about the task the dispatcher might want to send to
+	// the sweeper. Used for monitoring and tracing.
+	Extra []byte
 }
 
 // FreshUntilPrecision is precision of Reminder.FreshUntil, to which it is
