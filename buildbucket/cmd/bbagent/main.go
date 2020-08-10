@@ -112,6 +112,7 @@ func mainImpl() int {
 		ButlerLogLevel: logging.Warning,
 		ViewerURL: fmt.Sprintf("https://%s/build/%d",
 			input.Build.Infra.Buildbucket.Hostname, input.Build.Id),
+		ExeAuth: host.DefaultExeAuth("bbagent", input.KnownPublicGerritHosts),
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
