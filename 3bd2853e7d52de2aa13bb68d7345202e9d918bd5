@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "4f103f2b_c1b98924",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-10T20:19:42Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "877ed39d_64d87de1",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 65,
+        "endChar": 33
+      },
+      "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcdca851_8751cc9f",
         "filename": "resultdb/sink/artifact_channel.go",
         "patchSetId": 10
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "cc3c9e53_02081a22",
+        "filename": "resultdb/sink/artifact_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-10T20:19:42Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "fcdca851_8751cc9f",
+      "range": {
+        "startLine": 66,
+        "startChar": 36,
+        "endLine": 66,
+        "endChar": 39
+      },
+      "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb3ef615_5c806f22",
         "filename": "resultdb/sink/test_result_channel.go",
         "patchSetId": 10
@@ -85,6 +133,30 @@
       "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daa7d8ec_5652d4bd",
+        "filename": "resultdb/sink/test_result_channel.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-10T20:19:42Z",
+      "side": 1,
+      "message": "Removed. PTAL",
+      "parentUuid": "eb3ef615_5c806f22",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 2
+      },
+      "revId": "3bd2853e7d52de2aa13bb68d7345202e9d918bd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
