@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "616771d3_b08538c4",
+        "filename": "server/tq/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-10T00:05:51Z",
+      "side": 1,
+      "message": "Actually, please remove this. I have no intention of writing it anytime soon. We\u0027ll use inproc sweeper in ResultDB, it doesn\u0027t need a lessor.",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 52
+      },
+      "revId": "f292c8b26bb0bcbcd122c67d9e24f91433a74599",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
