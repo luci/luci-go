@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "5aa7fd2e_fe325f6f",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-10T21:20:13Z",
+      "side": 1,
+      "message": "Made the batch smaller.",
+      "parentUuid": "4a2d6a0c_7cbf2d9f",
+      "range": {
+        "startLine": 383,
+        "startChar": 3,
+        "endLine": 383,
+        "endChar": 18
+      },
+      "revId": "f49450e236777816e847d86471ee6bea35a02014",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7257bb89_1b71e47d",
         "filename": "server/tq/txn/datastore/integration_test.go",
         "patchSetId": 3
