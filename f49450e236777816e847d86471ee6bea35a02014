@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "93b6b65a_64b10c9a",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-10T19:32:56Z",
+      "side": 1,
+      "message": "No, I picked this number randomly. What would you recommend?",
+      "parentUuid": "b37eabf1_740aff3f",
+      "range": {
+        "startLine": 383,
+        "startChar": 3,
+        "endLine": 383,
+        "endChar": 18
+      },
+      "revId": "f49450e236777816e847d86471ee6bea35a02014",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7257bb89_1b71e47d",
         "filename": "server/tq/txn/datastore/integration_test.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "f49450e236777816e847d86471ee6bea35a02014",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "631ab171_7e0b0a8b",
+        "filename": "server/tq/txn/datastore/integration_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-10T19:32:56Z",
+      "side": 1,
+      "message": "Yes, same code.",
+      "parentUuid": "7257bb89_1b71e47d",
+      "revId": "f49450e236777816e847d86471ee6bea35a02014",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
