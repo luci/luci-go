@@ -40,17 +40,27 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 	epoch := time.Date(2020, time.February, 3, 4, 5, 6, 0, time.UTC)
 
 	// Test uses keySpaceBytes=1, meaning [0..256) keyspace.
-	mkReminder := func(id int64, freshUntil time.Time, payload ...byte) *reminder.Reminder {
-		low, _ := partition.FromInts(id, id+1).QueryBounds(1)
-		if len(payload) == 0 {
-			payload = nil
+	mkReminder := func(id int64, freshUntil time.Time, payload, extra string) *reminder.Reminder {
+		var payloadBytes []byte
+		if payload != "" { // prefer nil instead of []byte{}
+			payloadBytes = []byte(payload)
 		}
-		return &reminder.Reminder{ID: low, FreshUntil: freshUntil, Payload: payload}
+		var extraBytes []byte
+		if extra != "" { // prefer nil instead of []byte{}
+			extraBytes = []byte(extra)
+		}
+		low, _ := partition.FromInts(id, id+1).QueryBounds(1)
+		return &reminder.Reminder{
+			ID:         low,
+			FreshUntil: freshUntil,
+			Payload:    payloadBytes,
+			Extra:      extraBytes,
+		}
 	}
 
 	Convey("Test DB "+db.Kind(), t, func() {
 		Convey("Save & Delete", func() {
-			r := mkReminder(1, epoch, []byte("payload")...)
+			r := mkReminder(1, epoch, "payload", "extra")
 			So(db.SaveReminder(ctx, r), ShouldBeNil)
 			So(db.DeleteReminder(ctx, r), ShouldBeNil)
 			Convey("Delete non-existing is a noop", func() {
@@ -59,17 +69,17 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 		})
 
 		Convey("FetchRemindersMeta", func() {
-			So(db.SaveReminder(ctx, mkReminder(254, epoch.Add(time.Second), []byte("254")...)), ShouldBeNil)
-			So(db.SaveReminder(ctx, mkReminder(100, epoch.Add(time.Minute), []byte("pay")...)), ShouldBeNil)
-			So(db.SaveReminder(ctx, mkReminder(255, epoch.Add(time.Hour), []byte("load")...)), ShouldBeNil)
+			So(db.SaveReminder(ctx, mkReminder(254, epoch.Add(time.Second), "254", "ex 1")), ShouldBeNil)
+			So(db.SaveReminder(ctx, mkReminder(100, epoch.Add(time.Minute), "pay", "ex 2")), ShouldBeNil)
+			So(db.SaveReminder(ctx, mkReminder(255, epoch.Add(time.Hour), "load", "ex 3")), ShouldBeNil)
 
 			Convey("All + sorted", func() {
 				res, err := db.FetchRemindersMeta(ctx, "00", "g", 5)
 				So(err, ShouldBeNil)
 				So(res, ShouldResemble, []*reminder.Reminder{
-					mkReminder(100, epoch.Add(time.Minute)),
-					mkReminder(254, epoch.Add(time.Second)),
-					mkReminder(255, epoch.Add(time.Hour)),
+					mkReminder(100, epoch.Add(time.Minute), "", ""),
+					mkReminder(254, epoch.Add(time.Second), "", ""),
+					mkReminder(255, epoch.Add(time.Hour), "", ""),
 				})
 			})
 
@@ -77,8 +87,8 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "g", 2)
 				So(err, ShouldBeNil)
 				So(res, ShouldResemble, []*reminder.Reminder{
-					mkReminder(100, epoch.Add(time.Minute)),
-					mkReminder(254, epoch.Add(time.Second)),
+					mkReminder(100, epoch.Add(time.Minute), "", ""),
+					mkReminder(254, epoch.Add(time.Second), "", ""),
 				})
 			})
 
@@ -86,16 +96,16 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "ee", 5)
 				So(err, ShouldBeNil)
 				So(res, ShouldResemble, []*reminder.Reminder{
-					mkReminder(100, epoch.Add(time.Minute)),
+					mkReminder(100, epoch.Add(time.Minute), "", ""),
 				})
 			})
 		})
 
 		Convey("FetchReminderPayloads", func() {
 			all := []*reminder.Reminder{
-				mkReminder(100, epoch.Add(time.Minute), []byte("pay")...),
-				mkReminder(254, epoch.Add(time.Second), []byte("254")...),
-				mkReminder(255, epoch.Add(time.Hour), []byte("load")...),
+				mkReminder(100, epoch.Add(time.Minute), "pay", "ex 1"),
+				mkReminder(254, epoch.Add(time.Second), "254", "ex 2"),
+				mkReminder(255, epoch.Add(time.Hour), "load", "ex 3"),
 			}
 			meta := make([]*reminder.Reminder, len(all))
 			for i, r := range all {

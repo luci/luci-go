@@ -47,11 +47,13 @@ type dsReminder struct {
 
 	ID      string `gae:"$id"` // "{Reminder.ID}_{Reminder.FreshUntil}".
 	Payload []byte `gae:",noindex"`
+	Extra   []byte `gae:",noindex"`
 }
 
 func (d *dsReminder) fromReminder(r *reminder.Reminder) *dsReminder {
 	d.ID = fmt.Sprintf("%s_%d", r.ID, r.FreshUntil.UnixNano())
 	d.Payload = r.Payload
+	d.Extra = r.Extra
 	return d
 }
 
@@ -70,6 +72,7 @@ func (d dsReminder) toReminder(r *reminder.Reminder) *reminder.Reminder {
 	r.ID = parts[0]
 	r.FreshUntil = time.Unix(0, ns).UTC()
 	r.Payload = d.Payload
+	r.Extra = d.Extra
 	return r
 }
 

@@ -1,0 +1,31 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.server.tq.internal;
+
+option go_package = "go.chromium.org/luci/server/tq/internal/tqpb";
+
+import "google/protobuf/timestamp.proto";
+
+// Extra is additional data attached to CreateTask requests.
+//
+// It is prepared by the dispatcher and consumed by the sweeper and submitters.
+// Used for monitoring and tracing.
+message Extra {
+  string task_class = 1;                 // corresponding TaskClass.ID
+  google.protobuf.Timestamp created = 2; // when AddTask was called
+  string span_context = 3;               // where AddTask was called
+}

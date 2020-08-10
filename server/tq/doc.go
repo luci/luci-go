@@ -34,8 +34,9 @@
 //
 // You need to Create a table in your database:
 //   CREATE TABLE TQReminders (
-//    ID STRING(MAX) NOT NULL,
-//    FreshUntil TIMESTAMP NOT NULL,
-//    Payload BYTES(102400) NOT NULL,
+//     ID STRING(MAX) NOT NULL,
+//     FreshUntil TIMESTAMP NOT NULL,
+//     Payload BYTES(102400) NOT NULL,
+//     Extra BYTES(1024) NOT NULL,
 //   ) PRIMARY KEY (ID ASC);
 package tq

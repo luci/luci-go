@@ -121,6 +121,7 @@ func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*reminder.Reminde
 	for _, r := range in {
 		if saved, exists := f.reminders[r.ID]; exists {
 			r.Payload = saved.Payload
+			r.Extra = saved.Extra
 			out = append(out, r)
 		}
 	}
@@ -147,6 +148,7 @@ func (f *FakeDB) AllReminders() []*reminder.Reminder {
 			ID:         r.ID,
 			FreshUntil: r.FreshUntil,
 			Payload:    r.Payload,
+			Extra:      r.Extra,
 		})
 	}
 	return out
