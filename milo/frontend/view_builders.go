@@ -83,7 +83,7 @@ func BuildersRelativeHandler(c *router.Context, projectID, group string) error {
 						Bucket:  bucket,
 						Builder: builder.Name,
 					}
-					buildersFromSwarmbucket = append(buildersFromSwarmbucket, buildbucket.LegacyBuilderIDString(bid))
+					buildersFromSwarmbucket = append(buildersFromSwarmbucket, common.LegacyBuilderIDString(bid))
 				}
 			}
 			return nil
