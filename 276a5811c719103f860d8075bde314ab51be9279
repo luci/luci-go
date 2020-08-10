@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0040d309_8e52a885",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-10T04:36:54Z",
+      "side": 1,
+      "message": "By this, do you just want to refer to the \"from the same builder\" part? May be we can explicitly state it here (or can just omit it). I don\u0027t feel the reference very useful here.",
+      "range": {
+        "startLine": 47,
+        "startChar": 5,
+        "endLine": 47,
+        "endChar": 59
+      },
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "132e7b11_c74c05de",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-10T04:36:54Z",
+      "side": 1,
+      "message": "Is the limit (1000) here because the server need to make some calls that have 1000 as the limit?",
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fd8edb2_555113cc",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-10T04:36:54Z",
+      "side": 1,
+      "message": "Maybe say that this is optional?",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 17
+      },
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b274e55c_83df504d",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-10T04:36:54Z",
+      "side": 1,
+      "message": "Just curious here, what will happen if it doesn\u0027t match. Do we throw an error, use the previous one or use the current one?",
+      "range": {
+        "startLine": 60,
+        "startChar": 72,
+        "endLine": 61,
+        "endChar": 19
+      },
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49b953cc_68c0542e",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-10T04:36:54Z",
+      "side": 1,
+      "message": "Maybe we can mention that the list will be in reversed chronologically order? (i.e. the last commit will come first?)",
+      "revId": "276a5811c719103f860d8075bde314ab51be9279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
