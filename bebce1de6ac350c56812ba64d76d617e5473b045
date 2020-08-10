@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ffefd50_2dd4f1e3",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-10T22:05:01Z",
+      "side": 1,
+      "message": "this doesn\u0027t exist yet, I\u0027ll add it\n\nI want to have some association between a task and a trace context that submitted it. Theoretically we can even link them in Cloud Trace, but I\u0027m afraid it will look weird in \"an endless chain of tasks\" case. So I\u0027ll just add a reference that can be followed on manually during debugging.",
+      "range": {
+        "startLine": 479,
+        "startChar": 29,
+        "endLine": 479,
+        "endChar": 62
+      },
+      "revId": "bebce1de6ac350c56812ba64d76d617e5473b045",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
