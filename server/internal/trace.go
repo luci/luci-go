@@ -16,6 +16,8 @@ package internal
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -68,6 +70,16 @@ func (ocTraceBackend) PropagateSpanContext(ctx context.Context, span trace.Span,
 	// Inject X-Cloud-Trace-Context header with the encoded span context.
 	cloudTraceFormat.SpanContextToRequest(span.(ocSpan).span.SpanContext(), req)
 	return req
+}
+
+func (ocTraceBackend) SpanContext(ctx context.Context) string {
+	if span := octrace.FromContext(ctx); span != nil {
+		// Note: this is identical to what SpanContextToRequest does internally.
+		sc := span.SpanContext()
+		sid := binary.BigEndian.Uint64(sc.SpanID[:])
+		return fmt.Sprintf("%s/%d;o=%d", hex.EncodeToString(sc.TraceID[:]), sid, int64(sc.TraceOptions))
+	}
+	return ""
 }
 
 ////////////////////////////////////////////////////////////////////////////////
