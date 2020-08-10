@@ -39,7 +39,9 @@ service MiloInternal {
 
 // A request message for `QueryBlamelist` RPC.
 message QueryBlamelistRequest {
-  // The Gitiles commit of the build.
+  // The output Gitiles commit of the build.
+  // If output Gitiles commit isn't available, the caller can fallback to intput
+  // Gitiles commit.
   buildbucket.v2.GitilesCommit gitiles_commit = 1;
 
   // The context builder of the blamelist.
@@ -74,4 +76,14 @@ message QueryBlamelistResponse {
   // A token that can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there are no subsequent pages.
   string next_page_token = 2;
+}
+
+// A stateless page token for QueryBlamelist RPC.
+message QueryBlamelistPageToken {
+  // Hash of the original request, used to verify whether the parameters in the
+  // new request match the original one.
+  string req_hash = 1;
+
+  // The first commit in the next page.
+  string next_commit_id = 2;
 }
