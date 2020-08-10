@@ -46,6 +46,30 @@
       "revId": "4240d4b193f5849ac8d1eb899259ff2e8ceade4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87389dab_570dce5f",
+        "filename": "server/tq/internal/sweep/batching.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-10T11:27:49Z",
+      "side": 1,
+      "message": "i\u0027ve reviewed the follow up CL and I see that that you are starting \u0026 stopping this per sweep. So, it workgroup really was to work around CloseAndDrain.  Hence, LGTM % get rid of workgroup.\n\nbtw, you can also pass context.Background() to CloseAndDrain with the same effect.",
+      "parentUuid": "1d33db60_96b9d6f4",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "4240d4b193f5849ac8d1eb899259ff2e8ceade4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
