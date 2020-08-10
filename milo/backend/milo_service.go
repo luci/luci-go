@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package milopb
+package backend
 
-//go:generate cproto
-//go:generate svcdec -type MiloInternalServer
+// MiloInternalService implements milopb.MiloInternal
+type MiloInternalService struct{}
