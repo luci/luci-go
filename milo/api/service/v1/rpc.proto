@@ -30,8 +30,9 @@ option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
 service MiloInternal {
   // Retrieves blamelist of a build.
   //
-  // The blamelist of a build is defined as [end_commit, start_commit),
-  // where end_commit is the last commit of the build,
+  // The blamelist of a build is defined as [end_commit, start_commit)
+  // end_commit is the Gitiles commit of the build (specified in gitiles
+  // buildset tag).
   // start_commit is the closest ancestor commit with an associated build that
   // is from the same builder and is not expired, cancelled, or infra-failed.
   rpc QueryBlamelist(QueryBlamelistRequest) returns (QueryBlamelistResponse) {};
@@ -40,6 +41,9 @@ service MiloInternal {
 // A request message for `QueryBlamelist` RPC.
 message QueryBlamelistRequest {
   // The Gitiles commit of the build.
+  //
+  // This defines the end_commit of the blamelist.
+  // It should be set to the input Gitiles commit of the build.
   buildbucket.v2.GitilesCommit gitiles_commit = 1;
 
   // The context builder of the blamelist.
@@ -74,4 +78,10 @@ message QueryBlamelistResponse {
   // A token that can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there are no subsequent pages.
   string next_page_token = 2;
+}
+
+// A stateless page token for QueryBlamelist RPC.
+message QueryBlamelistPageToken {
+  // The first commit in the next page.
+  string next_commit_id = 2;
 }

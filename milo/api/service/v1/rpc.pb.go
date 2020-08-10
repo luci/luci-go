@@ -54,6 +54,9 @@ type QueryBlamelistRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The Gitiles commit of the build.
+	//
+	// This defines the end_commit of the blamelist.
+	// It should be set to the input Gitiles commit of the build.
 	GitilesCommit *proto1.GitilesCommit `protobuf:"bytes,1,opt,name=gitiles_commit,json=gitilesCommit,proto3" json:"gitiles_commit,omitempty"`
 	// The context builder of the blamelist.
 	//
@@ -196,6 +199,55 @@ func (x *QueryBlamelistResponse) GetNextPageToken() string {
 	return ""
 }
 
+// A stateless page token for QueryBlamelist RPC.
+type QueryBlamelistPageToken struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The first commit in the next page.
+	NextCommitId string `protobuf:"bytes,2,opt,name=next_commit_id,json=nextCommitId,proto3" json:"next_commit_id,omitempty"`
+}
+
+func (x *QueryBlamelistPageToken) Reset() {
+	*x = QueryBlamelistPageToken{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryBlamelistPageToken) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryBlamelistPageToken) ProtoMessage() {}
+
+func (x *QueryBlamelistPageToken) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryBlamelistPageToken.ProtoReflect.Descriptor instead.
+func (*QueryBlamelistPageToken) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *QueryBlamelistPageToken) GetNextCommitId() string {
+	if x != nil {
+		return x.NextCommitId
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_milo_api_service_v1_rpc_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDesc = []byte{
@@ -232,18 +284,22 @@ var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDesc = []byte{
 	0x67, 0x69, 0x74, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d,
 	0x69, 0x74, 0x73, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x70, 0x61, 0x67, 0x65,
 	0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6e, 0x65,
-	0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x32, 0x6d, 0x0a, 0x0c, 0x4d,
-	0x69, 0x6c, 0x6f, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x12, 0x5d, 0x0a, 0x0e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x23, 0x2e,
-	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x24, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c, 0x6f, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x6d, 0x69, 0x6c, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x69, 0x6c, 0x6f, 0x70, 0x62, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x3f, 0x0a, 0x17, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x50, 0x61, 0x67,
+	0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x24, 0x0a, 0x0e, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x63,
+	0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c,
+	0x6e, 0x65, 0x78, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x49, 0x64, 0x32, 0x6d, 0x0a, 0x0c,
+	0x4d, 0x69, 0x6c, 0x6f, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x12, 0x5d, 0x0a, 0x0e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x23,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c, 0x6f, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6d, 0x69, 0x6c, 0x6f, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x6c, 0x61, 0x6d, 0x65, 0x6c, 0x69, 0x73,
+	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x31, 0x5a, 0x2f, 0x67,
+	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
+	0x75, 0x63, 0x69, 0x2f, 0x6d, 0x69, 0x6c, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x69, 0x6c, 0x6f, 0x70, 0x62, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -258,18 +314,19 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_goTypes = []interface{}{
-	(*QueryBlamelistRequest)(nil),  // 0: luci.milo.v1.QueryBlamelistRequest
-	(*QueryBlamelistResponse)(nil), // 1: luci.milo.v1.QueryBlamelistResponse
-	(*proto1.GitilesCommit)(nil),   // 2: buildbucket.v2.GitilesCommit
-	(*proto1.BuilderID)(nil),       // 3: buildbucket.v2.BuilderID
-	(*git.Commit)(nil),             // 4: git.Commit
+	(*QueryBlamelistRequest)(nil),   // 0: luci.milo.v1.QueryBlamelistRequest
+	(*QueryBlamelistResponse)(nil),  // 1: luci.milo.v1.QueryBlamelistResponse
+	(*QueryBlamelistPageToken)(nil), // 2: luci.milo.v1.QueryBlamelistPageToken
+	(*proto1.GitilesCommit)(nil),    // 3: buildbucket.v2.GitilesCommit
+	(*proto1.BuilderID)(nil),        // 4: buildbucket.v2.BuilderID
+	(*git.Commit)(nil),              // 5: git.Commit
 }
 var file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_depIdxs = []int32{
-	2, // 0: luci.milo.v1.QueryBlamelistRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	3, // 1: luci.milo.v1.QueryBlamelistRequest.builder:type_name -> buildbucket.v2.BuilderID
-	4, // 2: luci.milo.v1.QueryBlamelistResponse.commits:type_name -> git.Commit
+	3, // 0: luci.milo.v1.QueryBlamelistRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	4, // 1: luci.milo.v1.QueryBlamelistRequest.builder:type_name -> buildbucket.v2.BuilderID
+	5, // 2: luci.milo.v1.QueryBlamelistResponse.commits:type_name -> git.Commit
 	0, // 3: luci.milo.v1.MiloInternal.QueryBlamelist:input_type -> luci.milo.v1.QueryBlamelistRequest
 	1, // 4: luci.milo.v1.MiloInternal.QueryBlamelist:output_type -> luci.milo.v1.QueryBlamelistResponse
 	4, // [4:5] is the sub-list for method output_type
@@ -309,6 +366,18 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryBlamelistPageToken); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -316,7 +385,7 @@ func file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_milo_api_service_v1_rpc_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -344,8 +413,9 @@ const _ = grpc.SupportPackageIsVersion6
 type MiloInternalClient interface {
 	// Retrieves blamelist of a build.
 	//
-	// The blamelist of a build is defined as [end_commit, start_commit),
-	// where end_commit is the last commit of the build,
+	// The blamelist of a build is defined as [end_commit, start_commit)
+	// end_commit is the Gitiles commit of the build (specified in gitiles
+	// buildset tag).
 	// start_commit is the closest ancestor commit with an associated build that
 	// is from the same builder and is not expired, cancelled, or infra-failed.
 	QueryBlamelist(ctx context.Context, in *QueryBlamelistRequest, opts ...grpc.CallOption) (*QueryBlamelistResponse, error)
@@ -388,8 +458,9 @@ func (c *miloInternalClient) QueryBlamelist(ctx context.Context, in *QueryBlamel
 type MiloInternalServer interface {
 	// Retrieves blamelist of a build.
 	//
-	// The blamelist of a build is defined as [end_commit, start_commit),
-	// where end_commit is the last commit of the build,
+	// The blamelist of a build is defined as [end_commit, start_commit)
+	// end_commit is the Gitiles commit of the build (specified in gitiles
+	// buildset tag).
 	// start_commit is the closest ancestor commit with an associated build that
 	// is from the same builder and is not expired, cancelled, or infra-failed.
 	QueryBlamelist(context.Context, *QueryBlamelistRequest) (*QueryBlamelistResponse, error)

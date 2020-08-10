@@ -43,6 +43,8 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/api/config"
+	milopb "go.chromium.org/luci/milo/api/service/v1"
+	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -79,15 +81,22 @@ func BuildAddress(build *buildbucketpb.Build) string {
 //     the SourceManifest objects inside of them). Currently getRespBuild defers
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
-func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result []*ui.Commit, err error) {
-	bs := build.GitilesCommit()
-	if bs == nil {
+func simplisticBlamelist(c context.Context, build *buildbucketpb.Build) (result []*ui.Commit, err error) {
+	gc := build.GetInput().GetGitilesCommit()
+	if gc == nil {
 		return
 	}
 
-	builds, commits, err := build.PreviousByGitilesCommit(c)
+	svc := &backend.MiloInternalService{}
+	req := &milopb.QueryBlamelistRequest{
+		Builder:       build.Builder,
+		GitilesCommit: gc,
+		PageSize:      100,
+	}
+	res, err := svc.QueryBlamelist(c, req)
+
 	switch {
-	case err == nil || err == model.ErrUnknownPreviousBuild:
+	case err == nil:
 		// continue
 	case status.Code(err) == codes.PermissionDenied:
 		err = grpcutil.UnauthenticatedTag.Apply(err)
@@ -96,14 +105,13 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) (result [
 		return
 	}
 
-	result = make([]*ui.Commit, 0, len(commits)+1)
-	for _, commit := range commits {
-		result = append(result, uiCommit(commit, protoutil.GitilesRepoURL(bs)))
+	result = make([]*ui.Commit, 0, len(res.Commits)+1)
+	for _, commit := range res.Commits {
+		result = append(result, uiCommit(commit, protoutil.GitilesRepoURL(gc)))
 	}
 	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
 
-	// this means that there were more than 100 commits in-between.
-	if len(builds) == 0 && len(commits) > 0 {
+	if res.NextPageToken != "" {
 		result = append(result, &ui.Commit{
 			Description: "<blame list capped at 100 commits>",
 			Revision:    &ui.Link{},
@@ -171,13 +179,8 @@ func getBlame(c context.Context, host string, b *buildbucketpb.Build, timeout ti
 	if commit == nil {
 		return nil, nil
 	}
-	// TODO(hinoka): This converts a buildbucketpb.Commit into a string
-	// and back into a buildbucketpb.Commit.  That's a bit silly.
-	return simplisticBlamelist(nc, &model.BuildSummary{
-		BuildKey:  MakeBuildKey(nc, host, BuildAddress(b)),
-		BuildSet:  []string{protoutil.GitilesBuildSet(commit)},
-		BuilderID: LegacyBuilderIDString(b.Builder),
-	})
+
+	return simplisticBlamelist(nc, b)
 }
 
 // getBugLink attempts to formulate and return the build page bug link
