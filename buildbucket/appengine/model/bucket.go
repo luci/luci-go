@@ -22,6 +22,11 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+const (
+	// BucketKind is a bucket entity's kind in the datastore.
+	BucketKind = "BucketV2"
+)
+
 // Project is the parent entity of buckets in the datastore.
 // Entities of this kind don't exist in the datastore.
 type Project struct {

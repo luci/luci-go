@@ -21,18 +21,22 @@ package perm
 
 import (
 	"context"
+	"sort"
+	"sync"
 
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 var (
@@ -161,4 +165,34 @@ func getRole(ctx context.Context, id identity.Identity, acls []*pb.Acl) (pb.Acl_
 	}
 
 	return role, nil
+}
+
+// BucketsByPerm returns buckets that the caller has the given permission in.
+func BucketsByPerm(ctx context.Context, p realms.Permission) (buckets []string, err error) {
+	var bucketKeys []*datastore.Key
+	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &bucketKeys); err != nil {
+		return nil, err
+	}
+
+	err = parallel.WorkPool(len(bucketKeys), func(c chan<- func() error) {
+		var mu sync.Mutex
+		for _, bk := range bucketKeys {
+			bk := bk
+			c <- func() error {
+				if err := HasInBucket(ctx, p, bk.Parent().StringID(), bk.StringID()); err != nil {
+					status, ok := appstatus.Get(err)
+					if ok && (status.Code() == codes.PermissionDenied || status.Code() == codes.NotFound) {
+						return nil
+					}
+					return err
+				}
+				mu.Lock()
+				buckets = append(buckets, protoutil.FormatBucketID(bk.Parent().StringID(), bk.StringID()))
+				mu.Unlock()
+				return nil
+			}
+		}
+	})
+	sort.Strings(buckets)
+	return
 }
