@@ -130,6 +130,8 @@ message Invocation {
   // Realm that the invocation exists under.
   // See https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/proto/realms_config.proto
   string realm = 12;
+
+  TestResultsHistoryOptions history_options = 13;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported
@@ -151,4 +153,27 @@ message BigQueryExport {
     TestResultPredicate predicate = 1;
   }
   TestResults test_results = 4;
+}
+
+message TestResultsHistoryOptions {
+  // Set this to expose the history of results indexed by the containing
+  // invocation's create_time.
+  bool use_invocation_timestamp = 1;
+
+  // Set this to have the results indexed by commit.position.
+  // It's up to the creator of the invocation to set this consistently over
+  // time across the same test variant.
+  CommitPosition commit = 2;
+}
+
+message CommitPosition {
+  // The following fields identify a git repository and a ref within which the
+  // numerical position below identifies a single commit.
+  string host = 1;
+  string project = 2;
+  string ref = 3;
+
+  // The numerical position of the commit in the log for the host/project/ref
+  // above.
+  int64 position = 4;
 }
