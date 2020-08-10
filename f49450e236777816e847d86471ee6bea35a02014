@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "4a2d6a0c_7cbf2d9f",
+        "filename": "server/tq/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-10T21:04:48Z",
+      "side": 1,
+      "message": "I was between 50 to 150 in my load testing. Since we like 2^N, how about 64? We can also bump # of concurrent batches 8x to keep throughput approx the same.",
+      "parentUuid": "93b6b65a_64b10c9a",
+      "range": {
+        "startLine": 383,
+        "startChar": 3,
+        "endLine": 383,
+        "endChar": 18
+      },
+      "revId": "f49450e236777816e847d86471ee6bea35a02014",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7257bb89_1b71e47d",
         "filename": "server/tq/txn/datastore/integration_test.go",
         "patchSetId": 3
