@@ -64,6 +64,16 @@ func InstrumentTransport(ctx context.Context, t http.RoundTripper) http.RoundTri
 	return &tracedTransport{ctx, t} // see transport.go
 }
 
+// SpanContext returns the current span context as an HTTP header-safe string.
+//
+// It is empty if there's no span context.
+func SpanContext(ctx context.Context) string {
+	if backend == nil {
+		return ""
+	}
+	return backend.SpanContext(ctx)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation API.
 
@@ -84,6 +94,8 @@ type Backend interface {
 	// PropagateSpanContext returns a shallow copy of http.Request with the span
 	// context (from the given `ctx`) injected into the headers.
 	PropagateSpanContext(ctx context.Context, span Span, req *http.Request) *http.Request
+	// SpanContext implements public SpanContext function.
+	SpanContext(ctx context.Context) string
 }
 
 // SetBackend installs the process-global implementation of the span collector.
