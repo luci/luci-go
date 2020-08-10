@@ -22,6 +22,30 @@
       "revId": "f292c8b26bb0bcbcd122c67d9e24f91433a74599",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df9d05ce_ad11db92",
+        "filename": "server/tq/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-10T06:16:01Z",
+      "side": 1,
+      "message": "Oh yeah, agree.",
+      "parentUuid": "616771d3_b08538c4",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 52
+      },
+      "revId": "f292c8b26bb0bcbcd122c67d9e24f91433a74599",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
