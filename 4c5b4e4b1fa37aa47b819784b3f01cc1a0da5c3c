@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d193387d_804333f9",
+        "filename": "milo/api/service/v1/generate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59bc1b3e_51de9cc1",
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "19cba943_072a0ef0",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -30,6 +48,30 @@
       "writtenOn": "2020-08-07T04:18:39Z",
       "side": 1,
       "message": "what other RPCs do you have in mind for this service?\ni wonder if we should generalize this to something like \"Milo\", so that if we need to add another RPC *not about* builds, then we can put it into the same service.",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba017343_5b2c2fac",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Renamed to Milo.\n\nfor the build page, at the moment I can think of RPCs like QueryRelatedBuilds, maybe GetProjectConfig (for getting things like build bug template),\nIn the future, there probably will be RPCs to query consoles, builders, etc, when we implement replacement for other pages.",
+      "parentUuid": "19cba943_072a0ef0",
       "range": {
         "startLine": 25,
         "startChar": 8,
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "b5bce81c_df561326",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Flipped.",
+      "parentUuid": "e0083c22_e0680303",
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1810301_e9a9883d",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "fc6034d6_7b385d78",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1810301_e9a9883d",
+      "range": {
+        "startLine": 31,
+        "startChar": 58,
+        "endLine": 32,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de959042_54e941ac",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -93,6 +177,24 @@
       "writtenOn": "2020-08-07T04:25:21Z",
       "side": 1,
       "message": "Just wonder why do we need all those information? I am imagining we can just give the RPC a buildID (may be + builderID, and the pagination info), and it can give back the blamelist. Am I missing anything here?",
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a926da3d_bef69829",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Replaced host/project/start_commit_id with gitiles_commit.\nWe can take a buildID instead, but that would require another query on the server side.",
+      "parentUuid": "de959042_54e941ac",
       "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -122,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "be02730e_cb608077",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Replaced host/project/start_commit_id with gitiles_commit.",
+      "parentUuid": "1166efd4_462f7f4b",
+      "range": {
+        "startLine": 39,
+        "startChar": 9,
+        "endLine": 39,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "187d3ee5_31188e17",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -142,6 +268,30 @@
       "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad511e4_1f9e77ea",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Changed to the standard pagination pattern.",
+      "parentUuid": "187d3ee5_31188e17",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 56
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -168,6 +318,30 @@
     },
     {
       "key": {
+        "uuid": "11af4af5_dbfba991",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cea15a99_988a01fa",
+      "range": {
+        "startLine": 67,
+        "startChar": 8,
+        "endLine": 67,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "405ee039_0996be02",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
@@ -182,6 +356,24 @@
       "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "528c5139_d4a81d37",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-10T02:45:28Z",
+      "side": 1,
+      "message": "Changed to the standard pagination pattern.",
+      "parentUuid": "405ee039_0996be02",
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
