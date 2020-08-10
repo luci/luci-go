@@ -37,6 +37,15 @@ import (
 
 // TODO(vadimsh): Add metrics.
 
+// TxnPath indicates a code path a task can take.
+type TxnPath string
+
+const (
+	TxnPathNone  TxnPath = "none"  // not a transactional task
+	TxnPathHappy TxnPath = "happy" // the reminder was processed right after txn landed
+	TxnPathSweep TxnPath = "sweep" // the reminder was processed during a sweep
+)
+
 // Submitter is used by the dispatcher and the sweeper to submit Cloud Tasks.
 type Submitter interface {
 	// CreateTask creates a task, returning a gRPC status.
@@ -47,7 +56,7 @@ type Submitter interface {
 //
 // Recognizes AlreadyExists as success. Annotates retriable errors with
 // transient.Tag.
-func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) error {
+func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, extra *tqpb.Extra, t TxnPath) error {
 	// Each individual RPC should be pretty quick. Also Cloud Tasks client bugs
 	// out if the context has a large deadline.
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
@@ -71,7 +80,7 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ex
 // or a fatal error.
 //
 // If `req` and/or `extra` are nil, they will be deserialized from the reminder.
-func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) error {
+func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra, t TxnPath) error {
 	var err error
 	if req == nil {
 		req = &taskspb.CreateTaskRequest{}
@@ -83,7 +92,7 @@ func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.
 	}
 
 	if err == nil {
-		err = Submit(ctx, s, req, extra)
+		err = Submit(ctx, s, req, extra, t)
 	}
 
 	// Delete the reminder if the task was successfully enqueued or it is
@@ -130,7 +139,7 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 		for _, r := range payloaded {
 			r := r
 			work <- func() error {
-				err := SubmitFromReminder(ctx, sub, db, r, nil, nil)
+				err := SubmitFromReminder(ctx, sub, db, r, nil, nil, TxnPathSweep)
 				if err != nil {
 					logging.Errorf(ctx, "Failed to process reminder %q: %s", r.ID, err)
 				} else {

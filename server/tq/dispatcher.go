@@ -503,7 +503,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 			"cr.dev/title": task.Title,
 		})
 		defer func() { span.End(err) }()
-		return internal.Submit(ctx, d.Submitter, req, extra)
+		return internal.Submit(ctx, d.Submitter, req, extra, internal.TxnPathNone)
 	}
 
 	// Named transactional tasks are not supported.
@@ -543,18 +543,15 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		})
 		defer func() { span.End(err) }()
 
-		if clock.Now(ctx).After(r.FreshUntil) {
-			// Don't enqueue the task if we are too late and the sweeper has likely
-			// picked up the reminder already.
-			logging.Warningf(ctx, "Happy path DeferredEnqueue has no time to run")
-			err = errors.New("happy path DeferredEnqueue has no time to run")
-			// TODO: add metric for this
+		// If the reminder is fresh enough, it mean the sweeper hasn't picked it
+		// up yet and we can process it right now. This is the "happy" path. Note
+		// that SubmitFromReminder keeps the reminder if it couldn't submit the task
+		// due to a transient error. We'll let the sweeper try to submit the task
+		// later. It will be the "sweep" path.
+		if clock.Now(ctx).Before(r.FreshUntil) {
+			err = internal.SubmitFromReminder(ctx, d.Submitter, db, r, req, extra, internal.TxnPathHappy)
 		} else {
-			// Actually submit the task and delete the reminder if the task was
-			// successfully enqueued or it is a non-retriable failure. This keeps the
-			// reminder if the failure was transient, we'll let the sweeper try to
-			// submit the task later.
-			err = internal.SubmitFromReminder(ctx, d.Submitter, db, r, req, extra)
+			err = errors.New("too late") // this is for span.End only
 		}
 	})
 

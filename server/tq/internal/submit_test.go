@@ -52,7 +52,7 @@ func TestSubmit(t *testing.T) {
 		}
 
 		call := func(r *reminder.Reminder, req *taskspb.CreateTaskRequest) error {
-			return SubmitFromReminder(ctx, &sub, &db, r, req, nil)
+			return SubmitFromReminder(ctx, &sub, &db, r, req, nil, TxnPathHappy)
 		}
 
 		r := makeRem("rem")
