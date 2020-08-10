@@ -14,18 +14,16 @@
 
 import '@chopsui/chops-signin';
 import '@material/mwc-icon';
-import { css, customElement, html, LitElement, property, PropertyValues } from 'lit-element';
-
-import { consumeClientId } from '../context/config_provider';
+import CONFIGS from 'configs';
+import { css, customElement, html, LitElement, PropertyValues } from 'lit-element';
 
 /**
  * Renders page header, including a sign-in widget and a feedback button, at the
  * top of the child nodes.
  * Refreshes the page when a new clientId is provided.
  */
+@customElement('tr-page-layout')
 export class PageLayoutElement extends LitElement {
-  @property() clientId!: string;
-
   private rendered = false;
   protected firstUpdated() {
     this.rendered = true;
@@ -60,7 +58,7 @@ Please enter a description of the problem, with repro steps if applicable.
         >
           <mwc-icon>feedback</mwc-icon>
         </a>
-        <chops-signin id="signin" client-id=${this.clientId}></chops-signin>
+        <chops-signin id="signin" client-id=${CONFIGS.OAUTH2.CLIENT_ID}></chops-signin>
       </div>
       <slot></slot>
     `;
@@ -118,9 +116,3 @@ Please enter a description of the problem, with repro steps if applicable.
     }
   `;
 }
-
-customElement('tr-page-layout')(
-  consumeClientId(
-    PageLayoutElement,
-  ),
-);

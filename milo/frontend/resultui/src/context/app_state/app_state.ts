@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import CONFIGS from 'configs';
 import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../../libs/context';
@@ -23,15 +24,14 @@ import { ResultDb } from '../../services/resultdb';
  */
 export class AppState {
   @observable.ref accessToken = '';
-  @observable.ref resultDbHost = '';
   @observable.ref selectedTabId = '';
 
   @computed
   get resultDb(): ResultDb | null {
-    if (!this.accessToken || !this.resultDbHost) {
+    if (!this.accessToken) {
       return null;
     }
-    return new ResultDb(this.resultDbHost, this.accessToken);
+    return new ResultDb(CONFIGS.RESULT_DB.HOST, this.accessToken);
   }
 
   @computed
