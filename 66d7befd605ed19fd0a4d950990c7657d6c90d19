@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "888fd0c2_361738e8",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-11T19:22:48Z",
+      "side": 1,
+      "message": "cmd.Path is added to cmd.Args.\n: https://golang.org/src/os/exec/exec.go?s\u003d6356:6393#L160",
+      "parentUuid": "817fe92f_7e09ae92",
+      "range": {
+        "startLine": 215,
+        "startChar": 67,
+        "endLine": 215,
+        "endChar": 75
+      },
+      "revId": "66d7befd605ed19fd0a4d950990c7657d6c90d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5460212_a83b326a",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2020-08-11T05:27:30Z",
       "side": 1,
       "message": "note that there may be other log lines between \"Shutting down Sink\" and \"Shutdown completed\", so it might be difficult to tell whether \"Shutdown completed\" is about Sink or anything else. This is a general concern, it applies to L253 too. Ideally \"start\" and \"end\" log messages are very obviously related, e.g. \"Shutdown Sink: starting...\", \"Shutdown Sink: completed\"",
+      "range": {
+        "startLine": 302,
+        "startChar": 21,
+        "endLine": 302,
+        "endChar": 42
+      },
+      "revId": "66d7befd605ed19fd0a4d950990c7657d6c90d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5de200a_d4ac267c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-11T19:22:48Z",
+      "side": 1,
+      "message": "Thanks for bringing a good point. I reviewed the logs with actual run and reorganized logs to make it easier to follow the flow.\n\nHere are the actual logs of a sample run. PTAL.\n\n```\n$ ~/rdb stream -new -realm chromium:public ./keep_lucictx.sh \nrdb-stream: created invocation - https://ci.chromium.org/ui/inv/....\nSinkServer: starting HTTP server...\nrdb-stream: starting the test command with [\"./keep_lucictx.sh\"]\nrdb-stream: the test process terminated\nSinkServer: shutdown started\nSinkServer: HTTP server stopped with \"http: Server closed\"\nSinkServer: draining TestResult channel started\nSinkServer: draining TestResult channel ended\nSinkServer: draining Artifact channel started\nSinkServer: draining Artifact channel ended\nSinkServer: shutdown completed successfully\nrdb-stream: exiting with 0\n```",
+      "parentUuid": "f5460212_a83b326a",
       "range": {
         "startLine": 302,
         "startChar": 21,
