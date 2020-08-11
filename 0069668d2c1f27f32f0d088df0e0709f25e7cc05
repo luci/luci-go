@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c2d57faa_db0a4bd1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:24:18Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f01fd366_d212ff01",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:24:18Z",
+      "side": 1,
+      "message": "should we use Errorf or Warningf if err !\u003d nil",
+      "range": {
+        "startLine": 294,
+        "startChar": 10,
+        "endLine": 294,
+        "endChar": 15
+      },
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e802faa6_a2d0371c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:24:18Z",
+      "side": 1,
+      "message": "this change isn\u0027t required and it was simpler before. Even if we `return foo` here, the err variable will be assigned to what we return and the defer above will see it\n\nsame below",
+      "range": {
+        "startLine": 299,
+        "startChar": 2,
+        "endLine": 300,
+        "endChar": 8
+      },
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "589f3a3c_ede0e825",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:24:18Z",
+      "side": 1,
+      "message": "nit: blank line between the two to make it more readable",
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9652fd56_5777b0f9",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:24:18Z",
+      "side": 1,
+      "message": "applies to other places, but what\u0027s your rationale of using Infof here vs Debugf?\n\nif debug statements do not get printed, should we add -verbose that configures verbosity?",
+      "range": {
+        "startLine": 77,
+        "startChar": 9,
+        "endLine": 77,
+        "endChar": 14
+      },
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
