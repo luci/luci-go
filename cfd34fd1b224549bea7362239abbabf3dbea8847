@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59b6f6be_d13c9e57",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:07:21Z",
+      "side": 1,
+      "message": "can we add it closer to the time when we actually need it and ready to use it?",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 47
+      },
+      "revId": "cfd34fd1b224549bea7362239abbabf3dbea8847",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff334bb6_f49b7594",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:07:21Z",
+      "side": 1,
+      "message": "how will use_invocation_timestamp be used to NOT index when it is false?\n\ni expected a separated nullable column dedicated to this, which is NULL when use_invocation_timestamp is false.\nThen we\u0027d need to use NULL FILTERED index.",
+      "range": {
+        "startLine": 99,
+        "startChar": 25,
+        "endLine": 99,
+        "endChar": 35
+      },
+      "revId": "cfd34fd1b224549bea7362239abbabf3dbea8847",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "945029d4_dd3b8a83",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:07:21Z",
+      "side": 1,
+      "message": "must be NULL FILTERED, otherwise we\u0027d be indexing invocations unnecessarily",
+      "revId": "cfd34fd1b224549bea7362239abbabf3dbea8847",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0782215e_22e824d9",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:07:21Z",
+      "side": 1,
+      "message": "domain is missing",
+      "range": {
+        "startLine": 104,
+        "startChar": 24,
+        "endLine": 104,
+        "endChar": 25
+      },
+      "revId": "cfd34fd1b224549bea7362239abbabf3dbea8847",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
