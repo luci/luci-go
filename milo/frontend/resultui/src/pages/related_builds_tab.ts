@@ -20,6 +20,8 @@ import { BuildState, consumeBuildState } from '../context/build_state/build_stat
 import { repeat } from 'lit-html/directives/repeat';
 import { Build, Timestamp, BuildStatus } from '../services/buildbucket'
 import { router } from '../routes';
+import { sanitizeHTML } from '../../src/libs/sanitize_html'
+import MarkdownIt from 'markdown-it'
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -118,9 +120,12 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`${(endTime.seconds - beginTime.seconds) + " secs"}`;
   }
 
-  // TODO (crbug.com/1112224): Really display this as markdown
   private displayMarkdown(markdown: string|undefined) {
-    return markdown? html`${markdown}` : html``;
+    if (markdown == undefined) {
+      return html ``;
+    }
+    const md = new MarkdownIt();
+    return sanitizeHTML(md.render(markdown));
   }
 }
 
