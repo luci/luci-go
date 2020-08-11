@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"crypto"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,7 +28,9 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -43,6 +46,8 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
 			c.Init()
+			c.cachePolicies.AddFlags(&c.Flags)
+			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
 			return &c
@@ -54,6 +59,9 @@ type downloadRun struct {
 	commonFlags
 	digest string
 	dir    string
+
+	cacheDir      string
+	cachePolicies cache.Policies
 }
 
 func (r *downloadRun) parse(a subcommands.Application, args []string) error {
@@ -63,6 +71,11 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	if len(args) != 0 {
 		return errors.Reason("position arguments not expected").Err()
 	}
+
+	if r.cacheDir == "" && !r.cachePolicies.IsDefault() {
+		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
+	}
+
 	return nil
 }
 
@@ -103,6 +116,15 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 
 	to := make(map[digest.Digest]*tree.Output)
 
+	var diskcache cache.Cache
+	if r.cacheDir != "" {
+		diskcache, err = cache.NewDisk(r.cachePolicies, r.cacheDir, crypto.SHA256)
+		if err != nil {
+			return errors.Annotate(err, "failed to create initialize cache").Err()
+		}
+		defer diskcache.Close()
+	}
+
 	// Files have the same digest are downloaded only once, so we need to
 	// copy duplicates files later.
 	var dups []*tree.Output
@@ -126,6 +148,19 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			continue
 		}
 
+		if diskcache != nil {
+			mode := 0o600
+			if output.IsExecutable {
+				mode = 0o700
+			}
+
+			if err := diskcache.Hardlink(isolated.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err == nil {
+				continue
+			} else if !errors.Contains(err, os.ErrNotExist) {
+				return err
+			}
+		}
+
 		if _, ok := to[output.Digest]; ok {
 			dups = append(dups, output)
 		} else {
@@ -138,13 +173,31 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	}
 
 	// DownloadFiles does not set desired file permission.
-	for _, output := range to {
+	for d, output := range to {
 		mode := 0o600
 		if output.IsExecutable {
 			mode = 0o700
 		}
 		if err := os.Chmod(output.Path, os.FileMode(mode)); err != nil {
 			return errors.Annotate(err, "failed to change mode").Err()
+		}
+
+		if diskcache != nil {
+			if err := func() (err error) {
+				f, err := os.Open(output.Path)
+				if err != nil {
+					return errors.Annotate(err, "failed to open").Err()
+				}
+				defer func() {
+					if cerr := f.Close(); err == nil {
+						err = cerr
+					}
+				}()
+
+				return diskcache.Add(isolated.HexDigest(d.Hash), f)
+			}(); err != nil {
+				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, d).Err()
+			}
 		}
 	}
 
