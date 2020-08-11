@@ -33,6 +33,24 @@
       "revId": "cf39c560cc68ea52bba2ef5bd6637b95714a2502",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f3f45ed_f8e018f8",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-11T01:31:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46b6644c_7e9a02cd",
+      "revId": "cf39c560cc68ea52bba2ef5bd6637b95714a2502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
