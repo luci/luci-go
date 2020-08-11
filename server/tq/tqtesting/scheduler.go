@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 )
 
 // ClockTag tags the clock used in scheduler's sleep.
@@ -47,6 +48,15 @@ const ClockTag = "tq-scheduler-sleep"
 type Scheduler struct {
 	// Executor knows how to execute tasks when their ETA arrives.
 	Executor Executor
+
+	// Deserializer knows how to transform raw Cloud Tasks into proto messages
+	// with caller's payload.
+	//
+	// Messages produced by the deserializer will be put into Payload field in
+	// Task.
+	//
+	// Optional. If not set, all Payloads will be nil.
+	Deserializer Deserializer
 
 	// MaxAttempts is the maximum number of attempts for a task, including the
 	// first attempt.
@@ -94,6 +104,7 @@ type Scheduler struct {
 // Task represents an enqueued or executing task.
 type Task struct {
 	Task      *taskspb.Task // a clone of original Task proto as passed to CreateTask
+	Payload   proto.Message // deserialized payload, if available
 	Name      string        // full task name (perhaps generated)
 	ETA       time.Time     // when the task is due, always set at now or in future
 	Attempts  int           // 0 initially, incremented before each execution attempt
@@ -106,6 +117,73 @@ type Task struct {
 func (t *Task) Copy() *Task {
 	cpy := *t
 	return &cpy
+}
+
+// TaskList is a collection of tasks.
+type TaskList []*Task
+
+// Payloads returns a list with individual task payloads.
+func (tl TaskList) Payloads() []proto.Message {
+	p := make([]proto.Message, len(tl))
+	for i, t := range tl {
+		p[i] = t.Payload
+	}
+	return p
+}
+
+// Filter returns a new task list with tasks matching the filter.
+func (tl TaskList) Filter(cb func(*Task) bool) TaskList {
+	var out TaskList
+	for _, t := range tl {
+		if cb(t) {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// Executing returns a list of tasks executing right now.
+func (tl TaskList) Executing() TaskList {
+	return tl.Filter(func(t *Task) bool { return t.Executing })
+}
+
+// Pending returns a list of tasks waiting execution.
+func (tl TaskList) Pending() TaskList {
+	return tl.Filter(func(t *Task) bool { return !t.Executing })
+}
+
+// SortByETA sorts the list in-place by ETA.
+//
+// Returns it to allow chaining calls.
+func (tl TaskList) SortByETA() TaskList {
+	sort.Slice(tl, func(i, j int) bool {
+		switch l, r := tl[i], tl[j]; {
+		case l.Executing && !r.Executing:
+			return true
+		case !r.Executing && r.Executing:
+			return false
+		case l.ETA.Equal(r.ETA):
+			return l.Name < r.Name
+		default:
+			return l.ETA.Before(r.ETA)
+		}
+	})
+	return tl
+}
+
+// TasksCollector returns a callback that adds tasks to the given list.
+//
+// Can be passed as TaskSucceeded or TaskFailed callback to the Scheduler.
+//
+// Synchronizes access to the list internally, but the list should be read
+// from only when the Scheduler is paused.
+func TasksCollector(tl *TaskList) func(context.Context, *Task) {
+	var m sync.Mutex
+	return func(_ context.Context, t *Task) {
+		m.Lock()
+		*tl = append(*tl, t.Copy())
+		m.Unlock()
+	}
 }
 
 // Executor knows how to execute tasks when their ETA arrives.
@@ -124,6 +202,13 @@ type Executor interface {
 	Execute(ctx context.Context, t *Task, done func(retry bool))
 }
 
+// Deserializer knows how to transform raw Cloud Tasks into proto messages
+// with caller's payload.
+type Deserializer interface {
+	// DeserializePayload extracts a user payload from a raw Cloud Task body.
+	DeserializePayload(t *taskspb.Task) (proto.Message, error)
+}
+
 // CreateTask scheduler a task for later execution.
 func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
 	// Note: this validation is pretty sloppy. It validates only things Scheduler
@@ -139,9 +224,10 @@ func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskReque
 	}
 
 	task := &Task{
-		Task: proto.Clone(req.Task).(*taskspb.Task),
-		Name: req.Task.Name,
-		ETA:  req.Task.ScheduleTime.AsTime(),
+		Task:    proto.Clone(req.Task).(*taskspb.Task),
+		Payload: s.deserializePayload(ctx, req.Task),
+		Name:    req.Task.Name,
+		ETA:     req.Task.ScheduleTime.AsTime(),
 	}
 	if now := clock.Now(ctx); task.ETA.Before(now) {
 		task.ETA = now
@@ -176,11 +262,11 @@ func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskReque
 //
 // Tasks are ordered by ETA: currently executing tasks first, then scheduled
 // tasks.
-func (s *Scheduler) Tasks() []*Task {
+func (s *Scheduler) Tasks() TaskList {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	tasks := make([]*Task, 0, len(s.tasks)+len(s.executing))
+	tasks := make(TaskList, 0, len(s.tasks)+len(s.executing))
 	for _, t := range s.tasks {
 		tasks = append(tasks, t.Copy())
 	}
@@ -188,20 +274,7 @@ func (s *Scheduler) Tasks() []*Task {
 		tasks = append(tasks, t.Copy())
 	}
 
-	sort.Slice(tasks, func(i, j int) bool {
-		switch l, r := tasks[i], tasks[j]; {
-		case l.Executing && !r.Executing:
-			return true
-		case !r.Executing && r.Executing:
-			return false
-		case l.ETA.Equal(r.ETA):
-			return l.Name < r.Name
-		default:
-			return l.ETA.Before(r.ETA)
-		}
-	})
-
-	return tasks
+	return tasks.SortByETA()
 }
 
 // Run executes the scheduler's loop until the context is canceled or one of
@@ -381,6 +454,21 @@ func (s *Scheduler) checkClockLocked(ctx context.Context) {
 	} else if s.clock != clock {
 		panic("multiple clocks used with a single Scheduler, this is dangerous")
 	}
+}
+
+// deserializePayload attempts to deserialize task's payload.
+//
+// Returns nil if it is unrecognized or no deserializer is available.
+func (s *Scheduler) deserializePayload(ctx context.Context, t *taskspb.Task) proto.Message {
+	if s.Deserializer == nil {
+		return nil
+	}
+	msg, err := s.Deserializer.DeserializePayload(t)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to deserialize task's payload: %s", err)
+		return nil
+	}
+	return msg
 }
 
 ////////////////////////////////////////////////////////////////////////////////

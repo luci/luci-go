@@ -418,6 +418,9 @@ func TestTesting(t *testing.T) {
 		disp := Dispatcher{}
 		sched := disp.SchedulerForTest()
 
+		var success tqtesting.TaskList
+		sched.TaskSucceeded = tqtesting.TasksCollector(&success)
+
 		m := sync.Mutex{}
 		etas := []time.Duration{}
 
@@ -431,18 +434,28 @@ func TestTesting(t *testing.T) {
 				m.Unlock()
 				if clock.Now(ctx).Sub(epoch) < 3*time.Second {
 					disp.AddTask(ctx, &Task{
-						Payload: &durationpb.Duration{},
-						Delay:   time.Second,
+						Payload: &durationpb.Duration{
+							Seconds: msg.(*durationpb.Duration).Seconds + 1,
+						},
+						Delay: time.Second,
 					})
 				}
 				return nil
 			},
 		})
 
-		So(disp.AddTask(ctx, &Task{Payload: &durationpb.Duration{}}), ShouldBeNil)
+		So(disp.AddTask(ctx, &Task{Payload: &durationpb.Duration{Seconds: 1}}), ShouldBeNil)
 		sched.Run(ctx, tqtesting.StopWhenDrained())
 		So(etas, ShouldResemble, []time.Duration{
 			0, 1 * time.Second, 2 * time.Second, 3 * time.Second,
+		})
+
+		So(success, ShouldHaveLength, 4)
+		So(success.Payloads(), ShouldResembleProto, []*durationpb.Duration{
+			{Seconds: 1},
+			{Seconds: 2},
+			{Seconds: 3},
+			{Seconds: 4},
 		})
 	})
 }
