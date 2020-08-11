@@ -64,19 +64,13 @@ type ExampleEntity struct {
 	LastUpdate time.Time `gae:",noindex"`
 }
 
-// CountDownChain wraps the raw TQ API into more type-friendly form.
-type CountDownChain struct {
-	dispatcher *tq.Dispatcher
-}
-
-// Register register the task handler in the dispatcher.
-func (c *CountDownChain) Register(disp *tq.Dispatcher) {
-	// Using non-default dispatcher is handy for tests, see main_test.go.
-	c.dispatcher = disp
-
-	// RegisterTaskClass can be called any time before the serving loop (e.g. in
-	// an init, in main, in server.Main callback, etc).
-	c.dispatcher.RegisterTaskClass(tq.TaskClass{
+func init() {
+	// RegisterTaskClass tells the TQ module how to serialize, route and execute
+	// a task of a particular proto type (*taskspb.CountDownTask in this case).
+	//
+	// It can be called any time before the serving loop (e.g. in an init,
+	// in main, in server.Main callback, etc). init() is the preferred place.
+	tq.RegisterTaskClass(tq.TaskClass{
 		// This is a stable ID that identifies this particular kind of tasks.
 		// Changing it will essentially "break" all inflight tasks.
 		ID: "count-down-task",
@@ -99,13 +93,35 @@ func (c *CountDownChain) Register(disp *tq.Dispatcher) {
 		// Handler will be called to handle a previously submitted task. It can also
 		// be attached later (perhaps even in from a different package) via
 		// AttachHandler.
-		Handler: c.taskHandler,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*taskspb.CountDownTask)
+
+			logging.Infof(ctx, "Got %d", task.Number)
+			if task.Number <= 0 {
+				return nil // stop counting
+			}
+
+			return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				// Update some entity.
+				err := datastore.Put(ctx, &ExampleEntity{
+					ID:         task.Number,
+					LastUpdate: clock.Now(ctx).UTC(),
+				})
+				if err != nil {
+					return err
+				}
+				// And transactionally enqueue the next task. Note if you need to submit
+				// more tasks, it is fine to call multiple Enqueue (or AddTask) in
+				// parallel.
+				return EnqueueCountDown(ctx, task.Number-1)
+			}, nil)
+		},
 	})
 }
 
-// Enqueue enqueues a count down task.
-func (c *CountDownChain) Enqueue(ctx context.Context, num int64) error {
-	return c.dispatcher.AddTask(ctx, &tq.Task{
+// EnqueueCountDown enqueues a count down task.
+func EnqueueCountDown(ctx context.Context, num int64) error {
+	return tq.AddTask(ctx, &tq.Task{
 		// The body of the task. Also identifies what TaskClass to use.
 		Payload: &taskspb.CountDownTask{Number: num},
 		// Title appears in logs and URLs, useful for debugging.
@@ -115,43 +131,11 @@ func (c *CountDownChain) Enqueue(ctx context.Context, num int64) error {
 	})
 }
 
-// taskHandler is called to execute a task submitted by Enqueue.
-func (c *CountDownChain) taskHandler(ctx context.Context, payload proto.Message) error {
-	task := payload.(*taskspb.CountDownTask)
-
-	logging.Infof(ctx, "Got %d", task.Number)
-	if task.Number <= 0 {
-		return nil // stop counting
-	}
-
-	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		// Update some entity.
-		err := datastore.Put(ctx, &ExampleEntity{
-			ID:         task.Number,
-			LastUpdate: clock.Now(ctx).UTC(),
-		})
-		if err != nil {
-			return err
-		}
-		// And transactionally enqueue the next task. Note if you need to submit
-		// more tasks, it is fine to call multiple Enqueue (or AddTask) in parallel.
-		return c.Enqueue(ctx, task.Number-1)
-	}, nil)
-}
-
 func main() {
 	modules := []module.Module{
 		gaeemulation.NewModuleFromFlags(), // to use Cloud Datastore
 		tq.NewModuleFromFlags(),           // to transactionally submit Cloud Tasks
 	}
-
-	// Register the task and the handler in the default dispatcher. This
-	// dispatcher is configured by tq.NewModuleFromFlags() and used for real
-	// tasks. Tests that want to emulate Cloud Tasks run loop usually create their
-	// own separate dispatcher, since using the global one makes tests collide
-	// with one another. See main_test.go.
-	chain := CountDownChain{}
-	chain.Register(&tq.Default)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		srv.Routes.GET("/count-down/:From", router.MiddlewareChain{}, func(c *router.Context) {
@@ -161,7 +145,7 @@ func main() {
 				return
 			}
 			// Kick off the chain by enqueuing the starting task.
-			if err = chain.Enqueue(c.Context, num); err != nil {
+			if err = EnqueueCountDown(c.Context, num); err != nil {
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			} else {
 				c.Writer.Write([]byte("OK\n"))

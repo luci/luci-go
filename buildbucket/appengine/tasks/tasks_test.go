@@ -23,9 +23,6 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
-	// Enable datastore transactional tasks support.
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
-
 	taskdef "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -36,22 +33,21 @@ func TestTasks(t *testing.T) {
 	t.Parallel()
 
 	Convey("CancelSwarmingTask", t, func() {
-		base := &tq.Dispatcher{}
-		sch := base.SchedulerForTest()
-		d := NewDispatcher(base)
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
+		ctx, sch := tq.TestingContext(ctx, nil)
+
 		Convey("invalid", func() {
 			Convey("nil", func() {
-				So(d.CancelSwarmingTask(ctx, nil), ShouldErrLike, "hostname is required")
+				So(CancelSwarmingTask(ctx, nil), ShouldErrLike, "hostname is required")
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("empty", func() {
 				task := &taskdef.CancelSwarmingTask{}
-				So(d.CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
+				So(CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
@@ -59,7 +55,7 @@ func TestTasks(t *testing.T) {
 				task := &taskdef.CancelSwarmingTask{
 					TaskId: "id",
 				}
-				So(d.CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
+				So(CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
@@ -67,7 +63,7 @@ func TestTasks(t *testing.T) {
 				task := &taskdef.CancelSwarmingTask{
 					Hostname: "example.com",
 				}
-				So(d.CancelSwarmingTask(ctx, task), ShouldErrLike, "task_id is required")
+				So(CancelSwarmingTask(ctx, task), ShouldErrLike, "task_id is required")
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 		})
@@ -79,7 +75,7 @@ func TestTasks(t *testing.T) {
 					TaskId:   "id",
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return d.CancelSwarmingTask(ctx, task)
+					return CancelSwarmingTask(ctx, task)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
@@ -91,7 +87,7 @@ func TestTasks(t *testing.T) {
 					Realm:    "realm",
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return d.CancelSwarmingTask(ctx, task)
+					return CancelSwarmingTask(ctx, task)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
