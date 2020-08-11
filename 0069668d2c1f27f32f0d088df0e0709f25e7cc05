@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "79c5f1c4_5c058e23",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-11T21:23:01Z",
+      "side": 1,
+      "message": "Used Errorf().",
+      "parentUuid": "f01fd366_d212ff01",
+      "range": {
+        "startLine": 294,
+        "startChar": 10,
+        "endLine": 294,
+        "endChar": 15
+      },
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e802faa6_a2d0371c",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 7
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "39cda2ac_77f11083",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-11T21:23:01Z",
+      "side": 1,
+      "message": "Ah it makes sense. done",
+      "parentUuid": "e802faa6_a2d0371c",
+      "range": {
+        "startLine": 299,
+        "startChar": 2,
+        "endLine": 300,
+        "endChar": 8
+      },
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "589f3a3c_ede0e825",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 7
@@ -79,6 +127,24 @@
       "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1f98b9c_f222b48c",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-11T21:23:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "589f3a3c_ede0e825",
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -102,6 +168,30 @@
       "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb2e9d64_5a413bdd",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-11T21:23:01Z",
+      "side": 1,
+      "message": "filed crbug.com/1115248. I will send a separate CL, as the flag should be available for all rdb subcommands.\n\n----------------------------------------\nfrom http://go/logging#severity,\n\"[Info logs] describes expected events that are important for understanding the state of the binary but which are not indicative of a problem\"\n\nIn this CL, I added Infof() for the important events that are helpful to understand the state of rdb-stream.\nAs for Debugf(), I\u0027d use it to print such logs that are helpful for micro-level debugging.",
+      "parentUuid": "9652fd56_5777b0f9",
+      "range": {
+        "startLine": 77,
+        "startChar": 9,
+        "endLine": 77,
+        "endChar": 14
+      },
+      "revId": "0069668d2c1f27f32f0d088df0e0709f25e7cc05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
