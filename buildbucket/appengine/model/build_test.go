@@ -51,12 +51,9 @@ func TestBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Status: pb.Status_SUCCESS,
 				},
-				Project:    "project",
-				BucketID:   "project/bucket",
-				BuilderID:  "project/bucket/builder",
 				CreateTime: testclock.TestRecentTimeUTC,
-				Status:     pb.Status_SUCCESS,
 			}), ShouldBeNil)
 
 			b := &Build{
@@ -64,13 +61,16 @@ func TestBuild(t *testing.T) {
 			}
 			So(datastore.Get(ctx, b), ShouldBeNil)
 			So(b, ShouldResemble, &Build{
-				ID:         1,
-				Proto:      b.Proto, // assert protobufs separately
-				Project:    "project",
-				BucketID:   "project/bucket",
-				BuilderID:  "project/bucket/builder",
-				CreateTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
-				Status:     pb.Status_SUCCESS,
+				ID:           1,
+				Proto:        b.Proto, // assert protobufs separately
+				BucketID:     "project/bucket",
+				BuilderID:    "project/bucket/builder",
+				Canary:       false,
+				CreateTime:   datastore.RoundTime(testclock.TestRecentTimeUTC),
+				Experimental: false,
+				Incomplete:   false,
+				Status:       pb.Status_SUCCESS,
+				Project:      "project",
 			})
 			So(&b.Proto, ShouldResembleProto, &pb.Build{
 				Id: 1,
@@ -79,6 +79,7 @@ func TestBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
+				Status: pb.Status_SUCCESS,
 			})
 		})
 
