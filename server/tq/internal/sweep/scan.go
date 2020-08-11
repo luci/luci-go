@@ -16,52 +16,14 @@ package sweep
 
 import (
 	"context"
-	"math"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/common/tsmon/distribution"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/common/tsmon/types"
-
 	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/reminder"
-)
-
-var (
-	// bucketer1msTo5min covers range of 1..300k.
-	bucketer1msTo5min = distribution.GeometricBucketer(math.Pow(10, 0.055), 100)
-
-	metricSweepFetchMetaDurationsMS = metric.NewCumulativeDistribution(
-		"tq/sweep/fetch/meta/durations",
-		"Duration of FetchRemindersMeta operation (ms)",
-		&types.MetricMetadata{Units: types.Milliseconds},
-		bucketer1msTo5min,
-		field.String("status"), // OK | limit | timeout | failures
-		field.Int("level"),     // 0 means the primary shard task, 1+ are its children
-		field.String("db"),
-	)
-	metricSweepFetchMetaReminders = metric.NewCounter(
-		"tq/sweep/fetch/meta/reminders",
-		"Count of Reminders fetched by FetchRemindersMeta",
-		nil,
-		field.String("status"), // OK | limit | timeout | failures
-		field.Int("level"),     // 0 means the primary shard task, 1+ are its children
-		field.String("db"),
-	)
-
-	metricReminderStalenessMS = metric.NewCumulativeDistribution(
-		"tq/reminders/staleness",
-		("Distribution of staleness of scanned Reminders during the sweep. " +
-			"May be incomplete if keyspace wasn't scanned completely"),
-		&types.MetricMetadata{Units: types.Milliseconds},
-		distribution.DefaultBucketer,
-		field.Int("level"),
-		field.String("db"),
-	)
 )
 
 // ScanParams contains parameters for the Scan call.
@@ -119,8 +81,8 @@ func Scan(ctx context.Context, p *ScanParams) ([]*reminder.Reminder, partition.S
 		status = "fail"
 	}
 
-	metricSweepFetchMetaDurationsMS.Add(ctx, durMS, status, p.Level, p.DB.Kind())
-	metricSweepFetchMetaReminders.Add(ctx, int64(len(rs)), status, p.Level, p.DB.Kind())
+	metrics.SweepFetchMetaDurationsMS.Add(ctx, durMS, status, p.Level, p.DB.Kind())
+	metrics.SweepFetchMetaReminders.Add(ctx, int64(len(rs)), status, p.Level, p.DB.Kind())
 
 	var scanParts partition.SortedPartitions
 
@@ -179,7 +141,7 @@ func filterOutTooFresh(ctx context.Context, reminders []*reminder.Reminder, lvl 
 	filtered := reminders[:0]
 	for _, r := range reminders {
 		staleness := now.Sub(r.FreshUntil)
-		metricReminderStalenessMS.Add(ctx, float64(staleness.Milliseconds()), lvl, db)
+		metrics.ReminderStalenessMS.Add(ctx, float64(staleness.Milliseconds()), lvl, db)
 		if staleness >= 0 {
 			filtered = append(filtered, r)
 		}

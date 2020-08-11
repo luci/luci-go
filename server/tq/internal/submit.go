@@ -25,17 +25,20 @@ import (
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
 
-// TODO(vadimsh): Add metrics.
+// ErrStaleReminder is returned by ProcessReminderPostTxn.
+var ErrStaleReminder = errors.New("the reminder is stale already")
 
 // TxnPath indicates a code path a task can take.
 type TxnPath string
@@ -62,7 +65,15 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ex
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
 	defer cancel()
 
-	switch err := s.CreateTask(ctx, req); status.Code(err) {
+	start := clock.Now(ctx)
+	err := s.CreateTask(ctx, req)
+	code := status.Code(err)
+	dur := clock.Now(ctx).Sub(start)
+
+	metrics.SubmitCount.Add(ctx, 1, extra.TaskClass, string(t), code.String())
+	metrics.SubmitDurationMS.Add(ctx, float64(dur.Milliseconds()), extra.TaskClass, string(t), code.String())
+
+	switch code {
 	case codes.OK, codes.AlreadyExists:
 		return nil
 	case codes.Internal,
@@ -90,6 +101,9 @@ func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.
 		extra = &tqpb.Extra{}
 		err = proto.Unmarshal(r.Extra, extra)
 	}
+	if extra == nil {
+		extra = &tqpb.Extra{}
+	}
 
 	if err == nil {
 		err = Submit(ctx, s, req, extra, t)
@@ -101,6 +115,12 @@ func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.
 		if rerr := db.DeleteReminder(ctx, r); rerr != nil {
 			if err == nil {
 				err = rerr
+			}
+		} else {
+			metrics.RemindersDeleted.Add(ctx, 1, extra.TaskClass, string(t), db.Kind())
+			if extra.Created.IsValid() {
+				lat := clock.Now(ctx).Sub(extra.Created.AsTime())
+				metrics.RemindersLatencyMS.Add(ctx, float64(lat.Milliseconds()), extra.TaskClass, string(t), db.Kind())
 			}
 		}
 	}
@@ -161,4 +181,23 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 		e := merr.(errors.MultiError)
 		return count, append(e, err)
 	}
+}
+
+// ProcessReminderPostTxn is called right after the transaction that saves the
+// reminder.
+//
+// If the reminder is fresh enough, it means the sweeper hasn't picked it
+// up yet and we can submit the task right now. This is the "happy" path. If
+// the reminder is sufficiently old, or if SubmitFromReminder fails, we'll let
+// the sweeper try to submit the task. It is the "sweep" path.
+//
+// Returns ErrStaleReminder if the reminder is stale and should be handled by
+// the sweeper.
+func ProcessReminderPostTxn(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) error {
+	if clock.Now(ctx).After(r.FreshUntil) {
+		metrics.RemindersCreated.Add(ctx, 1, extra.TaskClass, "stale", db.Kind())
+		return ErrStaleReminder
+	}
+	metrics.RemindersCreated.Add(ctx, 1, extra.TaskClass, "fresh", db.Kind())
+	return SubmitFromReminder(ctx, s, db, r, req, extra, TxnPathHappy)
 }
