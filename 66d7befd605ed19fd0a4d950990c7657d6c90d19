@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "817fe92f_7e09ae92",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T05:27:30Z",
+      "side": 1,
+      "message": "note that this does not include cmd.Path. Did you intend to include it?",
+      "range": {
+        "startLine": 215,
+        "startChar": 67,
+        "endLine": 215,
+        "endChar": 75
+      },
+      "revId": "66d7befd605ed19fd0a4d950990c7657d6c90d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5460212_a83b326a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T05:27:30Z",
+      "side": 1,
+      "message": "note that there may be other log lines between \"Shutting down Sink\" and \"Shutdown completed\", so it might be difficult to tell whether \"Shutdown completed\" is about Sink or anything else. This is a general concern, it applies to L253 too. Ideally \"start\" and \"end\" log messages are very obviously related, e.g. \"Shutdown Sink: starting...\", \"Shutdown Sink: completed\"",
+      "range": {
+        "startLine": 302,
+        "startChar": 21,
+        "endLine": 302,
+        "endChar": 42
+      },
+      "revId": "66d7befd605ed19fd0a4d950990c7657d6c90d19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
