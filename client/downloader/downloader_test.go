@@ -272,7 +272,7 @@ func TestDownloaderWithCache(t *testing.T) {
 			cacheDir := filepath.Join(tmpDir, "cache")
 			So(os.MkdirAll(cacheDir, os.ModePerm), ShouldBeNil)
 			var err error
-			cacheObj, err = cache.NewDisk(policy, cacheDir, namespace)
+			cacheObj, err = cache.NewDisk(policy, cacheDir, h)
 			So(err, ShouldBeNil)
 		})
 
@@ -330,7 +330,7 @@ func TestFetchAndMap(t *testing.T) {
 			MaxSize:  1024 * 1024,
 			MaxItems: 1024,
 		}
-		diskcache, err := cache.NewDisk(policy, filepath.Join(tmpdir, "cache"), namespace)
+		diskcache, err := cache.NewDisk(policy, filepath.Join(tmpdir, "cache"), h)
 		So(err, ShouldBeNil)
 		defer func() {
 			So(diskcache.Close(), ShouldBeNil)

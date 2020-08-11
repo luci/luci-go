@@ -139,11 +139,12 @@ func TestNewDisk(t *testing.T) {
 		}()
 		pol := Policies{MaxSize: 1024, MaxItems: 2}
 		namespace := isolatedclient.DefaultNamespace
-		c, err := NewDisk(pol, td, namespace)
+		h := isolated.GetHash(namespace)
+		c, err := NewDisk(pol, td, h)
 		So(err, ShouldBeNil)
 		expected := testCache(t, c)
 
-		c, err = NewDisk(pol, td, namespace)
+		c, err = NewDisk(pol, td, h)
 		So(err, ShouldBeNil)
 		So(c.Keys(), ShouldResemble, expected)
 		So(c.Close(), ShouldBeNil)
@@ -152,7 +153,7 @@ func TestNewDisk(t *testing.T) {
 		So(err, ShouldBeNil)
 		rel, err := filepath.Rel(td, cwd)
 		So(err, ShouldBeNil)
-		_, err = NewDisk(pol, rel, namespace)
+		_, err = NewDisk(pol, rel, h)
 		So(err, ShouldBeNil)
 	})
 
@@ -162,7 +163,7 @@ func TestNewDisk(t *testing.T) {
 		So(ioutil.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
 		So(ioutil.WriteFile(invalid, []byte("invalid"), os.ModePerm), ShouldBeNil)
 
-		c, err := NewDisk(Policies{}, dir, isolatedclient.DefaultNamespace)
+		c, err := NewDisk(Policies{}, dir, isolated.GetHash(isolatedclient.DefaultNamespace))
 		So(err, ShouldNotBeNil)
 		if c == nil {
 			t.Errorf("c should not be nil: %v", err)
@@ -182,10 +183,10 @@ func TestNewDisk(t *testing.T) {
 
 	Convey(`MinFreeSpace too big`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
 		namespace := isolatedclient.DefaultNamespace
-		c, err := NewDisk(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, namespace)
+		h := isolated.GetHash(namespace)
+		c, err := NewDisk(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, h)
 		So(err, ShouldBeNil)
 
-		h := isolated.GetHash(namespace)
 		file1Content := []byte("foo")
 		file1Digest := isolated.HashBytes(h, file1Content)
 		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
@@ -201,7 +202,7 @@ func TestNewDisk(t *testing.T) {
 		notOnDiskContent := []byte("not on disk")
 		notOnDiskDigest := isolated.HashBytes(h, notOnDiskContent)
 
-		c, err := NewDisk(Policies{}, dir, namespace)
+		c, err := NewDisk(Policies{}, dir, h)
 		defer func() { So(c.Close(), ShouldBeNil) }()
 
 		So(err, ShouldBeNil)

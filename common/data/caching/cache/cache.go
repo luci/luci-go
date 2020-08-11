@@ -96,7 +96,7 @@ var ErrInvalidHash = errors.New("invalid hash")
 // It may return both a valid Cache and an error if it failed to load the
 // previous cache metadata. It is safe to ignore this error. This creates
 // cache directory if it doesn't exist.
-func NewDisk(policies Policies, path, namespace string) (Cache, error) {
+func NewDisk(policies Policies, path string, h crypto.Hash) (Cache, error) {
 	var err error
 	path, err = filepath.Abs(path)
 	if err != nil {
@@ -106,11 +106,12 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to call MkdirAll(%s)", path).Err()
 	}
+
 	d := &disk{
 		policies: policies,
 		path:     path,
-		h:        isolated.GetHash(namespace),
-		lru:      makeLRUDict(namespace),
+		h:        h,
+		lru:      makeLRUDict(h),
 	}
 	p := d.statePath()
 
@@ -143,7 +144,7 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 			}
 		}
 
-		d.lru = makeLRUDict(namespace)
+		d.lru = makeLRUDict(h)
 	}
 	return d, err
 }

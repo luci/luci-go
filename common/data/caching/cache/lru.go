@@ -162,9 +162,9 @@ type lruDict struct {
 	sum   units.Size  // sum of all the values.
 }
 
-func makeLRUDict(namespace string) lruDict {
+func makeLRUDict(h crypto.Hash) lruDict {
 	return lruDict{
-		h:     isolated.GetHash(namespace),
+		h:     h,
 		items: makeOrderedDict(),
 	}
 }
