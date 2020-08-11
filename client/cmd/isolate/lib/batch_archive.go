@@ -311,12 +311,6 @@ func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcom
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	cl, err := c.defaultFlags.StartTracing()
-	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	defer cl.Close()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
