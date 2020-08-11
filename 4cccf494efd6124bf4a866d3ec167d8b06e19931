@@ -22,6 +22,30 @@
       "revId": "4cccf494efd6124bf4a866d3ec167d8b06e19931",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7daf353_eb709301",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-11T05:31:22Z",
+      "side": 1,
+      "message": "Correct. But I figured it is conceivable to have Cloud Tasks to be in completely separate Cloud Project (e.g. if we decide round trip between us-central1 and us-west2 in ResultDB is too large, we may create a separate Cloud Project just for queues in us-central1).",
+      "parentUuid": "255c0de1_d762992e",
+      "range": {
+        "startLine": 7,
+        "startChar": 12,
+        "endLine": 7,
+        "endChar": 33
+      },
+      "revId": "4cccf494efd6124bf4a866d3ec167d8b06e19931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
