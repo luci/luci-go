@@ -283,7 +283,7 @@ func TestPushHandler(t *testing.T) {
 
 		Convey("Handler asks for retry", func() {
 			handlerErr = errors.New("boo", Retry)
-			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 409)
+			So(call(`{"class": "test-1", "body": {}}`), ShouldEqual, 429)
 		})
 
 		Convey("Handler transient error", func() {

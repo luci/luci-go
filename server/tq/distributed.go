@@ -189,6 +189,7 @@ func sweepTaskRouting(disp *Dispatcher, opts DistributedSweeperOptions, exec swe
 		ID:            "tq-sweep",
 		Prototype:     (*tqpb.SweepTask)(nil),
 		Kind:          NonTransactional,
+		Quiet:         true,
 		Queue:         opts.TaskQueue,
 		RoutingPrefix: opts.TaskPrefix,
 		TargetHost:    opts.TaskHost,

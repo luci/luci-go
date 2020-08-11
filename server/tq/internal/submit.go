@@ -40,6 +40,13 @@ import (
 // ErrStaleReminder is returned by ProcessReminderPostTxn.
 var ErrStaleReminder = errors.New("the reminder is stale already")
 
+// TraceContextHeader is name of a header that contains the trace context of
+// a span that produced the task.
+//
+// It is always set regardless of InheritTraceContext setting. This header
+// is read only by tq.Dispatcher itself and exists mostly for FYI purposes.
+const TraceContextHeader = "X-Luci-Tq-Trace-Context"
+
 // TxnPath indicates a code path a task can take.
 type TxnPath string
 
@@ -57,6 +64,8 @@ type Submitter interface {
 
 // Submit submits the prepared request through the given submitter.
 //
+// Mutates `req` by adding tracing headers to it.
+//
 // Recognizes AlreadyExists as success. Annotates retriable errors with
 // transient.Tag.
 func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, extra *tqpb.Extra, t TxnPath) error {
@@ -64,6 +73,25 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ex
 	// out if the context has a large deadline.
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
 	defer cancel()
+
+	// Add a reference to the original trace context so that the trace of the
+	// task handler can be matched to the span where AddTask was called.
+	if extra.SpanContext != "" {
+		var headers *map[string]string
+		switch r := req.Task.MessageType.(type) {
+		case *taskspb.Task_HttpRequest:
+			headers = &r.HttpRequest.Headers
+		case *taskspb.Task_AppEngineHttpRequest:
+			headers = &r.AppEngineHttpRequest.Headers
+		}
+		if *headers == nil {
+			*headers = make(map[string]string)
+		}
+		(*headers)[TraceContextHeader] = extra.SpanContext
+		if extra.InheritTraceContext {
+			(*headers)["X-Cloud-Trace-Context"] = extra.SpanContext
+		}
+	}
 
 	start := clock.Now(ctx)
 	err := s.CreateTask(ctx, req)
@@ -91,6 +119,8 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ex
 // or a fatal error.
 //
 // If `req` and/or `extra` are nil, they will be deserialized from the reminder.
+//
+// Mutates `req` by adding tracing headers to it.
 func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra, t TxnPath) error {
 	var err error
 	if req == nil {

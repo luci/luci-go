@@ -28,4 +28,5 @@ message Extra {
   string task_class = 1;                 // corresponding TaskClass.ID
   google.protobuf.Timestamp created = 2; // when AddTask was called
   string span_context = 3;               // where AddTask was called
+  bool inherit_trace_context = 4;        // see TaskClass.InheritTraceContext
 }

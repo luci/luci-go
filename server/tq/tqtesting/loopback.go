@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
@@ -79,7 +80,14 @@ func (e *LoopbackHTTPExecutor) Execute(ctx context.Context, t *Task, done func(r
 		req := httptest.NewRequest(method.String(), requestURL, bytes.NewReader(body))
 		req.Host = host
 		for k, v := range headers {
-			req.Header.Add(k, v)
+			req.Header.Set(k, v)
+		}
+
+		// See https://cloud.google.com/tasks/docs/creating-http-target-tasks#handler
+		// We emulate only headers we actually use.
+		req.Header.Set("X-CloudTasks-TaskExecutionCount", strconv.Itoa(t.Attempts-1))
+		if t.Attempts > 1 {
+			req.Header.Set("X-CloudTasks-TaskRetryReason", "task handler failed")
 		}
 
 		rr := httptest.NewRecorder()

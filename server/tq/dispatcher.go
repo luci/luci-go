@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -257,6 +258,16 @@ type TaskClass struct {
 	// If unset, will use dispatcher's DefaultTargetHost.
 	TargetHost string
 
+	// Quiet, if set, instructs the dispatcher not to log bodies of tasks.
+	Quiet bool
+
+	// InheritTraceContext, if set, makes the task handler trace span be a child
+	// of the span that called AddTask.
+	//
+	// Use it only for "one-off" tasks. Using it for deep chains of tasks usually
+	// leads to messy complicated traces.
+	InheritTraceContext bool
+
 	// Custom, if given, will be called to generate a custom Cloud Tasks payload
 	// (i.e. a to-be-sent HTTP request) from the task's proto payload.
 	//
@@ -359,7 +370,7 @@ var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
 // Handler is called to handle one enqueued task.
 //
 // If the returned error is tagged with Retry tag, the request finishes with
-// HTTP status 409, indicating to the Cloud Tasks that it should attempt to
+// HTTP status 429, indicating to the Cloud Tasks that it should attempt to
 // execute the task later (which it may or may not do, depending on queue's
 // retry config). Same happens if the error is transient (i.e. tagged with
 // the transient.Tag), except the request finishes with HTTP status 500. This
@@ -381,6 +392,33 @@ var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
 //
 // An untagged error (or success) marks the task as "done", it won't be retried.
 type Handler func(ctx context.Context, payload proto.Message) error
+
+// ExecutionInfo is parsed from Cloud Tasks headers.
+//
+// It is accessible from within task handlers via TaskExecutionInfo(ctx).
+type ExecutionInfo struct {
+	// ExecutionCount is the total number of times that the task has received
+	// a response from the handler.
+	//
+	// Since Cloud Tasks deletes the task once a successful response has been
+	// received, all previous handler responses were failures. This number does
+	// not include failures due to a lack of available instances.
+	ExecutionCount int
+
+	taskRetryReason       string // X-CloudTasks-TaskRetryReason
+	taskPreviousResponse  string // X-CloudTasks-TaskPreviousResponse
+	submitterTraceContext string // see internal.TraceContextHeader
+}
+
+var executionInfoKey = "go.chromium.org/luci/server/tq.ExecutionInfo"
+
+// TaskExecutionInfo returns information about the currently executing task.
+//
+// Returns nil if called not from a task handler.
+func TaskExecutionInfo(ctx context.Context) *ExecutionInfo {
+	info, _ := ctx.Value(&executionInfoKey).(*ExecutionInfo)
+	return info
+}
 
 // ValidateNamespace returns an error if `n` is not a valid namespace name.
 //
@@ -472,11 +510,18 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		return err
 	}
 
+	ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.AddTask", logging.Fields{
+		"cr.dev/class": cls.ID,
+		"cr.dev/title": task.Title,
+	})
+	defer func() { span.End(err) }()
+
 	// Extra information about the task for monitoring/tracing.
 	extra := &tqpb.Extra{
-		TaskClass:   cls.ID,
-		Created:     timestamppb.New(clock.Now(ctx)),
-		SpanContext: trace.SpanContext(ctx),
+		TaskClass:           cls.ID,
+		Created:             timestamppb.New(clock.Now(ctx)),
+		SpanContext:         trace.SpanContext(ctx),
+		InheritTraceContext: cls.InheritTraceContext,
 	}
 
 	// Examine the context to see if we are inside a transaction.
@@ -498,11 +543,6 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 	// If not inside a transaction, submit the task right away.
 	if db == nil {
-		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.Submit", logging.Fields{
-			"cr.dev/class": cls.ID,
-			"cr.dev/title": task.Title,
-		})
-		defer func() { span.End(err) }()
 		return internal.Submit(ctx, d.Submitter, req, extra, internal.TxnPathNone)
 	}
 
@@ -514,11 +554,6 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	// Otherwise transactionally commit a reminder and schedule a best-effort
 	// post-transaction enqueuing of the actual task. If it fails, the sweeper
 	// will eventually discover the reminder and enqueue the task.
-	ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.Reminder", logging.Fields{
-		"cr.dev/class": cls.ID,
-		"cr.dev/title": task.Title,
-	})
-	defer func() { span.End(err) }()
 	r, err := d.makeReminder(ctx, req, extra)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare a reminder").Err()
@@ -601,15 +636,28 @@ type directExecutor struct {
 func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
 	go func() {
 		var body []byte
+		var headers map[string]string
 		switch mt := t.Task.MessageType.(type) {
 		case *taskspb.Task_HttpRequest:
 			body = mt.HttpRequest.Body
+			headers = mt.HttpRequest.Headers
 		case *taskspb.Task_AppEngineHttpRequest:
 			body = mt.AppEngineHttpRequest.Body
+			headers = mt.AppEngineHttpRequest.Headers
 		default:
 			panic(fmt.Sprintf("Bad task, no payload: %q", t.Task))
 		}
-		err := e.d.handlePush(ctx, body)
+
+		hdr := make(http.Header, len(headers))
+		for k, v := range headers {
+			hdr.Set(k, v)
+		}
+		info := parseHeaders(hdr)
+
+		// The direct executor doesn't emulate X-CloudTasks-* headers.
+		info.ExecutionCount = t.Attempts - 1
+
+		err := e.d.handlePush(ctx, body, info)
 		done(Retry.In(err) || transient.Tag.In(err))
 	}()
 }
@@ -645,17 +693,16 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 	// compatibility with "appengine/tq" which used totally different URL format.
 	prefix = strings.TrimRight(prefix, "/") + "/*path"
 	r.POST(prefix, mw, func(c *router.Context) {
-		// TODO(vadimsh): Parse magic headers to get the attempt count.
 		body, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
 			httpReply(c, 500, "Failed to read the request", err)
 			return
 		}
-		switch err := d.handlePush(c.Context, body); {
+		switch err := d.handlePush(c.Context, body, parseHeaders(c.Request.Header)); {
 		case err == nil:
 			httpReply(c, 200, "OK", nil)
 		case Retry.In(err):
-			httpReply(c, 409, "The handler asked for retry", err)
+			httpReply(c, 429, "The handler asked for retry", err)
 		case transient.Tag.In(err):
 			httpReply(c, 500, "Transient error", err)
 		default:
@@ -937,7 +984,7 @@ func isValidQueue(q string) bool {
 //
 // Returns errors annotated in the same style as errors from Handler, see its
 // doc.
-func (d *Dispatcher) handlePush(ctx context.Context, body []byte) error {
+func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info ExecutionInfo) error {
 	// See taskClassImpl.serialize().
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
@@ -957,8 +1004,23 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte) error {
 		err = errors.Reason("malformed task body, no class").Err()
 	}
 	if err != nil {
+		logging.Debugf(ctx, "TQ: %s", body)
 		return err
 	}
+
+	if !cls.Quiet {
+		logging.Debugf(ctx, "TQ: %s", body)
+		if info.submitterTraceContext != "" {
+			logging.Debugf(ctx, "TQ: submitted at %s", info.submitterTraceContext)
+		}
+		if info.ExecutionCount != 0 {
+			logging.Debugf(ctx, "TQ: this is a retry: %d previous attempt(s) already failed", info.ExecutionCount)
+			if info.taskRetryReason != "" || info.taskPreviousResponse != "" {
+				logging.Debugf(ctx, "TQ: the previous attempt failed with %s: %s", info.taskPreviousResponse, info.taskRetryReason)
+			}
+		}
+	}
+
 	if h == nil {
 		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Err()
 	}
@@ -968,6 +1030,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte) error {
 		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
 	}
 
+	ctx = context.WithValue(ctx, &executionInfoKey, &info)
 	return h(ctx, msg)
 }
 
@@ -1091,6 +1154,28 @@ func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// parseHeaders examines headers of the incoming Cloud Tasks push.
+func parseHeaders(h http.Header) ExecutionInfo {
+	magicHeader := func(key string) string {
+		if val := h.Get("X-AppEngine-" + key); val != "" {
+			return val
+		}
+		return h.Get("X-CloudTasks-" + key)
+	}
+
+	var execCount int64
+	if count := magicHeader("TaskExecutionCount"); count != "" {
+		execCount, _ = strconv.ParseInt(count, 10, 32)
+	}
+
+	return ExecutionInfo{
+		ExecutionCount:        int(execCount),
+		taskRetryReason:       magicHeader("TaskRetryReason"),
+		taskPreviousResponse:  magicHeader("TaskPreviousResponse"),
+		submitterTraceContext: h.Get(internal.TraceContextHeader),
+	}
+}
 
 // authMiddleware returns a middleware chain that authorizes requests from given
 // callers.
