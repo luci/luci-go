@@ -113,7 +113,7 @@ class TestVariant implements ReadonlyVariant {
   }
   @observable.shallow readonly results: TestResult[] = [];
   @observable.shallow readonly exonerations: TestExoneration[] = [];
-  constructor(readonly testId: string, readonly variant: Variant, readonly variantKey: string) {}
+  constructor(readonly testId: string, readonly variant: Variant, readonly variantHash: string) {}
 }
 
 /**
@@ -134,21 +134,8 @@ class Test implements ReadonlyTest {
   constructor(readonly id: string) {}
 
   addTestVariant(testVariant: ReadonlyVariant) {
-    this.variantMap.set(testVariant.variantKey, testVariant);
+    this.variantMap.set(testVariant.variantHash, testVariant);
   }
-}
-
-/**
- * Computes a unique string key of the variant.
- */
-function keyForVariant(variant: Variant) {
-  if (!variant) {
-    return '';
-  }
-  return Object.entries(variant.def)
-    .map((kv) => kv.join(':'))
-    .sort()
-    .join('|');
 }
 
 /**
@@ -189,12 +176,11 @@ export async function* streamVariantBatches(resultBatches: AsyncIterableIterator
   // Get the test variant of the specified testId and variant from
   // testVariantMap. If it doesn't exist, create a new one and add to
   // testVariantMap and newTestVariants.
-  function getOrCreateTestVariants(testId: string, variant: Variant = {def: {}}) {
-    const variantKey = keyForVariant(variant);
-    const testVariantKey = `${testId} ${variantKey}`;
+  function getOrCreateTestVariants(testId: string, variant: Variant = {def: {}}, variantHash = '') {
+    const testVariantKey = `${testId} ${variantHash}`;
     let testVariant = testVariantMap.get(testVariantKey);
     if (!testVariant) {
-      testVariant = new TestVariant(testId, variant, variantKey);
+      testVariant = new TestVariant(testId, variant, variantHash);
       testVariantMap.set(testVariantKey, testVariant);
       newTestVariants.push(testVariant);
     }
@@ -204,7 +190,7 @@ export async function* streamVariantBatches(resultBatches: AsyncIterableIterator
   async function loadAllExonerations() {
     for await (const exonerationBatch of exonerationBatches) {
       for (const exoneration of exonerationBatch) {
-        const testVariant = getOrCreateTestVariants(exoneration.testId, exoneration.variant);
+        const testVariant = getOrCreateTestVariants(exoneration.testId, exoneration.variant, exoneration.variantHash);
         testVariant.exonerations.push(exoneration);
       }
     }
@@ -217,7 +203,7 @@ export async function* streamVariantBatches(resultBatches: AsyncIterableIterator
     }
 
     for (const result of next.value) {
-      const testVariant = getOrCreateTestVariants(result.testId, result.variant);
+      const testVariant = getOrCreateTestVariants(result.testId, result.variant, result.variantHash);
       testVariant.results.push(result);
     }
     return false;

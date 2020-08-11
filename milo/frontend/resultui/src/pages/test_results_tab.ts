@@ -127,7 +127,7 @@ export class TestResultsTabElement extends MobxLitElement {
     return html`
       ${repeat(
         variants.map((v, i, variants) => [variants[i-1], v, variants[i+1]] as [ReadonlyVariant | undefined, ReadonlyVariant, ReadonlyVariant | undefined]),
-        ([_, v]) => `${v.testId} ${v.variantKey}`,
+        ([_, v]) => `${v.testId} ${v.variantHash}`,
         ([prev, v, next]) => html`
         <tr-variant-entry
           .variant=${v}

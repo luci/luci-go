@@ -52,6 +52,7 @@ export interface TestResult {
   readonly testId: string;
   readonly resultId: string;
   readonly variant?: Variant;
+  readonly variantHash?: string;
   readonly expected?: boolean;
   readonly status: TestStatus;
   readonly summaryHtml: string;
@@ -64,6 +65,7 @@ export interface TestExoneration {
   readonly name: string;
   readonly testId: string;
   readonly variant?: Variant;
+  readonly variantHash?: string;
   readonly exonerationId: string;
   readonly explanationHtml?: string;
 }
