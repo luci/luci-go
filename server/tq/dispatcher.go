@@ -97,12 +97,14 @@ type Dispatcher struct {
 
 	// CloudProject is ID of a project to use to construct full queue names.
 	//
-	// If not set, submission of tasks that use short queue names will fail.
+	// If not set, "default" will be used, which is pretty useless outside of
+	// tests.
 	CloudProject string
 
 	// CloudRegion is a ID of a region to use to construct full queue names.
 	//
-	// If not set, submission of tasks that use short queue names will fail.
+	// If not set, "default" will be used, which is pretty useless outside of
+	// tests.
 	CloudRegion string
 
 	// DefaultRoutingPrefix is a URL prefix for produced Cloud Tasks.
@@ -121,9 +123,8 @@ type Dispatcher struct {
 	//
 	// Individual task classes may override it with their own specific host.
 	//
-	// On GAE defaults to the GAE application itself. Elsewhere has no default:
-	// if the dispatcher can't figure out where to send the task, the task
-	// submission fails.
+	// On GAE defaults to the GAE application itself. Elsewhere defaults to
+	// "127.0.0.1", which is pretty useless outside of tests.
 	DefaultTargetHost string
 
 	// PushAs is a service account email to be used for generating OIDC tokens.
@@ -131,8 +132,8 @@ type Dispatcher struct {
 	// The service account must be within the same project. The server account
 	// must have "iam.serviceAccounts.actAs" permission for PushAs account.
 	//
-	// Optional on GAE when submitting tasks targeting GAE. Required in all other
-	// cases. If not set, task submissions will fail.
+	// Optional on GAE when submitting tasks targeting GAE. Elsewhere defaults to
+	// "default@example.com", which is pretty useless outside of tests.
 	PushAs string
 
 	// AuthorizedPushers is a list of service account emails to accept pushes from
@@ -616,21 +617,7 @@ func (d *Dispatcher) SchedulerForTest() *tqtesting.Scheduler {
 	if d.Submitter != nil {
 		panic("Dispatcher is already configured to use some submitter")
 	}
-	if d.CloudProject == "" {
-		d.CloudProject = "tq-project"
-	}
-	if d.CloudRegion == "" {
-		d.CloudRegion = "tq-region"
-	}
-	if d.DefaultTargetHost == "" {
-		d.DefaultTargetHost = "127.0.0.1" // not actually used
-	}
-	if d.PushAs == "" {
-		d.PushAs = "tq-pusher@example.com"
-	}
-	sched := &tqtesting.Scheduler{
-		Executor: directExecutor{d},
-	}
+	sched := &tqtesting.Scheduler{Executor: directExecutor{d}}
 	d.Submitter = sched
 	return sched
 }
@@ -867,12 +854,13 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 		return cls, req, nil
 	}
 
-	// Elsewhere we need to know a target host and how to authenticate to it.
+	// Elsewhere pick up some defaults mostly used only in tests.
 	if host == "" {
-		return nil, nil, errors.Reason("bad task class %q: no TargetHost", cls.ID).Err()
+		host = "127.0.0.1"
 	}
+	pushAs := d.PushAs
 	if d.PushAs == "" {
-		return nil, nil, errors.Reason("unconfigured Dispatcher: PushAs is not set").Err()
+		pushAs = "default@example.com"
 	}
 
 	req.Task.MessageType = &taskspb.Task_HttpRequest{
@@ -883,7 +871,7 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 			Body:       payload.Body,
 			AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 				OidcToken: &taskspb.OidcToken{
-					ServiceAccountEmail: d.PushAs,
+					ServiceAccountEmail: pushAs,
 				},
 			},
 		},
@@ -896,19 +884,22 @@ func (d *Dispatcher) queueID(id string) (string, error) {
 	if strings.HasPrefix(id, "projects/") {
 		return id, nil // already full name
 	}
-	if d.CloudProject == "" {
-		return "", errors.Reason("can't construct full queue name: no cloud project").Err()
+	project := d.CloudProject
+	if project == "" {
+		project = "default"
 	}
-	if d.CloudRegion == "" {
-		return "", errors.Reason("can't construct full queue name: no cloud region").Err()
+	region := d.CloudRegion
+	if region == "" {
+		region = "default"
 	}
-	return fmt.Sprintf("projects/%s/locations/%s/queues/%s", d.CloudProject, d.CloudRegion, id), nil
+	return fmt.Sprintf("projects/%s/locations/%s/queues/%s", project, region, id), nil
 }
 
 // taskTarget constructs a target URL for a task.
 //
 // `host` will be "" if no explicit host is configured anywhere. On GAE this
-// means "send the task back to the GAE app". On non-GAE this fails AddTask.
+// means "send the task back to the GAE app". On non-GAE this indicates to use
+// default "127.0.0.1" which is really usable only in tests.
 func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relativeURI string, err error) {
 	if cls.TargetHost != "" {
 		host = cls.TargetHost
