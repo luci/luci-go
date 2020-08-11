@@ -29,6 +29,8 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -67,15 +69,16 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m)
 	}
 
+	dsp := tasks.GetDispatcher(ctx)
+	inf := &model.BuildInfra{
+		ID:    1,
+		Build: datastore.KeyForObj(ctx, bld),
+	}
+	stp := &model.BuildSteps{
+		ID:    1,
+		Build: inf.Build,
+	}
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		inf := &model.BuildInfra{
-			ID:    1,
-			Build: datastore.KeyForObj(ctx, bld),
-		}
-		stp := &model.BuildSteps{
-			ID:    1,
-			Build: inf.Build,
-		}
 		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
@@ -95,8 +98,13 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 			}
 		}
 		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
-			// TODO(crbug/1042991): Cancel the Swarming task.
-			return appstatus.Errorf(codes.Unimplemented, "task cancellation not yet supported")
+			// TODO(crbug/1091604): Pass the realm if the build is realms-enabled.
+			if err := dsp.CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
+				Hostname: inf.Proto.Swarming.Hostname,
+				TaskId:   inf.Proto.Swarming.TaskId,
+			}); err != nil {
+				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
+			}
 		}
 
 		bld.Leasee = nil

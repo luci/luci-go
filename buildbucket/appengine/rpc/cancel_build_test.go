@@ -20,13 +20,19 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 
+	"go.chromium.org/gae/filter/txndefer"
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
+
+	// Enable datastore transactional tasks support.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,8 +66,10 @@ func TestCancelBuild(t *testing.T) {
 	})
 
 	Convey("CancelBuild", t, func() {
+		d := &tq.Dispatcher{}
+		sch := d.SchedulerForTest()
 		srv := &Builds{}
-		ctx := memory.Use(context.Background())
+		ctx := tasks.WithDispatcher(txndefer.FilterRDS(memory.Use(context.Background())), tasks.NewDispatcher(d))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -74,6 +82,7 @@ func TestCancelBuild(t *testing.T) {
 				rsp, err := srv.CancelBuild(ctx, req)
 				So(err, ShouldErrLike, "not found")
 				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("permission denied", func() {
@@ -109,6 +118,7 @@ func TestCancelBuild(t *testing.T) {
 				rsp, err := srv.CancelBuild(ctx, req)
 				So(err, ShouldErrLike, "does not have permission")
 				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("found", func() {
@@ -159,6 +169,7 @@ func TestCancelBuild(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Status: pb.Status_CANCELED,
 				})
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("ended", func() {
@@ -204,6 +215,7 @@ func TestCancelBuild(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Status: pb.Status_SUCCESS,
 				})
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("task cancellation", func() {
@@ -251,8 +263,22 @@ func TestCancelBuild(t *testing.T) {
 					SummaryMarkdown: "summary",
 				}
 				rsp, err := srv.CancelBuild(ctx, req)
-				So(err, ShouldErrLike, "task cancellation not yet supported")
-				So(rsp, ShouldBeNil)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					EndTime: &timestamp.Timestamp{
+						Seconds: 1454501106,
+						Nanos:   7,
+					},
+					Input:  &pb.Build_Input{},
+					Status: pb.Status_CANCELED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
 	})
