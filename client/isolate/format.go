@@ -623,7 +623,7 @@ func (v variableValue) key() variableValueKey {
 		return variableValueKey("~" + *v.S)
 	}
 	if v.I != nil {
-		return variableValueKey(string(*v.I))
+		return variableValueKey(strconv.Itoa(*v.I))
 	}
 	return variableValueKey("")
 }
