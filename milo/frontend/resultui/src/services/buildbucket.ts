@@ -25,16 +25,22 @@ export interface BuilderID {
   readonly builder: string;
 }
 
+export interface Timestamp {
+  readonly seconds: number;
+  readonly nanos: number;
+}
+
 export interface Build {
   readonly id: string;
   readonly builder: BuilderID;
   readonly number: string;
   readonly created_by: string;
   readonly canceled_by: string;
-  readonly start_time: string;
-  readonly end_time: string;
-  readonly update_time: string;
-  readonly status: BuildStatus | string;
+  readonly create_time: Timestamp;
+  readonly start_time: Timestamp;
+  readonly end_time: Timestamp;
+  readonly update_time: Timestamp;
+  readonly status: BuildStatus;
   readonly summary_markdown?: string;
   readonly input: BuildInput;
   readonly output: BuildOutput;
@@ -44,13 +50,14 @@ export interface Build {
   readonly exe: Executable;
 }
 
-export const enum BuildStatus {
-  Scheduled = 'SCHEDULED',
-  Started = 'STARTED',
-  Success = 'SUCCESS',
-  Failure = 'FAILURE',
-  InfraFailure = 'INFRA_FAILURE',
-  Canceled = 'CANCELED',
+// This is from https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/common.proto;l=27
+export enum BuildStatus {
+  Scheduled = 1,
+  Started = 2,
+  Success = 12,
+  Failure = 20,
+  InfraFailure = 36,
+  Canceled = 68,
 }
 
 export interface BuildInput {

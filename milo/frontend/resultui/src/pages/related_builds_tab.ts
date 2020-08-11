@@ -17,6 +17,9 @@ import { customElement, html } from 'lit-element';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { observable} from 'mobx';
 import { BuildState, consumeBuildState } from '../context/build_state/build_state';
+import { repeat } from 'lit-html/directives/repeat';
+import { Build, Timestamp, BuildStatus } from '../services/buildbucket'
+import { router } from '../routes';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -29,8 +32,95 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   protected render() {
     return html`
-      There are ${this.buildState.relatedBuildsData?.related_builds.length} related builds
+      <h3> Other builds with the same buildset </h3>
+      ${this.renderBuildsetInfo()}
+      ${this.renderRelatedBuildsTable()}
     `;
+  }
+
+  private renderBuildsetInfo() {
+    if (this.buildState.buildPageData == null) {
+      return html `Loading...`
+    }
+    return html`
+      <ul>
+      ${repeat(
+        this.buildState.buildPageData!.build_sets,
+        (item, _) => html`<li>${item}</li>`
+      )}
+      </ul>
+    `;
+  }
+
+  private renderRelatedBuildsTable() {
+    if (this.buildState.relatedBuildsData == null) {
+      return html ``;
+    }
+    return html`
+      <table>
+        <tr>
+          <th>Project</th>
+          <th>Bucket</th>
+          <th>Builder</th>
+          <th>Build</th>
+          <th>Status</th>
+          <th>Create Time</th>
+          <th>Pending</th>
+          <th>Duration</th>
+          <th>Summary</th>
+        </tr>
+        ${repeat(
+          this.buildState.relatedBuildsData.related_builds,
+          (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild),
+        )}
+      </table>
+    `;
+  }
+
+  private renderRelatedBuildRow(build: Build) {
+    return html `
+      <tr>
+        <td>${build.builder.project}</td>
+        <td>${build.builder.bucket}</td>
+        <td>${build.builder.builder}</td>
+        <td>${this.generateBuildLink(build)}</td>
+        <td>${BuildStatus[build.status]}</td>
+        <td>${this.displayTimestamp(build.create_time)}</td>
+        <td>${this.displayDuration(build.create_time, build.start_time)}</td>
+        <td>${this.displayDuration(build.start_time, build.end_time)}</td>
+        <td>${this.displayMarkdown(build.summary_markdown)}</td>
+    `;
+  }
+
+  // TODO (crbug.com/1112224): extract this to a library
+  private generateBuildLink(build: Build) {
+    const href = router.urlForName(
+      'build-test-results',
+      {
+        'project': build.builder.project,
+        'bucket': build.builder.bucket,
+        'builder': build.builder.builder,
+        'build_num_or_id': 'b' + build.id,
+      },
+    );
+    const display = build.number ? build.number : build.id;
+    return html`<a href="${href}">${display}</a>`;
+  }
+
+  // TODO (crbug.com/1112224): format and extract this to a library
+  private displayTimestamp(t: Timestamp) {
+    var d = new Date(t.seconds * 1000);
+    return html `${d.toString()}`;
+  }
+
+  // TODO (crbug.com/1112224): format and extract this to a library
+  private displayDuration(beginTime: Timestamp, endTime: Timestamp) {
+    return html`${(endTime.seconds - beginTime.seconds) + " secs"}`;
+  }
+
+  // TODO (crbug.com/1112224): Really display this as markdown
+  private displayMarkdown(markdown: string|undefined) {
+    return markdown? html`${markdown}` : html``;
   }
 }
 
