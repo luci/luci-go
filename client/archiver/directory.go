@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
-	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 // WalkItem represents a file encountered in the (symlink-following) walk of a directory.
@@ -66,17 +65,10 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 	// TODO(maruel): Cache directory enumeration. In particular cases (Chromium),
 	// the same directory may be enumerated multiple times. Caching the content
 	// may be worth. This needs to be perf tested.
-
-	total := 0
-	end := tracer.Span(root, "walk:"+filepath.Base(root), nil)
-	defer func() { end(tracer.Args{"root": root, "total": total}) }()
-
 	var walkWithLinks func(string, common.FilesystemView) filepath.WalkFunc
 
 	walkWithLinks = func(dir string, view common.FilesystemView) filepath.WalkFunc {
 		return func(path string, info os.FileInfo, err error) error {
-			total++
-
 			if err != nil {
 				return fmt.Errorf("walk(%q): %v", path, err)
 			}
@@ -153,9 +145,6 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 // generated .isolated file.
 //
 func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
-	total := 0
-	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
-	defer func() { end(tracer.Args{"total": total}) }()
 	c := make(chan *walkItem)
 
 	displayName := filepath.Base(root) + ".isolated"
@@ -182,7 +171,6 @@ func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 			// Empty the queue.
 			continue
 		}
-		total++
 		if relDir != "" {
 			item.relPath = filepath.Join(relDir, item.relPath)
 		}
