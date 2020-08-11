@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/sweep"
 	"go.chromium.org/luci/server/tq/internal/workset"
@@ -123,6 +124,12 @@ func (s *inprocSweeper) sweep(ctx context.Context, sub Submitter, reminderKeySpa
 		}
 		procs[kind] = proc
 	}
+
+	start := clock.Now(ctx)
+	defer func() {
+		dur := clock.Now(ctx).Sub(start)
+		metrics.InprocSweepDurationMS.Add(ctx, float64(dur.Milliseconds()))
+	}()
 
 	// Seed all future work: SweepShards scans per DB kind.
 	partitions := partition.Universe(reminderKeySpaceBytes).Split(s.opts.SweepShards)

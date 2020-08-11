@@ -798,7 +798,9 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 			// Construct the context after the server is fully initialized. Cancel it
 			// as soon as bgrDone is signaled.
 			ctx, cancel := context.WithCancel(s.Context)
-			ctx = logging.SetField(ctx, "activity", activity)
+			if activity != "" {
+				ctx = logging.SetField(ctx, "activity", activity)
+			}
 			defer cancel()
 			go func() {
 				select {

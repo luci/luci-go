@@ -29,6 +29,13 @@ var (
 
 	// TQ guts metrics, primary useful to debug TQ.
 
+	InprocSweepDurationMS = metric.NewCumulativeDistribution(
+		"tq/sweep/inproc/duration",
+		"Duration of a full inproc sweep cycle across all DBs (ms)",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		bucketer1msTo5min,
+	)
+
 	SweepFetchMetaDurationsMS = metric.NewCumulativeDistribution(
 		"tq/sweep/fetch/meta/durations",
 		"Duration of FetchRemindersMeta operation (ms)",
