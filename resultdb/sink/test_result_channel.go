@@ -51,12 +51,15 @@ func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultCha
 	var err error
 	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		QPSLimit: rate.NewLimiter(1, 1),
+		QPSLimit: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		Buffer: buffer.Options{
-			BatchSize:     400,
+			// BatchRequest can include up to 500 requests. KEEP BatchSize <= 500
+			// to keep report() simple. For more details, visit
+			// https://godoc.org/go.chromium.org/luci/resultdb/proto/v1#BatchCreateTestResultsRequest
+			BatchSize:     500,
 			MaxLeases:     4,
 			BatchDuration: time.Second,
-			FullBehavior:  &buffer.BlockNewItems{MaxItems: 2000},
+			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
