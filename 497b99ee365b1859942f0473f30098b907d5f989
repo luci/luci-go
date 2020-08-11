@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ffec566_fac37ca4",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-11T04:55:35Z",
+      "side": 1,
+      "message": "tbh, i found this design a tad complicated (maybe my brain is fried), but the usage is nice 👍",
+      "revId": "497b99ee365b1859942f0473f30098b907d5f989",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
