@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "d755d14c_9ca93957",
+        "filename": "server/tq/module.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-11T06:46:21Z",
+      "side": 1,
+      "message": "For uniformity and completness.",
+      "parentUuid": "ae3734d1_1cd86fc6",
+      "range": {
+        "startLine": 196,
+        "startChar": 50,
+        "endLine": 196,
+        "endChar": 64
+      },
+      "revId": "9fe96de519631bf1251313c099bd8195bc809db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54faf38f_bced7a3c",
         "filename": "server/tq/module.go",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "9fe96de519631bf1251313c099bd8195bc809db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "313b6f41_60e628cc",
+        "filename": "server/tq/module.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-11T06:46:21Z",
+      "side": 1,
+      "message": "Changed it back.",
+      "parentUuid": "54faf38f_bced7a3c",
+      "range": {
+        "startLine": 240,
+        "startChar": 51,
+        "endLine": 240,
+        "endChar": 54
+      },
+      "revId": "9fe96de519631bf1251313c099bd8195bc809db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
