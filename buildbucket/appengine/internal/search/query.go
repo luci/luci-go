@@ -49,7 +49,7 @@ const (
 )
 
 var (
-	TagIndexCursorRegex = regexp.MustCompile(`^id>\d+$`)
+	PageTokenRegex = regexp.MustCompile(`^id>\d+$`)
 )
 
 // Query is the intermediate to store the arguments for ds search query.
@@ -145,9 +145,7 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 	}
 
 	// Determine which subflow - directly query on Builds or on TagIndex.
-	isTagIndexCursor := TagIndexCursorRegex.MatchString(q.StartCursor)
-	canUseTagIndex := len(IndexedTags(q.Tags)) != 0 && (q.StartCursor == "" || isTagIndexCursor)
-	if canUseTagIndex {
+	if len(IndexedTags(q.Tags)) != 0 {
 		// TODO(crbug/1090540): test switch-case block after fetchOnTagIndex() is complete.
 		switch res, err := q.fetchOnTagIndex(ctx); {
 		case model.TagIndexIncomplete.In(err) && q.StartCursor == "":
@@ -304,7 +302,7 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 // filterEntries filters tag index entries by the build id ranges and buckets conditions in the Query.
 func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntry) ([]*model.TagIndexEntry, error) {
 	idLow, idHigh := q.idRange()
-	if TagIndexCursorRegex.MatchString(q.StartCursor) {
+	if q.StartCursor != "" {
 		if minExclusiveId, _ := strconv.ParseInt(q.StartCursor[len("id>"):], 10, 64); minExclusiveId+1 > idLow {
 			idLow = minExclusiveId + 1
 		}

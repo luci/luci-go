@@ -93,9 +93,9 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 	return nil
 }
 
-// validatePageToken checks if there are indexed tags when the token is TagIndex token.
-func validatePageToken(token string, tags []*pb.StringPair) error {
-	if search.TagIndexCursorRegex.MatchString(token) && len(search.IndexedTags(protoutil.StringPairMap(tags))) == 0 {
+// validatePageToken validates the given page token.
+func validatePageToken(token string) error {
+	if token != "" && !search.PageTokenRegex.MatchString(token) {
 		return errors.Reason("invalid page_token").Err()
 	}
 	return nil
@@ -107,7 +107,7 @@ func validateSearch(req *pb.SearchBuildsRequest) error {
 		return err
 	}
 
-	if err := validatePageToken(req.GetPageToken(), req.GetPredicate().GetTags()); err != nil {
+	if err := validatePageToken(req.GetPageToken()); err != nil {
 		return err
 	}
 
