@@ -18,6 +18,7 @@
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
     "lodash-es": "^4.17.15",
+    "markdown-it": "^11.0.0",
     "mobx": "^5.15.4",
     "mobx-utils": "^5.6.1"
   },
