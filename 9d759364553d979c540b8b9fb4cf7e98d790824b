@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "3f244d9a_d12d5e01",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-11T20:27:10Z",
+      "side": 1,
+      "message": "Can this be set as a config, similar to bq_export?",
+      "parentUuid": "68b3f4f8_dae27bbe",
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85d3bcb4_43b46d0e",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-11T20:27:10Z",
+      "side": 1,
+      "message": "Since this field is in Invocation, I think test results or non test results can share the same history option.",
+      "parentUuid": "40c33f27_5ec2471f",
+      "range": {
+        "startLine": 134,
+        "startChar": 28,
+        "endLine": 134,
+        "endChar": 43
+      },
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12509958_a251d1e0",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 1
