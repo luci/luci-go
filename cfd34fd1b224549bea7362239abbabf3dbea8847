@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "372f1f95_3d4cef16",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-11T20:31:08Z",
+      "side": 1,
+      "message": "Should there be a comment for this field as well?",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 82,
+        "endChar": 9
+      },
+      "revId": "cfd34fd1b224549bea7362239abbabf3dbea8847",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "59b6f6be_d13c9e57",
         "filename": "resultdb/internal/spanutil/init_db.sql",
         "patchSetId": 1
