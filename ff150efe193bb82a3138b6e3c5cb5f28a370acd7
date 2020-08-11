@@ -22,6 +22,30 @@
       "revId": "ff150efe193bb82a3138b6e3c5cb5f28a370acd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49113e7c_e519ad76",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-11T21:16:40Z",
+      "side": 1,
+      "message": "It fails without it. buildbucket/appengine/tasks only imports it in tasks_test.go.",
+      "parentUuid": "9b45a5ef_8e5fbfe1",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 49
+      },
+      "revId": "ff150efe193bb82a3138b6e3c5cb5f28a370acd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
