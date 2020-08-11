@@ -55,12 +55,14 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 	var err error
 	c := &artifactChannel{cfg: cfg}
 	opts := &dispatcher.Options{
-		// TODO(1087955) - tune QPSLimit and MaxLeases
-		QPSLimit: rate.NewLimiter(rate.Every(100*time.Millisecond), 4),
+		QPSLimit: rate.NewLimiter(rate.Every(100*time.Millisecond), 1),
 		Buffer: buffer.Options{
+			// BatchSize MUST be 1, or the processing logic needs to be updated.
+			//
+			// The dispatcher uploads only the first item in each Batch.
 			BatchSize:    1,
 			MaxLeases:    4,
-			FullBehavior: &buffer.BlockNewItems{MaxItems: 2000},
+			FullBehavior: &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
 	c.ch, err = dispatcher.NewChannel(ctx, opts, func(b *buffer.Batch) error {
