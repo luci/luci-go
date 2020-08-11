@@ -27,6 +27,12 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
   rpc GetChange(GetChangeRequest) returns (ChangeInfo);
 
+  // Loads a change with its labels, detailed labels, detailed accounts,
+  // reviewer updates, and messages.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change-detail
+  rpc GetChangeDetail(GetChangeRequest) returns (ChangeInfo);
+
   // Create a new empty change.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change

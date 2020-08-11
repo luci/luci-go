@@ -55,6 +55,26 @@ func (mr *MockGerritClientMockRecorder) GetChange(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritClient)(nil).GetChange), varargs...)
 }
 
+// GetChangeDetail mocks base method.
+func (m *MockGerritClient) GetChangeDetail(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetChangeDetail", varargs...)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChangeDetail indicates an expected call of GetChangeDetail.
+func (mr *MockGerritClientMockRecorder) GetChangeDetail(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChangeDetail", reflect.TypeOf((*MockGerritClient)(nil).GetChangeDetail), varargs...)
+}
+
 // CreateChange mocks base method.
 func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -271,6 +291,21 @@ func (m *MockGerritServer) GetChange(arg0 context.Context, arg1 *GetChangeReques
 func (mr *MockGerritServerMockRecorder) GetChange(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritServer)(nil).GetChange), arg0, arg1)
+}
+
+// GetChangeDetail mocks base method.
+func (m *MockGerritServer) GetChangeDetail(arg0 context.Context, arg1 *GetChangeRequest) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChangeDetail", arg0, arg1)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChangeDetail indicates an expected call of GetChangeDetail.
+func (mr *MockGerritServerMockRecorder) GetChangeDetail(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChangeDetail", reflect.TypeOf((*MockGerritServer)(nil).GetChangeDetail), arg0, arg1)
 }
 
 // CreateChange mocks base method.
