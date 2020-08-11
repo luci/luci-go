@@ -249,13 +249,25 @@ func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
 	*gerritpb.ChangeInfo, error) {
+	return c.getChange(ctx, req, false, opts...)
+}
 
+func (c *client) GetChangeDetail(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
+	*gerritpb.ChangeInfo, error) {
+	return c.getChange(ctx, req, true, opts...)
+}
+
+func (c *client) getChange(ctx context.Context, req *gerritpb.GetChangeRequest, getDetail bool, opts ...grpc.CallOption) (
+	*gerritpb.ChangeInfo, error) {
 	if err := checkArgs(opts, req); err != nil {
 		return nil, err
 	}
 
 	var resp changeInfo
 	path := fmt.Sprintf("/changes/%d", req.Number)
+	if getDetail {
+		path = fmt.Sprintf("%s/detail", path)
+	}
 
 	params := url.Values{}
 	for _, o := range req.Options {
