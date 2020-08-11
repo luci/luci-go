@@ -22,6 +22,52 @@
       "revId": "9fe96de519631bf1251313c099bd8195bc809db7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae3734d1_1cd86fc6",
+        "filename": "server/tq/module.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-11T06:19:45Z",
+      "side": 1,
+      "message": "why? In case someone wants to hardcode their cloud project in main.go?",
+      "range": {
+        "startLine": 196,
+        "startChar": 50,
+        "endLine": 196,
+        "endChar": 64
+      },
+      "revId": "9fe96de519631bf1251313c099bd8195bc809db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54faf38f_bced7a3c",
+        "filename": "server/tq/module.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-11T06:19:45Z",
+      "side": 1,
+      "message": "WDYM?\n\nI read this \"use\" as \"hey, user, *use* -tq-serving-prefix\". If it\u0027s still about default, IMO prior formulation was better.",
+      "range": {
+        "startLine": 240,
+        "startChar": 51,
+        "endLine": 240,
+        "endChar": 54
+      },
+      "revId": "9fe96de519631bf1251313c099bd8195bc809db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
