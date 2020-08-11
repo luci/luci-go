@@ -46,6 +46,30 @@
       "revId": "ff150efe193bb82a3138b6e3c5cb5f28a370acd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "63a9655d_42cfe81f",
+        "filename": "buildbucket/appengine/rpc/cancel_build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-11T21:20:20Z",
+      "side": 1,
+      "message": "Then considering moving _ \"go.chromium.org/luci/server/tq/txn/datastore\" into tasks.go so that if anything uses tasks.go, they also pick up datastore support which tasks.go require. Importing it manually by hand in every leaf file is not nice.",
+      "parentUuid": "49113e7c_e519ad76",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 49
+      },
+      "revId": "ff150efe193bb82a3138b6e3c5cb5f28a370acd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
