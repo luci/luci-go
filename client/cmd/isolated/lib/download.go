@@ -170,7 +170,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 			MaxSize:      units.Size(c.maxSize),
 			MaxItems:     c.maxItems,
 			MinFreeSpace: units.Size(c.minFreeSpace),
-		}, c.cacheDir, c.isolatedFlags.Namespace)
+		}, c.cacheDir, isolated.GetHash(c.isolatedFlags.Namespace))
 		if err != nil && diskCache == nil {
 			return errors.Annotate(err, "failed to initialize disk cache in %s", c.cacheDir).Err()
 		}
