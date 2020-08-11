@@ -106,6 +106,24 @@
     },
     {
       "key": {
+        "uuid": "fe8134c7_179b153c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-11T00:02:57Z",
+      "side": 1,
+      "message": "Discussed with Nodir in gvc on solving the time vs space issues. I\u0027m going to make some changes as follows \n\n1. All the PageToken in req/res will have this regex format- `^id\u003e\\d+$` which means I\u0027ll change the existing validation func (in a different CL).\n\n2. Change the `BucketsByPerm` function to directly filter on the Bucket\u0027s ancestor key if project is non-empty.\n\n3. Use n parallel queries to fetch qualified Build keys (n equals len(buckets)); Sorting the results; fetch the desired pageSize builds (which will be done in this CL). As for the NextPageToken, we no longer know the correct datastore cursor due to concurrent queries. That\u0027s why we change the pagetoken format to `id\u003exxxx`. \n\n4. After this CL, we also need to check if build.status equals query.status when fetching and converting build model to build proto. Because the status indexes in db may be stale, i.e. the build.status has changed while the corresponding status index hasn\u0027t been updated in time.",
+      "parentUuid": "49696a41_21d5765d",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5fbaaf6_03640f7c",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
