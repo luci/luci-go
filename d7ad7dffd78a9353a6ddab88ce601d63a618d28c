@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "954b580d_71fd3696",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-11T19:06:18Z",
+      "side": 1,
+      "message": "sorry, I reviewed it yesterday but got distracted by another thing.",
+      "revId": "d7ad7dffd78a9353a6ddab88ce601d63a618d28c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ceafcee3_0165f871",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-11T19:06:18Z",
+      "side": 1,
+      "message": "nit: It can use `protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket)` and \n `protoutil.FormatBuilderID(b.Proto.Builder)`",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 112
+      },
+      "revId": "d7ad7dffd78a9353a6ddab88ce601d63a618d28c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
