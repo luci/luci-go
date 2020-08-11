@@ -308,25 +308,12 @@ func Copy(outfile, infile string, mode os.FileMode) (err error) {
 
 // ReadableCopy makes a copy of the file that is readable by everyone.
 func ReadableCopy(outfile, infile string) error {
-	in, err := os.Open(infile)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	istat, err := in.Stat()
+	istat, err := os.Stat(infile)
 	if err != nil {
 		return err
 	}
 
-	out, err := os.OpenFile(outfile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, addReadMode(istat.Mode()))
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, in)
-	return err
+	return Copy(outfile, infile, addReadMode(istat.Mode()))
 }
 
 func hardlinkWithFallback(outfile, infile string) error {
