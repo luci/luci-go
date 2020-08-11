@@ -52,7 +52,7 @@ func TestSubmit(t *testing.T) {
 		}
 
 		call := func(r *reminder.Reminder, req *taskspb.CreateTaskRequest) error {
-			return SubmitFromReminder(ctx, &sub, &db, r, req, nil, TxnPathHappy)
+			return SubmitFromReminder(ctx, &sub, &db, r, req, nil, nil, TxnPathHappy)
 		}
 
 		r := makeRem("rem")
@@ -125,7 +125,7 @@ type submitter struct {
 	req []*taskspb.CreateTaskRequest
 }
 
-func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 	if s.ban.Has(req.Parent) {

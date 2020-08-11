@@ -59,7 +59,7 @@ const (
 // Submitter is used by the dispatcher and the sweeper to submit Cloud Tasks.
 type Submitter interface {
 	// CreateTask creates a task, returning a gRPC status.
-	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
+	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
 }
 
 // Submit submits the prepared request through the given submitter.
@@ -68,7 +68,7 @@ type Submitter interface {
 //
 // Recognizes AlreadyExists as success. Annotates retriable errors with
 // transient.Tag.
-func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, extra *tqpb.Extra, t TxnPath) error {
+func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, msg proto.Message, extra *tqpb.Extra, t TxnPath) error {
 	// Each individual RPC should be pretty quick. Also Cloud Tasks client bugs
 	// out if the context has a large deadline.
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
@@ -94,7 +94,7 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ex
 	}
 
 	start := clock.Now(ctx)
-	err := s.CreateTask(ctx, req)
+	err := s.CreateTask(ctx, req, msg)
 	code := status.Code(err)
 	dur := clock.Now(ctx).Sub(start)
 
@@ -121,7 +121,7 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ex
 // If `req` and/or `extra` are nil, they will be deserialized from the reminder.
 //
 // Mutates `req` by adding tracing headers to it.
-func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra, t TxnPath) error {
+func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, msg proto.Message, extra *tqpb.Extra, t TxnPath) error {
 	var err error
 	if req == nil {
 		req = &taskspb.CreateTaskRequest{}
@@ -136,7 +136,7 @@ func SubmitFromReminder(ctx context.Context, s Submitter, db db.DB, r *reminder.
 	}
 
 	if err == nil {
-		err = Submit(ctx, s, req, extra, t)
+		err = Submit(ctx, s, req, msg, extra, t)
 	}
 
 	// Delete the reminder if the task was successfully enqueued or it is
@@ -189,7 +189,7 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 		for _, r := range payloaded {
 			r := r
 			work <- func() error {
-				err := SubmitFromReminder(ctx, sub, db, r, nil, nil, TxnPathSweep)
+				err := SubmitFromReminder(ctx, sub, db, r, nil, nil, nil, TxnPathSweep)
 				if err != nil {
 					logging.Errorf(ctx, "Failed to process reminder %q: %s", r.ID, err)
 				} else {
@@ -223,11 +223,11 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 //
 // Returns ErrStaleReminder if the reminder is stale and should be handled by
 // the sweeper.
-func ProcessReminderPostTxn(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) error {
+func ProcessReminderPostTxn(ctx context.Context, s Submitter, db db.DB, r *reminder.Reminder, req *taskspb.CreateTaskRequest, msg proto.Message, extra *tqpb.Extra) error {
 	if clock.Now(ctx).After(r.FreshUntil) {
 		metrics.RemindersCreated.Add(ctx, 1, extra.TaskClass, "stale", db.Kind())
 		return ErrStaleReminder
 	}
 	metrics.RemindersCreated.Add(ctx, 1, extra.TaskClass, "fresh", db.Kind())
-	return SubmitFromReminder(ctx, s, db, r, req, extra, TxnPathHappy)
+	return SubmitFromReminder(ctx, s, db, r, req, msg, extra, TxnPathHappy)
 }

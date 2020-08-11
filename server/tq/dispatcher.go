@@ -162,8 +162,13 @@ type Submitter interface {
 	// AlreadyExists status indicates the task with request name already exists.
 	// Other statuses are handled using their usual semantics.
 	//
+	// `msg` is the original task payload. It is non-nil only when CreateTask
+	// is called on a "happy path" (i.e. not from a sweeper). This is primarily
+	// useful to capture task payloads in tests. Production implementations of
+	// Submitter should generally ignore it.
+	//
 	// Will be called from multiple goroutines at once.
-	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error
+	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
 }
 
 // Sweeper knows how sweep transaction tasks reminders.
@@ -543,7 +548,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 	// If not inside a transaction, submit the task right away.
 	if db == nil {
-		return internal.Submit(ctx, d.Submitter, req, extra, internal.TxnPathNone)
+		return internal.Submit(ctx, d.Submitter, req, task.Payload, extra, internal.TxnPathNone)
 	}
 
 	// Named transactional tasks are not supported.
@@ -579,7 +584,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		defer func() { span.End(err) }()
 
 		// Attempt to submit the task right away if the reminder is still fresh.
-		err = internal.ProcessReminderPostTxn(ctx, d.Submitter, db, r, req, extra)
+		err = internal.ProcessReminderPostTxn(ctx, d.Submitter, db, r, req, task.Payload, extra)
 	})
 
 	return nil
@@ -624,8 +629,7 @@ func (d *Dispatcher) SchedulerForTest() *tqtesting.Scheduler {
 		d.PushAs = "tq-pusher@example.com"
 	}
 	sched := &tqtesting.Scheduler{
-		Executor:     directExecutor{d},
-		Deserializer: testingDeserializer{d},
+		Executor: directExecutor{d},
 	}
 	d.Submitter = sched
 	return sched
@@ -663,34 +667,6 @@ func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fun
 		err := e.d.handlePush(ctx, body, info)
 		done(Retry.In(err) || transient.Tag.In(err))
 	}()
-}
-
-// testingDeserializer implements tqtesting.Deserializer via Dispatcher guts.
-//
-// It assumes the tasks were produces by the Dispatcher itself.
-type testingDeserializer struct {
-	d *Dispatcher
-}
-
-func (d testingDeserializer) DeserializePayload(t *taskspb.Task) (proto.Message, error) {
-	var body []byte
-	switch mt := t.MessageType.(type) {
-	case *taskspb.Task_HttpRequest:
-		body = mt.HttpRequest.Body
-	case *taskspb.Task_AppEngineHttpRequest:
-		body = mt.AppEngineHttpRequest.Body
-	default:
-		panic(fmt.Sprintf("Bad task, no payload: %q", t))
-	}
-	env := envelope{}
-	if err := json.Unmarshal(body, &env); err != nil {
-		return nil, err
-	}
-	cls, _, err := d.d.classByID(env.Class)
-	if err != nil {
-		return nil, err
-	}
-	return cls.deserialize(&env)
 }
 
 // InstallTasksRoutes installs tasks HTTP routes under the given prefix.

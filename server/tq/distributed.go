@@ -147,8 +147,8 @@ type distributedSweeper struct {
 //
 // This is useful in tests to make sure changes to disp.Submitter affect
 // the sweeper too.
-func (s *distributedSweeper) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
-	return s.disp.Submitter.CreateTask(ctx, req)
+func (s *distributedSweeper) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
+	return s.disp.Submitter.CreateTask(ctx, req, msg)
 }
 
 // sweep initiates an asynchronous sweep of the entire reminder keyspace.
