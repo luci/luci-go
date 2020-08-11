@@ -31,7 +31,7 @@ func TestNew(t *testing.T) {
 	if i.Algo != "sha-1" {
 		t.Fatal(i.Algo)
 	}
-	if i.Version != "1.4" {
+	if i.Version != "2.0" {
 		t.Fatal(i.Version)
 	}
 	if len(i.Files) != 0 {
@@ -42,7 +42,7 @@ func TestNew(t *testing.T) {
 	if i.Algo != "sha-256" {
 		t.Fatal(i.Algo)
 	}
-	if i.Version != "1.4" {
+	if i.Version != "2.0" {
 		t.Fatal(i.Version)
 	}
 	if len(i.Files) != 0 {
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 	if i.Algo != "sha-512" {
 		t.Fatal(i.Algo)
 	}
-	if i.Version != "1.4" {
+	if i.Version != "2.0" {
 		t.Fatal(i.Version)
 	}
 	if len(i.Files) != 0 {
