@@ -199,29 +199,18 @@ func TestValidateSearchBuilds(t *testing.T) {
 
 	Convey("validatePageToken", t, func() {
 		Convey("empty token", func() {
-			err := validatePageToken("", []*pb.StringPair{})
+			err := validatePageToken("")
 			So(err, ShouldBeNil)
 		})
 
-		Convey("non TagIndex token", func() {
-			err := validatePageToken("abc", []*pb.StringPair{})
-			So(err, ShouldBeNil)
-		})
-
-		Convey("TagIndex token with indexed tags", func() {
-			tags := []*pb.StringPair{
-				{Key: "buildset", Value: "b1"},
-			}
-			err := validatePageToken("id>123", tags)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("TagIndex token with non indexed tags", func() {
-			tags := []*pb.StringPair{
-				{Key: "k", Value: "v"},
-			}
-			err := validatePageToken("id>123", tags)
+		Convey("invalid page token", func() {
+			err := validatePageToken("abc")
 			So(err, ShouldErrLike, "invalid page_token")
+		})
+
+		Convey("valid page token", func() {
+			err := validatePageToken("id>123")
+			So(err, ShouldBeNil)
 		})
 	})
 
