@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "7c11771f_494f9467",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T05:16:42Z",
+      "side": 1,
+      "message": "aside: why do we need QueryRelatedBuilds? the entire RPC can be implemented on top of direct buildbucket RPC: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/buildsource/buildbucket/build.go;l\u003d237?q\u003dGetRelatedBuildsTable",
+      "parentUuid": "ba017343_5b2c2fac",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0083c22_e0680303",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
