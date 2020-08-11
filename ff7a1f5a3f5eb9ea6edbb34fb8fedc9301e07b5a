@@ -1,0 +1,239 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be7b8c41_45eefd51",
+        "filename": "resultdb/internal/services/resultdb/get_test_result_history.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "nit: put resultdb and non-resultdb imports into separate blocks",
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04b49f08_614ac10c",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "nit: https://screenshot.googleplex.com/Nb6wpsYx4ip",
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e620337e_c6c6ff51",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "could we make this a more precise reference? Is this Invocation.history_options?",
+      "range": {
+        "startLine": 135,
+        "startChar": 29,
+        "endLine": 135,
+        "endChar": 76
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b98eaa1_e253d542",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "vice-versa",
+      "range": {
+        "startLine": 142,
+        "startChar": 24,
+        "endLine": 142,
+        "endChar": 33
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "533bf4e9_fa11cc9c",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "this int64 makes sense only if the user knows the domain (host/project/ref). They know that only if they have explicitly specified it.",
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5734825_3d4aae9c",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "\"invocation_timestamp\" to make it more clear that this isn\u0027t timestamp of test results?",
+      "range": {
+        "startLine": 168,
+        "startChar": 30,
+        "endLine": 168,
+        "endChar": 39
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1074d07c_749495bd",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "what is sorting_field?\ndid you mean `order` below?\n\nstepping back, aren\u0027t we repeating what we say inside Order enum? can we refer to that here?",
+      "range": {
+        "startLine": 175,
+        "startChar": 61,
+        "endLine": 175,
+        "endChar": 74
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cad099c_c4c1eb5c",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "do I understand correctly that the response will never use this member? If so, can we clarify this?",
+      "range": {
+        "startLine": 180,
+        "startChar": 27,
+        "endLine": 180,
+        "endChar": 37
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56d10ad1_4a7bd6da",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "descending",
+      "range": {
+        "startLine": 187,
+        "startChar": 57,
+        "endLine": 187,
+        "endChar": 58
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "290d21ab_03aaad7a",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "double space",
+      "range": {
+        "startLine": 187,
+        "startChar": 64,
+        "endLine": 187,
+        "endChar": 65
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "372f8950_2819ff65",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T20:18:36Z",
+      "side": 1,
+      "message": "trailing space",
+      "range": {
+        "startLine": 196,
+        "startChar": 80,
+        "endLine": 196,
+        "endChar": 81
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
