@@ -39,6 +39,30 @@
       "revId": "dd81f1d090cb12d8f5d3d33636c0533fe4d6f8cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d7cfc91_2ef56361",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-11T19:28:39Z",
+      "side": 1,
+      "message": "no, we no longer need it. It only needs to check if StartCursor is empty.",
+      "parentUuid": "cf6bfe38_b9f3260f",
+      "range": {
+        "startLine": 305,
+        "startChar": 7,
+        "endLine": 305,
+        "endChar": 47
+      },
+      "revId": "dd81f1d090cb12d8f5d3d33636c0533fe4d6f8cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
