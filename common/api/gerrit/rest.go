@@ -25,7 +25,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
@@ -48,6 +50,10 @@ const (
 
 	// contentTypeText is the http header content-type value for plain text body.
 	contentTypeText = "application/x-www-form-urlencoded; charset=UTF-8"
+
+	// gerritTimestampLayout is the timestamp format used in Gerrit.
+	// See: https://gerrit-review.googlesource.com/Documentation/rest-api.html#timestamp
+	gerritTimestampLayout = "2006-01-02 15:04:05.0000000000"
 )
 
 // This file implements Gerrit proto service client
@@ -89,6 +95,33 @@ type client struct {
 	BaseURL string
 }
 
+// timestamp implements customized JSON marshal/unmarshal behavior
+// that confroms to the timestamp format used in Gerrit.
+type timestamp struct {
+	time.Time
+}
+
+func (t *timestamp) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), "\"")
+	if s == "null" {
+		t.Time = time.Time{}
+		return nil
+	}
+	parsedTime, err := time.Parse(gerritTimestampLayout, s)
+	if err != nil {
+		return errors.Annotate(err, "parse gerrit timestamp").Err()
+	}
+	t.Time = parsedTime
+	return nil
+}
+
+func (t *timestamp) MarshalJSON() ([]byte, error) {
+	if t.Time.IsZero() {
+		return []byte("null"), nil
+	}
+	return []byte(fmt.Sprintf("\"%s\"", t.Time.UTC().Format(gerritTimestampLayout))), nil
+}
+
 // changeInfo is JSON representation of gerritpb.ChangeInfo on the wire.
 type changeInfo struct {
 	Number   int64                 `json:"_number"`
@@ -102,6 +135,15 @@ type changeInfo struct {
 	CurrentRevision string                         `json:"current_revision"`
 	Revisions       map[string]*revisionInfo       `json:"revisions"`
 	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
+	Messages        []changeMsgInfo                `json:"messages"`
+}
+
+type changeMsgInfo struct {
+	ID         string                `json:"id"`
+	Author     *gerritpb.AccountInfo `json:"author"`
+	RealAuthor *gerritpb.AccountInfo `json:"real_author"`
+	Date       timestamp             `json:"date"`
+	Message    string                `json:"message"`
 }
 
 type fileInfo struct {
@@ -124,7 +166,7 @@ type mergeableInfo struct {
 	CommitMerged  bool     `json:"commit_merged"`
 	ContentMerged bool     `json:"content_merged"`
 	Conflicts     []string `json:"conflicts"`
-	MergeableInto []string `json:"mergeable_into"'`
+	MergeableInto []string `json:"mergeable_into"`
 }
 
 func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
@@ -149,7 +191,7 @@ func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 	}, nil
 }
 
-func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
+func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 	ret := &gerritpb.ChangeInfo{
 		Number:          ci.Number,
 		Owner:           ci.Owner,
@@ -170,7 +212,33 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 			ret.Labels[label] = info
 		}
 	}
-	return ret
+	if ci.Messages != nil {
+		ret.Messages = make([]*gerritpb.ChangeMessageInfo, len(ci.Messages))
+		var err error
+		for i, msg := range ci.Messages {
+			if ret.Messages[i], err = msg.ToProto(); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return ret, nil
+}
+
+func (cmi *changeMsgInfo) ToProto() (*gerritpb.ChangeMessageInfo, error) {
+	if cmi == nil {
+		return nil, nil
+	}
+	ret := &gerritpb.ChangeMessageInfo{
+		Id:         cmi.ID,
+		Author:     cmi.Author,
+		RealAuthor: cmi.RealAuthor,
+		Message:    cmi.Message,
+	}
+	var err error
+	if ret.Date, err = ptypes.TimestampProto(cmi.Date.Time); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
@@ -210,8 +278,11 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
 		return nil, err
 	}
-
-	return resp.ToProto(), nil
+	ci, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "convert to ChangeInfo Proto").Err()
+	}
+	return ci, nil
 }
 
 type changeInput struct {
@@ -234,7 +305,10 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 		return nil, errors.Annotate(err, "create empty change").Err()
 	}
 
-	ci := resp.ToProto()
+	ci, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "convert to ChangeInfo Proto").Err()
+	}
 	if ci.Status != gerritpb.ChangeInfo_NEW {
 		return nil, fmt.Errorf("unknown status %s for newly created change", ci.Status)
 	}
@@ -294,7 +368,11 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "submit change").Err()
 	}
-	return resp.ToProto(), nil
+	ci, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "convert to ChangeInfo Proto").Err()
+	}
+	return ci, nil
 }
 
 func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
@@ -306,7 +384,11 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
 		return nil, errors.Annotate(err, "abandon change").Err()
 	}
-	return resp.ToProto(), nil
+	ci, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "convert to ChangeInfo Proto").Err()
+	}
+	return ci, nil
 }
 
 func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
