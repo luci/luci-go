@@ -623,7 +623,10 @@ func (d *Dispatcher) SchedulerForTest() *tqtesting.Scheduler {
 	if d.PushAs == "" {
 		d.PushAs = "tq-pusher@example.com"
 	}
-	sched := &tqtesting.Scheduler{Executor: directExecutor{d}}
+	sched := &tqtesting.Scheduler{
+		Executor:     directExecutor{d},
+		Deserializer: testingDeserializer{d},
+	}
 	d.Submitter = sched
 	return sched
 }
@@ -660,6 +663,34 @@ func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done fun
 		err := e.d.handlePush(ctx, body, info)
 		done(Retry.In(err) || transient.Tag.In(err))
 	}()
+}
+
+// testingDeserializer implements tqtesting.Deserializer via Dispatcher guts.
+//
+// It assumes the tasks were produces by the Dispatcher itself.
+type testingDeserializer struct {
+	d *Dispatcher
+}
+
+func (d testingDeserializer) DeserializePayload(t *taskspb.Task) (proto.Message, error) {
+	var body []byte
+	switch mt := t.MessageType.(type) {
+	case *taskspb.Task_HttpRequest:
+		body = mt.HttpRequest.Body
+	case *taskspb.Task_AppEngineHttpRequest:
+		body = mt.AppEngineHttpRequest.Body
+	default:
+		panic(fmt.Sprintf("Bad task, no payload: %q", t))
+	}
+	env := envelope{}
+	if err := json.Unmarshal(body, &env); err != nil {
+		return nil, err
+	}
+	cls, _, err := d.d.classByID(env.Class)
+	if err != nil {
+		return nil, err
+	}
+	return cls.deserialize(&env)
 }
 
 // InstallTasksRoutes installs tasks HTTP routes under the given prefix.

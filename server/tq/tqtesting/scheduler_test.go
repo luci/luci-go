@@ -24,12 +24,14 @@ import (
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestScheduler(t *testing.T) {
@@ -209,6 +211,76 @@ func TestScheduler(t *testing.T) {
 				So(exec.tasks, ShouldHaveLength, 2)
 			})
 		})
+	})
+}
+
+func TestTaskList(t *testing.T) {
+	t.Parallel()
+
+	Convey("With task list", t, func() {
+		var epoch = time.Unix(1442540000, 0)
+
+		task := func(payload int, exec bool, eta int, name string) *Task {
+			return &Task{
+				Name:      name,
+				Executing: exec,
+				ETA:       epoch.Add(time.Duration(eta) * time.Second),
+				Payload:   &durationpb.Duration{Seconds: int64(payload)},
+			}
+		}
+
+		tl := TaskList{
+			task(0, true, 3, ""),
+			task(1, false, 1, ""),
+			task(2, true, 2, ""),
+			task(3, false, 4, ""),
+			task(4, true, 5, "b"),
+			task(5, true, 5, "a"),
+		}
+
+		Convey("Payloads", func() {
+			So(tl.Payloads(), ShouldResembleProto, []*durationpb.Duration{
+				{Seconds: 0},
+				{Seconds: 1},
+				{Seconds: 2},
+				{Seconds: 3},
+				{Seconds: 4},
+				{Seconds: 5},
+			})
+		})
+
+		Convey("Executing/Pending", func() {
+			So(tl.Executing().Payloads(), ShouldResembleProto, []*durationpb.Duration{
+				{Seconds: 0},
+				{Seconds: 2},
+				{Seconds: 4},
+				{Seconds: 5},
+			})
+
+			So(tl.Pending().Payloads(), ShouldResembleProto, []*durationpb.Duration{
+				{Seconds: 1},
+				{Seconds: 3},
+			})
+		})
+
+		Convey("SortByETA", func() {
+			So(tl.SortByETA().Payloads(), ShouldResembleProto, []*durationpb.Duration{
+				{Seconds: 2},
+				{Seconds: 1},
+				{Seconds: 0},
+				{Seconds: 5},
+				{Seconds: 4},
+				{Seconds: 3},
+			})
+		})
+	})
+
+	Convey("TasksCollector", t, func() {
+		var tl TaskList
+		cb := TasksCollector(&tl)
+		cb(context.Background(), &Task{})
+		cb(context.Background(), &Task{})
+		So(tl, ShouldHaveLength, 2)
 	})
 }
 
