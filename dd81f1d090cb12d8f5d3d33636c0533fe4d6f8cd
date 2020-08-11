@@ -16,6 +16,29 @@
       "revId": "dd81f1d090cb12d8f5d3d33636c0533fe4d6f8cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf6bfe38_b9f3260f",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-11T06:23:55Z",
+      "side": 1,
+      "message": "do we really need this condition?",
+      "range": {
+        "startLine": 305,
+        "startChar": 7,
+        "endLine": 305,
+        "endChar": 47
+      },
+      "revId": "dd81f1d090cb12d8f5d3d33636c0533fe4d6f8cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
