@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -112,10 +113,16 @@ func (b *Build) Load(p datastore.PropertyMap) error {
 	return datastore.GetPLS(b).Load(p)
 }
 
-// Save returns the datastore.PropertyMap representation of this build. Does not
-// mutate this entity (i.e. the returned PropertyMap contains changes not
-// reflected in this entity).
+// Save returns the datastore.PropertyMap representation of this build. Mutates
+// this entity to reflect computed datastore fields in the returned PropertyMap.
 func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
+	b.BucketID = protoutil.FormatBucketID(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
+	b.BuilderID = protoutil.FormatBuilderID(b.Proto.Builder)
+	b.Canary = b.Proto.Canary
+	b.Experimental = b.Proto.Input.GetExperimental()
+	b.Incomplete = !protoutil.IsEnded(b.Proto.Status)
+	b.Project = b.Proto.Builder.Project
+	b.Status = b.Proto.Status
 	p, err := datastore.GetPLS(b).Save(withMeta)
 	if err != nil {
 		return nil, err
@@ -129,7 +136,7 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	// value for this type (i.e. an empty string), which is not a valid JSON dict.
 	// For the benefit of the Python service, default the value to null in the
 	// datastore which Python will handle correctly.
-	// TODO(crbug/1042991): Remove ResultDetails default once v1 API is removed
+	// TODO(crbug/1042991): Remove ResultDetails default once v1 API is removed.
 	if len(b.LegacyProperties.ResultDetails) == 0 {
 		p["result_details"] = datastore.MkProperty(nil)
 	}

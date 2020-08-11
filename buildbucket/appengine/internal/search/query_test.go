@@ -475,6 +475,11 @@ func TestFetchOnBuild(t *testing.T) {
 				ID: 8764414515958775808,
 				Proto: pb.Build{
 					Id: 8764414515958775808,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
 				},
 			}), ShouldBeNil)
 			req := &pb.SearchBuildsRequest{
@@ -491,6 +496,11 @@ func TestFetchOnBuild(t *testing.T) {
 				Builds: []*pb.Build{
 					{
 						Id: 8764414515958775808,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
 					},
 				},
 			}
@@ -502,7 +512,12 @@ func TestFetchOnBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Build{
 				ID: 1111,
 				Proto: pb.Build{
-					Id:        1111,
+					Id: 1111,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
 					CreatedBy: "project:infra",
 				},
 				CreatedBy: "project:infra",
@@ -517,7 +532,12 @@ func TestFetchOnBuild(t *testing.T) {
 			expectedRsp := &pb.SearchBuildsResponse{
 				Builds: []*pb.Build{
 					{
-						Id:        1111,
+						Id: 1111,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
 						CreatedBy: "project:infra",
 					},
 				},
