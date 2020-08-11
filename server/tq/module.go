@@ -190,48 +190,62 @@ type ModuleOptions struct {
 }
 
 // Register registers the command line flags.
+//
+// Mutates `o` by populating defaults.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
-	f.StringVar(&o.CloudProject, "tq-cloud-project", "",
+	f.StringVar(&o.CloudProject, "tq-cloud-project", o.CloudProject,
 		`Cloud Project to use to construct full queue names, default is the same as -cloud-project.`)
 
-	f.StringVar(&o.CloudRegion, "tq-cloud-region", "",
+	f.StringVar(&o.CloudRegion, "tq-cloud-region", o.CloudRegion,
 		`Cloud Region to use to construct full queue names, default is the same as -cloud-region.`)
 
-	f.StringVar(&o.Namespace, "tq-namespace", "",
+	f.StringVar(&o.Namespace, "tq-namespace", o.Namespace,
 		`Namespace for tasks that use deduplication keys (optional).`)
 
-	f.StringVar(&o.DefaultTargetHost, "tq-default-target-host", "",
+	f.StringVar(&o.DefaultTargetHost, "tq-default-target-host", o.DefaultTargetHost,
 		`Hostname to dispatch Cloud Tasks to by default.`)
 
-	f.StringVar(&o.PushAs, "tq-push-as", "",
+	f.StringVar(&o.PushAs, "tq-push-as", o.PushAs,
 		`Service account email to be used for generating OIDC tokens. `+
 			`Default is server's own account.`)
 
 	f.Var(luciflag.StringSlice(&o.AuthorizedPushers), "tq-authorized-pusher",
 		`Service account email to accept pushes from (in addition to -tq-push-as). May be repeated.`)
 
-	f.StringVar(&o.ServingPrefix, "tq-serving-prefix", "/internal/tasks",
+	if o.ServingPrefix == "" {
+		o.ServingPrefix = "/internal/tasks"
+	}
+	f.StringVar(&o.ServingPrefix, "tq-serving-prefix", o.ServingPrefix,
 		`URL prefix to serve registered task handlers from. Set to '-' to disable serving.`)
 
-	f.StringVar(&o.SweepMode, "tq-sweep-mode", "distributed",
+	if o.SweepMode == "" {
+		o.SweepMode = "distributed"
+	}
+	f.StringVar(&o.SweepMode, "tq-sweep-mode", o.SweepMode,
 		`How to do sweeps of transactional task reminders: either "distributed" or "inproc".`)
 
-	f.StringVar(&o.SweepInitiationEndpoint, "tq-sweep-initiation-endpoint", "",
+	f.StringVar(&o.SweepInitiationEndpoint, "tq-sweep-initiation-endpoint", o.SweepInitiationEndpoint,
 		`URL path of an endpoint that launches sweeps.`)
 
 	f.Var(luciflag.StringSlice(&o.SweepInitiationLaunchers), "tq-sweep-initiation-launcher",
 		`Service account email allowed to hit -tq-sweep-initiation-endpoint. May be repeated.`)
 
-	f.StringVar(&o.SweepTaskQueue, "tq-sweep-task-queue", "tq-sweep",
+	if o.SweepTaskQueue == "" {
+		o.SweepTaskQueue = "tq-sweep"
+	}
+	f.StringVar(&o.SweepTaskQueue, "tq-sweep-task-queue", o.SweepTaskQueue,
 		`A queue name to use to distribute sweep subtasks`)
 
-	f.StringVar(&o.SweepTaskPrefix, "tq-sweep-task-prefix", "",
+	f.StringVar(&o.SweepTaskPrefix, "tq-sweep-task-prefix", o.SweepTaskPrefix,
 		`URL prefix to use for sweep subtasks. Defaults to -tq-serving-prefix.`)
 
-	f.StringVar(&o.SweepTargetHost, "tq-sweep-target-host", "",
+	f.StringVar(&o.SweepTargetHost, "tq-sweep-target-host", o.SweepTargetHost,
 		`Hostname to dispatch sweep subtasks to. Defaults to -tq-default-target-host.`)
 
-	f.IntVar(&o.SweepShards, "tq-sweep-shards", 16,
+	if o.SweepShards == 0 {
+		o.SweepShards = 16
+	}
+	f.IntVar(&o.SweepShards, "tq-sweep-shards", o.SweepShards,
 		`How many subtasks are submitted when initiating a sweep.`)
 }
 
