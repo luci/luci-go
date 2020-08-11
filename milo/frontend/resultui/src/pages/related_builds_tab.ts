@@ -19,6 +19,8 @@ import { observable} from 'mobx';
 import { BuildState, consumeBuildState } from '../context/build_state/build_state';
 import { repeat } from 'lit-html/directives/repeat';
 import { Build, Timestamp, BuildStatus } from '../services/buildbucket'
+import MarkdownIt = require("../../node_modules/@types/markdown-it")
+import { sanitizeHTML } from '../../src/libs/sanitize_html'
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -109,9 +111,12 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`${(endTime.seconds - beginTime.seconds) + " secs"}`;
   }
 
-  // TODO (crbug.com/1112224): Really display this as markdown
   private displayMarkdown(markdown: string|undefined) {
-    return markdown? html`${markdown}` : html``;
+    if (markdown == undefined) {
+      return html ``;
+    }
+    const md = new MarkdownIt();
+    return sanitizeHTML(md.render(markdown));
   }
 }
 
