@@ -22,6 +22,30 @@
       "revId": "f139de839088fb39715ccdb81ebbbeb374d69e9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f82ad74_def707e3",
+        "filename": "led/ledcmd/launch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-11T21:22:30Z",
+      "side": 1,
+      "message": "Because of https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/led/job/jobcreate/create.go;l\u003d108?q\u003djobcreate%2Fcreate.go\n\nThe invocation is already cleared.\n\nThe assumption here is that if rdb is not empty, then the build should have an attached invocation, so we inform swarming to create one.",
+      "parentUuid": "d02a377d_d07153ee",
+      "range": {
+        "startLine": 98,
+        "startChar": 68,
+        "endLine": 98,
+        "endChar": 82
+      },
+      "revId": "f139de839088fb39715ccdb81ebbbeb374d69e9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
