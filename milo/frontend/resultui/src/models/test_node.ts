@@ -67,7 +67,7 @@ export enum VariantStatus {
  */
 export interface ReadonlyVariant {
   readonly testId: string;
-  readonly variantKey: string;
+  readonly variantHash: string;
   readonly status: VariantStatus;
   readonly variant: Variant;
   readonly results: ReadonlyArray<TestResult>;
