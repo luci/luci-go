@@ -498,7 +498,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 	// If not inside a transaction, submit the task right away.
 	if db == nil {
-		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.Enqueue", logging.Fields{
+		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.Submit", logging.Fields{
 			"cr.dev/class": cls.ID,
 			"cr.dev/title": task.Title,
 		})
@@ -536,23 +536,15 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 		// `ctx` here is an outer non-transactional context.
 		var err error
-		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.DeferredEnqueue", logging.Fields{
+		ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.PostTxn", logging.Fields{
 			"cr.dev/class":    cls.ID,
 			"cr.dev/title":    task.Title,
 			"cr.dev/reminder": r.ID,
 		})
 		defer func() { span.End(err) }()
 
-		// If the reminder is fresh enough, it mean the sweeper hasn't picked it
-		// up yet and we can process it right now. This is the "happy" path. Note
-		// that SubmitFromReminder keeps the reminder if it couldn't submit the task
-		// due to a transient error. We'll let the sweeper try to submit the task
-		// later. It will be the "sweep" path.
-		if clock.Now(ctx).Before(r.FreshUntil) {
-			err = internal.SubmitFromReminder(ctx, d.Submitter, db, r, req, extra, internal.TxnPathHappy)
-		} else {
-			err = errors.New("too late") // this is for span.End only
-		}
+		// Attempt to submit the task right away if the reminder is still fresh.
+		err = internal.ProcessReminderPostTxn(ctx, d.Submitter, db, r, req, extra)
 	})
 
 	return nil
