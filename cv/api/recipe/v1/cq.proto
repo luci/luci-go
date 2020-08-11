@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package cq.recipe;
 
-option go_package = "go.chromium.org/luci/cq/api/recipe/v1;recipe";
+option go_package = "go.chromium.org/luci/cv/api/recipe/v1;recipe";
 
 // Input provides CQ metadata for CQ-triggered tryjob.
 message Input {
