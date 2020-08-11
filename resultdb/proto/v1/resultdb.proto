@@ -19,6 +19,7 @@ package luci.resultdb.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/artifact.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
@@ -88,6 +89,113 @@ service ResultDB {
   // directly or indirectly.
   // Supports invocation inclusions.
   rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
+
+  rpc GetTestResultHistory (GetTestResultHistoryRequest) returns (
+    GetTestResultHistoryResponse) {};
+}
+
+message GetTestResultHistoryRequest {
+  // Required. This needs to match the realm that the data being queried exists
+  // in.
+  // I.e. For a result to be part of the history, it needs to be contained
+  // transitively by an invocation in this realm.
+  string realm = 1;
+
+  // Specify the subset of test variants whose history we want to retrieve.
+  string test_id_regexp = 2;
+  VariantPredicate variant_predicate = 3;
+
+  // A range of commit_positions for the results.
+  // Commit positions are assumed to increase from earliest to latest.
+  message CommitPositionRange {
+    // 'earliest' and 'latest' below only make sense in the context of a single
+    // repository and ref.
+    string host = 1;
+    string project = 2;
+    string ref = 3;
+
+    // If 0, the results will go as far back as possible.
+    int64 earliest = 4;  // Incl.
+
+    // If 0, the results will start with the most recent result.
+    int64 latest = 5;  // Excl.
+  }
+
+  // A range of timestamps for the results.
+  message TimeRange {
+
+    // If unset, the results will go as far back as possible.
+    google.protobuf.Timestamp earliest = 1;  // Incl.
+
+    // If unset, the results will start with the most recent result.
+    google.protobuf.Timestamp latest = 2; // Excl.
+  }
+
+  // The test results are sorted by commit position and/or timestamp in
+  // the database, according to a field in the invocation that contains them.
+  // If neither range option is given, the service will query both options and
+  // return the results for the option with the most recent (by timestamp)
+  // results.
+  // Note that all results have a timestamp associated with them, even if they
+  // also have a commit position.
+  // If a given test variant changes from using only timestamped results to
+  // results tagged (or viceversa) with commit position we want the response to
+  // reflect this as soon as possible.
+  oneof range {
+    CommitPositionRange cp_range = 4;
+    TimeRange time_range = 5;
+  }
+
+  // Specifies the number of results per page.
+  int64 page_size = 6;
+
+  // Which fields of the TestResult entries to populate.
+  google.protobuf.FieldMask fields = 7;
+
+  // Populate this field to get subsequent pages if the original response
+  // contained a next page token.
+  // A request for the next page of the results must be identical to the
+  // original one except for this field.
+  string page_token = 101;
+}
+
+message GetTestResultHistoryResponse {
+  message Entry {
+    // Commit position of the invocation that contains the result.
+    int64 commit_position = 1;
+
+    // Creation time of the invocation that contains the result.
+    google.protobuf.Timestamp timestamp = 2;
+
+    // The result itself. Masked by the `fields` field of
+    // `GetResultHistoryRequest`.
+    TestResult result = 3;
+  }
+
+  // The actual results, in descending order sorted first by sorting_field, then
+  // by TestId, and then by VariantHash.
+  repeated Entry entries = 1;
+
+  enum Order {
+    // Intended to avoid a misleading default.
+    ORDER_UNSPECIFIED = 0;
+
+    // Entries are sorted by invocation create time descending, then
+    // test ID, then variant hash.
+    INVOCATION_TIMESTAMP = 1;
+
+    // Entries are sorted by invocation's commit position, then  test ID,
+    // then variant hash.
+    COMMIT_POSITION = 2;
+  }
+
+  // The order of entries.
+  Order order = 2;
+
+  // This field will be set if there are more results to return.
+  // To get the next page of data, send the same request again, but include this 
+  // token.
+  string next_page_token = 3;
 }
 
 // A request message for GetInvocation RPC.

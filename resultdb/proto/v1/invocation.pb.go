@@ -372,10 +372,10 @@ type TestResultsHistoryOptions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Set this to expose the history of results sorted by the containing
+	// Set this to expose the history of results indexed by the containing
 	// invocation's create_time.
 	UseInvocationTimestamp bool `protobuf:"varint,1,opt,name=use_invocation_timestamp,json=useInvocationTimestamp,proto3" json:"use_invocation_timestamp,omitempty"`
-	// Set this to have the results sorted by commit.position.
+	// Set this to have the results indexed by commit.position.
 	// It's up to the creator of the invocation to set this consistently over
 	// time across the same test variant.
 	Commit *CommitPosition `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
