@@ -233,3 +233,40 @@ func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 	}()
 	return s
 }
+
+// PushDirectoryNoIsolated is similar to PushDirectory, but it doesn't create
+// a separate isolated file for the files in |root|. Instead, it returns the
+// pending items representing the files under this directory.
+func PushDirectoryNoIsolated(a *Archiver, root, relDir string) (error, []*PendingItem) {
+	end := tracer.Span(a, "PushDirectoryNoIsolated", tracer.Args{"path": relDir, "root": root})
+	var items []*PendingItem
+	defer func() { end(tracer.Args{"total": len(items)}) }()
+	c := make(chan *walkItem)
+
+	fsView, err := common.NewFilesystemView(root, "")
+	if err != nil {
+		return err, nil
+	}
+
+	go func() {
+		walk(root, fsView, c)
+		close(c)
+	}()
+
+	for item := range c {
+		if relDir != "" {
+			item.relPath = filepath.Join(relDir, item.relPath)
+		}
+		items = append(items, a.PushFile(item.relPath, item.fullPath, item.info.Size()))
+	}
+	log.Printf("PushDirectoryNoIsolated(%s) = %d files", root, len(items))
+
+	// Hashing, cache lookups and upload is done asynchronously.
+	for _, item := range items {
+		item.WaitForHashed()
+		if err = item.Error(); err != nil {
+			return err, nil
+		}
+	}
+	return nil, items
+}
