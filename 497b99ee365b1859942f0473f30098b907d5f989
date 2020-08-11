@@ -16,6 +16,24 @@
       "revId": "497b99ee365b1859942f0473f30098b907d5f989",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1cad0cb6_54d74915",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-11T05:23:42Z",
+      "side": 1,
+      "message": "It\u0027s because it actually serves double duty:\n1. Run loop for unit tests.\n2. Run loop when running TQ processes locally.\n\nFor (1) we need arbitrary stop conditions and task payload deserialization.\nFor (2) we don\u0027t need all that, but need a way to pass the task through server middleware chain, as if it was called by Cloud Tasks.\n\nFor (1) we use Deserializer, for (2) we don\u0027t need it.\nFor (1) we use directExecutor{}, for (2) we use LoopbackExecutor.",
+      "parentUuid": "0ffec566_fac37ca4",
+      "revId": "497b99ee365b1859942f0473f30098b907d5f989",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
