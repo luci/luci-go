@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "42ec41ee_667de4dc",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-11T07:48:37Z",
+      "side": 1,
+      "message": "could you write dependent CL replacing PushDirectory? I\u0027d like to confirm how this will replace exsting function.",
+      "parentUuid": "e886a706_248e54dd",
+      "range": {
+        "startLine": 237,
+        "startChar": 41,
+        "endLine": 237,
+        "endChar": 54
+      },
+      "revId": "ef1ced0ca0d01ce4da15bdb8e6fa2cc3ceef0302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b4b8e159_b57d6754",
         "filename": "client/archiver/directory.go",
         "patchSetId": 1
