@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "764d522e_6402508e",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-11T20:47:33Z",
+      "side": 1,
+      "message": "Ah, nvm. I got confused by the \"option\", thinking it only specifies that this invocation should be ordered by commit position, not realizing it will require the commit position value here already.",
+      "parentUuid": "e6076c84_99f8461a",
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12509958_a251d1e0",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 1
