@@ -162,7 +162,7 @@ func TestValidateTestResult(t *testing.T) {
 			badInputs := []string{
 				strings.Repeat("1", 512+1),
 				// [[:print:]] matches with [ -~] and [[:graph:]]
-				string(163),
+				string(rune(163)),
 			}
 			for _, in := range badInputs {
 				msg.TestId = in
@@ -179,7 +179,7 @@ func TestValidateTestResult(t *testing.T) {
 			badInputs := []string{
 				strings.Repeat("1", 32+1),
 				// [[:ascii:]] matches with a char in [\x00-\x7F]
-				string(163),
+				string(rune(163)),
 			}
 			for _, in := range badInputs {
 				msg.ResultId = in
