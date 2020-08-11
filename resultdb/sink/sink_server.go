@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -68,8 +69,14 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 // or the context is cancelled.
 func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	ss := s.(*sinkpb.DecoratedSink).Service.(*sinkServer)
+
+	logging.Infof(ctx, "SinkServer: draining TestResult channel started")
 	ss.tc.closeAndDrain(ctx)
+	logging.Infof(ctx, "SinkServer: draining TestResult channel ended")
+
+	logging.Infof(ctx, "SinkServer: draining Artifact channel started")
 	ss.ac.closeAndDrain(ctx)
+	logging.Infof(ctx, "SinkServer: draining Artifact channel ended")
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must

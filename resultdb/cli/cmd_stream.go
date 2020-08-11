@@ -175,7 +175,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if !ok {
 		return r.done(err)
 	}
-	logging.Infof(ctx, "Child process terminated with %d", ec)
+	logging.Infof(ctx, "rdb-stream: exiting with %d", ec)
 	return ec
 }
 
@@ -209,10 +209,12 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		defer exported.Close()
+		defer func() {
+			logging.Infof(ctx, "rdb-stream: the test process terminated")
+			exported.Close()
+		}()
 		exported.SetInCmd(cmd)
-
-		logging.Debugf(ctx, "Starting: %q", cmd.Args)
+		logging.Infof(ctx, "rdb-stream: starting the test command - %q", cmd.Args)
 		if err := cmd.Start(); err != nil {
 			return errors.Annotate(err, "cmd.start").Err()
 		}
@@ -244,7 +246,7 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 	}
 
 	ret = lucictx.ResultDBInvocation{Name: resp.Name, UpdateToken: tks[0]}
-	fmt.Fprintf(os.Stderr, "created invocation: https://ci.chromium.org/ui/inv/%s\n", invID)
+	fmt.Fprintf(os.Stderr, "rdb-stream: created invocation - https://ci.chromium.org/ui/inv/%s\n", invID)
 	return
 }
 
