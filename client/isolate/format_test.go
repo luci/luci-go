@@ -26,25 +26,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/isolated"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func TestReadOnlyValue(t *testing.T) {
-	t.Parallel()
-	Convey(`Isolate should properly support read-only values.`, t, func() {
-		So(NotSet.ToIsolated(), ShouldBeNil)
-		So(ReadOnlyValue(100).ToIsolated(), ShouldBeNil)
-		tmp := new(isolated.ReadOnlyValue)
-		*tmp = isolated.Writable
-		So(Writable.ToIsolated(), ShouldResemble, tmp)
-		*tmp = isolated.FilesReadOnly
-		So(FilesReadOnly.ToIsolated(), ShouldResemble, tmp)
-		*tmp = isolated.DirsReadOnly
-		So(DirsReadOnly.ToIsolated(), ShouldResemble, tmp)
-	})
-}
 
 func TestConditionJson(t *testing.T) {
 	t.Parallel()
@@ -414,13 +397,13 @@ func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 		if runtime.GOOS == "windows" {
 			root = "x:\\dir"
 		}
-		_, _, _, _, err := LoadIsolateForConfig(root, isoData, nil)
+		_, _, _, err := LoadIsolateForConfig(root, isoData, nil)
 		So(err, ShouldNotBeNil)
 		Convey(fmt.Sprintf("Verify error message: %s", err), func() {
 			So(err.Error(), ShouldContainSubstring, "variables were missing")
 			So(err.Error(), ShouldContainSubstring, "bit")
 			So(err.Error(), ShouldContainSubstring, "OS")
-			_, _, _, _, err = LoadIsolateForConfig(root, isoData, map[string]string{"bit": "32"})
+			_, _, _, err = LoadIsolateForConfig(root, isoData, map[string]string{"bit": "32"})
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "variables were missing")
 			So(err.Error(), ShouldContainSubstring, "OS")
@@ -437,19 +420,17 @@ func TestLoadIsolateForConfig(t *testing.T) {
 			root = "x:\\dir"
 		}
 		vars := map[string]string{"bit": "64", "OS": "linux"}
-		cmd, deps, ro, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		cmd, deps, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(ro, ShouldResemble, NotSet) // first condition has no read_only specified.
 		So(cmd, ShouldResemble, []string{"python", "64linuxOrWin"})
 		So(deps, ShouldResemble, []string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")})
 
 		// Case win64, matches only first condition.
 		vars = map[string]string{"bit": "64", "OS": "win"}
-		cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		cmd, deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(ro, ShouldResemble, NotSet) // first condition has no read_only specified.
 		So(cmd, ShouldResemble, []string{"python", "64linuxOrWin"})
 		So(deps, ShouldResemble, []string{
 			"64linuxOrWin",
@@ -458,19 +439,17 @@ func TestLoadIsolateForConfig(t *testing.T) {
 
 		// Case mac64, matches only second condition.
 		vars = map[string]string{"bit": "64", "OS": "mac"}
-		cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		cmd, deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(ro, ShouldResemble, DirsReadOnly) // second condition has read_only 2.
 		So(cmd, ShouldResemble, []string{"python", "32orMac64"})
 		So(deps, ShouldBeEmpty)
 
 		// Case win32, both first and second condition match.
 		vars = map[string]string{"bit": "32", "OS": "win"}
-		cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
+		cmd, deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, root)
-		So(ro, ShouldResemble, DirsReadOnly) // first condition no read_only, but second has 2.
 		So(cmd, ShouldResemble, []string{"python", "32orMac64"})
 		So(deps, ShouldResemble, []string{
 			"64linuxOrWin",
@@ -496,20 +475,19 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 
 		// Test failures.
 		absIncData := addIncludesToSample(sampleIsolateData, "'includes':['/abs/path']")
-		_, _, _, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), nil)
+		_, _, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), nil)
 		So(err, ShouldNotBeNil)
 
-		_, _, _, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
+		_, _, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
 			[]byte(sampleIsolateDataWithIncludes), nil)
 		So(err, ShouldNotBeNil)
 
 		// Test Successful loading.
 		// Case mac32, matches only second condition from main isolate and one in included.
 		vars := map[string]string{"bit": "64", "OS": "linux"}
-		cmd, deps, ro, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
+		cmd, deps, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
 		So(err, ShouldBeNil)
 		So(dir, ShouldResemble, tmpDir)
-		So(ro, ShouldResemble, NotSet) // first condition has no read_only specified.
 		So(cmd, ShouldResemble, []string{"python", "64linuxOrWin"})
 		So(deps, ShouldResemble, []string{
 			"64linuxOrWin",
