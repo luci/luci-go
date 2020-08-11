@@ -41,6 +41,16 @@ type ModuleOptions struct {
 	// Default is the global Default instance.
 	Dispatcher *Dispatcher
 
+	// CloudProject is ID of a project to use to construct full queue names.
+	//
+	// Default is the project the server is running in.
+	CloudProject string
+
+	// CloudRegion is a ID of a region to use to construct full queue names.
+	//
+	// Default is the region the server is running in.
+	CloudRegion string
+
 	// Namespace is a namespace for tasks that use DeduplicationKey.
 	//
 	// This is needed if two otherwise independent deployments share a single
@@ -181,6 +191,12 @@ type ModuleOptions struct {
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
+	f.StringVar(&o.CloudProject, "tq-cloud-project", "",
+		`Cloud Project to use to construct full queue names, default is the same as -cloud-project.`)
+
+	f.StringVar(&o.CloudRegion, "tq-cloud-region", "",
+		`Cloud Region to use to construct full queue names, default is the same as -cloud-region.`)
+
 	f.StringVar(&o.Namespace, "tq-namespace", "",
 		`Namespace for tasks that use deduplication keys (optional).`)
 
@@ -267,10 +283,17 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 
 	disp.GAE = opts.GAE
 	disp.NoAuth = !opts.Prod
-	disp.CloudProject = opts.CloudProject
-	disp.CloudRegion = opts.CloudRegion
 	disp.DefaultTargetHost = m.opts.DefaultTargetHost
 	disp.AuthorizedPushers = m.opts.AuthorizedPushers
+
+	disp.CloudProject = m.opts.CloudProject
+	if disp.CloudProject == "" {
+		disp.CloudProject = opts.CloudProject
+	}
+	disp.CloudRegion = m.opts.CloudRegion
+	if disp.CloudRegion == "" {
+		disp.CloudRegion = opts.CloudRegion
+	}
 
 	if err := ValidateNamespace(m.opts.Namespace); err != nil {
 		return errors.Annotate(err, "bad TQ namespace %q", m.opts.Namespace).Err()
