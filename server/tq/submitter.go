@@ -19,6 +19,7 @@ import (
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/protobuf/proto"
 )
 
 // CloudTaskSubmitter implements Submitter on top of Cloud Tasks client.
@@ -27,7 +28,7 @@ type CloudTaskSubmitter struct {
 }
 
 // CreateTask creates a task, returning a gRPC status.
-func (s *CloudTaskSubmitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+func (s *CloudTaskSubmitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	_, err := s.Client.CreateTask(ctx, req)
 	return err
 }

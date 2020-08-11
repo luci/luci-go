@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/logging"
 )
 
 // ClockTag tags the clock used in scheduler's sleep.
@@ -48,15 +47,6 @@ const ClockTag = "tq-scheduler-sleep"
 type Scheduler struct {
 	// Executor knows how to execute tasks when their ETA arrives.
 	Executor Executor
-
-	// Deserializer knows how to transform raw Cloud Tasks into proto messages
-	// with caller's payload.
-	//
-	// Messages produced by the deserializer will be put into Payload field in
-	// Task.
-	//
-	// Optional. If not set, all Payloads will be nil.
-	Deserializer Deserializer
 
 	// MaxAttempts is the maximum number of attempts for a task, including the
 	// first attempt.
@@ -202,15 +192,8 @@ type Executor interface {
 	Execute(ctx context.Context, t *Task, done func(retry bool))
 }
 
-// Deserializer knows how to transform raw Cloud Tasks into proto messages
-// with caller's payload.
-type Deserializer interface {
-	// DeserializePayload extracts a user payload from a raw Cloud Task body.
-	DeserializePayload(t *taskspb.Task) (proto.Message, error)
-}
-
 // CreateTask scheduler a task for later execution.
-func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, payload proto.Message) error {
 	// Note: this validation is pretty sloppy. It validates only things Scheduler
 	// depends on. It doesn't validate full conformance to Cloud Tasks API.
 	if req.Parent == "" {
@@ -224,10 +207,12 @@ func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskReque
 	}
 
 	task := &Task{
-		Task:    proto.Clone(req.Task).(*taskspb.Task),
-		Payload: s.deserializePayload(ctx, req.Task),
-		Name:    req.Task.Name,
-		ETA:     req.Task.ScheduleTime.AsTime(),
+		Task: proto.Clone(req.Task).(*taskspb.Task),
+		Name: req.Task.Name,
+		ETA:  req.Task.ScheduleTime.AsTime(),
+	}
+	if payload != nil {
+		task.Payload = proto.Clone(payload)
 	}
 	if now := clock.Now(ctx); task.ETA.Before(now) {
 		task.ETA = now
@@ -454,21 +439,6 @@ func (s *Scheduler) checkClockLocked(ctx context.Context) {
 	} else if s.clock != clock {
 		panic("multiple clocks used with a single Scheduler, this is dangerous")
 	}
-}
-
-// deserializePayload attempts to deserialize task's payload.
-//
-// Returns nil if it is unrecognized or no deserializer is available.
-func (s *Scheduler) deserializePayload(ctx context.Context, t *taskspb.Task) proto.Message {
-	if s.Deserializer == nil {
-		return nil
-	}
-	msg, err := s.Deserializer.DeserializePayload(t)
-	if err != nil {
-		logging.Errorf(ctx, "Failed to deserialize task's payload: %s", err)
-		return nil
-	}
-	return msg
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -466,7 +466,7 @@ type submitter struct {
 	reqs []*taskspb.CreateTaskRequest
 }
 
-func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest) error {
+func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 	s.reqs = append(s.reqs, req)

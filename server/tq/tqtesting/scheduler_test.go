@@ -86,7 +86,7 @@ func TestScheduler(t *testing.T) {
 			if !eta.IsZero() {
 				req.Task.ScheduleTime = timestamppb.New(eta)
 			}
-			return status.Code(sched.CreateTask(ctx, req))
+			return status.Code(sched.CreateTask(ctx, req, nil))
 		}
 
 		Convey("One by one tasks", func() {
