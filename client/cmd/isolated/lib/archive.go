@@ -162,12 +162,6 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	cl, err := c.defaultFlags.StartTracing()
-	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	defer cl.Close()
 	defer c.profilerFlags.Stop()
 	start := time.Now()
 	stats, err := c.doArchive(a, args)

@@ -213,16 +213,6 @@ func (c *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		printError(a, err)
 		return 1
 	}
-	cl, err := c.defaultFlags.StartTracing()
-	if err != nil {
-		printError(a, err)
-		return 1
-	}
-	if err = cl.Close(); err != nil {
-		printError(a, err)
-		return 1
-	}
-
 	if err := c.main(a, args); err != nil {
 		printError(a, err)
 		return 1

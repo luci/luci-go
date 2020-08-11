@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 // DefaultNamespace is the namespace that should be used with the New function.
@@ -171,8 +170,6 @@ func (i *Client) ServerCapabilities(c context.Context) (*isolateservice.Handlers
 // The returned list is in the same order as 'items', with entries nil for
 // items that were present.
 func (i *Client) Contains(c context.Context, items []*isolateservice.HandlersEndpointsV1Digest) (out []*PushState, err error) {
-	end := tracer.Span(i, "contains", tracer.Args{"number": len(items)})
-	defer func() { end(tracer.Args{"err": err}) }()
 	in := isolateservice.HandlersEndpointsV1DigestCollection{Items: items, Namespace: &isolateservice.HandlersEndpointsV1Namespace{}}
 	in.Namespace.Namespace = i.namespace
 	data := &isolateservice.HandlersEndpointsV1UrlCollection{}
@@ -206,8 +203,6 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 
 	// Optionally notify the server that it's done.
 	if state.status.GsUploadUrl != "" {
-		end := tracer.Span(i, "finalize", nil)
-		defer func() { end(tracer.Args{"err": err}) }()
 		// TODO(vadimsh): Calculate MD5 or CRC32C sum while uploading a file and
 		// send it to isolated server. That way isolate server can verify that
 		// the data safely reached Google Storage (GS provides MD5 and CRC32C of
@@ -281,8 +276,6 @@ func (i *Client) postJSON(c context.Context, resource string, headers map[string
 
 func (i *Client) doPush(c context.Context, state *PushState, source Source) (err error) {
 	useDB := state.status.GsUploadUrl == ""
-	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
-	defer func() { end(tracer.Args{"err": err}) }()
 	if useDB {
 		// Fast inline storage.
 		var src io.ReadCloser
@@ -295,9 +288,7 @@ func (i *Client) doPush(c context.Context, state *PushState, source Source) (err
 		// Storage is deferred to Google Cloud Storage.
 		err = i.gcsHandler.Push(c, i, state.status, source)
 	}
-	if err != nil {
-		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
-	}
+
 	return err
 }
 
