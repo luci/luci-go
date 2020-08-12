@@ -85,6 +85,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -112,6 +113,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/dump"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/module"
@@ -223,6 +225,8 @@ type Options struct {
 	ProfilingServiceID string // service name to associated with profiles in Stackdriver Profiler
 
 	ContainerImageID string // ID of the container image with this binary, for logs (optional)
+
+	EnableExperiments []string // names of go.chromium.org/luci/server/experiments to enable
 
 	testSeed           int64                   // used to seed rng in tests
 	testStdout         sdlogger.LogEntryWriter // mocks stdout in tests
@@ -343,6 +347,10 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.ContainerImageID,
 		"ID of the container image with this binary, for logs (optional)",
 	)
+
+	// See go.chromium.org/luci/server/experiments.
+	f.Var(luciflag.StringSlice(&o.EnableExperiments), "enable-experiment",
+		`A name of the experiment to enable. May be repeated.`)
 }
 
 // FromGAEEnv uses the GAE_APPLICATION env var (and other GAE-specific env vars)
@@ -640,6 +648,18 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 			logging.Infof(srv.Context, "Cloud region is %s", srv.Options.CloudRegion)
 		}
 	}
+
+	// Log enabled experiments, warn if some of them are unknown now.
+	var exps []experiments.ID
+	for _, name := range opts.EnableExperiments {
+		if exp, ok := experiments.GetByName(name); ok {
+			logging.Infof(ctx, "Enabling experiment %q", name)
+			exps = append(exps, exp)
+		} else {
+			logging.Warningf(ctx, "Skipping unknown experiment %q", name)
+		}
+	}
+	srv.Context = experiments.Enable(srv.Context, exps...)
 
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
