@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "b17be506_b38f0f43",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:02:14Z",
+      "side": 1,
+      "message": "I think reflect pkg will just omit the rest of the tag k-v pair. But json tag is fine. See: https://play.golang.org/p/8M4itRC62U-",
+      "parentUuid": "891db30c_fd991a29",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f1354d8_e1311aff",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -47,6 +65,30 @@
       "writtenOn": "2020-08-12T01:23:39Z",
       "side": 1,
       "message": "this is fine, but *personally* in such cases I prefer *slightly* faster/shorter:\n\n  ret.Messages \u003d make([]*gerritpb.ChangeMessageInfo, len(ci.Messages))\n  for i, msg :\u003d range ci.Messages {\n    ret.Messages[i] \u003d msg.ToProto()\n  }",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 211,
+        "endChar": 3
+      },
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e54ca62_6fcc705e",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:02:14Z",
+      "side": 1,
+      "message": "Done!\n\nMay I ask why? I searched a bit but couldn\u0027t find the answer. I thought in terms of efficiency, my version will be better because my mental model is that `make([]T, l)` will create a slice with length l and assign zero value to each element. And my version will avoid creating zero value part (though it is nil in this particular case) and both versions don\u0027t need resizing the underlying array.",
+      "parentUuid": "9f1354d8_e1311aff",
       "range": {
         "startLine": 208,
         "startChar": 2,
@@ -76,6 +118,24 @@
     },
     {
       "key": {
+        "uuid": "8bfc141b_e8007b71",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:02:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77869963_e8ca423f",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e7dd6aa_cdcd1235",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -87,6 +147,24 @@
       "writtenOn": "2020-08-12T01:23:39Z",
       "side": 1,
       "message": "minor: Isn\u0027t DETAILED_ACCOUNTS required for this to be populated?",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "660317e9_2185d547",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:02:14Z",
+      "side": 1,
+      "message": "Hmmm.. From the documentation[1], it looks like DETAILED_ACCOUNTS only matters for the fields (namely - email, username) inside AccountInfo? Specifically for that GetChangeDetail, It will specify `DETAIL_ACCOUNTS` by default.\n\n[1]: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#detailed-accounts\n[2]: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change-detail",
+      "parentUuid": "8e7dd6aa_cdcd1235",
       "revId": "51528df6a559ec0825bc79604812335207e88895",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -113,6 +191,30 @@
       "revId": "51528df6a559ec0825bc79604812335207e88895",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0efe3f68_628a7b74",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:02:14Z",
+      "side": 1,
+      "message": "According to discussion in IM, filed a bug to Gerrit:) Thanks for catching this though",
+      "parentUuid": "41447c78_69d7bde3",
+      "range": {
+        "startLine": 326,
+        "startChar": 9,
+        "endLine": 326,
+        "endChar": 16
+      },
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
