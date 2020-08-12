@@ -101,6 +101,30 @@
     },
     {
       "key": {
+        "uuid": "889fbabe_00495500",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T05:52:23Z",
+      "side": 1,
+      "message": "First and foremost, you don\u0027t need to do what I *personally prefer* if you see no benefit 😊\n\n\n\nSecond, while I didn\u0027t check Go\u0027s version, but in C/C++ zero-ing out slices is extremely efficient memset operation. For sizes less 8KB, I don\u0027t think you\u0027d notice the cost in benchmarks of this code. Note that 8K is enough to allocate 1K messages, which is Gerrit max per CL.\n\nWhat I think is the cost in your first approach is that \n\nfor ... {\n  fut_value \u003d append(cur_value, data)\n  cur_value \u003d fut_value\n}\n\nwould mean that there is a dependency of loop iteration (i+1)-th on i-th iteration (since `fut_value` may theoretically be a totally new slice). This means loop unrolling is harder (read: harder to parallelize; for more, see https://en.wikipedia.org/wiki/Loop_unrolling). Smart optimizers in compilers like LLVM or GCC would probably figure it out that in fact slice is guaranteed to point to the same area in memory after each append() call, but i\u0027m less hopeful about Go.\n\n\n\nThird, anyhow this is microoptimization at best since within loop body you are actually allocating new memory, which probably blocks any loop unrolling in Go land anyway, which is good s.t. I can resist the urge to check resulting assembly 😊",
+      "parentUuid": "5e54ca62_6fcc705e",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 211,
+        "endChar": 3
+      },
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77869963_e8ca423f",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -168,6 +192,24 @@
       "revId": "51528df6a559ec0825bc79604812335207e88895",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "211128fe_0b823a4c",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T05:52:23Z",
+      "side": 1,
+      "message": "well, this doesn\u0027t matter to me that much. In CQ, we have to specify DETAIL_ACCOUNTS anyhow.",
+      "parentUuid": "660317e9_2185d547",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
