@@ -237,6 +237,30 @@
       "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4ff2a9f_1554bdce",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-12T08:47:48Z",
+      "side": 1,
+      "message": "\u003e E.g. isolated/archive.go\u0027s L125-140 pushes all as files, regardless of whether it\u0027s a regular file or a symlink; while isolate/isolate.go does distinguish them \n\nI think it is better to change symlink handling there too. But I just meant to say write here like\n```\nfor dir, wd :\u003d opts.Dirs {\n  filepath.Walk(..., func(...) {\n     // has similar code for opts.Files\n  })\n}\n```\n\n\u003e So I guess the code just relies on people not to create symlinks pointing to abs path?\n\nI think so, but there is broken case in https://crbug.com/1112996\nhttps://crbug.com/1112996#c15 is my proposal for that.",
+      "parentUuid": "7f7a2654_1ca22056",
+      "range": {
+        "startLine": 152,
+        "startChar": 15,
+        "endLine": 152,
+        "endChar": 19
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
