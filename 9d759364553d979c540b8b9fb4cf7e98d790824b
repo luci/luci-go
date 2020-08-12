@@ -120,6 +120,48 @@
     },
     {
       "key": {
+        "uuid": "247e245b_616532a9",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-12T00:30:13Z",
+      "side": 1,
+      "message": "WDYT About HistoryOptions containing a TestResultsHistoryOptions?\nthese would be e.g. invocation.HistoryOptions.TestResults.UseInvocationTimestamp, invocation.HistoryOptions.TestResults.Commit.Position which doesn\u0027t seem too bad.",
+      "parentUuid": "85d3bcb4_43b46d0e",
+      "range": {
+        "startLine": 134,
+        "startChar": 28,
+        "endLine": 134,
+        "endChar": 43
+      },
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fcb532f_d09660cd",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-12T00:30:13Z",
+      "side": 1,
+      "message": "Yes. I had assumed that this would be done when finalizing the invocation, as we would do the common prefix and uvariant computations then, but it can definitely be done earlier via UpdateInvocation.",
+      "parentUuid": "764d522e_6402508e",
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12509958_a251d1e0",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 1
@@ -140,6 +182,30 @@
       "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6e144f8_4c75dcba",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-12T00:30:13Z",
+      "side": 1,
+      "message": "Done, I mostly had copied this from the design doc. I\u0027ve now given it a pass to add comments PTAL.",
+      "parentUuid": "12509958_a251d1e0",
+      "range": {
+        "startLine": 158,
+        "startChar": 8,
+        "endLine": 158,
+        "endChar": 33
+      },
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

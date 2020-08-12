@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e28f2edc_5d4ae248",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-12T00:30:13Z",
+      "side": 1,
+      "message": "Is built from? Associated with? I am not sure what\u0027s better.",
+      "range": {
+        "startLine": 181,
+        "startChar": 3,
+        "endLine": 181,
+        "endChar": 12
+      },
+      "revId": "70b7382ee6ea6694be2a58e74e29c1fc4d9325ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
