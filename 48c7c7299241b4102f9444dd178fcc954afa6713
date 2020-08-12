@@ -213,6 +213,30 @@
       "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f7a2654_1ca22056",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-12T08:32:53Z",
+      "side": 1,
+      "message": "I\u0027m talking about directory.go\u0027s L120. I guess you were talking about isolated/archive.go\u0027s L125-L140? Note that this change needs to work for isolate as well. From what I can tell, isolated and isolate handle symlinks quite differently. E.g. isolated/archive.go\u0027s L125-140 pushes all as files, regardless of whether it\u0027s a regular file or a symlink; while isolate/isolate.go does distinguish them (https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/client/isolate/isolate.go;l\u003d339-347;drc\u003df701a3b9eae1d0adc44b6b415dcb9cede840d801).\n\nWithout any context, such kind of (intentional? accidental?) inconsistency makes it hard for me to decide whether we want to keep symlinks or translate them to files, and could result in multiple solutions to work around `includes`. For example, if we are allowed to treat all the symlinks as files under a directory, then it\u0027s simpler for the fix.\n\nI\u0027d suggest us to agree on how we want to handle symlinks before the fix.\n\n\u003e symlink is not always relative?\n\nIt\u0027s not. On the other hand, I don\u0027t think the existing code even handles the absolute path case. See directory.go L120, it uses whatever is returned by os.Readlink(). So I guess the code just relies on people not to create symlinks pointing to abs path?",
+      "parentUuid": "7ff538bc_7205bdfa",
+      "range": {
+        "startLine": 152,
+        "startChar": 15,
+        "endLine": 152,
+        "endChar": 19
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
