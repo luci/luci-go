@@ -338,7 +338,7 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 				if err != nil {
 					// Kill the process: there's no reason to continue if a file is
 					// unavailable.
-					log.Fatalf("Unable to stat %q: %v", dep, err)
+					log.Fatalf("Unable toooo stat %q: %v", dep, err)
 				}
 				i.Files[relPath] = isolated.SymLink(l)
 			} else {
