@@ -14,9 +14,12 @@
 
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 package gerrit;
+
+option go_package = "go.chromium.org/luci/common/proto/gerrit;gerrit";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service Gerrit {
   // Loads a change by id.
@@ -233,6 +236,11 @@ message ChangeInfo {
   //
   // Only set if label info is requested.
   map<string, LabelInfo> labels = 8;
+
+  // Messages associated with the change.
+  //
+  // Only set if messages are requested.
+  repeated ChangeMessageInfo messages = 9;
 }
 
 // Information about a patch set.
@@ -293,6 +301,29 @@ message LabelInfo {
 
   // The default voting value for the label.
   int32 default_value = 8;
+}
+
+// Information about a message attached to change.
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info
+message ChangeMessageInfo {
+  // The ID of the message
+  string id = 1;
+
+  // Author of the message.
+  //
+  // Unset if written by the Gerrit system.
+  AccountInfo author = 2;
+
+  // Real author of the message.
+  //
+  // Set if the message was posted on behalf of another user.
+  AccountInfo real_author = 3;
+
+  // The timestamp this message was posted.
+  google.protobuf.Timestamp date = 4;
+
+  // The text left by the user.
+  string message = 5;
 }
 
 // Information about a file in a patch set.
