@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a24726b1_b9ac72e0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-12T05:05:45Z",
+      "side": 1,
+      "message": "Hi Nodir and Sana, I changed to use n db queries concurrently and tested in Dev. PTAL again, thanks.\n\n(BTW, the CQ dry run test failure is unrelated to this CL. It\u0027s under /luci/common/tsmon pkg and likely a transient failure.)",
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
