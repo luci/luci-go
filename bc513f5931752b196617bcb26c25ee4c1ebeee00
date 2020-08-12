@@ -22,6 +22,63 @@
       "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3498388c_33df943c",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:12:55Z",
+      "side": 1,
+      "message": "This should suffice at the API level. If necessary, impl can route the request to \".../detail\" depending on QueryOptions specified.\n\nAlso, please test end-to-end that this actually works as intended.\nMaybe we should have a simple demo/ subpackage with bare bones main.go where one can easily change input+ RPC and then log output of a command?",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 55
+      },
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ec57c1f_55ca37a2",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:12:55Z",
+      "side": 1,
+      "message": "Ideal gRPC API would have a fieldmask instead of this.",
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "659283f6_7ecdcbd4",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:12:55Z",
+      "side": 1,
+      "message": "^ ideally, fieldmask would be specified here, based on which the QueryOption would be specified in RPC to Gerrit.",
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
