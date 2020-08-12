@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/sync/parallel"
@@ -120,7 +122,7 @@ func NewDistributedSweeper(disp *Dispatcher, opts DistributedSweeperOptions) Swe
 		opts.TaskPrefix = "/internal/tasks"
 	}
 
-	impl := &distributedSweeper{disp: disp, opts: opts}
+	impl := &distributedSweeper{opts: opts}
 
 	// Make sweep.Distributed submit raw Cloud Tasks requests via `impl`, enqueue
 	// sweep jobs via `disp`, which will eventually result in ExecSweepTask.
@@ -139,16 +141,16 @@ func NewDistributedSweeper(disp *Dispatcher, opts DistributedSweeperOptions) Swe
 // It will be called concurrently.
 type distributedSweeper struct {
 	opts    DistributedSweeperOptions
-	disp    *Dispatcher
 	enqueue func(ctx context.Context, task *tqpb.SweepTask) error
 }
 
-// CreateTask delegates to disp.Submitter.CreateTask.
-//
-// This is useful in tests to make sure changes to disp.Submitter affect
-// the sweeper too.
+// CreateTask delegates to the submitter in the context.
 func (s *distributedSweeper) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
-	return s.disp.Submitter.CreateTask(ctx, req, msg)
+	sub, err := currentSubmitter(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "%s", err)
+	}
+	return sub.CreateTask(ctx, req, msg)
 }
 
 // sweep initiates an asynchronous sweep of the entire reminder keyspace.

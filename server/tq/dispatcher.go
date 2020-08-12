@@ -49,28 +49,27 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/server/tq/tqtesting"
-
 	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
 
-// Dispatcher submits and handles Cloud Tasks tasks.
+// Dispatcher is a registry of task classes that knows how serialize and route
+// them.
 //
-// Can be instantiated directly in tests. Production code should generally use
-// the dispatcher configured by the tq server module (which is global Default
-// dispatcher). See NewModuleWithFlags() and ModuleOptions.
+// There's rarely a need to manually create instances of Dispatcher outside of
+// Dispatcher's own tests. You should generally use the global Default
+// dispatcher which is configured by the tq server module. Methods of the
+// default dispatcher (such as RegisterTaskClass and AddTask) are also available
+// as lop-level functions, prefer to use them.
+//
+// The dispatcher needs a way to submit tasks to Cloud Tasks. This is the job of
+// Submitter. It lives in the context, so that it can be mocked in tests. In
+// production contexts (setup when using the tq server module), the submitter is
+// initialized to be CloudTaskSubmitter. Tests will need to provide their own
+// submitter (usually via TestingContext).
 type Dispatcher struct {
-	// Submitter is used to submit Cloud Tasks tasks.
-	//
-	// Use CloudTaskSubmitter to create a submitter that sends requests to real
-	// Cloud Tasks.
-	//
-	// If not set, task submissions will fail.
-	Submitter Submitter
-
 	// Sweeper knows how to sweep transactional tasks reminders.
 	//
 	// If not set, Sweep calls will fail.
@@ -152,24 +151,6 @@ type Dispatcher struct {
 	mu       sync.RWMutex
 	clsByID  map[string]*taskClassImpl
 	clsByTyp map[protoreflect.MessageType]*taskClassImpl
-}
-
-// Submitter is used by Dispatcher to submit Cloud Tasks.
-//
-// Use CloudTaskSubmitter to create a submitter based on real Cloud Tasks API.
-type Submitter interface {
-	// CreateTask creates a task, returning a gRPC status.
-	//
-	// AlreadyExists status indicates the task with request name already exists.
-	// Other statuses are handled using their usual semantics.
-	//
-	// `msg` is the original task payload. It is non-nil only when CreateTask
-	// is called on a "happy path" (i.e. not from a sweeper). This is primarily
-	// useful to capture task payloads in tests. Production implementations of
-	// Submitter should generally ignore it.
-	//
-	// Will be called from multiple goroutines at once.
-	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
 }
 
 // Sweeper knows how sweep transaction tasks reminders.
@@ -508,8 +489,9 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 //
 // Annotates retriable errors with transient.Tag.
 func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
-	if d.Submitter == nil {
-		return errors.New("unconfigured Dispatcher: needs a Submitter")
+	sub, err := currentSubmitter(ctx)
+	if err != nil {
+		return err
 	}
 	cls, req, err := d.prepTask(ctx, task)
 	if err != nil {
@@ -549,7 +531,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 	// If not inside a transaction, submit the task right away.
 	if db == nil {
-		return internal.Submit(ctx, d.Submitter, req, task.Payload, extra, internal.TxnPathNone)
+		return internal.Submit(ctx, sub, req, task.Payload, extra, internal.TxnPathNone)
 	}
 
 	// Named transactional tasks are not supported.
@@ -585,7 +567,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		defer func() { span.End(err) }()
 
 		// Attempt to submit the task right away if the reminder is still fresh.
-		err = internal.ProcessReminderPostTxn(ctx, d.Submitter, db, r, req, task.Payload, extra)
+		err = internal.ProcessReminderPostTxn(ctx, sub, db, r, req, task.Payload, extra)
 	})
 
 	return nil
@@ -598,62 +580,11 @@ func (d *Dispatcher) Sweep(ctx context.Context) error {
 	if d.Sweeper == nil {
 		return errors.New("can't sweep: the Sweeper is not set")
 	}
-	if d.Submitter == nil {
-		return errors.New("can't sweep: the Submitter is not set")
+	sub, err := currentSubmitter(ctx)
+	if err != nil {
+		return err
 	}
-	return d.Sweeper.sweep(ctx, d.Submitter, reminderKeySpaceBytes)
-}
-
-// SchedulerForTest switches the dispatcher into testing mode.
-//
-// In this mode tasks are enqueued into a tqtesting.Scheduler, which executes
-// them by submitting them back into the Dispatcher (each task in a separate
-// goroutine).
-//
-// SchedulerForTest should be called before first AddTask call.
-//
-// Returns the instantiated tqtesting.Scheduler. It is in the stopped state.
-func (d *Dispatcher) SchedulerForTest() *tqtesting.Scheduler {
-	if d.Submitter != nil {
-		panic("Dispatcher is already configured to use some submitter")
-	}
-	sched := &tqtesting.Scheduler{Executor: directExecutor{d}}
-	d.Submitter = sched
-	return sched
-}
-
-// directExecutor implements tqtesting.Executor via handlePush.
-type directExecutor struct {
-	d *Dispatcher
-}
-
-func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
-	go func() {
-		var body []byte
-		var headers map[string]string
-		switch mt := t.Task.MessageType.(type) {
-		case *taskspb.Task_HttpRequest:
-			body = mt.HttpRequest.Body
-			headers = mt.HttpRequest.Headers
-		case *taskspb.Task_AppEngineHttpRequest:
-			body = mt.AppEngineHttpRequest.Body
-			headers = mt.AppEngineHttpRequest.Headers
-		default:
-			panic(fmt.Sprintf("Bad task, no payload: %q", t.Task))
-		}
-
-		hdr := make(http.Header, len(headers))
-		for k, v := range headers {
-			hdr.Set(k, v)
-		}
-		info := parseHeaders(hdr)
-
-		// The direct executor doesn't emulate X-CloudTasks-* headers.
-		info.ExecutionCount = t.Attempts - 1
-
-		err := e.d.handlePush(ctx, body, info)
-		done(Retry.In(err) || transient.Tag.In(err))
-	}()
+	return d.Sweeper.sweep(ctx, sub, reminderKeySpaceBytes)
 }
 
 // InstallTasksRoutes installs tasks HTTP routes under the given prefix.
