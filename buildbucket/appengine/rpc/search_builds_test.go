@@ -288,6 +288,7 @@ func TestSearchBuilds(t *testing.T) {
 					Builder: "builder",
 				},
 			},
+			BucketID:  "project/bucket",
 			BuilderID: "project/bucket/builder",
 			Tags:      []string{"k1:v1", "k2:v2"},
 		}), ShouldBeNil)
@@ -300,6 +301,7 @@ func TestSearchBuilds(t *testing.T) {
 					Builder: "builder2",
 				},
 			},
+			BucketID:  "project/bucket",
 			BuilderID: "project/bucket/builder2",
 		}), ShouldBeNil)
 		Convey("query search on Builds", func() {
