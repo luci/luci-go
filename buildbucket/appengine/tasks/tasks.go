@@ -27,31 +27,13 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+
+	// Enable datastore transactional tasks support.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
-type Dispatcher struct {
-	*tq.Dispatcher
-}
-
-// dspKey is the key to a *tq.Dispatcher in the context.
-var dspKey = "dsp"
-
-// getDispatcher returns the *Dispatcher installed in the current context.
-// Can be installed by WithDispatcher. Panics if there isn't one.
-func GetDispatcher(c context.Context) *Dispatcher {
-	return c.Value(&dspKey).(*Dispatcher)
-}
-
-// WithDispatcher returns a new context with the given *Dispatcher installed.
-// Can be retrieved by GetDispatcher.
-func WithDispatcher(c context.Context, dsp *Dispatcher) context.Context {
-	return context.WithValue(c, &dspKey, dsp)
-}
-
-// NewDispatcher returns a new *Dispatcher constructed from the given
-// *tq.Dispatcher.
-func NewDispatcher(dsp *tq.Dispatcher) *Dispatcher {
-	dsp.RegisterTaskClass(tq.TaskClass{
+func init() {
+	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "cancel-swarming-task",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.CancelSwarmingTask)
@@ -79,18 +61,17 @@ func NewDispatcher(dsp *tq.Dispatcher) *Dispatcher {
 		Prototype: (*taskdefs.CancelSwarmingTask)(nil),
 		Queue:     "backend-default",
 	})
-	return &Dispatcher{dsp}
 }
 
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming task.
-func (d *Dispatcher) CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) error {
+func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) error {
 	switch {
 	case task.GetHostname() == "":
 		return errors.Reason("hostname is required").Err()
 	case task.TaskId == "":
 		return errors.Reason("task_id is required").Err()
 	}
-	return d.AddTask(ctx, &tq.Task{
+	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
 	})
 }
