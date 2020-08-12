@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -98,6 +99,9 @@ func TestExe(t *testing.T) {
 				So(exitCode, ShouldEqual, 0)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status: bbpb.Status_SUCCESS,
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 			})
 
@@ -109,6 +113,9 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_FAILURE,
 					SummaryMarkdown: "Final error: bad stuff",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 			})
 
@@ -120,6 +127,9 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final infra error: bad stuff",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 			})
 
@@ -131,6 +141,9 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final panic: bad stuff",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 			})
 
@@ -144,6 +157,9 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "status set inside",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 			})
 		})
@@ -159,10 +175,16 @@ func TestExe(t *testing.T) {
 			So(len(builds), ShouldEqual, 2)
 			So(builds[0], ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: "Hi. I did stuff.",
+				Output: &bbpb.Build_Output{
+					Properties: &structpb.Struct{},
+				},
 			})
 			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
+				Output: &bbpb.Build_Output{
+					Properties: &structpb.Struct{},
+				},
 			})
 		})
 
@@ -177,10 +199,16 @@ func TestExe(t *testing.T) {
 			So(len(builds), ShouldEqual, 2)
 			So(builds[0], ShouldResembleProto, &bbpb.Build{
 				SummaryMarkdown: "Hi. I did stuff.",
+				Output: &bbpb.Build_Output{
+					Properties: &structpb.Struct{},
+				},
 			})
 			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
+				Output: &bbpb.Build_Output{
+					Properties: &structpb.Struct{},
+				},
 			})
 		})
 
@@ -194,16 +222,33 @@ func TestExe(t *testing.T) {
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
+					err := WriteProperties(build.Output.Properties, map[string]interface{}{
+						"some": "thing",
+					})
+					if err != nil {
+						panic(err)
+					}
+
 					return nil
 				})
 				So(exitCode, ShouldEqual, 0)
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"some": {Kind: &structpb.Value_StringValue{
+									StringValue: "thing",
+								}},
+							},
+						},
+					},
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble, "`\f\xa2\x01\x03Hi.")
+				So(string(data), ShouldResemble,
+					"`\f\x82\x01\x13\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\xa2\x01\x03Hi.")
 			})
 
 			Convey(`textpb`, func() {
@@ -217,11 +262,14 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"status: SUCCESS\nsummary_markdown: \"Hi.\"\n")
+					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n>\n")
 			})
 
 			Convey(`jsonpb`, func() {
@@ -235,11 +283,14 @@ func TestExe(t *testing.T) {
 				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
+					Output: &bbpb.Build_Output{
+						Properties: &structpb.Struct{},
+					},
 				})
 				data, err := ioutil.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\"\n}")
+					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
 			})
 
 			Convey(`pass through user args`, func() {
