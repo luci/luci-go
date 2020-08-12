@@ -141,6 +141,30 @@
       "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a44883da_8dbc1925",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-12T06:58:08Z",
+      "side": 1,
+      "message": "\u003e IIUC, you are suggesting to treat the in-tree symlinks as normal files as well? SGTM.\n\nNo, I suggested to relativize absolute symlink if that points to in-tree file path.",
+      "parentUuid": "47d2b5c6_cc5cc119",
+      "range": {
+        "startLine": 152,
+        "startChar": 15,
+        "endLine": 152,
+        "endChar": 19
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
