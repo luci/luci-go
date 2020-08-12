@@ -14,12 +14,16 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
-import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { observable} from 'mobx';
-import { BuildState, consumeBuildState } from '../context/build_state/build_state';
 import { repeat } from 'lit-html/directives/repeat';
-import { Build, Timestamp, BuildStatus } from '../services/buildbucket'
+import MarkdownIt from 'markdown-it';
+import { observable} from 'mobx';
+
+import { sanitizeHTML } from '../../src/libs/sanitize_html';
+import { displayTimestamp, displayDuration } from '../../src/libs/time_utils';
+import { AppState, consumeAppState } from '../context/app_state/app_state';
+import { BuildState, consumeBuildState } from '../context/build_state/build_state';
 import { router } from '../routes';
+import { Build, BuildStatus } from '../services/buildbucket';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -85,9 +89,9 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${build.builder.builder}</td>
         <td>${this.generateBuildLink(build)}</td>
         <td>${BuildStatus[build.status]}</td>
-        <td>${this.displayTimestamp(build.create_time)}</td>
-        <td>${this.displayDuration(build.create_time, build.start_time)}</td>
-        <td>${this.displayDuration(build.start_time, build.end_time)}</td>
+        <td>${displayTimestamp(build.create_time)}</td>
+        <td>${displayDuration(build.create_time, build.start_time)}</td>
+        <td>${displayDuration(build.start_time, build.end_time)}</td>
         <td>${this.displayMarkdown(build.summary_markdown)}</td>
     `;
   }
@@ -107,20 +111,12 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`<a href="${href}">${display}</a>`;
   }
 
-  // TODO (crbug.com/1112224): format and extract this to a library
-  private displayTimestamp(t: Timestamp) {
-    var d = new Date(t.seconds * 1000);
-    return html `${d.toString()}`;
-  }
-
-  // TODO (crbug.com/1112224): format and extract this to a library
-  private displayDuration(beginTime: Timestamp, endTime: Timestamp) {
-    return html`${(endTime.seconds - beginTime.seconds) + " secs"}`;
-  }
-
-  // TODO (crbug.com/1112224): Really display this as markdown
   private displayMarkdown(markdown: string|undefined) {
-    return markdown? html`${markdown}` : html``;
+    if (markdown == undefined) {
+      return html ``;
+    }
+    const md = new MarkdownIt();
+    return sanitizeHTML(md.render(markdown));
   }
 }
 
