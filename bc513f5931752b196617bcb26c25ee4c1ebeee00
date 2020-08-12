@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "0a975e28_c1074f80",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T06:12:40Z",
+      "side": 1,
+      "message": "from my PoV, \"detail\" is implementation detail, so I don\u0027t care as much as about API def.\nOf course, if impl itself can be done without \"detail\", great.",
+      "parentUuid": "4f5cd94a_30a10a1c",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 55
+      },
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6ec57c1f_55ca37a2",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
@@ -118,6 +142,24 @@
       "side": 1,
       "message": "While I agree with that using fieldmask is considered as best practice for gRPC API. For this particular API, I think switching to fieldmask may lead to following issues:\n\n1. user may actually get more data they need. Specifically, for those Detailed option. For example, if user provide field mask \"labels\", I think ideally, we will map it to DETAILED_LABELS but probably what user really want is only a summary info (i.e. LABELS option).\n2. We\u0027ll need to support advanced semantic for field mask because it is quite a complex object so user might need to specify field for the element of list. But there\u0027s no official support in protobuf lib and our customized implementation will panic during deserialization with new proto lib.\n\nGiven above, I\u0027d prefer to stick to the QueryOption to keep it in sync with Gerrit API. WDYT?",
       "parentUuid": "659283f6_7ecdcbd4",
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "923275b2_6052202a",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T06:12:40Z",
+      "side": 1,
+      "message": "I\u0027m absolutely fine to go with existing QueryOption.\n\n(2) 100% agree.\n(1) not sure I follow. User should specify what they actually need:\n  label.*      \u003d\u003e ADVANCED_LABELS + DETAILED_ACCOUNTS.\n  label.*.name \u003d\u003e would be just \"LABELS\" option.\n\nAnyways, let\u0027s proceed as is.",
+      "parentUuid": "93005aa8_b154c1b0",
       "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
