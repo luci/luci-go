@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "6d653eef_770372b8",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-12T16:28:51Z",
+      "side": 1,
+      "message": "I wonder whether it\u0027s worth adding comments to all these functions too? It would mostly be duplicated with comments in gerrit.go (and they\u0027re already short functions that are fairly clear from the name). Either way would be fine.",
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0cde64db_624ca274",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 2
@@ -84,6 +101,30 @@
       "side": 1,
       "message": "from my PoV, \"detail\" is implementation detail, so I don\u0027t care as much as about API def.\nOf course, if impl itself can be done without \"detail\", great.",
       "parentUuid": "4f5cd94a_30a10a1c",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 55
+      },
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b30e1c3f_f8113a3c",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-12T16:28:51Z",
+      "side": 1,
+      "message": "In my opinion either way is fine, because:\n 1. I like the fact that the api here is 1-to-1 with the Gerrit REST API described at https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change-detail\n 2. Although if the same functionality can be achieved with fewer methods, then that\u0027s better.\n\nIt seems that with GetChange plus options we can specify more specifically what we want to get. If we do want to get detailed labels, detailed accounts, reviewer updates and messages, then it may be nice to keep detail, but as far as I understand right now, CV doesn\u0027t need to fetch reviewer updates and messages for most runs.",
+      "parentUuid": "0a975e28_c1074f80",
       "range": {
         "startLine": 25,
         "startChar": 2,
