@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/common/data/caching/cache"
-	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/logging"
@@ -55,15 +54,13 @@ Files are referenced by their hash`,
 				CommandOptions: options,
 			}
 			c.commonFlags.Init(options.DefaultAuthOpts)
+			c.cachePolicies.AddFlags(&c.Flags)
 			// TODO(mknyszek): Add support for downloading individual files.
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
 			c.Flags.StringVar(&c.outputFiles, "output-files", "", "File into which the full list of downloaded files is written to.")
 			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
 
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
-			c.Flags.Int64Var(&c.maxSize, "cache-max-size", cacheMaxSizeDefault, "Cache is trimmed if the cache gets larger than this value.")
-			c.Flags.IntVar(&c.maxItems, "cache-max-items", cacheMaxItemsDefault, "Maximum number of items to keep in the cache.")
-			c.Flags.Int64Var(&c.minFreeSpace, "cache-min-free-space", 0, "Cache is trimmed if disk free space becomes lower than this value.")
 
 			c.Flags.StringVar(&c.resultJSON, "fetch-and-map-result-json", "", "This is created only for crbug.com/932396, do not use other than from run_isolated.py.")
 			return &c
@@ -80,10 +77,8 @@ type downloadRun struct {
 
 	resultJSON string
 
-	cacheDir     string
-	maxSize      int64
-	maxItems     int
-	minFreeSpace int64
+	cacheDir      string
+	cachePolicies cache.Policies
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
@@ -97,7 +92,7 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 		return errors.New("isolated is required")
 	}
 
-	if c.cacheDir == "" && (c.maxSize != cacheMaxSizeDefault || c.maxItems != cacheMaxItemsDefault || c.minFreeSpace != 0) {
+	if c.cacheDir == "" && !c.cachePolicies.IsDefault() {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
 	return nil
@@ -166,11 +161,7 @@ func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, ar
 		if err := os.MkdirAll(c.cacheDir, os.ModePerm); err != nil {
 			return errors.Annotate(err, "failed to create cache dir: %s", c.cacheDir).Err()
 		}
-		diskCache, err = cache.NewDisk(cache.Policies{
-			MaxSize:      units.Size(c.maxSize),
-			MaxItems:     c.maxItems,
-			MinFreeSpace: units.Size(c.minFreeSpace),
-		}, c.cacheDir, isolated.GetHash(c.isolatedFlags.Namespace))
+		diskCache, err = cache.NewDisk(c.cachePolicies, c.cacheDir, isolated.GetHash(c.isolatedFlags.Namespace))
 		if err != nil && diskCache == nil {
 			return errors.Annotate(err, "failed to initialize disk cache in %s", c.cacheDir).Err()
 		}

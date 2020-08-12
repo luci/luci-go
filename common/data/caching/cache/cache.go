@@ -17,9 +17,11 @@ package cache
 import (
 	"crypto"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -89,6 +91,19 @@ type Policies struct {
 	MinFreeSpace units.Size
 }
 
+// AddFlags adds flags for cache policy parameters.
+func (p *Policies) AddFlags(f *flag.FlagSet) {
+	p.MaxSize = cacheMaxSizeDefault
+	f.Var(&p.MaxSize, "cache-max-size", "Cache is trimmed if the cache gets larger than this value.")
+	f.IntVar(&p.MaxItems, "cache-max-items", cacheMaxItemsDefault, "Maximum number of items to keep in the cache.")
+	f.Var(&p.MinFreeSpace, "cache-min-free-space", "Cache is trimmed if disk free space becomes lower than this value.")
+}
+
+// IsDefault returns whether some flags are set or not.
+func (p *Policies) IsDefault() bool {
+	return p.MaxSize == cacheMaxSizeDefault && p.MaxItems == cacheMaxItemsDefault && p.MinFreeSpace == 0
+}
+
 var ErrInvalidHash = errors.New("invalid hash")
 
 // NewDisk creates a disk based cache.
@@ -150,6 +165,12 @@ func NewDisk(policies Policies, path string, h crypto.Hash) (Cache, error) {
 }
 
 // Private details.
+
+const maxUint = ^uint(0)
+const maxInt = int(maxUint >> 1)
+
+const cacheMaxSizeDefault = math.MaxInt64
+const cacheMaxItemsDefault = maxInt
 
 type disk struct {
 	// Immutable.

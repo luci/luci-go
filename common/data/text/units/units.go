@@ -16,6 +16,7 @@ package units
 
 import (
 	"fmt"
+	"strconv"
 )
 
 var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"}
@@ -25,6 +26,15 @@ type Size int64
 
 func (s Size) String() string {
 	return SizeToString(int64(s))
+}
+
+func (s *Size) Set(str string) error {
+	if n, err := strconv.Atoi(str); err != nil {
+		return err
+	} else {
+		*s = Size(n)
+	}
+	return nil
 }
 
 // SizeToString pretty prints file size (given as number of bytes).
