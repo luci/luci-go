@@ -178,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "c971a57e_8c8785c1",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-12T21:50:12Z",
+      "side": 1,
+      "message": "Yeah, supporting OR in gae/datastore needs n parallel queries.",
+      "parentUuid": "d0836f6e_3e5d83bd",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5fbaaf6_03640f7c",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
