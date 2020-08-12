@@ -16,6 +16,24 @@
       "revId": "725c019273bbb1c8ce2f7ccf4e0666ae23888d88",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dd9ab28_230b5bd7",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-12T01:31:35Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "2e95a7ef_7c9803ca",
+      "revId": "725c019273bbb1c8ce2f7ccf4e0666ae23888d88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
