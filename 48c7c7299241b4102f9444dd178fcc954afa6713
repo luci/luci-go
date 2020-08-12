@@ -261,6 +261,30 @@
       "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3110e359_3e0a243d",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-12T09:12:37Z",
+      "side": 1,
+      "message": "I don\u0027t want to touch how we handle symlinks in isolated because it is 1) error-prone, e.g. this relative vs abs symlink problem, and 2) not relevant to the original fix, which is to remove the usage of `includes`.\n\nfilepath.Walk() is good *if* we choose to treat symlinks as normal files. Otherwise we are pulling the logic of handling in-tree vs out-tree to the caller side. And without proper encapsulation, this logic will be duplicated in isolated and isolate.",
+      "parentUuid": "f4ff2a9f_1554bdce",
+      "range": {
+        "startLine": 152,
+        "startChar": 15,
+        "endLine": 152,
+        "endChar": 19
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
