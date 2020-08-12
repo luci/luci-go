@@ -33,6 +33,23 @@
       "revId": "8fee820f31bd950ff8790d7dcf90622bfd5da1f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f195929e_29687356",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-12T22:47:59Z",
+      "side": 1,
+      "message": "As long as tests pass it should be fine (but they won\u0027t pass, see https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/#making-changes-to-the-starlark-portion-of-the-code for what to do after changing *.proto).",
+      "revId": "8fee820f31bd950ff8790d7dcf90622bfd5da1f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
