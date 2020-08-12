@@ -132,6 +132,30 @@
     },
     {
       "key": {
+        "uuid": "197fb94d_492dc9d6",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-12T23:37:19Z",
+      "side": 1,
+      "message": "You are right. I didn\u0027t look into it.\nI won\u0027t add it here if it can be implemented on top of direct buildbucket RPC.",
+      "parentUuid": "1de50f40_6e982787",
+      "range": {
+        "startLine": 25,
+        "startChar": 8,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "4c5b4e4b1fa37aa47b819784b3f01cc1a0da5c3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0083c22_e0680303",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 6
