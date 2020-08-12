@@ -283,16 +283,17 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 	if m.opts.Dispatcher == nil {
 		m.opts.Dispatcher = &Default
 	}
-	if err := m.initDispatching(ctx, host, opts); err != nil {
+	submitter, err := m.initDispatching(ctx, host, opts)
+	if err != nil {
 		return nil, err
 	}
 	if err := m.initSweeping(ctx, host, opts); err != nil {
 		return nil, err
 	}
-	return ctx, nil
+	return UseSubmitter(ctx, submitter), nil
 }
 
-func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts module.HostOptions) error {
+func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts module.HostOptions) (Submitter, error) {
 	disp := m.opts.Dispatcher
 
 	disp.GAE = opts.GAE
@@ -310,7 +311,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	}
 
 	if err := ValidateNamespace(m.opts.Namespace); err != nil {
-		return errors.Annotate(err, "bad TQ namespace %q", m.opts.Namespace).Err()
+		return nil, errors.Annotate(err, "bad TQ namespace %q", m.opts.Namespace).Err()
 	}
 	disp.Namespace = m.opts.Namespace
 
@@ -319,23 +320,24 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	} else {
 		info, err := auth.GetSigner(ctx).ServiceInfo(ctx)
 		if err != nil {
-			return errors.Annotate(err, "failed to get own service account email").Err()
+			return nil, errors.Annotate(err, "failed to get own service account email").Err()
 		}
 		disp.PushAs = info.ServiceAccountName
 	}
 
+	var submitter Submitter
 	if opts.Prod {
 		// When running for real use real Cloud Tasks service.
 		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
-			return errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+			return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 		}
 		client, err := cloudtasks.NewClient(ctx, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 		if err != nil {
-			return errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+			return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
 		}
 		host.RegisterCleanup(func(ctx context.Context) { client.Close() })
-		disp.Submitter = &CloudTaskSubmitter{Client: client}
+		submitter = &CloudTaskSubmitter{Client: client}
 	} else {
 		// When running locally use a simple in-memory scheduler, but go through
 		// HTTP layer to pick up logging, middlewares, etc.
@@ -346,16 +348,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 		}
 		host.RunInBackground("luci.tq", func(ctx context.Context) { scheduler.Run(ctx) })
 		Default.NoAuth = true
-		Default.Submitter = scheduler
-		if Default.CloudProject == "" {
-			Default.CloudProject = "tq-project"
-		}
-		if disp.CloudRegion == "" {
-			disp.CloudRegion = "tq-region"
-		}
-		if disp.DefaultTargetHost == "" {
-			disp.DefaultTargetHost = "127.0.0.1" // not actually used
-		}
+		submitter = scheduler
 	}
 
 	if m.opts.ServingPrefix != "-" {
@@ -363,7 +356,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 		disp.InstallTasksRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
 
-	return nil
+	return submitter, nil
 }
 
 func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts module.HostOptions) error {

@@ -128,15 +128,15 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 	}
 
 	disp := &tq.Dispatcher{}
-	sched := disp.SchedulerForTest()
+	ctx, sched := tq.TestingContext(ctx, disp)
 	disp.Sweeper = sweeper(disp)
 
 	// "Buganize" the submitter.
-	disp.Submitter = &flakySubmitter{
-		Submitter:              disp.Submitter,
+	ctx = tq.UseSubmitter(ctx, &flakySubmitter{
+		Submitter:              sched,
 		InternalErrProbability: 0.3,
 		Rand:                   rand.New(rand.NewSource(123)),
-	}
+	})
 
 	// This will collect which tasks were executed and how many times.
 	mu := sync.Mutex{}

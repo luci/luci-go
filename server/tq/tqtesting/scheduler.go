@@ -97,6 +97,7 @@ type Task struct {
 	Payload   proto.Message // deserialized payload, if available
 	Name      string        // full task name (perhaps generated)
 	ETA       time.Time     // when the task is due, always set at now or in future
+	Finished  time.Time     // when the task finished last execution attempt
 	Attempts  int           // 0 initially, incremented before each execution attempt
 	Executing bool          // true if executing right now
 
@@ -373,6 +374,7 @@ func (s *Scheduler) tryDequeueTask(ctx context.Context) (t *Task, eta time.Time,
 		}()
 
 		task.Executing = false
+		task.Finished = clock.Now(ctx)
 		delete(s.executing, task)
 
 		if retry {

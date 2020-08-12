@@ -25,11 +25,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/examples/appengine/tq/taskspb"
 
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueue(t *testing.T) {
@@ -52,18 +54,25 @@ func TestQueue(t *testing.T) {
 		// default.
 		ctx = txndefer.FilterRDS(memory.Use(ctx))
 
-		// A separate local dispatcher instance just for this test and a Cloud Tasks
-		// scheduler fake that will actually schedule tasks.
-		disp := tq.Dispatcher{}
-		sched := disp.SchedulerForTest()
+		// Put a Cloud Tasks scheduler fake to be used by AddTask.
+		ctx, sched := tq.TestingContext(ctx, nil)
 
-		// The object under test.
-		chain := CountDownChain{}
-		chain.Register(&disp)
+		var succeeded tqtesting.TaskList
 
-		// Enqueue the first task, then simulate the Cloud Tasks run loop until
-		// there's no more pending or executing tasks left.
-		So(chain.Enqueue(ctx, 5), ShouldBeNil)
+		// Can tweak it more, if necessary.
+		sched.TaskSucceeded = tqtesting.TasksCollector(&succeeded)
+		sched.TaskFailed = func(ctx context.Context, task *tqtesting.Task) { panic("should not fail") }
+
+		// Enqueue the first task.
+		So(EnqueueCountDown(ctx, 5), ShouldBeNil)
+
+		// Examine currently enqueue tasks.
+		So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.CountDownTask{
+			{Number: 5},
+		})
+
+		// Simulate the Cloud Tasks run loop until there's no more pending or
+		// executing tasks left
 		sched.Run(ctx, tqtesting.StopWhenDrained())
 
 		// Verify all expected entities have been created, and when expected.
@@ -78,6 +87,18 @@ func TestQueue(t *testing.T) {
 			3: 300 * time.Millisecond,
 			2: 400 * time.Millisecond,
 			1: 500 * time.Millisecond,
+		})
+
+		// Can also examine all executed tasks. They may generally be executed in
+		// parallel, so order of their completion is undetermined. Explicitly
+		// sorting by ETA helps.
+		So(succeeded.SortByETA().Payloads(), ShouldResembleProto, []*taskspb.CountDownTask{
+			{Number: 5},
+			{Number: 4},
+			{Number: 3},
+			{Number: 2},
+			{Number: 1},
+			{Number: 0},
 		})
 	})
 }

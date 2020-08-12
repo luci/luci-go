@@ -34,7 +34,7 @@ func TestSweepRouting(t *testing.T) {
 		ctx := context.Background()
 
 		disp := Dispatcher{}
-		sched := disp.SchedulerForTest()
+		ctx, sched := TestingContext(ctx, &disp)
 
 		mu := sync.Mutex{}
 		calls := []*tqpb.SweepTask{}

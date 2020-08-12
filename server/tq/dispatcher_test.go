@@ -54,9 +54,9 @@ func TestAddTask(t *testing.T) {
 
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		submitter := &submitter{}
+		ctx = UseSubmitter(ctx, submitter)
 
 		d := Dispatcher{
-			Submitter:         submitter,
 			CloudProject:      "proj",
 			CloudRegion:       "reg",
 			DefaultTargetHost: "example.com",
@@ -312,7 +312,6 @@ func TestTransactionalEnqueue(t *testing.T) {
 		submitter := &submitter{}
 		db := testutil.FakeDB{}
 		d := Dispatcher{
-			Submitter:         submitter,
 			CloudProject:      "proj",
 			CloudRegion:       "reg",
 			DefaultTargetHost: "example.com",
@@ -326,6 +325,7 @@ func TestTransactionalEnqueue(t *testing.T) {
 		})
 
 		ctx, tc := testclock.UseTime(context.Background(), now)
+		ctx = UseSubmitter(ctx, submitter)
 		txn := db.Inject(ctx)
 
 		Convey("Happy path", func() {
@@ -416,7 +416,7 @@ func TestTesting(t *testing.T) {
 		})
 
 		disp := Dispatcher{}
-		sched := disp.SchedulerForTest()
+		ctx, sched := TestingContext(ctx, &disp)
 
 		var success tqtesting.TaskList
 		sched.TaskSucceeded = tqtesting.TasksCollector(&success)
