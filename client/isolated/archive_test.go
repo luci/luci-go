@@ -110,10 +110,15 @@ func TestArchive(t *testing.T) {
 				}
 
 				h := isolated.GetHash(namespace)
-				baseData := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink"))
-				secondData := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz"))
+				baseIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink")).Isolated
+				secondIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz")).Isolated
 				topIsolated := isolated.New(h)
-				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
+				for k, v := range baseIsolated.Files {
+					topIsolated.Files[k] = v
+				}
+				for k, v := range secondIsolated.Files {
+					topIsolated.Files[k] = v
+				}
 				if !isWindows() {
 					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, barData), mode, int64(len(barData)))
 				} else {
@@ -124,9 +129,7 @@ func TestArchive(t *testing.T) {
 					namespace: {
 						isolated.HashBytes(h, barData): string(barData),
 						isolated.HashBytes(h, bozData): string(bozData),
-						baseData.Hash:                  baseData.String,
 						isolatedData.Hash:              isolatedData.String,
-						secondData.Hash:                secondData.String,
 					},
 				}
 				if isWindows() {
@@ -187,16 +190,9 @@ func TestArchiveFiles(t *testing.T) {
 		dataFileA := filesArchiveExpect(h, dir, "a")
 		dataDirB := filesArchiveExpect(h, dir, filepath.Join("b", "c"), filepath.Join("b", "d"))
 
-		isolatedDirB := isolated.New(h)
-		isolatedDirB.Includes = isolated.HexDigests{dataDirB.Hash}
-
-		isolatedDirBData := newArchiveExpectData(h, isolatedDirB)
-
 		So(uploaded, ShouldResemble, map[isolated.HexDigest]string{
-			dataFileA.Hash:        dataFileA.String,
-			isolatedDirBData.Hash: isolatedDirBData.String,
-
-			dataDirB.Hash: dataDirB.String,
+			dataFileA.Hash: dataFileA.String,
+			dataDirB.Hash:  dataDirB.String,
 
 			isolated.HashBytes(h, []byte("a")):  "a",
 			isolated.HashBytes(h, []byte("bc")): "bc",

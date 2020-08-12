@@ -29,17 +29,21 @@ import (
 	"go.chromium.org/luci/common/runtime/tracer"
 )
 
-// WalkItem represents a file encountered in the (symlink-following) walk of a directory.
-type walkItem struct {
+type walkItemBase struct {
 	// Absolute path to the item.
-	fullPath string
+	// If this is an *in-tree* symlink, this is the link destination.
+	FullPath string
 
 	// Relativie path to the item within the directory.
-	relPath string
+	RelPath string
 
 	// FileInfo of the item.
-	info os.FileInfo
+	Info os.FileInfo
+}
 
+// WalkItem represents a file encountered in the (symlink-following) walk of a directory.
+type walkItem struct {
+	walkItemBase
 	// Whether the item is symlinked and has a source within the directory.
 	inTreeSymlink bool
 }
@@ -116,7 +120,7 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 					if l, err = os.Readlink(path); err != nil {
 						return fmt.Errorf("Readlink(%s): %s", path, err)
 					}
-					c <- &walkItem{fullPath: l, relPath: relPath, info: info, inTreeSymlink: true}
+					c <- &walkItem{walkItemBase: walkItemBase{FullPath: l, RelPath: relPath, Info: info}, inTreeSymlink: true}
 					return nil
 				}
 				// Found a symlink that pointed out of tree.
@@ -124,12 +128,12 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 					linkedView := view.NewSymlinkedView(relPath, l)
 					return filepath.Walk(l, walkWithLinks(l, linkedView))
 				}
-				c <- &walkItem{fullPath: l, relPath: relPath, info: info}
+				c <- &walkItem{walkItemBase: walkItemBase{FullPath: l, RelPath: relPath, Info: info}, inTreeSymlink: false}
 				return nil
 			}
 
 			if !info.IsDir() {
-				c <- &walkItem{fullPath: path, relPath: relPath, info: info}
+				c <- &walkItem{walkItemBase: walkItemBase{FullPath: path, RelPath: relPath, Info: info}, inTreeSymlink: false}
 			}
 			return nil
 		}
@@ -184,14 +188,14 @@ func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 		}
 		total++
 		if relDir != "" {
-			item.relPath = filepath.Join(relDir, item.relPath)
+			item.RelPath = filepath.Join(relDir, item.RelPath)
 		}
 		if item.inTreeSymlink {
-			i.Files[item.relPath] = isolated.SymLink(item.fullPath)
+			i.Files[item.RelPath] = isolated.SymLink(item.FullPath)
 		} else {
-			perm := int(item.info.Mode().Perm())
-			i.Files[item.relPath] = isolated.BasicFile("", perm, item.info.Size())
-			items = append(items, a.PushFile(item.relPath, item.fullPath, item.info.Size()))
+			perm := int(item.Info.Mode().Perm())
+			i.Files[item.RelPath] = isolated.BasicFile("", perm, item.Info.Size())
+			items = append(items, a.PushFile(item.RelPath, item.FullPath, item.Info.Size()))
 		}
 	}
 	if s.Error() != nil {
@@ -232,4 +236,55 @@ func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 		}
 	}()
 	return s
+}
+
+// PushedDirectoryItem represents either a file or a symlink within the
+// directory being pushed.
+type PushedDirectoryItem struct {
+	walkItemBase
+	Pending *PendingItem
+}
+
+// PushDirectoryNoIsolated is functionally similar to PushDirectory. However,
+// it doesn't create a separate isolated file for the files in |root|. Instead,
+// it returns the pushed files and the (in-tree) symlinks under the directory.
+// This helps us migrate away the usage of include for directories.
+func PushDirectoryNoIsolated(a *Archiver, root, relDir string) (error, []PushedDirectoryItem, []PushedDirectoryItem) {
+	end := tracer.Span(a, "PushDirectoryNoIsolated", tracer.Args{"path": relDir, "root": root})
+	var fileItems []PushedDirectoryItem
+	var symlinkItems []PushedDirectoryItem
+	defer func() { end(tracer.Args{"files": len(fileItems), "symlinks": len(symlinkItems)}) }()
+
+	fsView, err := common.NewFilesystemView(root, "")
+	if err != nil {
+		return err, nil, nil
+	}
+
+	c := make(chan *walkItem)
+	go func() {
+		walk(root, fsView, c)
+		close(c)
+	}()
+
+	for item := range c {
+		if relDir != "" {
+			item.RelPath = filepath.Join(relDir, item.RelPath)
+		}
+		if item.inTreeSymlink {
+			symlinkItems = append(symlinkItems, PushedDirectoryItem{item.walkItemBase, nil})
+		} else {
+			pending := a.PushFile(item.RelPath, item.FullPath, item.Info.Size())
+			fileItems = append(fileItems, PushedDirectoryItem{item.walkItemBase, pending})
+		}
+	}
+	log.Printf("PushDirectoryNoIsolated(%s) files=%d symlinks=%d", root, len(fileItems), len(symlinkItems))
+
+	// Hashing, cache lookups and upload is done asynchronously.
+	for _, item := range fileItems {
+		item.Pending.WaitForHashed()
+		if err = item.Pending.Error(); err != nil {
+			return err, nil, nil
+		}
+	}
+	return nil, fileItems, symlinkItems
 }
