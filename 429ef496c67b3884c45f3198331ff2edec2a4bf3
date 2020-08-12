@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc923384_e0c63791",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-12T22:37:47Z",
+      "side": 1,
+      "message": "PTAL\n\nWill be used to control what task queue implementation to use on ResultDB:\n1. I\u0027ll implement the code path for server/tq implementation, but will hide it behind an experiment.\n2. I\u0027ll enable the experiment on canary only.\n3. Meanwhile if someone deploys this code to production, nothing bad will happen, since the experiment is not enabled there yet.\n\nUsing CLI flags for this is more \"heavy\" and requires more coordination between service code and deployment configs (in particular when removing an experiment).\n\nI named the CLI flag \"-enabled-experiment\" because I can imagine an extension of this mechanism where:\n1. Experiments can be enabled per-request on demand (e.g. via a magic header). Then -disable-experiment can be used to totally disable them.\n2. Experiments can be enabled probabilistically on per-request basis.",
+      "revId": "429ef496c67b3884c45f3198331ff2edec2a4bf3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
