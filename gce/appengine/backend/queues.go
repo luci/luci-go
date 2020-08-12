@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -196,26 +197,48 @@ func createVM(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
-// setCurrent sets the current amount of VMs to create from this config in the
-// datastore.
-func setCurrent(c context.Context, id string, amt int32) error {
-	cfg := &model.Config{
+// updateCurrentAmount updates CurrentAmount if necessary.
+// Returns up-to-date config entity and the reference timestamp.
+func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, now time.Time, err error) {
+	cfg = &model.Config{
 		ID: id,
 	}
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		switch err := datastore.Get(c, cfg); {
-		case err != nil:
+	// Avoid transaction if possible.
+	if err = datastore.Get(c, cfg); err != nil {
+		err = errors.Annotate(err, "failed to fetch config").Err()
+		return
+	}
+
+	now = clock.Now(c)
+	var amt int32
+	switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, now); {
+	case err != nil:
+		err = errors.Annotate(err, "failed to parse amount").Err()
+		return
+	case cfg.Config.CurrentAmount == amt:
+		return
+	}
+
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		var err error
+		if err = datastore.Get(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to fetch config").Err()
+		}
+
+		now = clock.Now(c)
+		switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, now); {
+		case err != nil:
+			return errors.Annotate(err, "failed to parse amount").Err()
 		case cfg.Config.CurrentAmount == amt:
 			return nil
 		}
 		cfg.Config.CurrentAmount = amt
-		if err := datastore.Put(c, cfg); err != nil {
+		if err = datastore.Put(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to store config").Err()
 		}
 		return nil
 	}, nil)
-	return err
+	return
 }
 
 // expandConfigQueue is the name of the expand config task handler queue.
@@ -230,22 +253,12 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	cfg := &model.Config{
-		ID: task.Id,
-	}
-	if err := datastore.Get(c, cfg); err != nil {
-		return errors.Annotate(err, "failed to fetch config").Err()
-	}
-	now := clock.Now(c)
-	amt, err := cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, now)
+	cfg, now, err := updateCurrentAmount(c, task.Id)
 	if err != nil {
-		return errors.Annotate(err, "failed to parse amount").Err()
+		return err
 	}
-	if cfg.Config.CurrentAmount != amt {
-		setCurrent(c, task.Id, amt)
-	}
-	t := make([]*tq.Task, amt)
-	for i := int32(0); i < amt; i++ {
+	t := make([]*tq.Task, cfg.Config.CurrentAmount)
+	for i := int32(0); i < cfg.Config.CurrentAmount; i++ {
 		t[i] = &tq.Task{
 			Payload: &tasks.CreateVM{
 				Id:         fmt.Sprintf("%s-%d", cfg.Config.Prefix, i),
