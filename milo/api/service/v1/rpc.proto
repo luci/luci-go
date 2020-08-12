@@ -1,0 +1,77 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.milo.v1;
+
+import "go.chromium.org/luci/common/proto/git/commit.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
+
+// Service to query data on the Milo server.
+//
+// Note: this is private API and should only be used by Milo apps. Breaking
+// changes might be introduced without notice.
+// Please contact chops-tfs-team@ if your code needs to depend on this service.
+service MiloInternal {
+  // Retrieves blamelist of a build.
+  //
+  // The blamelist of a build is defined as [end_commit, start_commit),
+  // where end_commit is the last commit of the build,
+  // start_commit is the closest ancestor commit with an associated build that
+  // is from the same builder and is not expired, cancelled, or infra-failed.
+  rpc QueryBlamelist(QueryBlamelistRequest) returns (QueryBlamelistResponse) {};
+}
+
+// A request message for `QueryBlamelist` RPC.
+message QueryBlamelistRequest {
+  // The Gitiles commit of the build.
+  buildbucket.v2.GitilesCommit gitiles_commit = 1;
+
+  // The context builder of the blamelist.
+  //
+  // The start commit of the blamelist is the closest ancestor commit with an
+  // associated build that is from the same builder and is not expired,
+  // cancelled, or infra-failed.
+  buildbucket.v2.BuilderID builder = 2;
+
+  // Optional. The maximum number of commits to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 commits will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 3;
+
+  // Optional. A page token, received from a previous `QueryBlamelist` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all parameters provided to `QueryBlamelist`, with the
+  // exception of page_size and page_token, must match the call that provided
+  // the page token.
+  string page_token = 4;
+}
+
+// A response message for QueryBlamelist RPC.
+message QueryBlamelistResponse {
+  // The commits from the blamelist of the build, in reversed chronologically
+  // order.
+  repeated git.Commit commits = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
