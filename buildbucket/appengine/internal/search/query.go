@@ -19,12 +19,15 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"go.chromium.org/luci/common/sync/parallel"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
@@ -33,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/paged"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
@@ -73,7 +75,7 @@ type Query struct {
 func NewQuery(req *pb.SearchBuildsRequest) *Query {
 	if req.GetPredicate() == nil {
 		return &Query{
-			PageSize:    req.GetPageSize(),
+			PageSize:    fixPageSize(req.GetPageSize()),
 			StartCursor: req.GetPageToken(),
 		}
 	}
@@ -144,6 +146,9 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 		}
 	}
 
+	cpy := *q
+	q = &cpy
+	q.PageSize = fixPageSize(q.PageSize)
 	// Determine which subflow - directly query on Builds or on TagIndex.
 	if len(IndexedTags(q.Tags)) != 0 {
 		// TODO(crbug/1090540): test switch-case block after fetchOnTagIndex() is complete.
@@ -163,8 +168,6 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 
 // fetchOnBuild fetches directly on Build entity.
 func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, error) {
-	// TODO(crbug/1090540): Fetch accessible buckets once the related function is implemented, if bucketId is nil.
-
 	dq := datastore.NewQuery(model.BuildKind).Order("__key__")
 
 	for _, tag := range q.Tags.Format() {
@@ -196,14 +199,71 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: idHigh}))
 	}
 
-	logging.Debugf(ctx, "datastore query for FetchOnBuild: %s", dq.String())
-	rsp := &pb.SearchBuildsResponse{}
-	err := paged.Query(ctx, q.PageSize, q.StartCursor, rsp, dq, func(build *model.Build) error {
-		rsp.Builds = append(rsp.Builds, build.ToSimpleBuildProto(ctx))
-		return nil
+	var buckets []string
+	var err error
+	if q.Builder.GetBucket() != "" {
+		buckets = []string{protoutil.FormatBucketID(q.Builder.Project, q.Builder.Bucket)}
+	} else {
+		switch buckets, err = perm.BucketsByPerm(ctx, perm.BuildersList, q.Builder.GetProject()); {
+		case err != nil:
+			return nil, errors.Annotate(err, "error fetching accessible buckets").Err()
+		case len(buckets) == 0:
+			return &pb.SearchBuildsResponse{}, nil
+		}
+	}
+
+	// fetch the keys of builds which match the query conditions.
+	var bKeys []*datastore.Key
+	err = parallel.WorkPool(64, func(c chan<- func() error) {
+		var mu sync.Mutex
+		for _, bucket := range buckets {
+			dq := dq
+			bucket := bucket
+			c <- func() error {
+				var buildKeys []*datastore.Key
+				dq = dq.Eq("bucket_id", bucket)
+				logging.Debugf(ctx, "datastore query for FetchOnBuild: %s", dq.String())
+				if err := datastore.GetAll(ctx, dq, &buildKeys); err != nil {
+					return err
+				}
+				mu.Lock()
+				bKeys = append(bKeys, buildKeys...)
+				mu.Unlock()
+				return nil
+			}
+		}
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "error fetching builds keys in parallel").Err()
+	}
+
+	// sort in ascending order by build id.
+	sort.Slice(bKeys, func(i, j int) bool {
+		return bKeys[i].IntID() < bKeys[j].IntID()
+	})
+
+	// only fetch the q.PageSize of build entities.
+	builds := make([]*model.Build, 0, q.PageSize)
+	i := 0
+	for i < len(bKeys) && i < int(q.PageSize) {
+		b := &model.Build{}
+		if !datastore.PopulateKey(b, bKeys[i]) {
+			return nil, errors.Annotate(err, "failed to populate build key %q", bKeys[i].StringID()).Err()
+		}
+		builds = append(builds, b)
+		i++
+	}
+	if err := datastore.Get(ctx, builds); err != nil {
+		return nil, errors.Annotate(err, "error fetching builds").Err()
+	}
+
+	rsp := &pb.SearchBuildsResponse{}
+	for _, b := range builds {
+		// TODO(crbug/1090540): check if b.status == q.status.
+		rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
+	}
+	if len(rsp.Builds) == int(q.PageSize) {
+		rsp.NextPageToken = fmt.Sprintf("id>%d", rsp.Builds[q.PageSize-1].Id)
 	}
 
 	return rsp, nil
@@ -302,11 +362,6 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 // filterEntries filters tag index entries by the build id ranges and buckets conditions in the Query.
 func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntry) ([]*model.TagIndexEntry, error) {
 	idLow, idHigh := q.idRange()
-	if q.StartCursor != "" {
-		if minExclusiveId, _ := strconv.ParseInt(q.StartCursor[len("id>"):], 10, 64); minExclusiveId+1 > idLow {
-			idLow = minExclusiveId + 1
-		}
-	}
 	if idHigh == 0 {
 		idHigh = int64(uint64(1)<<63 - 1)
 	}
@@ -349,14 +404,21 @@ func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntr
 	return preprocessed, nil
 }
 
-// idRange returns the id range from either q.BuildIdLow/q.BuildIdHigh or q.StartTime/q.EndTime.
+// idRange computes the id range from q.BuildIdLow/q.BuildIdHigh, q.StartTime/q.EndTime and q.StartCursor.
 // Returning 0 means no boundary.
-func (q *Query) idRange() (int64, int64) {
+func (q *Query) idRange() (idLow, idHigh int64) {
 	if q.BuildIdLow != 0 || q.BuildIdHigh != 0 {
-		return q.BuildIdLow, q.BuildIdHigh
+		idLow, idHigh = q.BuildIdLow, q.BuildIdHigh
+	} else {
+		idLow, idHigh = buildid.IdRange(q.StartTime, q.EndTime)
 	}
 
-	return buildid.IdRange(q.StartTime, q.EndTime)
+	if q.StartCursor != "" {
+		if minExclusiveId, _ := strconv.ParseInt(q.StartCursor[len("id>"):], 10, 64); minExclusiveId+1 > idLow {
+			idLow = minExclusiveId + 1
+		}
+	}
+	return
 }
 
 // fixPageSize ensures the size is positive and less than or equal to maxPageSize.
