@@ -264,3 +264,12 @@ CREATE TABLE InvocationTasks (
   -- work on this task to prevent other workers picking up the same one.
   ProcessAfter TIMESTAMP
 ) PRIMARY KEY (TaskType, TaskId);
+
+-- Stores transactional tasks reminders.
+-- See https://go.chromium.org/luci/server/tq. Scanned by tq-sweeper-spanner.
+CREATE TABLE TQReminders (
+  ID STRING(MAX) NOT NULL,
+  FreshUntil TIMESTAMP NOT NULL,
+  Payload BYTES(102400) NOT NULL,
+  Extra BYTES(1024) NOT NULL,
+) PRIMARY KEY (ID ASC);
