@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7b760415_342480a3",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-12T02:38:41Z",
+      "side": 1,
+      "message": "I agree. Added comment that this is internal and update package name and service name to indicate that this should not be used elsewhere.",
+      "parentUuid": "df02d65c_258adfa1",
+      "range": {
+        "startLine": 29,
+        "startChar": 2,
+        "endLine": 29,
+        "endChar": 42
+      },
+      "revId": "cb49e761a156a0b6b20fbe9b62e9ef77d41353bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87ef497d_615dc4a6",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "cb49e761a156a0b6b20fbe9b62e9ef77d41353bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ae9db96_cf903d8b",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-12T02:38:41Z",
+      "side": 1,
+      "message": "I see. Updated the comments.",
+      "parentUuid": "87ef497d_615dc4a6",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 49
+      },
+      "revId": "cb49e761a156a0b6b20fbe9b62e9ef77d41353bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
