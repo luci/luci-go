@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/deriver/formats"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -150,7 +151,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 						"actual": "FAIL",
 						"expected": "PASS",
 						"artifacts": {
-							"log": ["relative/path/to/log"]
+							"log": ["layout-test-results\\relative/path/to/log"]
 						}
 					}
 				}
@@ -158,8 +159,12 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		}`)
 		size := int64(len(testJSON))
 		fileDigest := isoFake.Inject("ns", testJSON)
+		artFileDigesst := isoFake.Inject("ns", []byte(`"f00df00d"`))
+		sizePointer := func(n int64) *int64 { return &n }
 		isoOut := isolated.Isolated{
-			Files: map[string]isolated.File{"output.json": {Digest: fileDigest, Size: &size}},
+			Files: map[string]isolated.File{
+				"output.json": {Digest: fileDigest, Size: &size},
+				"layout-test-results\\relative\\path\\to\\log": {Digest: artFileDigesst, Size: sizePointer(8)}},
 		}
 		isoOutBytes, err := json.Marshal(isoOut)
 		So(err, ShouldBeNil)
@@ -242,7 +247,8 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 
-			invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(inv.Name)))
+			invID := invocations.MustParseName(inv.Name)
+			invIDs, err := invocations.Reachable(ctx, invocations.NewIDSet(invID))
 			So(err, ShouldBeNil)
 
 			trNum, err := invocations.ReadTestResultCount(ctx, invIDs)
@@ -280,6 +286,17 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 			err = proto.Unmarshal(payload, bqExports)
 			So(err, ShouldBeNil)
 			So(bqExports, ShouldResembleProto, deriver.InvBQTable)
+
+			// Query artifacts to make sure it's saved.
+			sq := &artifacts.Query{
+				InvocationIDs:       invIDs,
+				PageSize:            100,
+				TestResultPredicate: &pb.TestResultPredicate{},
+			}
+			arts, _, err := sq.Fetch(ctx)
+			So(err, ShouldBeNil)
+			So(len(arts), ShouldEqual, 1)
+			So(arts[0].Name, ShouldContainSubstring, "/tests/ninja:%2F%2Ftests:tests%2Fc2%2Ft3.html/results/2/artifacts/log")
 		})
 
 		Convey(`inserts a deduped invocation`, func() {
