@@ -167,10 +167,16 @@ func getRole(ctx context.Context, id identity.Identity, acls []*pb.Acl) (pb.Acl_
 	return role, nil
 }
 
-// BucketsByPerm returns buckets that the caller has the given permission in.
-func BucketsByPerm(ctx context.Context, p realms.Permission) (buckets []string, err error) {
+// BucketsByPerm returns buckets of the project that the caller has the given permission in.
+// If the project is empty, it returns all user accessible buckets.
+// Note: if the caller doesn't have the permission, it returns empty buckets.
+func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (buckets []string, err error) {
 	var bucketKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &bucketKeys); err != nil {
+	var projKey *datastore.Key
+	if project != "" {
+		projKey = datastore.KeyForObj(ctx, &model.Project{ID: project})
+	}
+	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(projKey), &bucketKeys); err != nil {
 		return nil, err
 	}
 

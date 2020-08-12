@@ -227,6 +227,18 @@ func TestBucketsByPerm(t *testing.T) {
 			},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Bucket{
+			ID:     "bucket1",
+			Parent: model.ProjectKey(ctx, "project2"),
+			Proto: pb.Bucket{
+				Acls: []*pb.Acl{
+					{
+						Identity: "user:user",
+						Role:     pb.Acl_READER,
+					},
+				},
+			},
+		}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket2",
 			Parent: model.ProjectKey(ctx, "project"),
 			Proto: pb.Bucket{
@@ -239,12 +251,23 @@ func TestBucketsByPerm(t *testing.T) {
 			},
 		}), ShouldBeNil)
 
-		buckets1, err := BucketsByPerm(ctx, BuildersList)
+		buckets1, err := BucketsByPerm(ctx, BuildersList, "")
 		So(err, ShouldBeNil)
-		So(buckets1, ShouldResemble, []string{"project/bucket1", "project/bucket2"})
+		So(buckets1, ShouldResemble, []string{"project/bucket1", "project/bucket2", "project2/bucket1"})
 
-		buckets2, err := BucketsByPerm(ctx, BuildsCancel)
+		buckets2, err := BucketsByPerm(ctx, BuildsCancel, "")
 		So(err, ShouldBeNil)
 		So(buckets2, ShouldResemble, []string{"project/bucket2"})
+
+		buckets3, err := BucketsByPerm(ctx, BuildersList, "project2")
+		So(err, ShouldBeNil)
+		So(buckets3, ShouldResemble, []string{"project2/bucket1"})
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.Identity("user:no_any_permission"),
+		})
+		buckets4, err := BucketsByPerm(ctx, BuildersList, "")
+		So(err, ShouldBeNil)
+		So(buckets4, ShouldBeNil)
 	})
 }
