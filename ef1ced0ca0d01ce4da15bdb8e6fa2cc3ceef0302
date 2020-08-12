@@ -193,6 +193,30 @@
     },
     {
       "key": {
+        "uuid": "728f0f6d_33c33e3e",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-12T00:27:02Z",
+      "side": 1,
+      "message": "OK, I\u0027ve managed to include the fix for *isolated*. isolate is in https://crrev.com/c/2350939/1. There will also be some clean up after these two fixes.",
+      "parentUuid": "42ec41ee_667de4dc",
+      "range": {
+        "startLine": 237,
+        "startChar": 41,
+        "endLine": 237,
+        "endChar": 54
+      },
+      "revId": "ef1ced0ca0d01ce4da15bdb8e6fa2cc3ceef0302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b4b8e159_b57d6754",
         "filename": "client/archiver/directory.go",
         "patchSetId": 1
