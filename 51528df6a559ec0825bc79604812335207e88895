@@ -16,6 +16,103 @@
       "revId": "51528df6a559ec0825bc79604812335207e88895",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "891db30c_fd991a29",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:23:39Z",
+      "side": 1,
+      "message": "👍 how did it work before? was the error silently ignored by json lib?",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f1354d8_e1311aff",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:23:39Z",
+      "side": 1,
+      "message": "this is fine, but *personally* in such cases I prefer *slightly* faster/shorter:\n\n  ret.Messages \u003d make([]*gerritpb.ChangeMessageInfo, len(ci.Messages))\n  for i, msg :\u003d range ci.Messages {\n    ret.Messages[i] \u003d msg.ToProto()\n  }",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 211,
+        "endChar": 3
+      },
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77869963_e8ca423f",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:23:39Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e7dd6aa_cdcd1235",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:23:39Z",
+      "side": 1,
+      "message": "minor: Isn\u0027t DETAILED_ACCOUNTS required for this to be populated?",
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41447c78_69d7bde3",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T01:23:39Z",
+      "side": 1,
+      "message": "TIL: I didn\u0027t realize protos allow using keyword as field name. Are you sure it\u0027s fine? I\u0027d use \"text\" to avoid having to think.",
+      "range": {
+        "startLine": 326,
+        "startChar": 9,
+        "endLine": 326,
+        "endChar": 16
+      },
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
