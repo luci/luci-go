@@ -14,12 +14,16 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
-import { AppState, consumeAppState } from '../context/app_state/app_state';
-import { observable} from 'mobx';
-import { BuildState, consumeBuildState } from '../context/build_state/build_state';
 import { repeat } from 'lit-html/directives/repeat';
-import { Build, Timestamp, BuildStatus } from '../services/buildbucket'
+import MarkdownIt from 'markdown-it';
+import { observable} from 'mobx';
+
+import { sanitizeHTML } from '../../src/libs/sanitize_html';
+import { AppState, consumeAppState } from '../context/app_state/app_state';
+import { BuildState, consumeBuildState } from '../context/build_state/build_state';
 import { router } from '../routes';
+import { Build, BuildStatus, Timestamp } from '../services/buildbucket';
+
 
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref appState!: AppState;
@@ -118,9 +122,12 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     return html`${(endTime.seconds - beginTime.seconds) + " secs"}`;
   }
 
-  // TODO (crbug.com/1112224): Really display this as markdown
   private displayMarkdown(markdown: string|undefined) {
-    return markdown? html`${markdown}` : html``;
+    if (markdown == undefined) {
+      return html ``;
+    }
+    const md = new MarkdownIt();
+    return sanitizeHTML(md.render(markdown));
   }
 }
 
