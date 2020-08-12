@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "38438de5_e0b0cfa8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-12T01:28:28Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "d253ebb61f737753c4862bd250b4e9b4f3e2eff1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b621c149_96a8e0db",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-12T01:28:28Z",
+      "side": 1,
+      "message": "Can we reorder those imports?\nThey should be speparated into 3 sections.\n1. nodejs native modules (usually none)\n2. 3rd party modules.\n3. local modules.\nSection should be separated by empty lines.\nIn each section, modules should be ordered alphabetically by the name/path of the module.",
+      "revId": "d253ebb61f737753c4862bd250b4e9b4f3e2eff1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
