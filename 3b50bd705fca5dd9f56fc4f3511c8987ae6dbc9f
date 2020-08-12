@@ -142,6 +142,24 @@
     },
     {
       "key": {
+        "uuid": "58b09199_168e0a7c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-12T17:21:24Z",
+      "side": 1,
+      "message": "Regarding option #3, does implementing OR really mean gae/datastore just does n parallel queries for you? If gae/datastore would still be doing n queries then I agree with the current approach, but if implementing OR means executing one query (i.e. ndb engine itself supports OR) then I think it\u0027s superior even though it takes more time to implement it correctly and generically. We\u0027ve had to modify gae/datastore package itself in the past to unblock Buildbucket.",
+      "parentUuid": "fe8134c7_179b153c",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e5fbaaf6_03640f7c",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
