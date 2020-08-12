@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"testing"
 
 	"go.chromium.org/luci/client/archiver"
@@ -114,6 +115,7 @@ func TestArchive(t *testing.T) {
 				secondData := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz"))
 				topIsolated := isolated.New(h)
 				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
+				sort.Sort(topIsolated.Includes)
 				if !isWindows() {
 					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, barData), mode, int64(len(barData)))
 				} else {

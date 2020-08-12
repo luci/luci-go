@@ -326,24 +326,3 @@ func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDi
 
 	return digest, stats, nil
 }
-
-func changeTreeReadOnly(ctx context.Context, rootDir string, readOnly commonisolated.ReadOnlyValue) error {
-	switch readOnly {
-	case commonisolated.Writable:
-		if err := filesystem.MakeTreeWritable(ctx, rootDir); err != nil {
-			return errors.Annotate(err, "failed to call MakeTreeWritable(ctx, %s)", rootDir).Err()
-		}
-		return nil
-	case commonisolated.FilesReadOnly:
-		if err := filesystem.MakeTreeFilesReadOnly(ctx, rootDir); err != nil {
-			return errors.Annotate(err, "failed to call MakeTreeFilesReadOnly(ctx, %s)", rootDir).Err()
-		}
-		return nil
-	case commonisolated.DirsReadOnly:
-		if err := filesystem.MakeTreeReadOnly(ctx, rootDir); err != nil {
-			return errors.Annotate(err, "failed to call MakeTreeReadOnly(ctx, %s)", rootDir).Err()
-		}
-		return nil
-	}
-	return errors.Reason("unknown flag for changeTreeReadOnly(ctx, %s, %v)", rootDir, readOnly).Err()
-}

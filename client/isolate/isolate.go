@@ -224,7 +224,7 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	if err != nil {
 		return nil, "", nil, err
 	}
-	cmd, deps, readOnly, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
+	cmd, deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -242,10 +242,9 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	}
 	// Prepare the .isolated struct.
 	isol := &isolated.Isolated{
-		Algo:     "sha-1",
-		Files:    map[string]isolated.File{},
-		ReadOnly: readOnly.ToIsolated(),
-		Version:  isolated.IsolatedFormatVersion,
+		Algo:    "sha-1",
+		Files:   map[string]isolated.File{},
+		Version: isolated.IsolatedFormatVersion,
 	}
 	if len(cmd) != 0 {
 		if opts.AllowCommandAndRelativeCWD {
@@ -283,7 +282,7 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	_, deps, _, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
+	_, deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
 		return nil, "", err
 	}

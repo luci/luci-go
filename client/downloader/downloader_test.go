@@ -340,7 +340,7 @@ func TestFetchAndMap(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(isomap, ShouldResemble, &isolated.Isolated{
 			Algo:    "sha-1",
-			Version: "1.4",
+			Version: isolated.IsolatedFormatVersion,
 		})
 
 		So(stats.Duration, ShouldBeGreaterThan, 0)

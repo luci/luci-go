@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
@@ -207,12 +208,14 @@ func TestArchive(t *testing.T) {
 		secondIsolatedEncoded := string(encoded) + "\n"
 		secondIsolatedHash := isolated.HashBytes(h, []byte(secondIsolatedEncoded))
 
+		digests := isolated.HexDigests{baseIsolatedHash, secondIsolatedHash}
+		sort.Sort(digests)
 		isolatedData := isolated.Isolated{
 			Algo:    "sha-1",
 			Command: []string{"amiga"},
 			Files:   map[string]isolated.File{},
 			// This list must be in deterministic order.
-			Includes:    isolated.HexDigests{baseIsolatedHash, secondIsolatedHash},
+			Includes:    digests,
 			RelativeCwd: "foo",
 			Version:     isolated.IsolatedFormatVersion,
 		}

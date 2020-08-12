@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -36,41 +35,9 @@ import (
 	"go/token"
 
 	"github.com/yosuke-furukawa/json5/encoding/json5"
-	"go.chromium.org/luci/common/isolated"
 )
 
 var osPathSeparator = string(os.PathSeparator)
-
-// ReadOnlyValue defines permissions on isolated files.
-type ReadOnlyValue int
-
-// Possible kinds of read only values.
-const (
-	NotSet        ReadOnlyValue = -1
-	Writable      ReadOnlyValue = 0
-	FilesReadOnly ReadOnlyValue = 1
-	DirsReadOnly  ReadOnlyValue = 2
-)
-
-// ToIsolated can be used to convert ReadOnlyValue enum values to corresponding
-// isolated.ReadOnlyValue enum values. It returns nil on errors.
-func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
-	switch r {
-	case NotSet:
-	case Writable:
-		out = new(isolated.ReadOnlyValue)
-		*out = isolated.Writable
-	case FilesReadOnly:
-		out = new(isolated.ReadOnlyValue)
-		*out = isolated.FilesReadOnly
-	case DirsReadOnly:
-		out = new(isolated.ReadOnlyValue)
-		*out = isolated.DirsReadOnly
-	default:
-		log.Printf("invalid ReadOnlyValue %d", r)
-	}
-	return
-}
 
 // LoadIsolateAsConfig parses one .isolate file and returns a Configs instance.
 //
@@ -170,11 +137,11 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 //
 // relDir and dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map[string]string) (
-	[]string, []string, ReadOnlyValue, string, error) {
+	[]string, []string, string, error) {
 	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
 	isolate, err := LoadIsolateAsConfig(isolateDir, content)
 	if err != nil {
-		return nil, nil, NotSet, "", err
+		return nil, nil, "", err
 	}
 	cn := configName{}
 	var missingVars []string
@@ -188,12 +155,12 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 	if len(missingVars) > 0 {
 		sort.Strings(missingVars)
 		err = fmt.Errorf("these configuration variables were missing from the command line: %v", missingVars)
-		return nil, nil, NotSet, "", err
+		return nil, nil, "", err
 	}
 	// A configuration is to be created with all the combinations of free variables.
 	config, err := isolate.GetConfig(cn)
 	if err != nil {
-		return nil, nil, NotSet, "", err
+		return nil, nil, "", err
 	}
 	dependencies := config.Files
 	relDir := config.IsolateDir
@@ -204,7 +171,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 		}
 		relDir = strings.Replace(relDir, "/", osPathSeparator, -1)
 	}
-	return config.Command, dependencies, config.ReadOnly, relDir, nil
+	return config.Command, dependencies, relDir, nil
 }
 
 func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
@@ -363,13 +330,6 @@ func (c *Configs) expandConfigVariables(newConfigVars []string) []configPair {
 	return out
 }
 
-func createReadOnlyValue(readOnly *int) ReadOnlyValue {
-	if readOnly == nil {
-		return NotSet
-	}
-	return ReadOnlyValue(*readOnly)
-}
-
 // ConfigSettings represents the dependency variables for a single build configuration.
 //
 // The structure is immutable.
@@ -378,8 +338,6 @@ type ConfigSettings struct {
 	Files []string
 	// Command is the actual command to run.
 	Command []string
-	// ReadOnly describes how to map the files.
-	ReadOnly ReadOnlyValue
 	// IsolateDir is the path where to start the command from.
 	// It uses the OS' native path separator and it must be an absolute path.
 	IsolateDir string
@@ -395,7 +353,6 @@ func newConfigSettings(variables variables, isolateDir string) *ConfigSettings {
 	c := &ConfigSettings{
 		make([]string, len(variables.Files)),
 		variables.Command,
-		createReadOnlyValue(variables.ReadOnly),
 		isolateDir,
 	}
 	copy(c.Files, variables.Files)
@@ -441,11 +398,6 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		useRHS = len(lhs.Files) == 0
 	}
 
-	readOnly := rhs.ReadOnly
-	if lhs.ReadOnly != NotSet {
-		readOnly = lhs.ReadOnly
-	}
-
 	lRelCwd, rRelCwd := lhs.IsolateDir, rhs.IsolateDir
 	lFiles, rFiles := lhs.Files, rhs.Files
 	if useRHS {
@@ -482,7 +434,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		files = append(files, f)
 	}
 	sort.Strings(files)
-	return &ConfigSettings{files, command, readOnly, lRelCwd}, nil
+	return &ConfigSettings{files, command, lRelCwd}, nil
 }
 
 // Private details.

@@ -17,25 +17,7 @@ package isolated
 import "crypto"
 
 // IsolatedFormatVersion is version of *.isolated file format. Put into JSON.
-const IsolatedFormatVersion = "1.4"
-
-// ReadOnlyValue defines permissions on isolated files.
-type ReadOnlyValue int
-
-const (
-	// Writable means that both files and directories are writeable. This should
-	// not be used.
-	Writable ReadOnlyValue = 0
-	// FilesReadOnly means that files are read only but directories are
-	// writeable. This permits the process executed to create temporary files in
-	// the current directory. This is the recommended value and this is the
-	// default value.
-	FilesReadOnly ReadOnlyValue = 1
-	// DirsReadOnly means that both files and directories are read-only. This
-	// enforces strict no-junk policy that the process cannot create files in the
-	// temporary mapped directory.
-	DirsReadOnly ReadOnlyValue = 2
-)
+const IsolatedFormatVersion = "2.0"
 
 // FileType describes the type of file being isolated.
 type FileType string
@@ -95,7 +77,6 @@ type Isolated struct {
 	Command     []string        `json:"command,omitempty"`
 	Files       map[string]File `json:"files,omitempty"`
 	Includes    HexDigests      `json:"includes,omitempty"`
-	ReadOnly    *ReadOnlyValue  `json:"read_only,omitempty"`
 	RelativeCwd string          `json:"relative_cwd,omitempty"`
 	Version     string          `json:"version"`
 }
