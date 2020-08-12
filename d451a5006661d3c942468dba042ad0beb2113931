@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5591890e_c30794d7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T21:56:32Z",
+      "side": 1,
+      "message": "LGTM",
+      "revId": "d451a5006661d3c942468dba042ad0beb2113931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e263400_aeb8ee5b",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T21:56:32Z",
+      "side": 1,
+      "message": "strictly speaking, this mutates input (q), which is not documented in Fetch() comment. Consider smth like\n\n  cpy :\u003d *q\n  q \u003d \u0026cpy\n\nbefore mutating q",
+      "revId": "d451a5006661d3c942468dba042ad0beb2113931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
