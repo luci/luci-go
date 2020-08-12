@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -69,6 +71,16 @@ func InitServer(srv *server.Server, opts Options) {
 		d.Run(ctx, tasks.TryFinalizeInvocation, func(ctx context.Context, invID invocations.ID, payload []byte) error {
 			return tryFinalizeInvocation(ctx, invID)
 		})
+	})
+}
+
+func init() {
+	// TODO(crbug.com/1080423): This is not really used yet. Tasks "handled" here
+	// are submitted in parallel to tasks in the InvocationTasks table.
+	tasks.FinalizationTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		task := msg.(*taskspb.TryFinalizeInvocation)
+		logging.Infof(ctx, "Asked to finalize %s", task.InvocationId)
+		return nil
 	})
 }
 

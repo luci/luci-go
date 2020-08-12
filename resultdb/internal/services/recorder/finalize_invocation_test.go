@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -52,6 +53,7 @@ func TestValidateFinalizeInvocationRequest(t *testing.T) {
 func TestFinalizeInvocation(t *testing.T) {
 	Convey(`TestFinalizeInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, sched := tq.TestingContext(ctx, nil)
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "inv")
@@ -68,6 +70,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+
+			So(sched.Tasks(), ShouldHaveLength, 1)
 		})
 
 		Convey(`Success`, func() {
@@ -87,6 +91,8 @@ func TestFinalizeInvocation(t *testing.T) {
 				"InvocationId": &taskInv,
 			})
 			So(taskInv, ShouldEqual, invocations.ID("inv"))
+
+			So(sched.Tasks(), ShouldHaveLength, 1)
 		})
 	})
 }
