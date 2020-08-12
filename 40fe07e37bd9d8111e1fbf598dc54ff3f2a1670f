@@ -104,6 +104,30 @@
       "revId": "40fe07e37bd9d8111e1fbf598dc54ff3f2a1670f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b47343e_e4168add",
+        "filename": "resultdb/internal/services/deriver/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-12T06:57:24Z",
+      "side": 1,
+      "message": "The reason that we had this problem was because outputs was keyed by non-normalized paths. But I agree that we should minimize assumptions on other code. Update.",
+      "parentUuid": "a0eb6407_3b020ede",
+      "range": {
+        "startLine": 332,
+        "startChar": 89,
+        "endLine": 332,
+        "endChar": 114
+      },
+      "revId": "40fe07e37bd9d8111e1fbf598dc54ff3f2a1670f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
