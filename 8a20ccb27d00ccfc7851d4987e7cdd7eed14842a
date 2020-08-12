@@ -16,6 +16,46 @@
       "revId": "8a20ccb27d00ccfc7851d4987e7cdd7eed14842a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c638cbb_93c56a3d",
+        "filename": "resultdb/internal/services/finalizer/finalizer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:48:33Z",
+      "side": 1,
+      "message": "i assume it will be used soon, otherwise a TODO(crbug.com/XXX) is ideal",
+      "revId": "8a20ccb27d00ccfc7851d4987e7cdd7eed14842a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9a5453c_17c3bb97",
+        "filename": "resultdb/internal/tasks/finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:48:33Z",
+      "side": 1,
+      "message": "should it end with a slash? the default does: https://godoc.org/go.chromium.org/luci/server/tq#TaskClass.RoutingPrefix",
+      "range": {
+        "startLine": 42,
+        "startChar": 47,
+        "endLine": 42,
+        "endChar": 48
+      },
+      "revId": "8a20ccb27d00ccfc7851d4987e7cdd7eed14842a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
