@@ -16,6 +16,29 @@
       "revId": "40fe07e37bd9d8111e1fbf598dc54ff3f2a1670f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d263806b_c41a20c2",
+        "filename": "resultdb/internal/services/deriver/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:02:22Z",
+      "side": 1,
+      "message": "we still should check that the entry is actually present in the map, right?\n\n  if file, ok :\u003d normPathToOutput[relPath]; ok {\n    ...\n  }",
+      "range": {
+        "startLine": 332,
+        "startChar": 89,
+        "endLine": 332,
+        "endChar": 114
+      },
+      "revId": "40fe07e37bd9d8111e1fbf598dc54ff3f2a1670f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
