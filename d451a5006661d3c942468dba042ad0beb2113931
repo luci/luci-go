@@ -33,6 +33,24 @@
       "revId": "d451a5006661d3c942468dba042ad0beb2113931",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3222918d_08a9867d",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-12T22:54:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e263400_aeb8ee5b",
+      "revId": "d451a5006661d3c942468dba042ad0beb2113931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
