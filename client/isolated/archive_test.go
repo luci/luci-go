@@ -50,6 +50,7 @@ func TestArchive(t *testing.T) {
 		// Setup temporary directory.
 		//   /base/bar
 		//   /base/ignored
+		//   /base/relativelink -> bar
 		//   /link -> /base/bar
 		//   /second/boz
 		// Result:
@@ -110,10 +111,15 @@ func TestArchive(t *testing.T) {
 				}
 
 				h := isolated.GetHash(namespace)
-				baseData := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink"))
-				secondData := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz"))
+				baseIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink")).Isolated
+				secondIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz")).Isolated
 				topIsolated := isolated.New(h)
-				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
+				for k, v := range baseIsolated.Files {
+					topIsolated.Files[k] = v
+				}
+				for k, v := range secondIsolated.Files {
+					topIsolated.Files[k] = v
+				}
 				if !isWindows() {
 					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, barData), mode, int64(len(barData)))
 				} else {
@@ -124,9 +130,7 @@ func TestArchive(t *testing.T) {
 					namespace: {
 						isolated.HashBytes(h, barData): string(barData),
 						isolated.HashBytes(h, bozData): string(bozData),
-						baseData.Hash:                  baseData.String,
 						isolatedData.Hash:              isolatedData.String,
-						secondData.Hash:                secondData.String,
 					},
 				}
 				if isWindows() {
@@ -187,16 +191,9 @@ func TestArchiveFiles(t *testing.T) {
 		dataFileA := filesArchiveExpect(h, dir, "a")
 		dataDirB := filesArchiveExpect(h, dir, filepath.Join("b", "c"), filepath.Join("b", "d"))
 
-		isolatedDirB := isolated.New(h)
-		isolatedDirB.Includes = isolated.HexDigests{dataDirB.Hash}
-
-		isolatedDirBData := newArchiveExpectData(h, isolatedDirB)
-
 		So(uploaded, ShouldResemble, map[isolated.HexDigest]string{
-			dataFileA.Hash:        dataFileA.String,
-			isolatedDirBData.Hash: isolatedDirBData.String,
-
-			dataDirB.Hash: dataDirB.String,
+			dataFileA.Hash: dataFileA.String,
+			dataDirB.Hash:  dataDirB.String,
 
 			isolated.HashBytes(h, []byte("a")):  "a",
 			isolated.HashBytes(h, []byte("bc")): "bc",
@@ -283,6 +280,119 @@ func TestArchiveFail(t *testing.T) {
 			So(a.Close(), ShouldResemble, errors.New("contains(1) failed: gave up after 1 attempts: http request failed: Bad Request (HTTP 400)"))
 		})
 	})
+}
+
+func TestArchiveDirs(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey(`Tests directory with symlinks.`, t, testfs.MustWithTempDir(t, "", func(dir string) {
+
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+
+		// Setup temporary directory.
+		//  /rootfoo
+		//  /base/foo
+		//  /base/foolink -> foo
+		//  /base/rootfoolink -> /rootfoo
+		//  /base/sub/bar
+		//  /base/sub/barlink -> bar
+		//  /base/sub/foolink -> ../foo
+		tmpDir, err := ioutil.TempDir("", "isolated")
+		So(err, ShouldBeNil)
+		defer func() {
+			if err := os.RemoveAll(tmpDir); err != nil {
+				t.Fail()
+			}
+		}()
+		baseDir := filepath.Join(tmpDir, "base")
+		subDir := filepath.Join(baseDir, "sub")
+		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
+		So(os.Mkdir(subDir, 0700), ShouldBeNil)
+
+		fooData := []byte("foo")
+		rootFooData := []byte("root-foo")
+		barData := []byte("bar")
+		So(ioutil.WriteFile(filepath.Join(baseDir, "foo"), fooData, 0600), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(subDir, "bar"), barData, 0600), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(tmpDir, "rootfoo"), rootFooData, 0600), ShouldBeNil)
+		winLinkData := []byte("no link on Windows")
+		if !isWindows() {
+			// In tree
+			So(os.Symlink("foo", filepath.Join(baseDir, "foolink")), ShouldBeNil)
+			So(os.Symlink("bar", filepath.Join(subDir, "barlink")), ShouldBeNil)
+			So(os.Symlink(filepath.Join(baseDir, "foo"), filepath.Join(subDir, "foolink")), ShouldBeNil)
+			// Out of tree
+			So(os.Symlink(filepath.Join(tmpDir, "rootfoo"), filepath.Join(baseDir, "rootfoolink")), ShouldBeNil)
+		} else {
+			So(ioutil.WriteFile(filepath.Join(baseDir, "foolink"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(subDir, "barlink"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(subDir, "foolink"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(baseDir, "rootfoolink"), winLinkData, 0600), ShouldBeNil)
+		}
+
+		var buf bytes.Buffer
+		dirsSC := ScatterGather{}
+		So(dirsSC.Add(tmpDir, "base"), ShouldBeNil)
+
+		opts := &ArchiveOptions{
+			Dirs:         dirsSC,
+			Isolated:     filepath.Join(tmpDir, "baz.isolated"),
+			LeakIsolated: &buf,
+		}
+
+		namespace := isolatedclient.DefaultNamespace
+		a := archiver.New(ctx, isolatedclient.NewClient(ts.URL, isolatedclient.WithNamespace(namespace)), nil)
+		item := Archive(ctx, a, opts)
+		So(item.DisplayName, ShouldResemble, filepath.Join(tmpDir, "baz.isolated"))
+		item.WaitForHashed()
+		So(item.Error(), ShouldBeNil)
+		So(a.Close(), ShouldBeNil)
+
+		h := isolated.GetHash(namespace)
+		baseIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("base", "foo"), filepath.Join("base", "foolink"), filepath.Join("base", "sub", "bar"), filepath.Join("base", "sub", "barlink"), filepath.Join("base", "sub", "foolink")).Isolated
+		topIsolated := isolated.New(h)
+		for k, v := range baseIsolated.Files {
+			topIsolated.Files[k] = v
+		}
+		mode := 0600
+		if isWindows() {
+			mode = 0666
+		}
+		if !isWindows() {
+			topIsolated.Files[filepath.Join("base", "rootfoolink")] = isolated.BasicFile(isolated.HashBytes(h, rootFooData), mode, int64(len(rootFooData)))
+		} else {
+			topIsolated.Files[filepath.Join("base", "rootfoolink")] = isolated.BasicFile(isolated.HashBytes(h, winLinkData), mode, int64(len(winLinkData)))
+		}
+
+		isolatedData := newArchiveExpectData(h, topIsolated)
+		expected := map[string]map[isolated.HexDigest]string{
+			namespace: {
+				isolated.HashBytes(h, fooData):     string(fooData),
+				isolated.HashBytes(h, rootFooData): string(rootFooData),
+				isolated.HashBytes(h, barData):     string(barData),
+				isolatedData.Hash:                  isolatedData.String,
+			},
+		}
+		if isWindows() {
+			expected[namespace][isolated.HashBytes(h, winLinkData)] = string(winLinkData)
+		}
+		actual := map[string]map[isolated.HexDigest]string{}
+		for n, c := range server.Contents() {
+			actual[n] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[n][isolated.HexDigest(k)] = string(v)
+			}
+		}
+		So(actual, ShouldResemble, expected)
+		So(item.Digest(), ShouldResemble, isolatedData.Hash)
+		So(server.Error(), ShouldBeNil)
+		digest := isolated.HashBytes(h, buf.Bytes())
+		So(digest, ShouldResemble, isolatedData.Hash)
+
+	}))
 }
 
 func isWindows() bool {
