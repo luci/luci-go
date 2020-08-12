@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "b9c93a8c_4b967292",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:49:57Z",
+      "side": 1,
+      "message": "LGTM either way",
+      "revId": "40fe07e37bd9d8111e1fbf598dc54ff3f2a1670f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d263806b_c41a20c2",
         "filename": "resultdb/internal/services/deriver/swarming.go",
         "patchSetId": 1
@@ -54,6 +71,30 @@
       "side": 1,
       "message": "I think we don\u0027t need to, because https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/deriver/formats/json.go;l\u003d427?q\u003dformats%2Fjson.go",
       "parentUuid": "d263806b_c41a20c2",
+      "range": {
+        "startLine": 332,
+        "startChar": 89,
+        "endLine": 332,
+        "endChar": 114
+      },
+      "revId": "40fe07e37bd9d8111e1fbf598dc54ff3f2a1670f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0eb6407_3b020ede",
+        "filename": "resultdb/internal/services/deriver/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:49:57Z",
+      "side": 1,
+      "message": "that code was there before this CL and yet we had the problem?\nalso a concern that this code assumes that code. Ideally we minimize such assumptions.",
+      "parentUuid": "1467e816_1c9d7d88",
       "range": {
         "startLine": 332,
         "startChar": 89,
