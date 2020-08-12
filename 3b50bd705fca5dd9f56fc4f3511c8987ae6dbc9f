@@ -160,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "d0836f6e_3e5d83bd",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T18:03:37Z",
+      "side": 1,
+      "message": "ndb implements OR and IN via n parallel queries. I have learned about this when the list of accessible buckets in all projects got very long.\n\nNote that https://godoc.org/go.chromium.org/gae/service/datastore#Query does not have neither OR nor IN.",
+      "parentUuid": "58b09199_168e0a7c",
+      "revId": "3b50bd705fca5dd9f56fc4f3511c8987ae6dbc9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e5fbaaf6_03640f7c",
         "filename": "buildbucket/appengine/internal/search/query.go",
         "patchSetId": 2
