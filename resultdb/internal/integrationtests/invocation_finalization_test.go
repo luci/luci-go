@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/tq"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,6 +29,15 @@ import (
 func TestInvocationFinalization(t *testing.T) {
 	Convey(`ShouldFinalize`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+
+		// Cancel the test after 20 sec.
+		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		defer cancel()
+
+		// Setup Cloud Tasks fake to pump messages between servers.
+		ctx, sched := tq.TestingContext(ctx, nil)
+		go sched.Run(ctx)
+
 		app, err := startTestApp(ctx)
 		So(err, ShouldBeNil)
 		defer app.Shutdown()
@@ -49,7 +59,6 @@ func TestInvocationFinalization(t *testing.T) {
 		c.FinalizeInvocation(ctx, "invocations/u-c")
 
 		// Assert that all three invocations are finalized within 10 seconds.
-		ctx, _ = context.WithTimeout(ctx, 10*time.Second)
 		for {
 			time.Sleep(100 * time.Millisecond)
 			if c.GetState(ctx, "invocations/u-a") != pb.Invocation_FINALIZED {
