@@ -29,7 +29,7 @@ func (s Size) String() string {
 }
 
 func (s *Size) Set(str string) error {
-	if n, err := strconv.Atoi(str); err != nil {
+	if n, err := strconv.ParseInt(str, 10, 64); err != nil {
 		return err
 	} else {
 		*s = Size(n)
