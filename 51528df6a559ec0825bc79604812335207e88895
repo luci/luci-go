@@ -125,6 +125,30 @@
     },
     {
       "key": {
+        "uuid": "399be34e_f09d93f4",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T22:43:07Z",
+      "side": 1,
+      "message": "awesome explanation, thank you!",
+      "parentUuid": "889fbabe_00495500",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 211,
+        "endChar": 3
+      },
+      "revId": "51528df6a559ec0825bc79604812335207e88895",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77869963_e8ca423f",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
