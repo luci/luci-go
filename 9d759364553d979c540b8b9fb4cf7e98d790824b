@@ -204,6 +204,48 @@
     },
     {
       "key": {
+        "uuid": "9cf65992_4d2dc9c0",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T07:50:41Z",
+      "side": 1,
+      "message": "I assume by \"when finalizing invocation\" you mean FinalizeInvocation RPC. It does not accept Invocation proto, so i am not sure how would it work. I meant that finalization code in buildbucket would make two RPCs: UpdateInvocation and FinalizeInvocation, but I am curious if you meant that FinalizeInvocationRequest would be extended to include Invocation and update_mask.\n\nthis is getting off-topic, but why would we ask the client to populate uvarant and common test id prefix if we can compute it ourselves?",
+      "parentUuid": "7e320caa_091d9a6d",
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f5d7e92_62e6a3c6",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T07:50:41Z",
+      "side": 1,
+      "message": "Chan, you are right. Nothing in TestResultHistoryOptions is specific to test results, and we cannot index test results anyway. We index only invocations, so instead of renaming he field, we should rename the message: HistoryOptions.\n\nRoberto, I think invocation.HistoryOptions.TestResults.UseInvocationTimestamp is a bit long, but also it would requires making all our new Spanner columns to be spanner specific (e.g. TestResultCommitPosition), i.e. Chan\u0027s point.",
+      "parentUuid": "5fa4c222_bf12103e",
+      "range": {
+        "startLine": 134,
+        "startChar": 28,
+        "endLine": 134,
+        "endChar": 43
+      },
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12509958_a251d1e0",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 1
