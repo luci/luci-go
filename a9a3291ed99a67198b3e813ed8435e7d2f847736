@@ -16,6 +16,184 @@
       "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f55434ad_2e8ced8a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "nice!",
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92a1f1d5_cb10c2a0",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "possible to dedupe?\n\nin particular, why not put this logic into idRange() ?",
+      "range": {
+        "startLine": 192,
+        "startChar": 0,
+        "endLine": 196,
+        "endChar": 2
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "029f9023_b9c475f9",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "nit: if this was !\u003d, then he \"else\" block would be closer to the condition, so the code might be more readable",
+      "range": {
+        "startLine": 206,
+        "startChar": 26,
+        "endLine": 206,
+        "endChar": 28
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11227c9d_277793f5",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "nit: switch?\n\n  switch buckets, err \u003d ...; {\n  case err !\u003d nil:\n     ...\n  case len(buckets) \u003d\u003d 0:\n     ...\n  }",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 210,
+        "endChar": 4
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afe788f6_e030a56e",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "nit: i think the intention of the code would be more obvious if this was\n\n  buckets \u003d []string{...}",
+      "range": {
+        "startLine": 214,
+        "startChar": 2,
+        "endLine": 214,
+        "endChar": 28
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd5a14f0_83e813c5",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "i think this might be more concurrent queries than we want to send, e.g. if someone has access to 1000 buckets, it would send 1000 queries at the same time.\n\nhow about some reasonable constant? e.g. 64",
+      "range": {
+        "startLine": 219,
+        "startChar": 25,
+        "endLine": 219,
+        "endChar": 37
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f061f003_e4a55ba5",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "nit:\n\n  for i :\u003d 0; i \u003c len(bKeys) \u0026\u0026 i \u003c int(q.PageSize); i++ {",
+      "range": {
+        "startLine": 249,
+        "startChar": 1,
+        "endLine": 250,
+        "endChar": 44
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "619fa7b4_998edf5a",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T06:37:56Z",
+      "side": 1,
+      "message": "here and in other places the code assumes that q.PageSize \u003e 0, or assumes that Query was created by NewQuery.\nIdeally we don\u0027t have assumptions. Consider either calling fixPageSize somewhere inside Fetch(), or explicitly panicking in the beginning of Fetch() if PageSize \u003c\u003d 0",
+      "range": {
+        "startLine": 268,
+        "startChar": 54,
+        "endLine": 268,
+        "endChar": 66
+      },
+      "revId": "a9a3291ed99a67198b3e813ed8435e7d2f847736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
