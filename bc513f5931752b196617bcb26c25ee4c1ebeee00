@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "4f5cd94a_30a10a1c",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:39:16Z",
+      "side": 1,
+      "message": "\u003e This should suffice at the API level. If necessary, impl can route the request to \".../detail\" depending on QueryOptions specified.\n\nTrue. Actually, technically, you can use GetChange API with options defined here [1] to achieve the same result as GetChangeDetail. So I\u0027m thinking we just drop the support for calling `detail` flavor API. WDYT?\n\n\n\u003e Also, please test end-to-end that this actually works as intended.\n\u003e Maybe we should have a simple demo/ subpackage with bare bones main.go where one can easily change input+ RPC and then log output of a command?\n\nWill do :) \n\n\n[1]: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#labels",
+      "parentUuid": "3498388c_33df943c",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 55
+      },
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6ec57c1f_55ca37a2",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
@@ -76,6 +100,24 @@
       "writtenOn": "2020-08-12T01:12:55Z",
       "side": 1,
       "message": "^ ideally, fieldmask would be specified here, based on which the QueryOption would be specified in RPC to Gerrit.",
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93005aa8_b154c1b0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-12T05:39:16Z",
+      "side": 1,
+      "message": "While I agree with that using fieldmask is considered as best practice for gRPC API. For this particular API, I think switching to fieldmask may lead to following issues:\n\n1. user may actually get more data they need. Specifically, for those Detailed option. For example, if user provide field mask \"labels\", I think ideally, we will map it to DETAILED_LABELS but probably what user really want is only a summary info (i.e. LABELS option).\n2. We\u0027ll need to support advanced semantic for field mask because it is quite a complex object so user might need to specify field for the element of list. But there\u0027s no official support in protobuf lib and our customized implementation will panic during deserialization with new proto lib.\n\nGiven above, I\u0027d prefer to stick to the QueryOption to keep it in sync with Gerrit API. WDYT?",
+      "parentUuid": "659283f6_7ecdcbd4",
       "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
