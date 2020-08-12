@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e098cff_97d548c4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T22:39:08Z",
+      "side": 1,
+      "message": "Does \"cd lucicfg; go generate ./...\" makes any diff?",
+      "revId": "8fee820f31bd950ff8790d7dcf90622bfd5da1f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
