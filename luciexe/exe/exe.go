@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -79,6 +80,9 @@ type bsg func() (*bootstrap.Bootstrap, error)
 //   build. The BuildSender is synchronous and locked; it may only be called
 //   once at a time. It will marshal the current build, then send it. Writes
 //   to the build should be synchronized with calls to the BuildSender.
+//
+// input.Output.Properties is initialized to an empty Struct so you can use
+// WriteProperties right away.
 type MainFn func(ctx context.Context, input *bbpb.Build, userargs []string, send BuildSender) error
 
 func splitArgs(args []string) ([]string, []string) {
@@ -111,6 +115,14 @@ func buildFrom(in io.Reader, build *bbpb.Build) {
 	}
 	if err := proto.Unmarshal(data, build); err != nil {
 		panic(errors.Annotate(err, "parsing Build from stdin").Err())
+	}
+	// Initialize Output.Properties so that users can use exe.WriteProperties
+	// straight away.
+	if build.Output == nil {
+		build.Output = &bbpb.Build_Output{}
+	}
+	if build.Output.Properties == nil {
+		build.Output.Properties = &structpb.Struct{}
 	}
 }
 
