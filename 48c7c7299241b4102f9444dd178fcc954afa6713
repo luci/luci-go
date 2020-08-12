@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95f59710_b6978398",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-12T04:49:45Z",
+      "side": 1,
+      "message": "drop",
+      "range": {
+        "startLine": 283,
+        "startChar": 8,
+        "endLine": 283,
+        "endChar": 9
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd002b00_0a2e5d9c",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-12T04:49:45Z",
+      "side": 1,
+      "message": "why not make this string?",
+      "range": {
+        "startLine": 152,
+        "startChar": 15,
+        "endLine": 152,
+        "endChar": 19
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
