@@ -69,7 +69,6 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m)
 	}
 
-	dsp := tasks.GetDispatcher(ctx)
 	inf := &model.BuildInfra{
 		ID:    1,
 		Build: datastore.KeyForObj(ctx, bld),
@@ -99,7 +98,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		}
 		if inf.Proto.Swarming.GetHostname() != "" && inf.Proto.Swarming.TaskId != "" {
 			// TODO(crbug/1091604): Pass the realm if the build is realms-enabled.
-			if err := dsp.CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
+			if err := tasks.CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
 				Hostname: inf.Proto.Swarming.Hostname,
 				TaskId:   inf.Proto.Swarming.TaskId,
 			}); err != nil {

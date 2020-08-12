@@ -28,11 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
-	// Enable datastore transactional tasks support.
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
-
 	"go.chromium.org/luci/buildbucket/appengine/model"
-	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,12 +62,11 @@ func TestCancelBuild(t *testing.T) {
 	})
 
 	Convey("CancelBuild", t, func() {
-		d := &tq.Dispatcher{}
-		sch := d.SchedulerForTest()
 		srv := &Builds{}
-		ctx := tasks.WithDispatcher(txndefer.FilterRDS(memory.Use(context.Background())), tasks.NewDispatcher(d))
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
+		ctx, sch := tq.TestingContext(ctx, nil)
 
 		Convey("id", func() {
 			Convey("not found", func() {
