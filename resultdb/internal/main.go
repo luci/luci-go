@@ -15,8 +15,6 @@
 package internal
 
 import (
-	"flag"
-
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/module"
@@ -35,9 +33,5 @@ func Main(init func(srv *server.Server) error) {
 		span.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
-
-	// TODO(vadimsh): Should this be removed?
-	_ = flag.Bool("resultdb-prod", false, "Run ResultDB in production mode")
-
 	server.Main(nil, modules, init)
 }
