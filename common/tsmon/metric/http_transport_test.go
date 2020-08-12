@@ -57,6 +57,7 @@ func TestHTTPRoundTripper(t *testing.T) {
 		Convey("successful request", func() {
 			rt.duration = time.Millisecond * 42
 			rt.resp.StatusCode = 200
+			rt.resp.Body = ioutil.NopCloser(strings.NewReader("12345678"))
 			rt.resp.ContentLength = 8
 
 			req, _ := http.NewRequest("GET", "https://www.example.com", strings.NewReader("12345"))
