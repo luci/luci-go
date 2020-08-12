@@ -162,6 +162,48 @@
     },
     {
       "key": {
+        "uuid": "5fa4c222_bf12103e",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-12T03:22:16Z",
+      "side": 1,
+      "message": "I don\u0027t know if it will ever be a valid case that users want to order test result history in one way and non test result history in a different way. So I\u0027m not sure should we leave room for this.\n\nAnd if we do, I would vote for add \u0027test_\u0027 prefix to this field.",
+      "parentUuid": "247e245b_616532a9",
+      "range": {
+        "startLine": 134,
+        "startChar": 28,
+        "endLine": 134,
+        "endChar": 43
+      },
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e320caa_091d9a6d",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-12T03:22:16Z",
+      "side": 1,
+      "message": "I think we can do the common prefix and uvariant computations when finalizing the invocation because by then resultdb already has all the results. But we\u0027ll still need buildbucket to make a UpdateInvocation call to provide us the commit position before it makes the FinalizeInvocation call.",
+      "parentUuid": "1fcb532f_d09660cd",
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12509958_a251d1e0",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 1
