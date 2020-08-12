@@ -298,9 +298,13 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	if err != nil {
 		return nil, errors.Annotate(err, "getting isolated outputs").Err()
 	}
+
+	normPathToOutput := map[string]isolated.File{}
 	availableArtifacts := stringset.New(len(outputs))
 	for path := range outputs {
-		availableArtifacts.Add(util.NormalizeIsolatedPath(path))
+		normPath := util.NormalizeIsolatedPath(path)
+		availableArtifacts.Add(normPath)
+		normPathToOutput[normPath] = outputs[path]
 	}
 
 	// Fetch the output.json file itself and convert it.
@@ -325,7 +329,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 		}
 
 		for name, relPath := range r.Artifacts {
-			a := isolatedFileToArtifact(outputsRef.Isolatedserver, outputsRef.Namespace, relPath, outputs[relPath], name)
+			a := isolatedFileToArtifact(outputsRef.Isolatedserver, outputsRef.Namespace, relPath, normPathToOutput[relPath], name)
 			if a != nil {
 				ret[i].Artifacts = append(ret[i].Artifacts, a)
 			}

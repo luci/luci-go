@@ -150,7 +150,7 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 						"actual": "FAIL",
 						"expected": "PASS",
 						"artifacts": {
-							"log": ["relative/path/to/log"]
+							"log": ["layout-test-results\\relative/path/to/log"]
 						}
 					}
 				}
@@ -158,8 +158,12 @@ func TestDeriveChromiumInvocation(t *testing.T) {
 		}`)
 		size := int64(len(testJSON))
 		fileDigest := isoFake.Inject("ns", testJSON)
+		artFileDigesst := isoFake.Inject("ns", []byte(`"f00df00d"`))
+		sizePointer := func(n int64) *int64 { return &n }
 		isoOut := isolated.Isolated{
-			Files: map[string]isolated.File{"output.json": {Digest: fileDigest, Size: &size}},
+			Files: map[string]isolated.File{
+				"output.json": {Digest: fileDigest, Size: &size},
+				"layout-test-results\\relative\\path\\to\\log": {Digest: artFileDigesst, Size: sizePointer(8)}},
 		}
 		isoOutBytes, err := json.Marshal(isoOut)
 		So(err, ShouldBeNil)
