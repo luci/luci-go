@@ -16,6 +16,23 @@
       "revId": "8fee820f31bd950ff8790d7dcf90622bfd5da1f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f664cc78_4e4c23d3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-12T22:40:41Z",
+      "side": 1,
+      "message": "LGTM but +vadimsh@, can you think of any caveat in lucicfg itself or its users wrt CQ protos renaming?",
+      "revId": "8fee820f31bd950ff8790d7dcf90622bfd5da1f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
