@@ -76,4 +76,26 @@ func TestValidateUpdate(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("validateBuildStatus", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+
+		Convey("succeeds", func() {
+			req.Build.Status = pb.Status_SUCCESS
+			So(validateBuildStatus(req), ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			req.Build.Status = pb.Status_SCHEDULED
+			So(validateBuildStatus(req), ShouldErrLike, "invalid status SCHEDULED for UpdateBuild")
+		})
+	})
+
+	Convey("validateBuildTags", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		So(validateBuildTags(req), ShouldBeNil)
+		req.Build.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
+		So(validateBuildTags(req), ShouldBeNil)
+	})
+
 }
