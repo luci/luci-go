@@ -105,6 +105,29 @@
     },
     {
       "key": {
+        "uuid": "cf903c27_9533860e",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T07:44:06Z",
+      "side": 1,
+      "message": "thinking about this a little more... after we have added OrdinalDomain, there is no long *both* options, because there are many possible domains. How are we going to implement this?\n\nbut also I am not aware of any use case *today* that needs auto-detection, so I wonder if we can omit it in the first version. It would be faster to implement (less code, less tests), but also we can ditch GetTestResultHistorOrder.order for now, and my comment at L165 is automatically addressed.",
+      "range": {
+        "startLine": 136,
+        "startChar": 56,
+        "endLine": 136,
+        "endChar": 74
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9b98eaa1_e253d542",
         "filename": "resultdb/proto/v1/resultdb.proto",
         "patchSetId": 1
@@ -121,6 +144,29 @@
         "startChar": 24,
         "endLine": 142,
         "endChar": 33
+      },
+      "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d645af7a_f561ce98",
+        "filename": "resultdb/proto/v1/resultdb.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-12T07:44:06Z",
+      "side": 1,
+      "message": "it appears that no comment explains the connection between these two fields and order below, or at least no comment here does this. Should we cover it?\n\nbut also see my comment about potentially removing Order enum. We might as well document entry order right here.",
+      "range": {
+        "startLine": 145,
+        "startChar": 3,
+        "endLine": 146,
+        "endChar": 29
       },
       "revId": "ff7a1f5a3f5eb9ea6edbb34fb8fedc9301e07b5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
