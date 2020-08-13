@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -62,6 +63,8 @@ var fakeAuthDB = authtest.NewFakeDB(
 	authtest.MockMembership("user:a@example.com", "group-1"),
 	authtest.MockMembership("user:a@example.com", "group-2"),
 )
+
+var testExperiment = experiments.Register("test-experiment")
 
 const (
 	testServerAccountEmail = "fake-email@example.com"
@@ -345,6 +348,11 @@ func testContextFeatures(ctx context.Context) (err error) {
 		}
 	}()
 
+	// Experiments work.
+	if !testExperiment.Enabled(ctx) {
+		return errors.New("the experiment is unexpectedly off")
+	}
+
 	// Client auth works (a test for advanced features is in TestServer).
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes("A", "B"))
 	if err != nil {
@@ -510,6 +518,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.TsMonServiceName = "service-name"
 	opts.TsMonJobName = "namespace/job"
 	opts.ContainerImageID = "registry/image:" + testImageVersion
+	opts.EnableExperiments = []string{testExperiment.String()}
 
 	opts.testSeed = 1
 	opts.testStdout = &srv.stdout
