@@ -51,6 +51,7 @@ import (
 
 	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
@@ -610,7 +611,9 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 		if d.GAE {
 			header = "X-Appengine-Queuename"
 		}
-		mw = authMiddleware(pushers, header)
+		mw = authMiddleware(pushers, header, func(ctx context.Context) {
+			metrics.ServerRejectedCount.Add(ctx, 1, "auth")
+		})
 	}
 
 	// We don't really care about the exact format of URLs. At the same time
@@ -648,7 +651,7 @@ func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 		if d.GAE {
 			header = "X-Appengine-Cron"
 		}
-		mw = authMiddleware(d.SweepInitiationLaunchers, header)
+		mw = authMiddleware(d.SweepInitiationLaunchers, header, nil)
 	}
 
 	r.GET(path, mw, func(c *router.Context) {
@@ -917,6 +920,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	// See taskClassImpl.serialize().
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
+		metrics.ServerRejectedCount.Add(ctx, 1, "bad_request")
 		return errors.Annotate(err, "not a valid JSON body").Err()
 	}
 
@@ -934,6 +938,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 	if err != nil {
 		logging.Debugf(ctx, "TQ: %s", body)
+		metrics.ServerRejectedCount.Add(ctx, 1, "unknown_class")
 		return err
 	}
 
@@ -951,16 +956,36 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 
 	if h == nil {
+		metrics.ServerRejectedCount.Add(ctx, 1, "no_handler")
 		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Err()
 	}
 
 	msg, err := cls.deserialize(&env)
 	if err != nil {
+		metrics.ServerRejectedCount.Add(ctx, 1, "bad_payload")
 		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
 	}
 
 	ctx = context.WithValue(ctx, &executionInfoKey, &info)
-	return h(ctx, msg)
+
+	start := clock.Now(ctx)
+	err = h(ctx, msg)
+	dur := clock.Now(ctx).Sub(start)
+
+	result := "OK"
+	switch {
+	case Retry.In(err):
+		result = "retry"
+	case transient.Tag.In(err):
+		result = "transient"
+	case err != nil:
+		result = "fatal"
+	}
+
+	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result)
+	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
+
+	return err
 }
 
 // classByID returns a task class given its ID or an error if no such class.
@@ -1115,7 +1140,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 // If `header` is set, will also accept requests that have this header,
 // regardless of its value. This is used to authorize GAE tasks and cron based
 // on `X-AppEngine-*` headers.
-func authMiddleware(callers []string, header string) router.MiddlewareChain {
+func authMiddleware(callers []string, header string, rejected func(context.Context)) router.MiddlewareChain {
 	oidc := auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 		AudienceCheck: openid.AudienceMatchesHost,
 	})
@@ -1129,6 +1154,9 @@ func authMiddleware(callers []string, header string) router.MiddlewareChain {
 			if checkContainsIdent(callers, ident) {
 				next(c)
 			} else {
+				if rejected != nil {
+					rejected(c.Context)
+				}
 				httpReply(c, 403,
 					fmt.Sprintf("Caller %q is not authorized", ident),
 					errors.Reason("expecting any of %q", callers).Err(),
@@ -1142,6 +1170,9 @@ func authMiddleware(callers []string, header string) router.MiddlewareChain {
 			err = errors.Reason("no OIDC token and no %s header", header).Err()
 		} else {
 			err = errors.Reason("no OIDC token").Err()
+		}
+		if rejected != nil {
+			rejected(c.Context)
 		}
 		httpReply(c, 403, "Authentication required", err)
 	})
