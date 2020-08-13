@@ -23,7 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/config/validation"
-	v2 "go.chromium.org/luci/cq/api/config/v2"
+	v2 "go.chromium.org/luci/cv/api/config/v2"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

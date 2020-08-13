@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
-	v2 "go.chromium.org/luci/cq/api/config/v2"
+	v2 "go.chromium.org/luci/cv/api/config/v2"
 )
 
 // Config validation rules go here.
