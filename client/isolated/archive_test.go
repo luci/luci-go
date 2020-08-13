@@ -155,7 +155,8 @@ func TestArchive(t *testing.T) {
 func TestArchiveFiles(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	Convey("ArchiveFiles", t, testfs.MustWithTempDir(t, "", func(dir string) {
+	Convey("ArchiveFiles", t, func() {
+		dir := t.TempDir()
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
@@ -206,7 +207,7 @@ func TestArchiveFiles(t *testing.T) {
 		})
 
 		So(server.Error(), ShouldBeNil)
-	}))
+	})
 }
 
 func TestArchiveFail(t *testing.T) {
