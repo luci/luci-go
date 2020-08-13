@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -42,6 +43,9 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix:       "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
+// UseFinalizationTQ experiment enables using server/tq for finalization tasks.
+var UseFinalizationTQ = experiments.Register("rdb-use-tq-finalization")
+
 // StartInvocationFinalization changes invocation state to FINALIZING
 // and enqueues a TryFinalizeInvocation task.
 //
@@ -50,24 +54,17 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
 // new package as the code base grows.
-//
-// TODO(crbug.com/1080423): It currently "forks" the task between old and new
-// queues. The new queue doesn't do anything yet.
-func StartInvocationFinalization(ctx context.Context, id invocations.ID) error {
-	// The old queue. Still handles everything.
-	span.BufferWrite(ctx,
-		spanutil.UpdateMap("Invocations", map[string]interface{}{
-			"InvocationId": id,
-			"State":        pb.Invocation_FINALIZING,
-		}),
-		Enqueue(TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx).UTC()),
-	)
-	// The new queue. Tasks just do logging for now, nothing more.
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: &taskspb.TryFinalizeInvocation{
-			InvocationId: string(id),
-			State:        pb.Invocation_FINALIZING,
-		},
-		Title: string(id),
-	})
+func StartInvocationFinalization(ctx context.Context, id invocations.ID) {
+	span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+		"InvocationId": id,
+		"State":        pb.Invocation_FINALIZING,
+	}))
+	if UseFinalizationTQ.Enabled(ctx) {
+		tq.MustAddTask(ctx, &tq.Task{
+			Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
+			Title:   string(id),
+		})
+	} else {
+		span.BufferWrite(ctx, Enqueue(TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx).UTC()))
+	}
 }
