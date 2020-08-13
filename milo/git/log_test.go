@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/milo/api/config"
@@ -82,7 +83,7 @@ func TestLog(t *testing.T) {
 				Log: fakeCommits[1:101], // return 100 commits
 			}
 
-			gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
+			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req)).Return(res, nil)
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 100})
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, res.Log)
@@ -129,7 +130,7 @@ func TestLog(t *testing.T) {
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[2:102],
 				}
-				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
+				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 100})
 				So(err, ShouldBeNil)
@@ -146,7 +147,7 @@ func TestLog(t *testing.T) {
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[101:201],
 				}
-				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
+				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[101].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 50)
@@ -169,7 +170,7 @@ func TestLog(t *testing.T) {
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[:100],
 				}
-				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
+				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res2.Log[:50])
@@ -192,8 +193,8 @@ func TestLog(t *testing.T) {
 			res2 := &gitilespb.LogResponse{
 				Log: fakeCommits[99:199],
 			}
-			gitilesMock.EXPECT().Log(gomock.Any(), req1).Return(res1, nil)
-			gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
+			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req1)).Return(res1, nil)
+			gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 150})
 			So(err, ShouldBeNil)
