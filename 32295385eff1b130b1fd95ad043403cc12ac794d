@@ -59,6 +59,30 @@
     },
     {
       "key": {
+        "uuid": "47061d33_cb424dae",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-13T23:46:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed27dcad_456de031",
+      "range": {
+        "startLine": 160,
+        "startChar": 3,
+        "endLine": 160,
+        "endChar": 11
+      },
+      "revId": "32295385eff1b130b1fd95ad043403cc12ac794d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94af56c6_a6b007ec",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 3
@@ -79,6 +103,30 @@
       "revId": "32295385eff1b130b1fd95ad043403cc12ac794d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2f8cfff_5d1cbb39",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-13T23:46:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94af56c6_a6b007ec",
+      "range": {
+        "startLine": 163,
+        "startChar": 0,
+        "endLine": 163,
+        "endChar": 3
+      },
+      "revId": "32295385eff1b130b1fd95ad043403cc12ac794d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
