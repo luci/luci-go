@@ -34,6 +34,29 @@
       "revId": "2abe6cb180eb8e87acadb39393ca6d374994820f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "142f223b_93098292",
+        "filename": "client/archiver/directory_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-13T08:49:45Z",
+      "side": 1,
+      "message": "this is not valid abs path on windows?",
+      "range": {
+        "startLine": 239,
+        "startChar": 28,
+        "endLine": 239,
+        "endChar": 54
+      },
+      "revId": "2abe6cb180eb8e87acadb39393ca6d374994820f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
