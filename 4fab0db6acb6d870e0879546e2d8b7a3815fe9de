@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b2b6339_97227f79",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-13T15:53:31Z",
+      "side": 1,
+      "message": "lgtm, though I think that testing already says it will clean up the temp dir, and that every call to TempDir is unique?\n\nThe only difference is _when_ the removal happens, I think?",
+      "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
