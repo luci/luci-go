@@ -31,16 +31,3 @@ func WithTempDir(t *testing.T, prefix string, fn func(string) error) error {
 	}
 	return td.With(fn)
 }
-
-// MustWithTempDir calls WithTempDir and panics if any failures occur.
-func MustWithTempDir(t *testing.T, prefix string, fn func(string)) func() {
-	return func() {
-		err := WithTempDir(t, prefix, func(tdir string) error {
-			fn(tdir)
-			return nil
-		})
-		if err != nil {
-			panic(err)
-		}
-	}
-}
