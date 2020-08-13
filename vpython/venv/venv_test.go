@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
-	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -168,7 +167,11 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 		t.Fatalf("could not set up test loader for %q: %s", ri.py.Python, err)
 	}
 
-	Convey(`Testing the VirtualEnv`, t, testfs.MustWithTempDir(t, "vpython", func(tdir string) {
+	Convey(`Testing the VirtualEnv`, t, func() {
+		tdir := t.TempDir()
+		defer func() {
+			So(filesystem.RemoveAll(tdir), ShouldBeNil)
+		}()
 		c := testContext()
 
 		// Load the bootstrap wheels for the next part of the test.
@@ -268,7 +271,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				}
 			}
 		})
-	}))
+	})
 }
 
 func TestVirtualEnv(t *testing.T) {
