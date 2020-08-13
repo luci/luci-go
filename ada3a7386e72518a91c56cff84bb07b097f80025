@@ -46,6 +46,29 @@
       "revId": "ada3a7386e72518a91c56cff84bb07b097f80025",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66e46a24_555d01cd",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-13T08:32:49Z",
+      "side": 1,
+      "message": "\u0027l, err \u003d\u0027?",
+      "range": {
+        "startLine": 158,
+        "startChar": 6,
+        "endLine": 158,
+        "endChar": 21
+      },
+      "revId": "ada3a7386e72518a91c56cff84bb07b097f80025",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
