@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc588965_a3b866e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-13T08:10:34Z",
+      "side": 1,
+      "message": "Great!\n\nFew more steps:\n1. Add empty implementation to https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/starlark/stdlib/proto_doc.star, it is used when generating lucicfg documentation.\n2. Bump https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/version.go#27 to 1.18.6.\n3. Follow https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/README.md#making-changes-to-the-starlark-portion-of-the-code to regenerate docs.\n4. Eventually release this change https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/lucicfg/README.md#making-a-release",
+      "revId": "458780d83384af5fec1ba826e20d1dddf551cee2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "65622ce1_ec6001d3",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-13T08:10:34Z",
+      "side": 1,
+      "message": "please document it here, just like other functions",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 220,
+        "endChar": 11
+      },
+      "revId": "458780d83384af5fec1ba826e20d1dddf551cee2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16244f80_f5ce9a97",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-13T08:10:34Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 372,
+        "startChar": 24,
+        "endLine": 372,
+        "endChar": 27
+      },
+      "revId": "458780d83384af5fec1ba826e20d1dddf551cee2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
