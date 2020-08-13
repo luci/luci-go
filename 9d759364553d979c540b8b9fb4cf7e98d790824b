@@ -246,6 +246,48 @@
     },
     {
       "key": {
+        "uuid": "822591f8_3aec6c68",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-13T02:19:43Z",
+      "side": 1,
+      "message": "I think the point about computing u-variant and test id prefix is unrelated to this CL, as these fields do not live in the proto, but only in the database.\n\nI only meant that when designing this I thought that the commit position could be set upon creation or afterwards.\n\nI think that it makes sense to not mix the current roles of UpdateInvocation and FinalizeInvocation and assume for now that UpdateInvocation will be in charge of setting this.",
+      "parentUuid": "9cf65992_4d2dc9c0",
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38f8b6de_3a2f61fe",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-13T02:19:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f5d7e92_62e6a3c6",
+      "range": {
+        "startLine": 134,
+        "startChar": 28,
+        "endLine": 134,
+        "endChar": 43
+      },
+      "revId": "9d759364553d979c540b8b9fb4cf7e98d790824b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12509958_a251d1e0",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 1
