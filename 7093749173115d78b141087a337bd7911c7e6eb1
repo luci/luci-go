@@ -16,6 +16,24 @@
       "revId": "7093749173115d78b141087a337bd7911c7e6eb1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f64b0ae9_eaa1e126",
+        "filename": "starlark/starlarkproto/functions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-13T18:21:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7a6ab4a_44ea4a0f",
+      "revId": "7093749173115d78b141087a337bd7911c7e6eb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
