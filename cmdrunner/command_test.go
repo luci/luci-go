@@ -177,7 +177,8 @@ func TestRun(t *testing.T) {
 func TestLinkOutputsToOutdir(t *testing.T) {
 	t.Parallel()
 
-	Convey("LinkOutputsToOutdir", t, testfs.MustWithTempDir(t, "", func(dir string) {
+	Convey("LinkOutputsToOutdir", t, func() {
+		dir := t.TempDir()
 		rundir := filepath.Join(dir, "rundir")
 
 		So(testfs.Build(rundir, map[string]string{
@@ -199,14 +200,15 @@ func TestLinkOutputsToOutdir(t *testing.T) {
 			"a/b": "ab",
 			"e":   "e",
 		})
-	}))
+	})
 }
 
 func TestUploadThenDelete(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("UploadThenDelete", t, testfs.MustWithTempDir(t, "", func(dir string) {
+	Convey("UploadThenDelete", t, func() {
+		dir := t.TempDir()
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
@@ -237,5 +239,5 @@ func TestUploadThenDelete(t *testing.T) {
 			So(stats.ItemsCold, ShouldNotBeEmpty)
 			So(stats.ItemsHot, ShouldBeEmpty)
 		})
-	}))
+	})
 }
