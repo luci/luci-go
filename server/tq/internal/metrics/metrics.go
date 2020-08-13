@@ -70,7 +70,7 @@ var (
 		"Count of reminders created and if they are still fresh in the post-txn defer",
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
-		field.String("staleness"),  // "fresh", "stale"
+		field.String("staleness"),  // fresh | stale
 		field.String("db"),
 	)
 
@@ -79,7 +79,7 @@ var (
 		"Count of reminders processed (i.e. deleted)",
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
-		field.String("txn_path"),   // "happy", "sweep"
+		field.String("txn_path"),   // happy | sweep
 		field.String("db"),
 	)
 
@@ -89,7 +89,7 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		bucketer1msTo5min,
 		field.String("task_class"), // matches TaskClass.ID
-		field.String("txn_path"),   // "happy", "sweep"
+		field.String("txn_path"),   // happy | sweep
 		field.String("db"),
 	)
 
@@ -100,7 +100,7 @@ var (
 		"Count of CreateTask calls",
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
-		field.String("txn_path"),   // "none", "happy", "sweep"
+		field.String("txn_path"),   // none | happy | sweep
 		field.String("grpc_code"),  // gRPC canonical code
 	)
 
@@ -110,7 +110,31 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("task_class"), // matches TaskClass.ID
-		field.String("txn_path"),   // "none", "happy", "sweep"
+		field.String("txn_path"),   // none | happy | sweep
 		field.String("grpc_code"),  // gRPC canonical code
+	)
+
+	ServerRejectedCount = metric.NewCounter(
+		"tq/server/rejected",
+		"Count of rejected (e.g. malformed) task pushes",
+		nil,
+		field.String("reason"), // auth | bad_request | unknown_class | no_handler | bad_payload
+	)
+
+	ServerHandledCount = metric.NewCounter(
+		"tq/server/handled",
+		"Count of handled non-rejected tasks",
+		nil,
+		field.String("task_class"), // matches TaskClass.ID
+		field.String("result"),     // OK | retry | transient | fatal
+	)
+
+	ServerDurationMS = metric.NewCumulativeDistribution(
+		"tq/server/duration",
+		"Duration of handling of non-rejected tasks",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		field.String("task_class"), // matches TaskClass.ID
+		field.String("result"),     // OK | retry | transient | fatal
 	)
 )
