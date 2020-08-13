@@ -27,61 +27,35 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func withTempDir(t *testing.T, fn func(string)) {
-	tdir, err := ioutil.TempDir("", "fs-tests")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	defer func() {
-		// Mark all files writable.
-		rmErr := recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode {
-			return mode | 0222
-		})
-		if rmErr != nil {
-			t.Errorf("failed to mark temporary directory as writable [%s]: %s", tdir, rmErr)
-		}
-		if rmErr := os.RemoveAll(tdir); rmErr != nil {
-			t.Errorf("failed to remove temporary directory [%s]: %s", tdir, rmErr)
-		}
-	}()
-	fn(tdir)
-}
-
 func TestIsNotExist(t *testing.T) {
 	t.Parallel()
 
-	// Create a temporary directory so we control its contents. This will let us
-	// safely create an IsNotExist error.
-	withTempDir(t, func(tdir string) {
-		dnePath := filepath.Join(tdir, "anything")
-		_, err := os.Open(dnePath)
-		if !os.IsNotExist(err) {
-			t.Fatalf("failed to get IsNotExist error: %s", err)
-		}
+	tdir := t.TempDir()
+	dnePath := filepath.Join(tdir, "anything")
+	_, err := os.Open(dnePath)
+	if !os.IsNotExist(err) {
+		t.Fatalf("failed to get IsNotExist error: %s", err)
+	}
 
-		Convey(`IsNotExist works`, t, func() {
-			So(IsNotExist(nil), ShouldBeFalse)
-			So(IsNotExist(errors.New("something")), ShouldBeFalse)
+	Convey(`IsNotExist works`, t, func() {
+		So(IsNotExist(nil), ShouldBeFalse)
+		So(IsNotExist(errors.New("something")), ShouldBeFalse)
 
-			So(IsNotExist(err), ShouldBeTrue)
-			So(IsNotExist(errors.Annotate(err, "annotated").Err()), ShouldBeTrue)
-		})
+		So(IsNotExist(err), ShouldBeTrue)
+		So(IsNotExist(errors.Annotate(err, "annotated").Err()), ShouldBeTrue)
 	})
 }
 
 func TestAbsPath(t *testing.T) {
 	t.Parallel()
 
-	// Create a temporary directory so we control its contents. This will let us
-	// safely create an IsNotExist error.
-	withTempDir(t, func(tdir string) {
-		tdirName := filepath.Base(tdir)
+	tdir := t.TempDir()
+	tdirName := filepath.Base(tdir)
 
-		Convey(`AbsPath works`, t, func() {
-			base := filepath.Join(tdir, "..", tdirName, "file.txt")
-			So(AbsPath(&base), ShouldBeNil)
-			So(base, ShouldEqual, filepath.Join(tdir, "file.txt"))
-		})
+	Convey(`AbsPath works`, t, func() {
+		base := filepath.Join(tdir, "..", tdirName, "file.txt")
+		So(AbsPath(&base), ShouldBeNil)
+		So(base, ShouldEqual, filepath.Join(tdir, "file.txt"))
 	})
 }
 
@@ -89,63 +63,63 @@ func TestTouch(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing Touch`, t, func() {
-		withTempDir(t, func(tdir string) {
-			thePast := time.Now().Add(-10 * time.Second)
+		tdir := t.TempDir()
 
-			Convey(`Can update a directory timestamp`, func() {
-				path := filepath.Join(tdir, "subdir")
+		thePast := time.Now().Add(-10 * time.Second)
 
-				So(os.Mkdir(path, 0755), ShouldBeNil)
-				st, err := os.Lstat(path)
-				So(err, ShouldBeNil)
-				initialModTime := st.ModTime()
+		Convey(`Can update a directory timestamp`, func() {
+			path := filepath.Join(tdir, "subdir")
 
-				So(Touch(path, thePast, 0), ShouldBeNil)
-				st, err = os.Lstat(path)
-				So(err, ShouldBeNil)
+			So(os.Mkdir(path, 0755), ShouldBeNil)
+			st, err := os.Lstat(path)
+			So(err, ShouldBeNil)
+			initialModTime := st.ModTime()
 
-				So(st.ModTime(), ShouldHappenBefore, initialModTime)
-			})
+			So(Touch(path, thePast, 0), ShouldBeNil)
+			st, err = os.Lstat(path)
+			So(err, ShouldBeNil)
 
-			Convey(`Can update an empty file timestamp`, func() {
-				path := filepath.Join(tdir, "touch")
+			So(st.ModTime(), ShouldHappenBefore, initialModTime)
+		})
 
-				So(Touch(path, time.Time{}, 0644), ShouldBeNil)
-				st, err := os.Lstat(path)
-				So(err, ShouldBeNil)
-				initialModTime := st.ModTime()
+		Convey(`Can update an empty file timestamp`, func() {
+			path := filepath.Join(tdir, "touch")
 
-				So(Touch(path, thePast, 0), ShouldBeNil)
-				st, err = os.Lstat(path)
-				So(err, ShouldBeNil)
-				pastModTime := st.ModTime()
-				So(pastModTime, ShouldHappenBefore, initialModTime)
+			So(Touch(path, time.Time{}, 0644), ShouldBeNil)
+			st, err := os.Lstat(path)
+			So(err, ShouldBeNil)
+			initialModTime := st.ModTime()
 
-				// Touch back to "now".
-				So(Touch(path, time.Time{}, 0644), ShouldBeNil)
-				st, err = os.Lstat(path)
-				So(err, ShouldBeNil)
-				So(st.ModTime(), ShouldHappenOnOrAfter, pastModTime)
-			})
+			So(Touch(path, thePast, 0), ShouldBeNil)
+			st, err = os.Lstat(path)
+			So(err, ShouldBeNil)
+			pastModTime := st.ModTime()
+			So(pastModTime, ShouldHappenBefore, initialModTime)
 
-			Convey(`Can update a populated file timestamp`, func() {
-				path := filepath.Join(tdir, "touch")
+			// Touch back to "now".
+			So(Touch(path, time.Time{}, 0644), ShouldBeNil)
+			st, err = os.Lstat(path)
+			So(err, ShouldBeNil)
+			So(st.ModTime(), ShouldHappenOnOrAfter, pastModTime)
+		})
 
-				So(ioutil.WriteFile(path, []byte("sup"), 0644), ShouldBeNil)
-				st, err := os.Lstat(path)
-				So(err, ShouldBeNil)
-				initialModTime := st.ModTime()
+		Convey(`Can update a populated file timestamp`, func() {
+			path := filepath.Join(tdir, "touch")
 
-				So(Touch(path, thePast, 0), ShouldBeNil)
-				st, err = os.Lstat(path)
-				So(err, ShouldBeNil)
+			So(ioutil.WriteFile(path, []byte("sup"), 0644), ShouldBeNil)
+			st, err := os.Lstat(path)
+			So(err, ShouldBeNil)
+			initialModTime := st.ModTime()
 
-				So(st.ModTime(), ShouldHappenBefore, initialModTime)
+			So(Touch(path, thePast, 0), ShouldBeNil)
+			st, err = os.Lstat(path)
+			So(err, ShouldBeNil)
 
-				content, err := ioutil.ReadFile(path)
-				So(err, ShouldBeNil)
-				So(content, ShouldResemble, []byte("sup"))
-			})
+			So(st.ModTime(), ShouldHappenBefore, initialModTime)
+
+			content, err := ioutil.ReadFile(path)
+			So(err, ShouldBeNil)
+			So(content, ShouldResemble, []byte("sup"))
 		})
 	})
 }
@@ -154,12 +128,70 @@ func TestMakeReadOnly(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Can RemoveAll`, t, func() {
-		withTempDir(t, func(tdir string) {
+		tdir := t.TempDir()
+		defer func() {
+			So(recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode { return mode | 0222 }), ShouldBeNil)
+		}()
+		for _, path := range []string{
+			filepath.Join(tdir, "foo", "bar"),
+			filepath.Join(tdir, "foo", "baz"),
+			filepath.Join(tdir, "qux"),
+		} {
+			base := filepath.Dir(path)
+			if err := os.MkdirAll(base, 0755); err != nil {
+				t.Fatalf("failed to populate directory [%s]: %s", base, err)
+			}
+			if err := ioutil.WriteFile(path, []byte("junk"), 0644); err != nil {
+				t.Fatalf("failed to create file [%s]: %s", path, err)
+			}
+		}
 
+		Convey(`Can mark the entire subdirectory read-only`, func() {
+			So(MakeReadOnly(tdir, nil), ShouldBeNil)
+			filepath.Walk(tdir, func(path string, info os.FileInfo, err error) error {
+				So(err, ShouldBeNil)
+				So(info.Mode()&0222, ShouldEqual, 0)
+				return nil
+			})
+		})
+
+		Convey(`Can selectively mark files read-only`, func() {
+			// Don't mark <TMP>/foo read-only.
+			fooPath := filepath.Join(tdir, "foo")
+
+			So(MakeReadOnly(tdir, func(path string) bool {
+				return path != fooPath
+			}), ShouldBeNil)
+
+			filepath.Walk(tdir, func(path string, info os.FileInfo, err error) error {
+				So(err, ShouldBeNil)
+				if path == fooPath {
+					So(info.Mode()&0222, ShouldNotEqual, 0)
+				} else {
+					So(info.Mode()&0222, ShouldEqual, 0)
+				}
+				return nil
+			})
+		})
+	})
+}
+
+func TestRemoveAll(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Can RemoveAll`, t, func() {
+		tdir := t.TempDir()
+		defer func() {
+			So(recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode { return mode | 0222 }), ShouldBeNil)
+		}()
+		subDir := filepath.Join(tdir, "sub")
+
+		Convey(`With directory contents...`, func() {
 			for _, path := range []string{
-				filepath.Join(tdir, "foo", "bar"),
-				filepath.Join(tdir, "foo", "baz"),
-				filepath.Join(tdir, "qux"),
+				filepath.Join(subDir, "foo", "bar"),
+				filepath.Join(subDir, "foo", "baz"),
+				filepath.Join(subDir, "qux"),
+				filepath.Join(subDir, "dummy"),
 			} {
 				base := filepath.Dir(path)
 				if err := os.MkdirAll(base, 0755); err != nil {
@@ -170,110 +202,54 @@ func TestMakeReadOnly(t *testing.T) {
 				}
 			}
 
-			Convey(`Can mark the entire subdirectory read-only`, func() {
-				So(MakeReadOnly(tdir, nil), ShouldBeNil)
-				filepath.Walk(tdir, func(path string, info os.FileInfo, err error) error {
-					So(err, ShouldBeNil)
-					So(info.Mode()&0222, ShouldEqual, 0)
-					return nil
-				})
+			// Make invalid symlink here.
+			So(os.Symlink("dummy", filepath.Join(subDir, "invalid_symlink")), ShouldBeNil)
+			So(os.Remove(filepath.Join(subDir, "dummy")), ShouldBeNil)
+
+			Convey(`Can remove the directory`, func() {
+				So(RemoveAll(subDir), ShouldBeNil)
+				So(isGone(subDir), ShouldBeTrue)
 			})
 
-			Convey(`Can selectively mark files read-only`, func() {
-				// Don't mark <TMP>/foo read-only.
-				fooPath := filepath.Join(tdir, "foo")
-
-				So(MakeReadOnly(tdir, func(path string) bool {
-					return path != fooPath
-				}), ShouldBeNil)
-
-				filepath.Walk(tdir, func(path string, info os.FileInfo, err error) error {
-					So(err, ShouldBeNil)
-					if path == fooPath {
-						So(info.Mode()&0222, ShouldNotEqual, 0)
-					} else {
-						So(info.Mode()&0222, ShouldEqual, 0)
-					}
-					return nil
-				})
+			Convey(`Removing inside a read-only dir...`, func() {
+				So(MakeReadOnly(subDir, nil), ShouldBeNil)
+				qux := filepath.Join(subDir, "qux")
+				if runtime.GOOS == "windows" {
+					Convey(`... is fine on Windows`, func() {
+						So(RemoveAll(qux), ShouldBeNil)
+						So(isGone(qux), ShouldBeTrue)
+					})
+				} else {
+					Convey(`... fails on POSIX`, func() {
+						So(RemoveAll(qux), ShouldNotBeNil)
+						So(isGone(qux), ShouldBeFalse)
+					})
+				}
 			})
-		})
-	})
-}
 
-func TestRemoveAll(t *testing.T) {
-	t.Parallel()
-
-	Convey(`Can RemoveAll`, t, func() {
-		withTempDir(t, func(tdir string) {
-
-			subDir := filepath.Join(tdir, "sub")
-
-			Convey(`With directory contents...`, func() {
-				for _, path := range []string{
-					filepath.Join(subDir, "foo", "bar"),
-					filepath.Join(subDir, "foo", "baz"),
-					filepath.Join(subDir, "qux"),
-					filepath.Join(subDir, "dummy"),
-				} {
-					base := filepath.Dir(path)
-					if err := os.MkdirAll(base, 0755); err != nil {
-						t.Fatalf("failed to populate directory [%s]: %s", base, err)
-					}
-					if err := ioutil.WriteFile(path, []byte("junk"), 0644); err != nil {
-						t.Fatalf("failed to create file [%s]: %s", path, err)
-					}
+			Convey(`Can remove the directory when it is read-only`, func() {
+				// Make the directory read-only, and assert that classic os.RemoveAll
+				// fails. Except on Windows it doesn't, see:
+				// https://github.com/golang/go/issues/26295.
+				So(MakeReadOnly(subDir, nil), ShouldBeNil)
+				if runtime.GOOS != "windows" {
+					So(os.RemoveAll(subDir), ShouldNotBeNil)
 				}
 
-				// Make invalid symlink here.
-				So(os.Symlink("dummy", filepath.Join(subDir, "invalid_symlink")), ShouldBeNil)
-				So(os.Remove(filepath.Join(subDir, "dummy")), ShouldBeNil)
-
-				Convey(`Can remove the directory`, func() {
-					So(RemoveAll(subDir), ShouldBeNil)
-					So(isGone(subDir), ShouldBeTrue)
-				})
-
-				Convey(`Removing inside a read-only dir...`, func() {
-					So(MakeReadOnly(subDir, nil), ShouldBeNil)
-					qux := filepath.Join(subDir, "qux")
-					if runtime.GOOS == "windows" {
-						Convey(`... is fine on Windows`, func() {
-							So(RemoveAll(qux), ShouldBeNil)
-							So(isGone(qux), ShouldBeTrue)
-						})
-					} else {
-						Convey(`... fails on POSIX`, func() {
-							So(RemoveAll(qux), ShouldNotBeNil)
-							So(isGone(qux), ShouldBeFalse)
-						})
-					}
-				})
-
-				Convey(`Can remove the directory when it is read-only`, func() {
-					// Make the directory read-only, and assert that classic os.RemoveAll
-					// fails. Except on Windows it doesn't, see:
-					// https://github.com/golang/go/issues/26295.
-					So(MakeReadOnly(subDir, nil), ShouldBeNil)
-					if runtime.GOOS != "windows" {
-						So(os.RemoveAll(subDir), ShouldNotBeNil)
-					}
-
-					So(RemoveAll(subDir), ShouldBeNil)
-					So(isGone(subDir), ShouldBeTrue)
-				})
-
-				Convey(`Can remove the directory when it has read-only files`, func() {
-					readOnly := filepath.Join(subDir, "foo", "bar")
-					So(MakeReadOnly(readOnly, nil), ShouldBeNil)
-					So(RemoveAll(subDir), ShouldBeNil)
-					So(isGone(subDir), ShouldBeTrue)
-				})
+				So(RemoveAll(subDir), ShouldBeNil)
+				So(isGone(subDir), ShouldBeTrue)
 			})
 
-			Convey(`Will return nil if the target does not exist`, func() {
-				So(RemoveAll(filepath.Join(tdir, "dne")), ShouldBeNil)
+			Convey(`Can remove the directory when it has read-only files`, func() {
+				readOnly := filepath.Join(subDir, "foo", "bar")
+				So(MakeReadOnly(readOnly, nil), ShouldBeNil)
+				So(RemoveAll(subDir), ShouldBeNil)
+				So(isGone(subDir), ShouldBeTrue)
 			})
+		})
+
+		Convey(`Will return nil if the target does not exist`, func() {
+			So(RemoveAll(filepath.Join(tdir, "dne")), ShouldBeNil)
 		})
 	})
 }
@@ -282,99 +258,96 @@ func TestRenamingRemoveAll(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Can RenamingRemoveAll`, t, func() {
-		withTempDir(t, func(tdir string) {
-			subDir := filepath.Join(tdir, "sub")
-			fooDir := filepath.Join(subDir, "foo")
-			fooBarFile := filepath.Join(fooDir, "bar")
-			if err := os.MkdirAll(fooDir, 0755); err != nil {
-				t.Fatalf("failed to populate directory [%s]: %s", fooDir, err)
-			}
-			if err := ioutil.WriteFile(fooBarFile, []byte("junk"), 0644); err != nil {
-				t.Fatalf("failed to create file [%s]: %s", fooBarFile, err)
-			}
+		tdir := t.TempDir()
+		subDir := filepath.Join(tdir, "sub")
+		fooDir := filepath.Join(subDir, "foo")
+		fooBarFile := filepath.Join(fooDir, "bar")
+		if err := os.MkdirAll(fooDir, 0755); err != nil {
+			t.Fatalf("failed to populate directory [%s]: %s", fooDir, err)
+		}
+		if err := ioutil.WriteFile(fooBarFile, []byte("junk"), 0644); err != nil {
+			t.Fatalf("failed to create file [%s]: %s", fooBarFile, err)
+		}
 
-			Convey(`No dir to rename into specified`, func() {
-				renamedTo, err := RenamingRemoveAll(fooDir, "")
-				So(err, ShouldBeNil)
-				So(isGone(fooDir), ShouldBeTrue)
-				So(renamedTo, ShouldStartWith, filepath.Join(subDir, ".trash-"))
-			})
+		Convey(`No dir to rename into specified`, func() {
+			renamedTo, err := RenamingRemoveAll(fooDir, "")
+			So(err, ShouldBeNil)
+			So(isGone(fooDir), ShouldBeTrue)
+			So(renamedTo, ShouldStartWith, filepath.Join(subDir, ".trash-"))
+		})
 
-			Convey(`Renaming to specified dir works`, func() {
-				renamedTo, err := RenamingRemoveAll(fooDir, tdir)
-				So(err, ShouldBeNil)
-				So(isGone(fooDir), ShouldBeTrue)
-				So(renamedTo, ShouldStartWith, filepath.Join(tdir, ".trash-"))
-			})
+		Convey(`Renaming to specified dir works`, func() {
+			renamedTo, err := RenamingRemoveAll(fooDir, tdir)
+			So(err, ShouldBeNil)
+			So(isGone(fooDir), ShouldBeTrue)
+			So(renamedTo, ShouldStartWith, filepath.Join(tdir, ".trash-"))
+		})
 
-			Convey(`Renaming to specified dir fails due to not exist error`, func() {
-				renamedTo, err := RenamingRemoveAll(fooDir, filepath.Join(tdir, "not-exists"))
-				So(err, ShouldBeNil)
-				So(isGone(fooDir), ShouldBeTrue)
-				So(renamedTo, ShouldEqual, "")
-			})
+		Convey(`Renaming to specified dir fails due to not exist error`, func() {
+			renamedTo, err := RenamingRemoveAll(fooDir, filepath.Join(tdir, "not-exists"))
+			So(err, ShouldBeNil)
+			So(isGone(fooDir), ShouldBeTrue)
+			So(renamedTo, ShouldEqual, "")
+		})
 
-			Convey(`Will return nil if the target does not exist`, func() {
-				_, err := RenamingRemoveAll(filepath.Join(tdir, "not-exists"), "")
-				So(err, ShouldBeNil)
-			})
+		Convey(`Will return nil if the target does not exist`, func() {
+			_, err := RenamingRemoveAll(filepath.Join(tdir, "not-exists"), "")
+			So(err, ShouldBeNil)
 		})
 	})
 }
 
 func TestReadableCopy(t *testing.T) {
 	Convey("ReadableCopy", t, func() {
-		withTempDir(t, func(dir string) {
-			out := filepath.Join(dir, "out")
-			in := filepath.Join(dir, "in")
-			content := []byte("test")
-			So(ioutil.WriteFile(in, content, 0644), ShouldBeNil)
+		dir := t.TempDir()
+		out := filepath.Join(dir, "out")
+		in := filepath.Join(dir, "in")
+		content := []byte("test")
+		So(ioutil.WriteFile(in, content, 0644), ShouldBeNil)
 
-			// Change umask on unix so that test is not affected by default umask.
-			old := umask(022)
-			So(ReadableCopy(out, in), ShouldBeNil)
-			umask(old)
+		// Change umask on unix so that test is not affected by default umask.
+		old := umask(022)
+		So(ReadableCopy(out, in), ShouldBeNil)
+		umask(old)
 
-			buf, err := ioutil.ReadFile(out)
-			So(err, ShouldBeNil)
-			So(buf, ShouldResemble, content)
+		buf, err := ioutil.ReadFile(out)
+		So(err, ShouldBeNil)
+		So(buf, ShouldResemble, content)
 
-			ostat, err := os.Stat(out)
-			So(err, ShouldBeNil)
-			istat, err := os.Stat(in)
-			So(err, ShouldBeNil)
+		ostat, err := os.Stat(out)
+		So(err, ShouldBeNil)
+		istat, err := os.Stat(in)
+		So(err, ShouldBeNil)
 
-			So(ostat.Mode(), ShouldEqual, addReadMode(istat.Mode()))
-		})
+		So(ostat.Mode(), ShouldEqual, addReadMode(istat.Mode()))
 	})
 }
 
 func TestCopy(t *testing.T) {
 	Convey("Copy", t, func() {
-		withTempDir(t, func(dir string) {
-			out := filepath.Join(dir, "out")
-			in := filepath.Join(dir, "in")
-			content := []byte("test")
-			So(ioutil.WriteFile(in, content, 0o644), ShouldBeNil)
+		dir := t.TempDir()
+		out := filepath.Join(dir, "out")
+		in := filepath.Join(dir, "in")
+		content := []byte("test")
+		So(ioutil.WriteFile(in, content, 0o644), ShouldBeNil)
 
-			// Change umask on unix so that test is not affected by default umask.
-			old := umask(0o22)
-			So(Copy(out, in, 0o644), ShouldBeNil)
-			umask(old)
+		// Change umask on unix so that test is not affected by default umask.
+		old := umask(0o22)
+		So(Copy(out, in, 0o644), ShouldBeNil)
+		umask(old)
 
-			buf, err := ioutil.ReadFile(out)
-			So(err, ShouldBeNil)
-			So(buf, ShouldResemble, content)
+		buf, err := ioutil.ReadFile(out)
+		So(err, ShouldBeNil)
+		So(buf, ShouldResemble, content)
 
-			ostat, err := os.Stat(out)
-			So(err, ShouldBeNil)
-			_, err = os.Stat(in)
-			So(err, ShouldBeNil)
+		ostat, err := os.Stat(out)
+		So(err, ShouldBeNil)
+		_, err = os.Stat(in)
+		So(err, ShouldBeNil)
 
-			if runtime.GOOS != "windows" {
-				So(ostat.Mode(), ShouldEqual, 0o644)
-			}
-		})
+		if runtime.GOOS != "windows" {
+			So(ostat.Mode(), ShouldEqual, 0o644)
+		}
 	})
 }
 
@@ -388,124 +361,119 @@ func TestHardlinkRecursively(t *testing.T) {
 	}
 
 	Convey("HardlinkRecursively", t, func() {
-		withTempDir(t, func(dir string) {
-			src1 := filepath.Join(dir, "src1")
-			src2 := filepath.Join(src1, "src2")
-			So(os.MkdirAll(src2, 0755), ShouldBeNil)
+		dir := t.TempDir()
+		src1 := filepath.Join(dir, "src1")
+		src2 := filepath.Join(src1, "src2")
+		So(os.MkdirAll(src2, 0755), ShouldBeNil)
 
-			So(ioutil.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), ShouldBeNil)
-			So(ioutil.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), ShouldBeNil)
 
-			So(os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), ShouldBeNil)
+		So(os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), ShouldBeNil)
 
-			dst := filepath.Join(dir, "dst")
-			So(HardlinkRecursively(src1, dst), ShouldBeNil)
+		dst := filepath.Join(dir, "dst")
+		So(HardlinkRecursively(src1, dst), ShouldBeNil)
 
-			checkFile(filepath.Join(dst, "file1"), "test1")
-			checkFile(filepath.Join(dst, "src2", "file2"), "test2")
-			checkFile(filepath.Join(dst, "link"), "test2")
+		checkFile(filepath.Join(dst, "file1"), "test1")
+		checkFile(filepath.Join(dst, "src2", "file2"), "test2")
+		checkFile(filepath.Join(dst, "link"), "test2")
 
-			stat, err := os.Stat(filepath.Join(dst, "link"))
-			So(err, ShouldBeNil)
-			So(stat.Mode()&os.ModeSymlink, ShouldEqual, 0)
-		})
+		stat, err := os.Stat(filepath.Join(dst, "link"))
+		So(err, ShouldBeNil)
+		So(stat.Mode()&os.ModeSymlink, ShouldEqual, 0)
 	})
 
 	Convey("HardlinkRecursively nested", t, func() {
-		withTempDir(t, func(dir string) {
-			top := filepath.Join(dir, "top")
-			nested := filepath.Join(top, "nested")
-			So(os.MkdirAll(nested, 0755), ShouldBeNil)
+		dir := t.TempDir()
+		top := filepath.Join(dir, "top")
+		nested := filepath.Join(top, "nested")
+		So(os.MkdirAll(nested, 0755), ShouldBeNil)
 
-			So(ioutil.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), ShouldBeNil)
 
-			dstTop := filepath.Join(dir, "dst")
-			So(HardlinkRecursively(top, dstTop), ShouldBeNil)
-			dstDested := filepath.Join(dstTop, "nested")
-			So(HardlinkRecursively(nested, dstDested), ShouldNotBeNil)
-		})
+		dstTop := filepath.Join(dir, "dst")
+		So(HardlinkRecursively(top, dstTop), ShouldBeNil)
+		dstDested := filepath.Join(dstTop, "nested")
+		So(HardlinkRecursively(nested, dstDested), ShouldNotBeNil)
 	})
 }
 
 func TestCreateDirectories(t *testing.T) {
 	t.Parallel()
 	Convey("CreateDirectories", t, func() {
-		withTempDir(t, func(dir string) {
-			So(CreateDirectories(dir, []string{}), ShouldBeNil)
+		dir := t.TempDir()
+		So(CreateDirectories(dir, []string{}), ShouldBeNil)
 
-			var paths []string
-			correctFiles := func(path string, info os.FileInfo, err error) error {
-				paths = append(paths, path)
-				return nil
-			}
+		var paths []string
+		correctFiles := func(path string, info os.FileInfo, err error) error {
+			paths = append(paths, path)
+			return nil
+		}
 
-			So(filepath.Walk(dir, correctFiles), ShouldBeNil)
-			So(paths, ShouldResemble, []string{dir})
+		So(filepath.Walk(dir, correctFiles), ShouldBeNil)
+		So(paths, ShouldResemble, []string{dir})
 
-			So(CreateDirectories(dir, []string{
-				filepath.Join("a", "b"),
-				filepath.Join("c", "d", "e"),
-				filepath.Join("c", "f"),
-				filepath.Join("g"),
-			}), ShouldBeNil)
+		So(CreateDirectories(dir, []string{
+			filepath.Join("a", "b"),
+			filepath.Join("c", "d", "e"),
+			filepath.Join("c", "f"),
+			filepath.Join("g"),
+		}), ShouldBeNil)
 
-			paths = nil
-			So(filepath.Walk(dir, correctFiles), ShouldBeNil)
-			So(paths, ShouldResemble, []string{
-				dir,
-				filepath.Join(dir, "a"),
-				filepath.Join(dir, "c"),
-				filepath.Join(dir, "c", "d"),
-			})
+		paths = nil
+		So(filepath.Walk(dir, correctFiles), ShouldBeNil)
+		So(paths, ShouldResemble, []string{
+			dir,
+			filepath.Join(dir, "a"),
+			filepath.Join(dir, "c"),
+			filepath.Join(dir, "c", "d"),
 		})
 	})
 }
 
 func TestIsEmptyDir(t *testing.T) {
 	Convey("IsEmptyDir", t, func() {
-		withTempDir(t, func(dir string) {
-			emptyDir := filepath.Join(dir, "empty")
-			So(MakeDirs(emptyDir), ShouldBeNil)
+		dir := t.TempDir()
+		emptyDir := filepath.Join(dir, "empty")
+		So(MakeDirs(emptyDir), ShouldBeNil)
 
-			isEmpty, err := IsEmptyDir(emptyDir)
-			So(err, ShouldBeNil)
-			So(isEmpty, ShouldBeTrue)
+		isEmpty, err := IsEmptyDir(emptyDir)
+		So(err, ShouldBeNil)
+		So(isEmpty, ShouldBeTrue)
 
-			nonEmptyDir := filepath.Join(dir, "non-empty")
-			So(MakeDirs(nonEmptyDir), ShouldBeNil)
-			file1 := filepath.Join(nonEmptyDir, "file1")
-			So(ioutil.WriteFile(file1, []byte("test1"), 0644), ShouldBeNil)
+		nonEmptyDir := filepath.Join(dir, "non-empty")
+		So(MakeDirs(nonEmptyDir), ShouldBeNil)
+		file1 := filepath.Join(nonEmptyDir, "file1")
+		So(ioutil.WriteFile(file1, []byte("test1"), 0644), ShouldBeNil)
 
-			isEmpty, err = IsEmptyDir(nonEmptyDir)
-			So(err, ShouldBeNil)
-			So(isEmpty, ShouldBeFalse)
+		isEmpty, err = IsEmptyDir(nonEmptyDir)
+		So(err, ShouldBeNil)
+		So(isEmpty, ShouldBeFalse)
 
-			_, err = IsEmptyDir(file1)
-			So(err, ShouldNotBeNil)
+		_, err = IsEmptyDir(file1)
+		So(err, ShouldNotBeNil)
 
-			_, err = IsEmptyDir(filepath.Join(dir, "not-existing"))
-			So(err, ShouldNotBeNil)
-		})
+		_, err = IsEmptyDir(filepath.Join(dir, "not-existing"))
+		So(err, ShouldNotBeNil)
 	})
 }
 
 func TestIsDir(t *testing.T) {
 	Convey("IsDir", t, func() {
-		withTempDir(t, func(dir string) {
-			b, err := IsDir(dir)
-			So(err, ShouldBeNil)
-			So(b, ShouldBeTrue)
+		dir := t.TempDir()
+		b, err := IsDir(dir)
+		So(err, ShouldBeNil)
+		So(b, ShouldBeTrue)
 
-			b, err = IsDir(filepath.Join(dir, "not_exists"))
-			So(err, ShouldBeNil)
-			So(b, ShouldBeFalse)
+		b, err = IsDir(filepath.Join(dir, "not_exists"))
+		So(err, ShouldBeNil)
+		So(b, ShouldBeFalse)
 
-			file := filepath.Join(dir, "file")
-			So(ioutil.WriteFile(file, []byte(""), 0644), ShouldBeNil)
-			b, err = IsDir(file)
-			So(err, ShouldBeNil)
-			So(b, ShouldBeFalse)
-		})
+		file := filepath.Join(dir, "file")
+		So(ioutil.WriteFile(file, []byte(""), 0644), ShouldBeNil)
+		b, err = IsDir(file)
+		So(err, ShouldBeNil)
+		So(b, ShouldBeFalse)
 	})
 }
 
