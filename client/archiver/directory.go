@@ -17,13 +17,13 @@ package archiver
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/runtime/tracer"
@@ -78,11 +78,11 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 			total++
 
 			if err != nil {
-				return fmt.Errorf("walk(%q): %v", path, err)
+				return errors.Annotate(err, "walk(%q)", path).Err()
 			}
 			relPath, err := view.RelativePath(path)
 			if err != nil {
-				return fmt.Errorf("walk(%q): %v", path, err)
+				return errors.Annotate(err, "walk(%q)", path).Err()
 			}
 			if relPath == "" { // empty string indicates skip.
 				return common.WalkFuncSkipFile(info)
@@ -98,23 +98,23 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 			if mode&os.ModeSymlink == os.ModeSymlink {
 				l, err := filepath.EvalSymlinks(path)
 				if err != nil {
-					return fmt.Errorf("EvalSymlinks(%s): %s", path, err)
+					return errors.Annotate(err, "EvalSymlinks(%s)", path).Err()
 				}
 				info, err = os.Stat(l)
 				if err != nil {
-					return fmt.Errorf("Stat(%s): %s", l, err)
+					return errors.Annotate(err, "Stat(%s)", l).Err()
 				}
 				// This is super annoying here especially on macOS, as when using
 				// TMPDIR, dir could have /var/folders/ while l has
 				// /private/var/folders/. Handle this case specifically.
 				realDir, err := filepath.EvalSymlinks(dir)
 				if err != nil {
-					return fmt.Errorf("EvalSymlinks(%s): %s", dir, err)
+					return errors.Annotate(err, "EvalSymlinks(%s)", dir).Err()
 				}
 				if strings.HasPrefix(l, realDir) {
 					// Readlink preserves relative paths of links; necessary to not break in tree symlinks.
 					if l, err = os.Readlink(path); err != nil {
-						return fmt.Errorf("Readlink(%s): %s", path, err)
+						return errors.Annotate(err, "Readlink(%s)", path).Err()
 					}
 					c <- &walkItem{fullPath: l, relPath: relPath, info: info, inTreeSymlink: true}
 					return nil
