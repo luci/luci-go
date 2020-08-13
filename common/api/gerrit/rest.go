@@ -127,7 +127,7 @@ type changeInfo struct {
 	CurrentRevision string                         `json:"current_revision"`
 	Revisions       map[string]*revisionInfo       `json:"revisions"`
 	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
-	Messages        []changemessageInfo                `json:"messages"`
+	Messages        []changemessageInfo            `json:"messages"`
 }
 
 type changemessageInfo struct {
