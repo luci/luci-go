@@ -18,6 +18,7 @@
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
     "lodash-es": "^4.17.15",
+    "luxon": "^1.24.1",
     "markdown-it": "^11.0.0",
     "mobx": "^5.15.4",
     "mobx-utils": "^5.6.1"
@@ -32,6 +33,7 @@
     "@types/karma": "^5.0.0",
     "@types/karma-webpack": "^2.0.7",
     "@types/lodash-es": "^4.17.3",
+    "@types/luxon": "^1.24.3",
     "@types/markdown-it": "^10.0.2",
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.0.14",
