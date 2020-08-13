@@ -168,14 +168,21 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 
 // fetchOnBuild fetches directly on Build entity.
 func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, error) {
-	dq := datastore.NewQuery(model.BuildKind).Order("__key__")
+	dq := datastore.NewQuery(model.BuildKind)
 
 	for _, tag := range q.Tags.Format() {
 		dq = dq.Eq("tags", tag)
 	}
 
-	if q.Status != pb.Status_STATUS_UNSPECIFIED {
+	switch {
+	case q.Status == pb.Status_ENDED_MASK:
+		dq = dq.Eq("incomplete", false)
+	case q.Status != pb.Status_STATUS_UNSPECIFIED:
 		dq = dq.Eq("status_v2", q.Status)
+	}
+
+	if q.Canary != nil {
+		dq = dq.Eq("canary", *q.Canary)
 	}
 
 	if q.CreatedBy != "" {
@@ -242,27 +249,33 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 		return bKeys[i].IntID() < bKeys[j].IntID()
 	})
 
-	// only fetch the q.PageSize of build entities.
-	builds := make([]*model.Build, 0, q.PageSize)
+	// fetch builds till the amount reaches to q.PageSize or no more qualified builds.
+	rsp := &pb.SearchBuildsResponse{}
 	i := 0
-	for i < len(bKeys) && i < int(q.PageSize) {
-		b := &model.Build{}
-		if !datastore.PopulateKey(b, bKeys[i]) {
-			return nil, errors.Annotate(err, "failed to populate build key %q", bKeys[i].StringID()).Err()
+	for len(rsp.Builds) < int(q.PageSize) && i < len(bKeys) {
+		count := int(q.PageSize) - len(rsp.Builds)
+		builds := make([]*model.Build, 0, count)
+		for ; i < len(bKeys) && count > 0; count-- {
+			b := &model.Build{}
+			if !datastore.PopulateKey(b, bKeys[i]) {
+				return nil, errors.Annotate(err, "failed to populate build key %q", bKeys[i].StringID()).Err()
+			}
+			builds = append(builds, b)
+			i++
 		}
-		builds = append(builds, b)
-		i++
-	}
-	if err := datastore.Get(ctx, builds); err != nil {
-		return nil, errors.Annotate(err, "error fetching builds").Err()
+		if err := datastore.Get(ctx, builds); err != nil {
+			return nil, errors.Annotate(err, "error fetching builds").Err()
+		}
+
+		for _, b := range builds {
+			if q.localPredicate(b) {
+				rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
+			}
+		}
 	}
 
-	rsp := &pb.SearchBuildsResponse{}
-	for _, b := range builds {
-		// TODO(crbug/1090540): check if b.status == q.status.
-		rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
-	}
-	if len(rsp.Builds) == int(q.PageSize) {
+	// construct NextPageToken only if there may be more results.
+	if i < len(bKeys) {
 		rsp.NextPageToken = fmt.Sprintf("id>%d", rsp.Builds[q.PageSize-1].Id)
 	}
 
@@ -419,6 +432,19 @@ func (q *Query) idRange() (idLow, idHigh int64) {
 		}
 	}
 	return
+}
+
+// localPredicate filters builds by conditions which have to apply locally.
+func (q *Query) localPredicate(b *model.Build) bool {
+	if q.Status != pb.Status_STATUS_UNSPECIFIED &&
+		q.Status != pb.Status_ENDED_MASK &&
+		q.Status != b.Status {
+		return false
+	}
+	if b.Experimental && !q.IncludeExperimental {
+		return false
+	}
+	return true
 }
 
 // fixPageSize ensures the size is positive and less than or equal to maxPageSize.
