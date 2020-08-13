@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "50b3135f_8c48ace1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-13T00:31:30Z",
+      "side": 1,
+      "message": "Would it make sense to add attributes to an experiment ID? For example \"cookie\"; this could enable some experiments to be settable via http requests in some generic way later?",
+      "revId": "aeaa3475b50055ffdaa52131e1d934629e090b70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
