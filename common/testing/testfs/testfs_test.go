@@ -23,7 +23,7 @@ import (
 func TestSimple(t *testing.T) {
 	t.Parallel()
 
-	MustWithTempDir(t, "", func(dir string) {
+	err := WithTempDir(t, "", func(dir string) error {
 		layout := map[string]string{
 			"a/b":    "ab",
 			"a/c/d":  "acd",
@@ -45,5 +45,8 @@ func TestSimple(t *testing.T) {
 		if !cmp.Equal(got, layout) {
 			t.Errorf("got: %v\nwant: %v", got, layout)
 		}
-	})()
+
+		return nil
+	})
+	So(err, ShouldBeNil)
 }
