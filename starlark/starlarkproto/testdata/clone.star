@@ -41,20 +41,20 @@ assert.eq(copy, testprotos.MapWithMessageType(m={
 
 # clone expects an argument.
 def clone_no_args():
-  proto.clone()
+  return proto.clone()
 assert.fails(clone_no_args, 'missing argument for msg')
 
 # Too many arguments.
 def clone_too_many_args():
-  proto.clone(src, src)
+  return proto.clone(src, src)
 assert.fails(clone_too_many_args, 'clone: got 2 arguments, want at most 1')
 
 # None argument.
 def clone_with_none():
-  proto.clone(None)
+  return proto.clone(None)
 assert.fails(clone_with_none, 'clone: for parameter msg: got NoneType, want proto.Message')
 
 # Wrongly typed argument.
 def clone_with_int():
-  proto.clone(1)
+  return proto.clone(1)
 assert.fails(clone_with_int, 'clone: for parameter msg: got int, want proto.Message')
