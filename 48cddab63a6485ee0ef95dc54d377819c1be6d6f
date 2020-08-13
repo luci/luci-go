@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f71f6303_a4d7a1d6",
+        "filename": "milo/frontend/resultui/src/pages/timeline_tab.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-13T13:11:42Z",
+      "side": 1,
+      "message": "Since the timeline_tab will only be used by the build page, can we move this to the build_page folder?",
+      "revId": "48cddab63a6485ee0ef95dc54d377819c1be6d6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
