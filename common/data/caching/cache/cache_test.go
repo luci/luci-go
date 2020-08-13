@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/system/filesystem"
-	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -157,7 +156,8 @@ func TestNewDisk(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey(`invalid state.json`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
+	Convey(`invalid state.json`, t, func() {
+		dir := t.TempDir()
 		state := filepath.Join(dir, "state.json")
 		invalid := filepath.Join(dir, "invalid file")
 		So(ioutil.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
@@ -179,9 +179,10 @@ func TestNewDisk(t *testing.T) {
 		So(empty, ShouldBeTrue)
 
 		So(c.Close(), ShouldBeNil)
-	}))
+	})
 
-	Convey(`MinFreeSpace too big`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
+	Convey(`MinFreeSpace too big`, t, func() {
+		dir := t.TempDir()
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
 		c, err := NewDisk(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, h)
@@ -192,9 +193,10 @@ func TestNewDisk(t *testing.T) {
 		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
 
 		So(c.Close(), ShouldBeNil)
-	}))
+	})
 
-	Convey(`HardLink will update used`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
+	Convey(`HardLink will update used`, t, func() {
+		dir := t.TempDir()
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
 		onDiskContent := []byte("on disk")
@@ -216,5 +218,5 @@ func TestNewDisk(t *testing.T) {
 		So(d.GetUsed(), ShouldBeEmpty)
 		So(d.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
 		So(d.GetUsed(), ShouldHaveLength, 1)
-	}))
+	})
 }
