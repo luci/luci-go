@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/system/filesystem"
-	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -62,7 +61,8 @@ func TestFind(t *testing.T) {
 		},
 	}
 
-	Convey(`Can Find a Python interpreter`, t, testfs.MustWithTempDir(t, "vpython", func(tdir string) {
+	Convey(`Can Find a Python interpreter`, t, func() {
+		tdir := t.TempDir()
 		c := context.Background()
 
 		var lookPathVersion Version
@@ -111,5 +111,5 @@ func TestFind(t *testing.T) {
 				}
 			})
 		}
-	}))
+	})
 }
