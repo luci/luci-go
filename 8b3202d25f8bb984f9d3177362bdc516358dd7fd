@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fafa39a4_2e7b4113",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-13T06:50:47Z",
+      "side": 1,
+      "message": "could you extract from here to L148 and write a test for that function?",
+      "revId": "8b3202d25f8bb984f9d3177362bdc516358dd7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7cab1b4_2522b5ee",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-13T06:50:47Z",
+      "side": 1,
+      "message": "\"|\" is more natural here?",
+      "range": {
+        "startLine": 127,
+        "startChar": 10,
+        "endLine": 127,
+        "endChar": 11
+      },
+      "revId": "8b3202d25f8bb984f9d3177362bdc516358dd7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd28a0f3_abe5c224",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-13T06:50:47Z",
+      "side": 1,
+      "message": "\"`\" is more natural here?",
+      "range": {
+        "startLine": 129,
+        "startChar": 10,
+        "endLine": 129,
+        "endChar": 11
+      },
+      "revId": "8b3202d25f8bb984f9d3177362bdc516358dd7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
