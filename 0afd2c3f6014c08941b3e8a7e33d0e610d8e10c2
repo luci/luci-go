@@ -16,6 +16,24 @@
       "revId": "0afd2c3f6014c08941b3e8a7e33d0e610d8e10c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f73a1bd_825fb082",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-13T22:13:28Z",
+      "side": 1,
+      "message": "See https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/master/configs/luci-config/schemas.cfg#39",
+      "parentUuid": "ddd9ad11_4b56af4e",
+      "revId": "0afd2c3f6014c08941b3e8a7e33d0e610d8e10c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
