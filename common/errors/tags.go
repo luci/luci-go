@@ -128,7 +128,7 @@ func (b BoolTag) In(err error) bool {
 //   type SomeType int
 //   type myTag struct { Key errors.TagKey }
 //   func (m myTag) With(value SomeType) errors.TagValue {
-//     return errors.TagValue{Key: vm.Key, Value: value}
+//     return errors.TagValue{Key: m.Key, Value: value}
 //   }
 //   func (m myTag) In(err error) (v SomeType, ok bool) {
 //     d, ok := errors.TagValueIn(m.Key, err)
@@ -142,7 +142,7 @@ func (b BoolTag) In(err error) bool {
 // You could then use it like:
 //   err = MyTag.With(100).Apply(err)
 //   MyTag.In(err) // == true
-//   MyTag.ValueIn(err) // == (SomeType(100), true)
+//   errors.ValueIn(err) // == (SomeType(100), true)
 func NewTagKey(description string) TagKey {
 	return &tagDescription{description}
 }
