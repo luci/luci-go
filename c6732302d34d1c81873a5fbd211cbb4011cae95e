@@ -33,6 +33,41 @@
       "revId": "c6732302d34d1c81873a5fbd211cbb4011cae95e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "28ced8bd_5b15858c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-13T02:12:37Z",
+      "side": 1,
+      "message": "LGTM % Chan please take a look at the CL when you have time today or tomorrow (depending on when your work time is). The same work will have to be done for BQ export.",
+      "revId": "c6732302d34d1c81873a5fbd211cbb4011cae95e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "43686482_54e8a15b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-13T02:12:37Z",
+      "side": 1,
+      "message": "LGTM!",
+      "parentUuid": "d114d57d_8aa7c164",
+      "revId": "c6732302d34d1c81873a5fbd211cbb4011cae95e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
