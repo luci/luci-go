@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
-	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -230,7 +229,8 @@ func genTar(t *testing.T) []byte {
 
 func TestDownloaderWithCache(t *testing.T) {
 	t.Parallel()
-	Convey(`TestDownloaderWithCache`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`TestDownloaderWithCache`, t, func() {
+		tmpDir := t.TempDir()
 		ctx := context.Background()
 
 		miss := []byte("cache miss")
@@ -290,13 +290,14 @@ func TestDownloaderWithCache(t *testing.T) {
 		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
 		So(cacheObj.Touch(misshash), ShouldBeTrue)
-	}))
+	})
 }
 
 func TestFetchAndMap(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestFetchAndMap`, t, testfs.MustWithTempDir(t, "", func(tmpdir string) {
+	Convey(`TestFetchAndMap`, t, func() {
+		tmpdir := t.TempDir()
 		ctx := context.Background()
 		isolatedDir := filepath.Join(tmpdir, "isolated")
 		So(os.Mkdir(isolatedDir, 0o700), ShouldBeNil)
@@ -352,5 +353,5 @@ func TestFetchAndMap(t *testing.T) {
 		So(buf, ShouldResemble, data1)
 
 		So(diskcache.Touch(tarhash), ShouldBeTrue)
-	}))
+	})
 }

@@ -23,7 +23,6 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/chunker"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/testing/testfs"
 )
 
 func TestChunkerDeduper(t *testing.T) {
@@ -40,7 +39,8 @@ func TestChunkerDeduper(t *testing.T) {
 		So(deduped, ShouldResemble, []*chunker.Chunker{bazCh})
 	})
 
-	Convey(`Files`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Files`, t, func() {
+		tmpDir := t.TempDir()
 		fooPath := filepath.Join(tmpDir, "foo")
 		So(ioutil.WriteFile(fooPath, []byte("foo"), 0600), ShouldBeNil)
 		barPath := filepath.Join(tmpDir, "bar")
@@ -65,7 +65,7 @@ func TestChunkerDeduper(t *testing.T) {
 
 		deduped = cd.Deduplicate([]*chunker.Chunker{foo2Ch, bazCh})
 		So(deduped, ShouldResemble, []*chunker.Chunker{bazCh})
-	}))
+	})
 }
 
 func chunkerFromFile(t *testing.T, path string) *chunker.Chunker {

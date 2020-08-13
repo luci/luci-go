@@ -30,7 +30,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/client/isolate"
-	"go.chromium.org/luci/common/testing/testfs"
 )
 
 func TestUploader(t *testing.T) {
@@ -42,7 +41,8 @@ func TestUploader(t *testing.T) {
 	bazDg := digest.NewFromBlob(bazContent)
 
 	t.Parallel()
-	Convey(`Basic`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Basic`, t, func() {
+		tmpDir := t.TempDir()
 		isol1Content := `{
 		  'variables': {
 		    'files': [
@@ -98,9 +98,10 @@ func TestUploader(t *testing.T) {
 		So(cas.BlobWrites(fooDg), ShouldEqual, 1)
 		So(cas.BlobWrites(barDg), ShouldEqual, 1)
 		So(cas.BlobWrites(bazDg), ShouldEqual, 1)
-	}))
+	})
 
-	Convey(`No upload if already on the server`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`No upload if already on the server`, t, func() {
+		tmpDir := t.TempDir()
 		isol1Content := `{
 		  'variables': {
 		    'files': [
@@ -142,9 +143,10 @@ func TestUploader(t *testing.T) {
 		So(cas.BlobWrites(fooDg), ShouldEqual, 0)
 		So(cas.BlobWrites(barDg), ShouldEqual, 0)
 		So(cas.BlobWrites(bazDg), ShouldEqual, 1)
-	}))
+	})
 
-	Convey(`Filter files`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Filter files`, t, func() {
+		tmpDir := t.TempDir()
 		isol1Content := `{
 		  'variables': {
 		    'files': [
@@ -190,7 +192,7 @@ func TestUploader(t *testing.T) {
 
 		So(cas.BlobWrites(fooDg), ShouldEqual, 0)
 		So(cas.BlobWrites(barDg), ShouldEqual, 1)
-	}))
+	})
 }
 
 func mustMarshal(p proto.Message) []byte {
