@@ -16,6 +16,23 @@
       "revId": "c6732302d34d1c81873a5fbd211cbb4011cae95e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d114d57d_8aa7c164",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-13T01:39:41Z",
+      "side": 1,
+      "message": "My deployment plan:\n1. Land the code, let it roll to the staging. Do not enable the experiment there yet.\n2. Confirm InvocationTasks table still works fine (since I kind of deleted tests for it in this CL).\n3. Pass `-enable-experiment rdb-use-tq-finalization` on stagine.\n4. Verify TQ stuff works now and InvocationTasks is eventually drained (of finalization tasks).\n5. Deploy this code to canary and stable, do not touch the experiment flag yet.\n6. Pass `-enable-experiment rdb-use-tq-finalization` on canary.\n7. Verify we now have both TQ and old tasks. Note that `stable` can already start handling TQ tasks, since we split TQ traffic same way as real traffic (e.g. 90% of tasks will go to `stable`).\n8. Pass `-enable-experiment rdb-use-tq-finalization` on stable.\n9. Verify all tasks go through TQ and InvocationTasks table is eventually drained (of finalization tasks).",
+      "revId": "c6732302d34d1c81873a5fbd211cbb4011cae95e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
