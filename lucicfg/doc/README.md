@@ -3360,6 +3360,27 @@ A str containing a text format protocol buffer message.
 
 
 
+### proto.clone {#proto.clone}
+
+```python
+proto.clone(msg)
+```
+
+
+
+Returns a deep copy of a given proto message.
+
+#### Arguments {#proto.clone-args}
+
+* **msg**: a proto message to make a copy of. Required.
+
+
+#### Returns  {#proto.clone-returns}
+
+A deep copy of the message.
+
+
+
 
 
 
