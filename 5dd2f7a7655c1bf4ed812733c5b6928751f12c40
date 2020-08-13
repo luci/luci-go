@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68dc8093_f745734d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-13T22:09:15Z",
+      "side": 1,
+      "message": "lgtm % semingly unused function.",
+      "revId": "5dd2f7a7655c1bf4ed812733c5b6928751f12c40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f1571023_a996a247",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-13T22:09:15Z",
+      "side": 1,
+      "message": "i don\u0027t see where this is used.",
+      "revId": "5dd2f7a7655c1bf4ed812733c5b6928751f12c40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
