@@ -30,7 +30,7 @@ import (
 
 	buildbucket_pb "go.chromium.org/luci/buildbucket/proto"
 	config_pb "go.chromium.org/luci/common/proto/config"
-	cq_pb "go.chromium.org/luci/cq/api/config/v2"
+	cq_pb "go.chromium.org/luci/cv/api/config/v2"
 	logdog_pb "go.chromium.org/luci/logdog/api/config/svcconfig"
 	notify_pb "go.chromium.org/luci/luci_notify/api/config"
 	milo_pb "go.chromium.org/luci/milo/api/config"

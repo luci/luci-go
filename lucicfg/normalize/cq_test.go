@@ -21,7 +21,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
-	pb "go.chromium.org/luci/cq/api/config/v2"
+	pb "go.chromium.org/luci/cv/api/config/v2"
 )
 
 const cqIn = `
