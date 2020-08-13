@@ -160,6 +160,26 @@ func TestPushDirectory(t *testing.T) {
 				},
 			},
 			testCase{
+				name: "Can push with a symlinked file in-tree pointing to absolute path",
+				nodes: []fileNode{
+					{
+						relPath:      "first/a",
+						contents:     "foo",
+						expectedFile: basicFile("foo"),
+					},
+					{
+						relPath:      "second/b",
+						expectedFile: isolated.SymLink(filepath.Join("..", "first", "a")),
+						symlink: &symlinkData{
+							// "second/b" -> "/PATH/TO/ROOT/first/a" (absolute path)
+							src:    filepath.Join("$ROOT", "first", "a"),
+							name:   filepath.Join("$ROOT", "second", "b"),
+							inTree: true,
+						},
+					},
+				},
+			},
+			testCase{
 				name: "Can push with a symlinked file out-of-tree",
 				nodes: []fileNode{
 					{
@@ -225,8 +245,10 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace stri
 		if node.symlink == nil {
 			So(os.MkdirAll(filepath.Dir(fullPath), 0700), ShouldBeNil)
 		} else {
+			src := strings.Replace(node.symlink.src, "$ROOT", root, 1)
 			linkname := strings.Replace(node.symlink.name, "$ROOT", root, 1)
-			So(os.Symlink(node.symlink.src, linkname), ShouldBeNil)
+			So(os.MkdirAll(filepath.Dir(linkname), 0700), ShouldBeNil)
+			So(os.Symlink(src, linkname), ShouldBeNil)
 		}
 	}
 	// Write the files.

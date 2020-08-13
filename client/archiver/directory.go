@@ -113,8 +113,38 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 				}
 				if strings.HasPrefix(l, realDir) {
 					// Readlink preserves relative paths of links; necessary to not break in tree symlinks.
-					if l, err = os.Readlink(path); err != nil {
+					l2, err := os.Readlink(path)
+					if err != nil {
 						return errors.Annotate(err, "Readlink(%s)", path).Err()
+					}
+
+					if filepath.IsAbs(l2) {
+						// It could happen that |l2|'s absolute path prefix is different from what is returned by os.EvalSymlinks
+						// (E.g. macOS's "/tmp" vs "/private/tmp"). So we use |l| (NOT |l2|) to figure out the relative portion
+						// within the directory tree.
+						// Example:
+						// /tmp/base/
+						//  `- first/
+						//  |  `- foo
+						//  |- second/
+						//     `- bar -> /tmp/base/first/foo
+						//
+						// |realDir|: "/private/tmp/base"
+						// |l|      : "/private/tmp/base/first/foo"
+						// |l2|     : "/tmp/base/first/foo"
+						//
+						// In this case, filepath.Rel(realDir, l) = "first/foo"
+						relDstInDir, err := filepath.Rel(realDir, l)
+						if err != nil {
+							return errors.Annotate(err, "failed to compute relDstInDir: Rel(%s, %s)", realDir, l).Err()
+						}
+						relDstToPath, err := filepath.Rel(filepath.Dir(relPath), relDstInDir)
+						if err != nil {
+							return errors.Annotate(err, "failed to compute relDstToPath: Rel(%s, %s)", filepath.Dir(relPath), relDstInDir).Err()
+						}
+						l = relDstToPath
+					} else {
+						l = l2
 					}
 					c <- &walkItem{fullPath: l, relPath: relPath, info: info, inTreeSymlink: true}
 					return nil
