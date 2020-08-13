@@ -107,6 +107,19 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
           },
         ),
       },
+      {
+        id: 'timeline',
+        label: 'Timeline',
+        href: router.urlForName(
+          'build-timeline',
+          {
+            'project': this.builder.project,
+            'bucket': this.builder.bucket,
+            'builder': this.builder.builder,
+            'build_num_or_id': this.buildNumOrId,
+          },
+        ),
+      },
     ];
   }
 
