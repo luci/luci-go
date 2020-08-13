@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 	"go.chromium.org/luci/common/system/filesystem"
-	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -296,7 +295,8 @@ func TestArchiveDir(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey(`Isolating a single directory should archive the contents, not the dir`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Isolating a single directory should archive the contents, not the dir`, t, func() {
+		tmpDir := t.TempDir()
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
@@ -387,13 +387,14 @@ func TestArchiveDir(t *testing.T) {
 		}
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedHash)
-	}))
+	})
 }
 
 func TestProcessIsolateFile(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Directory deps should end with osPathSeparator`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Directory deps should end with osPathSeparator`, t, func() {
+		tmpDir := t.TempDir()
 		baseDir := filepath.Join(tmpDir, "baseDir")
 		secondDir := filepath.Join(tmpDir, "secondDir")
 		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
@@ -426,9 +427,10 @@ func TestProcessIsolateFile(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(strings.HasSuffix(dep, osPathSeparator), ShouldEqual, isDir)
 		}
-	}))
+	})
 
-	Convey(`Allow missing files and dirs`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Allow missing files and dirs`, t, func() {
+		tmpDir := t.TempDir()
 		dir1 := filepath.Join(tmpDir, "dir1")
 		So(os.Mkdir(dir1, 0700), ShouldBeNil)
 		dir2 := filepath.Join(tmpDir, "dir2")
@@ -466,9 +468,10 @@ func TestProcessIsolateFile(t *testing.T) {
 		deps, _, _, err := ProcessIsolate(opts)
 		So(err, ShouldBeNil)
 		So(deps, ShouldResemble, []string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")})
-	}))
+	})
 
-	Convey(`Process isolate for CAS`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+	Convey(`Process isolate for CAS`, t, func() {
+		tmpDir := t.TempDir()
 		dir1 := filepath.Join(tmpDir, "dir1")
 		So(os.Mkdir(dir1, 0700), ShouldBeNil)
 		isolDir := filepath.Join(tmpDir, "out")
@@ -499,6 +502,6 @@ func TestProcessIsolateFile(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(rootDir, ShouldResemble, filepath.Dir(isolDir))
 		So(relDeps, ShouldResemble, []string{"dir1" + osPathSeparator, filepath.Join("dir1", "foo"), filepath.Join("out", "dir2", "bar")})
-	}))
+	})
 
 }
