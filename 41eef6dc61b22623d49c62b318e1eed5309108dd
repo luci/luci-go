@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a4ea19d_922d0a44",
+        "filename": "client/archiver/directory.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-13T08:50:39Z",
+      "side": 1,
+      "message": "I think /tmp/ has relative path symlink?",
+      "range": {
+        "startLine": 57,
+        "startChar": 13,
+        "endLine": 57,
+        "endChar": 14
+      },
+      "revId": "41eef6dc61b22623d49c62b318e1eed5309108dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
