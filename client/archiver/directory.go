@@ -44,7 +44,42 @@ type walkItem struct {
 	inTreeSymlink bool
 }
 
-// walk() enumerates a directory tree synchronously and sends the items to
+// computeRelDestOfInTreeSymlink handles the specific case where an in-tree symlink
+// points to an absolute path. In this case, we need to convert that destination to
+// a relative path.
+//
+// Precondition: |evaledDir| is a prefix of |evaledSymPath| (in-tree).
+func computeRelDestOfInTreeSymlink(symlinkRelPath, evaledSymPath, evaledDir string) (string, error) {
+	// It could be that the logical absolute path pointed by |symlinkPath| is different from
+	// what is returned by os.EvalSymlinks (E.g. macOS's "/tmp" vs  "/private/tmp"). So we use
+	// |evaledSymPath| to figure out the relative portion within the directory tree. For example:
+	//
+	// /tmp/ -> private/tmp/
+	// `- base/
+	//    |- first/
+	//    |  `- foo
+	//    `- second/
+	//       `- bar -> /tmp/base/first/foo
+	//
+	// |evaledDir|: "/private/tmp/base"
+	// |evaledSymPath|: "/private/tmp/base/first/foo"
+	//
+	// In this case, filepath.Rel(evaledDir, evaledSymPath) = "first/foo"
+
+	// Ideally we should panic on error, because the precondition enforces it.
+	relDstInDir, err := filepath.Rel(evaledDir, evaledSymPath)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to compute relDstInDir: Rel(%s, %s)", evaledDir, evaledSymPath).Err()
+	}
+	symlinkDir := filepath.Dir(symlinkRelPath)
+	relDstToSym, err := filepath.Rel(symlinkDir, relDstInDir)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to compute relDstToPath: Rel(%s, %s)", symlinkDir, relDstInDir).Err()
+	}
+	return relDstToSym, nil
+}
+
+// walk enumerates a directory tree synchronously and sends the items to
 // channel c.
 func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 	// TODO(maruel): Walk() sorts the file names list, which is not needed here
@@ -113,8 +148,18 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 				}
 				if strings.HasPrefix(l, realDir) {
 					// Readlink preserves relative paths of links; necessary to not break in tree symlinks.
-					if l, err = os.Readlink(path); err != nil {
+					l2, err := os.Readlink(path)
+					if err != nil {
 						return errors.Annotate(err, "Readlink(%s)", path).Err()
+					}
+
+					if !filepath.IsAbs(l2) {
+						l = l2
+					} else {
+						l, err = computeRelDestOfInTreeSymlink(relPath, l, realDir)
+						if err != nil {
+							return errors.Annotate(err, "failed to computeRelDestOfInTreeSymlink(%s, %s, %s)", relPath, l, realDir).Err()
+						}
 					}
 					c <- &walkItem{fullPath: l, relPath: relPath, info: info, inTreeSymlink: true}
 					return nil
