@@ -22,6 +22,30 @@
       "revId": "0ee054385b148dc1395459676e94518ae473073f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d385593_7fdf0899",
+        "filename": "lucicfg/starlark/stdlib/proto_doc.star",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-13T18:33:11Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "a5efdae5_8d8468ca",
+      "range": {
+        "startLine": 96,
+        "startChar": 6,
+        "endLine": 96,
+        "endChar": 32
+      },
+      "revId": "0ee054385b148dc1395459676e94518ae473073f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
