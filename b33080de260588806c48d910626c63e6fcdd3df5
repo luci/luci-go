@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5453b358_d45ff7dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-13T18:26:01Z",
+      "side": 1,
+      "message": "Better to merge it with the previous CL. Then it is immediately obvious in git log what\u0027s new in this version.",
+      "revId": "b33080de260588806c48d910626c63e6fcdd3df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
