@@ -51,6 +51,7 @@ import (
 
 	"go.chromium.org/luci/server/tq/internal"
 	"go.chromium.org/luci/server/tq/internal/db"
+	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
@@ -917,6 +918,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	// See taskClassImpl.serialize().
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
+		metrics.ServerRejectedCount.Add(ctx, 1, "bad_request")
 		return errors.Annotate(err, "not a valid JSON body").Err()
 	}
 
@@ -934,6 +936,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 	if err != nil {
 		logging.Debugf(ctx, "TQ: %s", body)
+		metrics.ServerRejectedCount.Add(ctx, 1, "unknown_class")
 		return err
 	}
 
@@ -951,16 +954,36 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	}
 
 	if h == nil {
+		metrics.ServerRejectedCount.Add(ctx, 1, "no_handler")
 		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Err()
 	}
 
 	msg, err := cls.deserialize(&env)
 	if err != nil {
+		metrics.ServerRejectedCount.Add(ctx, 1, "bad_payload")
 		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Err()
 	}
 
 	ctx = context.WithValue(ctx, &executionInfoKey, &info)
-	return h(ctx, msg)
+
+	start := clock.Now(ctx)
+	err = h(ctx, msg)
+	dur := clock.Now(ctx).Sub(start)
+
+	result := "OK"
+	switch {
+	case Retry.In(err):
+		result = "retry"
+	case transient.Tag.In(err):
+		result = "transient"
+	case err != nil:
+		result = "fatal"
+	}
+
+	metrics.ServerHandledCount.Add(ctx, 1, cls.ID, result)
+	metrics.ServerDurationMS.Add(ctx, float64(dur.Milliseconds()), cls.ID, result)
+
+	return err
 }
 
 // classByID returns a task class given its ID or an error if no such class.
