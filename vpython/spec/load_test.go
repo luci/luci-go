@@ -46,7 +46,8 @@ func TestLoadForScript(t *testing.T) {
 		CommonFilesystemBarriers: []string{"BARRIER"},
 	}
 
-	Convey(`Test LoadForScript`, t, testfs.MustWithTempDir(t, "TestLoadForScript", func(tdir string) {
+	Convey(`Test LoadForScript`, t, func() {
+		tdir := t.TempDir()
 		c := context.Background()
 
 		makePath := func(path string) string {
@@ -292,5 +293,5 @@ func TestLoadForScript(t *testing.T) {
 			_, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
 		})
-	}))
+	})
 }

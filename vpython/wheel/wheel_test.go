@@ -134,7 +134,8 @@ func TestName(t *testing.T) {
 func TestScanDir(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing ScanDir`, t, testfs.MustWithTempDir(t, "TestScanDir", func(tdir string) {
+	Convey(`Testing ScanDir`, t, func() {
+		tdir := t.TempDir()
 		mustBuild := func(layout map[string]string) {
 			if err := testfs.Build(tdir, layout); err != nil {
 				panic(err)
@@ -163,30 +164,30 @@ func TestScanDir(t *testing.T) {
 			_, err := ScanDir(tdir)
 			So(err, ShouldErrLike, "failed to parse wheel")
 		})
-	}))
+	})
 }
 
 func TestWriteRequirementsFile(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Can write a requirements file.`, t,
-		testfs.MustWithTempDir(t, "TestWriteRequirementsFile", func(tdir string) {
-			similarSimpleJSON := wheelSimpleJSON
-			similarSimpleJSON.ABITag = "some_other_abi"
+	Convey(`Can write a requirements file.`, t, func() {
+		tdir := t.TempDir()
+		similarSimpleJSON := wheelSimpleJSON
+		similarSimpleJSON.ABITag = "some_other_abi"
 
-			req := filepath.Join(tdir, "requirements.txt")
-			err := WriteRequirementsFile(req, []Name{
-				wheelMarkupSafe,
-				wheelSimpleJSON,
-				similarSimpleJSON,
-				wheelCryptography})
-			So(err, ShouldBeNil)
+		req := filepath.Join(tdir, "requirements.txt")
+		err := WriteRequirementsFile(req, []Name{
+			wheelMarkupSafe,
+			wheelSimpleJSON,
+			similarSimpleJSON,
+			wheelCryptography})
+		So(err, ShouldBeNil)
 
-			content, err := ioutil.ReadFile(req)
-			So(err, ShouldBeNil)
-			So(content, ShouldResemble, []byte(""+
-				"MarkupSafe==0.23\n"+
-				"simplejson==3.6.5\n"+
-				"cryptography==1.4\n"))
-		}))
+		content, err := ioutil.ReadFile(req)
+		So(err, ShouldBeNil)
+		So(content, ShouldResemble, []byte(""+
+			"MarkupSafe==0.23\n"+
+			"simplejson==3.6.5\n"+
+			"cryptography==1.4\n"))
+	})
 }
