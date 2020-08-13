@@ -86,6 +86,16 @@ def _struct_to_textpb(s):
       A str containing a text format protocol buffer message.
     """
 
+def _clone(msg):
+    """Returns a deep copy of a given proto message.
+
+    Args:
+      msg: a proto message to make a copy of. Required.
+
+    Returns:
+      A deep copy of the message.
+    """
+
 proto = struct(
     to_textpb = _to_textpb,
     to_jsonpb = _to_jsonpb,
@@ -94,4 +104,5 @@ proto = struct(
     from_jsonpb = _from_jsonpb,
     from_wirepb = _from_wirepb,
     struct_to_textpb = _struct_to_textpb,
+    clone = _clone,
 )
