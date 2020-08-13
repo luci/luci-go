@@ -16,6 +16,7 @@ package gitiles
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -25,6 +26,25 @@ import (
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/validation"
 )
+
+// matcherRefsRequest compares expected and actual refs request in mock.
+// gomock.eqMatcher does deep equal comparison which yields undeterministic
+// results depending on order when private content of pb structs are read via
+// reflection.
+type matcherRefsRequest gitiles.RefsRequest
+
+func (m *matcherRefsRequest) Matches(x interface{}) bool {
+	refsRequest, ok := x.(*gitiles.RefsRequest)
+	if !ok {
+		return false
+	}
+	return refsRequest.Project == m.Project &&
+		refsRequest.RefsPath == m.RefsPath
+}
+func (m *matcherRefsRequest) String() string {
+	return fmt.Sprintf("Project: %s; RefsPath: %s",
+		m.Project, m.RefsPath)
+}
 
 func TestRefSet(t *testing.T) {
 	t.Parallel()
@@ -53,7 +73,7 @@ func TestRefSet(t *testing.T) {
 			defer ctl.Finish()
 			mockClient := gitiles.NewMockGitilesClient(ctl)
 
-			mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+			mockClient.EXPECT().Refs(gomock.Any(), &matcherRefsRequest{
 				Project: "project", RefsPath: "refs/heads",
 			}).Return(
 				&gitiles.RefsResponse{Revisions: map[string]string{
@@ -61,12 +81,12 @@ func TestRefSet(t *testing.T) {
 					"refs/heads/foobar": "89abcdef",
 				}}, nil,
 			)
-			mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+			mockClient.EXPECT().Refs(gomock.Any(), &matcherRefsRequest{
 				Project: "project", RefsPath: "refs/missing",
 			}).Return(&gitiles.RefsResponse{}, nil)
 
 			Convey("normal", func() {
-				mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+				mockClient.EXPECT().Refs(gomock.Any(), &matcherRefsRequest{
 					Project: "project", RefsPath: "refs/branch-heads",
 				}).Return(
 					&gitiles.RefsResponse{Revisions: map[string]string{
@@ -87,7 +107,7 @@ func TestRefSet(t *testing.T) {
 			})
 
 			Convey("failed RPCs", func() {
-				mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+				mockClient.EXPECT().Refs(gomock.Any(), &matcherRefsRequest{
 					Project: "project", RefsPath: "refs/branch-heads",
 				}).Return(
 					nil, errors.New("foobar"),
