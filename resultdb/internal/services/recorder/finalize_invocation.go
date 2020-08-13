@@ -70,7 +70,8 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 		// Finalize as requested.
 		ret.State = pb.Invocation_FINALIZING
-		return tasks.StartInvocationFinalization(ctx, invID)
+		tasks.StartInvocationFinalization(ctx, invID)
+		return nil
 	})
 
 	if err != nil {

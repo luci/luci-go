@@ -19,11 +19,13 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -56,6 +58,10 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 		recorder := newTestRecorderServer()
 
+		// Note: testing only new TQ-based code path. The old one will be removed
+		// soon, it's fine not to test it. We "know" it works.
+		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
+
 		token, err := generateInvocationToken(ctx, "inv")
 		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
@@ -85,14 +91,10 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
-			var taskInv invocations.ID
-			taskID := "finalize/" + invocations.ID("inv").RowID()
-			testutil.MustReadRow(ctx, "InvocationTasks", tasks.TryFinalizeInvocation.Key(taskID), map[string]interface{}{
-				"InvocationId": &taskInv,
+			// Enqueued the finalization task.
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
+				{InvocationId: "inv"},
 			})
-			So(taskInv, ShouldEqual, invocations.ID("inv"))
-
-			So(sched.Tasks(), ShouldHaveLength, 1)
 		})
 	})
 }

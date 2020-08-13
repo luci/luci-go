@@ -37,6 +37,17 @@ func AddTask(ctx context.Context, task *Task) error {
 	return Default.AddTask(ctx, task)
 }
 
+// MustAddTask is like AddTask, but panics on errors.
+//
+// Mostly useful for AddTask calls inside a Spanner transaction, where they
+// essentially just call span.BufferWrite (i.e. make no RPCs) and thus can fail
+// only if arguments are bad (in which case it is OK to panic).
+func MustAddTask(ctx context.Context, task *Task) {
+	if err := AddTask(ctx, task); err != nil {
+		panic(err)
+	}
+}
+
 // Sweep is a shortcut for Default.Sweep.
 func Sweep(ctx context.Context) error {
 	return Default.Sweep(ctx)
