@@ -16,6 +16,23 @@
       "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "28b01e56_f3e26c77",
+        "filename": "common/api/gerrit/demo/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-13T22:11:47Z",
+      "side": 1,
+      "message": "btw, if you have executable package (as opposed to a library), it\u0027s a good idea to add .gitignore s.t. produced binary isn\u0027t accidentally committed to the repo.",
+      "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
