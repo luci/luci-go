@@ -212,7 +212,9 @@ func configsJSHandler(c *router.Context) error {
 		return err
 	}
 
-	c.Writer.Header().Set("content-type", "application/javascript")
+	header := c.Writer.Header()
+	header.Set("content-type", "application/javascript")
+	header.Set("cache-control", "max-age=3600,stale-while-revalidate=604800")
 	err = template.Execute(c.Writer, map[string]interface{}{
 		"ResultDB": map[string]string{
 			"Host": rdbHost,
