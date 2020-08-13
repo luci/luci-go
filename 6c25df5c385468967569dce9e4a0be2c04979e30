@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fdc443d7_01b5e212",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-08-13T19:57:10Z",
+      "side": 1,
+      "message": "LGTM, with a few questions.\n\nI am curious to see how you intend to handle step-level logging, though.",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e2dac3ac_704b13fd",
+        "filename": "luciexe/exe/status_tag.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-08-13T19:57:10Z",
+      "side": 1,
+      "message": "Nit: imcomplete sentence?",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 36
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebe1ad81_4fca4846",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-08-13T19:57:10Z",
+      "side": 1,
+      "message": "Why does the callback still provide build if it\u0027s in the context?",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 0
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
