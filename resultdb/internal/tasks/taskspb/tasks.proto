@@ -18,10 +18,6 @@ package luci.resultdb.internal.tasks;
 
 option go_package = "go.chromium.org/luci/resultdb/internal/tasks/taskspb";
 
-import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
-
-
 message TryFinalizeInvocation {
   string invocation_id = 1;
-  luci.resultdb.v1.Invocation.State state = 2;
 }

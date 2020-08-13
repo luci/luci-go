@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -75,12 +76,9 @@ func InitServer(srv *server.Server, opts Options) {
 }
 
 func init() {
-	// TODO(crbug.com/1080423): This is not really used yet. Tasks "handled" here
-	// are submitted in parallel to tasks in the InvocationTasks table.
 	tasks.FinalizationTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.TryFinalizeInvocation)
-		logging.Infof(ctx, "Asked to finalize %s", task.InvocationId)
-		return nil
+		return tryFinalizeInvocation(ctx, invocations.ID(task.InvocationId))
 	})
 }
 
@@ -287,8 +285,24 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 			// Enqueue tasks to try to finalize invocations that include ours.
 			work <- func() error {
-				if err := insertNextFinalizationTasks(ctx, invID); err != nil {
-					return err
+				if tasks.UseFinalizationTQ.Enabled(ctx) {
+					parentInvs, err := parentsInFinalizingState(ctx, invID)
+					if err != nil {
+						return err
+					}
+					// Note that AddTask in a Spanner transaction is essentially
+					// a BufferWrite (no RPCs inside), it's fine to call it sequentially
+					// and panic on errors.
+					for _, id := range parentInvs {
+						tq.MustAddTask(ctx, &tq.Task{
+							Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
+							Title:   string(id),
+						})
+					}
+				} else {
+					if err := insertNextFinalizationTasks(ctx, invID); err != nil {
+						return err
+					}
 				}
 				// Enqueue tasks to export the invocation to BigQuery.
 				// Note: this cannot be done in parallel with insertNextFinalizationTasks
@@ -317,6 +331,30 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 		invocations.ReachCache(invID).TryWrite(ctx, reach)
 		return nil
 	}
+}
+
+// parentsInFinalizingState returns IDs of invocations in FINALIZING state that
+// directly include ours.
+func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []invocations.ID, err error) {
+	st := spanner.NewStatement(`
+		SELECT including.InvocationId
+		FROM IncludedInvocations@{FORCE_INDEX=ReversedIncludedInvocations} incl
+		JOIN Invocations including ON incl.InvocationId = including.InvocationId
+		WHERE IncludedInvocationId = @invID AND including.State = @finalizing
+	`)
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+		"invID":      invID.RowID(),
+		"finalizing": pb.Invocation_FINALIZING,
+	})
+	err = span.Query(ctx, st).Do(func(row *spanner.Row) error {
+		var id invocations.ID
+		if err := spanutil.FromSpanner(row, &id); err != nil {
+			return err
+		}
+		ids = append(ids, id)
+		return nil
+	})
+	return ids, err
 }
 
 // insertNextFinalizationTasks, for each FINALIZING invocation that directly

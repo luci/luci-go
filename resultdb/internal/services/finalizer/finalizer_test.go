@@ -20,16 +20,20 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/server/experiments"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestShouldFinalize(t *testing.T) {
@@ -102,9 +106,13 @@ func TestShouldFinalize(t *testing.T) {
 }
 
 func TestFinalizeInvocation(t *testing.T) {
-	// Skip due to https://crbug.com/1042602
-	SkipConvey(`FinalizeInvocation`, t, func() {
+	Convey(`FinalizeInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, sched := tq.TestingContext(ctx, nil)
+
+		// Note: testing only new TQ-based code path. The old one will be removed
+		// soon, it's fine not to test it. We "know" it works.
+		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
 
 		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
@@ -135,23 +143,26 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x")
 			So(err, ShouldBeNil)
 
+			// Enqueued TQ tasks.
+			So(sched.Tasks().Payloads(), ShouldResembleProto, []*taskspb.TryFinalizeInvocation{
+				{InvocationId: "finalizing1"},
+				{InvocationId: "finalizing2"},
+			})
+
+			// No InvocationTasks enqueued, using TQ now.
 			st := spanner.NewStatement(`
 				SELECT InvocationId
 				FROM InvocationTasks
 				WHERE TaskType = @taskType
 			`)
 			st.Params["taskType"] = string(tasks.TryFinalizeInvocation)
-			var b spanutil.Buffer
-			nextInvs := invocations.IDSet{}
-			err = span.Query(span.Single(ctx), st).Do(func(r *spanner.Row) error {
-				var nextInv invocations.ID
-				err := b.FromSpanner(r, &nextInv)
-				So(err, ShouldBeNil)
-				nextInvs.Add(nextInv)
+			var count int
+			err = span.Query(span.Single(ctx), st).Do(func(*spanner.Row) error {
+				count++
 				return nil
 			})
 			So(err, ShouldBeNil)
-			So(nextInvs, ShouldResemble, invocations.NewIDSet("finalizing1", "finalizing2"))
+			So(count, ShouldEqual, 0)
 		})
 
 		Convey(`Enqueues more bq_export tasks`, func() {
