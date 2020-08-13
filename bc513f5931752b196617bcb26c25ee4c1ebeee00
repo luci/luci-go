@@ -137,6 +137,30 @@
     },
     {
       "key": {
+        "uuid": "602c5ea2_31322fe7",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T01:58:19Z",
+      "side": 1,
+      "message": "I will just use `GetChange` API with options then to keep the interface small and clean. I\u0027ve get rid of all the changes and include only unit test for new message property in this CL. PTAL. Thanks!\n\n\u003e Also, please test end-to-end that this actually works as intended.\n\u003e Maybe we should have a simple demo/ subpackage with bare bones main.go where one can easily change input+ RPC and then log output of a command?\n\nI\u0027ve tested it with my naive implementation: http://crrev.com/c/2353698 \nlmk if we should land that as well.",
+      "parentUuid": "b30e1c3f_f8113a3c",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 55
+      },
+      "revId": "bc513f5931752b196617bcb26c25ee4c1ebeee00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6ec57c1f_55ca37a2",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
