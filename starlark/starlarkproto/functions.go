@@ -218,6 +218,16 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //      Returns:
 //        A str containing a text format protocol buffer message.
 //      """
+//
+//    def clone(msg):
+//      """Returns a deep copy of a given proto message.
+//
+//      Args:
+//        msg: a proto message to make a copy of.
+//
+//      Returns:
+//        A deep copy of the message
+//      """
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
@@ -232,6 +242,7 @@ func ProtoLib() starlark.StringDict {
 			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB),
 			"from_wirepb":        unmarshallerBuiltin("from_wirepb", FromWirePB),
 			"struct_to_textpb":   starlark.NewBuiltin("struct_to_textpb", structToTextPb),
+			"clone":              starlark.NewBuiltin("clone", clone),
 		}),
 	}
 }
@@ -366,6 +377,15 @@ func unmarshallerBuiltin(name string, impl func(*MessageType, []byte) (*Message,
 		}
 		return msg, nil
 	})
+}
+
+// clone returns a copy of a given message.
+func clone(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var msg *Message
+	if err := starlark.UnpackArgs("clone", args, kwargs, "msg", &msg); err != nil {
+		return nil, err
+	}
+	return msg.MessageType().MessageFromProto(proto.Clone(msg.ToProto())), nil
 }
 
 // TODO(vadimsh): Remove once users switch to protos.
