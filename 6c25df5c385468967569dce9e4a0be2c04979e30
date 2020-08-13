@@ -19,6 +19,115 @@
     },
     {
       "key": {
+        "uuid": "fe2d5027_3b54eb0e",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "neat 👍",
+      "range": {
+        "startLine": 131,
+        "startChar": 0,
+        "endLine": 134,
+        "endChar": 76
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da89f842_49e9f6c1",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "close `triggerSink` as well?",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e46fc00_f22ac5bd",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "nit: maybe `const`?",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 3
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fe97143_75a4e1b0",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "This is nice as user has the full autonomy to log stream. WDYT about the idea of abstract log stream creation/writing so that user don\u0027t need to deal with the raw butler client (might help smooth the migration to butler v2 as well). For example, for step, we can have\n\n```\nfunc (s *Step) NewTextLogStream() (io.WriterCloser, err) {\n  // ...\n} \n\n// Maybe add binary or proto format log if neeeded.\n```",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 1
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b65f320_46fa89ba",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "I think this update will be ignored if user detach the build sink? We will need to manually get the sinkFn from ctx and call it.",
+      "range": {
+        "startLine": 227,
+        "startChar": 0,
+        "endLine": 230,
+        "endChar": 5
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e2dac3ac_704b13fd",
         "filename": "luciexe/exe/status_tag.go",
         "patchSetId": 8
@@ -34,6 +143,52 @@
         "startLine": 39,
         "startChar": 0,
         "endLine": 39,
+        "endChar": 36
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3e13616_44c8d475",
+        "filename": "luciexe/exe/status_tag.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "del?",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 36
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4155f917_04291ae4",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-13T21:07:43Z",
+      "side": 1,
+      "message": "nit: I think this actually panics?",
+      "range": {
+        "startLine": 111,
+        "startChar": 7,
+        "endLine": 111,
         "endChar": 36
       },
       "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
