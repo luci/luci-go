@@ -22,6 +22,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/validation"
 )
@@ -53,22 +54,22 @@ func TestRefSet(t *testing.T) {
 			defer ctl.Finish()
 			mockClient := gitiles.NewMockGitilesClient(ctl)
 
-			mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+			mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 				Project: "project", RefsPath: "refs/heads",
-			}).Return(
+			})).Return(
 				&gitiles.RefsResponse{Revisions: map[string]string{
 					"refs/heads/master": "01234567",
 					"refs/heads/foobar": "89abcdef",
 				}}, nil,
 			)
-			mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+			mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 				Project: "project", RefsPath: "refs/missing",
-			}).Return(&gitiles.RefsResponse{}, nil)
+			})).Return(&gitiles.RefsResponse{}, nil)
 
 			Convey("normal", func() {
-				mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+				mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 					Project: "project", RefsPath: "refs/branch-heads",
-				}).Return(
+				})).Return(
 					&gitiles.RefsResponse{Revisions: map[string]string{
 						"refs/branch-heads/1.9":      "cafedead",
 						"refs/branch-heads/1.10":     "deadcafe",
@@ -87,9 +88,9 @@ func TestRefSet(t *testing.T) {
 			})
 
 			Convey("failed RPCs", func() {
-				mockClient.EXPECT().Refs(gomock.Any(), &gitiles.RefsRequest{
+				mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 					Project: "project", RefsPath: "refs/branch-heads",
-				}).Return(
+				})).Return(
 					nil, errors.New("foobar"),
 				)
 
