@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7e7276f6_94095795",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-14T22:11:47Z",
+      "side": 1,
+      "message": "Yes, it should be an error. Thanks for catching this.",
+      "parentUuid": "e005eeed_59da5bdd",
+      "range": {
+        "startLine": 176,
+        "startChar": 10,
+        "endLine": 176,
+        "endChar": 15
+      },
+      "revId": "2067109e8ed865a4975cdf57a4944b1390b69c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba0dfc5e_410257f6",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "2067109e8ed865a4975cdf57a4944b1390b69c55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1895cc34_9d506f33",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 376,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-14T22:11:47Z",
+      "side": 1,
+      "message": "Added",
+      "parentUuid": "ba0dfc5e_410257f6",
+      "range": {
+        "startLine": 376,
+        "startChar": 5,
+        "endLine": 376,
+        "endChar": 11
+      },
+      "revId": "2067109e8ed865a4975cdf57a4944b1390b69c55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
