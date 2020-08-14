@@ -15,20 +15,35 @@
 package lib
 
 import (
+	"context"
+
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/cas"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
 )
+
+var _ cli.ContextModificator = (*commonFlags)(nil)
 
 type commonFlags struct {
 	subcommands.CommandRunBase
-	casFlags cas.Flags
+	casFlags  cas.Flags
+	logConfig logging.Config // for -log-level, used by ModifyContext
 }
 
 func (c *commonFlags) Init() {
 	c.casFlags.Init(&c.Flags)
+
+	c.logConfig.Level = logging.Warning
+	c.logConfig.AddFlags(&c.Flags)
 }
 
 func (c *commonFlags) Parse() error {
 	return c.casFlags.Parse()
+}
+
+// ModifyContext implements cli.ContextModificator.
+func (c *commonFlags) ModifyContext(ctx context.Context) context.Context {
+	return c.logConfig.Set(ctx)
 }
