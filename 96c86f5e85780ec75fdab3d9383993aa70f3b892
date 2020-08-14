@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "40b88af3_e7619fcf",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T22:59:17Z",
+      "side": 1,
+      "message": "Got it, will do.",
+      "parentUuid": "c08958ee_1a72cc98",
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86e37a54_63c3cef4",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 3
@@ -56,6 +74,30 @@
       "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95cecef1_224e0c71",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T22:59:17Z",
+      "side": 1,
+      "message": "Yeah, that sounds good to me.",
+      "parentUuid": "86e37a54_63c3cef4",
+      "range": {
+        "startLine": 179,
+        "startChar": 8,
+        "endLine": 179,
+        "endChar": 14
+      },
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +124,30 @@
     },
     {
       "key": {
+        "uuid": "7e5d7e7b_d8dee401",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T22:59:17Z",
+      "side": 1,
+      "message": "Also SGTM.",
+      "parentUuid": "614cd3ef_dddd3c67",
+      "range": {
+        "startLine": 182,
+        "startChar": 8,
+        "endLine": 182,
+        "endChar": 13
+      },
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b270f6e_a11ecfd3",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 3
@@ -102,6 +168,30 @@
       "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59bd9357_f9713d44",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T22:59:17Z",
+      "side": 1,
+      "message": "Oooh, hm. I had copied this from gerrit documentation, but this is useful information. I\u0027ll document this here.",
+      "parentUuid": "6b270f6e_a11ecfd3",
+      "range": {
+        "startLine": 192,
+        "startChar": 32,
+        "endLine": 193,
+        "endChar": 38
+      },
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
