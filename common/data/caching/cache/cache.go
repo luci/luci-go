@@ -55,6 +55,10 @@ type Cache interface {
 	// Add reads data from src and stores it in cache.
 	Add(digest isolated.HexDigest, src io.Reader) error
 
+	// AddFile adds src as cache entry with hardlink.
+	// But this doesn't do any content validation.
+	AddFileWithoutValidation(digest isolated.HexDigest, src string) error
+
 	// AddWithHardlink reads data from src and stores it in cache and hardlink file.
 	// This is to avoid file removal by shrink in Add().
 	AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error
@@ -314,6 +318,31 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 
 func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 	return d.add(digest, src, nil)
+}
+
+func (d *disk) AddFileWithoutValidation(digest isolated.HexDigest, src string) error {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Annotate(err, "failed to get stat").Err()
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if err := os.Link(src, d.itemPath(digest)); err != nil && !os.IsExist(err) {
+		return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+	}
+
+	d.lru.pushFront(digest, units.Size(fi.Size()))
+	if err := d.respectPolicies(); err != nil {
+		d.lru.pop(digest)
+		return err
+	}
+
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	d.added = append(d.added, fi.Size())
+	return nil
 }
 
 func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
