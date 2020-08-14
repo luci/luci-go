@@ -152,6 +152,24 @@
     },
     {
       "key": {
+        "uuid": "e4f6e15c_3325b141",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T22:26:07Z",
+      "side": 1,
+      "message": "I haven\u0027t dug into the code here, but from your explanation, I\u0027d choose panic.\n\nDetachBuildSink() build sink is a destructor of sorts -- once you call it, you don\u0027t get to use this libraries functionality.\nIf you really want a noop sink, that\u0027s already supported by setting a nil sink.",
+      "parentUuid": "a01f8ebb_b289c0f7",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "612c766f_3de27735",
         "filename": "luciexe/exe/build_modifiers.go",
         "patchSetId": 8
