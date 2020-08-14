@@ -33,6 +33,24 @@
       "revId": "6e2ea83931dd0fd14288c9b73c44f8e131e41e3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcec9e69_76ba8ddd",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T01:37:53Z",
+      "side": 1,
+      "message": "Do you mean the builders links are broken?\n\nThey seem to work in the demo: https://nqmtuan1-dot-luci-milo-dev.appspot.com/ui/p/chromium/ci/android-lollipop-arm-rel-swarming/3592/related-builds",
+      "parentUuid": "42fd8a06_10516b1b",
+      "revId": "6e2ea83931dd0fd14288c9b73c44f8e131e41e3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
