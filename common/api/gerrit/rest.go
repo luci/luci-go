@@ -114,7 +114,12 @@ func (t *timestamp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// changeInfo is JSON representation of gerritpb.ChangeInfo on the wire.
+// Below are the JSON representations of messages used for requests to
+// Gerrit; each of these structs corresponds to an entity described at
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#json-entities
+// and also to a message in `gerritpb`.
+
+// changeInfo is the JSON representation of gerritpb.ChangeInfo on the wire.
 type changeInfo struct {
 	Number   int64                 `json:"_number"`
 	Owner    *gerritpb.AccountInfo `json:"owner"`
@@ -127,10 +132,10 @@ type changeInfo struct {
 	CurrentRevision string                         `json:"current_revision"`
 	Revisions       map[string]*revisionInfo       `json:"revisions"`
 	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
-	Messages        []changemessageInfo                `json:"messages"`
+	Messages        []changeMessageInfo            `json:"messages"`
 }
 
-type changemessageInfo struct {
+type changeMessageInfo struct {
 	ID         string                `json:"id"`
 	Author     *gerritpb.AccountInfo `json:"author"`
 	RealAuthor *gerritpb.AccountInfo `json:"real_author"`
@@ -213,7 +218,7 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 	return ret
 }
 
-func (cmi *changemessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
+func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
 	if cmi == nil {
 		return nil
 	}
