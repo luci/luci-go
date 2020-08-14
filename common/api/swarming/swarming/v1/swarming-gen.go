@@ -544,6 +544,34 @@ func (s *SwarmingRpcsBotsDimensions) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+type SwarmingRpcsCASReference struct {
+	CasInstance string `json:"cas_instance,omitempty"`
+
+	Digest *SwarmingRpcsDigest `json:"digest,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "CasInstance") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "CasInstance") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsCASReference) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsCASReference
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // SwarmingRpcsCacheEntry: Describes a named cache that should be
 // present on the bot. A CacheEntry in a task specified that the task
 // prefers the cache to be present on the bot. A symlink to the cache
@@ -834,6 +862,34 @@ func (s *SwarmingRpcsDeletedResponse) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+type SwarmingRpcsDigest struct {
+	Hash string `json:"hash,omitempty"`
+
+	SizeBytes int64 `json:"size_bytes,omitempty,string"`
+
+	// ForceSendFields is a list of field names (e.g. "Hash") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Hash") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsDigest) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsDigest
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // SwarmingRpcsFileContent: Content of a file.
 type SwarmingRpcsFileContent struct {
 	Content string `json:"content,omitempty"`
@@ -872,11 +928,9 @@ func (s *SwarmingRpcsFileContent) MarshalJSON() ([]byte, error) {
 }
 
 // SwarmingRpcsFilesRef: Defines a data tree reference for Swarming task
-// inputs or outputs. It can either be: - a reference to an isolated
-// file on an isolate server - a reference to an isolated file on a RBE
-// CAS server In the RBE CAS case, the isolatedserver must be set to GCP
-// name, and namespace must be set to "sha256-GCP". For the moment, RBE
-// CAS requires SHA-256 and doesn't support precompressed data.
+// inputs or outputs. It is a reference to an isolated file on an
+// isolate server. DEPRECATED. Isolate server is being migrated to
+// RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS.
 type SwarmingRpcsFilesRef struct {
 	Isolated string `json:"isolated,omitempty"`
 
@@ -1362,6 +1416,8 @@ type SwarmingRpcsTaskProperties struct {
 	// if mapped to a different path, it will see the changes.
 	Caches []*SwarmingRpcsCacheEntry `json:"caches,omitempty"`
 
+	CasInputRoot *SwarmingRpcsCASReference `json:"cas_input_root,omitempty"`
+
 	// CipdInput: Defines CIPD packages to install in task run directory.
 	CipdInput *SwarmingRpcsCipdInput `json:"cipd_input,omitempty"`
 
@@ -1388,11 +1444,9 @@ type SwarmingRpcsTaskProperties struct {
 	Idempotent bool `json:"idempotent,omitempty"`
 
 	// InputsRef: Defines a data tree reference for Swarming task inputs or
-	// outputs. It can either be: - a reference to an isolated file on an
-	// isolate server - a reference to an isolated file on a RBE CAS server
-	// In the RBE CAS case, the isolatedserver must be set to GCP name, and
-	// namespace must be set to "sha256-GCP". For the moment, RBE CAS
-	// requires SHA-256 and doesn't support precompressed data.
+	// outputs. It is a reference to an isolated file on an isolate server.
+	// DEPRECATED. Isolate server is being migrated to RBE-CAS. Use
+	// `CASReference` to specify a reference to RBE-CAS.
 	InputsRef *SwarmingRpcsFilesRef `json:"inputs_ref,omitempty"`
 
 	IoTimeoutSecs int64 `json:"io_timeout_secs,omitempty,string"`
@@ -1646,6 +1700,8 @@ type SwarmingRpcsTaskResult struct {
 
 	BotVersion string `json:"bot_version,omitempty"`
 
+	CasOutputRoot *SwarmingRpcsCASReference `json:"cas_output_root,omitempty"`
+
 	ChildrenTaskIds []string `json:"children_task_ids,omitempty"`
 
 	// CipdPins: Defines pinned CIPD packages that were installed during the
@@ -1677,11 +1733,9 @@ type SwarmingRpcsTaskResult struct {
 	Name string `json:"name,omitempty"`
 
 	// OutputsRef: Defines a data tree reference for Swarming task inputs or
-	// outputs. It can either be: - a reference to an isolated file on an
-	// isolate server - a reference to an isolated file on a RBE CAS server
-	// In the RBE CAS case, the isolatedserver must be set to GCP name, and
-	// namespace must be set to "sha256-GCP". For the moment, RBE CAS
-	// requires SHA-256 and doesn't support precompressed data.
+	// outputs. It is a reference to an isolated file on an isolate server.
+	// DEPRECATED. Isolate server is being migrated to RBE-CAS. Use
+	// `CASReference` to specify a reference to RBE-CAS.
 	OutputsRef *SwarmingRpcsFilesRef `json:"outputs_ref,omitempty"`
 
 	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
@@ -2057,7 +2111,7 @@ func (c *BotDeleteCall) Header() http.Header {
 
 func (c *BotDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2219,7 +2273,7 @@ func (c *BotEventsCall) Header() http.Header {
 
 func (c *BotEventsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2381,7 +2435,7 @@ func (c *BotGetCall) Header() http.Header {
 
 func (c *BotGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2592,7 +2646,7 @@ func (c *BotTasksCall) Header() http.Header {
 
 func (c *BotTasksCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2809,7 +2863,7 @@ func (c *BotTerminateCall) Header() http.Header {
 
 func (c *BotTerminateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2951,7 +3005,7 @@ func (c *BotsCountCall) Header() http.Header {
 
 func (c *BotsCountCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3048,6 +3102,12 @@ func (r *BotsService) Dimensions() *BotsDimensionsCall {
 	return c
 }
 
+// Pool sets the optional parameter "pool":
+func (c *BotsDimensionsCall) Pool(pool string) *BotsDimensionsCall {
+	c.urlParams_.Set("pool", pool)
+	return c
+}
+
 // Fields allows partial responses to be retrieved. See
 // https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
@@ -3085,7 +3145,7 @@ func (c *BotsDimensionsCall) Header() http.Header {
 
 func (c *BotsDimensionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3147,6 +3207,12 @@ func (c *BotsDimensionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBots
 	//   "description": "Returns the cached set of dimensions currently in use in the fleet.",
 	//   "httpMethod": "GET",
 	//   "id": "swarming.bots.dimensions",
+	//   "parameters": {
+	//     "pool": {
+	//       "location": "query",
+	//       "type": "string"
+	//     }
+	//   },
 	//   "path": "bots/dimensions",
 	//   "response": {
 	//     "$ref": "SwarmingRpcsBotsDimensions"
@@ -3284,7 +3350,7 @@ func (c *BotsListCall) Header() http.Header {
 
 func (c *BotsListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3514,7 +3580,7 @@ func (c *QueuesListCall) Header() http.Header {
 
 func (c *QueuesListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3651,7 +3717,7 @@ func (c *ServerDetailsCall) Header() http.Header {
 
 func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3777,7 +3843,7 @@ func (c *ServerGetBootstrapCall) Header() http.Header {
 
 func (c *ServerGetBootstrapCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3903,7 +3969,7 @@ func (c *ServerGetBotConfigCall) Header() http.Header {
 
 func (c *ServerGetBotConfigCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4047,7 +4113,7 @@ func (c *ServerPermissionsCall) Header() http.Header {
 
 func (c *ServerPermissionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4180,7 +4246,7 @@ func (c *ServerTokenCall) Header() http.Header {
 
 func (c *ServerTokenCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4297,7 +4363,7 @@ func (c *TaskCancelCall) Header() http.Header {
 
 func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4444,7 +4510,7 @@ func (c *TaskRequestCall) Header() http.Header {
 
 func (c *TaskRequestCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4596,7 +4662,7 @@ func (c *TaskResultCall) Header() http.Header {
 
 func (c *TaskResultCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4753,7 +4819,7 @@ func (c *TaskStdoutCall) Header() http.Header {
 
 func (c *TaskStdoutCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4895,7 +4961,7 @@ func (c *TasksCancelCall) Header() http.Header {
 
 func (c *TasksCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5067,7 +5133,7 @@ func (c *TasksCountCall) Header() http.Header {
 
 func (c *TasksCountCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5253,7 +5319,7 @@ func (c *TasksGetStatesCall) Header() http.Header {
 
 func (c *TasksGetStatesCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5460,7 +5526,7 @@ func (c *TasksListCall) Header() http.Header {
 
 func (c *TasksListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5666,7 +5732,7 @@ func (c *TasksNewCall) Header() http.Header {
 
 func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5871,7 +5937,7 @@ func (c *TasksRequestsCall) Header() http.Header {
 
 func (c *TasksRequestsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -6084,7 +6150,7 @@ func (c *TasksTagsCall) Header() http.Header {
 
 func (c *TasksTagsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200714")
+	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20200801")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
