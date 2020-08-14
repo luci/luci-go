@@ -33,6 +33,29 @@
       "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f73cf628_1bd3ef1f",
+        "filename": "common/api/gerrit/demo/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T22:40:18Z",
+      "side": 1,
+      "message": "It looks like as-is it has a call getting change 1111, but we might use this for ad-hoc testing by modifying locally to make some other call.\n\nIs that what you had in mind? If so could you add another comment about this?",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 30
+      },
+      "revId": "12e395825d33b5737bf959b50d85834871f0b44a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
