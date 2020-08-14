@@ -13,16 +13,16 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { css,customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import MarkdownIt from 'markdown-it';
 import { observable} from 'mobx';
 
 import { sanitizeHTML } from '../../src/libs/sanitize_html';
+import { getDisplayNameForStatus, getURLForBuild, getURLForBuilder } from '../../src/libs/build_utils';
 import { displayTimestamp, displayDuration } from '../../src/libs/time_utils';
 import { AppState, consumeAppState } from '../context/app_state/app_state';
 import { BuildState, consumeBuildState } from '../context/build_state/build_state';
-import { router } from '../routes';
 import { Build, BuildStatus } from '../services/buildbucket';
 
 export class RelatedBuildsTabElement extends MobxLitElement {
@@ -61,7 +61,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       return html ``;
     }
     return html`
-      <table>
+      <table id="related-builds-table">
         <tr>
           <th>Project</th>
           <th>Bucket</th>
@@ -86,9 +86,9 @@ export class RelatedBuildsTabElement extends MobxLitElement {
       <tr>
         <td>${build.builder.project}</td>
         <td>${build.builder.bucket}</td>
-        <td>${build.builder.builder}</td>
+        <td><a href=${getURLForBuilder(build)} router-ignore>${build.builder.builder}</a></td>
         <td>${this.generateBuildLink(build)}</td>
-        <td>${BuildStatus[build.status]}</td>
+        <td class="status ${BuildStatus[build.status]}">${getDisplayNameForStatus(build.status)}</td>
         <td>${displayTimestamp(build.create_time)}</td>
         <td>${displayDuration(build.create_time, build.start_time)}</td>
         <td>${displayDuration(build.start_time, build.end_time)}</td>
@@ -96,17 +96,8 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     `;
   }
 
-  // TODO (crbug.com/1112224): extract this to a library
   private generateBuildLink(build: Build) {
-    const href = router.urlForName(
-      'build-test-results',
-      {
-        'project': build.builder.project,
-        'bucket': build.builder.bucket,
-        'builder': build.builder.builder,
-        'build_num_or_id': 'b' + build.id,
-      },
-    );
+    const href = getURLForBuild(build);
     const display = build.number ? build.number : build.id;
     return html`<a href="${href}">${display}</a>`;
   }
@@ -118,6 +109,41 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     const md = new MarkdownIt();
     return sanitizeHTML(md.render(markdown));
   }
+
+  static styles = css`
+    tr:nth-child(even) {
+      background-color: #ddd;
+    }
+    #related-builds-table {
+      vertical-align: middle;
+      text-align: center;
+    }
+    #related-builds-table td{
+      padding: 0.1em 1em 0.1em 1em;
+    }
+    .status.Success {
+      background-color: #8d4;
+      border-color: #4f8530;
+    }
+    .status.Failure {
+      background-color: #e88;
+      border-color: #a77272;
+      border-style: solid;
+    }
+    .status.InfraFailure {
+      background-color: #c6c;
+      border-color: #aca0b3;
+      color: #ffffff;
+    }
+    .status.Started {
+      background-color: #fd3;
+      border-color: #c5c56d;
+    }
+    .status.Canceled {
+      background-color: #8ef;
+      border-color: #00d8fc;
+    }
+  `;
 }
 
 customElement('tr-related-builds-tab')(
