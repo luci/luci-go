@@ -36,6 +36,41 @@
     },
     {
       "key": {
+        "uuid": "20a8171f_3b15fea0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T20:28:20Z",
+      "side": 1,
+      "message": "As I mentioned, this is just to start the conversation; Definitely needs tests before landing :)",
+      "parentUuid": "b772a63a_abebc31b",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d6754d1_ccf38582",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T20:28:20Z",
+      "side": 1,
+      "message": "(still replying to comments)",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe2d5027_3b54eb0e",
         "filename": "luciexe/exe/build.go",
         "patchSetId": 8
@@ -93,6 +128,24 @@
       "writtenOn": "2020-08-13T21:07:43Z",
       "side": 1,
       "message": "close `triggerSink` as well?",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a01f8ebb_b289c0f7",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T20:28:20Z",
+      "side": 1,
+      "message": "I\u0027m a bit torn on this; We could close triggerSink here, but it means that any code written using these high level functions will panic. By keeping it unclosed, it means that such code\u0027s use of exe\u0027s high-level functions effectively become no-ops. This means that if you take manual control over the build presentation, you can still use exe-enabled code (you just won\u0027t get the UI updates from it).\n\nWDYT?",
+      "parentUuid": "da89f842_49e9f6c1",
       "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -168,6 +221,30 @@
     },
     {
       "key": {
+        "uuid": "f4fd5cfd_b67e63db",
+        "filename": "luciexe/exe/build_modifiers.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T20:28:20Z",
+      "side": 1,
+      "message": "\u003e I\u0027d now vote to not support return values in exe.Run() at all, and ModifyBuildStatus() being the only way to update Status.\n\nI think this makes most use cases substantially more cumbersome... What\u0027s your reasoning for this?",
+      "parentUuid": "0d3b43f6_d85a82cc",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 28
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7c4c3fe8_efe49f46",
         "filename": "luciexe/exe/build_modifiers.go",
         "patchSetId": 8
@@ -211,6 +288,30 @@
       "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ad3815_3dbb0ddb",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T20:28:20Z",
+      "side": 1,
+      "message": "Unfortunately, in order to take the address of these, they need to be vars.",
+      "parentUuid": "4e46fc00_f22ac5bd",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 3
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -343,6 +444,30 @@
       "writtenOn": "2020-08-13T21:07:43Z",
       "side": 1,
       "message": "I think this update will be ignored if user detach the build sink? We will need to manually get the sinkFn from ctx and call it.",
+      "range": {
+        "startLine": 227,
+        "startChar": 0,
+        "endLine": 230,
+        "endChar": 5
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a89d674_70232b1d",
+        "filename": "luciexe/exe/exe.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T20:28:20Z",
+      "side": 1,
+      "message": "Ah, good point. Hm... I\u0027ll refactor to handle this.",
+      "parentUuid": "1b65f320_46fa89ba",
       "range": {
         "startLine": 227,
         "startChar": 0,
