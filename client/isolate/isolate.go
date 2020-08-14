@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
-	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 // IsolatedGenJSONVersion is used in the batcharchive json format.
@@ -154,7 +153,6 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 // Returns a *PendingItem to the .isolated.
 func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
 	displayName := filepath.Base(opts.Isolated)
-	defer tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":archive", nil)(nil)
 	f, err := archive(arch, opts, displayName)
 	if err != nil {
 		i := &archiver.PendingItem{DisplayName: displayName}
@@ -306,9 +304,7 @@ func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
 }
 
 func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.PendingItem, error) {
-	end := tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":loading", nil)
 	deps, rootDir, i, err := ProcessIsolate(opts)
-	end(tracer.Args{"err": err})
 	if err != nil {
 		return nil, err
 	}
