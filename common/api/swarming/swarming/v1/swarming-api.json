@@ -306,6 +306,12 @@
           "description": "Returns the cached set of dimensions currently in use in the fleet.",
           "httpMethod": "GET",
           "id": "swarming.bots.dimensions",
+          "parameters": {
+            "pool": {
+              "location": "query",
+              "type": "string"
+            }
+          },
           "path": "bots/dimensions",
           "response": {
             "$ref": "SwarmingRpcsBotsDimensions"
@@ -1208,6 +1214,18 @@
       },
       "type": "object"
     },
+    "SwarmingRpcsCASReference": {
+      "id": "SwarmingRpcsCASReference",
+      "properties": {
+        "cas_instance": {
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "SwarmingRpcsDigest"
+        }
+      },
+      "type": "object"
+    },
     "SwarmingRpcsCacheEntry": {
       "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at \u003crun_dir\u003e/|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
       "id": "SwarmingRpcsCacheEntry",
@@ -1372,6 +1390,19 @@
       },
       "type": "object"
     },
+    "SwarmingRpcsDigest": {
+      "id": "SwarmingRpcsDigest",
+      "properties": {
+        "hash": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "format": "int64",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "SwarmingRpcsFileContent": {
       "description": "Content of a file.",
       "id": "SwarmingRpcsFileContent",
@@ -1393,7 +1424,7 @@
       "type": "object"
     },
     "SwarmingRpcsFilesRef": {
-      "description": "Defines a data tree reference for Swarming task inputs or outputs. It can either be: - a reference to an isolated file on an isolate server - a reference to an isolated file on a RBE CAS server In the RBE CAS case, the isolatedserver must be set to GCP name, and namespace must be set to \"sha256-GCP\". For the moment, RBE CAS requires SHA-256 and doesn't support precompressed data.",
+      "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS.",
       "id": "SwarmingRpcsFilesRef",
       "properties": {
         "isolated": {
@@ -1711,6 +1742,9 @@
           },
           "type": "array"
         },
+        "cas_input_root": {
+          "$ref": "SwarmingRpcsCASReference"
+        },
         "cipd_input": {
           "$ref": "SwarmingRpcsCipdInput",
           "description": "Defines CIPD packages to install in task run directory."
@@ -1765,7 +1799,7 @@
         },
         "inputs_ref": {
           "$ref": "SwarmingRpcsFilesRef",
-          "description": "Defines a data tree reference for Swarming task inputs or outputs. It can either be: - a reference to an isolated file on an isolate server - a reference to an isolated file on a RBE CAS server In the RBE CAS case, the isolatedserver must be set to GCP name, and namespace must be set to \"sha256-GCP\". For the moment, RBE CAS requires SHA-256 and doesn't support precompressed data."
+          "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS."
         },
         "io_timeout_secs": {
           "format": "int64",
@@ -1949,6 +1983,9 @@
         "bot_version": {
           "type": "string"
         },
+        "cas_output_root": {
+          "$ref": "SwarmingRpcsCASReference"
+        },
         "children_task_ids": {
           "items": {
             "type": "string"
@@ -2008,7 +2045,7 @@
         },
         "outputs_ref": {
           "$ref": "SwarmingRpcsFilesRef",
-          "description": "Defines a data tree reference for Swarming task inputs or outputs. It can either be: - a reference to an isolated file on an isolate server - a reference to an isolated file on a RBE CAS server In the RBE CAS case, the isolatedserver must be set to GCP name, and namespace must be set to \"sha256-GCP\". For the moment, RBE CAS requires SHA-256 and doesn't support precompressed data."
+          "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS."
         },
         "performance_stats": {
           "$ref": "SwarmingRpcsPerformanceStats"
