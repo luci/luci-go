@@ -173,6 +173,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	err := r.runTestCmd(ctx, args)
 	ec, ok := exitcode.Get(err)
 	if !ok {
+		logging.Errorf(ctx, "rdb-stream: failed to run the test command: %s", ec)
 		return r.done(err)
 	}
 	logging.Infof(ctx, "rdb-stream: exiting with %d", ec)
