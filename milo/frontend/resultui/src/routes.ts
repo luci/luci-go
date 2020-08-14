@@ -104,6 +104,7 @@ router.setRoutes({
                   children: [
                     {
                       path: '/',
+                      name:'build-main',
                       redirect: '/ui/p/:project/:bucket/:builder/:build_num_or_id/test-results',
                     },
                     {
