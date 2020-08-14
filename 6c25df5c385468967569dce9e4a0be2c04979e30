@@ -316,6 +316,30 @@
     },
     {
       "key": {
+        "uuid": "cadf462b_b8c53160",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-08-14T17:52:20Z",
+      "side": 1,
+      "message": "Yeah, that makes sense, and is definitely clearer.",
+      "parentUuid": "c0ccbc26_9aee652a",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 13
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ebe1ad81_4fca4846",
         "filename": "luciexe/legacy/cmd/run_annotations/main.go",
         "patchSetId": 8
