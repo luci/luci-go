@@ -22,6 +22,30 @@
       "revId": "ee60d301c6cee5d43b5a181a319413875ee38dcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c8140d1_94fbb050",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-14T17:09:53Z",
+      "side": 1,
+      "message": "I have the exact some thought as well. To me, it\u0027s not unbearable at this moment but some day in the future for sure as we add more stuff to this file. So I totally agree with you.",
+      "parentUuid": "704b0304_199258a8",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 39
+      },
+      "revId": "ee60d301c6cee5d43b5a181a319413875ee38dcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

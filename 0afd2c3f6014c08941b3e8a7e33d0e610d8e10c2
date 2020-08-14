@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4746a266_7bbf7323",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-14T17:09:53Z",
+      "side": 0,
+      "message": "Oops.. I\u0027m pretty sure I typed the camel case. Should check before landing :( Thanks for catching and fixing that.",
+      "range": {
+        "startLine": 133,
+        "startChar": 11,
+        "endLine": 133,
+        "endChar": 12
+      },
+      "revId": "0afd2c3f6014c08941b3e8a7e33d0e610d8e10c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
