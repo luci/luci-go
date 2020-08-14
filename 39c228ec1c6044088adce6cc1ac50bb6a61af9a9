@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0757d6ec_21c36377",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-14T17:56:03Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "9d45d9af_ecd176ba",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 75
+      },
+      "revId": "39c228ec1c6044088adce6cc1ac50bb6a61af9a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1086530a_0676e75d",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2020-08-14T16:55:15Z",
       "side": 1,
       "message": "This differs from the aip.dev recommendations in order to more closely match the Gerrit REST API. In the actual rest API the query parameters are q, o, n, and S.",
+      "range": {
+        "startLine": 178,
+        "startChar": 0,
+        "endLine": 182,
+        "endChar": 18
+      },
+      "revId": "39c228ec1c6044088adce6cc1ac50bb6a61af9a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9144274_6e42605f",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-14T17:56:03Z",
+      "side": 1,
+      "message": "I think this is fine? This is anyway not a cursor-based pagination.",
+      "parentUuid": "1086530a_0676e75d",
       "range": {
         "startLine": 178,
         "startChar": 0,
