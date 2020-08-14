@@ -87,9 +87,21 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 		return errors.Reason("build is mutually exclusive with create_time").Err()
 	}
 	// TODO(crbug/1053813): Disallow empty predicate.
-	// TODO(crbug/1090540): validate the pr.createBy identity.
-	// It'll be the replacement for the `user.parse_identity(q.created_by)` in Py.
-	// https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/search.py;l=294
+
+	if err := validateCreatedBy(pr.GetCreatedBy()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateCreatedBy checks if the createdBy string has the correct "kind:value" identity format.
+func validateCreatedBy(createdBy string) error {
+	if createdBy == "" {
+		return nil
+	}
+	if err := search.ToIdentity(createdBy).Validate(); err != nil {
+		return errors.Annotate(err, "invalid createdBy").Err()
+	}
 	return nil
 }
 

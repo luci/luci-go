@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -85,7 +86,7 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		Builder:             p.GetBuilder(),
 		Tags:                protoutil.StringPairMap(p.Tags),
 		Status:              p.Status,
-		CreatedBy:           identity.Identity(p.CreatedBy),
+		CreatedBy:           ToIdentity(p.CreatedBy),
 		StartTime:           mustTimestamp(p.CreateTime.GetStartTime()),
 		EndTime:             mustTimestamp(p.CreateTime.GetEndTime()),
 		IncludeExperimental: p.IncludeExperimental,
@@ -117,6 +118,15 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		s.Canary = proto.Bool(p.GetCanary() == pb.Trinary_YES)
 	}
 	return s
+}
+
+// ToIdentity converts a string to an identity.
+// It fixes a string if has no colon.
+func ToIdentity(createdBy string) identity.Identity {
+	if createdBy != "" && !strings.Contains(createdBy, ":") {
+		createdBy = fmt.Sprintf("user:%s", createdBy)
+	}
+	return identity.Identity(createdBy)
 }
 
 // IndexedTags returns the indexed tags.
