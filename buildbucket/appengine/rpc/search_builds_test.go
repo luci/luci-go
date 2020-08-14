@@ -214,6 +214,26 @@ func TestValidateSearchBuilds(t *testing.T) {
 		})
 	})
 
+	Convey("validateCreatedBy", t, func() {
+		Convey("empty", func() {
+			err := validateCreatedBy("")
+			So(err, ShouldBeNil)
+		})
+
+		Convey("invalid", func() {
+			err := validateCreatedBy("abc:abc")
+			So(err, ShouldErrLike, "invalid createdBy")
+		})
+
+		Convey("valid", func() {
+			err := validateCreatedBy("user@test.com")
+			So(err, ShouldBeNil)
+
+			err = validateCreatedBy("user:user@test.com")
+			So(err, ShouldBeNil)
+		})
+	})
+
 	Convey("validateSearch", t, func() {
 		Convey("nil", func() {
 			err := validateSearch(nil)
