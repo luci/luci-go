@@ -309,6 +309,30 @@
       "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a18feb2_12d79d63",
+        "filename": "client/isolated/archive.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-14T00:39:43Z",
+      "side": 1,
+      "message": "I\u0027ve fixed as discussed yesterday. Could you help take a look?",
+      "parentUuid": "4ec33009_4c75e036",
+      "range": {
+        "startLine": 152,
+        "startChar": 15,
+        "endLine": 152,
+        "endChar": 19
+      },
+      "revId": "48c7c7299241b4102f9444dd178fcc954afa6713",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
