@@ -122,6 +122,14 @@ router.setRoutes({
                         return cmd.component('tr-related-builds-tab');
                       },
                     },
+                    {
+                      path: '/timeline',
+                      name: 'build-timeline',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "timeline_tab" */ './pages/build_page/timeline_tab');
+                        return cmd.component('tr-timeline-tab');
+                      },
+                    },
                   ],
                 },
               ],
