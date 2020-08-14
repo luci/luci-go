@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "d55df711_2d476cf6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-14T21:28:32Z",
+      "side": 1,
+      "message": "Can any of the other indices be outdated, or is status the only mutable search parameter?",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40b90c61_1efca87e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-14T21:28:32Z",
+      "side": 1,
+      "message": "But can\u0027t you use the index for this?",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8da556fb_3c3c7f76",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 2
@@ -16,6 +50,74 @@
       "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45b986d4_b5e9299a",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-14T21:28:32Z",
+      "side": 1,
+      "message": "Could you add a comment here that we need to fetch all keys because there is additional filtering that can only be done after the build itself is fetched?\n\nI mean, originally I wanted to know if you could fetch at most q.PageSize keys per bucket, but I see that it won\u0027t be correct in case q.localPredicate filters them all out.",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f06c70e_09e1dc9c",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-14T21:28:32Z",
+      "side": 1,
+      "message": "Can you add a summarizing comment explaining why this is being done in a loop? I mean something like:\nFetch builds up to q.PageSize\nAppend the ones that match q.localPredicate\nRepeat until there are q.PageSize builds to return or all bKeys is exhausted",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93178ee8_9a85304b",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-14T21:28:32Z",
+      "side": 1,
+      "message": "for i :\u003d 0; len(rsp.Builds) \u003c int(q.PageSize) \u0026\u0026 i \u003c len(bKeys); {",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcedaaab_917e1ff9",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-14T21:28:32Z",
+      "side": 1,
+      "message": "I might just inline this code in fetchOnBuild, because it only works in conjunction with the assumptions made in that function (that ENDED_MASK was already filtered by !incomplete). Although, if you think the status index is outdated, the incomplete index may also be since it\u0027s derived from status. In which case you might as well check ENDED_MASK correctly (by using IsTerminalStatus or whatever).",
+      "revId": "5385572b4dadac64945f9ffbaf5f94d822a986ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
