@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44d90d8b_e7233f36",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-14T20:54:32Z",
+      "side": 1,
+      "message": "lgtm % suggestions + 1 doc correction.",
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c08958ee_1a72cc98",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-14T20:54:32Z",
+      "side": 1,
+      "message": "you need to add a boilerplate method in RestClient implementing this API in *this* CL. It may return \"not implemented error\", of course.",
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86e37a54_63c3cef4",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-14T20:54:32Z",
+      "side": 1,
+      "message": "IMO, `limit` is more readable.",
+      "range": {
+        "startLine": 179,
+        "startChar": 8,
+        "endLine": 179,
+        "endChar": 14
+      },
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "614cd3ef_dddd3c67",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-14T20:54:32Z",
+      "side": 1,
+      "message": "and `offset` here. This is more SQL-like.",
+      "range": {
+        "startLine": 182,
+        "startChar": 8,
+        "endLine": 182,
+        "endChar": 13
+      },
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b270f6e_a11ecfd3",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-14T20:54:32Z",
+      "side": 1,
+      "message": "this part is sadly not true. Internal limit was ~1k. If there were more than 1K of CLs, Gerrit will not even bother setting `more_changes\u003dTrue` 😞 (I think I documented that in gerrit_util.py of CQ)",
+      "range": {
+        "startLine": 192,
+        "startChar": 32,
+        "endLine": 193,
+        "endChar": 38
+      },
+      "revId": "96c86f5e85780ec75fdab3d9383993aa70f3b892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
