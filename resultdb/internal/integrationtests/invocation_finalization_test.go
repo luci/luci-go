@@ -30,7 +30,8 @@ import (
 )
 
 func TestInvocationFinalization(t *testing.T) {
-	Convey(`ShouldFinalize`, t, func() {
+	// https://crbug.com/1116284
+	SkipConvey(`ShouldFinalize`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		// Note: testing only new TQ-based code path. The old one will be removed
