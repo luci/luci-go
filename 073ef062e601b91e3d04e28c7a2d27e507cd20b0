@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f96f0ce9_bad4efdb",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-14T04:13:13Z",
+      "side": 0,
+      "message": "can we remove this function now?",
+      "range": {
+        "startLine": 334,
+        "startChar": 40,
+        "endLine": 334,
+        "endChar": 53
+      },
+      "revId": "073ef062e601b91e3d04e28c7a2d27e507cd20b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
