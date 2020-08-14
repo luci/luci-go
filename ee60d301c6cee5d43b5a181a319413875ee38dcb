@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "704b0304_199258a8",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T16:59:51Z",
+      "side": 1,
+      "message": "Side comment: IMO this file is starting to get a bit long and these structs and their ToProto definitions could maybe be put in a separate file in the same package. I\u0027ll do this if you don\u0027t disagree :-)",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 39
+      },
+      "revId": "ee60d301c6cee5d43b5a181a319413875ee38dcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
