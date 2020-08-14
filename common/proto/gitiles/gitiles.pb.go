@@ -721,6 +721,92 @@ func (x *DownloadFileResponse) GetContents() string {
 	return ""
 }
 
+type ProjectsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ProjectsRequest) Reset() {
+	*x = ProjectsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProjectsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectsRequest) ProtoMessage() {}
+
+func (x *ProjectsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectsRequest.ProtoReflect.Descriptor instead.
+func (*ProjectsRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDescGZIP(), []int{8}
+}
+
+type ProjectsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// List of available Gitiles projects
+	Projects []string `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
+}
+
+func (x *ProjectsResponse) Reset() {
+	*x = ProjectsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProjectsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectsResponse) ProtoMessage() {}
+
+func (x *ProjectsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectsResponse.ProtoReflect.Descriptor instead.
+func (*ProjectsResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ProjectsResponse) GetProjects() []string {
+	if x != nil {
+		return x.Projects
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_common_proto_gitiles_gitiles_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDesc = []byte{
@@ -795,27 +881,35 @@ var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDesc = []byt
 	0x10, 0x01, 0x22, 0x32, 0x0a, 0x14, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69,
 	0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x6f,
 	0x6e, 0x74, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x63, 0x6f,
-	0x6e, 0x74, 0x65, 0x6e, 0x74, 0x73, 0x32, 0x83, 0x02, 0x0a, 0x07, 0x47, 0x69, 0x74, 0x69, 0x6c,
-	0x65, 0x73, 0x12, 0x32, 0x0a, 0x03, 0x4c, 0x6f, 0x67, 0x12, 0x13, 0x2e, 0x67, 0x69, 0x74, 0x69,
-	0x6c, 0x65, 0x73, 0x2e, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x14,
-	0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x35, 0x0a, 0x04, 0x52, 0x65, 0x66, 0x73, 0x12, 0x14,
-	0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x52, 0x65, 0x66, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x52,
-	0x65, 0x66, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3e, 0x0a,
-	0x07, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x12, 0x17, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c,
-	0x65, 0x73, 0x2e, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x18, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x41, 0x72, 0x63, 0x68,
-	0x69, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4d, 0x0a,
-	0x0c, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x1c, 0x2e,
-	0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64,
-	0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x67, 0x69,
-	0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69,
-	0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2b, 0x5a, 0x29,
-	0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f,
-	0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x6e, 0x74, 0x65, 0x6e, 0x74, 0x73, 0x22, 0x11, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63,
+	0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x2e, 0x0a, 0x10, 0x50, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a,
+	0x08, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52,
+	0x08, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x32, 0xc6, 0x02, 0x0a, 0x07, 0x47, 0x69,
+	0x74, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x32, 0x0a, 0x03, 0x4c, 0x6f, 0x67, 0x12, 0x13, 0x2e, 0x67,
+	0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x14, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x4c, 0x6f, 0x67, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x35, 0x0a, 0x04, 0x52, 0x65, 0x66,
+	0x73, 0x12, 0x14, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x52, 0x65, 0x66, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65,
+	0x73, 0x2e, 0x52, 0x65, 0x66, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x3e, 0x0a, 0x07, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x12, 0x17, 0x2e, 0x67, 0x69,
+	0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x41,
+	0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x4d, 0x0a, 0x0c, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65,
+	0x12, 0x1c, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c,
+	0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d,
+	0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61,
+	0x64, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
+	0x41, 0x0a, 0x08, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x12, 0x18, 0x2e, 0x67, 0x69,
+	0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x2e,
+	0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -831,7 +925,7 @@ func file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDescGZIP() 
 }
 
 var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_goTypes = []interface{}{
 	(ArchiveRequest_Format)(0),      // 0: gitiles.ArchiveRequest.Format
 	(DownloadFileRequest_Format)(0), // 1: gitiles.DownloadFileRequest.Format
@@ -843,24 +937,28 @@ var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_goTypes = []int
 	(*ArchiveResponse)(nil),         // 7: gitiles.ArchiveResponse
 	(*DownloadFileRequest)(nil),     // 8: gitiles.DownloadFileRequest
 	(*DownloadFileResponse)(nil),    // 9: gitiles.DownloadFileResponse
-	nil,                             // 10: gitiles.RefsResponse.RevisionsEntry
-	(*git.Commit)(nil),              // 11: git.Commit
+	(*ProjectsRequest)(nil),         // 10: gitiles.ProjectsRequest
+	(*ProjectsResponse)(nil),        // 11: gitiles.ProjectsResponse
+	nil,                             // 12: gitiles.RefsResponse.RevisionsEntry
+	(*git.Commit)(nil),              // 13: git.Commit
 }
 var file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_depIdxs = []int32{
-	11, // 0: gitiles.LogResponse.log:type_name -> git.Commit
-	10, // 1: gitiles.RefsResponse.revisions:type_name -> gitiles.RefsResponse.RevisionsEntry
+	13, // 0: gitiles.LogResponse.log:type_name -> git.Commit
+	12, // 1: gitiles.RefsResponse.revisions:type_name -> gitiles.RefsResponse.RevisionsEntry
 	0,  // 2: gitiles.ArchiveRequest.format:type_name -> gitiles.ArchiveRequest.Format
 	1,  // 3: gitiles.DownloadFileRequest.format:type_name -> gitiles.DownloadFileRequest.Format
 	2,  // 4: gitiles.Gitiles.Log:input_type -> gitiles.LogRequest
 	4,  // 5: gitiles.Gitiles.Refs:input_type -> gitiles.RefsRequest
 	6,  // 6: gitiles.Gitiles.Archive:input_type -> gitiles.ArchiveRequest
 	8,  // 7: gitiles.Gitiles.DownloadFile:input_type -> gitiles.DownloadFileRequest
-	3,  // 8: gitiles.Gitiles.Log:output_type -> gitiles.LogResponse
-	5,  // 9: gitiles.Gitiles.Refs:output_type -> gitiles.RefsResponse
-	7,  // 10: gitiles.Gitiles.Archive:output_type -> gitiles.ArchiveResponse
-	9,  // 11: gitiles.Gitiles.DownloadFile:output_type -> gitiles.DownloadFileResponse
-	8,  // [8:12] is the sub-list for method output_type
-	4,  // [4:8] is the sub-list for method input_type
+	10, // 8: gitiles.Gitiles.Projects:input_type -> gitiles.ProjectsRequest
+	3,  // 9: gitiles.Gitiles.Log:output_type -> gitiles.LogResponse
+	5,  // 10: gitiles.Gitiles.Refs:output_type -> gitiles.RefsResponse
+	7,  // 11: gitiles.Gitiles.Archive:output_type -> gitiles.ArchiveResponse
+	9,  // 12: gitiles.Gitiles.DownloadFile:output_type -> gitiles.DownloadFileResponse
+	11, // 13: gitiles.Gitiles.Projects:output_type -> gitiles.ProjectsResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -968,6 +1066,30 @@ func file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProjectsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProjectsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -975,7 +1097,7 @@ func file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_common_proto_gitiles_gitiles_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1015,6 +1137,8 @@ type GitilesClient interface {
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error)
 	// DownloadFile retrieves a file from the project.
 	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error)
+	// Projects retrieves list of available Gitiles projects
+	Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error)
 }
 type gitilesPRPCClient struct {
 	client *prpc.Client
@@ -1054,6 +1178,15 @@ func (c *gitilesPRPCClient) Archive(ctx context.Context, in *ArchiveRequest, opt
 func (c *gitilesPRPCClient) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (*DownloadFileResponse, error) {
 	out := new(DownloadFileResponse)
 	err := c.client.Call(ctx, "gitiles.Gitiles", "DownloadFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitilesPRPCClient) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
+	out := new(ProjectsResponse)
+	err := c.client.Call(ctx, "gitiles.Gitiles", "Projects", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1104,6 +1237,15 @@ func (c *gitilesClient) DownloadFile(ctx context.Context, in *DownloadFileReques
 	return out, nil
 }
 
+func (c *gitilesClient) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
+	out := new(ProjectsResponse)
+	err := c.cc.Invoke(ctx, "/gitiles.Gitiles/Projects", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitilesServer is the server API for Gitiles service.
 type GitilesServer interface {
 	// Log retrieves commit log.
@@ -1119,6 +1261,8 @@ type GitilesServer interface {
 	Archive(context.Context, *ArchiveRequest) (*ArchiveResponse, error)
 	// DownloadFile retrieves a file from the project.
 	DownloadFile(context.Context, *DownloadFileRequest) (*DownloadFileResponse, error)
+	// Projects retrieves list of available Gitiles projects
+	Projects(context.Context, *ProjectsRequest) (*ProjectsResponse, error)
 }
 
 // UnimplementedGitilesServer can be embedded to have forward compatible implementations.
@@ -1136,6 +1280,9 @@ func (*UnimplementedGitilesServer) Archive(context.Context, *ArchiveRequest) (*A
 }
 func (*UnimplementedGitilesServer) DownloadFile(context.Context, *DownloadFileRequest) (*DownloadFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (*UnimplementedGitilesServer) Projects(context.Context, *ProjectsRequest) (*ProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Projects not implemented")
 }
 
 func RegisterGitilesServer(s prpc.Registrar, srv GitilesServer) {
@@ -1214,6 +1361,24 @@ func _Gitiles_DownloadFile_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gitiles_Projects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitilesServer).Projects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitiles.Gitiles/Projects",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitilesServer).Projects(ctx, req.(*ProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Gitiles_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gitiles.Gitiles",
 	HandlerType: (*GitilesServer)(nil),
@@ -1233,6 +1398,10 @@ var _Gitiles_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DownloadFile",
 			Handler:    _Gitiles_DownloadFile_Handler,
+		},
+		{
+			MethodName: "Projects",
+			Handler:    _Gitiles_Projects_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

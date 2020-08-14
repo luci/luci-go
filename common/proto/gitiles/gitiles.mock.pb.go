@@ -114,6 +114,26 @@ func (mr *MockGitilesClientMockRecorder) DownloadFile(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockGitilesClient)(nil).DownloadFile), varargs...)
 }
 
+// Projects mocks base method.
+func (m *MockGitilesClient) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Projects", varargs...)
+	ret0, _ := ret[0].(*ProjectsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Projects indicates an expected call of Projects.
+func (mr *MockGitilesClientMockRecorder) Projects(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Projects", reflect.TypeOf((*MockGitilesClient)(nil).Projects), varargs...)
+}
+
 // MockGitilesServer is a mock of GitilesServer interface.
 type MockGitilesServer struct {
 	ctrl     *gomock.Controller
@@ -195,4 +215,19 @@ func (m *MockGitilesServer) DownloadFile(arg0 context.Context, arg1 *DownloadFil
 func (mr *MockGitilesServerMockRecorder) DownloadFile(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockGitilesServer)(nil).DownloadFile), arg0, arg1)
+}
+
+// Projects mocks base method.
+func (m *MockGitilesServer) Projects(arg0 context.Context, arg1 *ProjectsRequest) (*ProjectsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Projects", arg0, arg1)
+	ret0, _ := ret[0].(*ProjectsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Projects indicates an expected call of Projects.
+func (mr *MockGitilesServerMockRecorder) Projects(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Projects", reflect.TypeOf((*MockGitilesServer)(nil).Projects), arg0, arg1)
 }
