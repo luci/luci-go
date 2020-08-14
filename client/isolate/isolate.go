@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strings"
 
 	"go.chromium.org/luci/client/archiver"
@@ -315,7 +314,6 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 	}
 	// Handle each dependency, either a file or a directory.
 	var fileItems []*archiver.PendingItem
-	var dirItems []*archiver.PendingItem
 	for _, dep := range deps {
 		relPath, err := filepath.Rel(rootDir, dep)
 		if err != nil {
@@ -331,7 +329,17 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 			if relPath, err = filepath.Rel(rootDir, dep); err != nil {
 				return nil, err
 			}
-			dirItems = append(dirItems, archiver.PushDirectory(arch, dep, relPath))
+			err, dirFItems, dirSymItems := archiver.PushDirectoryNoIsolated(arch, dep, relPath)
+			if err != nil {
+				return nil, err
+			}
+			for pending, item := range dirFItems {
+				i.Files[item.RelPath] = isolated.BasicFile("", int(item.Info.Mode()), item.Info.Size())
+				fileItems = append(fileItems, pending)
+			}
+			for relPath, dstPath := range dirSymItems {
+				i.Files[relPath] = isolated.SymLink(dstPath)
+			}
 		} else {
 			if mode&os.ModeSymlink == os.ModeSymlink {
 				l, err := os.Readlink(dep)
@@ -357,21 +365,6 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 		f.Digest = item.Digest()
 		i.Files[item.DisplayName] = f
 	}
-	// Avoid duplicated entries in includes.
-	// TODO(tandrii): add test to reproduce the problem.
-	includesSet := map[isolated.HexDigest]bool{}
-	for _, item := range dirItems {
-		item.WaitForHashed()
-		if err = item.Error(); err != nil {
-			return nil, err
-		}
-		includesSet[item.Digest()] = true
-	}
-	for digest := range includesSet {
-		i.Includes = append(i.Includes, digest)
-	}
-	// Make the includes list deterministic.
-	sort.Sort(i.Includes)
 
 	raw := &bytes.Buffer{}
 	if err = json.NewEncoder(raw).Encode(i); err != nil {

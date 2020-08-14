@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strings"
 	"testing"
 
@@ -180,41 +179,13 @@ func TestArchive(t *testing.T) {
 			mode = 0666
 		}
 
-		//   /base/
-		baseIsolatedData := isolated.Isolated{
-			Algo: "sha-1",
-			Files: map[string]isolated.File{
-				filepath.Join("base", "bar"): isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
-			},
-			Version: isolated.IsolatedFormatVersion,
-		}
-		encoded, err := json.Marshal(baseIsolatedData)
-		So(err, ShouldBeNil)
-		baseIsolatedEncoded := string(encoded) + "\n"
-		h := isolated.GetHash(namespace)
-		baseIsolatedHash := isolated.HashBytes(h, []byte(baseIsolatedEncoded))
-
-		//   /second/
-		secondIsolatedData := isolated.Isolated{
-			Algo: "sha-1",
-			Files: map[string]isolated.File{
-				filepath.Join("second", "boz"): isolated.BasicFile("aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427", mode, 4),
-			},
-			Version: isolated.IsolatedFormatVersion,
-		}
-		encoded, err = json.Marshal(secondIsolatedData)
-		So(err, ShouldBeNil)
-		secondIsolatedEncoded := string(encoded) + "\n"
-		secondIsolatedHash := isolated.HashBytes(h, []byte(secondIsolatedEncoded))
-
-		digests := isolated.HexDigests{baseIsolatedHash, secondIsolatedHash}
-		sort.Sort(digests)
 		isolatedData := isolated.Isolated{
 			Algo:    "sha-1",
 			Command: []string{"amiga"},
-			Files:   map[string]isolated.File{},
-			// This list must be in deterministic order.
-			Includes:    digests,
+			Files: map[string]isolated.File{
+				filepath.Join("base", "bar"):   isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
+				filepath.Join("second", "boz"): isolated.BasicFile("aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427", mode, 4),
+			},
 			RelativeCwd: "foo",
 			Version:     isolated.IsolatedFormatVersion,
 		}
@@ -223,8 +194,9 @@ func TestArchive(t *testing.T) {
 		} else {
 			isolatedData.Files["link"] = isolated.BasicFile("12339b9756c2994f85c310d560bc8c142a6b79a1", 0666, 18)
 		}
-		encoded, err = json.Marshal(isolatedData)
+		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
+		h := isolated.GetHash(namespace)
 		isolatedEncoded := string(encoded) + "\n"
 		isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
 
@@ -232,9 +204,7 @@ func TestArchive(t *testing.T) {
 			namespace: {
 				"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
 				"aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427": "foo2",
-				baseIsolatedHash:   baseIsolatedEncoded,
-				isolatedHash:       isolatedEncoded,
-				secondIsolatedHash: secondIsolatedEncoded,
+				isolatedHash: isolatedEncoded,
 			},
 		}
 		if runtime.GOOS == "windows" {
@@ -254,12 +224,12 @@ func TestArchive(t *testing.T) {
 		stats := a.Stats()
 		So(stats.TotalHits(), ShouldBeZeroValue)
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
-		size := 3 + 4 + len(baseIsolatedEncoded) + len(isolatedEncoded) + len(secondIsolatedEncoded)
+		size := 3 + 4 + len(isolatedEncoded)
 		if runtime.GOOS != "windows" {
-			So(stats.TotalMisses(), ShouldEqual, 5)
+			So(stats.TotalMisses(), ShouldEqual, 3)
 			So(stats.TotalBytesPushed(), ShouldResemble, units.Size(size))
 		} else {
-			So(stats.TotalMisses(), ShouldEqual, 6)
+			So(stats.TotalMisses(), ShouldEqual, 4)
 			// Includes the duplicate due to lack of symlink.
 			So(stats.TotalBytesPushed(), ShouldResemble, units.Size(size+18))
 		}
@@ -342,7 +312,8 @@ func TestArchiveDir(t *testing.T) {
 		fooHash := isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
 		barHash := isolated.HexDigest("62cdb7020ff920e5aa642c3d4066950dd1f01f4d")
 		bazHash := isolated.HexDigest("dfe2138a5f964f254b334255217f719367cd1231")
-		subdirIsolatedData := isolated.Isolated{
+
+		isolatedData := isolated.Isolated{
 			Algo: "sha-1",
 			Files: map[string]isolated.File{
 				"foo":         isolated.BasicFile(fooHash, mode, 3),
@@ -351,30 +322,18 @@ func TestArchiveDir(t *testing.T) {
 			},
 			Version: isolated.IsolatedFormatVersion,
 		}
-		encoded, err := json.Marshal(subdirIsolatedData)
-		So(err, ShouldBeNil)
-		subdirIsolatedEncoded := string(encoded) + "\n"
-		h := isolated.GetHash(namespace)
-		subdirIsolatedHash := isolated.HashBytes(h, []byte(subdirIsolatedEncoded))
-
-		isolatedData := isolated.Isolated{
-			Algo:     "sha-1",
-			Files:    map[string]isolated.File{},
-			Includes: isolated.HexDigests{subdirIsolatedHash},
-			Version:  isolated.IsolatedFormatVersion,
-		}
-		encoded, err = json.Marshal(isolatedData)
+		encoded, err := json.Marshal(isolatedData)
 		So(err, ShouldBeNil)
 		isolatedEncoded := string(encoded) + "\n"
+		h := isolated.GetHash(namespace)
 		isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
 
 		expected := map[string]map[isolated.HexDigest]string{
 			namespace: {
-				fooHash:            "foo",
-				barHash:            "bar",
-				bazHash:            isolate,
-				subdirIsolatedHash: subdirIsolatedEncoded,
-				isolatedHash:       isolatedEncoded,
+				fooHash:      "foo",
+				barHash:      "bar",
+				bazHash:      isolate,
+				isolatedHash: isolatedEncoded,
 			},
 		}
 
