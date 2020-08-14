@@ -219,4 +219,29 @@ func TestNewDisk(t *testing.T) {
 		So(d.Hardlink(onDiskDigest, filepath.Join(dir, "on_disk"), perm), ShouldBeNil)
 		So(d.GetUsed(), ShouldHaveLength, 1)
 	})
+
+	Convey(`AddFile`, t, func() {
+		dir := t.TempDir()
+		cache := filepath.Join(dir, "cache")
+		h := isolated.GetHash(isolatedclient.DefaultNamespace)
+
+		c, err := NewDisk(Policies{
+			MaxSize:  1,
+			MaxItems: 1,
+		}, cache, h)
+		defer func() { So(c.Close(), ShouldBeNil) }()
+		So(err, ShouldBeNil)
+
+		empty := filepath.Join(dir, "empty")
+		So(ioutil.WriteFile(empty, nil, 0600), ShouldBeNil)
+
+		emptyHash := isolated.HashBytes(h, nil)
+
+		So(c.AddFile(emptyHash, empty), ShouldBeNil)
+
+		So(c.Touch(emptyHash), ShouldBeTrue)
+
+		// Adding already existing file is fine.
+		So(c.AddFile(emptyHash, empty), ShouldBeNil)
+	})
 }
