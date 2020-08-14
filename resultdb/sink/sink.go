@@ -24,14 +24,18 @@ import (
 	"net/http"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -50,6 +54,9 @@ const (
 	// where the auth_token must be present. For the details about the value format of
 	// the Authoization HTTP request header, find the description of `AuthTokenKey`.
 	AuthTokenPrefix = "ResultSink"
+
+	// DefaultMaxWarmUpDuration is the default value for ServerConfig.MaxWarmUpDuration.
+	DefaultMaxWarmUpDuration = 30 * time.Second
 )
 
 // ErrCloseBeforeStart is returned by Close(), when it was invoked before the server
@@ -85,6 +92,12 @@ type ServerConfig struct {
 	// keys, the variant value given by the test command always wins.
 	BaseVariant *pb.Variant
 
+	// MaxWarmUpDuration is the maximum duration that Run can wait for the server to be
+	// responsive before returning an error to the caller.
+	//
+	// If 0, DefaultMaxWarmUpDuration is used.
+	MaxWarmUpDuration time.Duration
+
 	// Listener for tests
 	testListener net.Listener
 }
@@ -106,6 +119,9 @@ func (c *ServerConfig) Validate() error {
 		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
 			return errors.Annotate(err, "TestIDPrefix").Err()
 		}
+	}
+	if c.MaxWarmUpDuration == 0 {
+		c.MaxWarmUpDuration = DefaultMaxWarmUpDuration
 	}
 	if err := pbutil.ValidateVariant(c.BaseVariant); err != nil {
 		return errors.Annotate(err, "BaseVariant").Err()
@@ -205,6 +221,16 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 		}
 	}()
 
+	// ensure that the server is ready for serving traffic before executing the callback.
+	logging.Infof(ctx, "SinkServer: warm-up started")
+	wCtx, wCancel := context.WithTimeout(ctx, cfg.MaxWarmUpDuration)
+	defer wCancel()
+	if err = warmUp(wCtx, s.Config()); err != nil {
+		logging.Errorf(ctx, "SinkServer: warm-up failed: %s", err)
+		return errors.Annotate(err, "warm-up").Err()
+	}
+	logging.Infof(ctx, "SinkServer: warm-up ended")
+
 	// It's necessary to create a new context with a new variable. If param `ctx` was
 	// re-used, the new context would be passed to Shutdown in the deferred function after
 	// being cancelled.
@@ -253,7 +279,6 @@ func (s *Server) Start(ctx context.Context) error {
 			closeSinkServer(ctx, ss)
 			close(s.doneC)
 		}()
-
 		var err error
 		if s.cfg.testListener == nil {
 			// err will be written to s.err after the channel fully drained.
@@ -319,8 +344,8 @@ func (s *Server) Shutdown(ctx context.Context) (err error) {
 //
 // It's recommended to use Shutdown() instead of Close with Done.
 func (s *Server) Close(ctx context.Context) (err error) {
-	logging.Infof(ctx, "Sink: close started")
-	defer logging.Infof(ctx, "Sink: close completed with %s", err)
+	logging.Infof(ctx, "SinkServer: close started")
+	defer logging.Infof(ctx, "SinkServer: close completed with %s", err)
 
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started
@@ -346,4 +371,24 @@ func genAuthToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(buf), nil
+}
+
+// warmUp continuously sends an empty test result to the SinkServer until it receives
+// a succeesful response.
+//
+// This function is used to ensure that the SinkServer is ready for serving traffic.
+// It returns to the caller, if the context is cancelled, reached the maximum allowed
+// retry count (10), or a non-error reponse was returned from the SinkServer.
+func warmUp(ctx context.Context, cfg ServerConfig) error {
+	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
+		Host:    cfg.Address,
+		Options: &prpc.Options{Insecure: true},
+	})
+	ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(cfg.AuthToken))
+	return retry.Retry(ctx, retry.Default, func() error {
+		_, err := sinkClient.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{},
+			// connection errors will happen until the server is ready for serving.
+			prpc.ExpectedCode(codes.Internal))
+		return err
+	}, nil)
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -117,7 +118,7 @@ func TestServer(t *testing.T) {
 			}
 			So(srv.Start(ctx), ShouldBeNil)
 
-			// check that the server is up.
+			// wait until the server is up.
 			_, err := reportTestResults(ctx, addr, "secret", req)
 			So(err, ShouldBeNil)
 
@@ -127,7 +128,7 @@ func TestServer(t *testing.T) {
 		})
 
 		Convey("Run", func() {
-			handlerErr := make(chan error)
+			handlerErr := make(chan error, 1)
 			runErr := make(chan error)
 			expected := errors.New("an error-1")
 
@@ -139,10 +140,6 @@ func TestServer(t *testing.T) {
 					})
 				}()
 
-				// check that the server is running
-				_, err := reportTestResults(ctx, addr, "secret", req)
-				So(err, ShouldBeNil)
-
 				// finish the callback and verify that srv.Run returned what the callback
 				// returned.
 				handlerErr <- expected
@@ -151,16 +148,23 @@ func TestServer(t *testing.T) {
 
 			Convey("aborts after server error", func() {
 				// launch a go routine with Run
+				started := make(chan bool)
 				go func() {
 					runErr <- Run(ctx, srvCfg, func(ctx context.Context, cfg ServerConfig) error {
+						started <- true
 						<-ctx.Done()
 						return ctx.Err()
 					})
 				}()
 
-				// check that the server is running
-				_, err := reportTestResults(ctx, addr, "secret", req)
-				So(err, ShouldBeNil)
+				// wait until the server is up.
+				sctx, scancel := context.WithTimeout(ctx, 3*time.Second)
+				defer scancel()
+				select {
+				case <-sctx.Done():
+				case <-started:
+				}
+				So(sctx.Err(), ShouldBeNil)
 
 				// close the test listener so that the server terminates.
 				cleanup()
