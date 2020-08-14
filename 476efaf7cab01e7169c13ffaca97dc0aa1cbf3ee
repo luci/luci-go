@@ -34,6 +34,24 @@
       "revId": "476efaf7cab01e7169c13ffaca97dc0aa1cbf3ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "49a0ffce_6d0c696b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T17:11:52Z",
+      "side": 1,
+      "message": "Yes, which is why I posted the question in team chat and not on your CL :p",
+      "parentUuid": "88bac092_7524b778",
+      "revId": "476efaf7cab01e7169c13ffaca97dc0aa1cbf3ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
