@@ -42,6 +42,7 @@ func installTestListener(cfg *ServerConfig) (string, func() error) {
 	l, err := net.Listen("tcp", "localhost:0")
 	So(err, ShouldBeNil)
 	cfg.testListener = l
+	cfg.Address = fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port)
 
 	// return the serving address
 	return fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port), l.Close

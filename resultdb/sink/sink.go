@@ -24,14 +24,17 @@ import (
 	"net/http"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -205,6 +208,16 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 		}
 	}()
 
+	// warmup the server by reporting an empty test result.
+	logging.Infof(ctx, "SinkServer: warmup started")
+	wCtx, wCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer wCancel()
+	if err = warmup(wCtx, s.Config()); err != nil {
+		logging.Errorf(ctx, "Failed to warm up the server: %s", err)
+		return errors.Annotate(err, "warmup").Err()
+	}
+	logging.Infof(ctx, "SinkServer: warmup ended")
+
 	// It's necessary to create a new context with a new variable. If param `ctx` was
 	// re-used, the new context would be passed to Shutdown in the deferred function after
 	// being cancelled.
@@ -319,8 +332,8 @@ func (s *Server) Shutdown(ctx context.Context) (err error) {
 //
 // It's recommended to use Shutdown() instead of Close with Done.
 func (s *Server) Close(ctx context.Context) (err error) {
-	logging.Infof(ctx, "Sink: close started")
-	defer logging.Infof(ctx, "Sink: close completed with %s", err)
+	logging.Infof(ctx, "SinkServer: close started")
+	defer logging.Infof(ctx, "SinkServer: close completed with %s", err)
 
 	if atomic.LoadInt32(&s.started) == 0 {
 		// hasn't been started
@@ -346,4 +359,16 @@ func genAuthToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(buf), nil
+}
+
+func warmup(ctx context.Context, cfg ServerConfig) error {
+	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
+		Host:    cfg.Address,
+		Options: &prpc.Options{Insecure: true},
+	})
+	ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(cfg.AuthToken))
+	return retry.Retry(ctx, retry.Default, func() error {
+		_, err := sinkClient.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{})
+		return err
+	}, nil)
 }

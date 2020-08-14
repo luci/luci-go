@@ -117,17 +117,13 @@ func TestServer(t *testing.T) {
 			}
 			So(srv.Start(ctx), ShouldBeNil)
 
-			// check that the server is up.
-			_, err := reportTestResults(ctx, addr, "secret", req)
-			So(err, ShouldBeNil)
-
 			So(isClosed(), ShouldBeFalse)
 			So(srv.Shutdown(ctx), ShouldBeNil)
 			So(isClosed(), ShouldBeTrue)
 		})
 
 		Convey("Run", func() {
-			handlerErr := make(chan error)
+			handlerErr := make(chan error, 1)
 			runErr := make(chan error)
 			expected := errors.New("an error-1")
 
@@ -138,10 +134,6 @@ func TestServer(t *testing.T) {
 						return <-handlerErr
 					})
 				}()
-
-				// check that the server is running
-				_, err := reportTestResults(ctx, addr, "secret", req)
-				So(err, ShouldBeNil)
 
 				// finish the callback and verify that srv.Run returned what the callback
 				// returned.
@@ -157,10 +149,6 @@ func TestServer(t *testing.T) {
 						return ctx.Err()
 					})
 				}()
-
-				// check that the server is running
-				_, err := reportTestResults(ctx, addr, "secret", req)
-				So(err, ShouldBeNil)
 
 				// close the test listener so that the server terminates.
 				cleanup()
