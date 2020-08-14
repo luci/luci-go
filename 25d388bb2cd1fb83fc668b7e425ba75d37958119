@@ -22,6 +22,30 @@
       "revId": "25d388bb2cd1fb83fc668b7e425ba75d37958119",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40c068c9_caebf2ca",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-14T11:05:48Z",
+      "side": 1,
+      "message": "Rnamed to AddFileWithoutValidation",
+      "parentUuid": "4bbf6c70_4b07482a",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 9
+      },
+      "revId": "25d388bb2cd1fb83fc668b7e425ba75d37958119",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
