@@ -221,6 +221,29 @@
     },
     {
       "key": {
+        "uuid": "469a92f1_50553b96",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1414197
+      },
+      "writtenOn": "2020-08-14T02:48:59Z",
+      "side": 1,
+      "message": "How would this account for steps sharing information? For example: one step queries Datastore and does some sort of validation/ manipulation, and wants to send the result of that to the next step? Would that be an antipattern?",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 13
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ebe1ad81_4fca4846",
         "filename": "luciexe/legacy/cmd/run_annotations/main.go",
         "patchSetId": 8
