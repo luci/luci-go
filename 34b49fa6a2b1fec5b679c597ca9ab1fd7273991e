@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "25019d16_c53708de",
+        "filename": "milo/frontend/resultui/src/libs/build_utils.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-14T02:14:05Z",
+      "side": 1,
+      "message": "If you want a default, you can do\n`return statusMap.get(s) || \u0027Unknown\u0027;`",
+      "revId": "34b49fa6a2b1fec5b679c597ca9ab1fd7273991e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

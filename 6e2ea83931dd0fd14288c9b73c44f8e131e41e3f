@@ -69,6 +69,24 @@
       "revId": "6e2ea83931dd0fd14288c9b73c44f8e131e41e3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1a18629_31693a69",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-14T02:14:05Z",
+      "side": 1,
+      "message": "At least in my browser, it only works when I open it in a new tab.\nBut doesn\u0027t work if I just click on it (navigate to a new page in the same tab)",
+      "parentUuid": "bcec9e69_76ba8ddd",
+      "revId": "6e2ea83931dd0fd14288c9b73c44f8e131e41e3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
