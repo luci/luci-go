@@ -87,6 +87,24 @@
       "revId": "6e2ea83931dd0fd14288c9b73c44f8e131e41e3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2103d6c_03253113",
+        "filename": "milo/frontend/resultui/src/pages/related_builds_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T06:03:35Z",
+      "side": 1,
+      "message": "I had a look at vaadin and it looks like router-ignore solves the problem.",
+      "parentUuid": "e1a18629_31693a69",
+      "revId": "6e2ea83931dd0fd14288c9b73c44f8e131e41e3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
