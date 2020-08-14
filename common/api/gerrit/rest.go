@@ -279,6 +279,10 @@ type changeInput struct {
 	BaseCommit string `json:"base_commit"`
 }
 
+func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
 	var resp changeInfo
 	data := &changeInput{
@@ -310,7 +314,7 @@ func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.Change
 func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	var data struct{}
-	// The response cannot be json-desirealized.
+	// The response cannot be JSON-deserialized.
 	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
