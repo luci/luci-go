@@ -110,3 +110,10 @@ func (c *commit) Proto() (ret *git.Commit, err error) {
 
 	return
 }
+
+// project is the information of a project returned from gitiles.
+type project struct {
+	Name        string `json:"name"`
+	CloneURL    string `json:"clone_url"`
+	Description string `json:"description"`
+}
