@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43052dba_499f4ee0",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 0,
+      "message": "Trying to keep library functionality optional:\nDoes it makes sense to keep the Run() signature unchanged, but provide a library that can be used to immediately wrap build and sendBuild in a single object with all the goodies provided here?\n\nThat \n(a) gives me some time to start using this functionality without it being a breaking change.\n(b) gives the users an option to use the provided goodies or not.\n\nEDIT:\n\nHaving understood what exe.DetachBuildSink() does, I see that there\u0027s already an escape hatch for (b), if one wants. And this library now makes the golden path the one most users would want, so good enough for me.",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 98
+      },
+      "revId": "5304db2be91fb1026762f3d54da4287812dfb349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

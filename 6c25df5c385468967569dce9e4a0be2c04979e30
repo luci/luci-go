@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "b772a63a_abebc31b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "Thanks for whipping this up.\n\nI\u0027ve focussed my review mostly on the client interface ( \u0027cause that\u0027s who I am ;) )\n\nAnother overall comment: I\u0027d encourage more unit-tests:\n- exercising the newly added step API\n- to get more confidence in the non-trivial concurrency handling happening inside this library. There\u0027s fine grained mutex locking in the internals, something I was leaning away from doing because in my use case (even adding in concurrency), I have not yet seen reason to believe that fine grained locking is necessary.",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe2d5027_3b54eb0e",
         "filename": "luciexe/exe/build.go",
         "patchSetId": 8
@@ -42,6 +59,29 @@
     },
     {
       "key": {
+        "uuid": "19357bcd_444136fb",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "This means that we\u0027ll copy all of Build every second even for non-concurrent users of this library, where it is unnecessary.\n\nThis might be a problem for cros_test_platform where the output properties are quite large (have repeatedly hit the buildbucket and bigquery limit on size).\nI think we should at least document this somewhere obvious for the library users. I need to dig in some more to see if this is too big of a problem for using it from cros_test_platform.",
+      "range": {
+        "startLine": 172,
+        "startChar": 4,
+        "endLine": 172,
+        "endChar": 47
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "da89f842_49e9f6c1",
         "filename": "luciexe/exe/build.go",
         "patchSetId": 8
@@ -53,6 +93,98 @@
       "writtenOn": "2020-08-13T21:07:43Z",
       "side": 1,
       "message": "close `triggerSink` as well?",
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "612c766f_3de27735",
+        "filename": "luciexe/exe/build_modifiers.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "nit: same as from step.\n\nI\u0027d drop the word temporary.",
+      "range": {
+        "startLine": 44,
+        "startChar": 20,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4463392b_b11c13a2",
+        "filename": "luciexe/exe/build_modifiers.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "naming nit: same as step.\n\nBuildStatus.Status and BuildStatus.SomethingOtherThanStatus at the same time is confusing.\n\nPerhaps BuildModificationView?",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 16
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d3b43f6_d85a82cc",
+        "filename": "luciexe/exe/build_modifiers.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "iiuc, this interacts with how errors are handled by exe.Run().\n\nSee my comment there about only supporting one way of setting Status.\n\nI see here that there\u0027s also StatusDetails to consider. In client code, it makes sense to set Status wherever one wants to set StatusDetails, so I can see why Status must be updatable here.\n\nI\u0027d now vote to not support return values in exe.Run() at all, and ModifyBuildStatus() being the only way to update Status.",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 28
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c4c3fe8_efe49f46",
+        "filename": "luciexe/exe/build_modifiers.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "In line with my comments elsewhere about naming this Status, what is the reasoning behind the distinction between ModifyBuildStatus() and ModifyBuildOutput()\n\nHow would you compare this with ModifyBuild() which lets you set all the stuff you can set on a Build directly (sans Steps, handled separately).",
+      "range": {
+        "startLine": 66,
+        "startChar": 5,
+        "endLine": 66,
+        "endChar": 22
+      },
       "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -177,6 +309,29 @@
     },
     {
       "key": {
+        "uuid": "a18fdec7_e4373745",
+        "filename": "luciexe/exe/doc.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "The doc could use a more featured example, showing how to modify the build and create steps.\n\nPackage docstring is the most important docstring imo, in well crafted packages.",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 6
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1b65f320_46fa89ba",
         "filename": "luciexe/exe/exe.go",
         "patchSetId": 8
@@ -239,6 +394,98 @@
         "startChar": 3,
         "endLine": 39,
         "endChar": 36
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85e9183d_6f031cf4",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "nit: I\u0027d drop \"temporary\". From an-end user\u0027s perspective it is irrelevant whether this is a temporary copy or some black-magic view into Step. I did a double take to try to understand what\u0027s temporary about it.\n\nThe fact that this is passed in to the callback in ModifyStatus is enough of a hint.",
+      "range": {
+        "startLine": 60,
+        "startChar": 19,
+        "endLine": 60,
+        "endChar": 28
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a33d9e3e_1f20750b",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "naming nit: This is called StepStatus, which contains StepStatus.Status... but then also has StepStatus.SummaryMarkdown ?\n\nHow about StepUpdateView or StepModificationView?",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 15
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fad98e42_d7a905c4",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "Is this required by buildbucket / luciexe protocol?\n\nIf not, I\u0027d advise against doing this in the API here, as it takes this library in the direction of a framework. Less magic \u003d\u003d more good.",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 79
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37caf920_034183ea",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "I\u0027d recommend not supporting manually set statuses.\n\nSupporting this allows two ways of doing the same thing that will likely lead to harder to understand client code.\n\nClients will have to make the decision whether or not to return an error, based on whether or not something deeper in their logic has already set the status, or might be surprised when a returned error has no effect on the status.",
+      "range": {
+        "startLine": 103,
+        "startChar": 4,
+        "endLine": 103,
+        "endChar": 33
       },
       "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -340,6 +587,29 @@
     },
     {
       "key": {
+        "uuid": "e08286c2_e332456d",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "nit: rename to input or some such to distinguish from build on line 50, which is the real deal.",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 45,
+        "endChar": 40
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ebe1ad81_4fca4846",
         "filename": "luciexe/legacy/cmd/run_annotations/main.go",
         "patchSetId": 8
@@ -351,6 +621,30 @@
       "writtenOn": "2020-08-13T19:57:10Z",
       "side": 1,
       "message": "Why does the callback still provide build if it\u0027s in the context?",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 0
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e375d7cd_e9d53bc3",
+        "filename": "luciexe/legacy/cmd/run_annotations/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2020-08-14T20:19:25Z",
+      "side": 1,
+      "message": "The API here makes sense to me.\n\n\"build stored in the context\" is an implementation detail.\n\nIf you want to escape the build helpers provided via exe, you all exe.DetachBuildSink() and then get back the pieces you need to work with yourself.",
+      "parentUuid": "ebe1ad81_4fca4846",
       "range": {
         "startLine": 51,
         "startChar": 0,
