@@ -34,6 +34,8 @@ service Gitiles {
     rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
     // DownloadFile retrieves a file from the project.
     rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
+    // Projects retrieves list of available Gitiles projects
+    rpc Projects(ProjectsRequest) returns (ProjectsResponse) {};
 }
 
 // LogRequest is request message for Gitiles.Log rpc.
@@ -191,4 +193,12 @@ message DownloadFileResponse {
     // The underlying server RPC streams back the contents. This API simplifies
     // the RPC to a non-streaming response.
     string contents = 1;
+}
+
+message ProjectsRequest {
+}
+
+message ProjectsResponse {
+    // List of available Gitiles projects
+  repeated string projects = 1;
 }

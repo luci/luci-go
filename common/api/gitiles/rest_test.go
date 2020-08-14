@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"testing"
 
 	"go.chromium.org/luci/common/proto/gitiles"
@@ -140,6 +141,43 @@ func TestRefs(t *testing.T) {
 		})
 	})
 }
+
+func TestProjects(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("List Projects", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintln(w, `)]}'
+				{
+					"All-Projects": {
+						"name": "All-Projects",
+						"clone_url": "https://foo.googlesource.com/All-Projects",
+						"description": "foo"
+					},
+					"bar": {
+						"name": "bar",
+						"clone_url": "https://foo.googlesource.com/bar",
+						"description": "bar description"
+					}
+				}
+			`)
+		})
+		defer srv.Close()
+
+		res, err := c.Projects(ctx, &gitiles.ProjectsRequest{})
+		So(err, ShouldBeNil)
+		// Sort project to make it deterministic
+		sort.Strings(res.Projects)
+		So(res.Projects, ShouldResemble, []string{
+			"All-Projects",
+			"bar",
+		})
+	})
+}
+
 func newMockClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gitiles.GitilesClient) {
 	srv := httptest.NewServer(http.HandlerFunc(handler))
 	return srv, &client{BaseURL: srv.URL}

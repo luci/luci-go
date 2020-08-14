@@ -211,6 +211,22 @@ func (c *client) Archive(ctx context.Context, req *gitiles.ArchiveRequest, opts 
 	return resp, nil
 }
 
+func (c *client) Projects(ctx context.Context, req *gitiles.ProjectsRequest, opts ...grpc.CallOption) (*gitiles.ProjectsResponse, error) {
+	var resp map[string]project
+
+	if err := c.get(ctx, "/", url.Values{}, &resp); err != nil {
+		return nil, err
+	}
+	ret := &gitiles.ProjectsResponse{
+		Projects: []string{},
+	}
+	for name := range resp {
+		ret.Projects = append(ret.Projects, name)
+	}
+
+	return ret, nil
+}
+
 func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest interface{}) error {
 	if query == nil {
 		query = make(url.Values, 1)
