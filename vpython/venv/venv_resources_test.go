@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"hash"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -33,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
-	"go.chromium.org/luci/common/testing/testfs"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
@@ -218,53 +218,51 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 	// Build the wheel in a temporary directory, then copy it into outDir. This
 	// will stop wheel builds from stepping on each other or inheriting each
 	// others' state accidentally.
-	err = testfs.WithTempDir(t, "vpython_venv_wheel", func(tdir string) error {
-		buildDir := filepath.Join(tdir, "build")
-		if err := filesystem.MakeDirs(buildDir); err != nil {
-			return err
-		}
+	tdir, err := ioutil.TempDir(t.TempDir(), "vpython_venv_wheel")
+	if err != nil {
+		return "", errors.Annotate(err, "failed to create tempdir").Err()
+	}
 
-		distDir := filepath.Join(tdir, "dist")
-		if err := filesystem.MakeDirs(distDir); err != nil {
-			return err
-		}
+	buildDir := filepath.Join(tdir, "build")
+	if err := filesystem.MakeDirs(buildDir); err != nil {
+		return "", err
+	}
 
-		// Use an empty bootstrap VirtualEnv to build the wheel. This guarantees
-		// that we actually have "setuptools" and "wheel" packages, which are
-		// required for building wheels, and not necessarily present in their
-		// expected forms on all systems.
-		err := With(ctx, cfg, func(ctx context.Context, env *Env) error {
-			cmd := env.Interpreter().MkIsolatedCommand(ctx,
-				python.ScriptTarget{Path: "setup.py"},
-				"--no-user-cfg",
-				"bdist_wheel",
-				"--bdist-dir", buildDir,
-				"--dist-dir", distDir)
-			defer cmd.Cleanup()
-			cmd.Dir = srcDir
-			if err := cmd.Run(); err != nil {
-				return errors.Annotate(err, "failed to build wheel").Err()
-			}
-			return nil
-		})
-		if err != nil {
+	distDir := filepath.Join(tdir, "dist")
+	if err := filesystem.MakeDirs(distDir); err != nil {
+		return "", err
+	}
+
+	// Use an empty bootstrap VirtualEnv to build the wheel. This guarantees
+	// that we actually have "setuptools" and "wheel" packages, which are
+	// required for building wheels, and not necessarily present in their
+	// expected forms on all systems.
+	err = With(ctx, cfg, func(ctx context.Context, env *Env) error {
+		cmd := env.Interpreter().MkIsolatedCommand(ctx,
+			python.ScriptTarget{Path: "setup.py"},
+			"--no-user-cfg",
+			"bdist_wheel",
+			"--bdist-dir", buildDir,
+			"--dist-dir", distDir)
+		defer cmd.Cleanup()
+		cmd.Dir = srcDir
+		if err := cmd.Run(); err != nil {
 			return errors.Annotate(err, "failed to build wheel").Err()
 		}
-
-		// Assert that the expected wheel file was generated, and copy it into
-		// outDir.
-		wheelPath := filepath.Join(distDir, w.String())
-		if _, err := os.Stat(wheelPath); err != nil {
-			return errors.Annotate(err, "failed to generate wheel").Err()
-		}
-		if err := copyFileIntoDir(wheelPath, outDir); err != nil {
-			return errors.Annotate(err, "failed to install wheel").Err()
-		}
-
 		return nil
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Annotate(err, "failed to build wheel").Err()
+	}
+
+	// Assert that the expected wheel file was generated, and copy it into
+	// outDir.
+	wheelPath := filepath.Join(distDir, w.String())
+	if _, err := os.Stat(wheelPath); err != nil {
+		return "", errors.Annotate(err, "failed to generate wheel").Err()
+	}
+	if err := copyFileIntoDir(wheelPath, outDir); err != nil {
+		return "", errors.Annotate(err, "failed to install wheel").Err()
 	}
 
 	t.Logf("Generated wheel file %q: %s", name, outWheelPath)
@@ -356,36 +354,39 @@ var testCIPDClientOptions = cipd.ClientOptions{
 }
 
 func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, hash, pkg, version string) error {
-	return testfs.WithTempDir(t, "vpython_venv_cipd", func(tdir string) error {
-		opts := testCIPDClientOptions
-		opts.Root = tdir
+	tdir, err := ioutil.TempDir(t.TempDir(), "vpython_venv_cipd")
+	if err != nil {
+		return errors.Annotate(err, "failed to create tempdir").Err()
+	}
 
-		client, err := cipd.NewClient(opts)
-		if err != nil {
-			return errors.Annotate(err, "failed to create CIPD client").Err()
-		}
+	opts := testCIPDClientOptions
+	opts.Root = tdir
 
-		pin, err := client.ResolveVersion(ctx, pkg, version)
-		if err != nil {
-			return errors.Annotate(err, "failed to resolve CIPD version for %s @%s", pkg, version).Err()
-		}
+	client, err := cipd.NewClient(opts)
+	if err != nil {
+		return errors.Annotate(err, "failed to create CIPD client").Err()
+	}
 
-		if err := client.FetchAndDeployInstance(ctx, "", pin, 1); err != nil {
-			return errors.Annotate(err, "failed to fetch/deploy CIPD package").Err()
-		}
+	pin, err := client.ResolveVersion(ctx, pkg, version)
+	if err != nil {
+		return errors.Annotate(err, "failed to resolve CIPD version for %s @%s", pkg, version).Err()
+	}
 
-		path := filepath.Join(opts.Root, name)
-		if err := validateHash(t, path, hash, false); err != nil {
-			// Do not export the invalid path.
-			return err
-		}
+	if err := client.FetchAndDeployInstance(ctx, "", pin, 1); err != nil {
+		return errors.Annotate(err, "failed to fetch/deploy CIPD package").Err()
+	}
 
-		if err := copyFile(path, cachePath, nil); err != nil {
-			return errors.Annotate(err, "failed to install CIPD package file").Err()
-		}
+	path := filepath.Join(opts.Root, name)
+	if err := validateHash(t, path, hash, false); err != nil {
+		// Do not export the invalid path.
+		return err
+	}
 
-		return nil
-	})
+	if err := copyFile(path, cachePath, nil); err != nil {
+		return errors.Annotate(err, "failed to install CIPD package file").Err()
+	}
+
+	return nil
 }
 
 func cacheFromURLLocked(t *testing.T, cachePath, hash, url string) (err error) {
