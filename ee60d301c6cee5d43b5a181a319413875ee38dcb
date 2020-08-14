@@ -46,6 +46,30 @@
       "revId": "ee60d301c6cee5d43b5a181a319413875ee38dcb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b9529a7_83b0c1a1",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-14T20:00:42Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7c8140d1_94fbb050",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 120,
+        "endChar": 39
+      },
+      "revId": "ee60d301c6cee5d43b5a181a319413875ee38dcb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
