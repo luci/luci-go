@@ -16,6 +16,24 @@
       "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "adf67ef6_3ec8acc4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-14T00:28:06Z",
+      "side": 1,
+      "message": "I use filesystem.RemoveAll because that can remove read-only file too. But testing package fails to remove the file if it is read only.",
+      "parentUuid": "8b2b6339_97227f79",
+      "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
