@@ -22,6 +22,30 @@
       "revId": "8bce937c4290e3e1e1af066b0aa476da2e2075e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ca9cbea_b2dca761",
+        "filename": "common/testing/testfs/tempdir.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-14T00:40:41Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/testing/testfs/build.go\nis still useful, but I removed tempdir.go entirely.",
+      "parentUuid": "503294fa_2c06ecf2",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 14
+      },
+      "revId": "8bce937c4290e3e1e1af066b0aa476da2e2075e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
