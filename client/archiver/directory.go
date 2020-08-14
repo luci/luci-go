@@ -15,8 +15,6 @@
 package archiver
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
@@ -24,8 +22,6 @@ import (
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/isolated"
-	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/runtime/tracer"
 )
 
@@ -186,99 +182,6 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 	}
 }
 
-// PushDirectory walks a directory at root and creates a .isolated file.
-//
-// It walks the directories synchronously, then returns a *PendingItem to
-// signal when the background work is completed. The PendingItem is signaled
-// once all files are hashed. In particular, the *PendingItem is signaled
-// before server side cache lookups and upload is completed. Use
-// archiver.Close() to wait for completion.
-//
-// relDir is a relative directory to offset relative paths against in the
-// generated .isolated file.
-//
-func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
-	total := 0
-	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
-	defer func() { end(tracer.Args{"total": total}) }()
-	c := make(chan *walkItem)
-
-	displayName := filepath.Base(root) + ".isolated"
-	s := &PendingItem{DisplayName: displayName}
-	fsView, err := common.NewFilesystemView(root, "")
-	if err != nil {
-		s.SetErr(err)
-		return s
-	}
-
-	go func() {
-		walk(root, fsView, c)
-		close(c)
-	}()
-
-	i := isolated.Isolated{
-		Algo:    "sha-1",
-		Files:   map[string]isolated.File{},
-		Version: isolated.IsolatedFormatVersion,
-	}
-	items := []*PendingItem{}
-	for item := range c {
-		if s.Error() != nil {
-			// Empty the queue.
-			continue
-		}
-		total++
-		if relDir != "" {
-			item.relPath = filepath.Join(relDir, item.relPath)
-		}
-		if item.inTreeSymlink {
-			i.Files[item.relPath] = isolated.SymLink(item.fullPath)
-		} else {
-			perm := int(item.info.Mode().Perm())
-			i.Files[item.relPath] = isolated.BasicFile("", perm, item.info.Size())
-			items = append(items, a.PushFile(item.relPath, item.fullPath, item.info.Size()))
-		}
-	}
-	if s.Error() != nil {
-		return s
-	}
-	log.Printf("PushDirectory(%s) = %d files", root, len(i.Files))
-
-	// Hashing, cache lookups and upload is done asynchronously.
-	s.wgHashed.Add(1)
-	go func() {
-		defer s.wgHashed.Done()
-		var err error
-		for _, item := range items {
-			item.WaitForHashed()
-			if err = item.Error(); err != nil {
-				break
-			}
-			name := item.DisplayName
-			d := i.Files[name]
-			d.Digest = item.Digest()
-			i.Files[name] = d
-		}
-		if err == nil {
-			raw := &bytes.Buffer{}
-			if err = json.NewEncoder(raw).Encode(i); err == nil {
-				if f := a.Push(displayName, isolatedclient.NewBytesSource(raw.Bytes()), 0); f != nil {
-					f.WaitForHashed()
-					if err = f.Error(); err == nil {
-						s.lock.Lock()
-						s.digestItem.Digest = string(f.Digest())
-						s.lock.Unlock()
-					}
-				}
-			}
-		}
-		if err != nil {
-			s.SetErr(err)
-		}
-	}()
-	return s
-}
-
 // PushedDirectoryItem represents a file within the directory being pushed.
 type PushedDirectoryItem struct {
 	// Absolute path to the item.
@@ -291,15 +194,19 @@ type PushedDirectoryItem struct {
 	Info os.FileInfo
 }
 
-// PushDirectoryNoIsolated is functionally similar to PushDirectory. However,
-// it doesn't create a separate isolated file for the files in |root|. Instead,
-// it returns the pushed files and the (in-tree) symlinks under the directory.
-// This helps us migrate away the usage of include for directories.
+// PushDirectory walks a directory at root and pushes the files in it. relDir
+// is a relative directory to offset relative paths against the root directory.
+// For symlink that points to another file under the same root (called *in-tree*),
+// the symlink is preserved. Otherwise, the symlink is followed (*out-of-tree*),
+// and is pushed as an ordinary file.
+//
+// It does not return until all the pushed items are hashed, which is done
+// asynchornously.
 //
 // The returned files are in a map from its relative path to PushedDirectoryItem.
 // The returned in-tree symlinks are in a map from its relative path to the
 // relative path it points to.
-func PushDirectoryNoIsolated(a *Archiver, root, relDir string) (error, map[*PendingItem]PushedDirectoryItem, map[string]string) {
+func PushDirectory(a *Archiver, root, relDir string) (error, map[*PendingItem]PushedDirectoryItem, map[string]string) {
 	fileItems := make(map[*PendingItem]PushedDirectoryItem)
 	symlinkItems := make(map[string]string)
 
