@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/tree"
@@ -203,10 +204,15 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 
 	eg, ctx := errgroup.WithContext(ctx)
 
+	// limit the number of concurrent I/O threads.
+	ch := make(chan struct{}, runtime.NumCPU())
+
 	for _, dup := range dups {
 		src := to[dup.Digest]
 		dst := dup
+		ch <- struct{}{}
 		eg.Go(func() (err error) {
+			defer func() { <-ch }()
 			mode := 0o600
 			if dst.IsExecutable {
 				mode = 0o700
