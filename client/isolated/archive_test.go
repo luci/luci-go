@@ -27,7 +27,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"testing"
 
 	"go.chromium.org/luci/client/archiver"
@@ -51,6 +50,8 @@ func TestArchive(t *testing.T) {
 		// Setup temporary directory.
 		//   /base/bar
 		//   /base/ignored
+		//   /base/relativelink -> bar
+		//   /base/sub/abslink -> /base/bar
 		//   /link -> /base/bar
 		//   /second/boz
 		// Result:
@@ -63,10 +64,10 @@ func TestArchive(t *testing.T) {
 			}
 		}()
 		baseDir := filepath.Join(tmpDir, "base")
-		fooDir := filepath.Join(tmpDir, "foo")
+		subDir := filepath.Join(baseDir, "sub")
 		secondDir := filepath.Join(tmpDir, "second")
 		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
-		So(os.Mkdir(fooDir, 0700), ShouldBeNil)
+		So(os.Mkdir(subDir, 0700), ShouldBeNil)
 		So(os.Mkdir(secondDir, 0700), ShouldBeNil)
 
 		barData := []byte("foo")
@@ -77,9 +78,11 @@ func TestArchive(t *testing.T) {
 		if !isWindows() {
 			So(os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")), ShouldBeNil)
 			So(os.Symlink("bar", filepath.Join(baseDir, "relativelink")), ShouldBeNil)
+			So(os.Symlink(filepath.Join(baseDir, "bar"), filepath.Join(subDir, "abslink")), ShouldBeNil)
 		} else {
 			So(ioutil.WriteFile(filepath.Join(tmpDir, "link"), winLinkData, 0600), ShouldBeNil)
 			So(ioutil.WriteFile(filepath.Join(baseDir, "relativelink"), winLinkData, 0600), ShouldBeNil)
+			So(ioutil.WriteFile(filepath.Join(subDir, "abslink"), winLinkData, 0600), ShouldBeNil)
 		}
 
 		var buf bytes.Buffer
@@ -111,14 +114,20 @@ func TestArchive(t *testing.T) {
 				}
 
 				h := isolated.GetHash(namespace)
-				baseData := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink"))
-				secondData := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz"))
+				baseIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink")).Isolated
+				secondIsolated := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz")).Isolated
 				topIsolated := isolated.New(h)
-				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
-				sort.Sort(topIsolated.Includes)
+				for k, v := range baseIsolated.Files {
+					topIsolated.Files[k] = v
+				}
+				for k, v := range secondIsolated.Files {
+					topIsolated.Files[k] = v
+				}
 				if !isWindows() {
+					topIsolated.Files[filepath.Join("base", "sub", "abslink")] = isolated.SymLink(filepath.Join("..", "bar"))
 					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, barData), mode, int64(len(barData)))
 				} else {
+					topIsolated.Files[filepath.Join("base", "sub", "abslink")] = isolated.BasicFile(isolated.HashBytes(h, winLinkData), 0666, int64(len(winLinkData)))
 					topIsolated.Files["link"] = isolated.BasicFile(isolated.HashBytes(h, winLinkData), 0666, int64(len(winLinkData)))
 				}
 				isolatedData := newArchiveExpectData(h, topIsolated)
@@ -126,9 +135,7 @@ func TestArchive(t *testing.T) {
 					namespace: {
 						isolated.HashBytes(h, barData): string(barData),
 						isolated.HashBytes(h, bozData): string(bozData),
-						baseData.Hash:                  baseData.String,
 						isolatedData.Hash:              isolatedData.String,
-						secondData.Hash:                secondData.String,
 					},
 				}
 				if isWindows() {
@@ -190,16 +197,9 @@ func TestArchiveFiles(t *testing.T) {
 		dataFileA := filesArchiveExpect(h, dir, "a")
 		dataDirB := filesArchiveExpect(h, dir, filepath.Join("b", "c"), filepath.Join("b", "d"))
 
-		isolatedDirB := isolated.New(h)
-		isolatedDirB.Includes = isolated.HexDigests{dataDirB.Hash}
-
-		isolatedDirBData := newArchiveExpectData(h, isolatedDirB)
-
 		So(uploaded, ShouldResemble, map[isolated.HexDigest]string{
-			dataFileA.Hash:        dataFileA.String,
-			isolatedDirBData.Hash: isolatedDirBData.String,
-
-			dataDirB.Hash: dataDirB.String,
+			dataFileA.Hash: dataFileA.String,
+			dataDirB.Hash:  dataDirB.String,
 
 			isolated.HashBytes(h, []byte("a")):  "a",
 			isolated.HashBytes(h, []byte("bc")): "bc",
