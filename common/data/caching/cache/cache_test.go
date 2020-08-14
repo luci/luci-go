@@ -220,7 +220,7 @@ func TestNewDisk(t *testing.T) {
 		So(d.GetUsed(), ShouldHaveLength, 1)
 	})
 
-	Convey(`AddFile`, t, func() {
+	Convey(`AddFileWithoutValidation`, t, func() {
 		dir := t.TempDir()
 		cache := filepath.Join(dir, "cache")
 		h := isolated.GetHash(isolatedclient.DefaultNamespace)
