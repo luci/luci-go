@@ -129,6 +129,30 @@
     },
     {
       "key": {
+        "uuid": "09259e16_9489b2ba",
+        "filename": "luciexe/exe/context.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T17:20:08Z",
+      "side": 1,
+      "message": "Yep, I\u0027m thinking almost exactly this; That\u0027s the reason why the logdog client context functions are private for now; This will expose higher-level versions of them later. If the user wants direct logdog access then they can bootstrap their own logdog client.",
+      "parentUuid": "6403ff5f_2d0a9ca8",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 1
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1b65f320_46fa89ba",
         "filename": "luciexe/exe/exe.go",
         "patchSetId": 8
@@ -232,6 +256,30 @@
       "writtenOn": "2020-08-14T02:48:59Z",
       "side": 1,
       "message": "How would this account for steps sharing information? For example: one step queries Datastore and does some sort of validation/ manipulation, and wants to send the result of that to the next step? Would that be an antipattern?",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 13
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0ccbc26_9aee652a",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-14T17:20:08Z",
+      "side": 1,
+      "message": "That\u0027s not an antipattern, but \u0027steps\u0027 here in Go land are strictly about updating the Build. I expect to see things like:\n\n   func QueryDatastore(ctx, ...) (dat *Data, err error) {\n     err \u003d exe.WithStep(..., func(ctx, s *Step) (err error) {\n        dat, err \u003d doQuery()\n        return\n     })\n     return \n   }\n\nWhere user code would call QueryDatastore to get their two values.\n\nIt\u0027s a bit messy, but I think this is clearer than some sort of information passing scheme.\n\nWDYT?",
+      "parentUuid": "469a92f1_50553b96",
       "range": {
         "startLine": 114,
         "startChar": 5,
