@@ -1,4 +1,4 @@
 node_modules
 out/static/dist
 out/index.html
-local-dev-config.json
+dev-configs
