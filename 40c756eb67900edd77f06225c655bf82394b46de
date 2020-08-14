@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "10ddadaa_dfbe3d1c",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-14T03:04:51Z",
+      "side": 1,
+      "message": "Actually, now i don\u0027t think this test brings much value, so I removed it and just improved TestArchive().",
+      "parentUuid": "9762db8f_748e77f1",
+      "range": {
+        "startLine": 355,
+        "startChar": 0,
+        "endLine": 358,
+        "endChar": 3
+      },
+      "revId": "40c756eb67900edd77f06225c655bf82394b46de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9758b0b4_c1d918a4",
         "filename": "client/isolated/archive_test.go",
         "patchSetId": 16
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "98c548f5_65dc3f7d",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-14T03:04:51Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9758b0b4_c1d918a4",
+      "range": {
+        "startLine": 380,
+        "startChar": 3,
+        "endLine": 381,
+        "endChar": 16
+      },
+      "revId": "40c756eb67900edd77f06225c655bf82394b46de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84da417e_b797a6a4",
         "filename": "client/isolated/archive_test.go",
         "patchSetId": 16
@@ -62,6 +110,24 @@
       "revId": "40c756eb67900edd77f06225c655bf82394b46de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "676fe0e9_5293cf99",
+        "filename": "client/isolated/archive_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-08-14T03:04:51Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "84da417e_b797a6a4",
+      "revId": "40c756eb67900edd77f06225c655bf82394b46de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
