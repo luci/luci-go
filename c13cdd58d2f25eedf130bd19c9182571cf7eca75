@@ -22,6 +22,30 @@
       "revId": "c13cdd58d2f25eedf130bd19c9182571cf7eca75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b7370b8_3be1b242",
+        "filename": "client/cmd/cas/lib/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-14T07:08:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e46ef1a8_b880ff48",
+      "range": {
+        "startLine": 207,
+        "startChar": 27,
+        "endLine": 207,
+        "endChar": 28
+      },
+      "revId": "c13cdd58d2f25eedf130bd19c9182571cf7eca75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
