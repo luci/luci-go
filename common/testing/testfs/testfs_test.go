@@ -23,27 +23,26 @@ import (
 func TestSimple(t *testing.T) {
 	t.Parallel()
 
-	MustWithTempDir(t, "", func(dir string) {
-		layout := map[string]string{
-			"a/b":    "ab",
-			"a/c/d":  "acd",
-			"e":      "e",
-			"f/":     "",
-			"g/h/i/": "",
-			"j/k/l":  "jkl",
-		}
+	dir := t.TempDir()
+	layout := map[string]string{
+		"a/b":    "ab",
+		"a/c/d":  "acd",
+		"e":      "e",
+		"f/":     "",
+		"g/h/i/": "",
+		"j/k/l":  "jkl",
+	}
 
-		if err := Build(dir, layout); err != nil {
-			t.Errorf("failed to call Build: %v", err)
-		}
+	if err := Build(dir, layout); err != nil {
+		t.Errorf("failed to call Build: %v", err)
+	}
 
-		got, err := Collect(dir)
-		if err != nil {
-			t.Errorf("failed to call Collect: %v", err)
-		}
+	got, err := Collect(dir)
+	if err != nil {
+		t.Errorf("failed to call Collect: %v", err)
+	}
 
-		if !cmp.Equal(got, layout) {
-			t.Errorf("got: %v\nwant: %v", got, layout)
-		}
-	})()
+	if !cmp.Equal(got, layout) {
+		t.Errorf("got: %v\nwant: %v", got, layout)
+	}
 }
