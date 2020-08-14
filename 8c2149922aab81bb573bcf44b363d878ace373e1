@@ -16,6 +16,103 @@
       "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "855e0d9f_e96ab09d",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T05:09:06Z",
+      "side": 1,
+      "message": "nit: extra line?",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3f96db6_3b962a51",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T05:09:06Z",
+      "side": 1,
+      "message": "I don\u0027t think you need the \"else\" here. I think the whole think can be put into a function getPageSize() of something like that",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 7
+      },
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b64c2bf8_c2f81260",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T05:09:06Z",
+      "side": 1,
+      "message": "whether?",
+      "range": {
+        "startLine": 50,
+        "startChar": 35,
+        "endLine": 50,
+        "endChar": 40
+      },
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59be6b8b_3589f6fb",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T05:09:06Z",
+      "side": 1,
+      "message": "Not sure if I understand it correctly or not, but I want to revisit the \"stop condition\" here.\n\nLet\u0027s say you want to get the blamelist of the first build of a builder, because there is no \"previous build\", so len(builds) always be 0, so it will return every commit?",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48e04dda_67673cd1",
+        "filename": "milo/backend/query_blamelist_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-14T05:09:06Z",
+      "side": 1,
+      "message": "Maybe we should have a test for the not valid case?",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
