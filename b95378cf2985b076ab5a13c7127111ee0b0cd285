@@ -16,6 +16,24 @@
       "revId": "b95378cf2985b076ab5a13c7127111ee0b0cd285",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6eb92388_ac76d609",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-14T03:06:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "adc2aad3_863e2426",
+      "revId": "b95378cf2985b076ab5a13c7127111ee0b0cd285",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
