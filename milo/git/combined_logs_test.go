@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/google"
@@ -74,17 +75,17 @@ func TestCombinedLogs(t *testing.T) {
 
 		type refTips map[string]string
 		mockRefsCall := func(prefix string, tips refTips) *gomock.Call {
-			return gitilesMock.EXPECT().Refs(gomock.Any(), &gitilespb.RefsRequest{
+			return gitilesMock.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitilespb.RefsRequest{
 				Project:  "project",
 				RefsPath: prefix,
-			}).Return(&gitilespb.RefsResponse{Revisions: tips}, nil)
+			})).Return(&gitilespb.RefsResponse{Revisions: tips}, nil)
 		}
 
 		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) *gomock.Call {
-			return gitilesMock.EXPECT().Log(gomock.Any(), &gitilespb.LogRequest{
+			return gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(&gitilespb.LogRequest{
 				Project: "project", Committish: reqCommit,
 				PageSize: 100, ExcludeAncestorsOf: "refs/heads/master",
-			}).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
+			})).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
 		}
 
 		Convey("ACLs respected", func() {

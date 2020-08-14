@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"
+	commonpb "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/google"
@@ -85,7 +86,7 @@ func TestTriggerBuild(t *testing.T) {
 			res := &gitilespb.RefsResponse{
 				Revisions: tips,
 			}
-			return gitilesMock.EXPECT().Refs(gomock.Any(), req).Return(res, nil)
+			return gitilesMock.EXPECT().Refs(gomock.Any(), commonpb.MatcherEqual(req)).Return(res, nil)
 		}
 		// expCommits is for readability of expectLog calls.
 		log := func(ids ...string) []string { return ids }
@@ -98,7 +99,7 @@ func TestTriggerBuild(t *testing.T) {
 				PageSize:           int32(pageSize),
 			}
 			if len(errs) > 0 {
-				return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(nil, errs[0])
+				return gitilesMock.EXPECT().Log(gomock.Any(), commonpb.MatcherEqual(req)).Return(nil, errs[0])
 			}
 			res := &gitilespb.LogResponse{}
 			committedAt := epoch
@@ -110,7 +111,7 @@ func TestTriggerBuild(t *testing.T) {
 					Committer: &git.Commit_User{Time: google.NewTimestamp(committedAt)},
 				})
 			}
-			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
+			return gitilesMock.EXPECT().Log(gomock.Any(), commonpb.MatcherEqual(req)).Return(res, nil)
 		}
 
 		// expectLogWithDiff mocks Log call with result containing Tree Diff.
@@ -144,7 +145,7 @@ func TestTriggerBuild(t *testing.T) {
 					TreeDiff:  diff,
 				})
 			}
-			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
+			return gitilesMock.EXPECT().Log(gomock.Any(), commonpb.MatcherEqual(req)).Return(res, nil)
 		}
 
 		Convey("each configured ref must match resolved ref", func() {
