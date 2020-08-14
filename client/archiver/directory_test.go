@@ -16,7 +16,6 @@ package archiver
 
 import (
 	"context"
-	"encoding/json"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -300,38 +299,31 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace stri
 		So(ioutil.WriteFile(fullPath, []byte(node.contents), mode), ShouldBeNil)
 	}
 
-	item := PushDirectory(a, root, "")
-	So(item.Error(), ShouldBeNil)
-	So(item.DisplayName, ShouldResemble, filepath.Base(root)+".isolated")
-	item.WaitForHashed()
+	err, fItems, symItems := PushDirectory(a, root, "")
+	So(err, ShouldBeNil)
 	So(a.Close(), ShouldBeNil)
 
 	expected := map[string]map[isolated.HexDigest]string{namespace: {}}
-	expectedMisses := 1
+	expectedMisses := 0
 	expectedBytesPushed := 0
 	files := make(map[string]isolated.File)
+	expectedOrdinaryFiles := 0
 	for _, node := range nodes {
 		files[node.relPath] = node.expectedFile
 		if node.symlink != nil && node.symlink.inTree {
+			So(symItems[node.relPath], ShouldResemble, *node.expectedFile.Link)
 			continue
 		}
 		expectedBytesPushed += int(len(node.contents))
 		expectedMisses++
 		digest := isolated.HashBytes(h, []byte(node.contents))
 		expected[namespace][digest] = node.contents
+		expectedOrdinaryFiles++
 	}
-
-	isolatedData := isolated.Isolated{
-		Algo:    "sha-1",
-		Files:   files,
-		Version: isolated.IsolatedFormatVersion,
+	So(fItems, ShouldHaveLength, expectedOrdinaryFiles)
+	for p, i := range fItems {
+		So(p.Digest(), ShouldResemble, files[i.RelPath].Digest)
 	}
-	encoded, err := json.Marshal(isolatedData)
-	So(err, ShouldBeNil)
-	isolatedEncoded := string(encoded) + "\n"
-	isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
-	expected[namespace][isolatedHash] = isolatedEncoded
-	expectedBytesPushed += len(isolatedEncoded)
 
 	actual := map[string]map[isolated.HexDigest]string{}
 	for n, c := range server.Contents() {
@@ -341,7 +333,6 @@ func expectValidPush(t *testing.T, root string, nodes []fileNode, namespace stri
 		}
 	}
 	So(actual, ShouldResemble, expected)
-	So(item.Digest(), ShouldResemble, isolatedHash)
 
 	stats := a.Stats()
 	So(stats.TotalMisses(), ShouldResemble, expectedMisses)

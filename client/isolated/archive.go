@@ -144,7 +144,7 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	// Archive all directories.
 	for dir, wd := range opts.Dirs {
 		path := filepath.Join(wd, dir)
-		err, dirFItems, dirSymItems := archiver.PushDirectoryNoIsolated(arch, path, dir)
+		err, dirFItems, dirSymItems := archiver.PushDirectory(arch, path, dir)
 		if err != nil {
 			return nil, err
 		}
