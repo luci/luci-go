@@ -184,19 +184,8 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		}
 
 		if diskcache != nil {
-			if err := func() (err error) {
-				f, err := os.Open(output.Path)
-				if err != nil {
-					return errors.Annotate(err, "failed to open").Err()
-				}
-				defer func() {
-					if cerr := f.Close(); err == nil {
-						err = cerr
-					}
-				}()
-
-				return diskcache.Add(isolated.HexDigest(d.Hash), f)
-			}(); err != nil {
+			if err := diskcache.AddFileWithoutValidation(
+				isolated.HexDigest(d.Hash), output.Path); err != nil {
 				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, d).Err()
 			}
 		}
