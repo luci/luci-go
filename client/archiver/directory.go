@@ -278,3 +278,60 @@ func PushDirectory(a *Archiver, root string, relDir string) *PendingItem {
 	}()
 	return s
 }
+
+// PushedDirectoryItem represents a file within the directory being pushed.
+type PushedDirectoryItem struct {
+	// Absolute path to the item.
+	FullPath string
+
+	// Relativie path to the item within the directory.
+	RelPath string
+
+	// FileInfo of the item.
+	Info os.FileInfo
+}
+
+// PushDirectoryNoIsolated is functionally similar to PushDirectory. However,
+// it doesn't create a separate isolated file for the files in |root|. Instead,
+// it returns the pushed files and the (in-tree) symlinks under the directory.
+// This helps us migrate away the usage of include for directories.
+//
+// The returned files are in a map from its relative path to PushedDirectoryItem.
+// The returned in-tree symlinks are in a map from its relative path to the
+// relative path it points to.
+func PushDirectoryNoIsolated(a *Archiver, root, relDir string) (error, map[*PendingItem]PushedDirectoryItem, map[string]string) {
+	fileItems := make(map[*PendingItem]PushedDirectoryItem)
+	symlinkItems := make(map[string]string)
+
+	fsView, err := common.NewFilesystemView(root, "")
+	if err != nil {
+		return err, nil, nil
+	}
+
+	c := make(chan *walkItem)
+	go func() {
+		walk(root, fsView, c)
+		close(c)
+	}()
+
+	for item := range c {
+		if relDir != "" {
+			item.relPath = filepath.Join(relDir, item.relPath)
+		}
+		if item.inTreeSymlink {
+			symlinkItems[item.relPath] = item.fullPath
+		} else {
+			fileItems[a.PushFile(item.relPath, item.fullPath, item.info.Size())] = PushedDirectoryItem{item.fullPath, item.relPath, item.info}
+		}
+	}
+	log.Printf("PushDirectoryNoIsolated(%s) files=%d symlinks=%d", root, len(fileItems), len(symlinkItems))
+
+	// Hashing, cache lookups and upload is done asynchronously.
+	for pending := range fileItems {
+		pending.WaitForHashed()
+		if err = pending.Error(); err != nil {
+			return err, nil, nil
+		}
+	}
+	return nil, fileItems, symlinkItems
+}

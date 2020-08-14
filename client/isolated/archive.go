@@ -138,15 +138,25 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 		fItems[arch.PushFile(file, path, 0)] = path
 	}
 
-	// Archive all directories.
-	dItems := make(itemToPathMap, len(opts.Dirs))
-	for dir, wd := range opts.Dirs {
-		path := filepath.Join(wd, dir)
-		dItems[archiver.PushDirectory(arch, path, dir)] = path
-	}
-
 	// Construct isolated file.
 	composite := isolated.New(arch.Hash())
+
+	// Archive all directories.
+	for dir, wd := range opts.Dirs {
+		path := filepath.Join(wd, dir)
+		err, dirFItems, dirSymItems := archiver.PushDirectoryNoIsolated(arch, path, dir)
+		if err != nil {
+			return nil, err
+		}
+
+		for pending, item := range dirFItems {
+			fItems[pending] = item.FullPath
+		}
+		for relPath, dst := range dirSymItems {
+			composite.Files[relPath] = isolated.SymLink(dst)
+		}
+	}
+
 	err := waitOnItems(fItems, func(path, file string, digest isolated.HexDigest) error {
 		info, err := os.Lstat(path)
 		if err != nil {
@@ -160,10 +170,6 @@ func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (
 	if err != nil {
 		return nil, err
 	}
-	err = waitOnItems(dItems, func(_, _ string, digest isolated.HexDigest) error {
-		composite.Includes = append(composite.Includes, digest)
-		return nil
-	})
 	if err != nil {
 		return nil, err
 	}
