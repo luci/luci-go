@@ -165,7 +165,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(count, ShouldEqual, 0)
 		})
 
-		Convey(`Enqueues more bq_export tasks`, func() {
+		// This is flaky https://crbug.com/1042602#c17
+		SkipConvey(`Enqueues more bq_export tasks`, func() {
 			testutil.MustApply(ctx,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
 					"BigQueryExports": [][]byte{
