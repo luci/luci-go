@@ -35,6 +35,26 @@ func (m *MockGerritClient) EXPECT() *MockGerritClientMockRecorder {
 	return m.recorder
 }
 
+// ListChanges mocks base method.
+func (m *MockGerritClient) ListChanges(ctx context.Context, in *ListChangesRequest, opts ...grpc.CallOption) (*ListChangesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListChanges", varargs...)
+	ret0, _ := ret[0].(*ListChangesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListChanges indicates an expected call of ListChanges.
+func (mr *MockGerritClientMockRecorder) ListChanges(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListChanges", reflect.TypeOf((*MockGerritClient)(nil).ListChanges), varargs...)
+}
+
 // GetChange mocks base method.
 func (m *MockGerritClient) GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -256,6 +276,21 @@ func NewMockGerritServer(ctrl *gomock.Controller) *MockGerritServer {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGerritServer) EXPECT() *MockGerritServerMockRecorder {
 	return m.recorder
+}
+
+// ListChanges mocks base method.
+func (m *MockGerritServer) ListChanges(arg0 context.Context, arg1 *ListChangesRequest) (*ListChangesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListChanges", arg0, arg1)
+	ret0, _ := ret[0].(*ListChangesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListChanges indicates an expected call of ListChanges.
+func (mr *MockGerritServerMockRecorder) ListChanges(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListChanges", reflect.TypeOf((*MockGerritServer)(nil).ListChanges), arg0, arg1)
 }
 
 // GetChange mocks base method.

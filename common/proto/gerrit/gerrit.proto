@@ -22,6 +22,15 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 service Gerrit {
+  // Lists changes that match a query.
+  //
+  // Note, although the Gerrit API supports multiple queries, for which
+  // it can return multiple lists of changes, this is not a foreseen use-case
+  // so this API just includes one query with one returned list of changes.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+  rpc ListChanges(ListChangesRequest) returns (ListChangesResponse);
+
   // Loads a change by id.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
@@ -151,6 +160,44 @@ enum QueryOption {
   // Include the commands field in the FetchInfo for revisions. Only valid when
   // the CURRENT_REVISION or ALL_REVISIONS option is selected.
   DOWNLOAD_COMMANDS = 2097152;
+}
+
+// Request to list changes based on a query.
+message ListChangesRequest {
+  // The query used to filter the changes.
+  //
+  // This is the same as the query that can be used in the Gerrit web UI. It is
+  // space-separated and can include filters like "label:Commit-Queue" or
+  // "status:open". The possible search operators are described at:
+  // https://gerrit-review.googlesource.com/Documentation/user-search.html
+  string query = 1;
+
+  // What to include in the response.
+  repeated QueryOption options = 2;
+
+  // The number of results to return.
+  int64 limit = 3;
+
+  // The number of changes to skip from the start, for pagination.
+  int64 offset = 4;
+}
+
+// A list of changes that matched the query.
+message ListChangesResponse {
+  // The changes that matched the query, with the fields requested.
+  repeated ChangeInfo changes = 1;
+
+  // True if there are more changes not returned.
+  //
+  // This will be set if the number of changes matching the query exceeds the
+  // limit supplied; however, it's possible that if the number exceeds some
+  // internal Gerrit maximum, this will not be set.
+  //
+  // Specifically (as of Dec 2018) Google's Gerrit instance will not look
+  // beyond a maximum hardcoded in Gerrit backend of 10k changes in the index
+  // of changes, and so if a query matches more than that many changes, Gerrit
+  // backend may not know and may not set "_more_changes".
+  bool more_changes = 2;
 }
 
 // Request to get information for a single change.
