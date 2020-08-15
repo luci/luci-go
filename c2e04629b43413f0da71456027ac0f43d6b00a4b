@@ -22,6 +22,30 @@
       "revId": "c2e04629b43413f0da71456027ac0f43d6b00a4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5df43337_32005fb3",
+        "filename": "resultdb/cli/cmd_stream.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-15T22:05:55Z",
+      "side": 1,
+      "message": "Thanks for a review. This has been fixed in https://crrev.com/c/2358789.",
+      "parentUuid": "100d7713_6c27706e",
+      "range": {
+        "startLine": 176,
+        "startChar": 72,
+        "endLine": 176,
+        "endChar": 74
+      },
+      "revId": "c2e04629b43413f0da71456027ac0f43d6b00a4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
