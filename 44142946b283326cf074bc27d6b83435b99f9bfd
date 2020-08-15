@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77f64ab0_0a9b12e4",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-15T03:00:54Z",
+      "side": 1,
+      "message": "In py-bb, validate_update_build_request() validates \"build.outout.properties\" with validate_struct(), which simply checks all the Value objects are instance of the supported value types.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/validation.py;l\u003d258-261\n\nHowever looking at https://github.com/protocolbuffers/protobuf-go/blob/v1.25.0/types/known/structpb/struct.pb.go#L318, struct_pb.go doesn\u0027t allow any uninitialized Value at all. If the Value object was nil, then NewValue() creates and assigns NullValue{}.\n\nI don\u0027t the same validation makes sense for golang, and skipped porting validate_struct().\nLet me know if this is not correct.",
+      "range": {
+        "startLine": 34,
+        "startChar": 39,
+        "endLine": 34,
+        "endChar": 64
+      },
+      "revId": "44142946b283326cf074bc27d6b83435b99f9bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a83db2eb_c7a1ec7d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-15T03:00:54Z",
+      "side": 1,
+      "message": "Strictly speaking, this flow doesn\u0027t run the validations in the same order that py:validate_update_build_request() runs.\n\nIf it\u0027s important to run the sub-validations in the same order, then I will reoragnize this. WDYT?",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "44142946b283326cf074bc27d6b83435b99f9bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
