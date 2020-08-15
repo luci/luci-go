@@ -16,10 +16,10 @@ package rpc
 
 import (
 	"context"
+	"sort"
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
@@ -27,34 +27,69 @@ import (
 )
 
 var (
-	// updateableFieldPaths is a set of UpdateBuildRequest field paths updatable
-	// via UpdateBuild RPC.
-	updatableFieldPaths = stringset.NewFromSlice(
-		"build.output",
-		"build.output.properties",
-		"build.output.gitiles_commit",
-		"build.status",
-		"build.status_details",
-		"build.steps",
-		"build.summary_markdown",
-		"build.tags",
-	)
+	// updatableFiledPaths is a map of updatable field paths to the validation func.
+	// TODO(ddoman): implement missing validations.
+	updatableFieldPaths = map[string](func(req *pb.UpdateBuildRequest) error){
+		"build.output":                noop, // no validation required
+		"build.output.properties":     noop,
+		"build.output.gitiles_commit": noop,
+		"build.status":                validateUpdateBuildStatus,
+		"build.status_details":        noop, // no validation required
+		"build.steps":                 noop,
+		"build.summary_markdown":      noop,
+		"build.tags":                  validateUpdateBuildTags,
+	}
+
+	// a set of build statuses supported by UpdateableBuild RPC
+	updateBuildStatuses = map[pb.Status]struct{}{
+		pb.Status_STARTED: {},
+		// kitchen does not actually use SUCCESS. It relies on swarming pubsub
+		// handler in Buildbucket because a task may fail after recipe succeeded.
+		pb.Status_SUCCESS:       {},
+		pb.Status_FAILURE:       {},
+		pb.Status_INFRA_FAILURE: {},
+	}
 )
+
+func noop(req *pb.UpdateBuildRequest) error {
+	return nil
+}
+
+func validateUpdateBuildStatus(req *pb.UpdateBuildRequest) error {
+	if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
+		return errors.Reason("invalid status %s for UpdateBuild", req.Build.Status.String()).Err()
+	}
+	return nil
+}
+
+func validateUpdateBuildTags(req *pb.UpdateBuildRequest) error {
+	return validateTags(req.Build.Tags, TagAppend)
+}
 
 // validateUpdate validates the given request.
 func validateUpdate(req *pb.UpdateBuildRequest) error {
-	// validate the mask
-	unsupported := stringset.NewFromSlice(
-		req.GetUpdateMask().GetPaths()...).Difference(updatableFieldPaths)
+	if req.GetBuild().GetId() == 0 {
+		return errors.Reason("id is required").Err()
+	}
+	reqPaths := req.GetUpdateMask().GetPaths()
+
+	// check for unsupported field paths before executing any of the validation funcs.
+	var unsupported []string
+	for _, p := range reqPaths {
+		if _, ok := updatableFieldPaths[p]; !ok {
+			unsupported = append(unsupported, p)
+		}
+	}
 	if len(unsupported) > 0 {
-		return errors.Reason("unsupported path(s) %q", unsupported.ToSortedSlice()).Err()
+		sort.Strings(unsupported)
+		return errors.Reason("unsupported path(s) %q", unsupported).Err()
 	}
 
-	// validate the build
-	switch {
-	// TODO(1110990): validate the rest of the message fields
-	case req.GetBuild().GetId() == 0:
-		return errors.Reason("id is required").Err()
+	// run per-path validation funcs.
+	for _, p := range reqPaths {
+		if err := updatableFieldPaths[p](req); err != nil {
+			return err
+		}
 	}
 	return nil
 }
