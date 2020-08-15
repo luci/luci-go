@@ -22,6 +22,30 @@
       "revId": "840235af42034067031b4dd2f817d7c84f5da14b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1567f3a_e2621c0a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-15T22:40:19Z",
+      "side": 1,
+      "message": "yeah, validation is supposed to be side-effect free. I will send a separate CL to make it side-effect free.\n\n\u003e\u003e why not have `if c.MaxWarmUpDuration \u003d\u003d 0 {` logic right before using it?\nPerhaps, it doesn\u0027t need to be configurable at all. https://crrev.com/c/2358852 to have it as a constant.",
+      "parentUuid": "46851ff9_67fbf18a",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 25
+      },
+      "revId": "840235af42034067031b4dd2f817d7c84f5da14b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
