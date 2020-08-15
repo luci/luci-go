@@ -42,10 +42,12 @@ func check(err error) {
 }
 
 func main() {
-	exe.Run(func(ctx context.Context, build *pb.Build, userArgs []string, sendBuild exe.BuildSender) error {
+	exe.Run(func(ctx context.Context, buildObj *exe.Build, userArgs []string) error {
 		if len(userArgs) == 0 {
 			return errors.New("No arguments were provided")
 		}
+
+		build, sendBuild := buildObj.Detach()
 
 		cwd, err := os.Getwd()
 		check(err)
@@ -70,7 +72,7 @@ func main() {
 			buildMU.Lock()
 			defer buildMU.Unlock()
 			updateBaseBuild(build, latest)
-			sendBuild()
+			sendBuild(build)
 		}
 
 		// Run STDOUT/STDERR streams through the processor.
