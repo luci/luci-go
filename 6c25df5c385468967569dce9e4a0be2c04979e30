@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "ffc38e1f_8eabf182",
+        "filename": "luciexe/exe/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-15T06:38:06Z",
+      "side": 1,
+      "message": "It\u0027s only copied when there\u0027s modifications to the build. The proto library is quite fast in Go vs. python, where the performance issues were manifesting in buildbucket (it\u0027s at least 2 orders of magnitude faster)",
+      "parentUuid": "19357bcd_444136fb",
+      "range": {
+        "startLine": 172,
+        "startChar": 4,
+        "endLine": 172,
+        "endChar": 47
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "da89f842_49e9f6c1",
         "filename": "luciexe/exe/build.go",
         "patchSetId": 8
@@ -601,6 +625,30 @@
       "writtenOn": "2020-08-14T20:19:25Z",
       "side": 1,
       "message": "Is this required by buildbucket / luciexe protocol?\n\nIf not, I\u0027d advise against doing this in the API here, as it takes this library in the direction of a framework. Less magic \u003d\u003d more good.",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 79
+      },
+      "revId": "6c25df5c385468967569dce9e4a0be2c04979e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5aa32bfd_5c88ef4b",
+        "filename": "luciexe/exe/step.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-15T06:38:06Z",
+      "side": 1,
+      "message": "\u003e Is this required by buildbucket / luciexe protocol?\n\nYes; Duplicate steps names are not allowed, and \"|\" is a step name separator.",
+      "parentUuid": "fad98e42_d7a905c4",
       "range": {
         "startLine": 92,
         "startChar": 0,
