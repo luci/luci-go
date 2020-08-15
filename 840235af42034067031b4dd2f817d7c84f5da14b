@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46851ff9_67fbf18a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-15T22:29:43Z",
+      "side": 1,
+      "message": "this is the root cause of the problem. Validation is supposed to be  side-effect-free. \n\nwhy not have `if c.MaxWarmUpDuration \u003d\u003d 0 {` logic right before using it?",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 25
+      },
+      "revId": "840235af42034067031b4dd2f817d7c84f5da14b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
