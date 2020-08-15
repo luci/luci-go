@@ -327,6 +327,13 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		},
 	}
 
+	// Enable swarming/resultdb integration.
+	if rdb := bbi.GetResultdb(); rdb != nil {
+		sw.Task.Resultdb = &swarmingpb.ResultDBCfg{
+			Enable: true,
+		}
+	}
+
 	baseProperties := &swarmingpb.TaskProperties{
 		CipdInputs: append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
 		CasInputs:  jd.UserPayload,

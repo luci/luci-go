@@ -93,6 +93,11 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 	if err != nil {
 		return nil, nil, err
 	}
+
+	if st.Resultdb != nil && st.Resultdb.Enable {
+		logging.Infof(ctx, "led, resultdb Enable is set in swarming request.")
+	}
+
 	logging.Infof(ctx, "building swarming task: done")
 
 	if opts.DryRun {
