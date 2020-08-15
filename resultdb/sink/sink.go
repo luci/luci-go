@@ -55,8 +55,11 @@ const (
 	// the Authoization HTTP request header, find the description of `AuthTokenKey`.
 	AuthTokenPrefix = "ResultSink"
 
-	// DefaultMaxWarmUpDuration is the default value for ServerConfig.MaxWarmUpDuration.
-	DefaultMaxWarmUpDuration = 30 * time.Second
+	// maxWarmUpDuration is how long warmUp may wait until the Server is ready.
+	//
+	// Note that that retry.Default stops the iteration ~3m24s after the first try.
+	// Any value greater than 3m24s won't make sense.
+	maxWarmUpDuration = 30 * time.Second
 )
 
 // ErrCloseBeforeStart is returned by Close(), when it was invoked before the server
@@ -92,12 +95,6 @@ type ServerConfig struct {
 	// keys, the variant value given by the test command always wins.
 	BaseVariant *pb.Variant
 
-	// MaxWarmUpDuration is the maximum duration that Run can wait for the server to be
-	// responsive before returning an error to the caller.
-	//
-	// If 0, DefaultMaxWarmUpDuration is used.
-	MaxWarmUpDuration time.Duration
-
 	// Listener for tests
 	testListener net.Listener
 }
@@ -119,9 +116,6 @@ func (c *ServerConfig) Validate() error {
 		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
 			return errors.Annotate(err, "TestIDPrefix").Err()
 		}
-	}
-	if c.MaxWarmUpDuration == 0 {
-		c.MaxWarmUpDuration = DefaultMaxWarmUpDuration
 	}
 	if err := pbutil.ValidateVariant(c.BaseVariant); err != nil {
 		return errors.Annotate(err, "BaseVariant").Err()
@@ -222,7 +216,7 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 	}()
 
 	// ensure that the server is ready for serving traffic before executing the callback.
-	logging.Infof(ctx, "SinkServer: warm-up started.")
+	logging.Infof(ctx, "SinkServer: warm-up started")
 	if err = s.warmUp(ctx); err != nil {
 		logging.Errorf(ctx, "SinkServer: warm-up failed: %s", err)
 		return errors.Annotate(err, "warm-up").Err()
@@ -383,7 +377,7 @@ func (s *Server) warmUp(ctx context.Context) error {
 		Options: &prpc.Options{Insecure: true},
 	})
 	ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(s.cfg.AuthToken))
-	ctx, cancel := context.WithTimeout(ctx, s.cfg.MaxWarmUpDuration)
+	ctx, cancel := context.WithTimeout(ctx, maxWarmUpDuration)
 	defer cancel()
 	return retry.Retry(ctx, retry.Default, func() error {
 		_, err := sinkClient.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{},
