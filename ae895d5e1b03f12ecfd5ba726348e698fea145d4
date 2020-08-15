@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b2d2f98_7db7a069",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-15T15:12:21Z",
+      "side": 1,
+      "message": "+Oliver FYI I\u0027m working on a higher level (and safer) API for handling the Build message from within the exe package.\n\nThere\u0027s still a method (Detach) which you can use to keep the same manual control that the current exe package provides.",
+      "revId": "ae895d5e1b03f12ecfd5ba726348e698fea145d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
