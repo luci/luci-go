@@ -797,6 +797,8 @@ message TaskRequest {
   // Task realm is used to control who can interact with the task e.g. get,
   // cancel etc, and which task service accounts can be used in the realm.
   string realm = 14;
+  // Swarming:ResultDB integration configuration for a task.
+  ResultDBCfg resultdb = 15;
 
   // Task hierarchy and notifications
 
@@ -1242,4 +1244,11 @@ enum TaskState {
   // The task never ran, the server had an internal failure, unrelated to the
   // task itself. It can be due to a server bug or network I/O issues.
   SKIPPED_INTERNAL_FAILURE = 0x56;  // Not used yet. https://crbug.com/916553
+}
+
+// Swarming:ResultDB integration configuration for a task.
+// This is a copy of SwarmingRpcsResultDBCfg.
+message ResultDBCfg {
+  // Flag to indicates the integration is enabled.
+  bool enable = 1;
 }
