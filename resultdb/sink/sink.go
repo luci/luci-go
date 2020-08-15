@@ -222,10 +222,8 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 	}()
 
 	// ensure that the server is ready for serving traffic before executing the callback.
-	logging.Infof(ctx, "SinkServer: warm-up started")
-	wCtx, wCancel := context.WithTimeout(ctx, cfg.MaxWarmUpDuration)
-	defer wCancel()
-	if err = warmUp(wCtx, s.Config()); err != nil {
+	logging.Infof(ctx, "SinkServer: warm-up started.")
+	if err = s.warmUp(ctx); err != nil {
 		logging.Errorf(ctx, "SinkServer: warm-up failed: %s", err)
 		return errors.Annotate(err, "warm-up").Err()
 	}
@@ -377,14 +375,16 @@ func genAuthToken(ctx context.Context) (string, error) {
 // a succeesful response.
 //
 // This function is used to ensure that the SinkServer is ready for serving traffic.
-// It returns to the caller, if the context is cancelled, reached the maximum allowed
+// It returns to the caller, if the context times out, it reached the maximum allowed
 // retry count (10), or a non-error reponse was returned from the SinkServer.
-func warmUp(ctx context.Context, cfg ServerConfig) error {
+func (s *Server) warmUp(ctx context.Context) error {
 	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
-		Host:    cfg.Address,
+		Host:    s.cfg.Address,
 		Options: &prpc.Options{Insecure: true},
 	})
-	ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(cfg.AuthToken))
+	ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(s.cfg.AuthToken))
+	ctx, cancel := context.WithTimeout(ctx, s.cfg.MaxWarmUpDuration)
+	defer cancel()
 	return retry.Retry(ctx, retry.Default, func() error {
 		_, err := sinkClient.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{},
 			// connection errors will happen until the server is ready for serving.
