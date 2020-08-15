@@ -1247,7 +1247,7 @@ enum TaskState {
 }
 
 // Swarming:ResultDB integration configuration for a task.
-// This is a copy of SwarmingRpcsResultDBCfg.
+// This is a copy of c.
 message ResultDBCfg {
   // Flag to indicates the integration is enabled.
   bool enable = 1;

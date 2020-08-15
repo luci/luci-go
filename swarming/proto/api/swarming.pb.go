@@ -3239,7 +3239,7 @@ func (x *CASEntriesStats) GetItems() []byte {
 }
 
 // Swarming:ResultDB integration configuration for a task.
-// This is a copy of SwarmingRpcsResultDBCfg.
+// This is a copy of c.
 type ResultDBCfg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
