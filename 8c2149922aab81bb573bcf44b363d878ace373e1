@@ -183,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "339a77bd_5a9943c0",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-16T22:14:32Z",
+      "side": 1,
+      "message": "I suppose this is an edge case, and we should show \"There is no blamelist because this is the first build\", instead of showing everything?\n\nI think maybe we can improve the performance of this for loop by:\n1. Find out the last ancestor build of the current build that has status !\u003d Infra Failure, Expired or Canceled\n2. Just return the array of commits up that ancestor build?",
+      "parentUuid": "b1ecb9b2_70d20220",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9
