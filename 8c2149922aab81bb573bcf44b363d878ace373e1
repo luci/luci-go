@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "2bb29cdc_afe239ea",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-16T11:29:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "855e0d9f_e96ab09d",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3f96db6_3b962a51",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 9
@@ -56,6 +74,30 @@
       "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8253a5cc_209f58e9",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-16T11:29:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3f96db6_3b962a51",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 7
+      },
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +124,30 @@
     },
     {
       "key": {
+        "uuid": "8a77f1f6_632265b6",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-16T11:29:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b64c2bf8_c2f81260",
+      "range": {
+        "startLine": 50,
+        "startChar": 35,
+        "endLine": 50,
+        "endChar": 40
+      },
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59be6b8b_3589f6fb",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 9
@@ -93,6 +159,24 @@
       "writtenOn": "2020-08-14T05:09:06Z",
       "side": 1,
       "message": "Not sure if I understand it correctly or not, but I want to revisit the \"stop condition\" here.\n\nLet\u0027s say you want to get the blamelist of the first build of a builder, because there is no \"previous build\", so len(builds) always be 0, so it will return every commit?",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1ecb9b2_70d20220",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-16T11:29:15Z",
+      "side": 1,
+      "message": "Yes. I think that\u0027s logically correct.\nAnd it will be capped to the page size. So performance-wise it should be fine too.",
+      "parentUuid": "59be6b8b_3589f6fb",
       "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -113,6 +197,24 @@
       "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "747438cb_ff03594f",
+        "filename": "milo/backend/query_blamelist_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-16T11:29:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48e04dda_67673cd1",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
