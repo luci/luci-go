@@ -76,12 +76,6 @@ func (c *requestShowRun) Run(a subcommands.Application, args []string, _ subcomm
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	cl, err := c.defaultFlags.StartTracing()
-	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	defer cl.Close()
 	if err := c.main(a, args[0]); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

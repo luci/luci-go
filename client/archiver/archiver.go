@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 const (
@@ -153,8 +152,6 @@ func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver
 		c:        c,
 		stage1:   make(chan *PendingItem),
 	}
-	tracer.NewPID(a, "archiver")
-
 	// Tuning parameters.
 
 	// Stage 1 is single threaded.
@@ -240,7 +237,6 @@ type PendingItem struct {
 }
 
 func newItem(a *Archiver, displayName, path string, source isolatedclient.Source, priority int64) *PendingItem {
-	tracer.CounterAdd(a, "itemsProcessing", 1)
 	i := &PendingItem{a: a, DisplayName: displayName, path: path, source: source, priority: priority}
 	i.wgHashed.Add(1)
 	return i
@@ -251,7 +247,6 @@ func newItem(a *Archiver, displayName, path string, source isolatedclient.Source
 // It can be because there was an error, it was linked to another item, it was
 // present on the server or finally it was uploaded successfully.
 func (i *PendingItem) done() error {
-	tracer.CounterAdd(i.a, "itemsProcessing", -1)
 	i.a = nil
 	return nil
 }
@@ -392,7 +387,6 @@ func (a *Archiver) Close() error {
 	}
 	a.wg.Wait()
 	_ = a.progress.Close()
-	tracer.Instant(a, "done", tracer.Global, nil)
 	err := a.ctx.Err()
 	// Documentation says that not calling cancel() could cause a leak, so call
 	// it, but not before taking the context's error, if any.
@@ -442,8 +436,6 @@ func (a *Archiver) setErr(err error) {
 
 func (a *Archiver) push(item *PendingItem) *PendingItem {
 	if a.pushLocked(item) {
-		tracer.Instant(a, "itemAdded", tracer.Thread, tracer.Args{"item": item.DisplayName})
-		tracer.CounterAdd(a, "itemsAdded", 1)
 		a.progress.Update(groupFound, groupFoundFound, 1)
 		return item
 	}
@@ -548,17 +540,13 @@ func (a *Archiver) stage2HashLoop(in <-chan *PendingItem, out chan<- *PendingIte
 		item := file
 		pool.Schedule(item.priority, func() {
 			// calcDigest calls SetErr() and update wgHashed even on failure.
-			end := tracer.Span(a, "hash", tracer.Args{"name": item.DisplayName})
 			if err := item.calcDigest(); err != nil {
-				end(tracer.Args{"err": err})
 				// When an error occurs, early exit the process.
 				a.cancel()
 				item.SetErr(err)
 				item.done()
 				return
 			}
-			end(tracer.Args{"size": float64(item.digestItem.Size)})
-			tracer.CounterAdd(a, "bytesHashed", float64(item.digestItem.Size))
 			a.progress.Update(groupHash, groupHashDone, 1)
 			a.progress.Update(groupHash, groupHashDoneSize, item.digestItem.Size)
 			a.progress.Update(groupLookup, groupLookupTodo, 1)

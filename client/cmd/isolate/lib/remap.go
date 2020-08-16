@@ -77,12 +77,6 @@ func (r *remapRun) Run(a subcommands.Application, args []string, _ subcommands.E
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	cl, err := r.defaultFlags.StartTracing()
-	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	defer cl.Close()
 	if err := r.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

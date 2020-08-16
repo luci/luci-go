@@ -205,12 +205,6 @@ func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommand
 		fmt.Fprintf(a.GetErr(), "%s: failed to call Parse(%s): %v\n", a.GetName(), args, err)
 		return 1
 	}
-	cl, err := c.defaultFlags.StartTracing()
-	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: failed to call StartTracing(): %v\n", a.GetName(), err)
-		return 1
-	}
-	defer cl.Close()
 	defer c.profilerFlags.Stop()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: failed to call main(%s): %v\n", a.GetName(), args, err)

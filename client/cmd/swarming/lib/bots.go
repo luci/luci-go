@@ -116,12 +116,6 @@ func (b *botsRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) 
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
-	cl, err := b.defaultFlags.StartTracing()
-	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	defer cl.Close()
 	if err := b.main(a); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

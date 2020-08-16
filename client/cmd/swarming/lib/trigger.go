@@ -236,13 +236,6 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, env subcomman
 		printError(a, err)
 		return 1
 	}
-	cl, err := c.defaultFlags.StartTracing()
-	if err != nil {
-		printError(a, err)
-		return 1
-	}
-	defer cl.Close()
-
 	if err := c.main(a, args, env); err != nil {
 		printError(a, err)
 		return 1
