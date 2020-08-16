@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a141fdeb_fe1d950c",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-16T05:27:20Z",
+      "side": 1,
+      "message": "I think this column must be not NULL if Ordinal is not NULL, or strictly speaking ((Ordinal is NULL) \u003d\u003d (OrdinalDomain is NULL)) must be true. Should we mention this in the comment?",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 15
+      },
+      "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f09dbdd_f7982147",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-16T05:27:20Z",
+      "side": 1,
+      "message": "if it is set, does it always match CreateTime? If so, let\u0027s say that in the comment",
+      "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "216d6166_7420f99f",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-16T05:27:20Z",
+      "side": 1,
+      "message": "stale? we don\u0027t use CreateTime column anymore",
+      "range": {
+        "startLine": 98,
+        "startChar": 13,
+        "endLine": 99,
+        "endChar": 50
+      },
+      "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
