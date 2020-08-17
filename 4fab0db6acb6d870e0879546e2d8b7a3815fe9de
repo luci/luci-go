@@ -70,6 +70,24 @@
       "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "37ee6299_11a09118",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-17T20:05:24Z",
+      "side": 1,
+      "message": "Sorry, I meant potentially a bug in the golang \u0027testing\u0027 package; vpython definitely produces read-only files on purpose.",
+      "parentUuid": "26d0f035_218397b1",
+      "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
