@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import fs from 'fs';
+
 import { Config } from 'karma';
+import { DefinePlugin } from 'webpack';
+
 import webpackConfig from './webpack.common';
 
 module.exports = (config: Config) => {
@@ -52,6 +56,12 @@ module.exports = (config: Config) => {
       mode: 'development',
       module: webpackConfig.module,
       resolve: webpackConfig.resolve,
+      externals: webpackConfig.externals,
+      plugins: [
+        new DefinePlugin({
+          'CONFIGS': fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
+        }),
+      ],
     },
 
     webpackMiddleware: {

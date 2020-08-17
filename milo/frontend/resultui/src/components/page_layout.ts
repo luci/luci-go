@@ -14,7 +14,6 @@
 
 import '@chopsui/chops-signin';
 import '@material/mwc-icon';
-import CONFIGS from 'configs';
 import { css, customElement, html, LitElement, PropertyValues } from 'lit-element';
 
 /**

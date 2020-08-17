@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CONFIGS from 'configs';
 import { computed, observable } from 'mobx';
 
 import { consumeContext, provideContext } from '../../libs/context';
