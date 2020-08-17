@@ -23,7 +23,6 @@ import (
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
@@ -49,8 +48,10 @@ func TestBatching(t *testing.T) {
 
 		makeRem := func(id string) *reminder.Reminder {
 			r := &reminder.Reminder{ID: id}
-			r.Payload, _ = proto.Marshal(&taskspb.CreateTaskRequest{
-				Parent: id + " body",
+			r.AttachPayload(&reminder.Payload{
+				CreateTaskRequest: &taskspb.CreateTaskRequest{
+					Parent: id + " body",
+				},
 			})
 			So(db.SaveReminder(ctx, r), ShouldBeNil)
 			return r
@@ -76,7 +77,7 @@ func TestBatching(t *testing.T) {
 			var stopped int32
 
 			ch := make(chan struct{})
-			sub.cb = func(*taskspb.CreateTaskRequest) error {
+			sub.cb = func(*reminder.Payload) error {
 				if atomic.LoadInt32(&stopped) == 1 {
 					panic("processing while stopped")
 				}
@@ -105,7 +106,7 @@ func TestBatching(t *testing.T) {
 
 			var stopped int32
 			var count int32
-			sub.cb = func(*taskspb.CreateTaskRequest) error {
+			sub.cb = func(*reminder.Payload) error {
 				if atomic.LoadInt32(&stopped) == 1 {
 					panic("processing while stopped")
 				}
