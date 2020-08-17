@@ -280,7 +280,29 @@ type changeInput struct {
 }
 
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
-	return nil, errors.New("not implemented")
+	var changes []changeInfo
+	path := "/changes/"
+	params := url.Values{}
+	params.Add("q", req.Query)
+	for _, o := range req.Options {
+		params.Add("o", o.String())
+	}
+	params.Add("n", req.Limit)
+	params.Add("S", req.Offset)
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+		return nil, err
+	}
+	if ci.Status != gerritpb.ChangeInfo_NEW {
+		return nil, fmt.Errorf("unknown status %s for newly created change", ci.Status)
+	}
+	var resp gerritpb.ListChangesResponse
+
+	// TODO: Convert each change from changeInfo to proto message.
+	// Extract _more_changes from last changeInfo.
+	resp := &gerritpb.ListChangesResponse{
+		Changes:     changes,
+		MoreChanges: false,
+	}
 }
 
 func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
