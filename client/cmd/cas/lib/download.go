@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -104,6 +105,8 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to call GetDirectoryTree").Err()
 	}
+	logger := logging.Get(ctx)
+	logger.Infof("finished GetDirectoryTree api call: %d", len(dirs))
 
 	t := &repb.Tree{
 		Root:     rootDir,
@@ -168,13 +171,16 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			to[output.Digest] = output
 		}
 	}
+	logger.Infof("finished copy from cache (if any), dups: %d, to: %d", len(dirs), len(to))
 
 	if err := c.DownloadFiles(ctx, ".", to); err != nil {
 		return errors.Annotate(err, "failed to download files").Err()
 	}
 
+	logger.Infof("finished DownloadFiles api call")
+
 	// DownloadFiles does not set desired file permission.
-	for d, output := range to {
+	for _, output := range to {
 		mode := 0o600
 		if output.IsExecutable {
 			mode = 0o700
@@ -182,13 +188,18 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		if err := os.Chmod(output.Path, os.FileMode(mode)); err != nil {
 			return errors.Annotate(err, "failed to change mode").Err()
 		}
+	}
 
-		if diskcache != nil {
+	logger.Infof("finished permission update")
+
+	if diskcache != nil {
+		for d, output := range to {
 			if err := diskcache.AddFileWithoutValidation(
 				isolated.HexDigest(d.Hash), output.Path); err != nil {
 				return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, d).Err()
 			}
 		}
+		logger.Infof("finished cache addition")
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -214,13 +225,16 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 			return nil
 		})
 	}
+	err = eg.Wait()
 
-	return eg.Wait()
+	logger.Infof("finished file copy")
+
+	return err
 }
 
 func (r *downloadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-
+	logging.Get(ctx).Infof("start command")
 	if err := r.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
