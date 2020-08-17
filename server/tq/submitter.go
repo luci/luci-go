@@ -24,34 +24,34 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Submitter is used by Dispatcher to submit Cloud Tasks.
+// Submitter is used by Dispatcher to submit tasks.
 //
 // It lives in the context, so that it can be mocked in tests. In production
 // contexts (setup when using the tq server module), the submitter is
-// initialized to be CloudTaskSubmitter. Tests will need to provide their own
+// initialized to be CloudSubmitter. Tests will need to provide their own
 // submitter (usually via TestingContext).
 type Submitter interface {
-	// CreateTask creates a task, returning a gRPC status.
+	// Submit submits a task, returning a gRPC status.
 	//
 	// AlreadyExists status indicates the task with request name already exists.
 	// Other statuses are handled using their usual semantics.
 	//
-	// `msg` is the original task payload. It is non-nil only when CreateTask
+	// `msg` is the original task payload. It is non-nil only when Submit
 	// is called on a "happy path" (i.e. not from a sweeper). This is primarily
 	// useful to capture task payloads in tests. Production implementations of
 	// Submitter should generally ignore it.
 	//
 	// Will be called from multiple goroutines at once.
-	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
+	Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
 }
 
-// CloudTaskSubmitter implements Submitter on top of Cloud Tasks client.
-type CloudTaskSubmitter struct {
+// CloudSubmitter implements Submitter on top of Cloud Tasks client.
+type CloudSubmitter struct {
 	Client *cloudtasks.Client
 }
 
-// CreateTask creates a task, returning a gRPC status.
-func (s *CloudTaskSubmitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+// Submit creates a task, returning a gRPC status.
+func (s *CloudSubmitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	_, err := s.Client.CreateTask(ctx, req)
 	return err
 }
