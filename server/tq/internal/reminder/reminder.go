@@ -17,13 +17,31 @@ package reminder
 
 import (
 	"time"
+
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
+
+// FreshUntilPrecision is precision of Reminder.FreshUntil, to which it is
+// always truncated.
+const FreshUntilPrecision = time.Millisecond
 
 // Reminder reminds to enqueue a task.
 //
 // It is persisted transactionally with some other user logic to the database.
 // Later, a task is actually scheduled and a reminder can be deleted
 // non-transactionally.
+//
+// Its payload is represented either by a raw byte buffer (when the reminder
+// is stored and loaded), or by a more complex Go value (when the reminder
+// is manipulated by Dispatcher and Submitter). The Go value representation
+// is described by Payload struct and it can be "attached" to the reminder
+// via AttachReminder() or deserialized from the raw byte buffer via Payload().
 type Reminder struct {
 	// ID identifies a reminder.
 	//
@@ -38,19 +56,101 @@ type Reminder struct {
 	// Truncated to FreshUntilPrecision.
 	FreshUntil time.Time
 
-	// Payload is a proto-serialized taskspb.CreateTaskRequest.
+	// RawPayload is a proto-serialized tqpb.Payload.
 	//
-	// Always has a name set, so even if the reminder is processed more than once,
-	// only one task will be enqueued.
-	Payload []byte
+	// It is what is actually stored in the database.
+	RawPayload []byte
 
-	// Extra is a proto-serialized tqpb.Extra.
-	//
-	// It is internal data about the task the dispatcher might want to send to
-	// the sweeper. Used for monitoring and tracing.
-	Extra []byte
+	// payload, if non-nil, is attached (or deserialized) payload.
+	payload *Payload
 }
 
-// FreshUntilPrecision is precision of Reminder.FreshUntil, to which it is
-// always truncated.
-const FreshUntilPrecision = time.Millisecond
+// AttachPayload attaches the given payload to this reminder.
+//
+// It mutates `p` with reminder's ID, which should already be populated.
+//
+// Panics if `r` has a payload attached already.
+func (r *Reminder) AttachPayload(p *Payload) error {
+	if r.payload != nil {
+		panic("the reminder has a payload attached already")
+	}
+	p.injectReminderID(r.ID)
+
+	msg := &tqpb.Payload{
+		TaskClass: p.TaskClass,
+		Created:   timestamppb.New(p.Created),
+	}
+
+	switch {
+	case p.CreateTaskRequest != nil:
+		blob, err := proto.Marshal(p.CreateTaskRequest)
+		if err != nil {
+			return errors.Annotate(err, "failed to marshal CreateTaskRequest").Err()
+		}
+		msg.Payload = &tqpb.Payload_CreateTaskRequest{CreateTaskRequest: blob}
+	// TODO: add pubsub
+	default:
+		panic("malformed payload")
+	}
+
+	raw, err := proto.Marshal(msg)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal Payload").Err()
+	}
+
+	r.RawPayload = raw
+	r.payload = p
+	return nil
+}
+
+// DropPayload returns a copy of the reminder without attached payload.
+func (r *Reminder) DropPayload() *Reminder {
+	return &Reminder{
+		ID:         r.ID,
+		FreshUntil: r.FreshUntil,
+		RawPayload: r.RawPayload,
+	}
+}
+
+// MustHavePayload returns an attached payload or panics if `r` doesn't have
+// a payload attached.
+//
+// Does not attempt to deserialize RawPayload.
+func (r *Reminder) MustHavePayload() *Payload {
+	if r.payload == nil {
+		panic("the reminder doesn't have a payload attached")
+	}
+	return r.payload
+}
+
+// Payload returns an attached payload, perhaps deserializing it first.
+func (r *Reminder) Payload() (*Payload, error) {
+	if r.payload != nil {
+		return r.payload, nil
+	}
+
+	var msg tqpb.Payload
+	if err := proto.Unmarshal(r.RawPayload, &msg); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal Payload").Err()
+	}
+
+	p := &Payload{
+		TaskClass: msg.TaskClass,
+		Created:   msg.Created.AsTime(),
+	}
+
+	switch blob := msg.Payload.(type) {
+	case *tqpb.Payload_CreateTaskRequest:
+		req := &taskspb.CreateTaskRequest{}
+		if err := proto.Unmarshal(blob.CreateTaskRequest, req); err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal CreateTaskRequest").Err()
+		}
+		p.CreateTaskRequest = req
+	// TODO: add pubsub
+	default:
+		return nil, errors.New("unrecognized task payload kind")
+	}
+
+	r.payload = p
+	return p, nil
+}
