@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -27,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/partition"
+	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/sweep"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
@@ -145,12 +145,12 @@ type distributedSweeper struct {
 }
 
 // Submit delegates to the submitter in the context.
-func (s *distributedSweeper) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
+func (s *distributedSweeper) Submit(ctx context.Context, payload *reminder.Payload) error {
 	sub, err := currentSubmitter(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "%s", err)
 	}
-	return sub.Submit(ctx, req, msg)
+	return sub.Submit(ctx, payload)
 }
 
 // sweep initiates an asynchronous sweep of the entire reminder keyspace.

@@ -47,13 +47,11 @@ type dsReminder struct {
 
 	ID      string `gae:"$id"` // "{Reminder.ID}_{Reminder.FreshUntil}".
 	Payload []byte `gae:",noindex"`
-	Extra   []byte `gae:",noindex"`
 }
 
 func (d *dsReminder) fromReminder(r *reminder.Reminder) *dsReminder {
 	d.ID = fmt.Sprintf("%s_%d", r.ID, r.FreshUntil.UnixNano())
-	d.Payload = r.Payload
-	d.Extra = r.Extra
+	d.Payload = r.RawPayload
 	return d
 }
 
@@ -71,8 +69,7 @@ func (d dsReminder) toReminder(r *reminder.Reminder) *reminder.Reminder {
 	}
 	r.ID = parts[0]
 	r.FreshUntil = time.Unix(0, ns).UTC()
-	r.Payload = d.Payload
-	r.Extra = d.Extra
+	r.RawPayload = d.Payload
 	return r
 }
 
@@ -117,14 +114,14 @@ func (dsDB) FetchRemindersMeta(ctx context.Context, low string, high string, lim
 	return
 }
 
-// FetchReminderPayloads fetches payloads of a batch of Reminders.
+// FetchReminderRawPayloads fetches payloads of a batch of Reminders.
 //
 // The Reminder objects are re-used in the returned batch.
 // If any Reminder is no longer found, it is silently omitted in the returned
 // batch.
 // In case of any other error, partial result of fetched Reminders so far
 // should be returned alongside the error.
-func (dsDB) FetchReminderPayloads(ctx context.Context, batch []*reminder.Reminder) ([]*reminder.Reminder, error) {
+func (dsDB) FetchReminderRawPayloads(ctx context.Context, batch []*reminder.Reminder) ([]*reminder.Reminder, error) {
 	vs := make([]*dsReminder, len(batch))
 	for i, r := range batch {
 		vs[i] = (&dsReminder{}).fromReminder(r)
