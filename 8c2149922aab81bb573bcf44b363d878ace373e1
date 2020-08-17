@@ -219,6 +219,24 @@
     },
     {
       "key": {
+        "uuid": "93ba1c22_874c13c0",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-17T02:18:29Z",
+      "side": 1,
+      "message": "I got it. I just want to see if going through every commit, and making a datastore query for each commit the only option we have here (since it seems expensive to me). Do we have any other data (like commit position) that can help us make the decision?",
+      "parentUuid": "c798df55_f3932ed4",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9
