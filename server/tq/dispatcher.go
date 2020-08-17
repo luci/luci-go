@@ -68,7 +68,7 @@ import (
 // The dispatcher needs a way to submit tasks to Cloud Tasks. This is the job of
 // Submitter. It lives in the context, so that it can be mocked in tests. In
 // production contexts (setup when using the tq server module), the submitter is
-// initialized to be CloudTaskSubmitter. Tests will need to provide their own
+// initialized to be CloudSubmitter. Tests will need to provide their own
 // submitter (usually via TestingContext).
 type Dispatcher struct {
 	// Sweeper knows how to sweep transactional tasks reminders.

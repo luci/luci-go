@@ -97,7 +97,7 @@ var (
 
 	SubmitCount = metric.NewCounter(
 		"tq/submit/count",
-		"Count of CreateTask calls",
+		"Count of submitted tasks",
 		nil,
 		field.String("task_class"), // matches TaskClass.ID
 		field.String("txn_path"),   // none | happy | sweep
@@ -106,7 +106,7 @@ var (
 
 	SubmitDurationMS = metric.NewCumulativeDistribution(
 		"tq/submit/duration",
-		"Duration of CreateTask calls",
+		"Duration of submit calls",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("task_class"), // matches TaskClass.ID
