@@ -447,7 +447,7 @@ func (d *disk) respectPolicies() error {
 			break
 		}
 		if d.lru.length() == 0 {
-			return errors.Reason("no more space to free: current free space=%d policies.MinFreeSpace=%d", freeSpace, minFreeSpaceWanted).Err()
+			return errors.Reason("no more space to free in %s: current free space=%d policies.MinFreeSpace=%d", d.path, freeSpace, minFreeSpaceWanted).Err()
 		}
 		k, _ := d.lru.popOldest()
 		_ = os.Remove(d.itemPath(k))
