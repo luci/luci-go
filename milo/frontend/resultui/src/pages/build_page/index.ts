@@ -82,6 +82,19 @@ export class BuildPageElement extends MobxLitElement implements BeforeEnterObser
   @computed get tabDefs(): TabDef[] {
     return [
       {
+        id: 'overview',
+        label: 'Overview',
+        href: router.urlForName(
+          'build-overview',
+          {
+            'project': this.builder.project,
+            'bucket': this.builder.bucket,
+            'builder': this.builder.builder,
+            'build_num_or_id': this.buildNumOrId,
+          },
+        ),
+      },
+      {
         id: 'test-results',
         label: 'Test Results',
         href: router.urlForName(

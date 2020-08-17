@@ -17,7 +17,7 @@ import { Build, BuildStatus } from '../services/buildbucket';
 
 export function getURLForBuild(build: Build): string {
   return router.urlForName(
-      'build-main',
+      'build',
       {
       'project': build.builder.project,
       'bucket': build.builder.bucket,
