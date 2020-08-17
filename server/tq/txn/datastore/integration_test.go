@@ -26,8 +26,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/gae/filter/txndefer"
@@ -41,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -237,12 +236,12 @@ type flakySubmitter struct {
 	m sync.Mutex
 }
 
-func (f *flakySubmitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
+func (f *flakySubmitter) Submit(ctx context.Context, req *reminder.Payload) error {
 	f.m.Lock()
 	fail := f.Rand.Float64() < f.InternalErrProbability
 	f.m.Unlock()
 	if fail {
 		return status.Errorf(codes.Internal, "Simulated internal error")
 	}
-	return f.Submitter.Submit(ctx, req, msg)
+	return f.Submitter.Submit(ctx, req)
 }
