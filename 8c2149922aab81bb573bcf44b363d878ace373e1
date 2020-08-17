@@ -201,6 +201,24 @@
     },
     {
       "key": {
+        "uuid": "c798df55_f3932ed4",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-17T01:56:58Z",
+      "side": 1,
+      "message": "\u003e 1. Find out the last ancestor build of the current build that has status !\u003d Infra Failure, Expired or Canceled\n\nThat\u0027s basically what the loop is doing now.\n\n\u003e 2. Just return the array of commits up that ancestor build?\nThe problem with that is the builds are not ordered. They do have a build number, but there\u0027s no guarantee that the build with a smaller build number is the predecessor of a build with a greater build number. For instance, if we retry an old build, the retry build will have a large build ID and an old associated commit.\nTherefore we have to iterate though the commits. If we iterate though the commit, we may as well just return only the commits that we just checked instead of finding the last ancestor build.",
+      "parentUuid": "339a77bd_5a9943c0",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9
