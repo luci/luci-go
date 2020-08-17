@@ -357,7 +357,7 @@ func TestTransactionalEnqueue(t *testing.T) {
 			So(rem.FreshUntil.Equal(now.Add(happyPathMaxDuration)), ShouldBeTrue)
 		})
 
-		Convey("Fatal CreateTask error", func() {
+		Convey("Fatal Submit error", func() {
 			submitter.err = func(string) error { return status.Errorf(codes.PermissionDenied, "boom") }
 
 			err := d.AddTask(txn, &Task{
@@ -371,7 +371,7 @@ func TestTransactionalEnqueue(t *testing.T) {
 			So(db.AllReminders(), ShouldBeEmpty)
 		})
 
-		Convey("Transient CreateTask error", func() {
+		Convey("Transient Submit error", func() {
 			submitter.err = func(string) error { return status.Errorf(codes.Internal, "boom") }
 
 			err := d.AddTask(txn, &Task{
@@ -466,7 +466,7 @@ type submitter struct {
 	reqs []*taskspb.CreateTaskRequest
 }
 
-func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+func (s *submitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 	s.reqs = append(s.reqs, req)

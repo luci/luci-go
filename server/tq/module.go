@@ -337,7 +337,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 			return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
 		}
 		host.RegisterCleanup(func(ctx context.Context) { client.Close() })
-		submitter = &CloudTaskSubmitter{Client: client}
+		submitter = &CloudSubmitter{Client: client}
 	} else {
 		// When running locally use a simple in-memory scheduler, but go through
 		// HTTP layer to pick up logging, middlewares, etc.
