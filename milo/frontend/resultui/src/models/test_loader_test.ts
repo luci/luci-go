@@ -26,39 +26,39 @@ import { ReadonlyTest, ReadonlyVariant, TestNode, VariantStatus } from './test_n
 chai.use(chaiRecursiveDeepInclude);
 
 describe('test_loader', () => {
-  const testResult1 = {testId: 'a', resultId: '1', variant: {def: {'key1': 'val1'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult1 = {testId: 'a', resultId: '1', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1', expected: true} as Partial<TestResult> as TestResult;
   // Result with the same test ID and the same variant.
-  const testResult2 = {testId: 'a', resultId: '2', variant: {def: {'key1': 'val1'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult2 = {testId: 'a', resultId: '2', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1', expected: true} as Partial<TestResult> as TestResult;
   // Result with the same test ID and a different variant.
-  const testResult3 = {testId: 'a', resultId: '3', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult3 = {testId: 'a', resultId: '3', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2', expected: false} as Partial<TestResult> as TestResult;
 
   // Result with a different test ID and the same variant.
-  const testResult4 = {testId: 'b', resultId: '1', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult4 = {testId: 'b', resultId: '1', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2', expected: false} as Partial<TestResult> as TestResult;
   // Result with multiple variant keys.
-  const testResult5 = {testId: 'c', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult5 = {testId: 'c', resultId: '3', variant: {def: {'key2': 'val1', 'key1': 'val2'}}, variantHash: 'key1:val2|key2:val1', expected: true} as Partial<TestResult> as TestResult;
   // Result with the same variant but variant keys are in different order.
-  const testResult6 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult6 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val1'}}, variantHash: 'key1:val2|key2:val1', expected: false} as Partial<TestResult> as TestResult;
   // Result with partially different variant.
-  const testResult7 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, expected: true} as Partial<TestResult> as TestResult;
+  const testResult7 = {testId: 'c', resultId: '4', variant: {def: {'key1': 'val2', 'key2': 'val2'}}, variantHash: 'key1:val2|key2:val2', expected: true} as Partial<TestResult> as TestResult;
   // Result with an out of order test ID.
-  const testResult8 = {testId: 'b', resultId: '2', variant: {def: {'key1': 'val2'}}, expected: false} as Partial<TestResult> as TestResult;
+  const testResult8 = {testId: 'b', resultId: '2', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2',expected: false} as Partial<TestResult> as TestResult;
 
   // Exoneration that shares the same ID and variant with a result.
   // TODO(weiweilin): is this possible?
-  const testExoneration1 = {testId: 'a', exonerationId: '1', variant: {def: {'key1': 'val1'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration1 = {testId: 'a', exonerationId: '1', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1'} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that shares the same ID but a different variant with a result.
-  const testExoneration2 = {testId: 'a', exonerationId: '2', variant: {def: {'key1': 'val3'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration2 = {testId: 'a', exonerationId: '2', variant: {def: {'key1': 'val3'}}, variantHash: 'key1:val3'} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that has a different testId but shares the same variant with a result.
-  const testExoneration3 = {testId: 'd', exonerationId: '1', variant: {def: {'key1': 'val1'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration3 = {testId: 'd', exonerationId: '1', variant: {def: {'key1': 'val1'}}, variantHash: 'key1:val1'} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that shares the same ID but a different variant with an exoneration.
-  const testExoneration4 = {testId: 'd', exonerationId: '2', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration4 = {testId: 'd', exonerationId: '2', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2'} as Partial<TestExoneration> as TestExoneration;
   // Exoneration that has a different ID but shared the same variant with an exoneration.
-  const testExoneration5 = {testId: 'e', exonerationId: '1', variant: {def: {'key1': 'val2'}}} as Partial<TestExoneration> as TestExoneration;
+  const testExoneration5 = {testId: 'e', exonerationId: '1', variant: {def: {'key1': 'val2'}}, variantHash: 'key1:val2'} as Partial<TestExoneration> as TestExoneration;
 
   const variant1 = {
     testId: 'a',
     variant: {'def': {'key1': 'val1'}},
-    variantKey: 'key1:val1',
+    variantHash: 'key1:val1',
     status: VariantStatus.Exonerated,
     results: [testResult1, testResult2],
     exonerations: [testExoneration1],
@@ -67,7 +67,7 @@ describe('test_loader', () => {
   const variant2 = {
     testId: 'a',
     variant: {def: {'key1': 'val2'}},
-    variantKey: 'key1:val2',
+    variantHash: 'key1:val2',
     status: VariantStatus.Unexpected,
     results: [testResult3],
     exonerations: [],
@@ -76,7 +76,7 @@ describe('test_loader', () => {
   const variant3 = {
     testId: 'a',
     variant: {def: {'key1': 'val3'}},
-    variantKey: 'key1:val3',
+    variantHash: 'key1:val3',
     status: VariantStatus.Exonerated,
     results: [],
     exonerations: [testExoneration2],
@@ -85,7 +85,7 @@ describe('test_loader', () => {
   const variant4 = {
     testId: 'b',
     variant: {'def': {'key1': 'val2'}},
-    variantKey: 'key1:val2',
+    variantHash: 'key1:val2',
     status: VariantStatus.Unexpected,
     results: [testResult4, testResult8],
     exonerations: [],
@@ -94,7 +94,7 @@ describe('test_loader', () => {
   const variant5 = {
     testId: 'c',
     variant: {def: {'key1': 'val2', 'key2': 'val1'}},
-    variantKey: 'key1:val2|key2:val1',
+    variantHash: 'key1:val2|key2:val1',
     status: VariantStatus.Flaky,
     results: [testResult5, testResult6],
     exonerations: [],
@@ -104,7 +104,7 @@ describe('test_loader', () => {
   const variant6 = {
     testId: 'c',
     variant: {def: {'key1': 'val2', 'key2': 'val2'}},
-    variantKey: 'key1:val2|key2:val2',
+    variantHash: 'key1:val2|key2:val2',
     status: VariantStatus.Expected,
     results: [testResult7],
     exonerations: [],
@@ -113,7 +113,7 @@ describe('test_loader', () => {
   const variant7 = {
     testId: 'd',
     variant: {def: {'key1': 'val1'}},
-    variantKey: 'key1:val1',
+    variantHash: 'key1:val1',
     status: VariantStatus.Exonerated,
     results: [],
     exonerations: [testExoneration3],
@@ -122,7 +122,7 @@ describe('test_loader', () => {
   const variant8 = {
     testId: 'd',
     variant: {def: {'key1': 'val2'}},
-    variantKey: 'key1:val2',
+    variantHash: 'key1:val2',
     status: VariantStatus.Exonerated,
     results: [],
     exonerations: [testExoneration4],
@@ -131,7 +131,7 @@ describe('test_loader', () => {
   const variant9 = {
     testId: 'e',
     variant: {def: {'key1': 'val2'}},
-    variantKey: 'key1:val2',
+    variantHash: 'key1:val2',
     status: VariantStatus.Exonerated,
     results: [],
     exonerations: [testExoneration5],

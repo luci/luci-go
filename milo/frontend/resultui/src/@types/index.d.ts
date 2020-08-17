@@ -14,3 +14,16 @@
  */
 
 type Constructor<T, P extends unknown[] = []> = new (...params: P) => T;
+
+/**
+ * Configs of the app.
+ * Declared in the server generated file, /configs.js, included as a script tag.
+ */
+declare const CONFIGS: {
+  readonly RESULT_DB: {
+    readonly HOST: string;
+  },
+  readonly OAUTH2: {
+    readonly CLIENT_ID: string;
+  }
+};

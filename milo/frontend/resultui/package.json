@@ -68,7 +68,7 @@
   },
   "scripts": {
     "build": "webpack --config webpack.prod.ts",
-    "dev": "webpack-dev-server --open --config webpack.dev.ts",
+    "dev": "webpack-dev-server --config webpack.dev.ts",
     "test": "karma start --single-run",
     "test:watch": "karma start"
   }
