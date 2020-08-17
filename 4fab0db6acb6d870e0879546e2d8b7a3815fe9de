@@ -52,6 +52,24 @@
       "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26d0f035_218397b1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-17T00:34:51Z",
+      "side": 1,
+      "message": "I don\u0027t know.\nBut some code doesn\u0027t set write permission?\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/vpython/venv/venv.go;l\u003d786;drc\u003dde7013128708c801e6da5bbbdb42a5498e50f5be\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/vpython/venv/venv.go;l\u003d799;drc\u003dde7013128708c801e6da5bbbdb42a5498e50f5be",
+      "parentUuid": "0b25cd31_2b731a5b",
+      "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
