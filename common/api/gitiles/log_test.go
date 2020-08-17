@@ -45,7 +45,7 @@ func TestPagingLog(t *testing.T) {
 		defer srv.Close()
 
 		Convey("Page till no cursor", func() {
-			req := gitiles.LogRequest{
+			req := &gitiles.LogRequest{
 				Project:            "repo",
 				ExcludeAncestorsOf: "master",
 				Committish:         "8de6836858c99e48f3c58164ab717bda728e95dd",
@@ -61,7 +61,7 @@ func TestPagingLog(t *testing.T) {
 		})
 
 		Convey("Page till limit", func() {
-			req := gitiles.LogRequest{
+			req := &gitiles.LogRequest{
 				Project:    "repo",
 				Committish: "master",
 			}
