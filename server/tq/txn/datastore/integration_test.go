@@ -237,12 +237,12 @@ type flakySubmitter struct {
 	m sync.Mutex
 }
 
-func (f *flakySubmitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
+func (f *flakySubmitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
 	f.m.Lock()
 	fail := f.Rand.Float64() < f.InternalErrProbability
 	f.m.Unlock()
 	if fail {
 		return status.Errorf(codes.Internal, "Simulated internal error")
 	}
-	return f.Submitter.CreateTask(ctx, req, msg)
+	return f.Submitter.Submit(ctx, req, msg)
 }

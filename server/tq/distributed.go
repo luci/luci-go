@@ -144,13 +144,13 @@ type distributedSweeper struct {
 	enqueue func(ctx context.Context, task *tqpb.SweepTask) error
 }
 
-// CreateTask delegates to the submitter in the context.
-func (s *distributedSweeper) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
+// Submit delegates to the submitter in the context.
+func (s *distributedSweeper) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error {
 	sub, err := currentSubmitter(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "%s", err)
 	}
-	return sub.CreateTask(ctx, req, msg)
+	return sub.Submit(ctx, req, msg)
 }
 
 // sweep initiates an asynchronous sweep of the entire reminder keyspace.

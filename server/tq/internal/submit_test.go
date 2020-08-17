@@ -125,7 +125,7 @@ type submitter struct {
 	req []*taskspb.CreateTaskRequest
 }
 
-func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+func (s *submitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 	if s.ban.Has(req.Parent) {

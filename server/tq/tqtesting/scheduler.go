@@ -93,7 +93,7 @@ type Scheduler struct {
 
 // Task represents an enqueued or executing task.
 type Task struct {
-	Task      *taskspb.Task // a clone of original Task proto as passed to CreateTask
+	Task      *taskspb.Task // a clone of original Task proto as passed to Submit
 	Payload   proto.Message // deserialized payload, if available
 	Name      string        // full task name (perhaps generated)
 	ETA       time.Time     // when the task is due, always set at now or in future
@@ -186,15 +186,15 @@ type Executor interface {
 	// is done executing the task, indicating whether the task should be
 	// reenqueued for a retry.
 	//
-	// It is safe to call Scheduler's CreateTask from inside Execute.
+	// It is safe to call Scheduler's Submit from inside Execute.
 	//
 	// Receives the exact same context as Run(...), in particular this context
 	// is canceled when Run is done.
 	Execute(ctx context.Context, t *Task, done func(retry bool))
 }
 
-// CreateTask scheduler a task for later execution.
-func (s *Scheduler) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, payload proto.Message) error {
+// Submit schedules a task for later execution.
+func (s *Scheduler) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, payload proto.Message) error {
 	// Note: this validation is pretty sloppy. It validates only things Scheduler
 	// depends on. It doesn't validate full conformance to Cloud Tasks API.
 	if req.Parent == "" {

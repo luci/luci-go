@@ -201,7 +201,7 @@ type submitter struct {
 	req []*taskspb.CreateTaskRequest
 }
 
-func (s *submitter) CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+func (s *submitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
 	if s.cb != nil {
 		if err := s.cb(req); err != nil {
 			return err

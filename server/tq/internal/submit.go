@@ -56,10 +56,10 @@ const (
 	TxnPathSweep TxnPath = "sweep" // the reminder was processed during a sweep
 )
 
-// Submitter is used by the dispatcher and the sweeper to submit Cloud Tasks.
+// Submitter is used by the dispatcher and the sweeper to submit tasks.
 type Submitter interface {
-	// CreateTask creates a task, returning a gRPC status.
-	CreateTask(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
+	// Submit submits a task, returning a gRPC status.
+	Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
 }
 
 // Submit submits the prepared request through the given submitter.
@@ -94,7 +94,7 @@ func Submit(ctx context.Context, s Submitter, req *taskspb.CreateTaskRequest, ms
 	}
 
 	start := clock.Now(ctx)
-	err := s.CreateTask(ctx, req, msg)
+	err := s.Submit(ctx, req, msg)
 	code := status.Code(err)
 	dur := clock.Now(ctx).Sub(start)
 
