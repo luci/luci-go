@@ -114,7 +114,8 @@ func TestFinalizeInvocation(t *testing.T) {
 		// soon, it's fine not to test it. We "know" it works.
 		ctx = experiments.Enable(ctx, tasks.UseFinalizationTQ)
 
-		Convey(`Changes the state and finalization time`, func() {
+		// This is flaky https://crbug.com/1042602#c19
+		SkipConvey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
