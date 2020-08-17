@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1d3085fe_285c4766",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-17T22:40:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a141fdeb_fe1d950c",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 15
+      },
+      "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0f09dbdd_f7982147",
         "filename": "resultdb/internal/spanutil/init_db.sql",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2df413d_d098749b",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-17T22:40:39Z",
+      "side": 1,
+      "message": "I think this is the assumption. I have added to the comment to say so.",
+      "parentUuid": "0f09dbdd_f7982147",
+      "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adc92e24_dfe04e24",
+        "filename": "resultdb/internal/spanutil/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-08-17T22:40:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "216d6166_7420f99f",
+      "range": {
+        "startLine": 98,
+        "startChar": 13,
+        "endLine": 99,
+        "endChar": 50
+      },
+      "revId": "d8ef81dc5d32130d3ecdb50536eddc96501a25cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
