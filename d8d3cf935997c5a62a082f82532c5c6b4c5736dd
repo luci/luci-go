@@ -16,6 +16,29 @@
       "revId": "d8d3cf935997c5a62a082f82532c5c6b4c5736dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d3de9cf_6805daa1",
+        "filename": "swarming/proto/update.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-18T22:22:32Z",
+      "side": 1,
+      "message": "single space?",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 8
+      },
+      "revId": "d8d3cf935997c5a62a082f82532c5c6b4c5736dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
