@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "790064a6_ba5b5bf0",
+        "filename": "buildbucket/appengine/frontend/service-default-go.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T00:02:29Z",
+      "side": 1,
+      "message": "30?",
+      "range": {
+        "startLine": 14,
+        "startChar": 27,
+        "endLine": 14,
+        "endChar": 29
+      },
+      "revId": "8b77b69735daf32e5b8b56ba51a03e3ca3397f13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
