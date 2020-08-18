@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "349ce34d_0bf7a026",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-18T19:05:41Z",
+      "side": 1,
+      "message": "Can emails contain colons? This would incorrectly assume a:b@example.com is a valid identity and not attach the prefix. The SearchBuildsRequest would have to explicitly say user:a:b@example.com to search for builds created by a:b@example.com.\n\nCould you combine this with validateCreatedBy in search_builds.go? Then in search internals you can always assume Query.CreatedBy is intended to match Predicate.CreatedBy exactly, and if the identity string isn\u0027t well-formed it just doesn\u0027t match anything in the datastore. I think it might be better not to split the logic up.",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bb04997_4eff6e52",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-18T19:05:41Z",
+      "side": 1,
+      "message": "Does this actually matter? It will just not match anything in the datastore, right?",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
