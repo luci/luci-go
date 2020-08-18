@@ -138,7 +138,7 @@ export class ResultEntryElement extends MobxLitElement {
         <ul id="artifact-list" slot="content">
           ${this.artifacts.map((artifact) => html`
           <!-- TODO(weiweilin): refresh when the fetchUrl expires -->
-          <li><a href=${artifact.fetchUrl}>${artifact.artifactId}</a></li>
+          <li><a href=${artifact.fetchUrl} target="_blank">${artifact.artifactId}</a></li>
           `)}
         </ul>
       </tr-expandable-entry>
