@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4730f7c1_9e5465e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:14:49Z",
+      "side": 1,
+      "message": "Thanks. I\u0027ll wait to deploy this change with my increase of concurrency then.",
+      "revId": "ddb4917136fd592e0463346daa54e67a720f515e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
