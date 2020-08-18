@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fec0e5cb_a26c4191",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-18T04:24:16Z",
+      "side": 1,
+      "message": "PTAL\n\nI also plan to write some high-level test that hits some pubsub code paths.",
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
