@@ -273,6 +273,24 @@
     },
     {
       "key": {
+        "uuid": "87cd87f6_9a494088",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T02:44:25Z",
+      "side": 1,
+      "message": "parallelizing this sgtm; These are all independent queries so there\u0027s no benefit to doing them sequentially. I recommend WorkPool (https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/sync/parallel/workPool.go;l\u003d29?q\u003dWorkPool\u0026ss\u003dchromium) with a conservative number of workers (say, 8).\n\nI think practically speaking, most of these queries will come up empty, so you\u0027re just going to be paying the RPC overhead. You probably want to play with this for a very densely-populated builder and also a very empty builder to figure out what a good value is.",
+      "parentUuid": "2974ac36_dcc56a69",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9
