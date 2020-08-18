@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d9b39fe0_9867164c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T23:09:42Z",
+      "side": 1,
+      "message": "PTAL. Example build on -dev: https://iannucci-dot-luci-milo-dev.appspot.com/p/infra/builders/ci/build-proto-experiment-linux/46851",
+      "revId": "c3e1cdf76d806c05b6de0f0e127733b8dfb38b78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
