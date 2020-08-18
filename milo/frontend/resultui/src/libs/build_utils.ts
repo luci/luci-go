@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { router } from '../routes';
-import { Build, BuildStatus } from '../services/buildbucket';
+import { Build, BuildInfraSwarming, BuildStatus, GerritChange, GitilesCommit } from '../services/buildbucket';
+import { Link } from '../services/build_page';
 
 export function getURLForBuild(build: Build): string {
   return router.urlForName(
@@ -41,4 +42,30 @@ export function getDisplayNameForStatus(s: BuildStatus): string {
     [BuildStatus.Canceled, "Canceled"],
   ]);
   return statusMap.get(s) || "Unknown";
+}
+
+export function getURLForGitilesCommit(commit: GitilesCommit): string {
+  return `https://${commit.host}/${commit.project}/+/${commit.id}`;
+}
+
+export function getURLForGerritChange(change: GerritChange): string {
+  return `https://${change.host}/c/${change.change}/${change.patchset}`;
+}
+
+export function getURLForSwarmingTask(swarming: BuildInfraSwarming): string {
+  return `https://${swarming.hostname}/task?id=${swarming.task_id}&o=true&w=true`;
+}
+
+// getBotLink generates a link to a swarming bot.
+export function getBotLink(swarming: BuildInfraSwarming): Link | null {
+  for (const dim of swarming.bot_dimensions || []) {
+    if (dim.key === 'id') {
+      return {
+        label: dim.value,
+        url: `https://${swarming.hostname}/bot?id=${dim.value}`,
+        aria_label: `swarming bot ${dim.value}`,
+      };
+    }
+  }
+  return null;
 }
