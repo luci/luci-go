@@ -38,6 +38,12 @@ type LoopbackHTTPExecutor struct {
 // Marks the task as failed if the response status code is outside of
 // range [200-299].
 func (e *LoopbackHTTPExecutor) Execute(ctx context.Context, t *Task, done func(retry bool)) {
+	if t.Message != nil {
+		logging.Errorf(ctx, "Executing PubSub tasks is not supported yet")
+		done(false)
+		return
+	}
+
 	go func() {
 		success := false
 		defer func() {

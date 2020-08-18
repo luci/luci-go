@@ -188,7 +188,7 @@ func TestAddTask(t *testing.T) {
 					ts := m.(*timestamppb.Timestamp)
 					return &CustomPayload{
 						Method:      "GET",
-						Headers:     map[string]string{"k": "v"},
+						Meta:        map[string]string{"k": "v"},
 						RelativeURI: "/zzz",
 						Body:        []byte(fmt.Sprintf("%d", ts.Seconds)),
 					}, nil

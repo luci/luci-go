@@ -24,10 +24,12 @@ import (
 	"sync"
 	"time"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -40,10 +42,11 @@ const ClockTag = "tq-scheduler-sleep"
 
 // Scheduler knows how to execute submitted tasks when they are due.
 //
-// This is a very primitive in-memory version of Cloud Tasks service that can be
-// used in tests and on localhost. Must be configured before the first Run call.
-// Can be reconfigured between Run calls, but changing the configuration while
-// Run is running is not allowed.
+// This is a very primitive in-memory unholy hybrid of Cloud Tasks and PubSub
+// services that can be used in tests and on localhost.
+//
+// Must be configured before the first Run call.Can be reconfigured between Run
+// calls, but changing the configuration while Run is running is not allowed.
 //
 // Scheduler implements tq.Submitter interface.
 type Scheduler struct {
@@ -95,13 +98,17 @@ type Scheduler struct {
 
 // Task represents an enqueued or executing task.
 type Task struct {
-	Task      *taskspb.Task // a clone of original Task proto as passed to Submit
-	Payload   proto.Message // deserialized payload, if available
-	Name      string        // full task name (perhaps generated)
-	ETA       time.Time     // when the task is due, always set at now or in future
-	Finished  time.Time     // when the task finished last execution attempt
-	Attempts  int           // 0 initially, incremented before each execution attempt
-	Executing bool          // true if executing right now
+	Payload proto.Message // a clone of the original AddTask payload, if available
+
+	Task    *taskspb.Task           // a clone of the Cloud Tasks task as passed to Submit
+	Message *pubsubpb.PubsubMessage // a clone of the PubSub message as passed to Submit
+
+	Name string    // full task name (perhaps generated)
+	ETA  time.Time // when the task is due, always set at now or in future
+
+	Finished  time.Time // when the task finished last execution attempt
+	Attempts  int       // 0 initially, incremented before each execution attempt
+	Executing bool      // true if executing right now
 
 	index int // index in tasksHeap
 }
@@ -197,32 +204,26 @@ type Executor interface {
 
 // Submit schedules a task for later execution.
 func (s *Scheduler) Submit(ctx context.Context, p *reminder.Payload) error {
-	// TODO(vadimsh): Add support for PubSub tasks.
-	req := p.CreateTaskRequest
-	payload := p.Raw
+	// Validate the request and transform it into *Task. Note that this validation
+	// is pretty sloppy. It validates only things Scheduler depends on. It doesn't
+	// validate full conformance to Cloud APIs.
+	var task *Task
+	var namePrefix string
+	var err error
+	switch {
+	case p.CreateTaskRequest != nil:
+		task, namePrefix, err = s.prepCloudTasksTask(ctx, p.CreateTaskRequest)
+	case p.PublishRequest != nil:
+		task, namePrefix, err = s.prepPubSubTask(ctx, p.PublishRequest)
+	default:
+		err = status.Errorf(codes.InvalidArgument, "unrecognized payload kind")
+	}
+	if err != nil {
+		return err
+	}
 
-	// Note: this validation is pretty sloppy. It validates only things Scheduler
-	// depends on. It doesn't validate full conformance to Cloud Tasks API.
-	if req.Parent == "" {
-		return status.Errorf(codes.InvalidArgument, "no Parent in the request")
-	}
-	if req.Task == nil {
-		return status.Errorf(codes.InvalidArgument, "no Task in the request")
-	}
-	if req.Task.Name != "" && !strings.HasPrefix(req.Task.Name, req.Parent+"/tasks/") {
-		return status.Errorf(codes.InvalidArgument, "bad task name")
-	}
-
-	task := &Task{
-		Task: proto.Clone(req.Task).(*taskspb.Task),
-		Name: req.Task.Name,
-		ETA:  req.Task.ScheduleTime.AsTime(),
-	}
-	if payload != nil {
-		task.Payload = proto.Clone(payload)
-	}
-	if now := clock.Now(ctx); task.ETA.Before(now) {
-		task.ETA = now
+	if p.Raw != nil {
+		task.Payload = proto.Clone(p.Raw)
 	}
 
 	s.m.Lock()
@@ -238,7 +239,7 @@ func (s *Scheduler) Submit(ctx context.Context, p *reminder.Payload) error {
 	}
 
 	if task.Name == "" {
-		task.Name = fmt.Sprintf("%s/tasks/generated-task-id-%08d", req.Parent, s.nextID)
+		task.Name = fmt.Sprintf("%s/generated-task-id-%08d", namePrefix, s.nextID)
 		s.nextID++
 	} else if !s.seen.Add(task.Name) {
 		return status.Errorf(codes.AlreadyExists, "task %q already exists", task.Name)
@@ -246,6 +247,44 @@ func (s *Scheduler) Submit(ctx context.Context, p *reminder.Payload) error {
 
 	s.enqueueLocked(task)
 	return nil
+}
+
+// prepCloudTasksTask makes *Task out of a Cloud Tasks request.
+func (s *Scheduler) prepCloudTasksTask(ctx context.Context, req *taskspb.CreateTaskRequest) (*Task, string, error) {
+	if req.Parent == "" {
+		return nil, "", status.Errorf(codes.InvalidArgument, "no Parent in the request")
+	}
+	if req.Task == nil {
+		return nil, "", status.Errorf(codes.InvalidArgument, "no Task in the request")
+	}
+	if req.Task.Name != "" && !strings.HasPrefix(req.Task.Name, req.Parent+"/tasks/") {
+		return nil, "", status.Errorf(codes.InvalidArgument, "bad task name")
+	}
+
+	task := &Task{
+		Task: proto.Clone(req.Task).(*taskspb.Task),
+		Name: req.Task.Name,
+		ETA:  req.Task.ScheduleTime.AsTime(),
+	}
+	if now := clock.Now(ctx); task.ETA.Before(now) {
+		task.ETA = now
+	}
+
+	return task, req.Parent + "/tasks/", nil
+}
+
+// prepPubSubTask makes *Task out of Cloud PubSub request.
+func (s *Scheduler) prepPubSubTask(ctx context.Context, req *pubsubpb.PublishRequest) (*Task, string, error) {
+	if req.Topic == "" {
+		return nil, "", status.Errorf(codes.InvalidArgument, "no Topic in the request")
+	}
+	if len(req.Messages) != 1 {
+		return nil, "", status.Errorf(codes.InvalidArgument, "expecting 1 message, got %d", len(req.Messages))
+	}
+	return &Task{
+		Message: proto.Clone(req.Messages[0]).(*pubsubpb.PubsubMessage),
+		ETA:     clock.Now(ctx),
+	}, req.Topic + "/messages/", nil
 }
 
 // Tasks returns a snapshot of the scheduler state.

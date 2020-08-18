@@ -32,5 +32,6 @@ message Payload {
   // raw *.proto files which are not quite trivial to link to without Bazel.
   oneof payload {
     bytes create_task_request = 20; // serialized cloud.tasks.v2.CreateTaskRequest
+    bytes publish_request = 21;     // serialized pubsub.v1.PublishRequest
   }
 }

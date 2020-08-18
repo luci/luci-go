@@ -18,9 +18,11 @@ package reminder
 import (
 	"time"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -88,7 +90,12 @@ func (r *Reminder) AttachPayload(p *Payload) error {
 			return errors.Annotate(err, "failed to marshal CreateTaskRequest").Err()
 		}
 		msg.Payload = &tqpb.Payload_CreateTaskRequest{CreateTaskRequest: blob}
-	// TODO: add pubsub
+	case p.PublishRequest != nil:
+		blob, err := proto.Marshal(p.PublishRequest)
+		if err != nil {
+			return errors.Annotate(err, "failed to marshal PublishRequest").Err()
+		}
+		msg.Payload = &tqpb.Payload_PublishRequest{PublishRequest: blob}
 	default:
 		panic("malformed payload")
 	}
@@ -146,7 +153,12 @@ func (r *Reminder) Payload() (*Payload, error) {
 			return nil, errors.Annotate(err, "failed to unmarshal CreateTaskRequest").Err()
 		}
 		p.CreateTaskRequest = req
-	// TODO: add pubsub
+	case *tqpb.Payload_PublishRequest:
+		req := &pubsubpb.PublishRequest{}
+		if err := proto.Unmarshal(blob.PublishRequest, req); err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal PublishRequest").Err()
+		}
+		p.PublishRequest = req
 	default:
 		return nil, errors.New("unrecognized task payload kind")
 	}
