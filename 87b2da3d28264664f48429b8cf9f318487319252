@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be04e6b6_45f25d50",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T22:39:16Z",
+      "side": 1,
+      "message": "lgtm, but note that I plan to change this behavior; appending to the user provided Markdown is not generally a safe operation.",
+      "revId": "87b2da3d28264664f48429b8cf9f318487319252",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
