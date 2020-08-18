@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7889dd50_62001577",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:45:53Z",
+      "side": 1,
+      "message": "Don\u0027t want to hold this up, IIUC Weiwei you\u0027re working on a new patchset here?",
+      "revId": "42a082e3fb060ce74650111d32f799f8b3e98b53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
