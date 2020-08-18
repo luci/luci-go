@@ -31,6 +31,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+
+	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
 // ClockTag tags the clock used in scheduler's sleep.
@@ -194,7 +196,11 @@ type Executor interface {
 }
 
 // Submit schedules a task for later execution.
-func (s *Scheduler) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, payload proto.Message) error {
+func (s *Scheduler) Submit(ctx context.Context, p *reminder.Payload) error {
+	// TODO(vadimsh): Add support for PubSub tasks.
+	req := p.CreateTaskRequest
+	payload := p.Raw
+
 	// Note: this validation is pretty sloppy. It validates only things Scheduler
 	// depends on. It doesn't validate full conformance to Cloud Tasks API.
 	if req.Parent == "" {

@@ -18,10 +18,10 @@ import (
 	"context"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/server/tq/internal/reminder"
 )
 
 // Submitter is used by Dispatcher to submit tasks.
@@ -30,29 +30,27 @@ import (
 // contexts (setup when using the tq server module), the submitter is
 // initialized to be CloudSubmitter. Tests will need to provide their own
 // submitter (usually via TestingContext).
+//
+// Note that currently Submitter can only be implemented by structs in server/tq
+// package, since its signature depends on an internal reminder.Payload type.
 type Submitter interface {
 	// Submit submits a task, returning a gRPC status.
 	//
 	// AlreadyExists status indicates the task with request name already exists.
 	// Other statuses are handled using their usual semantics.
 	//
-	// `msg` is the original task payload. It is non-nil only when Submit
-	// is called on a "happy path" (i.e. not from a sweeper). This is primarily
-	// useful to capture task payloads in tests. Production implementations of
-	// Submitter should generally ignore it.
-	//
 	// Will be called from multiple goroutines at once.
-	Submit(ctx context.Context, req *taskspb.CreateTaskRequest, msg proto.Message) error
+	Submit(ctx context.Context, p *reminder.Payload) error
 }
 
-// CloudSubmitter implements Submitter on top of Cloud Tasks client.
+// CloudSubmitter implements Submitter on top of Google Cloud APIs.
 type CloudSubmitter struct {
 	Client *cloudtasks.Client
 }
 
 // Submit creates a task, returning a gRPC status.
-func (s *CloudSubmitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
-	_, err := s.Client.CreateTask(ctx, req)
+func (s *CloudSubmitter) Submit(ctx context.Context, p *reminder.Payload) error {
+	_, err := s.Client.CreateTask(ctx, p.CreateTaskRequest)
 	return err
 }
 

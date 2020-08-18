@@ -23,7 +23,6 @@ import (
 	"time"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -59,8 +58,10 @@ func TestInProcSweeper(t *testing.T) {
 				ID:         hex.EncodeToString(hash[:reminderKeySpaceBytes]),
 				FreshUntil: epoch.Add(-time.Minute),
 			}
-			r.Payload, _ = proto.Marshal(&taskspb.CreateTaskRequest{
-				Parent: num,
+			r.AttachPayload(&reminder.Payload{
+				CreateTaskRequest: &taskspb.CreateTaskRequest{
+					Parent: num,
+				},
 			})
 			So(db.SaveReminder(ctx, r), ShouldBeNil)
 		}
