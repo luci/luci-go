@@ -170,12 +170,14 @@ message ListChangesRequest {
   // space-separated and can include filters like "label:Commit-Queue" or
   // "status:open". The possible search operators are described at:
   // https://gerrit-review.googlesource.com/Documentation/user-search.html
+  //
+  // An empty query matches all changes.
   string query = 1;
 
   // What to include in the response.
   repeated QueryOption options = 2;
 
-  // The number of results to return.
+  // The number of results to return. This should always be provided.
   int64 limit = 3;
 
   // The number of changes to skip from the start, for pagination.

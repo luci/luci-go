@@ -114,8 +114,8 @@ func (t *timestamp) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Below are the JSON representations of messages used for requests to
-// Gerrit; each of these structs corresponds to an entity described at
+// Below are the JSON representations of messages used for requests to Gerrit;
+// each of these structs corresponds to an entity described at
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#json-entities
 // and also to a message in `gerritpb`.
 
@@ -126,13 +126,20 @@ type changeInfo struct {
 	Project  string                `json:"project"`
 	Branch   string                `json:"branch"`
 	ChangeID string                `json:"change_id"`
-	// json.Unmarshal cannot convert enum string to value
+
+	// json.Unmarshal cannot convert enum string to value,
+	// so this field is handled specially in ToProto.
 	Status string `json:"status"`
 
 	CurrentRevision string                         `json:"current_revision"`
 	Revisions       map[string]*revisionInfo       `json:"revisions"`
 	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
 	Messages        []changeMessageInfo            `json:"messages"`
+
+	// MoreChanges may be set on the last change in a response to a query for
+	// changes, but this is not a property of the change itself and is not
+	// needed in gerritpb.ChangeInfo.
+	MoreChanges bool `json:"_more_changes"`
 }
 
 type changeMessageInfo struct {
@@ -280,7 +287,35 @@ type changeInput struct {
 }
 
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
-	return nil, errors.New("not implemented")
+	if req.Limit <= 0 {
+		return nil, fmt.Errorf("field Limit %d must be positive", req.Limit)
+	}
+	if req.Offset < 0 {
+		return nil, fmt.Errorf("field Offset %d must be nonnegative", req.Offset)
+	}
+
+	params := url.Values{}
+	params.Add("q", req.Query)
+	for _, o := range req.Options {
+		params.Add("o", o.String())
+	}
+	params.Add("n", strconv.FormatInt(req.Limit, 10))
+	params.Add("S", strconv.FormatInt(req.Offset, 10))
+
+	var changes []*changeInfo
+	if _, err := c.call(ctx, "GET", "/changes/", params, nil, &changes); err != nil {
+		return nil, err
+	}
+
+	resp := &gerritpb.ListChangesResponse{}
+	for _, c := range changes {
+		resp.Changes = append(resp.Changes, c.ToProto())
+	}
+	if len(changes) > 0 {
+		resp.MoreChanges = changes[len(changes)-1].MoreChanges
+	}
+
+	return resp, nil
 }
 
 func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
@@ -431,7 +466,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
-			return ret, status.Errorf(codes.Internal, "failed to desirealize response: %s", err)
+			return ret, status.Errorf(codes.Internal, "failed to deserialize response: %s", err)
 		}
 	}
 	return ret, err
