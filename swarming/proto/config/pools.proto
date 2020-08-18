@@ -127,15 +127,24 @@ message Pool {
 
   // Enforcements of permissions can be controlled by pool during migration
   // from legacy ACLs configs to Realms configs.
-  // Listed permissions will be enforced to the specific pool.
-  // This field will be deprecated after migration.
+  //
+  // When scheduling tasks:
+  //   * If a task doesn't have a realm (i.e. it is a legacy task), it will be
+  //     assigned `default_task_realm` and only permissions listed here will be
+  //     enforced. If some permission is not enforced, Swarming will use a
+  //     legacy ACL check for it instead.
+  //   * If a task has a realm (i.e. it is a modern task aware of realms), all
+  //     permissions will always be enforced for it. Legacy ACLs will not be
+  //     used at all.
+  //
+  // This field is not used for permissions not related to task scheduling.
+  //
+  // This field will be deprecated after migration. All scheduling permissions
+  // will be enforced at all times.
   repeated RealmPermission enforced_realm_permissions = 11;
 
-  // Realm name that will be used to call
-  // auth.has_permission_dryrun('swarming.tasks.actAs') and
-  // auth.has_permission_dryrun('swarming.tasks.createInRealm')
-  // for task requests without realm field.
-  string dry_run_task_realm = 12;
+  // Realm name to use for tasks if they don't have a realm associated.
+  string default_task_realm = 12;
 }
 
 

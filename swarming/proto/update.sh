@@ -27,9 +27,9 @@ cp ${LUCI_ROOT}/appengine/swarming/proto/jsonrpc/*.proto jsonrpc
 echo "- Fix import paths"
 # Fix the import path due to difference between the way Go and python process
 # imports; Go doesn't allow relative import.
-sed -i '' 's#"swarming\.proto"#"go.chromium.org/luci/swarming/proto/api/swarming.proto"#' api/*.proto
-sed -i '' 's#"config\.proto"#"go.chromium.org/luci/swarming/proto/config/config.proto"#' config/*.proto
-sed -i '' 's#"realms\.proto"#"go.chromium.org/luci/swarming/proto/config/realms.proto"#' config/*.proto
+sed -i 's#"swarming\.proto"#"go.chromium.org/luci/swarming/proto/api/swarming.proto"#' api/*.proto
+sed -i 's#"config\.proto"#"go.chromium.org/luci/swarming/proto/config/config.proto"#' config/*.proto
+sed -i 's#"realms\.proto"#"go.chromium.org/luci/swarming/proto/config/realms.proto"#' config/*.proto
 
 echo "- git commit to use to update README.md:"
 cd ${LUCI_ROOT}
