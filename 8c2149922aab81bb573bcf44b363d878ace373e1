@@ -237,6 +237,24 @@
     },
     {
       "key": {
+        "uuid": "6001b9b5_eda3bbe8",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-18T00:59:50Z",
+      "side": 1,
+      "message": "I looked into this. Not every build has a commit position.\nAnd I can\u0027t think of a way to reduce the number of queries.\nWe can, however, parallelising the queries to improvement the performance.\nWDYT?",
+      "parentUuid": "93ba1c22_874c13c0",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9
