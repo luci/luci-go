@@ -88,6 +88,24 @@
       "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f7e5b3ef_ca3a27e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-18T02:39:57Z",
+      "side": 1,
+      "message": "Ah, maybe. Reported in https://github.com/golang/go/issues/40853",
+      "parentUuid": "37ee6299_11a09118",
+      "revId": "4fab0db6acb6d870e0879546e2d8b7a3815fe9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
