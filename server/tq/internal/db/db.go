@@ -47,7 +47,7 @@ type DB interface {
 
 	// FetchRemindersMeta fetches Reminders with Ids in [low..high) range.
 	//
-	// Payload of Reminders should not be fetched.
+	// RawPayload of Reminders should not be fetched.
 	// Both fresh & stale reminders should be fetched.
 	// The reminders should be returned in order of ascending Id.
 	//
@@ -56,14 +56,14 @@ type DB interface {
 	// to fetch the remaining of Reminders in range of [<lastReturned.Id+1> .. high).
 	FetchRemindersMeta(ctx context.Context, low, high string, limit int) ([]*reminder.Reminder, error)
 
-	// FetchReminderPayloads fetches payloads of a batch of Reminders.
+	// FetchReminderRawPayloads fetches raw payloads of a batch of Reminders.
 	//
 	// The Reminder objects are re-used in the returned batch.
 	// If any Reminder is no longer found, it is silently omitted in the returned
 	// batch.
 	// In case of any other error, partial result of fetched Reminders so far
 	// should be returned alongside the error.
-	FetchReminderPayloads(context.Context, []*reminder.Reminder) ([]*reminder.Reminder, error)
+	FetchReminderRawPayloads(context.Context, []*reminder.Reminder) ([]*reminder.Reminder, error)
 }
 
 // Impl knows how to instantiate DB instances.

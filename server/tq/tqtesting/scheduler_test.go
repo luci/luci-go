@@ -30,6 +30,8 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	"go.chromium.org/luci/server/tq/internal/reminder"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -86,7 +88,9 @@ func TestScheduler(t *testing.T) {
 			if !eta.IsZero() {
 				req.Task.ScheduleTime = timestamppb.New(eta)
 			}
-			return status.Code(sched.Submit(ctx, req, nil))
+			return status.Code(sched.Submit(ctx, &reminder.Payload{
+				CreateTaskRequest: req,
+			}))
 		}
 
 		Convey("One by one tasks", func() {

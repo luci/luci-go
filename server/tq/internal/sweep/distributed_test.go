@@ -25,7 +25,6 @@ import (
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock/testclock"
 
@@ -94,7 +93,9 @@ func TestDistributed(t *testing.T) {
 			} else {
 				rem.FreshUntil = epoch.Add(-5 * time.Second)
 			}
-			rem.Payload, _ = proto.Marshal(&taskspb.CreateTaskRequest{Parent: body})
+			rem.AttachPayload(&reminder.Payload{
+				CreateTaskRequest: &taskspb.CreateTaskRequest{Parent: body},
+			})
 			return rem
 		}
 
@@ -113,7 +114,7 @@ func TestDistributed(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(enqueued, ShouldBeEmpty)
 			So(sub.req, ShouldHaveLength, 1)
-			So(sub.req[0].Parent, ShouldEqual, "r2")
+			So(sub.req[0].CreateTaskRequest.Parent, ShouldEqual, "r2")
 
 			So(db.AllReminders(), ShouldHaveLength, 1)
 		})
@@ -182,7 +183,7 @@ func TestDistributed(t *testing.T) {
 
 			submitted := []string{}
 			for _, r := range sub.req {
-				submitted = append(submitted, r.Parent)
+				submitted = append(submitted, r.CreateTaskRequest.Parent)
 			}
 			sort.Strings(submitted)
 			So(submitted, ShouldResemble, []string{
@@ -195,13 +196,13 @@ func TestDistributed(t *testing.T) {
 }
 
 type submitter struct {
-	cb  func(req *taskspb.CreateTaskRequest) error
+	cb  func(req *reminder.Payload) error
 	err error
 	mu  sync.Mutex
-	req []*taskspb.CreateTaskRequest
+	req []*reminder.Payload
 }
 
-func (s *submitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+func (s *submitter) Submit(ctx context.Context, req *reminder.Payload) error {
 	if s.cb != nil {
 		if err := s.cb(req); err != nil {
 			return err

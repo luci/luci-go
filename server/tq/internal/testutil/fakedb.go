@@ -60,26 +60,20 @@ func (f *FakeDB) Defer(_ context.Context, cb func(context.Context)) {
 
 func (f *FakeDB) SaveReminder(_ context.Context, r *reminder.Reminder) error {
 	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.reminders == nil {
 		f.reminders = map[string]*reminder.Reminder{}
 	}
-	f.reminders[r.ID] = r
-	f.mu.Unlock()
+	f.reminders[r.ID] = r.DropPayload()
 	return nil
 }
 
 func (f *FakeDB) DeleteReminder(_ context.Context, r *reminder.Reminder) error {
 	f.mu.Lock()
-	if f.reminders == nil {
-		return nil
+	defer f.mu.Unlock()
+	if f.reminders != nil {
+		delete(f.reminders, r.ID)
 	}
-	for id, _ := range f.reminders {
-		if id == r.ID {
-			delete(f.reminders, id)
-			break
-		}
-	}
-	f.mu.Unlock()
 	return nil
 }
 
@@ -111,7 +105,7 @@ func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit
 	return ret, nil
 }
 
-func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*reminder.Reminder) (out []*reminder.Reminder, err error) {
+func (f *FakeDB) FetchReminderRawPayloads(_ context.Context, in []*reminder.Reminder) (out []*reminder.Reminder, err error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	if f.reminders == nil {
@@ -120,8 +114,7 @@ func (f *FakeDB) FetchReminderPayloads(_ context.Context, in []*reminder.Reminde
 	out = make([]*reminder.Reminder, 0, len(in))
 	for _, r := range in {
 		if saved, exists := f.reminders[r.ID]; exists {
-			r.Payload = saved.Payload
-			r.Extra = saved.Extra
+			r.RawPayload = saved.RawPayload
 			out = append(out, r)
 		}
 	}
@@ -147,8 +140,7 @@ func (f *FakeDB) AllReminders() []*reminder.Reminder {
 		out = append(out, &reminder.Reminder{
 			ID:         r.ID,
 			FreshUntil: r.FreshUntil,
-			Payload:    r.Payload,
-			Extra:      r.Extra,
+			RawPayload: r.RawPayload,
 		})
 	}
 	return out

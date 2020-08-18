@@ -102,17 +102,17 @@ func (mr *MockDBMockRecorder) FetchRemindersMeta(ctx, low, high, limit interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRemindersMeta", reflect.TypeOf((*MockDB)(nil).FetchRemindersMeta), ctx, low, high, limit)
 }
 
-// FetchReminderPayloads mocks base method.
-func (m *MockDB) FetchReminderPayloads(arg0 context.Context, arg1 []*reminder.Reminder) ([]*reminder.Reminder, error) {
+// FetchReminderRawPayloads mocks base method.
+func (m *MockDB) FetchReminderRawPayloads(arg0 context.Context, arg1 []*reminder.Reminder) ([]*reminder.Reminder, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchReminderPayloads", arg0, arg1)
+	ret := m.ctrl.Call(m, "FetchReminderRawPayloads", arg0, arg1)
 	ret0, _ := ret[0].([]*reminder.Reminder)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FetchReminderPayloads indicates an expected call of FetchReminderPayloads.
-func (mr *MockDBMockRecorder) FetchReminderPayloads(arg0, arg1 interface{}) *gomock.Call {
+// FetchReminderRawPayloads indicates an expected call of FetchReminderRawPayloads.
+func (mr *MockDBMockRecorder) FetchReminderRawPayloads(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchReminderPayloads", reflect.TypeOf((*MockDB)(nil).FetchReminderPayloads), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchReminderRawPayloads", reflect.TypeOf((*MockDB)(nil).FetchReminderRawPayloads), arg0, arg1)
 }

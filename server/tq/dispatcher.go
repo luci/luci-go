@@ -53,8 +53,14 @@ import (
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/metrics"
 	"go.chromium.org/luci/server/tq/internal/reminder"
-	"go.chromium.org/luci/server/tq/internal/tqpb"
 )
+
+// TraceContextHeader is name of a header that contains the trace context of
+// a span that produced the task.
+//
+// It is always set regardless of InheritTraceContext setting. This header
+// is read only by Dispatcher itself and exists mostly for FYI purposes.
+const TraceContextHeader = "X-Luci-Tq-Trace-Context"
 
 // Dispatcher is a registry of task classes that knows how serialize and route
 // them.
@@ -395,7 +401,7 @@ type ExecutionInfo struct {
 
 	taskRetryReason       string // X-CloudTasks-TaskRetryReason
 	taskPreviousResponse  string // X-CloudTasks-TaskPreviousResponse
-	submitterTraceContext string // see internal.TraceContextHeader
+	submitterTraceContext string // see TraceContextHeader
 }
 
 var executionInfoKey = "go.chromium.org/luci/server/tq.ExecutionInfo"
@@ -461,7 +467,12 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 		panic(fmt.Sprintf("TaskClass with Prototype %q is already registered", proto.MessageName(cls.Prototype)))
 	}
 
-	impl := &taskClassImpl{TaskClass: cls, disp: d, protoType: typ}
+	impl := &taskClassImpl{
+		TaskClass: cls,
+		disp:      d,
+		protoType: typ,
+		backend:   backendCloudTasks, // TODO(vadimsh): Add PubSub
+	}
 	d.clsByID[cls.ID] = impl
 	d.clsByTyp[typ] = impl
 	return impl
@@ -494,23 +505,23 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	if err != nil {
 		return err
 	}
-	cls, req, err := d.prepTask(ctx, task)
+
+	// Start a span annotated with the task's class.
+	cls, _, err := d.classByMsg(task.Payload)
 	if err != nil {
 		return err
 	}
-
 	ctx, span := startSpan(ctx, "go.chromium.org/luci/server/tq.AddTask", logging.Fields{
 		"cr.dev/class": cls.ID,
 		"cr.dev/title": task.Title,
 	})
 	defer func() { span.End(err) }()
 
-	// Extra information about the task for monitoring/tracing.
-	extra := &tqpb.Extra{
-		TaskClass:           cls.ID,
-		Created:             timestamppb.New(clock.Now(ctx)),
-		SpanContext:         trace.SpanContext(ctx),
-		InheritTraceContext: cls.InheritTraceContext,
+	// Prepare a raw request. We'll either submit it right away (for non-tx
+	// tasks), or attach it to a reminder and store in the DB for later handling.
+	payload, err := d.prepPayload(ctx, cls, task)
+	if err != nil {
+		return err
 	}
 
 	// Examine the context to see if we are inside a transaction.
@@ -532,18 +543,19 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 	// If not inside a transaction, submit the task right away.
 	if db == nil {
-		return internal.Submit(ctx, sub, req, task.Payload, extra, internal.TxnPathNone)
+		return internal.Submit(ctx, sub, payload, internal.TxnPathNone)
 	}
 
 	// Named transactional tasks are not supported.
-	if req.Task.Name != "" {
+	if task.DeduplicationKey != "" {
 		return errors.Reason("when enqueuing %q: can't use DeduplicationKey for a transactional task", cls.ID).Err()
 	}
 
 	// Otherwise transactionally commit a reminder and schedule a best-effort
 	// post-transaction enqueuing of the actual task. If it fails, the sweeper
-	// will eventually discover the reminder and enqueue the task.
-	r, err := d.makeReminder(ctx, req, extra)
+	// will eventually discover the reminder and enqueue the task. Note that this
+	// modifies `payload` with the reminder's ID.
+	r, err := d.attachToReminder(ctx, payload)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare a reminder").Err()
 	}
@@ -568,7 +580,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 		defer func() { span.End(err) }()
 
 		// Attempt to submit the task right away if the reminder is still fresh.
-		err = internal.ProcessReminderPostTxn(ctx, sub, db, r, req, task.Payload, extra)
+		err = internal.ProcessReminderPostTxn(ctx, sub, db, r)
 	})
 
 	return nil
@@ -668,9 +680,6 @@ func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// defaultHeaders are added to all submitted Cloud Tasks.
-var defaultHeaders = map[string]string{"Content-Type": "application/json"}
-
 var (
 	// namespaceRe is used to validate Dispatcher.Namespace.
 	namespaceRe = regexp.MustCompile(`^[a-zA-Z_][0-9a-zA-Z_]{0,49}$`)
@@ -691,6 +700,11 @@ const (
 	happyPathMaxDuration = time.Minute
 )
 
+// defaultHeaders returns headers to add to all submitted tasks.
+func defaultHeaders() map[string]string {
+	return map[string]string{"Content-Type": "application/json"}
+}
+
 // startSpan starts a new span and puts `meta` into its attributes and into
 // logger fields.
 func startSpan(ctx context.Context, title string, meta logging.Fields) (context.Context, trace.Span) {
@@ -702,16 +716,30 @@ func startSpan(ctx context.Context, title string, meta logging.Fields) (context.
 	return ctx, span
 }
 
-// prepTask converts a task into Cloud Tasks request.
-func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *taskspb.CreateTaskRequest, error) {
-	cls, _, err := d.classByMsg(t.Payload)
-	if err != nil {
-		return nil, nil, err
+// prepPayload converts a task into a reminder.Payload.
+func (d *Dispatcher) prepPayload(ctx context.Context, cls *taskClassImpl, t *Task) (*reminder.Payload, error) {
+	payload := &reminder.Payload{
+		TaskClass: cls.ID,
+		Created:   clock.Now(ctx),
+		Raw:       t.Payload, // used on a happy path only (essentially only in tests)
 	}
+	var err error
+	switch cls.backend {
+	case backendCloudTasks:
+		payload.CreateTaskRequest, err = d.prepCloudTasksRequest(ctx, cls, t)
+	case backendPubSub:
+		panic("not implemented yet")
+	default:
+		panic("impossible")
+	}
+	return payload, err
+}
 
+// prepCloudTasksRequest prepare Cloud Tasks based on a *Task.
+func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassImpl, t *Task) (*taskspb.CreateTaskRequest, error) {
 	queueID, err := d.queueID(cls.Queue)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	taskID := ""
@@ -723,7 +751,7 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 	switch {
 	case !t.ETA.IsZero():
 		if t.Delay != 0 {
-			return nil, nil, errors.New("bad task: either ETA or Delay should be given, not both")
+			return nil, errors.New("bad task: either ETA or Delay should be given, not both")
 		}
 		scheduleTime = timestamppb.New(t.ETA)
 	case t.Delay > 0:
@@ -734,13 +762,13 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 	// Note: relativeURI is discarded when using custom payload.
 	host, relativeURI, err := d.taskTarget(cls, t)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var payload *CustomPayload
 	if cls.Custom != nil {
 		if payload, err = cls.Custom(ctx, t.Payload); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 	if payload == nil {
@@ -748,19 +776,34 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 		payload = &CustomPayload{
 			Method:      "POST",
 			RelativeURI: relativeURI,
-			Headers:     defaultHeaders,
+			Headers:     defaultHeaders(),
 		}
 		if payload.Body, err = cls.serialize(t); err != nil {
-			return nil, nil, err
+			return nil, err
+		}
+	} else {
+		// We'll likely be mutating the headers below, make a copy.
+		headers := make(map[string]string, len(payload.Headers))
+		for k, v := range payload.Headers {
+			headers[k] = v
+		}
+		payload.Headers = headers
+	}
+
+	// Inject tracing headers.
+	if span := trace.SpanContext(ctx); span != "" {
+		payload.Headers[TraceContextHeader] = span
+		if cls.InheritTraceContext {
+			payload.Headers["X-Cloud-Trace-Context"] = span
 		}
 	}
 
 	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
 	if method == 0 {
-		return nil, nil, errors.Reason("bad HTTP method %q", payload.Method).Err()
+		return nil, errors.Reason("bad HTTP method %q", payload.Method).Err()
 	}
 	if !strings.HasPrefix(payload.RelativeURI, "/") {
-		return nil, nil, errors.Reason("bad relative URI %q", payload.RelativeURI).Err()
+		return nil, errors.Reason("bad relative URI %q", payload.RelativeURI).Err()
 	}
 
 	// We need to populate one of Task.MessageType oneof alternatives. It has
@@ -785,7 +828,7 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 				Body:        payload.Body,
 			},
 		}
-		return cls, req, nil
+		return req, nil
 	}
 
 	// Elsewhere pick up some defaults mostly used only in tests.
@@ -810,7 +853,7 @@ func (d *Dispatcher) prepTask(ctx context.Context, t *Task) (*taskClassImpl, *ta
 			},
 		},
 	}
-	return cls, req, nil
+	return req, nil
 }
 
 // queueID expands `id` into a full queue name if necessary.
@@ -863,13 +906,13 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 	return
 }
 
-// makeReminder prepares a reminder to be stored in the database to remind
-// the sweeper to submit the task if best-effort post-transactional submit
-// fails.
+// attachToReminder makes a reminder and attaches the payload to it, thus
+// mutating the payload with reminder's ID.
 //
-// Mutates the task request to include an auto-generated task name (the same one
-// as stored in the reminder).
-func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRequest, extra *tqpb.Extra) (*reminder.Reminder, error) {
+// Returns the constructed reminder. It will eventually be stored in the
+// database to remind the sweeper to submit the task if best-effort
+// post-transactional submit fails.
+func (d *Dispatcher) attachToReminder(ctx context.Context, payload *reminder.Payload) (*reminder.Reminder, error) {
 	buf := make([]byte, reminderKeySpaceBytes)
 	if _, err := io.ReadFull(cryptorand.Get(ctx), buf); err != nil {
 		return nil, errors.Annotate(err, "failed to get random bytes").Tag(transient.Tag).Err()
@@ -879,7 +922,6 @@ func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRe
 	// we generate when using DeduplicationKey, so there'll be no collisions
 	// between two different sorts of named tasks.
 	r := &reminder.Reminder{ID: hex.EncodeToString(buf)}
-	req.Task.Name = req.Parent + "/tasks/" + r.ID
 
 	// Bound FreshUntil to at most current context deadline.
 	r.FreshUntil = clock.Now(ctx).Add(happyPathMaxDuration)
@@ -890,14 +932,7 @@ func (d *Dispatcher) makeReminder(ctx context.Context, req *taskspb.CreateTaskRe
 	}
 	r.FreshUntil = r.FreshUntil.UTC().Truncate(reminder.FreshUntilPrecision)
 
-	var err error
-	if r.Payload, err = proto.Marshal(req); err != nil {
-		return nil, errors.Annotate(err, "failed to marshal the task").Err()
-	}
-	if r.Extra, err = proto.Marshal(extra); err != nil {
-		return nil, errors.Annotate(err, "failed to marshal internal extra info").Err()
-	}
-	return r, nil
+	return r, r.AttachPayload(payload)
 }
 
 // isValidQueue is true if q looks like "projects/.../locations/.../queues/...".
@@ -1036,11 +1071,19 @@ func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type taskBackend int
+
+const (
+	backendCloudTasks taskBackend = 1
+	backendPubSub     taskBackend = 2
+)
+
 // taskClassImpl knows how to prepare and handle tasks of a particular class.
 type taskClassImpl struct {
 	TaskClass
 	disp      *Dispatcher
 	protoType protoreflect.MessageType
+	backend   taskBackend
 }
 
 // envelope is what we put into all Cloud Tasks.
@@ -1127,7 +1170,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 		ExecutionCount:        int(execCount),
 		taskRetryReason:       magicHeader("TaskRetryReason"),
 		taskPreviousResponse:  magicHeader("TaskPreviousResponse"),
-		submitterTraceContext: h.Get(internal.TraceContextHeader),
+		submitterTraceContext: h.Get(TraceContextHeader),
 	}
 }
 

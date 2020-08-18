@@ -37,6 +37,5 @@
 //     ID STRING(MAX) NOT NULL,
 //     FreshUntil TIMESTAMP NOT NULL,
 //     Payload BYTES(102400) NOT NULL,
-//     Extra BYTES(1024) NOT NULL,
 //   ) PRIMARY KEY (ID ASC);
 package tq

@@ -40,6 +40,7 @@ import (
 
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -84,7 +85,7 @@ func TestAddTask(t *testing.T) {
 			So(d.AddTask(ctx, task), ShouldBeNil)
 
 			So(submitter.reqs, ShouldHaveLength, 1)
-			So(submitter.reqs[0], ShouldResembleProto, &taskspb.CreateTaskRequest{
+			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: timestamppb.New(now.Add(123 * time.Second)),
@@ -92,7 +93,7 @@ func TestAddTask(t *testing.T) {
 						HttpRequest: &taskspb.HttpRequest{
 							HttpMethod: taskspb.HttpMethod_POST,
 							Url:        "https://example.com/internal/tasks/t/test-dur/hi",
-							Headers:    defaultHeaders,
+							Headers:    defaultHeaders(),
 							Body:       expectedPayload,
 							AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 								OidcToken: &taskspb.OidcToken{
@@ -111,7 +112,7 @@ func TestAddTask(t *testing.T) {
 			So(d.AddTask(ctx, task), ShouldBeNil)
 
 			So(submitter.reqs, ShouldHaveLength, 1)
-			So(submitter.reqs[0], ShouldResembleProto, &taskspb.CreateTaskRequest{
+			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: timestamppb.New(now.Add(123 * time.Second)),
@@ -119,7 +120,7 @@ func TestAddTask(t *testing.T) {
 						AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
 							HttpMethod:  taskspb.HttpMethod_POST,
 							RelativeUri: "/internal/tasks/t/test-dur/hi",
-							Headers:     defaultHeaders,
+							Headers:     defaultHeaders(),
 							Body:        expectedPayload,
 						},
 					},
@@ -133,7 +134,7 @@ func TestAddTask(t *testing.T) {
 			So(d.AddTask(ctx, task), ShouldBeNil)
 
 			So(submitter.reqs, ShouldHaveLength, 1)
-			So(submitter.reqs[0].Task.Name, ShouldEqual,
+			So(submitter.reqs[0].CreateTaskRequest.Task.Name, ShouldEqual,
 				"projects/proj/locations/reg/queues/queue-1/tasks/"+
 					"ca0a124846df4b453ae63e3ad7c63073b0d25941c6e63e5708fd590c016edcef")
 		})
@@ -145,7 +146,7 @@ func TestAddTask(t *testing.T) {
 
 			So(submitter.reqs, ShouldHaveLength, 1)
 			So(
-				submitter.reqs[0].Task.MessageType.(*taskspb.Task_HttpRequest).HttpRequest.Url,
+				submitter.reqs[0].CreateTaskRequest.Task.MessageType.(*taskspb.Task_HttpRequest).HttpRequest.Url,
 				ShouldEqual,
 				"https://example.com/internal/tasks/t/test-dur",
 			)
@@ -200,7 +201,7 @@ func TestAddTask(t *testing.T) {
 			}), ShouldBeNil)
 
 			So(submitter.reqs, ShouldHaveLength, 1)
-			So(submitter.reqs[0], ShouldResembleProto, &taskspb.CreateTaskRequest{
+			So(submitter.reqs[0].CreateTaskRequest, ShouldResembleProto, &taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: timestamppb.New(now.Add(444 * time.Second)),
@@ -329,10 +330,11 @@ func TestTransactionalEnqueue(t *testing.T) {
 		txn := db.Inject(ctx)
 
 		Convey("Happy path", func() {
-			err := d.AddTask(txn, &Task{
+			task := &Task{
 				Payload: durationpb.New(5 * time.Second),
 				Delay:   10 * time.Second,
-			})
+			}
+			err := d.AddTask(txn, task)
 			So(err, ShouldBeNil)
 
 			// Created the reminder.
@@ -349,12 +351,17 @@ func TestTransactionalEnqueue(t *testing.T) {
 			req := submitter.reqs[0]
 
 			// Make sure the reminder and the task look as expected.
-			remReq := &taskspb.CreateTaskRequest{}
-			So(proto.Unmarshal(rem.Payload, remReq), ShouldBeNil)
-			So(req, ShouldResembleProto, remReq)
 			So(rem.ID, ShouldHaveLength, reminderKeySpaceBytes*2)
-			So(req.Task.Name, ShouldEqual, "projects/proj/locations/reg/queues/queue-1/tasks/"+rem.ID)
 			So(rem.FreshUntil.Equal(now.Add(happyPathMaxDuration)), ShouldBeTrue)
+			So(req.TaskClass, ShouldEqual, "test-dur")
+			So(req.Created.Equal(now), ShouldBeTrue)
+			So(req.Raw, ShouldEqual, task.Payload) // the exact same pointer
+			So(req.CreateTaskRequest.Task.Name, ShouldEqual, "projects/proj/locations/reg/queues/queue-1/tasks/"+rem.ID)
+
+			// The task request inside the reminder's raw payload is correct.
+			remPayload, err := rem.DropPayload().Payload()
+			So(err, ShouldBeNil)
+			So(req.CreateTaskRequest, ShouldResembleProto, remPayload.CreateTaskRequest)
 		})
 
 		Convey("Fatal Submit error", func() {
@@ -463,10 +470,10 @@ func TestTesting(t *testing.T) {
 type submitter struct {
 	err  func(title string) error
 	m    sync.Mutex
-	reqs []*taskspb.CreateTaskRequest
+	reqs []*reminder.Payload
 }
 
-func (s *submitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+func (s *submitter) Submit(ctx context.Context, req *reminder.Payload) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 	s.reqs = append(s.reqs, req)
@@ -485,9 +492,9 @@ func (s *submitter) titles() []string {
 	return t
 }
 
-func title(req *taskspb.CreateTaskRequest) string {
+func title(req *reminder.Payload) string {
 	url := ""
-	switch mt := req.Task.MessageType.(type) {
+	switch mt := req.CreateTaskRequest.Task.MessageType.(type) {
 	case *taskspb.Task_HttpRequest:
 		url = mt.HttpRequest.Url
 	case *taskspb.Task_AppEngineHttpRequest:

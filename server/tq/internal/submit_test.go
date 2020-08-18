@@ -24,7 +24,6 @@ import (
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server/tq/internal/reminder"
@@ -44,43 +43,45 @@ func TestSubmit(t *testing.T) {
 
 		makeRem := func(id string) *reminder.Reminder {
 			r := &reminder.Reminder{ID: id}
-			r.Payload, _ = proto.Marshal(&taskspb.CreateTaskRequest{
-				Parent: id + " body",
+			r.AttachPayload(&reminder.Payload{
+				CreateTaskRequest: &taskspb.CreateTaskRequest{
+					Parent: id + " body",
+				},
 			})
 			So(db.SaveReminder(ctx, r), ShouldBeNil)
 			return r
 		}
 
-		call := func(r *reminder.Reminder, req *taskspb.CreateTaskRequest) error {
-			return SubmitFromReminder(ctx, &sub, &db, r, req, nil, nil, TxnPathHappy)
+		call := func(r *reminder.Reminder) error {
+			return SubmitFromReminder(ctx, &sub, &db, r, TxnPathHappy)
 		}
 
 		r := makeRem("rem")
 		So(db.AllReminders(), ShouldHaveLength, 1)
 
-		Convey("Success, existing request", func() {
-			So(call(r, &taskspb.CreateTaskRequest{Parent: "zzz"}), ShouldBeNil)
+		Convey("Success, have payload deserialized", func() {
+			So(call(r), ShouldBeNil)
 			So(db.AllReminders(), ShouldHaveLength, 0)
 			So(sub.req, ShouldHaveLength, 1)
-			So(sub.req[0].Parent, ShouldEqual, "zzz")
+			So(sub.req[0].CreateTaskRequest.Parent, ShouldEqual, "rem body")
 		})
 
-		Convey("Success, from reminder", func() {
-			So(call(r, nil), ShouldBeNil)
+		Convey("Success, from raw reminder payload", func() {
+			So(call(r.DropPayload()), ShouldBeNil)
 			So(db.AllReminders(), ShouldHaveLength, 0)
 			So(sub.req, ShouldHaveLength, 1)
-			So(sub.req[0].Parent, ShouldEqual, "rem body")
+			So(sub.req[0].CreateTaskRequest.Parent, ShouldEqual, "rem body")
 		})
 
 		Convey("Transient err", func() {
 			sub.err = status.Errorf(codes.Internal, "boo")
-			So(call(r, nil), ShouldNotBeNil)
+			So(call(r), ShouldNotBeNil)
 			So(db.AllReminders(), ShouldHaveLength, 1) // kept it
 		})
 
 		Convey("Fatal err", func() {
 			sub.err = status.Errorf(codes.PermissionDenied, "boo")
-			So(call(r, nil), ShouldNotBeNil)
+			So(call(r), ShouldNotBeNil)
 			So(db.AllReminders(), ShouldHaveLength, 0) // deleted it
 		})
 
@@ -91,7 +92,7 @@ func TestSubmit(t *testing.T) {
 
 			batch := db.AllReminders()
 			for _, r := range batch {
-				r.Payload = nil
+				r.RawPayload = nil
 			}
 			So(batch, ShouldHaveLength, 6)
 
@@ -105,7 +106,7 @@ func TestSubmit(t *testing.T) {
 			// Verify they had correct payloads.
 			var bodies []string
 			for _, r := range sub.req {
-				bodies = append(bodies, r.Parent)
+				bodies = append(bodies, r.CreateTaskRequest.Parent)
 			}
 			sort.Strings(bodies)
 			So(bodies, ShouldResemble, []string{
@@ -122,13 +123,13 @@ type submitter struct {
 	m   sync.Mutex
 	ban stringset.Set
 	err error
-	req []*taskspb.CreateTaskRequest
+	req []*reminder.Payload
 }
 
-func (s *submitter) Submit(ctx context.Context, req *taskspb.CreateTaskRequest, _ proto.Message) error {
+func (s *submitter) Submit(ctx context.Context, req *reminder.Payload) error {
 	s.m.Lock()
 	defer s.m.Unlock()
-	if s.ban.Has(req.Parent) {
+	if s.ban.Has(req.CreateTaskRequest.Parent) {
 		return status.Errorf(codes.PermissionDenied, "boom")
 	}
 	s.req = append(s.req, req)

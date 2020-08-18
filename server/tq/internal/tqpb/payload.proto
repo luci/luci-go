@@ -20,13 +20,17 @@ option go_package = "go.chromium.org/luci/server/tq/internal/tqpb";
 
 import "google/protobuf/timestamp.proto";
 
-// Extra is additional data attached to CreateTask requests.
+// Payload is stored inside reminder records.
 //
 // It is prepared by the dispatcher and consumed by the sweeper and submitters.
-// Used for monitoring and tracing.
-message Extra {
+message Payload {
+  // Fields used for monitoring and logging only.
   string task_class = 1;                 // corresponding TaskClass.ID
   google.protobuf.Timestamp created = 2; // when AddTask was called
-  string span_context = 3;               // where AddTask was called
-  bool inherit_trace_context = 4;        // see TaskClass.InheritTraceContext
+
+  // Actual payload. We store them as blobs to avoid depending on Google Cloud
+  // raw *.proto files which are not quite trivial to link to without Bazel.
+  oneof payload {
+    bytes create_task_request = 20; // serialized cloud.tasks.v2.CreateTaskRequest
+  }
 }
