@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48c2e687_08822ee7",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-18T18:50:37Z",
+      "side": 1,
+      "message": "Filed -\u003e Field",
+      "range": {
+        "startLine": 30,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 23
+      },
+      "revId": "0ba9837dfc10fdac8b650436b118e978ffa6184c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56ac1032_97e31ae8",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-18T18:50:37Z",
+      "side": 1,
+      "message": "This is fine but none of the other validation logic is written this way. I\u0027m not sure anything is really gained by doing this. Why not call validateUpdateBuildStatus and validateTags directly from validateUpdate and avoid the indirection? In the case of validateTags you have extra indirection, because you can\u0027t call it directly since you don\u0027t know what type of argument you need to pass, you had to create validateUpdateBuildTags which does nothing except call validateTags with the correct arguments. And you had to define noop which is unnecessarily called on every one of these fields.",
+      "revId": "0ba9837dfc10fdac8b650436b118e978ffa6184c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1875420a_439208f1",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-18T18:50:37Z",
+      "side": 1,
+      "message": "UpdateBuild",
+      "range": {
+        "startLine": 43,
+        "startChar": 41,
+        "endLine": 43,
+        "endChar": 56
+      },
+      "revId": "0ba9837dfc10fdac8b650436b118e978ffa6184c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
