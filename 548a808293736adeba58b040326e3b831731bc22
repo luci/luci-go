@@ -66,6 +66,30 @@
     },
     {
       "key": {
+        "uuid": "d8ef8f5d_1d0fe5c9",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T16:14:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "27f2e456_4bb6cef6",
+      "range": {
+        "startLine": 41,
+        "startChar": 8,
+        "endLine": 41,
+        "endChar": 29
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b5e1f2b_ca67ccba",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 10
@@ -113,6 +137,30 @@
     },
     {
       "key": {
+        "uuid": "198a5be3_e81c860f",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T16:14:02Z",
+      "side": 1,
+      "message": "I wasn\u0027t meaning about how to populate these. I was meaning about what this API actually queries from.",
+      "parentUuid": "9d18f743_bc86e1a4",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10
@@ -148,6 +196,30 @@
       "side": 1,
       "message": "That\u0027s an attempt to follow https://google.aip.dev/15.\nI planed to use a similar API like the one you proposed. But nodir suggested that we should follow the standard when possible, which I agree.",
       "parentUuid": "d82705a3_df9192fd",
+      "range": {
+        "startLine": 112,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 5
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1182a99d_3d73fea8",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T16:14:02Z",
+      "side": 1,
+      "message": "As long as the extra complexity here is justified.",
+      "parentUuid": "e0e56907_6857e642",
       "range": {
         "startLine": 112,
         "startChar": 1,
