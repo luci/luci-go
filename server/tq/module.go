@@ -18,10 +18,6 @@ import (
 	"context"
 	"flag"
 
-	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
-
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
@@ -327,17 +323,17 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 
 	var submitter Submitter
 	if opts.Prod {
-		// When running for real use real Cloud Tasks service.
+		// When running for real use real services.
 		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 		}
-		client, err := cloudtasks.NewClient(ctx, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+		cloudSub, err := NewCloudSubmitter(ctx, creds)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+			return nil, err
 		}
-		host.RegisterCleanup(func(ctx context.Context) { client.Close() })
-		submitter = &CloudSubmitter{Client: client}
+		host.RegisterCleanup(func(ctx context.Context) { cloudSub.Close() })
+		submitter = cloudSub
 	} else {
 		// When running locally use a simple in-memory scheduler, but go through
 		// HTTP layer to pick up logging, middlewares, etc.

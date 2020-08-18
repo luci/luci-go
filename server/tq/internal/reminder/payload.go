@@ -17,8 +17,10 @@ package reminder
 import (
 	"time"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/protobuf/proto"
+
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
 
 // Payload incapsulates the Reminder's payload.
@@ -33,6 +35,7 @@ type Payload struct {
 	Raw       proto.Message // a proto passed to AddTask, available only on happy path
 
 	CreateTaskRequest *taskspb.CreateTaskRequest // prepared Cloud Tasks request
+	PublishRequest    *pubsubpb.PublishRequest   // prepared PubSub request
 }
 
 // injectReminderID is called when the payload is attached to a reminder.
@@ -41,6 +44,12 @@ func (r *Payload) injectReminderID(id string) {
 	if req := r.CreateTaskRequest; req != nil {
 		if req.Task != nil { // may be nil in tests
 			req.Task.Name = req.Parent + "/tasks/" + id
+		}
+	}
+	// For PubSub tasks just inject the ID into attributes, for observability.
+	if req := r.PublishRequest; req != nil {
+		for _, m := range req.Messages {
+			m.Attributes["X-Luci-Tq-Reminder-Id"] = id
 		}
 	}
 }
