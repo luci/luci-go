@@ -34,6 +34,23 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d2f1bdb_bb781771",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T05:41:06Z",
+      "side": 1,
+      "message": "Chan, in the meeting we agreed on updating the builbducket proto file to say that if a build message is used as input to create a build and build.infra.resultdb is set, then it is an instruction to enable resultdb integration",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
