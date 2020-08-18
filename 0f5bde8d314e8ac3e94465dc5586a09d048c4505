@@ -271,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "f108311b_d5f687c5",
+        "filename": "server/tq/submitter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T08:13:04Z",
+      "side": 1,
+      "message": "Thanks for digging into it.",
+      "parentUuid": "1c2f7b1a_93da0a31",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 35
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12a1a312_ac5805d8",
         "filename": "server/tq/tqtesting/scheduler.go",
         "patchSetId": 2
