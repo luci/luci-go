@@ -72,7 +72,7 @@ router.setRoutes({
                   redirect: '/ui/inv/:invocation_id/test-results',
                 },
                 {
-                  path: 'test-results',
+                  path: '/test-results',
                   name: 'invocation-test-results',
                   action: async (_ctx, cmd) => {
                     await import(/* webpackChunkName: "test_results_tab" */ './pages/test_results_tab');
@@ -104,8 +104,15 @@ router.setRoutes({
                   children: [
                     {
                       path: '/',
-                      name:'build-main',
-                      redirect: '/ui/p/:project/:bucket/:builder/:build_num_or_id/test-results',
+                      redirect: '/ui/p/:project/:bucket/:builder/:build_num_or_id/overview',
+                    },
+                    {
+                      path: '/overview',
+                      name: 'build-overview',
+                      action: async (_ctx, cmd) => {
+                        await import(/* webpackChunkName: "test_overview_tab" */ './pages/build_page/overview_tab');
+                        return cmd.component('tr-overview-tab');
+                      },
                     },
                     {
                       path: '/test-results',
