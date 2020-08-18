@@ -33,13 +33,7 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 	var expected isolated.HexDigests
 	Convey(`Common tests performed on a cache of objects.`, func() {
 		// c's policies must have MaxItems == 2 and MaxSize == 1024.
-		td, err := ioutil.TempDir("", "cache")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(td); err != nil {
-				t.Fail()
-			}
-		}()
+		td := t.TempDir()
 
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
@@ -129,13 +123,8 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 
 func TestNewDisk(t *testing.T) {
 	Convey(`Test the disk-based cache of objects.`, t, func() {
-		td, err := ioutil.TempDir("", "cache")
-		So(err, ShouldBeNil)
-		defer func() {
-			if err := os.RemoveAll(td); err != nil {
-				t.Error(err)
-			}
-		}()
+		td := t.TempDir()
+
 		pol := Policies{MaxSize: 1024, MaxItems: 2}
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
@@ -150,8 +139,9 @@ func TestNewDisk(t *testing.T) {
 
 		cwd, err := os.Getwd()
 		So(err, ShouldBeNil)
-		rel, err := filepath.Rel(td, cwd)
+		rel, err := filepath.Rel(cwd, t.TempDir())
 		So(err, ShouldBeNil)
+		So(filepath.IsAbs(rel), ShouldBeFalse)
 		_, err = NewDisk(pol, rel, h)
 		So(err, ShouldBeNil)
 	})
