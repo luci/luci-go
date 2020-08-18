@@ -318,6 +318,20 @@ func TestExe(t *testing.T) {
 					So(exitcode, ShouldEqual, 0)
 				})
 			})
+
+			Convey(`write output on error`, func() {
+				outFile := filepath.Join(tdir, "out.json")
+				args = append(args, luciexe.OutputCLIArg, outFile)
+				exitCode := runCtx(ctx, args, bootstrapGet, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
+					build.SummaryMarkdown = "Hi."
+					return errors.New("bad stuff")
+				})
+				So(exitCode, ShouldEqual, 1)
+				data, err := ioutil.ReadFile(outFile)
+				So(err, ShouldBeNil)
+				So(string(data), ShouldResemble,
+					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
+			})
 		})
 	})
 }
