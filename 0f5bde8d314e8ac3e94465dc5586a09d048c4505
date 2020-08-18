@@ -16,6 +16,161 @@
       "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "65a10fca_197ab31b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "sorry, took me long time to review. LGTM % i\u0027m a bit worried about 4 concurrent Cloud Tasks RPCs.",
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5abd8848_fda0136e",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "routeD",
+      "range": {
+        "startLine": 203,
+        "startChar": 45,
+        "endLine": 203,
+        "endChar": 46
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10fc2210_9fa0516c",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "must is more accurate.",
+      "range": {
+        "startLine": 211,
+        "startChar": 52,
+        "endLine": 211,
+        "endChar": 58
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "085ee207_e96eccf6",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "that\u0027s very hacky. Can it be named `Meta`?",
+      "range": {
+        "startLine": 346,
+        "startChar": 47,
+        "endLine": 346,
+        "endChar": 78
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4abee689_a0f9d0e2",
+        "filename": "server/tq/dispatcher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 506,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "WDYT about moving this block above \"var backend taskBackend\" \nand moving cls.Queue- and cls.Task-specific checks into a big switch:\n\nvar backend block\nswitch {\ncase cls.Queue !\u003d \"\" \u0026\u0026 cls.Topic !\u003d \"\"\n panic\ncase cls.Queue !\u003d \"\":\n  ..\ncase cls.Task !\u003d \"\":\n  ...\ndefault:\n  panic\n}\n\n?",
+      "range": {
+        "startLine": 503,
+        "startChar": 1,
+        "endLine": 506,
+        "endChar": 0
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1e04a7e_6964b625",
+        "filename": "server/tq/submitter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "If I read godoc right, this means 4 concurrent RPCs. Are you sure this won\u0027t negatively affect Cloud Tasks? Do you know what default they had?",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 35
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12a1a312_ac5805d8",
+        "filename": "server/tq/tqtesting/scheduler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T06:05:54Z",
+      "side": 1,
+      "message": "wasn\u0027t clear to me what \"ns\" stand for. I expected np or namePrefix",
+      "range": {
+        "startLine": 211,
+        "startChar": 5,
+        "endLine": 211,
+        "endChar": 7
+      },
+      "revId": "0f5bde8d314e8ac3e94465dc5586a09d048c4505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
