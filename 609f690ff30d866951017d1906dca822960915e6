@@ -36,6 +36,23 @@
     },
     {
       "key": {
+        "uuid": "a7833573_e3c7e9e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:45:05Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "34c4d775_e0092a08",
         "filename": "resultdb/proto/v1/test_result.pb.go",
         "patchSetId": 3
@@ -196,6 +213,30 @@
       "side": 1,
       "message": "i thought of this for quite a bit, and locally I have map\u003cstring, string\u003e where key is the name of the categorization, and the value is a slash-separated category string (\"category/sub-category\"), but all examples of known keys I was able to come up with falls into one of two buckets\n\n1) the user-defined arbitrary categorization, e.g. \"GPU Tests/NVidia\". I kind of doubt that we will have more than one of this kind. Maintaining a single one would not be easy for developers. I am not sure about maintaining two.\n2) categorization based on some attribute that is already present in TestResult message, e.g. monorail component (UI/Blink) or test location (chrome/browser/ui/browser_browsertest.cc)\n\nI think it would be simpler not to have (2) because otherwise would mean *N* pieces of code that reports (2) must report the same info twice. The alternative is that a *single* piece of code in Milo implements the logic \"if the test result has TestResult.test_location.file_name, then we can group by that\", and \"if the test result defines a monorail component, we can group by that\". The latter means we would need to move monorail component from tags to a proto message.\n\n---\n\nSo I think the answer to your question about multiple ways to categorize is yes, but it is achieved via existing fields, such as TestResult.test_location.\n\n--\n\n\u003e It seems to me that `test_category` will end up adding a lot of redundant data, though maybe this cannot be helped?\n\nthis might be not a big deal because both spanner and bigquery compress/deduplicate data at the storage level\n\n--\n\nWDYT about turning [\"a\", \"b\", \"c\"] into \"a/b/c\". Seems simpler.",
       "parentUuid": "5fb769bf_ddcaff35",
+      "range": {
+        "startLine": 225,
+        "startChar": 16,
+        "endLine": 225,
+        "endChar": 54
+      },
+      "revId": "609f690ff30d866951017d1906dca822960915e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "380f7176_0dc4801a",
+        "filename": "resultdb/proto/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:45:05Z",
+      "side": 1,
+      "message": "\u003e WDYT about turning [\"a\", \"b\", \"c\"] into \"a/b/c\". Seems simpler.\n\nYeah, I think this is reasonable given that \"/\" is already a hierarchy delimiter for names here. The only time when it might NOT be OK is if somehow folks are depending on having \"/\" as a character in their custom categorization... but that would be weird, right?\n\nIn general, having it be a single string seems like it will be simpler down the line if this ever needs to show up in e.g. BQ (for the same reasons that step names use an in-line delimiter there)",
+      "parentUuid": "41b2b9ca_6d05bf88",
       "range": {
         "startLine": 225,
         "startChar": 16,
