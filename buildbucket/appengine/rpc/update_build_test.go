@@ -55,7 +55,7 @@ func TestValidateUpdate(t *testing.T) {
 
 		Convey("fails", func() {
 			Convey("with nil request", func() {
-				So(validateUpdate(nil), ShouldErrLike, "id is required")
+				So(validateUpdate(nil), ShouldErrLike, "build.id: required")
 			})
 
 			Convey("with an invalid path", func() {
@@ -75,5 +75,29 @@ func TestValidateUpdate(t *testing.T) {
 				So(validateUpdate(req), ShouldErrLike, `unsupported path(s) ["bucket.name" "build.ts"]`)
 			})
 		})
+	})
+
+	Convey("validateUpdateBuildStatus", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
+
+		Convey("succeeds", func() {
+			req.Build.Status = pb.Status_SUCCESS
+			So(validateUpdate(req), ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			req.Build.Status = pb.Status_SCHEDULED
+			So(validateUpdate(req), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
+		})
+	})
+
+	Convey("validateBuildTags", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
+
+		So(validateUpdate(req), ShouldBeNil)
+		req.Build.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
+		So(validateUpdate(req), ShouldBeNil)
 	})
 }
