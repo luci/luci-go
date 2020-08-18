@@ -123,6 +123,42 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bd3bbe5_80c1d0e9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-18T19:37:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "350f9f03_a528f933",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "566423c9_d9ebdd18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-18T19:37:46Z",
+      "side": 1,
+      "message": "(unresolving)\n\ntikuta, do you have any idea on when will swarming tasks have realms?\n\nQuestion to all: if we ask swarming to create the invocation for led builds, then we need to grant \"swarming.tasks.createInRealm\" permissions to users who can run led (maybe group:project-chromium-tryjob-access ?) in each realms, do you see any issue with it?  +vadimsh as well.",
+      "parentUuid": "32a0c074_31c8cd27",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
