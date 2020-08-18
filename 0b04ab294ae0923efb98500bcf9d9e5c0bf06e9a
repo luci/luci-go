@@ -87,6 +87,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb5ac9ec_3a877e45",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T15:27:01Z",
+      "side": 1,
+      "message": "\"updating the buildbucket proto file\" (meaning comments) isnt\u0027 the case of the current patchset? the proto file isn\u0027t modified and HEAD doesn\u0027t say it in neither https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d417-425?q\u003dbuild.proto%20f:buildbucket\nnor\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d431?q\u003dbuild.proto%20f:buildbucket",
+      "parentUuid": "a64f3e4c_a4d3672a",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
