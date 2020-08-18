@@ -43,6 +43,9 @@ const (
 
 const (
 	buildSetMaxLength = 1024
+	// summaryMardkdownMaxLength is the maximum size of Build.summary_markdown field in bytes.
+	// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
+	summaryMarkdownMaxLength = 4 * 1000
 )
 
 var (
@@ -55,6 +58,12 @@ var (
 // commonPostlude converts an appstatus error to a gRPC error and logs it.
 func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	return appstatus.GRPCifyAndLog(ctx, err)
+}
+
+// teeErr saves `err` in `keep` and then returns `err`
+func teeErr(err error, keep *error) error {
+	*keep = err
+	return err
 }
 
 // logDetails logs debug information about the request.
@@ -165,6 +174,13 @@ func validateBuildSet(bs string) error {
 		if !gerritCLRegex.MatchString(bs) {
 			return errors.Reason(`does not match regex "%s"`, gerritCLRegex).Err()
 		}
+	}
+	return nil
+}
+
+func validateSummaryMarkdown(md string) error {
+	if len(md) > summaryMarkdownMaxLength {
+		return errors.Reason("too big to accept (%d > %d bytes)", len(md), summaryMarkdownMaxLength).Err()
 	}
 	return nil
 }
