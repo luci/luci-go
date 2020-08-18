@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "5fc4a497_3b574d96",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-18T20:39:51Z",
+      "side": 1,
+      "message": "I\u0027m not sure it needs to be connected, when the majority of fields that can be updated don\u0027t require validation anyway. If every field that could be updated required validation it might be beneficial as a way to ensure anyone adding another field also remembered validation code, but in my opinion it necessitates too much boilerplate (validateUpdateBuildTags, as previously mentioned).",
+      "parentUuid": "1a7d3d43_cbed4efe",
+      "revId": "0ba9837dfc10fdac8b650436b118e978ffa6184c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1875420a_439208f1",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 10
