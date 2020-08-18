@@ -291,6 +291,24 @@
     },
     {
       "key": {
+        "uuid": "6c364e87_ca684d8f",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-18T07:35:19Z",
+      "side": 1,
+      "message": "implemented.\nDid some preliminary testing. With a blamelist that has ~40 commits.\nwhen the number of worker is 8, it cuts the execution time to about half.\nSetting the worker count to 16 doesn\u0027t seem to improve the performance.\nSetting the worker count to 4 only marginally increate the query time, maybe it will be more significant if we have a longer blamelist.\nI think 8 works is good enough. We can always tune the number later.",
+      "parentUuid": "87cd87f6_9a494088",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9

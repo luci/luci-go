@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "27f2e456_4bb6cef6",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-18T07:35:19Z",
+      "side": 1,
+      "message": "The service is intended to be used by milo/resultui only.\nSo the API is tailored to fit those use cases.\nIf we take a build ID, we need an extra query to get the gitiles commit and builder info from buildbucket.\nBut often when we request the info in milo/resultui, we already have those info available. Taking builder and gitiles commit should improve the performance.",
+      "parentUuid": "26fe5d87_369a01a5",
+      "range": {
+        "startLine": 41,
+        "startChar": 8,
+        "endLine": 41,
+        "endChar": 29
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4b5e1f2b_ca67ccba",
         "filename": "milo/api/service/v1/rpc.proto",
         "patchSetId": 10
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "9d18f743_bc86e1a4",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-18T07:35:19Z",
+      "side": 1,
+      "message": "Added comment that the commit should be build.output.gitiles_commit, but if it\u0027s not available, the caller can fallback to build.input.gitiles_commit.",
+      "parentUuid": "4b5e1f2b_ca67ccba",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10
@@ -76,6 +124,30 @@
       "writtenOn": "2020-08-18T01:22:50Z",
       "side": 1,
       "message": "what\u0027s the reason for this hash and token? Why not make the \"next page\" token instead be a transparent git hash? Is this meant to protect against some attack vector?\n\nThe user is already providing the GitilesCommit (i.e. arbitrary git hash) which doesn\u0027t have to be correlated with the Builder. What would having \"next_commit\" instead of this opaque \"next_page\" token/hash thing?",
+      "range": {
+        "startLine": 112,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 5
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0e56907_6857e642",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-18T07:35:19Z",
+      "side": 1,
+      "message": "That\u0027s an attempt to follow https://google.aip.dev/15.\nI planed to use a similar API like the one you proposed. But nodir suggested that we should follow the standard when possible, which I agree.",
+      "parentUuid": "d82705a3_df9192fd",
       "range": {
         "startLine": 112,
         "startChar": 1,
