@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc53879e_25e091e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T20:17:14Z",
+      "side": 1,
+      "message": "Thanks, Josip! Unfortunately, can you please fix the downstream usage to unblock the roll?\n(See https://crrev.com/c/2363474)",
+      "revId": "f05dff6f22cc51fe78bec91b4459db5b84278a04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
