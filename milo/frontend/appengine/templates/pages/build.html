@@ -236,8 +236,25 @@
         Recipe: {{ .BuildPage.RecipeLink.HTML }}
       </li>
     </ul>
+    Show Debug Logs:
+    <input type="checkbox" name="debug_hider" id="showDebugLogs"
+           {{- if .BuildPage.ShowDebugLogsPref }} checked{{ end }}>
 
-    <h2>Steps and Logs</h2>
+    {{ with .BuildPage.GetOutput.GetLogs }}
+      <h2>Build Logs:</h2>
+      <ul>
+      {{ range . }}
+        <li class="sublink{{ if startswith .Name "$" }} debug-log{{ end }}">
+          <a href="{{ .ViewUrl }}">{{ .Name }}</a>
+          {{- if eq .Name "stdout" "stderr" }}
+            [{{ logdogLink . true }}]
+          {{- end }}
+        </li>
+      {{ end }}
+      </ul>
+    {{ end }}
+
+    <h2>Build Steps</h2>
     Show:
     <input type="radio" name="hider" id="showExpanded" value="expanded"
            {{- if eq .BuildPage.StepDisplayPref "expanded" }} checked{{ end }}>
@@ -248,11 +265,6 @@
     <input type="radio" name="hider" id="showNonGreen" value="non-green"
            {{- if eq .BuildPage.StepDisplayPref "non-green" }} checked{{ end }}>
     <label for="showNonGreen">Non-Green</label>
-
-    <br/>
-    Debug Logs:
-    <input type="checkbox" name="debug_hider" id="showDebugLogs"
-           {{- if .BuildPage.ShowDebugLogsPref }} checked{{ end }}>
 
     <ol id="steps" class="
       {{- if eq .BuildPage.StepDisplayPref "non-green" }} non-green{{ end -}}
