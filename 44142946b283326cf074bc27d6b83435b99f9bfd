@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "758c87dc_aa569ed2",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:41:35Z",
+      "side": 1,
+      "message": "that reasoning sgtm",
+      "parentUuid": "77f64ab0_0a9b12e4",
+      "range": {
+        "startLine": 34,
+        "startChar": 39,
+        "endLine": 34,
+        "endChar": 64
+      },
+      "revId": "44142946b283326cf074bc27d6b83435b99f9bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a83db2eb_c7a1ec7d",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "44142946b283326cf074bc27d6b83435b99f9bfd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "320fafb7_b112486d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:41:35Z",
+      "side": 1,
+      "message": "This looks fine to me; I don\u0027t think matching validation order is important (it looks arbitrary in the python code). The only way it might matter is if you want to directly compare the validation output between versions to check correctness in prod, but I think probably they\u0027re not going to be comparable in that way anyhow?",
+      "parentUuid": "a83db2eb_c7a1ec7d",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "44142946b283326cf074bc27d6b83435b99f9bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
