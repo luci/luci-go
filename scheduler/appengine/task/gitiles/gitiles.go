@@ -444,7 +444,7 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 	c, cancel := clock.WithTimeout(c, gitilesRPCTimeout)
 	defer cancel()
 
-	commits, err = gitiles.PagingLog(c, g, gitilespb.LogRequest{
+	commits, err = gitiles.PagingLog(c, g, &gitilespb.LogRequest{
 		Project:            g.project,
 		Committish:         newHead,
 		ExcludeAncestorsOf: oldHead, // empty if ref is new, but then maxCommits is 1.
@@ -486,7 +486,7 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 
 	// Fetch log of newHead only.
 	var newErr error
-	commits, newErr = gitiles.PagingLog(c, g, gitilespb.LogRequest{
+	commits, newErr = gitiles.PagingLog(c, g, &gitilespb.LogRequest{
 		Project:    g.project,
 		Committish: newHead,
 	}, 1)
@@ -496,7 +496,7 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 		return
 	}
 	// Fetch log of oldHead only.
-	_, errOld := gitiles.PagingLog(c, g, gitilespb.LogRequest{
+	_, errOld := gitiles.PagingLog(c, g, &gitilespb.LogRequest{
 		Project:    g.project,
 		Committish: oldHead,
 		TreeDiff:   pathFilter.active(),
