@@ -255,6 +255,24 @@
     },
     {
       "key": {
+        "uuid": "2974ac36_dcc56a69",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-18T01:38:16Z",
+      "side": 1,
+      "message": "I think parallelising this may be a good idea, if the performance is slow (may be we can check with 1000 and see if the performance is ok?).\n\nDo we already have index for the fields we want to query?",
+      "parentUuid": "6001b9b5_eda3bbe8",
+      "revId": "8c2149922aab81bb573bcf44b363d878ace373e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "48e04dda_67673cd1",
         "filename": "milo/backend/query_blamelist_test.go",
         "patchSetId": 9
