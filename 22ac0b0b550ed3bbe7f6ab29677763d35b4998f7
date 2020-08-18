@@ -39,6 +39,30 @@
       "revId": "22ac0b0b550ed3bbe7f6ab29677763d35b4998f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17a07872_cd9d30e0",
+        "filename": "server/tq/internal/tqpb/payload.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-18T01:50:51Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "79b19ca3_3aecbee6",
+      "range": {
+        "startLine": 23,
+        "startChar": 14,
+        "endLine": 23,
+        "endChar": 16
+      },
+      "revId": "22ac0b0b550ed3bbe7f6ab29677763d35b4998f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
