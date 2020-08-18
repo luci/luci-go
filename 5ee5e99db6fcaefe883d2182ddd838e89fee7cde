@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26d94556_65e82310",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-18T22:58:05Z",
+      "side": 1,
+      "message": "This is not strictly necessary, gerrit will probably just ignore bogus values.\n\nAlso, separately, it would be possible to validate that req.Query is non-empty, but this also seems unnecessary, and having an empty query that matches everything seems potentially valid.",
+      "range": {
+        "startLine": 293,
+        "startChar": 0,
+        "endLine": 295,
+        "endChar": 2
+      },
+      "revId": "5ee5e99db6fcaefe883d2182ddd838e89fee7cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

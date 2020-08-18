@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "02c704c4_acae7bc9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-18T22:58:05Z",
+      "side": 1,
+      "message": "Thanks for speedy review!\n\n(Will update tomorrow)",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b6296f6b_677db035",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -116,6 +133,24 @@
       "writtenOn": "2020-08-18T22:29:51Z",
       "side": 1,
       "message": "I wish we didn\u0027t provide this field. It\u0027d lead to more likely correct usage of GoB API.\nThe only reliable way to query GoB for multiple changes, afaiu, is by adding \"before\" to the query.\n\nI guess one way to solve this is to provide high level wrapper that does the right thing:\n    PagingListChanges(req, query, limit)\nPerhaps I can work on that, since we need it for CQ/Tricium anyway.",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a5c1ad0d_b4c36ec4",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-18T22:58:05Z",
+      "side": 1,
+      "message": "\"before\"... so what you mean is that in order to page you\u0027d get the timestamp from the earliest change and then to get the next page you\u0027d use before:?\n\nIf this is definitely always the best way to do it, then why don\u0027t we do it that way in this CL? i.e. don\u0027t provide Offset, and (optionally) provide an  earliest timestamp field in the response for convenience?",
+      "parentUuid": "d09729b9_b7eff18a",
       "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
