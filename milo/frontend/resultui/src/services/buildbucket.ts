@@ -45,7 +45,7 @@ export interface Build {
   readonly input: BuildInput;
   readonly output: BuildOutput;
   readonly steps: Step[];
-  readonly infra: BuildInfra;
+  readonly infra?: BuildInfra;
   readonly tags: StringPair[];
   readonly exe: Executable;
 }
@@ -63,7 +63,7 @@ export enum BuildStatus {
 export interface BuildInput {
   readonly properties: {[key: string]: unknown};
   readonly gitiles_commit?: GitilesCommit;
-  readonly gerrit_changes: GerritChange[];
+  readonly gerrit_changes?: GerritChange[];
   readonly experimental: boolean;
 }
 
@@ -126,12 +126,12 @@ export interface RequestedDimension {
 
 export interface BuildInfraSwarming {
   readonly hostname: string;
-  readonly taskId: string;
+  readonly task_id?: string;
   readonly parent_run_id: string;
   readonly task_service_account: string;
   readonly priority: number;
   readonly task_dimensions: readonly RequestedDimension[];
-  readonly bot_dimensions: StringPair[];
+  readonly bot_dimensions?: StringPair[];
   readonly caches: readonly BuildInfraSwarmingCacheEntry[];
   readonly containment: Containment;
 }
