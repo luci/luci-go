@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6296f6b_677db035",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "I\u0027d add default of 25. But do check that it is at most 1K.",
+      "range": {
+        "startLine": 290,
+        "startChar": 4,
+        "endLine": 290,
+        "endChar": 19
+      },
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d530791_5950243a",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "prefer errors.Reason().Err() when you need formatting and errors.New() but crucially from our \"errors\" package\nOur errors package captures stack trace, which makes for easier debugging. See also errors.Log function.",
+      "range": {
+        "startLine": 291,
+        "startChar": 14,
+        "endLine": 291,
+        "endChar": 24
+      },
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa70916e_46f7707c",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "FYI: consider adding smth similar to what Nodir did for Gitiles:\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/proto/gitiles/validation.go?q\u003dLUCI%20gitiles%20validate\u0026ss\u003dchromium%2Finfra%2Finfra",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "217c78cf_21ab3f8b",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "this is a good test, but the sad truth is that one can\u0027t trust 404 from Gerrit 😞 It may be that the query was routed to the stale replica which would then respond 404 on a newly created change. And there is no guarantee for how long changes may be stale.",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "974e808c_a668519f",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "Just \"Required\"\n\nalso, may be worth documenting that number of returned items may in fact be smaller than requested while moreChanges is true.\nSo, wdyt:\n\n\"Caps the number of results to return. Required.\"\n\n\nbtw, why not provide a default value of say 25?\n\nalso, document it must be below 1K (GoB internal limit).",
+      "range": {
+        "startLine": 180,
+        "startChar": 38,
+        "endLine": 180,
+        "endChar": 69
+      },
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d09729b9_b7eff18a",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "I wish we didn\u0027t provide this field. It\u0027d lead to more likely correct usage of GoB API.\nThe only reliable way to query GoB for multiple changes, afaiu, is by adding \"before\" to the query.\n\nI guess one way to solve this is to provide high level wrapper that does the right thing:\n    PagingListChanges(req, query, limit)\nPerhaps I can work on that, since we need it for CQ/Tricium anyway.",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f6478c05_8f527ea5",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T22:29:51Z",
+      "side": 1,
+      "message": "can you verify with API docs that returned order is by .updatedTimestamp? And if so, add it here.",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
