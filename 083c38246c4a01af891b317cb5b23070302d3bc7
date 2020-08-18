@@ -39,6 +39,30 @@
       "revId": "083c38246c4a01af891b317cb5b23070302d3bc7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daae3f66_bcb688bd",
+        "filename": "common/api/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1393469
+      },
+      "writtenOn": "2020-08-18T15:53:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0730d934_9318a245",
+      "range": {
+        "startLine": 42,
+        "startChar": 37,
+        "endLine": 43,
+        "endChar": 28
+      },
+      "revId": "083c38246c4a01af891b317cb5b23070302d3bc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
