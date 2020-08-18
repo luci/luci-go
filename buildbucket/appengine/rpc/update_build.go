@@ -36,7 +36,7 @@ var (
 		"build.status":                validateUpdateBuildStatus,
 		"build.status_details":        noop, // no validation required
 		"build.steps":                 noop,
-		"build.summary_markdown":      noop,
+		"build.summary_markdown":      validateUpdateBuildSummaryMarkdown,
 		"build.tags":                  validateUpdateBuildTags,
 	}
 
@@ -64,6 +64,10 @@ func validateUpdateBuildStatus(req *pb.UpdateBuildRequest) error {
 
 func validateUpdateBuildTags(req *pb.UpdateBuildRequest) error {
 	return validateTags(req.Build.Tags, TagAppend)
+}
+
+func validateUpdateBuildSummaryMarkdown(req *pb.UpdateBuildRequest) error {
+	return validateSummaryMarkdown(req.Build.SummaryMarkdown)
 }
 
 // validateUpdate validates the given request.
