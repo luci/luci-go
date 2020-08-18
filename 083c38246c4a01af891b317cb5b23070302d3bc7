@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80a82336_aed43d0b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:36:28Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "083c38246c4a01af891b317cb5b23070302d3bc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0730d934_9318a245",
+        "filename": "common/api/gitiles/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T06:36:28Z",
+      "side": 1,
+      "message": "probably drop this last bit.",
+      "range": {
+        "startLine": 42,
+        "startChar": 37,
+        "endLine": 43,
+        "endChar": 28
+      },
+      "revId": "083c38246c4a01af891b317cb5b23070302d3bc7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
