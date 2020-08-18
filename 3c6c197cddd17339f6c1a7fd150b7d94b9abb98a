@@ -19,6 +19,69 @@
     },
     {
       "key": {
+        "uuid": "65c78523_4b58884a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "high level, perhaps for the future: this CL is pretty large, doing multiple things at the same time. See go/small-cls. In particular, code moves code be in a separate CL, setting up a pRPC server without actual impl could be in a separate CL. The proto files could be in a separate CL. Some of these CLs would have already landed by now because they wouldn\u0027t be contentious ",
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da2ddb5b_b73d6807",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "capital C",
+      "range": {
+        "startLine": 41,
+        "startChar": 6,
+        "endLine": 41,
+        "endChar": 7
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ece8f9f_f3626881",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "please use appstatus.BadRequest(err)\nsee how buildbucket and resultdb uses it, including a Postlude: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/appengine/rpc/common.go;l\u003d57?q\u003dcommonPostlude%20f:buildbucket\n\nwe should probably send a PSA to stop using grpcutil",
+      "range": {
+        "startLine": 43,
+        "startChar": 59,
+        "endLine": 43,
+        "endChar": 86
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fe19e4ed_81e23b67",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 12
@@ -65,6 +128,144 @@
       "side": 1,
       "message": "IMO moving this to a const wouldn\u0027t improve the clarity of the code, but I\u0027m not an OWNER, so as you like.",
       "parentUuid": "41da1a49_b2c94971",
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b31c35be_8b20bb1e",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "I doubt using different synchronization (atomic vs Mutex) mechanisms works. I think we need use mutex in L68",
+      "range": {
+        "startLine": 82,
+        "startChar": 6,
+        "endLine": 82,
+        "endChar": 15
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d064798_6044ea2c",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "nit: names \"blameLength\" and \"blameSize\" are very similar and it is hard to tell what\u0027s the difference.\nit is definitely not obvious form the name that size is synchronized and length is not\n\nperhaps we don\u0027t need blameLength if we use mutex above",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 12
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d33a2209_7d59ef3e",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "nit: this is a perfect candidate for a switch statement",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 0
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "091297c4_ad1c7fae",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "i am not aware of any paging implementation in LUCI that ensures that the request is the same. Why it isn\u0027t sufficient to solve this problem by adding a comment in the proto file, saying that all other fields should be the same? I think the implementation would be simpler\n\nin particular, we can use the commit id itself as a hash (or maybe with some prefix e.g. \"commit:\u003cid\u003e\")",
+      "range": {
+        "startLine": 143,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 3
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2a02be3_cf523134",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "lower-case a",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 4
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9fffcf4_dade6f36",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-18T19:48:51Z",
+      "side": 1,
+      "message": "should go in the same block as other milo imports",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 0
+      },
       "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
