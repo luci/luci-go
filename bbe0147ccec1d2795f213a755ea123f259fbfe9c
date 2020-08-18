@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "31a53f9b_46640410",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-18T07:30:13Z",
+      "side": 1,
+      "message": "Do you know how to package the css file in node_modules?",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
