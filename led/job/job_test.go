@@ -26,7 +26,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/led/job/experiments"
-	"go.chromium.org/luci/luciexe/exe"
+	"go.chromium.org/luci/luciexe/exe/exeutil"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -93,7 +93,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
 
 			props := ledProperties{}
-			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]interface{}{
+			err = exeutil.ParseProperties(bbArgs.Build.Input.Properties, map[string]interface{}{
 				"$recipe_engine/led": &props,
 			})
 			So(err, ShouldBeNil)
