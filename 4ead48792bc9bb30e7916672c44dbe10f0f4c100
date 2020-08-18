@@ -157,6 +157,24 @@
     },
     {
       "key": {
+        "uuid": "68e1919a_0c284131",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T23:41:13Z",
+      "side": 1,
+      "message": "Having offset follows actual Gerrit API and using \"before\" correctly is very non-trivial. 2 examples:\n\n1. how to handle the case of:\n    res \u003d list(q, page_size \u003d 25, before \u003c\u003d $tstamp)\n  where each change in result has exactly the same update $tstamp?\n  what should the next query be? Naive implementation would loop forever 😞\n\n2. what if a change is updated while you are paging through?\nNaive impl would totally miss it. And in some cases it\u0027s fine, though then probably using offset is also fine.\nIf you really want to get all changes matching a query, then the proper implementation must page through all of them first and then page again for the most recently updated changes until timestamps start overlapping. This is PITA to implement.\n\nSo, I think it\u0027s much better to provide high level function instead that works around the unfortunate Gerrit API. BTW, another way might be to convince Gerrit to provide optional ordering of changes in the query by their change.number or change.created_time DESC. This would be ~similar to ordering by .updated in practice, but unlike .updated, the ordering is stable and paging is obvious.",
+      "parentUuid": "a5c1ad0d_b4c36ec4",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6478c05_8f527ea5",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
