@@ -39,22 +39,39 @@ var (
 		"build.summary_markdown",
 		"build.tags",
 	)
+
+	// a set of build statuses supported by UpdateBuild RPC
+	updateBuildStatuses = map[pb.Status]struct{}{
+		pb.Status_STARTED: {},
+		// kitchen does not actually use SUCCESS. It relies on swarming pubsub
+		// handler in Buildbucket because a task may fail after recipe succeeded.
+		pb.Status_SUCCESS:       {},
+		pb.Status_FAILURE:       {},
+		pb.Status_INFRA_FAILURE: {},
+	}
 )
 
 // validateUpdate validates the given request.
 func validateUpdate(req *pb.UpdateBuildRequest) error {
 	// validate the mask
-	unsupported := stringset.NewFromSlice(
-		req.GetUpdateMask().GetPaths()...).Difference(updatableFieldPaths)
+	reqPaths := stringset.NewFromSlice(req.GetUpdateMask().GetPaths()...)
+	unsupported := reqPaths.Difference(updatableFieldPaths)
 	if len(unsupported) > 0 {
 		return errors.Reason("unsupported path(s) %q", unsupported.ToSortedSlice()).Err()
 	}
-
-	// validate the build
-	switch {
-	// TODO(1110990): validate the rest of the message fields
-	case req.GetBuild().GetId() == 0:
-		return errors.Reason("id is required").Err()
+	if req.GetBuild().GetId() == 0 {
+		return errors.Reason("build.id: required").Err()
+	}
+	if reqPaths.Has("build.status") {
+		if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
+			return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
+		}
+	}
+	// TODO(1110990): validate gitiles_commit, summary_markdown, and steps
+	if reqPaths.Has("build.tags") {
+		if err := validateTags(req.Build.Tags, TagAppend); err != nil {
+			return errors.Annotate(err, "build.tags").Err()
+		}
 	}
 	return nil
 }
