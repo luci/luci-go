@@ -474,6 +474,9 @@ message BotEvent {
 // Defines a Content Addressed Storage (a cache in practice) data tree
 // reference, normally a reference to a .isolated file.
 //
+// Deprecated: Isoalte server is being migrated to RBE-CAS. Use `CASReference`
+// for the digest on RBE-CAS.
+//
 // This can be used to refer to either a task's inputs or a task's outputs.
 //
 // The .isolated file format is defined at
@@ -502,6 +505,22 @@ message CASTree {
   // "sha256-GCP". The GCP RBE CAS requires SHA-256 and doesn't support
   // precompressed data.
   string namespace = 3;
+}
+
+message Digest {
+  // This is a [Digest][build.bazel.remote.execution.v2.Digest] of a blob on
+  // RBE-CAS. See the explanations at the original definition.
+  // https://github.com/bazelbuild/remote-apis/blob/77cfb44a88577a7ade5dd2400425f6d50469ec6d/build/bazel/remote/execution/v2/remote_execution.proto#L753-L791
+  string hash = 1;
+  int64 size_bytes = 2;
+}
+
+message CASReference {
+  // Full name of RBE-CAS instance. `projects/{project_id}/instances/{instance}`.
+  // e.g. projects/chromium-swarm/instances/default_instance
+  string cas_instance = 1;
+  // CAS Digest consists of hash and size bytes.
+  Digest digest = 2;
 }
 
 // Defines one CIPD package to install prior to running the task.
@@ -593,14 +612,21 @@ message Containment {
 //
 // A serialization of this message is hashed and this hash is what is used for
 // task deduping.
+// NEXT_ID: 19
 message TaskProperties {
   // Inputs.
 
   // Isolated inputs to map in the working directory.
   //
+  // Deprecated: Isolate server is being migrated to RBE-CAS. `cas_input_root`
+  // will be used to reference to the input root on RBE-CAS.
   // Deprecated: the isolated file may optionally specify a command to run.
   // Otherwise, 'command' must be specified.
   CASTree cas_inputs = 1;
+
+  // Digest of the input root on RBE-CAS.
+  // cas_input_root.digest MUST be digest of [build.bazel.remote.execution.v2.Directory].
+  CASReference cas_input_root = 18;
   // Defines the set of CIPD packages to install prior to running the task.
   //
   // These packages are meant to be software that is needed (a dependency) by
@@ -797,6 +823,8 @@ message TaskRequest {
   // Task realm is used to control who can interact with the task e.g. get,
   // cancel etc, and which task service accounts can be used in the realm.
   string realm = 14;
+  // Swarming:ResultDB integration configuration for a task.
+  ResultDBCfg resultdb = 15;
 
   // Task hierarchy and notifications
 
@@ -891,6 +919,7 @@ message PubSub {
 // partition to enforce strong consistency and ignore on-going tasks. See
 // https://cloud.google.com/bigquery/streaming-data-into-bigquery#dataconsistency
 // for more information.
+// NEXT_ID: 22
 message TaskResult {
   TaskRequest request = 1;
 
@@ -994,7 +1023,10 @@ message TaskResult {
   // cases.
   sint32 exit_code = 19;
   // Isolated outputs, if any.
+  // Deprecated: `cas_output_root` will be used.
   CASTree outputs = 20;
+  // RBE-CAS output, if any.
+  CASReference cas_output_root = 21;
 }
 
 // Defines pinned CIPD packages that were installed during the task.
@@ -1242,4 +1274,11 @@ enum TaskState {
   // The task never ran, the server had an internal failure, unrelated to the
   // task itself. It can be due to a server bug or network I/O issues.
   SKIPPED_INTERNAL_FAILURE = 0x56;  // Not used yet. https://crbug.com/916553
+}
+
+// Swarming:ResultDB integration configuration for a task.
+// This is a copy of SwarmingRpcsResultDBCfg.
+message ResultDBCfg {
+  // Flag to indicates the integration is enabled.
+  bool enable = 1;
 }
