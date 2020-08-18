@@ -33,6 +33,37 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestListChanges(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ListChanges", t, func() {
+		Convey("Validate args", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
+			defer srv.Close()
+
+			_, err := c.ListChanges(ctx, &gerritpb.ListChangesRequest{
+				Query: "label:Commit-Queue",
+				Limit: -1,
+			})
+			So(err, ShouldErrLike, "must be nonnegative")
+		})
+
+		req := &gerritpb.ListChangesRequest{Query: "label:Commit-Queue"}
+
+		Convey("HTTP 404", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(404)
+			})
+			defer srv.Close()
+			_, err := c.ListChanges(ctx, req)
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+	})
+}
+
 func TestGetChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
