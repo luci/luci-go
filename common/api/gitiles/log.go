@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/git"
@@ -37,9 +38,9 @@ const DefaultLimit = 1000
 //
 // Limit specifies the maximum number of commits to load.
 // 0 means use DefaultLimit.
-func PagingLog(ctx context.Context, client gitiles.GitilesClient, req gitiles.LogRequest, limit int, opts ...grpc.CallOption) ([]*git.Commit, error) {
-	// Note: we intentionally receive req as struct (not pointer)
-	// because we need to mutate it.
+func PagingLog(ctx context.Context, client gitiles.GitilesClient, req *gitiles.LogRequest, limit int, opts ...grpc.CallOption) ([]*git.Commit, error) {
+	// req needs to mutate, so clone it.
+	req = proto.Clone(req).(*gitiles.LogRequest)
 
 	switch {
 	case limit < 0:
@@ -59,7 +60,7 @@ func PagingLog(ctx context.Context, client gitiles.GitilesClient, req gitiles.Lo
 			req.PageSize = int32(remaining)
 		}
 
-		res, err := client.Log(ctx, &req, opts...)
+		res, err := client.Log(ctx, req, opts...)
 		if err != nil {
 			return combinedLog, err
 		}

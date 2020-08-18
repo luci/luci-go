@@ -54,7 +54,7 @@ func gitilesHistory(ctx context.Context, luciProject, gerritHost, gerritProject,
 		return nil, errors.Annotate(err, "creating Gitiles client").Err()
 	}
 
-	req := gitilespb.LogRequest{
+	req := &gitilespb.LogRequest{
 		Project: gerritProject,
 		// With ~1, if newCommit.Revision == oldRevision,
 		// we'll get one commit,
@@ -63,7 +63,7 @@ func gitilesHistory(ctx context.Context, luciProject, gerritHost, gerritProject,
 		ExcludeAncestorsOf: oldRevision + "~1",
 		Committish:         newRevision,
 	}
-	logging.Infof(ctx, "Gitiles request to host %q: %q", gerritHost, &req)
+	logging.Infof(ctx, "Gitiles request to host %q: %q", gerritHost, req)
 	res, err := gitiles.PagingLog(ctx, client, req, 0)
 	switch {
 	case err != nil:
