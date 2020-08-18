@@ -124,6 +124,12 @@ message BotGroup {
   // The path is relative to 'scripts/' directory in the service config repo.
   string bot_config_script = 23;
 
+  // The revision of the config script to inject into the swarming bot upon
+  // handshake.
+  //
+  // The field is filled when the bots.cfg gets loaded.
+  string bot_config_script_rev = 26;
+
   // The actual body of the config script to inject into the swarming bot upon
   // handshake (in whatever encoding it happened to be in the config repo).
   //
