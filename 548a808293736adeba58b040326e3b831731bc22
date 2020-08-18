@@ -16,6 +16,75 @@
       "revId": "548a808293736adeba58b040326e3b831731bc22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26fe5d87_369a01a5",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T01:22:50Z",
+      "side": 1,
+      "message": "there\u0027s an alternate formulation of this request, too, which would be\n\n   QueryBlamelistRequest{BuildID: 123456789, ...}\n\nThat would have the context of both gitiles_commit and builder. I may have missed the original rationale for not providing this option?",
+      "range": {
+        "startLine": 41,
+        "startChar": 8,
+        "endLine": 41,
+        "endChar": 29
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b5e1f2b_ca67ccba",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T01:22:50Z",
+      "side": 1,
+      "message": "Can you document if this is\n\n  build.input.gitiles_commit\n  build.output.gitiles_commit\n\nor both?",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d82705a3_df9192fd",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-18T01:22:50Z",
+      "side": 1,
+      "message": "what\u0027s the reason for this hash and token? Why not make the \"next page\" token instead be a transparent git hash? Is this meant to protect against some attack vector?\n\nThe user is already providing the GitilesCommit (i.e. arbitrary git hash) which doesn\u0027t have to be correlated with the Builder. What would having \"next_commit\" instead of this opaque \"next_page\" token/hash thing?",
+      "range": {
+        "startLine": 112,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 5
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
