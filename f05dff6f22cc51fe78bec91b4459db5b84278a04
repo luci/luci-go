@@ -34,6 +34,23 @@
       "revId": "f05dff6f22cc51fe78bec91b4459db5b84278a04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e4ffdec6_ac0786c4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-08-18T20:59:44Z",
+      "side": 1,
+      "message": "\u003e Patch Set 3:\n\u003e \n\u003e You can update that CL to include your luci-go changes in the DEPS file, and then it should be CQ-able.\n\nEh, it\u0027s not nice to stick diffs to autoroller CLs (it\u0027s also a TBR-like loophole I\u0027d like close). Better to do what you actually did, Josip, namely adding DEPS change to your CL using your name.",
+      "revId": "f05dff6f22cc51fe78bec91b4459db5b84278a04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
