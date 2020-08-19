@@ -185,6 +185,30 @@
     },
     {
       "key": {
+        "uuid": "1bf6e7f3_da836e98",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T04:31:55Z",
+      "side": 1,
+      "message": "Updated the description.\nIt should be the input gitiles commit but not strictly input.gitiles_commit\nHowever, the actual commit used when searching the build is read from the gitiles buildset tag.\nFrom what I can find, buildbucket set the tag to input.gitiles_commit.\nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/creation.py;l\u003d265\n\nscheduler also set the tag to the triggering commit when the build is trigger by gitiles.\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/scheduler/appengine/engine/policy/request_builder.go;l\u003d104\n\nI can also update the comment to say that it depends on the buildset tag. WDYT?",
+      "parentUuid": "9c4eab18_effec068",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10
