@@ -233,6 +233,30 @@
     },
     {
       "key": {
+        "uuid": "5f2192f1_fe664e15",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T06:57:24Z",
+      "side": 1,
+      "message": "Updated the comment.\n\n\u003e I wonder if it would be better for Milo to keep its own index for a combined input.gitiles_commit plus output.gitiles_commit?\n\nCould you clarify further?",
+      "parentUuid": "205426b6_cfd084ab",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10

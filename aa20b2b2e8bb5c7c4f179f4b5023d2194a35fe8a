@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "fd68e4cf_9e1ff0a8",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T06:57:24Z",
+      "side": 1,
+      "message": "Reworded it a bit.",
+      "parentUuid": "8b69b549_8d3e3e00",
+      "range": {
+        "startLine": 57,
+        "startChar": 67,
+        "endLine": 57,
+        "endChar": 75
+      },
+      "revId": "aa20b2b2e8bb5c7c4f179f4b5023d2194a35fe8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c7b018cf_589a3faa",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 18
@@ -62,6 +86,30 @@
       "revId": "aa20b2b2e8bb5c7c4f179f4b5023d2194a35fe8a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28103ad4_f4089eae",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T06:57:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7b018cf_589a3faa",
+      "range": {
+        "startLine": 73,
+        "startChar": 24,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "aa20b2b2e8bb5c7c4f179f4b5023d2194a35fe8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
