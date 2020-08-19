@@ -122,14 +122,15 @@ func (o *orderedDict) length() int {
 	return o.ll.Len()
 }
 
-func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) {
+func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) bool {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToFront(e)
 		e.Value.(*entry).value = value
 		e.Value.(*entry).lastAccess = time.Now().Unix()
-		return
+		return true
 	}
 	o.entries[key] = o.ll.PushFront(&entry{key, value, time.Now().Unix()})
+	return false
 }
 
 func (o *orderedDict) pushBack(key isolated.HexDigest, value units.Size, lastAccess int64) {
@@ -203,9 +204,9 @@ func (l *lruDict) pushFront(key isolated.HexDigest, value units.Size) {
 	l.dirty = true
 }
 
-func (l *lruDict) touch(key isolated.HexDigest) {
-	l.items.pushFront(key, l.items.pop(key))
+func (l *lruDict) touch(key isolated.HexDigest) bool {
 	l.dirty = true
+	return l.items.pushFront(key, l.items.pop(key))
 }
 
 type serializedLRUDict struct {
