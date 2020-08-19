@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e55ee819_f0ed81b0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 17
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T05:24:54Z",
+      "side": 1,
+      "message": "LGTM % comments",
+      "revId": "e9d5ccf7cbde7cb247f706fdc76a13586b8658e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4ae8dd26_a66a76e4",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T05:24:54Z",
+      "side": 1,
+      "message": "we don\u0027t need this anymore",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 2
+      },
+      "revId": "e9d5ccf7cbde7cb247f706fdc76a13586b8658e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6de85f9_cf279c2a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T05:24:54Z",
+      "side": 1,
+      "message": "this too",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 1
+      },
+      "revId": "e9d5ccf7cbde7cb247f706fdc76a13586b8658e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
