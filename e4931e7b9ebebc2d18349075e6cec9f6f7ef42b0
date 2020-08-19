@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "b9219cba_e833a11a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T23:49:56Z",
+      "side": 1,
+      "message": "I see.\nIt seems like only items under #steps are affected though.\nAre you suppose to change this line as well?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/appengine/static/common/js/build.js;l\u003d63\n\nAnd shall we group Build Logs and Build Steps into a single section and put the option under it? Right now it looks like the toggle belongs to the Infra section.",
+      "parentUuid": "44c520cb_522f2f02",
+      "revId": "e4931e7b9ebebc2d18349075e6cec9f6f7ef42b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8a2829ef_d658fa20",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
