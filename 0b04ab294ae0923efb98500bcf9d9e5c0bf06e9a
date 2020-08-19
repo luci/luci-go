@@ -177,6 +177,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b4007d7_8438cc67",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-08-19T19:01:54Z",
+      "side": 1,
+      "message": "Thanks tikuta.\n\nGentle ping on the other question on mine: Do you see any issue with granting users who can run led \"swarming.tasks.createInRealm\" permission in each realm?",
+      "parentUuid": "06bfa62b_7120c122",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
