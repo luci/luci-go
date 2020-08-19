@@ -37,6 +37,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -71,11 +72,13 @@ const TraceContextHeader = "X-Luci-Tq-Trace-Context"
 // default dispatcher (such as RegisterTaskClass and AddTask) are also available
 // as lop-level functions, prefer to use them.
 //
-// The dispatcher needs a way to submit tasks to Cloud Tasks. This is the job of
-// Submitter. It lives in the context, so that it can be mocked in tests. In
-// production contexts (setup when using the tq server module), the submitter is
-// initialized to be CloudSubmitter. Tests will need to provide their own
-// submitter (usually via TestingContext).
+// The dispatcher needs a way to submit tasks to Cloud Tasks or Cloud PubSub.
+// This is the job of Submitter. It lives in the context, so that it can be
+// mocked in tests. In production contexts (setup when using the tq server
+// module), the submitter is initialized to be CloudSubmitter. Tests will need
+// to provide their own submitter (usually via TestingContext).
+//
+// TODO(vadimsh): Support consuming PubSub tasks, not just producing them.
 type Dispatcher struct {
 	// Sweeper knows how to sweep transactional tasks reminders.
 	//
@@ -86,6 +89,8 @@ type Dispatcher struct {
 	//
 	// This is needed if two otherwise independent deployments share a single
 	// Cloud Tasks instance.
+	//
+	// Used only for Cloud Tasks tasks. Doesn't affect PubSub tasks.
 	//
 	// Must be valid per ValidateNamespace. Default is "".
 	Namespace string
@@ -101,13 +106,13 @@ type Dispatcher struct {
 	// This is useful when running in development mode on localhost or in tests.
 	NoAuth bool
 
-	// CloudProject is ID of a project to use to construct full queue names.
+	// CloudProject is ID of a project to use to construct full resource names.
 	//
 	// If not set, "default" will be used, which is pretty useless outside of
 	// tests.
 	CloudProject string
 
-	// CloudRegion is a ID of a region to use to construct full queue names.
+	// CloudRegion is a ID of a region to use to construct full resource names.
 	//
 	// If not set, "default" will be used, which is pretty useless outside of
 	// tests.
@@ -115,8 +120,8 @@ type Dispatcher struct {
 
 	// DefaultRoutingPrefix is a URL prefix for produced Cloud Tasks.
 	//
-	// Used only for tasks whose TaskClass doesn't provide some custom
-	// RoutingPrefix.
+	// Used only for Cloud Tasks tasks whose TaskClass doesn't provide some custom
+	// RoutingPrefix. Doesn't affect PubSub tasks.
 	//
 	// Default is "/internal/tasks/t/". It means generated Cloud Tasks by will
 	// have target URL "/internal/tasks/t/<generated-per-task-suffix>".
@@ -127,13 +132,16 @@ type Dispatcher struct {
 
 	// DefaultTargetHost is a hostname to dispatch Cloud Tasks to by default.
 	//
-	// Individual task classes may override it with their own specific host.
+	// Individual Cloud Tasks task classes may override it with their own specific
+	// host. Doesn't affect PubSub tasks.
 	//
 	// On GAE defaults to the GAE application itself. Elsewhere defaults to
 	// "127.0.0.1", which is pretty useless outside of tests.
 	DefaultTargetHost string
 
 	// PushAs is a service account email to be used for generating OIDC tokens.
+	//
+	// Used only for Cloud Tasks tasks. Doesn't affect PubSub tasks.
 	//
 	// The service account must be within the same project. The server account
 	// must have "iam.serviceAccounts.actAs" permission for PushAs account.
@@ -189,7 +197,19 @@ const (
 	FollowsContext TaskKind = 2
 )
 
-// TaskClass defines how to handles tasks of a specific proto message type.
+// TaskClass defines how to treat tasks of a specific proto message type.
+//
+// It assigns some stable ID to a proto message kind and also defines how tasks
+// of this kind should be submitted and routed.
+//
+// The are two backends for tasks: Cloud Tasks and Cloud PubSub. Which one to
+// use for a particular task class is defined via mutually exclusive Queue and
+// Topic fields.
+//
+// Refer to Google Cloud documentation for all semantic differences between
+// Cloud Tasks and Cloud PubSub. One important difference is that Cloud PubSub
+// tasks can't be deduplicated and thus the handler must expect to receive
+// duplicates.
 type TaskClass struct {
 	// ID is unique identifier of this class of tasks.
 	//
@@ -227,27 +247,45 @@ type TaskClass struct {
 
 	// Queue is a name of Cloud Tasks queue to use for the tasks.
 	//
+	// If set, indicates the task should be submitted through Cloud Tasks API.
+	// The queue must exist already in this case. Can't be set together with
+	// Topic.
+	//
 	// It can either be a short name like "default" or a full name like
-	// "projects/<project>/locations/<region>/queues/<name>". If it is a full name
-	// it must have the above format or RegisterTaskClass would panic.
+	// "projects/<project>/locations/<region>/queues/<name>". If it is a full
+	// name, it must have the above format or RegisterTaskClass would panic.
 	//
 	// If it is a short queue name, the full queue name will be constructed using
 	// dispatcher's CloudProject and CloudRegion if they are set.
-	//
-	// Required. The queue must exist already.
 	Queue string
 
+	// Topic is a name of PubSub topic to use for the tasks.
+	//
+	// If set, indicates the task should be submitted through Cloud PubSub API.
+	// The topic must exist already in this case. Can't be set together with
+	// Queue.
+	//
+	// It can either be a short name like "tasks" or a full name like
+	// "projects/<project>/topics/<name>". If it is a full name, it must have the
+	// above format or RegisterTaskClass would panic.
+	Topic string
+
 	// RoutingPrefix is a URL prefix for produced Cloud Tasks.
+	//
+	// Can only be used for Cloud Tasks task (i.e. only if Queue is also set).
 	//
 	// Default is dispatcher's DefaultRoutingPrefix which itself defaults to
 	// "/internal/tasks/t/". It means generated Cloud Tasks by default will have
 	// target URL "/internal/tasks/t/<generated-per-task-suffix>".
 	//
-	// A non-default value can be used to route tasks of a particular class to
-	// particular processes, assuming the load balancer is configured accordingly.
+	// A non-default value can be used to route Cloud Tasks tasks of a particular
+	// class to particular processes, assuming the load balancer is configured
+	// accordingly.
 	RoutingPrefix string
 
 	// TargetHost is a hostname to dispatch Cloud Tasks to.
+	//
+	// Can only be used for Cloud Tasks task (i.e. only if Queue is also set).
 	//
 	// If unset, will use dispatcher's DefaultTargetHost.
 	TargetHost string
@@ -258,25 +296,32 @@ type TaskClass struct {
 	// InheritTraceContext, if set, makes the task handler trace span be a child
 	// of the span that called AddTask.
 	//
+	// Ignored for PubSub tasks currently, since there's no easy way to put
+	// the trace context header into PubSub request headers.
+	//
 	// Use it only for "one-off" tasks. Using it for deep chains of tasks usually
 	// leads to messy complicated traces.
 	InheritTraceContext bool
 
-	// Custom, if given, will be called to generate a custom Cloud Tasks payload
-	// (i.e. a to-be-sent HTTP request) from the task's proto payload.
+	// Custom, if given, will be called to generate a custom payload from the
+	// task's proto payload.
 	//
-	// Useful for interoperability with existing code that doesn't use dispatcher.
+	// Useful for interoperability with existing code that doesn't use dispatcher
+	// or if the tasks are meant to be consumed in some custom way. You'll need to
+	// setup the consumer manually, the Dispatcher doesn't know how to handle
+	// tasks with custom payload.
 	//
-	// It is possible to customize HTTP method, relative URI, headers and the
-	// request body this way. Other properties of the task (such as the target
-	// host, the queue, the task name, authentication headers) are not
-	// customizable.
+	// For Cloud Tasks tasks it is possible to customize HTTP method, relative
+	// URI, headers and the request body this way. Other properties of the task
+	// (such as the target host, the queue, the task name, authentication headers)
+	// are not customizable.
 	//
-	// Such produced tasks are generally not routable by the Dispatcher. You'll
-	// need to make sure there's an HTTP handler that accepts them.
+	// For PubSub tasks it is possible to customize only task's body and
+	// attributes (via CustomPayload.Meta). Other fields in CustomPayload are
+	// ignored.
 	//
 	// Receives the exact same context as passed to AddTask. If returns nil
-	// result, the task will be dispatched as usual.
+	// result, the task will be submitted as usual.
 	Custom func(ctx context.Context, m proto.Message) (*CustomPayload, error)
 
 	// Handler will be called by the dispatcher to execute the tasks.
@@ -289,16 +334,16 @@ type TaskClass struct {
 	// to submit tasks, but not handle them. Some other process would need to
 	// attach the handler then to be able to process tasks.
 	//
-	// The dispatcher will permanently fail Cloud Tasks if it can't find a handler
-	// for them.
+	// The dispatcher will permanently fail tasks if it can't find a handler for
+	// them.
 	Handler Handler
 }
 
 // CustomPayload is returned by TaskClass's Custom, see its doc.
 type CustomPayload struct {
-	Method      string            // e.g. "GET" or "POST"
-	RelativeURI string            // an URI relative to the task's target host
-	Headers     map[string]string // HTTP headers to attach
+	Method      string            // e.g. "GET" or "POST", Cloud Tasks only
+	RelativeURI string            // an URI relative to the task's target host, Cloud Tasks only
+	Meta        map[string]string // HTTP headers or message attributes to attach
 	Body        []byte            // serialized body of the request
 }
 
@@ -331,14 +376,17 @@ type Task struct {
 	// Because there is an extra lookup cost to identify duplicate task names,
 	// enqueues of named tasks have significantly increased latency.
 	//
+	// Can be used only with Cloud Tasks tasks, since PubSub doesn't support
+	// deduplication during enqueuing.
+	//
 	// Named tasks can only be used outside of transactions.
 	DeduplicationKey string
 
 	// Title is optional string that identifies the task in server logs.
 	//
-	// It will show up as a suffix in task handler URL. It exists exclusively to
-	// simplify reading server logs. It serves no other purpose! In particular,
-	// it is *not* a task name.
+	// For Cloud Tasks it will also show up as a suffix in task handler URL. It
+	// exists exclusively to simplify reading server logs. It serves no other
+	// purpose! In particular, it is *not* a task name.
 	//
 	// Handlers won't ever see it. Pass all information through the payload.
 	Title string
@@ -346,12 +394,14 @@ type Task struct {
 	// Delay specifies the duration the Cloud Tasks service must wait before
 	// attempting to execute the task.
 	//
-	// Either Delay or ETA may be set, but not both.
+	// Can be used only with Cloud Tasks tasks. Either Delay or ETA may be set,
+	// but not both.
 	Delay time.Duration
 
 	// ETA specifies the earliest time a task may be executed.
 	//
-	// Either Delay or ETA may be set, but not both.
+	// Can be used only with Cloud Tasks tasks. Either Delay or ETA may be set,
+	// but not both.
 	ETA time.Time
 }
 
@@ -364,15 +414,16 @@ var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
 // Handler is called to handle one enqueued task.
 //
 // If the returned error is tagged with Retry tag, the request finishes with
-// HTTP status 429, indicating to the Cloud Tasks that it should attempt to
-// execute the task later (which it may or may not do, depending on queue's
-// retry config). Same happens if the error is transient (i.e. tagged with
-// the transient.Tag), except the request finishes with HTTP status 500. This
-// difference allows to distinguish "expected" retry requests (errors tagged
-// with Retry) from "unexpected" ones (errors tagged with transient.Tag). Retry
-// tag should be used **only** if the handler is fully aware of Cloud Tasks
-// retry semantics and it **explicitly** wants the task to be retried because it
-// can't be processed right now and the handler expects that the retry may help.
+// HTTP status 429, indicating to the backend that it should attempt to execute
+// the task later (which it may or may not do, depending on retry config). Same
+// happens if the error is transient (i.e. tagged with the transient.Tag),
+// except the request finishes with HTTP status 500. This difference allows to
+// distinguish "expected" retry requests (errors tagged with Retry) from
+// "unexpected" ones (errors tagged with transient.Tag).
+//
+// Retry tag should be used **only** if the handler is fully aware of the retry
+// semantics and it **explicitly** wants the task to be retried because it can't
+// be processed right now and the handler expects that the retry may help.
 //
 // For a contrived example, if the handler can process the task only after 2 PM,
 // but it is 01:55 PM now, the handler should return an error tagged with Retry
@@ -387,16 +438,12 @@ var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
 // An untagged error (or success) marks the task as "done", it won't be retried.
 type Handler func(ctx context.Context, payload proto.Message) error
 
-// ExecutionInfo is parsed from Cloud Tasks headers.
+// ExecutionInfo is parsed from incoming task's metadata.
 //
 // It is accessible from within task handlers via TaskExecutionInfo(ctx).
 type ExecutionInfo struct {
-	// ExecutionCount is the total number of times that the task has received
-	// a response from the handler.
-	//
-	// Since Cloud Tasks deletes the task once a successful response has been
-	// received, all previous handler responses were failures. This number does
-	// not include failures due to a lack of available instances.
+	// ExecutionCount is 0 on a first delivery attempt and increased by 1 for each
+	// failed attempt.
 	ExecutionCount int
 
 	taskRetryReason       string // X-CloudTasks-TaskRetryReason
@@ -438,14 +485,32 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	if cls.Prototype == nil {
 		panic("TaskClass Prototype must be set")
 	}
-	if cls.Queue == "" {
-		panic("TaskClass Queue must be set")
-	}
-	if strings.ContainsRune(cls.Queue, '/') && !isValidQueue(cls.Queue) {
-		panic(fmt.Sprintf("not a valid full queue name %q", cls.Queue))
-	}
 	if cls.RoutingPrefix != "" && !strings.HasPrefix(cls.RoutingPrefix, "/") {
 		panic("TaskClass RoutingPrefix must start with /")
+	}
+
+	var backend taskBackend
+	switch {
+	case cls.Queue == "" && cls.Topic == "":
+		panic("TaskClass must have either Queue or Topic set")
+	case cls.Queue != "" && cls.Topic != "":
+		panic("TaskClass must have either Queue or Topic set, not both")
+	case cls.Queue != "":
+		backend = backendCloudTasks
+		if strings.ContainsRune(cls.Queue, '/') && !isValidQueue(cls.Queue) {
+			panic(fmt.Sprintf("not a valid full queue name %q", cls.Queue))
+		}
+	case cls.Topic != "":
+		backend = backendPubSub
+		if strings.ContainsRune(cls.Topic, '/') && !isValidTopic(cls.Topic) {
+			panic(fmt.Sprintf("not a valid full topic name %q", cls.Topic))
+		}
+		if cls.RoutingPrefix != "" {
+			panic("PubSub tasks do not support RoutingPrefix")
+		}
+		if cls.TargetHost != "" {
+			panic("PubSub tasks do not support TargetHost")
+		}
 	}
 
 	typ := cls.Prototype.ProtoReflect().Type()
@@ -471,7 +536,7 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 		TaskClass: cls,
 		disp:      d,
 		protoType: typ,
-		backend:   backendCloudTasks, // TODO(vadimsh): Add PubSub
+		backend:   backend,
 	}
 	d.clsByID[cls.ID] = impl
 	d.clsByTyp[typ] = impl
@@ -728,14 +793,14 @@ func (d *Dispatcher) prepPayload(ctx context.Context, cls *taskClassImpl, t *Tas
 	case backendCloudTasks:
 		payload.CreateTaskRequest, err = d.prepCloudTasksRequest(ctx, cls, t)
 	case backendPubSub:
-		panic("not implemented yet")
+		payload.PublishRequest, err = d.prepPubSubRequest(ctx, cls, t)
 	default:
 		panic("impossible")
 	}
 	return payload, err
 }
 
-// prepCloudTasksRequest prepare Cloud Tasks based on a *Task.
+// prepCloudTasksRequest prepares Cloud Tasks request based on a *Task.
 func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassImpl, t *Task) (*taskspb.CreateTaskRequest, error) {
 	queueID, err := d.queueID(cls.Queue)
 	if err != nil {
@@ -776,25 +841,25 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 		payload = &CustomPayload{
 			Method:      "POST",
 			RelativeURI: relativeURI,
-			Headers:     defaultHeaders(),
+			Meta:        defaultHeaders(),
 		}
 		if payload.Body, err = cls.serialize(t); err != nil {
 			return nil, err
 		}
 	} else {
 		// We'll likely be mutating the headers below, make a copy.
-		headers := make(map[string]string, len(payload.Headers))
-		for k, v := range payload.Headers {
-			headers[k] = v
+		meta := make(map[string]string, len(payload.Meta))
+		for k, v := range payload.Meta {
+			meta[k] = v
 		}
-		payload.Headers = headers
+		payload.Meta = meta
 	}
 
 	// Inject tracing headers.
 	if span := trace.SpanContext(ctx); span != "" {
-		payload.Headers[TraceContextHeader] = span
+		payload.Meta[TraceContextHeader] = span
 		if cls.InheritTraceContext {
-			payload.Headers["X-Cloud-Trace-Context"] = span
+			payload.Meta["X-Cloud-Trace-Context"] = span
 		}
 	}
 
@@ -824,7 +889,7 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 			AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
 				HttpMethod:  method,
 				RelativeUri: payload.RelativeURI,
-				Headers:     payload.Headers,
+				Headers:     payload.Meta,
 				Body:        payload.Body,
 			},
 		}
@@ -844,7 +909,7 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 		HttpRequest: &taskspb.HttpRequest{
 			HttpMethod: method,
 			Url:        "https://" + host + payload.RelativeURI,
-			Headers:    payload.Headers,
+			Headers:    payload.Meta,
 			Body:       payload.Body,
 			AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 				OidcToken: &taskspb.OidcToken{
@@ -906,6 +971,63 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 	return
 }
 
+// prepPubSubRequest prepares Cloud PubSub request based on a *Task.
+func (d *Dispatcher) prepPubSubRequest(ctx context.Context, cls *taskClassImpl, t *Task) (*pubsubpb.PublishRequest, error) {
+	if t.DeduplicationKey != "" {
+		return nil, errors.New("can't use DeduplicationKey with PubSub tasks")
+	}
+	if t.Delay != 0 || !t.ETA.IsZero() {
+		return nil, errors.New("can't use Delay or ETA with PubSub tasks")
+	}
+
+	topicID, err := d.topicID(cls.Topic)
+	if err != nil {
+		return nil, err
+	}
+
+	var payload *CustomPayload
+	if cls.Custom != nil {
+		if payload, err = cls.Custom(ctx, t.Payload); err != nil {
+			return nil, err
+		}
+	}
+	if payload == nil {
+		// This is not really a "custom" payload, we are just reusing the struct.
+		payload = &CustomPayload{}
+		if payload.Body, err = cls.serialize(t); err != nil {
+			return nil, err
+		}
+	}
+
+	msg := &pubsubpb.PubsubMessage{
+		Data:       payload.Body,
+		Attributes: make(map[string]string, len(payload.Meta)+1),
+	}
+	for k, v := range payload.Meta {
+		msg.Attributes[k] = v
+	}
+	if span := trace.SpanContext(ctx); span != "" {
+		msg.Attributes[TraceContextHeader] = span
+	}
+
+	return &pubsubpb.PublishRequest{
+		Topic:    topicID,
+		Messages: []*pubsubpb.PubsubMessage{msg},
+	}, nil
+}
+
+// topicID expands `id` into a full topic name if necessary.
+func (d *Dispatcher) topicID(id string) (string, error) {
+	if strings.HasPrefix(id, "projects/") {
+		return id, nil // already full name
+	}
+	project := d.CloudProject
+	if project == "" {
+		project = "default"
+	}
+	return fmt.Sprintf("projects/%s/topics/%s", project, id), nil
+}
+
 // attachToReminder makes a reminder and attaches the payload to it, thus
 // mutating the payload with reminder's ID.
 //
@@ -945,6 +1067,16 @@ func isValidQueue(q string) bool {
 		chunks[3] != "" &&
 		chunks[4] == "queues" &&
 		chunks[5] != ""
+}
+
+// isValidTopic is true if t looks like "projects/.../topics/...".
+func isValidTopic(t string) bool {
+	chunks := strings.Split(t, "/")
+	return len(chunks) == 4 &&
+		chunks[0] == "projects" &&
+		chunks[1] != "" &&
+		chunks[2] == "topics" &&
+		chunks[3] != ""
 }
 
 // handlePush handles one incoming task.

@@ -16,8 +16,17 @@ package tq
 
 import (
 	"context"
+	"time"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
+	pubsub "cloud.google.com/go/pubsub/apiv1"
+	"go.opencensus.io/plugin/ocgrpc"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -45,13 +54,53 @@ type Submitter interface {
 
 // CloudSubmitter implements Submitter on top of Google Cloud APIs.
 type CloudSubmitter struct {
-	Client *cloudtasks.Client
+	tasks  *cloudtasks.Client
+	pubsub *pubsub.PublisherClient
+}
+
+// NewCloudSubmitter creates a new submitter.
+func NewCloudSubmitter(ctx context.Context, creds credentials.PerRPCCredentials) (*CloudSubmitter, error) {
+	// gRPC options used for both Cloud Tasks and PubSub clients. Copy-pasted from
+	// cloud.google.com/go/pubsub initialization.
+	opts := []option.ClientOption{
+		option.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time: 5 * time.Minute,
+		})),
+		option.WithGRPCDialOption(grpc.WithStatsHandler(&ocgrpc.ClientHandler{})),
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
+	}
+
+	tasks, err := cloudtasks.NewClient(ctx, opts...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+	}
+
+	pubsub, err := pubsub.NewPublisherClient(ctx, opts...)
+	if err != nil {
+		tasks.Close()
+		return nil, errors.Annotate(err, "failed to initialize Cloud PubSub client").Err()
+	}
+
+	return &CloudSubmitter{tasks: tasks, pubsub: pubsub}, nil
+}
+
+// Close closes the submitter.
+func (s *CloudSubmitter) Close() {
+	s.tasks.Close()
+	s.pubsub.Close()
 }
 
 // Submit creates a task, returning a gRPC status.
-func (s *CloudSubmitter) Submit(ctx context.Context, p *reminder.Payload) error {
-	_, err := s.Client.CreateTask(ctx, p.CreateTaskRequest)
-	return err
+func (s *CloudSubmitter) Submit(ctx context.Context, p *reminder.Payload) (err error) {
+	switch {
+	case p.CreateTaskRequest != nil:
+		_, err = s.tasks.CreateTask(ctx, p.CreateTaskRequest)
+	case p.PublishRequest != nil:
+		_, err = s.pubsub.Publish(ctx, p.PublishRequest)
+	default:
+		err = status.Errorf(codes.Internal, "unrecognized payload kind")
+	}
+	return
 }
 
 var submitterCtxKey = "go.chromium.org/luci/server/tq.Submitter"

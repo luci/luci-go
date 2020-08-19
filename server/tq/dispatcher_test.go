@@ -24,13 +24,15 @@ import (
 	"testing"
 	"time"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -188,7 +190,7 @@ func TestAddTask(t *testing.T) {
 					ts := m.(*timestamppb.Timestamp)
 					return &CustomPayload{
 						Method:      "GET",
-						Headers:     map[string]string{"k": "v"},
+						Meta:        map[string]string{"k": "v"},
 						RelativeURI: "/zzz",
 						Body:        []byte(fmt.Sprintf("%d", ts.Seconds)),
 					}, nil
@@ -463,6 +465,76 @@ func TestTesting(t *testing.T) {
 			{Seconds: 2},
 			{Seconds: 3},
 			{Seconds: 4},
+		})
+	})
+}
+
+func TestPubSubEnqueue(t *testing.T) {
+	t.Parallel()
+
+	Convey("With dispatcher", t, func() {
+		var epoch = testclock.TestRecentTimeUTC
+
+		ctx, tc := testclock.UseTime(context.Background(), epoch)
+		db := testutil.FakeDB{}
+
+		disp := Dispatcher{Sweeper: NewInProcSweeper(InProcSweeperOptions{})}
+		ctx, sched := TestingContext(ctx, &disp)
+
+		disp.RegisterTaskClass(TaskClass{
+			ID:        "test-dur",
+			Prototype: &durationpb.Duration{}, // just some proto type
+			Topic:     "topic-1",
+			Kind:      Transactional,
+			Custom: func(_ context.Context, msg proto.Message) (*CustomPayload, error) {
+				return &CustomPayload{
+					Meta: map[string]string{"a": "b"},
+					Body: []byte(fmt.Sprintf("%d", msg.(*durationpb.Duration).Seconds)),
+				}, nil
+			},
+		})
+
+		So(disp.AddTask(db.Inject(ctx), &Task{Payload: &durationpb.Duration{Seconds: 1}}), ShouldBeNil)
+
+		Convey("Happy path", func() {
+			db.ExecDefers(ctx) // actually enqueue
+
+			So(sched.Tasks(), ShouldHaveLength, 1)
+
+			task := sched.Tasks()[0]
+			So(task.Payload, ShouldResembleProto, &durationpb.Duration{Seconds: 1})
+			So(task.Message, ShouldResembleProto, &pubsubpb.PubsubMessage{
+				Data: []byte("1"),
+				Attributes: map[string]string{
+					"a":                     "b",
+					"X-Luci-Tq-Reminder-Id": task.Message.Attributes["X-Luci-Tq-Reminder-Id"],
+				},
+			})
+		})
+
+		Convey("Unhappy path", func() {
+			// Not enqueued, but have a reminder.
+			So(sched.Tasks(), ShouldHaveLength, 0)
+			So(db.AllReminders(), ShouldHaveLength, 1)
+
+			// Make reminder sufficiently stale to be eligible for sweeping.
+			tc.Add(5 * time.Minute)
+
+			// Run the sweeper to enqueue from the reminder.
+			So(disp.Sweep(db.Inject(ctx)), ShouldBeNil)
+
+			// Have the task now!
+			So(sched.Tasks(), ShouldHaveLength, 1)
+
+			task := sched.Tasks()[0]
+			So(task.Payload, ShouldBeNil) // not available on non-happy path
+			So(task.Message, ShouldResembleProto, &pubsubpb.PubsubMessage{
+				Data: []byte("1"),
+				Attributes: map[string]string{
+					"a":                     "b",
+					"X-Luci-Tq-Reminder-Id": task.Message.Attributes["X-Luci-Tq-Reminder-Id"],
+				},
+			})
 		})
 	})
 }
