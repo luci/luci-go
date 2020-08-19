@@ -15,7 +15,9 @@
 package tqtesting
 
 // RunOption influences behavior of Run call.
-type RunOption interface{}
+type RunOption interface {
+	isOption()
+}
 
 // TODO(vadimsh): Add more stop conditions when needed:
 //  StopBeforeTask(taskKind)
@@ -32,3 +34,18 @@ func StopWhenDrained() RunOption {
 }
 
 type stopWhenDrained struct{}
+
+func (stopWhenDrained) isOption() {}
+
+// ParallelExecute instructs the scheduler to call executor's Execute method
+// in a separate goroutine instead of serially in Run.
+//
+// This more closely resembles real-life behavior but may introduce more
+// unpredictability into tests due to races.
+func ParallelExecute() RunOption {
+	return parallelExecute{}
+}
+
+type parallelExecute struct{}
+
+func (parallelExecute) isOption() {}
