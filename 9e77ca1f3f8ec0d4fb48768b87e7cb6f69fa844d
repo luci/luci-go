@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a11968b8_a8432d1b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-08-19T22:41:30Z",
+      "side": 1,
+      "message": "Vadim,\nIs the structure written in the helloworld_standard still recommende?\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/examples/appengine/helloworld_standard/\n\n`appengine/frontend/` ... app.yaml, routers for default service, cron.yaml, queue.yaml\n`appengine/backend/` ... for backend.\nsub packages for application logics.",
+      "parentUuid": "3dd64b1f_f6ec91b3",
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d625b48a_3bff8c1f",
         "filename": "cas/appengine/frontend/app.yaml",
         "patchSetId": 12
