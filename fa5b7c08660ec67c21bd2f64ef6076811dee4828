@@ -129,6 +129,30 @@
       "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c98f714_bd07d43d",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T01:32:07Z",
+      "side": 1,
+      "message": "there we have 2 loops and a function per field (with auxiliary func noop). i find all that more complicated than a single loop with a single switch statement",
+      "parentUuid": "ec91c795_ae9da3c3",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
