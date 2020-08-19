@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5e4d1335_83f7fc2d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:26:16Z",
+      "side": 1,
+      "message": "Implementing one ourselves seem like a lot of effort.\nWe can resort to that we want custom features.\n\nI think overall it\u0027s ok to use a lib. With mobx, it\u0027s easy to have our own rendering loop.",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 27
+      },
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8751a7d9_7a8092f3",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 3
