@@ -346,7 +346,9 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 				Handler: host.Routes(),
 			},
 		}
-		host.RunInBackground("luci.tq", func(ctx context.Context) { scheduler.Run(ctx) })
+		host.RunInBackground("luci.tq", func(ctx context.Context) {
+			scheduler.Run(ctx, tqtesting.ParallelExecute())
+		})
 		Default.NoAuth = true
 		submitter = scheduler
 	}

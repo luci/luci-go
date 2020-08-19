@@ -272,6 +272,9 @@ func (s *Scheduler) Tasks() TaskList {
 // Run executes the scheduler's loop until the context is canceled or one of
 // the stop conditions are hit.
 //
+// By default executes tasks serially. Pass ParallelExecute() option to execute
+// them asynchronously.
+//
 // Upon exit all executing tasks has finished, there still may be pending tasks.
 //
 // Panics if Run is already running (perhaps in another goroutine).
@@ -296,6 +299,14 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 	// Waits for all initiated executing tasks to finish before returning.
 	defer s.wg.Wait()
 
+	parallelExec := false
+	for _, opt := range opts {
+		if _, ok := opt.(parallelExecute); ok {
+			parallelExec = true
+			break
+		}
+	}
+
 	for ctx.Err() == nil {
 		if s.shouldStop(opts) {
 			return
@@ -305,7 +316,11 @@ func (s *Scheduler) Run(ctx context.Context, opts ...RunOption) {
 			// Pass the task to the executor. It may either execute it right away
 			// or asynchronously later. Either way, when it is done it will call
 			// the finalization callback.
-			s.Executor.Execute(ctx, task, taskDone)
+			if !parallelExec {
+				s.Executor.Execute(ctx, task, taskDone)
+			} else {
+				go func() { s.Executor.Execute(ctx, task, taskDone) }()
+			}
 		case !nextETA.IsZero():
 			select {
 			case <-s.wakeUp:

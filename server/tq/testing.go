@@ -47,30 +47,28 @@ type directExecutor struct {
 }
 
 func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
-	go func() {
-		var body []byte
-		var headers map[string]string
-		switch mt := t.Task.MessageType.(type) {
-		case *taskspb.Task_HttpRequest:
-			body = mt.HttpRequest.Body
-			headers = mt.HttpRequest.Headers
-		case *taskspb.Task_AppEngineHttpRequest:
-			body = mt.AppEngineHttpRequest.Body
-			headers = mt.AppEngineHttpRequest.Headers
-		default:
-			panic(fmt.Sprintf("Bad task, no payload: %q", t.Task))
-		}
+	var body []byte
+	var headers map[string]string
+	switch mt := t.Task.MessageType.(type) {
+	case *taskspb.Task_HttpRequest:
+		body = mt.HttpRequest.Body
+		headers = mt.HttpRequest.Headers
+	case *taskspb.Task_AppEngineHttpRequest:
+		body = mt.AppEngineHttpRequest.Body
+		headers = mt.AppEngineHttpRequest.Headers
+	default:
+		panic(fmt.Sprintf("Bad task, no payload: %q", t.Task))
+	}
 
-		hdr := make(http.Header, len(headers))
-		for k, v := range headers {
-			hdr.Set(k, v)
-		}
-		info := parseHeaders(hdr)
+	hdr := make(http.Header, len(headers))
+	for k, v := range headers {
+		hdr.Set(k, v)
+	}
+	info := parseHeaders(hdr)
 
-		// The direct executor doesn't emulate X-CloudTasks-* headers.
-		info.ExecutionCount = t.Attempts - 1
+	// The direct executor doesn't emulate X-CloudTasks-* headers.
+	info.ExecutionCount = t.Attempts - 1
 
-		err := e.d.handlePush(ctx, body, info)
-		done(Retry.In(err) || transient.Tag.In(err))
-	}()
+	err := e.d.handlePush(ctx, body, info)
+	done(Retry.In(err) || transient.Tag.In(err))
 }

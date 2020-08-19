@@ -89,10 +89,8 @@ func TestQueue(t *testing.T) {
 			1: 500 * time.Millisecond,
 		})
 
-		// Can also examine all executed tasks. They may generally be executed in
-		// parallel, so order of their completion is undetermined. Explicitly
-		// sorting by ETA helps.
-		So(succeeded.SortByETA().Payloads(), ShouldResembleProto, []*taskspb.CountDownTask{
+		// Can also examine all executed tasks.
+		So(succeeded.Payloads(), ShouldResembleProto, []*taskspb.CountDownTask{
 			{Number: 5},
 			{Number: 4},
 			{Number: 3},
