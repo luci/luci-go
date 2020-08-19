@@ -58,7 +58,7 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 	}
 
 	for _, p := range req.GetUpdateMask().GetPaths() {
-		// TODO(1110990): validate gitiles_commit, summary_markdown, and steps
+		// TODO(1110990): validate gitiles_commit, and steps
 		switch p {
 		case "build.output":
 		case "build.output.properties":
@@ -70,6 +70,9 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 		case "build.status_details":
 		case "build.steps":
 		case "build.summary_markdown":
+			if err := validateSummaryMarkdown(req.Build.SummaryMarkdown); err != nil {
+				return errors.Annotate(err, "build.summary_markdown").Err()
+			}
 		case "build.tags":
 			if err := validateTags(req.Build.Tags, TagAppend); err != nil {
 				return errors.Annotate(err, "build.tags").Err()
