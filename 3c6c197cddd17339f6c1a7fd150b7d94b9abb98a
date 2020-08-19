@@ -283,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "bb9236e7_c5f6e0d7",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T01:06:54Z",
+      "side": 1,
+      "message": "i still think this code is racy.\nimagine one goroutine acquire m, starting writing the int32 without atomic.StoreInt32, was in a middle of it while atomic.LoadInt32 read a partially written value.\n\nalso it is confusing to have two synchronization mechanisms for the same piece of data. this is an invitation to a deadlock\n\nalso using m consistently would remove the need to have two variables for blame length",
+      "parentUuid": "b11a1634_3e3adf63",
+      "range": {
+        "startLine": 82,
+        "startChar": 6,
+        "endLine": 82,
+        "endChar": 15
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d064798_6044ea2c",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 12
@@ -421,6 +445,30 @@
       "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7694c04b_a19b338b",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T01:06:54Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "00069e14_d01c84da",
+      "range": {
+        "startLine": 143,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 3
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
