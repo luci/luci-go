@@ -209,6 +209,30 @@
     },
     {
       "key": {
+        "uuid": "205426b6_cfd084ab",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T05:55:20Z",
+      "side": 1,
+      "message": "\u003e comment to say that it depends on the buildset tag\n\nYeah, I think this is probably the clearest; Indicate that the API is serving based on the buildset tag, and that currently (as of 20Q2), buildbucket sets this based on input.gitiles_commit and scheduler sets this based on its trigger conditions.\n\nI wonder if it would be better for Milo to keep its own index for a combined input.gitiles_commit plus output.gitiles_commit?",
+      "parentUuid": "1bf6e7f3_da836e98",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10

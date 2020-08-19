@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d974d414_a6eec4d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 18
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T05:55:20Z",
+      "side": 1,
+      "message": "lgtm w/ some more comments",
+      "revId": "aa20b2b2e8bb5c7c4f179f4b5023d2194a35fe8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8b69b549_8d3e3e00",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T05:55:20Z",
+      "side": 1,
+      "message": "I don\u0027t think this is _necessarially_ true. Because the user can specify any commit, it\u0027s possible that they specify one that doesn\u0027t precisely correspond to a build, right?",
+      "range": {
+        "startLine": 57,
+        "startChar": 67,
+        "endLine": 57,
+        "endChar": 75
+      },
+      "revId": "aa20b2b2e8bb5c7c4f179f4b5023d2194a35fe8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7b018cf_589a3faa",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T05:55:20Z",
+      "side": 1,
+      "message": "suggest ds.Run to avoid loading all matching builds (since you are only looking for a single build per commit)",
+      "range": {
+        "startLine": 73,
+        "startChar": 24,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "aa20b2b2e8bb5c7c4f179f4b5023d2194a35fe8a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
