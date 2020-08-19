@@ -105,6 +105,30 @@
       "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec91c795_ae9da3c3",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-19T01:19:59Z",
+      "side": 1,
+      "message": "I feel like this continues the discussion I had with smut@.\n\nIf we want to make sure that we don\u0027t accidentally miss the validation of an updatable field path, then I\u0027d construct a map of updatable field paths with the validator.\n\nWDYT of patchset #10?\n: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2352630/10/buildbucket/appengine/rpc/update_build.go",
+      "parentUuid": "43a26de4_77a83162",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
