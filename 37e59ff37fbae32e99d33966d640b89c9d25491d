@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ee3d94aa_3d1885f6",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-19T18:54:57Z",
+      "side": 1,
+      "message": "Only the identity kind, service, allows to have a colon in the value. Unless it explicitly adds the prefix \"service:\" in req, it always regards it as the default kind \"user\". This is how it\u0027s been done in Python. \n\nRE: Could you combine this with validateCreatedBy in search_builds.go?\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\nDo you mean directly adding the `user:` prefix for the request.Predicate.CreatedBy in validation if it doest\u0027t specify a identity kind?",
+      "parentUuid": "349ce34d_0bf7a026",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0bb04997_4eff6e52",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2020-08-18T19:05:41Z",
       "side": 1,
       "message": "Does this actually matter? It will just not match anything in the datastore, right?",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e64d72c_9cc7243e",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-08-19T18:54:57Z",
+      "side": 1,
+      "message": "Responding an error might be better. It prevents using extra computing resource when there is clearly no matched results. It also prompt users that their createBy format is wrong otherwise they may not know why there is no matching results.\n\nBTW, this is also what Py does.",
+      "parentUuid": "0bb04997_4eff6e52",
       "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
