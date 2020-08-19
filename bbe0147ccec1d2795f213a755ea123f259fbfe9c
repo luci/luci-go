@@ -19,6 +19,91 @@
     },
     {
       "key": {
+        "uuid": "c05e5af4_c7ed3e39",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:24:15Z",
+      "side": 1,
+      "message": "nit: extra space",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b1722ca_01e36016",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:24:15Z",
+      "side": 1,
+      "message": "I find this weird.\nI think using autorun is probably better.\n```\nautorun(\n  // also, check whether timeline data is available directly in renderTimeline.\n  () \u003d\u003e this.renderTimeline(),\n)\n```",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "470c9e60_49436a2d",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:24:15Z",
+      "side": 1,
+      "message": "nit: shouldRenderTimeline?",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a6c65d6_fca775f1",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:24:15Z",
+      "side": 1,
+      "message": "nit: extra space",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6db072c_40585d38",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:24:15Z",
+      "side": 1,
+      "message": "is there a way to should a pointer cursor when hovering on the timeline items?",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "31a53f9b_46640410",
         "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
         "patchSetId": 3
@@ -30,6 +115,24 @@
       "writtenOn": "2020-08-18T07:30:13Z",
       "side": 1,
       "message": "Do you know how to package the css file in node_modules?",
+      "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f7bde5e_f1dd3cbd",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:24:15Z",
+      "side": 1,
+      "message": "There should be a way to setup webpack to include those css files.\nLet\u0027s land this first and I\u0027ll look into this later.",
+      "parentUuid": "31a53f9b_46640410",
       "revId": "bbe0147ccec1d2795f213a755ea123f259fbfe9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
