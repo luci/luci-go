@@ -56,6 +56,30 @@
       "revId": "a077b8601704b5144a4be9e28bba35a4227e5010",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "803aef7d_c668dc58",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:53:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "216738a8_6258e3cd",
+      "range": {
+        "startLine": 60,
+        "startChar": 3,
+        "endLine": 64,
+        "endChar": 4
+      },
+      "revId": "a077b8601704b5144a4be9e28bba35a4227e5010",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
