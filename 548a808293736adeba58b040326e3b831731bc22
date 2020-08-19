@@ -161,6 +161,30 @@
     },
     {
       "key": {
+        "uuid": "9c4eab18_effec068",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T00:57:53Z",
+      "side": 1,
+      "message": "I\u0027m not quite sure actually. This is based on the previous implementation. From the milo code, I can tell that it\u0027s from the buildset tag. But the buildset tag is returned from buildbucket. Not quite sure whether it\u0027s output.gitiles_commit or input.gitiles_commit. I\u0027ll try to look it up.",
+      "parentUuid": "198a5be3_e81c860f",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10
@@ -229,6 +253,30 @@
       "revId": "548a808293736adeba58b040326e3b831731bc22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6892437_ef5c3cf0",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T00:57:53Z",
+      "side": 1,
+      "message": "The link above was wrong.\nhttps://google.aip.dev/158\n\nRemoved the hash check since\n\u003e if any arguments are different, the API *should* send an INVALID_ARGUMENT error.\n\nPage token is still opaque because\n\u003e Page tokens provided by APIs must be opaque",
+      "parentUuid": "1182a99d_3d73fea8",
+      "range": {
+        "startLine": 112,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 5
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
