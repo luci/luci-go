@@ -508,10 +508,12 @@ type ListChangesRequest struct {
 	// space-separated and can include filters like "label:Commit-Queue" or
 	// "status:open". The possible search operators are described at:
 	// https://gerrit-review.googlesource.com/Documentation/user-search.html
+	//
+	// An empty query matches all changes.
 	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// What to include in the response.
 	Options []QueryOption `protobuf:"varint,2,rep,packed,name=options,proto3,enum=gerrit.QueryOption" json:"options,omitempty"`
-	// The number of results to return.
+	// The number of results to return. This should always be provided.
 	Limit int64 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	// The number of changes to skip from the start, for pagination.
 	Offset int64 `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
