@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9fc29f5d_2051a127",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T00:45:29Z",
+      "side": 1,
+      "message": "+1 to consistently and deterministically prepending the field path",
+      "parentUuid": "17e3ebf5_918f5816",
+      "range": {
+        "startLine": 43,
+        "startChar": 49,
+        "endLine": 45,
+        "endChar": 79
+      },
+      "revId": "19a6ca73ed7ef5ff0df17d4843909699458b3ed3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eb33a6fa_2e4beeb4",
         "filename": "buildbucket/appengine/rpc/cancel_build.go",
         "patchSetId": 4
@@ -45,6 +69,52 @@
       "revId": "19a6ca73ed7ef5ff0df17d4843909699458b3ed3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d94378f7_b6f204a1",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T00:45:29Z",
+      "side": 1,
+      "message": "not exactly for this CL, but\n\nperhaps, validateCancel will never return a non-InvalidArgument error, so it might be simpler to use appstatus.Attachf in the callsite\n\nthen this code would be more typical to other error handling code: errors.Annotate(\"summary_markdown\", err).Err()",
+      "range": {
+        "startLine": 47,
+        "startChar": 26,
+        "endLine": 47,
+        "endChar": 47
+      },
+      "revId": "19a6ca73ed7ef5ff0df17d4843909699458b3ed3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "15ba3d51_54b34fad",
+        "filename": "buildbucket/appengine/rpc/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T00:45:29Z",
+      "side": 1,
+      "message": "given how teeError is used, should we return `err !\u003d nil` here?",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 11
+      },
+      "revId": "19a6ca73ed7ef5ff0df17d4843909699458b3ed3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
