@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "b0624d54_3e6c3b53",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-19T22:48:53Z",
+      "side": 1,
+      "message": "Yes, if you plan to have multiple modules. If you plan to have only app.yaml, it is fine to remove \u0027frontend\u0027 and put everything under \u0027appengine\u0027. It doesn\u0027t really matter. The only important part is that GAE modules are not nested and they are in separate directories (since they are \"package main\", there can\u0027t be two mains in a single directory).",
+      "parentUuid": "a11968b8_a8432d1b",
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d625b48a_3bff8c1f",
         "filename": "cas/appengine/frontend/app.yaml",
         "patchSetId": 12
