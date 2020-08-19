@@ -28,7 +28,7 @@ import (
 func TestValidateUpdate(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateUpdate", t, func() {
+	Convey("validate UpdateMask", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
 		Convey("succeeds", func() {
@@ -55,14 +55,14 @@ func TestValidateUpdate(t *testing.T) {
 
 		Convey("fails", func() {
 			Convey("with nil request", func() {
-				So(validateUpdate(nil), ShouldErrLike, "id is required")
+				So(validateUpdate(nil), ShouldErrLike, "build.id: required")
 			})
 
 			Convey("with an invalid path", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"bucket.name",
 				}}
-				So(validateUpdate(req), ShouldErrLike, `unsupported path(s) ["bucket.name"]`)
+				So(validateUpdate(req), ShouldErrLike, `unsupported path "bucket.name"`)
 			})
 
 			Convey("with a mix of valid and invalid paths", func() {
@@ -70,10 +70,31 @@ func TestValidateUpdate(t *testing.T) {
 					"build.tags",
 					"bucket.name",
 					"build.output",
-					"build.ts",
 				}}
-				So(validateUpdate(req), ShouldErrLike, `unsupported path(s) ["bucket.name" "build.ts"]`)
+				So(validateUpdate(req), ShouldErrLike, `unsupported path "bucket.name"`)
 			})
 		})
+	})
+
+	Convey("validate BuildStatus", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
+
+		Convey("succeeds", func() {
+			req.Build.Status = pb.Status_SUCCESS
+			So(validateUpdate(req), ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			req.Build.Status = pb.Status_SCHEDULED
+			So(validateUpdate(req), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
+		})
+	})
+
+	Convey("validate BuildTags", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
+		req.Build.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
+		So(validateUpdate(req), ShouldBeNil)
 	})
 }

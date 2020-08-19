@@ -19,42 +19,48 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-var (
-	// updateableFieldPaths is a set of UpdateBuildRequest field paths updatable
-	// via UpdateBuild RPC.
-	updatableFieldPaths = stringset.NewFromSlice(
-		"build.output",
-		"build.output.properties",
-		"build.output.gitiles_commit",
-		"build.status",
-		"build.status_details",
-		"build.steps",
-		"build.summary_markdown",
-		"build.tags",
-	)
-)
+// updateBuildStatuses is a set of build statuses supported by UpdateBuild RPC.
+var updateBuildStatuses = map[pb.Status]struct{}{
+	pb.Status_STARTED: {},
+	// kitchen does not actually use SUCCESS. It relies on swarming pubsub
+	// handler in Buildbucket because a task may fail after recipe succeeded.
+	pb.Status_SUCCESS:       {},
+	pb.Status_FAILURE:       {},
+	pb.Status_INFRA_FAILURE: {},
+}
 
 // validateUpdate validates the given request.
 func validateUpdate(req *pb.UpdateBuildRequest) error {
-	// validate the mask
-	unsupported := stringset.NewFromSlice(
-		req.GetUpdateMask().GetPaths()...).Difference(updatableFieldPaths)
-	if len(unsupported) > 0 {
-		return errors.Reason("unsupported path(s) %q", unsupported.ToSortedSlice()).Err()
+	if req.GetBuild().GetId() == 0 {
+		return errors.Reason("build.id: required").Err()
 	}
 
-	// validate the build
-	switch {
-	// TODO(1110990): validate the rest of the message fields
-	case req.GetBuild().GetId() == 0:
-		return errors.Reason("id is required").Err()
+	for _, p := range req.UpdateMask.GetPaths() {
+		// TODO(1110990): validate gitiles_commit, summary_markdown, and steps
+		switch p {
+		case "build.output":
+		case "build.output.properties":
+		case "build.output.gitiles_commit":
+		case "build.status":
+			if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
+				return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
+			}
+		case "build.status_details":
+		case "build.steps":
+		case "build.summary_markdown":
+		case "build.tags":
+			if err := validateTags(req.Build.Tags, TagAppend); err != nil {
+				return errors.Annotate(err, "build.tags").Err()
+			}
+		default:
+			return errors.Reason("unsupported path %q", p).Err()
+		}
 	}
 	return nil
 }
