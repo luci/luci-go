@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "61427934_0cc59a4a",
+        "filename": "cas/appengine/frontend/app.yaml",
+        "patchSetId": 12
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-19T18:31:29Z",
+      "side": 1,
+      "message": "Yes, when deploying manually from a workstation.",
+      "parentUuid": "d625b48a_3bff8c1f",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 24
+      },
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4174fce1_858ee6ae",
         "filename": "cas/appengine/frontend/main.go",
         "patchSetId": 12
