@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afb9de8f_883e9c30",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-19T05:36:36Z",
+      "side": 1,
+      "message": "LGTM, just some nits.",
+      "revId": "5db5a4419b9effeca433c682ed25966e84688eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "323e154b_43603cec",
+        "filename": "milo/frontend/resultui/src/components/link.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-08-19T05:36:36Z",
+      "side": 1,
+      "message": "nit: \"link\" -\u003e \"Link\"",
+      "range": {
+        "startLine": 21,
+        "startChar": 13,
+        "endLine": 21,
+        "endChar": 17
+      },
+      "revId": "5db5a4419b9effeca433c682ed25966e84688eaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
