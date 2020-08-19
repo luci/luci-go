@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "58270b82_2a050e2f",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-19T22:58:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6296f6b_677db035",
+      "range": {
+        "startLine": 290,
+        "startChar": 4,
+        "endLine": 290,
+        "endChar": 19
+      },
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d530791_5950243a",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "51b5fbd9_8305729e",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-19T22:58:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d530791_5950243a",
+      "range": {
+        "startLine": 291,
+        "startChar": 14,
+        "endLine": 291,
+        "endChar": 24
+      },
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa70916e_46f7707c",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -79,6 +127,24 @@
       "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bcfe0c3_e841b0e6",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-19T22:58:16Z",
+      "side": 1,
+      "message": "That does look reasonable, and seems like something to do in a separate refactoring CL.",
+      "parentUuid": "aa70916e_46f7707c",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -119,6 +185,30 @@
       "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5df87e3_298636c2",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-19T22:58:16Z",
+      "side": 1,
+      "message": "Done.\n\nTo clarify, must be at most 1k or must be below 1k? is \u003d\u003d 1k allowed? In the latest patchset I have allowed 1k.",
+      "parentUuid": "974e808c_a668519f",
+      "range": {
+        "startLine": 180,
+        "startChar": 38,
+        "endLine": 180,
+        "endChar": 69
+      },
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -175,6 +265,24 @@
     },
     {
       "key": {
+        "uuid": "fc552f94_a4042497",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-19T22:58:16Z",
+      "side": 1,
+      "message": "Alright -- so I\u0027ll go ahead with this as-is including Offset, and a helper function can be provided (perhaps here or perhaps elsewhere) to provide querying with paging by updated time.",
+      "parentUuid": "68e1919a_0c284131",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6478c05_8f527ea5",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -189,6 +297,24 @@
       "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd23453f_d7ae9fef",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-08-19T22:58:16Z",
+      "side": 1,
+      "message": "Strangely, the docs don\u0027t say anything, but the behavior does seem to be by updated time; I added a comment about that here.",
+      "parentUuid": "f6478c05_8f527ea5",
+      "revId": "4ead48792bc9bb30e7916672c44dbe10f0f4c100",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
