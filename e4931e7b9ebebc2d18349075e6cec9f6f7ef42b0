@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "86327032_eee21d4a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T23:55:20Z",
+      "side": 1,
+      "message": "Ah, you\u0027re right. Let\u0027s chat about how to organize this better.",
+      "parentUuid": "b9219cba_e833a11a",
+      "revId": "e4931e7b9ebebc2d18349075e6cec9f6f7ef42b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8a2829ef_d658fa20",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
