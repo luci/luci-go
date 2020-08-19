@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17e3ebf5_918f5816",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-19T00:31:46Z",
+      "side": 1,
+      "message": "The existing error format of _check_truth() is \"$field_path: required\"\n: https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/validation.py;l\u003d551-556\n\nWith the original err format, these error strings would be like below.\n- id: required\n- summary_markdown: required\n\nThe above messages may not look much different because validate_cancel_build_request() has only one depth. However, the validator of ScheduleBuildRequest will benefit much from it, as it will make the error messages easy to follow.\ne.g.,\n- exe.cipd_version: invalid version xxxzzz\n- dimensions.key.pool: \"pool\" is not allowed\"\n- etc...\n\nWDYT? I\u0027m asking this because, at L47, the err msg follows the original format. I\u0027m happy to write a separate CL to reformat the err msg of all others.",
+      "range": {
+        "startLine": 43,
+        "startChar": 49,
+        "endLine": 45,
+        "endChar": 79
+      },
+      "revId": "19a6ca73ed7ef5ff0df17d4843909699458b3ed3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb33a6fa_2e4beeb4",
+        "filename": "buildbucket/appengine/rpc/cancel_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-19T00:31:46Z",
+      "side": 1,
+      "message": "I can move this out of the this switch, and remove teeErr(). LMK",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 77
+      },
+      "revId": "19a6ca73ed7ef5ff0df17d4843909699458b3ed3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
