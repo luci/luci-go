@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "7c028ed0_3092b12a",
+        "filename": "buildbucket/appengine/internal/search/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-19T23:28:01Z",
+      "side": 1,
+      "message": "Yes, because I find it strange that you have to call search.ToIdentity to validate CreatedBy in search_builds.go but you just pass raw CreatedBy when calling search.NewQuery. It means search_builds.go knows the internal logic of NewQuery instead of just its inputs and outputs. I think that dependency is unnecessary.",
+      "parentUuid": "ee3d94aa_3d1885f6",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0bb04997_4eff6e52",
         "filename": "buildbucket/appengine/rpc/search_builds.go",
         "patchSetId": 3
@@ -66,6 +84,24 @@
       "side": 1,
       "message": "Responding an error might be better. It prevents using extra computing resource when there is clearly no matched results. It also prompt users that their createBy format is wrong otherwise they may not know why there is no matching results.\n\nBTW, this is also what Py does.",
       "parentUuid": "0bb04997_4eff6e52",
+      "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eeec427_4d127f27",
+        "filename": "buildbucket/appengine/rpc/search_builds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-08-19T23:28:01Z",
+      "side": 1,
+      "message": "But it assumes all builds in the datastore are stored \"correctly\". e.g. no old builds that may have had different CreatedBy format, no bugs in the code that allowed a different format of CreatedBy to be written. If for some reason a datastore entity has an improperly formatted CreatedBy field, that build becomes impossible to search for. Since you already have to hack identity to force email -\u003e user:email it seems possible. Generally speaking, for this reason, I\u0027d validate format on write only. But yes, as you say, it will probably just waste resources most of the time (but that\u0027s another problem-- we should be charging users for what they query, not eating the cost ourselves, so invalid queries becomes their problem).\n\nI\u0027m not insisting though.",
+      "parentUuid": "5e64d72c_9cc7243e",
       "revId": "37e59ff37fbae32e99d33966d640b89c9d25491d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
