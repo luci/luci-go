@@ -47,6 +47,11 @@ type directExecutor struct {
 }
 
 func (e directExecutor) Execute(ctx context.Context, t *tqtesting.Task, done func(retry bool)) {
+	if t.Message != nil {
+		done(false)
+		panic("Executing PubSub tasks is not supported yet") // break tests loudly
+	}
+
 	var body []byte
 	var headers map[string]string
 	switch mt := t.Task.MessageType.(type) {
