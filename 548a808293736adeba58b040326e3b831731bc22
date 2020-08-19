@@ -281,6 +281,30 @@
     },
     {
       "key": {
+        "uuid": "ddd1f40b_49080f63",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T22:18:10Z",
+      "side": 1,
+      "message": "I see. I\u0027ll look into that after landing this CL.",
+      "parentUuid": "6e62508c_69808553",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10
