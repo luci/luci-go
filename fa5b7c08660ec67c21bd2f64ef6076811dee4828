@@ -34,6 +34,29 @@
       "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5dbcd92f_441e960a",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T00:48:12Z",
+      "side": 1,
+      "message": "nit: given how validateUpdate is being modified in upcoming CLs,\n\nshould we have a loop over paths? with a switch statement? \n\nthis way it we won\u0027t have to duplicate the list of supported fields in this code and in L32.\n\n  switch path {\n  case \"build.output\":\n    ...\n  case \"build.status\":\n     ...\n\n  default:\n    return errors.Reason(\"unsupported path...\")\n  }\n\ni am worried about accidental addition of a path to L44 map, but forgetting to add code in this func",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
