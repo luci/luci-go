@@ -153,6 +153,30 @@
       "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a970334_cdd79028",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-19T01:39:53Z",
+      "side": 1,
+      "message": "e.g.\n\n  for _, p :\u003d range req.GetUpdateMask().GetPaths() {\n    switch p {\n    case \"build.tags\":\n      ...\n    default:\n      return errors.Reason(...)\n  }\n\nit doesn\u0027t return all unsupported fields, but I think that\u0027s fine: we don\u0027t return all invalid fields either, e.g. if both status and summary markdown are invalid, we return an error only for one of them, and we don\u0027t guarantee anything about which one",
+      "parentUuid": "3c98f714_bd07d43d",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
