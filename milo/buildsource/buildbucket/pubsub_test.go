@@ -306,7 +306,7 @@ func TestPubSub(t *testing.T) {
 			err := datastore.Get(c, &buildAct)
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
-			blder := model.BuilderSummary{BuilderID: LegacyBuilderIDString(&builderID)}
+			blder := model.BuilderSummary{BuilderID: common.LegacyBuilderIDString(&builderID)}
 			err = datastore.Get(c, &blder)
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})

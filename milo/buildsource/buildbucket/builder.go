@@ -56,12 +56,6 @@ var builderPageBuildFields = &field_mask.FieldMask{
 	},
 }
 
-// LegacyBuilderIDString returns a legacy string identifying the builder.
-// It is used in the Milo datastore.
-func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
-	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
-}
-
 // backPageToken implements bidirectional page tokens with forward-only
 // buildbucket page tokens by storing a map for pageToken -> prevPageToken in
 // memcache.
@@ -97,7 +91,7 @@ func backPageToken(c context.Context, bid *buildbucketpb.BuilderID, pageSize int
 
 // viewsForBuilder returns a list of links to views that reference the builder.
 func viewsForBuilder(c context.Context, bid *buildbucketpb.BuilderID) ([]*ui.Link, error) {
-	consoles, err := common.GetAllConsoles(c, LegacyBuilderIDString(bid))
+	consoles, err := common.GetAllConsoles(c, common.LegacyBuilderIDString(bid))
 	if err != nil {
 		return nil, err
 	}

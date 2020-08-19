@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -100,4 +101,10 @@ func ReadExactOneFromForm(form url.Values, key string) (string, error) {
 		return "", fmt.Errorf("multiple or missing %v; actual value: %v", key, input)
 	}
 	return input[0], nil
+}
+
+// LegacyBuilderIDString returns a legacy string identifying the builder.
+// It is used in the Milo datastore.
+func LegacyBuilderIDString(bid *buildbucketpb.BuilderID) string {
+	return fmt.Sprintf("buildbucket/luci.%s.%s/%s", bid.Project, bid.Bucket, bid.Builder)
 }

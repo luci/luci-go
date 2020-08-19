@@ -34,9 +34,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/git"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
@@ -296,63 +294,6 @@ func (bs *BuildSummary) GitilesCommit() *buildbucketpb.GitilesCommit {
 	return nil
 }
 
-// ErrUnknownPreviousBuild is returned when PreviousByGitilesCommit was unable
-// to find the previous build.
-var ErrUnknownPreviousBuild = errors.New("unable to find previous build")
-
-// PreviousByGitilesCommit returns the previous build(s) (and all intervening
-// commits) based on the GitilesCommit BuildSet of the given build.
-//
-// There may be multiple BuildSummaries, if there were rebuilds. The resulting
-// BuildSummaries will be sorted in reverse creation order, so that builds[0] is
-// always the most-recently-created build.
-//
-// This will only look up to 100 commits into the past.
-//
-// If this is unable to find the previous build, it returns
-// ErrUnknownPreviousBuild.
-func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*BuildSummary, commits []*gitpb.Commit, err error) {
-	gc := bs.GitilesCommit()
-	if gc == nil {
-		err = ErrUnknownPreviousBuild
-		return
-	}
-
-	// Note: this cannot be done using exponential search
-	// because there may be gaps in commits,
-	// i.e. some commits may not have builds.
-
-	// We don't really need a blamelist longer than 100  commits.
-	commits, err = git.Get(c).Log(c, gc.Host, gc.Project, gc.Id, &git.LogOptions{Limit: 100, WithFiles: true})
-	if err != nil || len(commits) == 0 {
-		return
-	}
-
-	// TODO(iannucci): This bit could be parallelized, but I think in the typical
-	// case this will be fast enough.
-	curGC := &buildbucketpb.GitilesCommit{Host: gc.Host, Project: gc.Project}
-	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", bs.BuilderID)
-	for i, commit := range commits[1:] { // skip the first commit... it's us!
-		curGC.Id = commit.Id
-		if err = datastore.GetAll(c, q.Eq("BuildSet", protoutil.GitilesBuildSet(curGC)), &builds); err != nil {
-			return
-		}
-		builds = filterBuilds(builds, InfraFailure, Expired, Canceled)
-		if len(builds) > 0 {
-			logging.Infof(c, "I found %d builds. build[0]: %q", len(builds), builds[0].BuildID)
-			sort.Slice(builds, func(i, j int) bool {
-				return builds[i].Summary.Start.After(builds[j].Summary.Start)
-			})
-			commits = commits[:i+1] // since we skip the first one
-			logging.Infof(c, "Sliced commit list down to %d", len(commits))
-			return
-		}
-	}
-
-	err = ErrUnknownPreviousBuild
-	return
-}
-
 // SelfLink returns a link to the build represented by the BuildSummary via BuildID.
 //
 // BuildID is used for indexing BuildSummary and BuilderSummary entities, so this lets us get links
@@ -402,20 +343,4 @@ func buildIDLink(b string, project string) string {
 	default:
 		return InvalidBuildIDURL
 	}
-}
-
-// filterBuilds returns a truncated slice, filtering out builds with the given
-// statuses.
-func filterBuilds(builds []*BuildSummary, without ...Status) []*BuildSummary {
-	filtered := builds[:0]
-outer:
-	for _, build := range builds {
-		for _, status := range without {
-			if status == build.Summary.Status {
-				continue outer
-			}
-		}
-		filtered = append(filtered, build)
-	}
-	return filtered
 }

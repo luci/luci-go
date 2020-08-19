@@ -27,11 +27,16 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/prpc"
+	milopb "go.chromium.org/luci/milo/api/service/v1"
+	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -129,7 +134,21 @@ func Run(templatePath string) {
 	// Config for ResultUI frontend.
 	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
 
+	apiMW := baseMW.Extend(withGitMiddleware)
+	installAPIRoutes(r, apiMW)
+
 	http.DefaultServeMux.Handle("/", r)
+}
+
+func installAPIRoutes(r *router.Router, base router.MiddlewareChain) {
+	server := &prpc.Server{}
+	milopb.RegisterMiloInternalServer(server, &milopb.DecoratedMiloInternal{
+		Service:  &backend.MiloInternalService{},
+		Postlude: backend.CommonPostlude,
+	})
+	discovery.Enable(server)
+	rpcexplorer.Install(r)
+	server.InstallHandlers(r, base)
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error

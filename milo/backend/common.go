@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package milopb
+package backend
 
-//go:generate cproto
-//go:generate svcdec -type MiloInternalServer
+import (
+	"context"
+
+	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/grpc/appstatus"
+)
+
+// CommonPostlude converts an appstatus error to a gRPC error and logs it.
+func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	return appstatus.GRPCifyAndLog(ctx, err)
+}
