@@ -257,6 +257,30 @@
     },
     {
       "key": {
+        "uuid": "6e62508c_69808553",
+        "filename": "milo/api/service/v1/rpc.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T16:38:41Z",
+      "side": 1,
+      "message": "Well, I think Milo has a pubsub channel of all Build objects. It would be possible for milo to synthesize its own properties from the Build (both on creation and completion) meaning that it could have an index which is directly generated from build.input.gitiles_commit and build.output.gitiles_commit (instead of relying on the apparently-strange \u0027buildset\u0027 tag)",
+      "parentUuid": "5f2192f1_fe664e15",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "548a808293736adeba58b040326e3b831731bc22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d82705a3_df9192fd",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 10
