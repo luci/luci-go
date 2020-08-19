@@ -170,21 +170,34 @@ message ListChangesRequest {
   // space-separated and can include filters like "label:Commit-Queue" or
   // "status:open". The possible search operators are described at:
   // https://gerrit-review.googlesource.com/Documentation/user-search.html
+  //
+  // An empty query matches all changes.
   string query = 1;
 
   // What to include in the response.
   repeated QueryOption options = 2;
 
-  // The number of results to return.
+  // Caps the number of results to return. Required.
+  //
+  // Defaults to 25 if not provided; maximum value 1000.
   int64 limit = 3;
 
   // The number of changes to skip from the start, for pagination.
+  //
+  // Note that without using offset, it's also possible to do paging by
+  // including a "before:" time in the query, and querying for changes before
+  // the earliest change in the current page. This may be preferred but is not
+  // very trivial to implement correctly.
   int64 offset = 4;
 }
 
 // A list of changes that matched the query.
 message ListChangesResponse {
   // The changes that matched the query, with the fields requested.
+  //
+  // The order of the changes is expected to be decreasing by update time,
+  // however the The Gerrit API doc doesn't explicitly specify the order:
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html
   repeated ChangeInfo changes = 1;
 
   // True if there are more changes not returned.

@@ -33,6 +33,104 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestListChanges(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ListChanges", t, func() {
+		Convey("Validates Limit number", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
+			defer srv.Close()
+
+			_, err := c.ListChanges(ctx, &gerritpb.ListChangesRequest{
+				Query: "label:Commit-Queue",
+				Limit: -1,
+			})
+			So(err, ShouldErrLike, "must be nonnegative")
+
+			_, err = c.ListChanges(ctx, &gerritpb.ListChangesRequest{
+				Query: "label:Commit-Queue",
+				Limit: 1001,
+			})
+			So(err, ShouldErrLike, "should be at most")
+		})
+
+		req := &gerritpb.ListChangesRequest{
+			Query: "label:Code-Review",
+			Limit: 1,
+		}
+
+		Convey("With a HTTP 404 response", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(404)
+			})
+			defer srv.Close()
+			_, err := c.ListChanges(ctx, req)
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("OK case with one change, _more_changes set in response", func() {
+			expectedResponse := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{
+					&gerritpb.ChangeInfo{
+						Number: 1,
+						Owner: &gerritpb.AccountInfo{
+							Name:     "John Doe",
+							Email:    "jdoe@example.com",
+							Username: "jdoe",
+						},
+						Project: "example/repo",
+						Ref:     "refs/heads/master",
+					},
+				},
+				MoreChanges: true,
+			}
+			var actualRequest *http.Request
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualRequest = r
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'[
+					{
+						"_number": 1,
+						"owner": {
+							"name":             "John Doe",
+							"email":            "jdoe@example.com",
+							"username":         "jdoe"
+						},
+						"project": "example/repo",
+						"branch":  "master",
+						"_more_changes": true
+					}
+				]`)
+			})
+			defer srv.Close()
+
+			Convey("Response and request are as expected", func() {
+				res, err := c.ListChanges(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResemble, expectedResponse)
+				So(actualRequest.URL.Query()["q"], ShouldResemble, []string{"label:Code-Review"})
+				So(actualRequest.URL.Query()["S"], ShouldResemble, []string{"0"})
+				So(actualRequest.URL.Query()["n"], ShouldResemble, []string{"1"})
+			})
+
+			Convey("Options are included in the request", func() {
+				req.Options = append(req.Options, gerritpb.QueryOption_DETAILED_ACCOUNTS, gerritpb.QueryOption_ALL_COMMITS)
+				_, err := c.ListChanges(ctx, req)
+				So(err, ShouldBeNil)
+				So(
+					actualRequest.URL.Query()["o"],
+					ShouldResemble,
+					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
+				)
+			})
+		})
+	})
+}
+
 func TestGetChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -142,6 +240,7 @@ func TestGetChange(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res, ShouldResemble, expectedChange)
 			})
+
 			Convey("Options", func() {
 				req.Options = append(req.Options, gerritpb.QueryOption_DETAILED_ACCOUNTS, gerritpb.QueryOption_ALL_COMMITS)
 				_, err := c.GetChange(ctx, req)
@@ -151,14 +250,6 @@ func TestGetChange(t *testing.T) {
 					ShouldResemble,
 					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
 				)
-			})
-			Convey("Request", func() {
-				_, err := c.GetChange(ctx, req)
-				So(err, ShouldBeNil)
-
-				body, err := ioutil.ReadAll(actualRequest.Body)
-				So(err, ShouldBeNil)
-				So(body, ShouldHaveLength, 0)
 			})
 		})
 	})
