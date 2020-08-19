@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36d32779_9f0f078d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-08-19T19:37:42Z",
+      "side": 1,
+      "message": "LGTM but not CQ this change to let owner have a final look.",
+      "revId": "e4931e7b9ebebc2d18349075e6cec9f6f7ef42b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
