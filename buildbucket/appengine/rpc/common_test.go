@@ -91,4 +91,14 @@ func TestValidateTags(t *testing.T) {
 			So(validateTags([]*pb.StringPair{{Key: "builder", Value: "v"}}, TagAppend), ShouldErrLike, "cannot be added to an existing build")
 		})
 	})
+
+	Convey("validate summary_markdown", t, func() {
+		Convey("valid", func() {
+			So(validateSummaryMarkdown("[this](http://example.org) is a link"), ShouldBeNil)
+		})
+
+		Convey("too big", func() {
+			So(validateSummaryMarkdown(strings.Repeat("☕", summaryMarkdownMaxLength)), ShouldErrLike, "too big to accept")
+		})
+	})
 }
