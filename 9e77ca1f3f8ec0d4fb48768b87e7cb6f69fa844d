@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3dd64b1f_f6ec91b3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 12
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-19T09:07:49Z",
+      "side": 1,
+      "message": "better to follow structure in\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/examples/appengine/helloworld_v2/\n?",
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d625b48a_3bff8c1f",
+        "filename": "cas/appengine/frontend/app.yaml",
+        "patchSetId": 12
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-19T09:07:49Z",
+      "side": 1,
+      "message": "vadimsh, using gae.py is still recommended way for GAEv2?",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 24
+      },
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4174fce1_858ee6ae",
+        "filename": "cas/appengine/frontend/main.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-08-19T09:07:49Z",
+      "side": 1,
+      "message": "nil?",
+      "range": {
+        "startLine": 27,
+        "startChar": 18,
+        "endLine": 27,
+        "endChar": 25
+      },
+      "revId": "9e77ca1f3f8ec0d4fb48768b87e7cb6f69fa844d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
