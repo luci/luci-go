@@ -307,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "fda9959d_3764dc31",
+        "filename": "milo/backend/query_blamelist.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T01:40:37Z",
+      "side": 1,
+      "message": "you are right. changed to use mutex instead.",
+      "parentUuid": "bb9236e7_c5f6e0d7",
+      "range": {
+        "startLine": 82,
+        "startChar": 6,
+        "endLine": 82,
+        "endChar": 15
+      },
+      "revId": "3c6c197cddd17339f6c1a7fd150b7d94b9abb98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d064798_6044ea2c",
         "filename": "milo/backend/query_blamelist.go",
         "patchSetId": 12
