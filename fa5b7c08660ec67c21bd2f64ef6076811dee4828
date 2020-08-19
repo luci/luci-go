@@ -57,6 +57,30 @@
       "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85000f46_cb9a5a45",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-19T00:53:56Z",
+      "side": 1,
+      "message": "L44 map is not a map of updatable field paths. Did you mean something like below?\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2352630/10/buildbucket/appengine/rpc/update_build.go at line #32?",
+      "parentUuid": "5dbcd92f_441e960a",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "fa5b7c08660ec67c21bd2f64ef6076811dee4828",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
