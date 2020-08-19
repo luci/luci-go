@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f25ff0e5_f6a37032",
+        "filename": "milo/frontend/resultui/src/components/link.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T04:39:14Z",
+      "side": 1,
+      "message": "yes.\nI\u0027m happy to change to something else in another CL.\nDo you have a better alternative in mind?",
+      "parentUuid": "69aa9831_165a6f93",
+      "revId": "b5a36e241a16b89c7ebd45d08d028f735a9eea67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f612d732_6f48c3c3",
         "filename": "milo/frontend/resultui/src/components/link.ts",
         "patchSetId": 4
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "f7017236_7e3dfe35",
+        "filename": "milo/frontend/resultui/src/components/link.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T04:39:14Z",
+      "side": 1,
+      "message": "replaced with a property to give the parent element the option to set it.",
+      "parentUuid": "f612d732_6f48c3c3",
+      "revId": "b5a36e241a16b89c7ebd45d08d028f735a9eea67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "02b0e7cf_1a5f7271",
         "filename": "milo/frontend/resultui/src/components/link.ts",
         "patchSetId": 4
@@ -47,6 +83,30 @@
       "writtenOn": "2020-08-19T02:20:17Z",
       "side": 1,
       "message": "Did you miss some html tag here?\n\nthis.link.alias ? html`[[${this.link.label}]]` : html`this.link.label` ?\n\nAnd did you mean this.link.alias instead of this.link.label?",
+      "range": {
+        "startLine": 36,
+        "startChar": 8,
+        "endLine": 36,
+        "endChar": 68
+      },
+      "revId": "b5a36e241a16b89c7ebd45d08d028f735a9eea67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a25cfbe2_cfc3ece2",
+        "filename": "milo/frontend/resultui/src/components/link.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-19T04:39:14Z",
+      "side": 1,
+      "message": "I\u0027m not quite sure.\nIt\u0027s from\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/frontend/ui/build.go;l\u003d619",
+      "parentUuid": "02b0e7cf_1a5f7271",
       "range": {
         "startLine": 36,
         "startChar": 8,
