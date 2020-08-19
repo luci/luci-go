@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "8b66b0be_451ef455",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-19T05:29:20Z",
+      "side": 1,
+      "message": "Oooops. removed :)",
+      "parentUuid": "4ae8dd26_a66a76e4",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 2
+      },
+      "revId": "e9d5ccf7cbde7cb247f706fdc76a13586b8658e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6de85f9_cf279c2a",
         "filename": "buildbucket/appengine/rpc/update_build.go",
         "patchSetId": 17
@@ -62,6 +86,30 @@
       "revId": "e9d5ccf7cbde7cb247f706fdc76a13586b8658e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f331bed7_e314bcea",
+        "filename": "buildbucket/appengine/rpc/update_build.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-08-19T05:29:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6de85f9_cf279c2a",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 1
+      },
+      "revId": "e9d5ccf7cbde7cb247f706fdc76a13586b8658e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
