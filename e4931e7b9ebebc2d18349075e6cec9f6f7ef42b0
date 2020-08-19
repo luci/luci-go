@@ -33,6 +33,47 @@
       "revId": "e4931e7b9ebebc2d18349075e6cec9f6f7ef42b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44c520cb_522f2f02",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T22:51:33Z",
+      "side": 1,
+      "message": "It can interact with the build logs too, in the same way (which is why I moved it)",
+      "parentUuid": "8144c00a_142982f1",
+      "revId": "e4931e7b9ebebc2d18349075e6cec9f6f7ef42b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a2829ef_d658fa20",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-08-19T22:51:33Z",
+      "side": 1,
+      "message": "this is the same \u0027debug log\u0027 logic as below; logs whose names start with \u0027$\u0027 count as debug logs",
+      "range": {
+        "startLine": 247,
+        "startChar": 50,
+        "endLine": 247,
+        "endChar": 51
+      },
+      "revId": "e4931e7b9ebebc2d18349075e6cec9f6f7ef42b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
