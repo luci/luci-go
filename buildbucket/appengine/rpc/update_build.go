@@ -67,7 +67,12 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 			return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
 		}
 	}
-	// TODO(1110990): validate gitiles_commit, summary_markdown, and steps
+	// TODO(1110990): validate gitiles_commit and steps
+	if reqPaths.Has("build.summary_markdown") {
+		if err := validateSummaryMarkdown(req.Build.SummaryMarkdown); err != nil {
+			return errors.Annotate(err, "build.summary_markdown").Err()
+		}
+	}
 	if reqPaths.Has("build.tags") {
 		if err := validateTags(req.Build.Tags, TagAppend); err != nil {
 			return errors.Annotate(err, "build.tags").Err()
