@@ -54,6 +54,9 @@ func validateUpdate(req *pb.UpdateBuildRequest) error {
 		case "build.status_details":
 		case "build.steps":
 		case "build.summary_markdown":
+			if err := validateSummaryMarkdown(req.Build.SummaryMarkdown); err != nil {
+				return errors.Annotate(err, "build.summary_markdown").Err()
+			}
 		case "build.tags":
 			if err := validateTags(req.Build.Tags, TagAppend); err != nil {
 				return errors.Annotate(err, "build.tags").Err()

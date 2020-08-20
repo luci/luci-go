@@ -37,11 +37,14 @@ import (
 
 // validateCancel validates the given request.
 func validateCancel(req *pb.CancelBuildRequest) error {
+	var err error
 	switch {
 	case req.GetId() == 0:
 		return appstatus.Errorf(codes.InvalidArgument, "id is required")
 	case req.SummaryMarkdown == "":
 		return appstatus.Errorf(codes.InvalidArgument, "summary_markdown is required")
+	case teeErr(validateSummaryMarkdown(req.SummaryMarkdown), &err) != nil:
+		return appstatus.Errorf(codes.InvalidArgument, "summary_markdown: %s", err)
 	}
 	return nil
 }

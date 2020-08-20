@@ -97,4 +97,11 @@ func TestValidateUpdate(t *testing.T) {
 		req.Build.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
 		So(validateUpdate(req), ShouldBeNil)
 	})
+
+	Convey("validate SummaryMarkdown", t, func() {
+		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
+		req.Build.SummaryMarkdown = "[mark](http://example.org)*down*"
+		So(validateUpdate(req), ShouldBeNil)
+	})
 }
