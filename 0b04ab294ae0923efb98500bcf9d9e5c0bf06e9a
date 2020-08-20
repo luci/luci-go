@@ -195,6 +195,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0cb0865_4a65c1d3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-20T22:23:34Z",
+      "side": 1,
+      "message": "This is blocked on migrating Swarming pools to use realms. This is a big migration that should be done carefully. And we should not start the migration with Chromium, we need to pick something smaller/less risky first.\n\nCan ResultDB led integration be tested *not* on production Chromium pools, but on something smaller where we can enable realms with less risk? Also what is the urgency of this?",
+      "parentUuid": "6b4007d7_8438cc67",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "975319cf_b3776223",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-08-20T22:23:34Z",
+      "side": 1,
+      "message": "I think for this to \"properly\" work with existing Buildbucket tasks (that don\u0027t have `realm` populated), is to either call led with `-experiment luci.use_realms\u003dtrue` [1] or hardcode this requirement in LED (i.e. if ResultDB is enabled and `realm` is not set, populate `realm` based on builder\u0027s bucket [2]).\n\nHardcoding \"chromium:public\" is not correct.\n\n[1]: https://chromium.googlesource.com/infra/luci/luci-go/+/28afea2aff664c2aacaa7b6f0ceab5a547e9f333\n[2]: https://chromium.googlesource.com/infra/luci/luci-go/+/28afea2aff664c2aacaa7b6f0ceab5a547e9f333/led/job/experiments/use_realms.go#34",
+      "revId": "19450a5e751bb6ea7d0f239cd55e448d6962b339",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
