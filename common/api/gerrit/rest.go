@@ -25,14 +25,12 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -62,19 +60,18 @@ const (
 	maxQueryLimit     = 1000
 )
 
-// This file implements Gerrit proto service client
-// on top of Gerrit REST API.
-// WARNING: The returned client is incomplete, so if you want access to
-// a particular field from this API, you may need to update rest.go to add
-// unmarshalling of that field.
+// This file implements Gerrit proto service client on top of Gerrit REST API.
+// WARNING: The returned client is incomplete, so if you want access to a
+// particular field from this API, you may need to update the relevant struct
+// and add an unmarshalling of that field.
 
 // NewRESTClient creates a new Gerrit client based on Gerrit's REST API.
 //
 // The host must be a full Gerrit host, e.g. "chromium-review.googlesource.com".
 //
-// If auth is true, indicates that the given HTTP client sends authenticated
-// requests. If so, the requests to Gerrit will include "/a/" URL path
-// prefix.
+// If `auth` is true,  this indicates that the given HTTP client sends
+// authenticated requests. If so, the requests to Gerrit will include "/a/" URL
+// path prefix.
 //
 // RPC methods of the returned client return an error if a grpc.CallOption is
 // passed.
@@ -91,6 +88,7 @@ func NewRESTClient(httpClient *http.Client, host string, auth bool) (gerritpb.Ge
 
 // Implementation.
 
+// jsonPrefix is expected in all JSON responses from the Gerrit REST API.
 var jsonPrefix = []byte(")]}'")
 
 // client implements gerritpb.GerritClient.
@@ -99,197 +97,6 @@ type client struct {
 	// BaseURL is the base URL for all API requests,
 	// for example "https://chromium-review.googlesource.com/a".
 	BaseURL string
-}
-
-// timestamp implements customized JSON marshal/unmarshal behavior
-// that matches the timestamp format used in Gerrit.
-type timestamp struct {
-	time.Time
-}
-
-func (t *timestamp) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", t.Time.UTC().Format(gerritTimestampLayout))), nil
-}
-
-func (t *timestamp) UnmarshalJSON(b []byte) error {
-	parsedTime, err := time.Parse(gerritTimestampLayout, strings.Trim(string(b), "\""))
-	if err != nil {
-		return errors.Annotate(err, "parse gerrit timestamp").Err()
-	}
-	t.Time = parsedTime
-	return nil
-}
-
-// Below are the JSON representations of messages used for requests to Gerrit;
-// each of these structs corresponds to an entity described at
-// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#json-entities
-// and also to a message in `gerritpb`.
-
-// changeInfo is the JSON representation of gerritpb.ChangeInfo on the wire.
-type changeInfo struct {
-	Number   int64                 `json:"_number"`
-	Owner    *gerritpb.AccountInfo `json:"owner"`
-	Project  string                `json:"project"`
-	Branch   string                `json:"branch"`
-	ChangeID string                `json:"change_id"`
-
-	// json.Unmarshal cannot convert enum string to value,
-	// so this field is handled specially in ToProto.
-	Status string `json:"status"`
-
-	CurrentRevision string                         `json:"current_revision"`
-	Revisions       map[string]*revisionInfo       `json:"revisions"`
-	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
-	Messages        []changeMessageInfo            `json:"messages"`
-
-	// MoreChanges may be set on the last change in a response to a query for
-	// changes, but this is not a property of the change itself and is not
-	// needed in gerritpb.ChangeInfo.
-	MoreChanges bool `json:"_more_changes"`
-}
-
-type changeMessageInfo struct {
-	ID         string                `json:"id"`
-	Author     *gerritpb.AccountInfo `json:"author"`
-	RealAuthor *gerritpb.AccountInfo `json:"real_author"`
-	Date       timestamp             `json:"date"`
-	Message    string                `json:"message"`
-}
-
-type fileInfo struct {
-	LinesInserted int32 `json:"lines_inserted"`
-	LinesDeleted  int32 `json:"lines_deleted"`
-	SizeDelta     int64 `json:"size_delta"`
-	Size          int64 `json:"size"`
-}
-
-type revisionInfo struct {
-	Number int                  `json:"_number"`
-	Ref    string               `json:"ref"`
-	Files  map[string]*fileInfo `json:"files"`
-}
-
-type mergeableInfo struct {
-	SubmitType    string   `json:"submit_type"`
-	Strategy      string   `json:"strategy"`
-	Mergeable     bool     `json:"mergeable"`
-	CommitMerged  bool     `json:"commit_merged"`
-	ContentMerged bool     `json:"content_merged"`
-	Conflicts     []string `json:"conflicts"`
-	MergeableInto []string `json:"mergeable_into"`
-}
-
-func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
-	// Convert something like 'simple-two-way-in-core' to 'SIMPLE_TWO_WAY_IN_CORE'.
-	strategyEnumName := strings.Replace(strings.ToUpper(mi.Strategy), "-", "_", -1)
-	strategyEnumNum, found := gerritpb.MergeableStrategy_value[strategyEnumName]
-	if !found {
-		return nil, fmt.Errorf("no MergeableStrategy enum value for %q", strategyEnumName)
-	}
-	submitTypeEnumNum, found := gerritpb.MergeableInfo_SubmitType_value[mi.SubmitType]
-	if !found {
-		return nil, fmt.Errorf("no SubmitType enum value for %q", mi.SubmitType)
-	}
-	return &gerritpb.MergeableInfo{
-		SubmitType:    gerritpb.MergeableInfo_SubmitType(submitTypeEnumNum),
-		Strategy:      gerritpb.MergeableStrategy(strategyEnumNum),
-		Mergeable:     mi.Mergeable,
-		CommitMerged:  mi.CommitMerged,
-		ContentMerged: mi.ContentMerged,
-		Conflicts:     mi.Conflicts,
-		MergeableInto: mi.MergeableInto,
-	}, nil
-}
-
-func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
-	ret := &gerritpb.ChangeInfo{
-		Number:          ci.Number,
-		Owner:           ci.Owner,
-		Project:         ci.Project,
-		Ref:             branchToRef(ci.Branch),
-		Status:          gerritpb.ChangeInfo_Status(gerritpb.ChangeInfo_Status_value[ci.Status]),
-		CurrentRevision: ci.CurrentRevision,
-	}
-	if ci.Revisions != nil {
-		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
-		for rev, info := range ci.Revisions {
-			ret.Revisions[rev] = info.ToProto()
-		}
-	}
-	if ci.Labels != nil {
-		ret.Labels = make(map[string]*gerritpb.LabelInfo, len(ci.Labels))
-		for label, info := range ci.Labels {
-			ret.Labels[label] = info
-		}
-	}
-	if ci.Messages != nil {
-		ret.Messages = make([]*gerritpb.ChangeMessageInfo, len(ci.Messages))
-		for i, msg := range ci.Messages {
-			ret.Messages[i] = msg.ToProto()
-		}
-	}
-	return ret
-}
-
-func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
-	if cmi == nil {
-		return nil
-	}
-	return &gerritpb.ChangeMessageInfo{
-		Id:         cmi.ID,
-		Author:     cmi.Author,
-		RealAuthor: cmi.RealAuthor,
-		Date:       timestamppb.New(cmi.Date.Time),
-		Message:    cmi.Message,
-	}
-}
-
-func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
-	ret := &gerritpb.RevisionInfo{Number: int32(ri.Number), Ref: ri.Ref}
-	if ri.Files != nil {
-		ret.Files = make(map[string]*gerritpb.FileInfo, len(ri.Files))
-		for i, fi := range ri.Files {
-			ret.Files[i] = fi.ToProto()
-		}
-	}
-	return ret
-}
-
-func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
-	return &gerritpb.FileInfo{
-		LinesInserted: fi.LinesInserted,
-		LinesDeleted:  fi.LinesDeleted,
-		SizeDelta:     fi.SizeDelta,
-		Size:          fi.Size,
-	}
-}
-
-func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
-	*gerritpb.ChangeInfo, error) {
-
-	if err := checkArgs(opts, req); err != nil {
-		return nil, err
-	}
-
-	var resp changeInfo
-	path := fmt.Sprintf("/changes/%d", req.Number)
-
-	params := url.Values{}
-	for _, o := range req.Options {
-		params.Add("o", o.String())
-	}
-	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp.ToProto(), nil
-}
-
-type changeInput struct {
-	Project    string `json:"project"`
-	Branch     string `json:"branch"`
-	Subject    string `json:"subject"`
-	BaseCommit string `json:"base_commit"`
 }
 
 func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
@@ -327,6 +134,34 @@ func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesReque
 	}
 
 	return resp, nil
+}
+
+func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
+	*gerritpb.ChangeInfo, error) {
+
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+
+	var resp changeInfo
+	path := fmt.Sprintf("/changes/%d", req.Number)
+
+	params := url.Values{}
+	for _, o := range req.Options {
+		params.Add("o", o.String())
+	}
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+		return nil, err
+	}
+
+	return resp.ToProto(), nil
+}
+
+type changeInput struct {
+	Project    string `json:"project"`
+	Branch     string `json:"branch"`
+	Subject    string `json:"subject"`
+	BaseCommit string `json:"base_commit"`
 }
 
 func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
