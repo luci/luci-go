@@ -17,6 +17,7 @@ package job
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"path"
 	"sort"
 	"strings"
@@ -325,6 +326,21 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 			User:           uid,
 			TaskSlices:     make([]*swarmingpb.TaskSlice, len(expiringDims)),
 		},
+	}
+
+	// Enable swarming/resultdb integration.
+	if rdb := bbi.GetResultdb(); rdb != nil {
+		sw.Task.Resultdb = &swarmingpb.ResultDBCfg{
+			Enable: true,
+		}
+
+		// Populate task.Realm using builder's bucket.
+		project := bb.GetBbagentArgs().GetBuild().GetBuilder().GetProject()
+		bucket := bb.GetBbagentArgs().GetBuild().GetBuilder().GetBucket()
+		if project == "" || bucket == "" {
+			return errors.Reason("incomplete Builder ID, need both `project` and `bucket` set").Err()
+		}
+		sw.Task.Realm = fmt.Sprintf("%s:%s", project, bucket)
 	}
 
 	baseProperties := &swarmingpb.TaskProperties{
