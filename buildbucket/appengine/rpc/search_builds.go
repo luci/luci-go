@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -40,30 +39,6 @@ func validateChange(ch *pb.GerritChange) error {
 	default:
 		return nil
 	}
-}
-
-// validateCommit validates the given Gitiles commit.
-func validateCommit(cm *pb.GitilesCommit) error {
-	switch {
-	case cm.GetHost() == "":
-		return errors.Reason("host is required").Err()
-	case cm.GetProject() == "":
-		return errors.Reason("project is required").Err()
-	case cm.GetId() != "":
-		switch {
-		case cm.Ref != "" || cm.Position != 0:
-			return errors.Reason("id is mutually exclusive with (ref and position)").Err()
-		case !sha1Regex.MatchString(cm.Id):
-			return errors.Reason("id must match %q", sha1Regex).Err()
-		}
-	case cm.GetRef() != "":
-		if !strings.HasPrefix(cm.Ref, "refs/") {
-			return errors.Reason("ref must match refs/.*").Err()
-		}
-	default:
-		return errors.Reason("one of id or ref is required").Err()
-	}
-	return nil
 }
 
 // validatePredicate validates the given build predicate.
