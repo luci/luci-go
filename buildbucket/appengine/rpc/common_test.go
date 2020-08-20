@@ -101,4 +101,101 @@ func TestValidateTags(t *testing.T) {
 			So(validateSummaryMarkdown(strings.Repeat("☕", summaryMarkdownMaxLength)), ShouldErrLike, "too big to accept")
 		})
 	})
+
+	Convey("validateCommit", t, func() {
+		Convey("nil", func() {
+			err := validateCommit(nil)
+			So(err, ShouldErrLike, "host is required")
+		})
+
+		Convey("empty", func() {
+			cm := &pb.GitilesCommit{}
+			err := validateCommit(cm)
+			So(err, ShouldErrLike, "host is required")
+		})
+
+		Convey("project", func() {
+			cm := &pb.GitilesCommit{
+				Host: "host",
+			}
+			err := validateCommit(cm)
+			So(err, ShouldErrLike, "project is required")
+		})
+
+		Convey("id", func() {
+			cm := &pb.GitilesCommit{
+				Host:    "host",
+				Project: "project",
+				Id:      "id",
+			}
+			err := validateCommit(cm)
+			So(err, ShouldErrLike, "id must match")
+		})
+
+		Convey("ref", func() {
+			cm := &pb.GitilesCommit{
+				Host:    "host",
+				Project: "project",
+				Ref:     "ref",
+			}
+			err := validateCommit(cm)
+			So(err, ShouldErrLike, "ref must match")
+		})
+
+		Convey("mutual exclusion", func() {
+			Convey("ref", func() {
+				cm := &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+					Id:      "id",
+					Ref:     "ref",
+				}
+				err := validateCommit(cm)
+				So(err, ShouldErrLike, "id is mutually exclusive with (ref and position)")
+			})
+
+			Convey("position", func() {
+				cm := &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Id:       "id",
+					Position: 1,
+				}
+				err := validateCommit(cm)
+				So(err, ShouldErrLike, "id is mutually exclusive with (ref and position)")
+			})
+
+			Convey("neither", func() {
+				cm := &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+				}
+				err := validateCommit(cm)
+				So(err, ShouldErrLike, "one of")
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("id", func() {
+				cm := &pb.GitilesCommit{
+					Host:    "host",
+					Project: "project",
+					Id:      "1234567890123456789012345678901234567890",
+				}
+				err := validateCommit(cm)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("ref", func() {
+				cm := &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Ref:      "refs/ref",
+					Position: 1,
+				}
+				err := validateCommit(cm)
+				So(err, ShouldBeNil)
+			})
+		})
+	})
 }
