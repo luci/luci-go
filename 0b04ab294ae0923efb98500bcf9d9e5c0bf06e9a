@@ -213,6 +213,24 @@
       "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09180bb0_82047f93",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-08-20T22:29:35Z",
+      "side": 1,
+      "message": "this will block engprod from using resultdb in recipes. They need their builds to work in led mode. Using led non non-prod pools means engprod devs will have to change their behavior, and potentially update recipes that use led for integration testing.",
+      "parentUuid": "f0cb0865_4a65c1d3",
+      "revId": "0b04ab294ae0923efb98500bcf9d9e5c0bf06e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
