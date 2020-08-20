@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "efc78c58_559d6961",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:56:25Z",
+      "side": 1,
+      "message": "these imports should be moved to the group above.",
+      "revId": "5f690e71ac863ffa3e12ab1ee8d17873ce1b2f8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "899722b1_f9ca017c",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:56:25Z",
+      "side": 1,
+      "message": "Since this is only used in one place, can we just inline it?",
+      "revId": "5f690e71ac863ffa3e12ab1ee8d17873ce1b2f8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0fdb48b_c615a73d",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:56:25Z",
+      "side": 1,
+      "message": "We can get rid of the 2nd and 3d parameters.\nYou should still be able to assign the function to options.groupTemplate.\nAlso, can we type the first param?",
+      "revId": "5f690e71ac863ffa3e12ab1ee8d17873ce1b2f8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "512f1727_4c95174d",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:56:25Z",
+      "side": 1,
+      "message": "I think it would be better to use firstUpdated instead.\nAnd since it\u0027s just part of the lifecycle, I think we don\u0027t really need to comment.\nIf you don\u0027t need the params, you can just do\n```\nprotected firstUpdated() {\n```",
+      "revId": "5f690e71ac863ffa3e12ab1ee8d17873ce1b2f8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1925c342_16b9ddbe",
+        "filename": "milo/frontend/resultui/src/pages/build_page/timeline_tab.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-08-20T01:56:25Z",
+      "side": 1,
+      "message": "maybe .vis-range instead?\nI think that better matches the box.",
+      "range": {
+        "startLine": 112,
+        "startChar": 14,
+        "endLine": 112,
+        "endChar": 32
+      },
+      "revId": "5f690e71ac863ffa3e12ab1ee8d17873ce1b2f8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
