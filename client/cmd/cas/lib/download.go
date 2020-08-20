@@ -28,6 +28,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/client/cas"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/errors"
@@ -91,7 +92,7 @@ func (r *downloadRun) doDownload(ctx context.Context, args []string) error {
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
 	}
 
-	c, err := r.casFlags.NewClient(ctx, true)
+	c, err := cas.NewClient(ctx, r.casFlags.Instance, r.casFlags.TokenServerHost, true)
 	if err != nil {
 		return err
 	}
