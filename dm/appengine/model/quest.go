@@ -20,9 +20,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	google_pb "go.chromium.org/luci/common/proto/google"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )

@@ -23,7 +23,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -38,6 +37,7 @@ import (
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 

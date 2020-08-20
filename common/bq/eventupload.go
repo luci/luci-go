@@ -187,11 +187,11 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 					vPath[len(vPath)-1] = kStr
 					elemValue, err := getValue(f.MapIndex(k).Interface(), vPath, fi.Properties)
 					if err != nil {
-						return nil, errors.Annotate(err, "%s[%s]",  fi.OrigName, kStr).Err()
+						return nil, errors.Annotate(err, "%s[%s]", fi.OrigName, kStr).Err()
 					}
 					elems[i] = map[string]bigquery.Value{
-							"key": kStr,
-							"value": elemValue,
+						"key":   kStr,
+						"value": elemValue,
 					}
 				}
 

@@ -22,8 +22,8 @@ import (
 	"sync"
 	"testing"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

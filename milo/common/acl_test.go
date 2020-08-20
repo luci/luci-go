@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -27,6 +26,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 

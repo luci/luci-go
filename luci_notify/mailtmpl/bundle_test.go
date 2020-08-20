@@ -121,8 +121,8 @@ steps of build 54 go here`)
 					},
 				},
 				MatchingFailedSteps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{Name: "test1"},
-					&buildbucketpb.Step{Name: "test2"},
+					{Name: "test1"},
+					{Name: "test2"},
 				},
 			}
 
@@ -144,8 +144,8 @@ steps of build 54 go here`)
 					Input: &buildbucketpb.Build_Input{GitilesCommit: nil},
 				},
 				MatchingFailedSteps: []*buildbucketpb.Step{
-					&buildbucketpb.Step{Name: "test1"},
-					&buildbucketpb.Step{Name: "test2"},
+					{Name: "test1"},
+					{Name: "test2"},
 				},
 			}
 

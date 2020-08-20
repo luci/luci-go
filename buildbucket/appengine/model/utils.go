@@ -17,8 +17,8 @@ package model
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // GetIgnoreMissing fetches the given entities from the datastore,

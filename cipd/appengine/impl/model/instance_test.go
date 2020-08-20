@@ -25,9 +25,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"

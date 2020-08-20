@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/validation"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 

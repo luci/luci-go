@@ -20,12 +20,12 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/mapper/splitter"
 )

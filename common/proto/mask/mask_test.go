@@ -37,23 +37,23 @@ func TestNormalizePath(t *testing.T) {
 	})
 	Convey("Remove all deduplicate paths", t, func() {
 		So(normalizePaths([]path{
-			path{"a", "b"},
-			path{"a", "b"},
-			path{"a", "b"},
+			{"a", "b"},
+			{"a", "b"},
+			{"a", "b"},
 		}), ShouldResemble, []path{
-			path{"a", "b"},
+			{"a", "b"},
 		})
 	})
 	Convey("Remove all redundant paths and return sorted", t, func() {
 		So(normalizePaths([]path{
-			path{"b", "z"},
-			path{"b", "c", "d"},
-			path{"b", "c"},
-			path{"a"},
+			{"b", "z"},
+			{"b", "c", "d"},
+			{"b", "c"},
+			{"a"},
 		}), ShouldResemble, []path{
-			path{"a"},
-			path{"b", "c"},
-			path{"b", "z"},
+			{"a"},
+			{"b", "c"},
+			{"b", "z"},
 		})
 	})
 }
@@ -78,12 +78,12 @@ func TestFromFieldMask(t *testing.T) {
 			assertMaskEqual(actual, Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]Mask{
-					"str": Mask{},
-					"num": Mask{},
-					"msg": Mask{
+					"str": {},
+					"num": {},
+					"msg": {
 						descriptor: testMsgDescriptor,
 						children: map[string]Mask{
-							"num": Mask{},
+							"num": {},
 						},
 					},
 				},
@@ -95,23 +95,23 @@ func TestFromFieldMask(t *testing.T) {
 			assertMaskEqual(actual, Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]Mask{
-					"map_str_msg": Mask{
+					"map_str_msg": {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_msg")).Message(),
 						isRepeated: true,
 						children: map[string]Mask{
-							"some_key": Mask{
+							"some_key": {
 								descriptor: testMsgDescriptor,
 								children: map[string]Mask{
-									"str": Mask{},
+									"str": {},
 								},
 							},
 						},
 					},
-					"map_str_num": Mask{
+					"map_str_num": {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_num")).Message(),
 						isRepeated: true,
 						children: map[string]Mask{
-							"another_key": Mask{},
+							"another_key": {},
 						},
 					},
 				},
@@ -123,19 +123,19 @@ func TestFromFieldMask(t *testing.T) {
 			assertMaskEqual(actual, Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]Mask{
-					"msgs": Mask{
+					"msgs": {
 						descriptor: testMsgDescriptor,
 						isRepeated: true,
 						children: map[string]Mask{
-							"*": Mask{
+							"*": {
 								descriptor: testMsgDescriptor,
 								children: map[string]Mask{
-									"str": Mask{},
+									"str": {},
 								},
 							},
 						},
 					},
-					"nums": Mask{
+					"nums": {
 						isRepeated: true,
 					},
 				},
@@ -218,8 +218,8 @@ func TestTrim(t *testing.T) {
 		Convey("trim repeated message field", func() {
 			msg := &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Num: 1},
-					&testMsg{Num: 2},
+					{Num: 1},
+					{Num: 2},
 				},
 			}
 			testTrim([]string{"str"}, msg)
@@ -228,30 +228,30 @@ func TestTrim(t *testing.T) {
 		Convey("keep subfield of repeated message field entirely", func() {
 			msg := &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Num: 1, Str: "abc"},
-					&testMsg{Num: 2, Str: "bcd"},
+					{Num: 1, Str: "abc"},
+					{Num: 2, Str: "bcd"},
 				},
 			}
 			testTrim([]string{"msgs"}, msg)
 			So(msg, ShouldResembleProto, &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Num: 1, Str: "abc"},
-					&testMsg{Num: 2, Str: "bcd"},
+					{Num: 1, Str: "abc"},
+					{Num: 2, Str: "bcd"},
 				},
 			})
 		})
 		Convey("keep subfield of repeated message field partially", func() {
 			msg := &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Num: 1, Str: "abc"},
-					&testMsg{Num: 2, Str: "bcd"},
+					{Num: 1, Str: "abc"},
+					{Num: 2, Str: "bcd"},
 				},
 			}
 			testTrim([]string{"msgs.*.str"}, msg)
 			So(msg, ShouldResembleProto, &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Str: "abc"},
-					&testMsg{Str: "bcd"},
+					{Str: "abc"},
+					{Str: "bcd"},
 				},
 			})
 		})
@@ -279,59 +279,59 @@ func TestTrim(t *testing.T) {
 		Convey("trim map (message value) ", func() {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1},
+					"b": {Num: 2},
 				},
 			}
 			testTrim([]string{"map_str_msg.a"}, msg)
 			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
+					"a": {Num: 1},
 				},
 			})
 		})
 		Convey("trim map (message value) and keep message value partially", func() {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1, Str: "abc"},
-					"b": &testMsg{Num: 2, Str: "bcd"},
+					"a": {Num: 1, Str: "abc"},
+					"b": {Num: 2, Str: "bcd"},
 				},
 			}
 			testTrim([]string{"map_str_msg.a.num"}, msg)
 			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
+					"a": {Num: 1},
 				},
 			})
 		})
 		Convey("trim map (message value) with star key and keep message value partially", func() {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1, Str: "abc"},
-					"b": &testMsg{Num: 2, Str: "bcd"},
+					"a": {Num: 1, Str: "abc"},
+					"b": {Num: 2, Str: "bcd"},
 				},
 			}
 			testTrim([]string{"map_str_msg.*.num"}, msg)
 			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1},
+					"b": {Num: 2},
 				},
 			})
 		})
 		Convey("trim map (message value) with both star key and actual key", func() {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1, Str: "abc"},
-					"b": &testMsg{Num: 2, Str: "bcd"},
+					"a": {Num: 1, Str: "abc"},
+					"b": {Num: 2, Str: "bcd"},
 				},
 			}
 			testTrim([]string{"map_str_msg.*.num", "map_str_msg.a"}, msg)
 			// expect keep "a" entirely and "b" partially
 			So(msg, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1, Str: "abc"},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1, Str: "abc"},
+					"b": {Num: 2},
 				},
 			})
 		})
@@ -417,20 +417,20 @@ func TestMerge(t *testing.T) {
 		Convey("repeated message field", func() {
 			src := &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Num: 1},
-					&testMsg{Str: "abc"},
+					{Num: 1},
+					{Str: "abc"},
 				},
 			}
 			dest := &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Msg: &testMsg{}},
+					{Msg: &testMsg{}},
 				},
 			}
 			testMerge([]string{"msgs"}, src, dest)
 			So(dest, ShouldResembleProto, &testMsg{
 				Msgs: []*testMsg{
-					&testMsg{Num: 1},
-					&testMsg{Str: "abc"},
+					{Num: 1},
+					{Str: "abc"},
 				},
 			})
 		})
@@ -479,28 +479,28 @@ func TestMerge(t *testing.T) {
 		Convey("map field ", func() {
 			src := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1},
+					"b": {Num: 2},
 				},
 			}
 			dest := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"c": &testMsg{Num: 1},
+					"c": {Num: 1},
 				},
 			}
 			testMerge([]string{"map_str_msg"}, src, dest)
 			So(dest, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1},
+					"b": {Num: 2},
 				},
 			})
 		})
 		Convey("map field (dest map is nil)", func() {
 			src := &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1},
+					"b": {Num: 2},
 				},
 			}
 			dest := &testMsg{
@@ -509,8 +509,8 @@ func TestMerge(t *testing.T) {
 			testMerge([]string{"map_str_msg"}, src, dest)
 			So(dest, ShouldResembleProto, &testMsg{
 				MapStrMsg: map[string]*testMsg{
-					"a": &testMsg{Num: 1},
-					"b": &testMsg{Num: 2},
+					"a": {Num: 1},
+					"b": {Num: 2},
 				},
 			})
 		})

@@ -28,7 +28,6 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-
 // Value can be converted to a Spanner value.
 // Typically if type T implements Value, then *T implements Ptr.
 type Value interface {

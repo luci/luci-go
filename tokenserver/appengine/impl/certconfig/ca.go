@@ -23,8 +23,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/retry/transient"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"

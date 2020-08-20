@@ -72,7 +72,7 @@ func buildInputSpec(opts *isolate.ArchiveOptions) (string, *command.InputSpec, e
 	}
 	if opts.IgnoredPathFilterRe != "" {
 		inputSpec.InputExclusions = []*command.InputExclusion{
-			&command.InputExclusion{
+			{
 				Regex: opts.IgnoredPathFilterRe,
 				Type:  command.UnspecifiedInputType,
 			},

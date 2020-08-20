@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/gae/service/user"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"golang.org/x/net/context"
 )
 

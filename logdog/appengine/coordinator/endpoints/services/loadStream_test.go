@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"

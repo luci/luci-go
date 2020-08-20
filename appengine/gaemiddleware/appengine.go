@@ -17,8 +17,8 @@ package gaemiddleware
 import (
 	"net/http"
 
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/router"
 )
 

@@ -24,10 +24,10 @@ import (
 	"errors"
 	"time"
 
-	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
+	mc "go.chromium.org/luci/gae/service/memcache"
 )
 
 // ErrFailedToLock is returned from TryWithLock when it fails to obtain a lock

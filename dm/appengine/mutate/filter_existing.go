@@ -17,9 +17,9 @@ package mutate
 import (
 	"context"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/dm/appengine/model"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // filterExisting removes the FwdDep objects which already exist.

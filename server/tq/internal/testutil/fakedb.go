@@ -84,7 +84,7 @@ func (f *FakeDB) FetchRemindersMeta(ctx context.Context, low, high string, limit
 		return nil, nil
 	}
 	var ids []string
-	for id, _ := range f.reminders {
+	for id := range f.reminders {
 		if low <= id && id < high {
 			// Optimal algo uses a heap of size exactly limit, but Go makes it very
 			// verbose, so simple stupid sort.

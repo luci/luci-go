@@ -20,14 +20,14 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 )

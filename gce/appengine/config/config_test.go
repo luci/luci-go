@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
-	gae "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
+	gae "go.chromium.org/luci/gae/impl/memory"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"

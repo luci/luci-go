@@ -21,9 +21,9 @@ import (
 
 	"cloud.google.com/go/pubsub"
 
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/gae/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

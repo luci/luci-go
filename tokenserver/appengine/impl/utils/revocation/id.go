@@ -17,8 +17,8 @@ package revocation
 import (
 	"context"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // GenerateTokenID produces an int64 that can be used as a token identifier.

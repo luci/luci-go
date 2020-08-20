@@ -17,8 +17,8 @@ package model
 import (
 	"bytes"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/data/cmpbin"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // ManifestLink is an in-MILO link to a named source manifest.

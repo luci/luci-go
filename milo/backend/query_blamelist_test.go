@@ -21,11 +21,11 @@ import (
 	"github.com/golang/mock/gomock"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/gae/service/datastore"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -133,14 +133,14 @@ func TestQueryBlamelist(t *testing.T) {
 		}
 
 		commits := []*gitpb.Commit{
-			&gitpb.Commit{Id: "commit8"},
-			&gitpb.Commit{Id: "commit7"},
-			&gitpb.Commit{Id: "commit6"},
-			&gitpb.Commit{Id: "commit5"},
-			&gitpb.Commit{Id: "commit4"},
-			&gitpb.Commit{Id: "commit3"},
-			&gitpb.Commit{Id: "commit2"},
-			&gitpb.Commit{Id: "commit1"},
+			{Id: "commit8"},
+			{Id: "commit7"},
+			{Id: "commit6"},
+			{Id: "commit5"},
+			{Id: "commit4"},
+			{Id: "commit3"},
+			{Id: "commit2"},
+			{Id: "commit1"},
 		}
 
 		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, commitID string) *model.BuildSummary {

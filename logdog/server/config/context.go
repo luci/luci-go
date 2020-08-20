@@ -23,12 +23,12 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"

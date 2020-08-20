@@ -17,9 +17,9 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"context"
 	"os"
 
 	"go.chromium.org/luci/common/logging"
@@ -69,8 +69,8 @@ func main() {
 	for i := 0; i < 4; i++ {
 		// Create a context with a dummy project target.
 		tc := target.Set(c, &dummy_project.DummyProject{
-			Project: fmt.Sprintf("MyProject-%d", i),
-			Location: "MyComputer",
+			Project:   fmt.Sprintf("MyProject-%d", i),
+			Location:  "MyComputer",
 			IsStaging: false,
 		})
 		presence.Set(tc, true, i)

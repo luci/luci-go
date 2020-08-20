@@ -24,9 +24,9 @@ import (
 
 	"cloud.google.com/go/pubsub"
 
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/milo/api/config"
 )
 

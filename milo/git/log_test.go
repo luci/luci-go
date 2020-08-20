@@ -21,12 +21,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"

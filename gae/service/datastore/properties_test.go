@@ -131,12 +131,12 @@ func TestProperties(t *testing.T) {
 						},
 						"nested": Property{
 							indexSetting: false,
-							propType: PTPropertyMap,
+							propType:     PTPropertyMap,
 							value: PropertyMap{
 								"key": Property{
 									indexSetting: false,
-									propType: PTInt,
-									value: 1,
+									propType:     PTInt,
+									value:        1,
 								},
 							},
 						},
@@ -144,17 +144,17 @@ func TestProperties(t *testing.T) {
 					So(pv.Value(), ShouldResemble, PropertyMap{
 						"key": Property{
 							indexSetting: true,
-							propType: PTString,
-							value: stringByteSequence("val"),
+							propType:     PTString,
+							value:        stringByteSequence("val"),
 						},
 						"nested": Property{
 							indexSetting: false,
-							propType: PTPropertyMap,
+							propType:     PTPropertyMap,
 							value: PropertyMap{
 								"key": Property{
 									indexSetting: false,
-									propType: PTInt,
-									value: 1,
+									propType:     PTInt,
+									value:        1,
 								},
 							},
 						},

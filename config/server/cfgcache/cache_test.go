@@ -23,13 +23,13 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb" // some "random" v2 proto
 
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/clock/testclock"
 	configpb "go.chromium.org/luci/common/proto/config" // some "random" v1 proto
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"

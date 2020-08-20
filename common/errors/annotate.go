@@ -168,7 +168,7 @@ var _ interface {
 
 func (e *annotatedError) Error() string              { return e.ctx.renderPublic(e.inner) }
 func (e *annotatedError) stackContext() stackContext { return e.ctx }
-func (e *annotatedError) Unwrap() error          { return e.inner }
+func (e *annotatedError) Unwrap() error              { return e.inner }
 
 // Annotator is a builder for annotating errors. Obtain one by calling Annotate
 // on an existing error or using Reason.

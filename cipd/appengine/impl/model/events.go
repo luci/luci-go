@@ -24,7 +24,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/appengine"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"

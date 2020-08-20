@@ -17,9 +17,9 @@ package mutate
 import (
 	"testing"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/model"
+	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/tumble"
 
 	//. "go.chromium.org/luci/common/testing/assertions"

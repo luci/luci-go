@@ -19,10 +19,10 @@ import (
 	"net/http"
 	"strings"
 
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/user"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/gae/service/user"
 	"go.chromium.org/luci/server/auth"
 )
 

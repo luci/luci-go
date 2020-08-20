@@ -18,8 +18,8 @@ import (
 	"context"
 	"flag"
 
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 )

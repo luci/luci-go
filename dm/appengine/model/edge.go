@@ -17,8 +17,8 @@ package model
 import (
 	"context"
 
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/dm/api/service/v1"
+	ds "go.chromium.org/luci/gae/service/datastore"
 )
 
 // FwdEdge represents a forward-dependency from one attempt to another. The

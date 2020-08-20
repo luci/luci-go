@@ -77,12 +77,12 @@ func createLockBlocker(ctx context.Context) fslock.Blocker {
 		pollingInterval = clock.Until(ctx, deadline) / (lockAcquisitionAttempts - 1)
 	}
 
-  // crbug.com/1038136
-  // The default timeout is 120 minutes and the lock acquisition attempts is 100.
-  // With this setting, the polling interval is 72 seconds which is too long for
-  // lock acquisition. Setting max interval to be 1 second.
+	// crbug.com/1038136
+	// The default timeout is 120 minutes and the lock acquisition attempts is 100.
+	// With this setting, the polling interval is 72 seconds which is too long for
+	// lock acquisition. Setting max interval to be 1 second.
 	if pollingInterval > time.Second {
-	  pollingInterval = time.Second
+		pollingInterval = time.Second
 	}
 
 	return func() error {

@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/gae/service/datastore"
 	srvtsmon "go.chromium.org/luci/server/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -82,7 +82,7 @@ func TestFixFieldMasks(t *testing.T) {
 				&testingpb.Props{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"foo": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bar"}},
+							"foo": {Kind: &structpb.Value_StringValue{StringValue: "bar"}},
 						},
 					},
 				},
@@ -98,7 +98,7 @@ func TestFixFieldMasks(t *testing.T) {
 			testFix(
 				&testingpb.WithInner{
 					Msgs: []*testingpb.WithInner_Inner{
-						&testingpb.WithInner_Inner{
+						{
 							Msg: &testingpb.WithInner_Inner_Simple{
 								Simple: &testingpb.Simple{Fields: &field_mask.FieldMask{Paths: []string{
 									"id", "some_field",

@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"

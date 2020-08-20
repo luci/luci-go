@@ -17,8 +17,8 @@ package config
 import (
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )

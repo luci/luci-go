@@ -18,7 +18,6 @@ import (
 	"context"
 	"sort"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket/access"
 	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -26,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"

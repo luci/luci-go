@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"sort"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/datastore/serialize"
-	"go.chromium.org/luci/common/data/stringset"
 )
 
 // queryToIter takes a FinalizedQuery and returns an iterator function which

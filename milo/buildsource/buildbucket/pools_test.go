@@ -17,12 +17,12 @@ package buildbucket
 import (
 	"testing"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	sv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"

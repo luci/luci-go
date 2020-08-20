@@ -121,8 +121,8 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 
 		err = jd.Edit(func(je job.Editor) {
 			je.SetDimensions(map[string][]job.ExpiringValue{
-				"pool": []job.ExpiringValue{{Value: pool}},
-				"id":   []job.ExpiringValue{{Value: id}},
+				"pool": {{Value: pool}},
+				"id":   {{Value: id}},
 			})
 		})
 		if err != nil {

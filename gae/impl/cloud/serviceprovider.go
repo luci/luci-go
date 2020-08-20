@@ -15,8 +15,8 @@
 package cloud
 
 import (
-	infoS "go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/common/errors"
+	infoS "go.chromium.org/luci/gae/service/info"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"

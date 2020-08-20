@@ -24,10 +24,10 @@ import (
 	"sync"
 	"time"
 
-	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
+	mc "go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"

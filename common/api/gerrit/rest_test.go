@@ -74,7 +74,7 @@ func TestListChanges(t *testing.T) {
 		Convey("OK case with one change, _more_changes set in response", func() {
 			expectedResponse := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{
-					&gerritpb.ChangeInfo{
+					{
 						Number: 1,
 						Owner: &gerritpb.AccountInfo{
 							Name:     "John Doe",

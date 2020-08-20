@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/buildbucket/deprecated"
 
-	"go.chromium.org/luci/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucketAPI "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -32,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
