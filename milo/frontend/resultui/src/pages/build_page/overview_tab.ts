@@ -31,7 +31,7 @@ const STATUS_DISPLAY_MAP = new Map([
   [BuildStatus.Success, 'succeeded'],
   [BuildStatus.Failure, 'failed'],
   [BuildStatus.InfraFailure, 'infra failed'],
-  [BuildStatus.Canceled, 'canceled'],
+  [BuildStatus.Cancelled, 'cancelled'],
 ]);
 
 const STATUS_CLASS_MAP = new Map([
@@ -40,7 +40,7 @@ const STATUS_CLASS_MAP = new Map([
   [BuildStatus.Success, 'success'],
   [BuildStatus.Failure, 'failure'],
   [BuildStatus.InfraFailure, 'infra-failure'],
-  [BuildStatus.Canceled, 'canceled'],
+  [BuildStatus.Cancelled, 'cancelled'],
 ]);
 
 export class OverviewTabElement extends MobxLitElement {
@@ -65,7 +65,7 @@ export class OverviewTabElement extends MobxLitElement {
         return `since ${displayTimestamp(bpd.create_time)}`;
       case BuildStatus.Started:
         return `since ${displayTimestamp(bpd.start_time)}`;
-      case BuildStatus.Canceled:
+      case BuildStatus.Cancelled:
         return `after ${displayDuration(bpd.start_time, bpd.end_time)} by ${bpd.canceled_by}`;
       case BuildStatus.Failure:
       case BuildStatus.InfraFailure:
@@ -238,7 +238,7 @@ export class OverviewTabElement extends MobxLitElement {
     .status.infra-failure {
       color: #6f42c1;
     }
-    .status.canceled {
+    .status.cancelled {
       color: #6c757d;
     }
 

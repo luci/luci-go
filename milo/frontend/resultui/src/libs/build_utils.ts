@@ -39,7 +39,7 @@ export function getDisplayNameForStatus(s: BuildStatus): string {
     [BuildStatus.Success, "Success"],
     [BuildStatus.Failure, "Failure"],
     [BuildStatus.InfraFailure, "Infra Failure"],
-    [BuildStatus.Canceled, "Canceled"],
+    [BuildStatus.Cancelled, "Canceled"],
   ]);
   return statusMap.get(s) || "Unknown";
 }
